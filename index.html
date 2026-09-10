@@ -1,0 +1,1356 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Best Gas — Cash Collection</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --green:#4D6D51; --green-dark:#3b5540; --green-pale:#e7ede8; --cream:#F2EEE4;
+    --bg:#f6f5f1; --card:#ffffff; --text:#20241f; --muted:#767b71; --muted-2:#98988f;
+    --border:#e7e3d7; --border-soft:#f0ede4; --danger:#c14a30; --danger-bg:#fbe7e1;
+    --warn:#b3820f; --warn-bg:#fdf1d8; --ok:#2f7a45; --ok-bg:#e2f3e6;
+    --radius:14px; --radius-sm:9px; --radius-lg:20px;
+    --shadow-sm:0 1px 2px rgba(32,36,31,.05), 0 1px 1px rgba(32,36,31,.04);
+    --shadow-md:0 4px 14px rgba(32,36,31,.07), 0 1px 3px rgba(32,36,31,.05);
+    --shadow-lg:0 12px 32px rgba(32,36,31,.12), 0 2px 6px rgba(32,36,31,.06);
+    --font-en:'Inter',-apple-system,'Segoe UI',Tahoma,Arial,sans-serif;
+    --font-ar:'Cairo','Inter',-apple-system,'Segoe UI','Geeza Pro',Arial,sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font-en);min-height:100vh;-webkit-font-smoothing:antialiased;letter-spacing:-.01em;}
+  html[dir="rtl"] body{font-family:var(--font-ar);letter-spacing:0;}
+  ::selection{background:var(--green);color:#fff;}
+  /* Flat #4D6D51, exactly the logo artwork's own background — the PNG has
+     no transparency around the emblem, so anything but an exact match shows
+     as a visible rectangle behind it. */
+  .brand-page{background:var(--green);min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px 16px;gap:22px;}
+  .brand-logo{width:150px;max-width:55vw;display:block;filter:drop-shadow(0 8px 24px rgba(0,0,0,.18));}
+  header{background:var(--green);color:#fff;padding:13px 22px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;box-shadow:var(--shadow-md);position:relative;z-index:2;}
+  header .brand{font-weight:800;font-size:17px;display:flex;align-items:center;gap:10px;letter-spacing:-.02em;}
+  header .brand img{height:38px;width:38px;object-fit:contain;}
+  header .who{font-size:13px;opacity:.85;font-weight:500;}
+  header select, header button{background:rgba(255,255,255,.14);color:#fff;border:1px solid rgba(255,255,255,.22);border-radius:9px;padding:7px 12px;font-size:13px;cursor:pointer;font-weight:600;transition:background .15s ease, transform .1s ease;font-family:inherit;}
+  header select{background:#fff;color:var(--green-dark);border-color:transparent;}
+  header button:hover{background:rgba(255,255,255,.24);}
+  header button:active{transform:scale(.97);}
+  nav{display:flex;gap:6px;flex-wrap:wrap;background:var(--green-dark);padding:10px 18px;position:relative;z-index:1;}
+  nav button{background:transparent;border:1px solid rgba(255,255,255,.28);color:rgba(255,255,255,.92);padding:7px 15px;border-radius:999px;font-size:13px;cursor:pointer;font-weight:600;transition:background .15s ease, border-color .15s ease, transform .1s ease;font-family:inherit;}
+  nav button:hover{background:rgba(255,255,255,.1);}
+  nav button.active{background:#fff;color:var(--green-dark);border-color:#fff;box-shadow:var(--shadow-sm);}
+  nav button:active{transform:scale(.96);}
+  main{max-width:1080px;margin:0 auto;padding:22px 18px 60px;}
+  .card{background:var(--card);border:1px solid var(--border-soft);border-radius:var(--radius);padding:20px;margin-bottom:18px;overflow-x:auto;box-shadow:var(--shadow-sm);transition:box-shadow .2s ease;}
+  .card h2{margin:0 0 14px;font-size:15px;font-weight:700;color:var(--text);letter-spacing:-.01em;display:flex;align-items:center;gap:8px;}
+  .card h2::before{content:'';width:4px;height:15px;border-radius:3px;background:var(--green);display:inline-block;flex-shrink:0;}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;}
+  label{display:block;font-size:12px;color:var(--muted);margin-bottom:5px;font-weight:600;text-transform:uppercase;letter-spacing:.03em;}
+  html[dir="rtl"] label{text-transform:none;letter-spacing:0;}
+  input,select,textarea{width:100%;padding:10px 13px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:14px;background:var(--bg);color:var(--text);font-family:inherit;transition:border-color .15s ease, background .15s ease, box-shadow .15s ease;}
+  input:hover,select:hover,textarea:hover{border-color:var(--muted-2);}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--green);background:#fff;box-shadow:0 0 0 3px var(--green-pale);}
+  .field{margin-bottom:12px;}
+  button.btn{background:var(--green);color:#fff;border:none;padding:10px 18px;border-radius:var(--radius-sm);font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:var(--shadow-sm);transition:background .15s ease, transform .1s ease, box-shadow .15s ease;}
+  button.btn:hover{background:var(--green-dark);box-shadow:var(--shadow-md);}
+  button.btn:active{transform:scale(.97);}
+  button.btn.secondary{background:#fff;color:var(--green);border:1.5px solid var(--border);box-shadow:none;}
+  button.btn.secondary:hover{border-color:var(--green);background:var(--green-pale);}
+  button.btn.danger{background:var(--danger);}
+  button.btn.danger:hover{background:#a13c26;}
+  button.btn:disabled{opacity:.45;cursor:not-allowed;transform:none;box-shadow:none;}
+  table{width:100%;border-collapse:collapse;font-size:13.5px;}
+  th,td{padding:10px 12px;border-bottom:1px solid var(--border-soft);text-align:start;}
+  th{color:var(--muted);font-weight:700;font-size:11.5px;text-transform:uppercase;letter-spacing:.04em;background:var(--bg);position:sticky;top:0;}
+  html[dir="rtl"] th{text-transform:none;letter-spacing:0;}
+  tbody tr{transition:background .1s ease;}
+  tbody tr:hover{background:var(--green-pale);}
+  .badge{display:inline-flex;align-items:center;gap:4px;padding:3px 11px;border-radius:999px;font-size:11.5px;font-weight:700;letter-spacing:.01em;}
+  .badge::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor;}
+  .badge.pending{background:var(--warn-bg);color:var(--warn);}
+  .badge.confirmed{background:var(--ok-bg);color:var(--ok);}
+  .badge.disputed{background:var(--danger-bg);color:var(--danger);}
+  .badge.rejected{background:#efeee8;color:var(--muted);}
+  .badge.completed{background:var(--ok-bg);color:var(--ok);}
+  .stat{display:flex;flex-direction:column;gap:4px;position:relative;padding-inline-start:14px;}
+  .stat::before{content:'';position:absolute;inset-inline-start:0;top:2px;bottom:2px;width:3px;border-radius:3px;background:var(--green);opacity:.55;}
+  .stat .n{font-size:26px;font-weight:800;color:var(--text);letter-spacing:-.02em;line-height:1.1;}
+  .stat .l{font-size:12px;color:var(--muted);font-weight:600;}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+  .msg{padding:11px 14px;border-radius:var(--radius-sm);margin-bottom:14px;font-size:13px;font-weight:600;}
+  .msg.err{background:var(--danger-bg);color:var(--danger);}
+  .msg.ok{background:var(--ok-bg);color:var(--ok);}
+  .tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;}
+  .tabs button{padding:8px 15px;border-radius:999px;border:1.5px solid var(--border);background:#fff;cursor:pointer;font-size:13px;font-weight:600;color:var(--text);font-family:inherit;transition:all .15s ease;}
+  .tabs button:hover{border-color:var(--green);}
+  .tabs button.active{background:var(--green);color:#fff;border-color:var(--green);box-shadow:var(--shadow-sm);}
+  .center{display:flex;align-items:center;justify-content:center;min-height:70vh;}
+  table th[data-key]{cursor:pointer;user-select:none;white-space:nowrap;}
+  table th[data-key]:hover{color:var(--green);}
+  .barlist{display:flex;flex-direction:column;gap:10px;}
+  .barlist .row-label{display:flex;justify-content:space-between;font-size:12.5px;font-weight:600;margin-bottom:3px;}
+  .barlist .track{height:10px;border-radius:6px;background:var(--bg-2,#eee9dd);overflow:hidden;}
+  .barlist .fill{height:100%;border-radius:6px;background:var(--green);}
+  .barlist .fill.pos{background:#8fae7a;}
+  .trend-svg{width:100%;height:auto;display:block;}
+  .login-card{width:100%;max-width:380px;box-shadow:var(--shadow-lg);border:none;border-radius:var(--radius-lg);padding:30px 26px 26px;}
+  .brand-title{color:#fff;font-weight:800;font-size:21px;letter-spacing:-.02em;text-align:center;margin:0;}
+  .brand-tagline{color:rgba(255,255,255,.8);font-size:12.5px;font-weight:600;text-align:center;margin-top:2px;letter-spacing:.01em;}
+  .login-lang{display:flex;justify-content:center;gap:6px;margin-bottom:20px;}
+  .login-lang button{border:1.5px solid var(--border);background:#fff;color:var(--muted);font-size:12px;font-weight:700;padding:5px 13px;border-radius:999px;cursor:pointer;font-family:inherit;transition:all .15s ease;}
+  .login-lang button:hover{border-color:var(--green);color:var(--green-dark);}
+  .login-lang button.active{background:var(--green);color:#fff;border-color:var(--green);}
+  .login-card h2{font-size:16px;margin:0 0 6px;text-align:center;}
+  .login-hint{font-size:12.5px;color:var(--muted);text-align:center;margin:0 0 18px;line-height:1.5;}
+  .login-card .field label{display:block;font-size:11.5px;font-weight:700;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em;}
+  .login-card .field input{padding:12px 14px;border-radius:var(--radius-sm);font-size:15px;}
+  .login-card button.btn{width:100%;padding:12.5px;font-size:14.5px;border-radius:var(--radius-sm);margin-top:8px;letter-spacing:-.005em;}
+  .login-forgot{display:block;width:100%;text-align:center;margin-top:16px;font-size:12.5px;color:var(--green-dark);font-weight:700;cursor:pointer;background:none;border:none;font-family:inherit;padding:4px;}
+  .login-forgot:hover{text-decoration:underline;color:var(--green);}
+  .login-footer{color:rgba(255,255,255,.65);font-size:11px;text-align:center;margin-top:-6px;}
+  small.hint{color:var(--muted);font-size:12px;}
+  .list-item{padding:14px;border:1px solid var(--border-soft);border-radius:var(--radius-sm);margin-bottom:10px;background:#fff;transition:box-shadow .15s ease, border-color .15s ease;}
+  .list-item:hover{box-shadow:var(--shadow-sm);border-color:var(--border);}
+  .list-item .top{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;}
+  .amount{font-weight:800;color:var(--text);font-size:15px;letter-spacing:-.01em;}
+  .muted{color:var(--muted);font-size:12px;}
+  .actions{display:flex;gap:8px;margin-top:10px;}
+  .breakdown{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-top:10px;padding-top:10px;border-top:1px dashed var(--border);}
+  .breakdown .bi{font-size:11.5px;color:var(--muted);}
+  .breakdown .bi b{display:block;font-size:13.5px;color:var(--text);font-weight:700;margin-top:1px;}
+  .details-toggle{background:none;border:none;color:var(--green);font-size:12px;font-weight:700;cursor:pointer;padding:0;margin-top:8px;font-family:inherit;}
+  .details-toggle:hover{text-decoration:underline;}
+  /* sortable / searchable table component */
+  .tbl-search{position:relative;margin-bottom:12px;max-width:320px;}
+  .tbl-search input{padding-inline-start:36px;border-radius:999px;background:var(--bg);}
+  .tbl-search::before{content:'';position:absolute;top:50%;inset-inline-start:13px;transform:translateY(-50%);width:14px;height:14px;border:2px solid var(--muted-2);border-radius:50%;pointer-events:none;}
+  .tbl-search::after{content:'';position:absolute;top:60%;inset-inline-start:23px;width:6px;height:2px;background:var(--muted-2);transform:rotate(45deg);pointer-events:none;}
+  html[dir="rtl"] .tbl-search::after{inset-inline-start:auto;inset-inline-end:23px;transform:rotate(-45deg);}
+  .tbl-scroll{overflow-x:auto;}
+  th.sortable{cursor:pointer;user-select:none;white-space:nowrap;}
+  th.sortable:hover{color:var(--green-dark);}
+  th.sortable .arrow{color:var(--green);margin-inline-start:3px;}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+(function(){
+'use strict';
+
+// Best Gas Carrier Co. logo — embedded so the client stays a single file.
+// Its background is a flat #4D6D51 baked into the PNG; only place it on a
+// page painted the same exact green (see .brand-page), never on white.
+// Small header badge: the simple gas-cylinder glyph (icon-512.png), not the
+// detailed wordmark below — cropping the wordmark's fine linework/text down
+// to header-icon size read as a blurry smear, not a resolution problem with
+// either source file. A bold, simple mark stays legible small; a detailed
+// one doesn't, regardless of source pixel count.
+var ICON_B64 = 'iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYAAAD0eNT6AAAmmklEQVR42u3d9bMld5nHcf4M3Bd3hwTi2C6wuOwi6+6O2+Lu7rrCKhICCQRJsIQQQyI48WSixHfPucWQycy995zup/v7PN2vb9Wnamrmnu7vT/N511TdO9e5jpPuPPSpD7m6154yzh7ylAfH7sn59uAnP2i1/WbdPeg3HlhzT1ptD3zSQfn2xNgd9MQDx9kT+s3f7o4TgTz84Q9/+BfCXxw4sB9y8Ic//OFfEH9R4MAe/vCHP/zhv3MHPuGA3UYZJ9X51ac+9Opm8MMf/vCH/0zwFwNOGvR/MfjDH/7wh/+4+IsBpxn68Ic//OEP/xz477LHiwFnQPThD3/4wx/+OfG/9ijmhMIPf/jDH/7wz4+/EHDC0Ic//OEPf/jXw18MOL3hhz/84Q9/+NfGXwg4a8MPf/jDH/7wnw7+QgD88Ic//OEP/xnjLwTAD3/4wx/+8J8x/kIA/PCHP/zhD/8Z4y8E4A9/+MMf/vCfMf4iYKbwwx/+8Ic//OEvBKrB/7R+8MMf/vCHP/zhLwTgD3/4wx/+8Ie/CEgNP/zhD3/4wx/+QgD+8Ic//OEPf/gPuQMev78IaAo//OEPf/jDH/4N8L/mqAx/+MMf/vCH/8zwX+5xIgD+8Ic//OEP/9nh/4tRGv7whz/84Q//meEvAoaGH/7whz/84Q//pPgLAfjDH/7whz/8Z4y/CIA//OEPf/jDf6b4iwD4wx/+8Ic//GeKvwiAP/zhD3/4w3+m+IsA+MMf/vCHP/xnir8IgD/84Q9/+MN/pviLgFXghz/84Q9/+MN/gvgLAfjDH/7whz/8Z4y/CPDP/vCHP/zhD/+Z4j/rAIA//OEPf/jDf674zzYC4A9/+MMf/vCfO/6ziwD4wx/+8Ic//OE/swiAP/zhD3/4wx/+M4sA+MMf/vCHP/zhP7MIgD/84Q9/+MMf/jOLAPjDH/7whz/84T/DCIA//OEPf/jDH/4zCwD4wx/+8Ic//OE/swiAP/zhD3/4wx/+M4sA+MMf/vCHP/zhP7MIgD/84Q9/+MMf/kF77MZqBQD84Q9/+MMf/vDvjX+JAIA//OEPf/jDH/6x+KePAPjDH/7whz/84T8M/vs/dr/l8gYA/OEPf/jDH/7wHwT/lAEAf/jDH/7whz/8h8U/XQTAH/7whz/84Q//cfBPFQHwhz/84Q9/+MN/PPxTBAD84Q9/+MMf/vAfF/8UEQB/+MMf/vCHP/zHx79pAMAf/vCHP/zhD/82+DeLAPjDH/7whz/84d8W/yYRAH/4wx/+8Ic//NvjP2oAwB/+8Ic//OEP/xz4jxoB8Ic//OEPf/jDPw/+owQA/OEPf/jDH/7wz4X/KBEAf/jDH/7whz/88+E/aADAH/7whz/84Q//nPgPGgHwhz/84Q9/+MM/L/6DBAD84Q9/+MMf/vDPjf8gEQB/+MMf/vCHP/zz4x8aAPCHP/zhD3/4w78G/qERAH/4wx/+8Ic//OvgP1oAwB/+8K+D//c/uvfOXX3xqTt/DX/4w386+IcEAPzhD//p4H/qR/beuasvOmXnfvF78Ic//KeBf0gEwB/+8J8K/nvtsqsvOnnnrvn78Ic//KeBf68AgD/84T9N/Be76sKTdu7afwZ/+MO/Pv69IgD+8Id/ffxP+fBeu+2qC7+32679NfCHP/zr4x8aAPCHP/wr4X+/Pe6qC7672/b0dfCHP/xr498pAOAPf/gXx/9D99t0V13wnd222dfCH/7wr4t/pwiAP/zhX/v7/E/+0P023VXnf3u3bfa18Ic//Kehf68AgD/84T9N/Be76sKTdu7afwZ/+MO/Pv69IgD+8Id/ffxP+fBeu+2qC7+32679NfCHP/zr4x8aAPCHP/wr4X+/Pe6qC7672/b0dfCHP/xr498pAOAPf/gXx/9D99t0V13wnd222dfCH/7wr4t/pwiAP/zhX/v7/E/+0P023VXnf3u3bfa18Ic//OerplhbhStYAAAAAElFTkSuQmCC';
+var LOGO_B64 = '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';
+var LOGO_SRC = 'data:image/png;base64,' + LOGO_B64;
+var ICON_SRC = 'data:image/png;base64,' + ICON_B64;
+
+// ---------------- i18n ----------------
+var L = {
+  ar: {
+    appName:'باقات — إدارة تحصيل النقدية', login:'تسجيل الدخول', email:'البريد الإلكتروني', password:'كلمة المرور',
+    signIn:'دخول', invalidCredentials:'بيانات الدخول غير صحيحة', locked:'الحساب مقفل مؤقتاً، حاول لاحقاً',
+    forgotPassword:'نسيت كلمة المرور؟', forgotPasswordTitle:'استعادة كلمة المرور',
+    forgotPasswordHint:'أدخل بريدك الإلكتروني وسنرسل لك كلمة مرور مؤقتة جديدة.',
+    forgotPasswordSent:'إذا كان البريد مسجلاً لدينا، ستصلك كلمة مرور مؤقتة جديدة خلال لحظات.',
+    sendReset:'إرسال', backToLogin:'العودة لتسجيل الدخول', appTagline:'تحصيل النقدية والموافقات',
+    mustChangePw:'يجب تغيير كلمة المرور', newPassword:'كلمة المرور الجديدة', currentPassword:'كلمة المرور الحالية',
+    save:'حفظ', cancel:'إلغاء', logout:'خروج', language:'اللغة',
+    nav_home:'الرئيسية', nav_entries:'الإدخالات', nav_handoffs:'التسليمات', nav_report:'تقرير المبيعات', nav_admin:'الإدارة',
+    home_pendingForMe:'بانتظار تأكيدك', home_heldByMe:'المبلغ الموجود لديك', home_disputes:'اعتراضات جارية',
+    home_companyOutstanding:'إجمالي النقدية غير المودعة', home_openDisputes:'اعتراضات مفتوحة (الإدارة)',
+    entry_new:'إدخال يومي جديد', entry_date:'التاريخ', entry_sourceType:'المصدر', entry_source_store:'الفرع',
+    entry_source_car:'سيارة', entry_source_pos:'جهاز نقاط بيع', entry_cash:'المبيعات النقدية', entry_delivery:'رسوم التوصيل (بنك)',
+    entry_pos:'مبيعات نقاط البيع', entry_note:'ملاحظة', entry_submit:'حفظ الإدخال', entry_list:'الإدخالات الأخيرة',
+    entry_product:'المنتج', entry_product_none:'بدون منتج محدد',
+    handoff_createLocation:'تسليم نقدية الفرع للمشرف', handoff_createCluster:'تسليم المجمّع للمُحصّل',
+    handoff_pending:'قيد الانتظار', handoff_confirmed:'مؤكد', handoff_disputed:'معترض عليه', handoff_rejected:'مرفوض', handoff_completed:'مكتمل',
+    handoff_confirm:'تأكيد الاستلام', handoff_dispute:'اعتراض', handoff_disputeNote:'سبب الاعتراض',
+    handoff_from:'من', handoff_to:'إلى', handoff_amount:'المبلغ', handoff_created:'التاريخ',
+    handoff_deposit:'تسجيل إيداع بنكي', handoff_bankRef:'المرجع البنكي', handoff_slip:'صورة إيصال الإيداع',
+    handoff_takePhoto:'التقاط صورة بالكاميرا', handoff_chooseFile:'اختيار من المعرض',
+    handoff_resolve:'حل الاعتراض', handoff_resolveConfirm:'تأكيد كصحيح', handoff_resolveReject:'إلغاء التسليم',
+    report_title:'تقرير المبيعات', report_from:'من تاريخ', report_to:'إلى تاريخ', report_city:'المدينة', report_run:'عرض التقرير',
+    report_storeCash:'نقدية الفرع', report_carCash:'نقدية السيارات', report_delivery:'رسوم التوصيل', report_vat:'ضريبة القيمة المضافة',
+    report_net:'صافي المستحق', report_outstanding:'غير محصّل بعد', report_pos:'مبيعات نقاط البيع', report_byLocation:'حسب الموقع',
+    report_byProduct:'حسب المنتج', report_product:'المنتج', report_cashChannel:'نقدي', report_posChannel:'نقاط بيع',
+    report_total:'الإجمالي', report_trend:'اتجاه المبيعات اليومي', report_unspecified:'غير محدد', report_sortHint:'اضغط على العنوان للترتيب',
+    admin_users:'المستخدمون', admin_locations:'المواقع', admin_stores:'الفروع', admin_cars:'السيارات', admin_pos:'أجهزة نقاط البيع',
+    admin_clusters:'المجمّعات', admin_products:'المنتجات', admin_config:'الإعدادات', admin_audit:'سجل التدقيق',
+    admin_addProduct:'إضافة منتج', admin_productName:'اسم المنتج',
+    admin_groupSystem:'النظام والمستخدمون', admin_groupMaster:'البيانات الأساسية', admin_groupOther:'أخرى',
+    admin_permissions:'مصفوفة الصلاحيات', perm_screen:'الشاشة/الصلاحية', perm_note:'تُبنى هذه المصفوفة من قواعد النظام الفعلية، وليست وثيقة منفصلة قد تصبح قديمة.',
+    perm_home:'الرئيسية (نطاقه الخاص)', perm_home_company:'الرئيسية (بيانات الشركة كاملة)', perm_entries:'إدخال البيانات اليومية',
+    perm_handoffs_own:'التسليمات (الخاصة به)', perm_handoffs_all:'التسليمات (كل الشركة)', perm_report_own:'تقرير المبيعات (مجمّعه فقط)',
+    perm_report_all:'تقرير المبيعات (كل الشركة)', perm_audit:'سجل التدقيق', perm_resolve:'حل الاعتراضات', perm_manage:'إدارة المستخدمين والبيانات الأساسية',
+    admin_addUser:'إضافة مستخدم', admin_name:'الاسم', admin_role:'الدور', admin_active:'نشط', admin_resetPw:'إعادة تعيين كلمة المرور',
+    admin_addLocation:'إضافة موقع', admin_city:'المدينة', admin_locName:'اسم الموقع', admin_cluster:'المجمّع',
+    admin_addStore:'إضافة فرع', admin_storeName:'اسم الفرع', admin_manager:'المشرف', admin_location:'الموقع',
+    admin_addCar:'إضافة سيارة', admin_carLabel:'رقم اللوحة/السائق', admin_driver:'السائق',
+    admin_addPos:'إضافة جهاز', admin_posLabel:'رقم الجهاز', admin_ownerType:'مرتبط بـ', admin_owner:'الجهة', admin_assignedDriver:'الموظف المسؤول',
+    admin_addCluster:'إضافة مجمّع', admin_clusterName:'اسم المجمّع', admin_clusterManager:'مدير المجمّع', admin_collector:'المُحصّل',
+    admin_vatRate:'نسبة الضريبة', admin_delete:'حذف', admin_edit:'تعديل', admin_hasChildren:'لا يمكن الحذف — توجد عناصر تابعة',
+    role_admin:'مدير النظام', role_finance:'مدير مالي', role_accountant:'محاسب', role_operations_manager:'مدير العمليات',
+    role_cluster_manager:'مدير مجمّع', role_store_manager:'مشرف فرع',
+    role_collector:'مُحصّل', role_driver:'سائق', settings_url:'رابط النظام (Apps Script)', settings_save:'حفظ الرابط',
+    err_generic:'حدث خطأ، حاول مرة أخرى', ok_saved:'تم الحفظ بنجاح', confirm_delete:'هل أنت متأكد من الحذف؟',
+    noData:'لا توجد بيانات', loading:'جارِ التحميل...', total:'الإجمالي', kind_location_to_cluster:'فرع ← مجمّع',
+    kind_cluster_to_collector:'مجمّع ← مُحصّل', kind_deposit:'إيداع بنكي', filter:'تصفية', all:'الكل'
+  },
+  en: {
+    appName:'Best Gas — Cash Collection', login:'Sign In', email:'Email', password:'Password',
+    signIn:'Sign in', invalidCredentials:'Invalid email or password', locked:'Account temporarily locked, try later',
+    forgotPassword:'Forgot password?', forgotPasswordTitle:'Reset your password',
+    forgotPasswordHint:'Enter your email and we\'ll send you a new temporary password.',
+    forgotPasswordSent:'If that email is registered, a new temporary password is on its way.',
+    sendReset:'Send', backToLogin:'Back to sign in', appTagline:'Cash Collection & Approvals',
+    mustChangePw:'You must change your password', newPassword:'New password', currentPassword:'Current password',
+    save:'Save', cancel:'Cancel', logout:'Log out', language:'Language',
+    nav_home:'Home', nav_entries:'Entries', nav_handoffs:'Handoffs', nav_report:'Sales Report', nav_admin:'Admin',
+    home_pendingForMe:'Awaiting your confirmation', home_heldByMe:'Cash currently held by you', home_disputes:'Open disputes',
+    home_companyOutstanding:'Total cash not yet deposited', home_openDisputes:'Open disputes (company-wide)',
+    entry_new:'New daily entry', entry_date:'Date', entry_sourceType:'Source', entry_source_store:'Store branch',
+    entry_source_car:'Car', entry_source_pos:'POS machine', entry_cash:'Cash sales', entry_delivery:'Delivery fee (bank)',
+    entry_pos:'POS sales', entry_note:'Note', entry_submit:'Save entry', entry_list:'Recent entries',
+    entry_product:'Product', entry_product_none:'No specific product',
+    handoff_createLocation:'Hand off branch cash to Cluster Manager', handoff_createCluster:'Hand off to Collector',
+    handoff_pending:'Pending', handoff_confirmed:'Confirmed', handoff_disputed:'Disputed', handoff_rejected:'Rejected', handoff_completed:'Completed',
+    handoff_confirm:'Confirm receipt', handoff_dispute:'Dispute', handoff_disputeNote:'Reason for dispute',
+    handoff_from:'From', handoff_to:'To', handoff_amount:'Amount', handoff_created:'Date',
+    handoff_deposit:'Record bank deposit', handoff_bankRef:'Bank reference', handoff_slip:'Deposit slip photo',
+    handoff_takePhoto:'Take photo', handoff_chooseFile:'Choose from gallery',
+    handoff_resolve:'Resolve dispute', handoff_resolveConfirm:'Confirm as correct', handoff_resolveReject:'Cancel handoff',
+    report_title:'Sales Report', report_from:'From date', report_to:'To date', report_city:'City', report_run:'Run report',
+    report_storeCash:'Branch cash', report_carCash:'Car cash', report_delivery:'Delivery fees', report_vat:'VAT',
+    report_net:'Net owed', report_outstanding:'Still outstanding', report_pos:'POS sales', report_byLocation:'By location',
+    report_byProduct:'By product', report_product:'Product', report_cashChannel:'Cash', report_posChannel:'POS',
+    report_total:'Total', report_trend:'Daily sales trend', report_unspecified:'Unspecified', report_sortHint:'Click a header to sort',
+    admin_users:'Users', admin_locations:'Locations', admin_stores:'Store branches', admin_cars:'Cars', admin_pos:'POS machines',
+    admin_clusters:'Clusters', admin_products:'Products', admin_config:'Settings', admin_audit:'Audit log',
+    admin_addProduct:'Add product', admin_productName:'Product name',
+    admin_groupSystem:'System & users', admin_groupMaster:'Master data', admin_groupOther:'Other',
+    admin_permissions:'Permissions matrix', perm_screen:'Screen / permission', perm_note:"This matrix is generated from the system's actual access rules, not a separate document that can go stale.",
+    perm_home:'Home (own scope)', perm_home_company:'Home (company-wide figures)', perm_entries:'Enter daily data',
+    perm_handoffs_own:'Handoffs (own)', perm_handoffs_all:'Handoffs (company-wide)', perm_report_own:'Sales report (own cluster only)',
+    perm_report_all:'Sales report (company-wide)', perm_audit:'Audit log', perm_resolve:'Resolve disputes', perm_manage:'Manage users & master data',
+    admin_addUser:'Add user', admin_name:'Name', admin_role:'Role', admin_active:'Active', admin_resetPw:'Reset password',
+    admin_addLocation:'Add location', admin_city:'City', admin_locName:'Location name', admin_cluster:'Cluster',
+    admin_addStore:'Add branch', admin_storeName:'Branch name', admin_manager:'Store manager', admin_location:'Location',
+    admin_addCar:'Add car', admin_carLabel:'Plate / driver label', admin_driver:'Driver',
+    admin_addPos:'Add POS machine', admin_posLabel:'Terminal id', admin_ownerType:'Belongs to', admin_owner:'Owner', admin_assignedDriver:'Assigned employee',
+    admin_addCluster:'Add cluster', admin_clusterName:'Cluster name', admin_clusterManager:'Cluster manager', admin_collector:'Collector',
+    admin_vatRate:'VAT rate', admin_delete:'Delete', admin_edit:'Edit', admin_hasChildren:'Cannot delete — has child records',
+    role_admin:'Admin', role_finance:'Finance Manager', role_accountant:'Accountant', role_operations_manager:'Operations Manager',
+    role_cluster_manager:'Cluster Manager', role_store_manager:'Store Manager',
+    role_collector:'Collector', role_driver:'Driver', settings_url:'System URL (Apps Script)', settings_save:'Save URL',
+    err_generic:'Something went wrong, please try again', ok_saved:'Saved successfully', confirm_delete:'Are you sure you want to delete this?',
+    noData:'No data', loading:'Loading...', total:'Total', kind_location_to_cluster:'Branch → Cluster',
+    kind_cluster_to_collector:'Cluster → Collector', kind_deposit:'Bank deposit', filter:'Filter', all:'All'
+  },
+  ur: {
+    appName:'بیسٹ گیس — نقد وصولی نظام', login:'لاگ ان', email:'ای میل', password:'پاس ورڈ',
+    signIn:'داخل ہوں', invalidCredentials:'ای میل یا پاس ورڈ درست نہیں', locked:'اکاؤنٹ عارضی طور پر مقفل ہے، بعد میں کوشش کریں',
+    forgotPassword:'پاس ورڈ بھول گئے؟', forgotPasswordTitle:'پاس ورڈ بحال کریں',
+    forgotPasswordHint:'اپنا ای میل درج کریں، ہم آپ کو نیا عارضی پاس ورڈ بھیج دیں گے۔',
+    forgotPasswordSent:'اگر یہ ای میل رجسٹرڈ ہے، تو تھوڑی دیر میں نیا عارضی پاس ورڈ آپ کو مل جائے گا۔',
+    sendReset:'بھیجیں', backToLogin:'لاگ ان پر واپس جائیں', appTagline:'نقد وصولی اور منظوری کا نظام',
+    mustChangePw:'پاس ورڈ تبدیل کرنا ضروری ہے', newPassword:'نیا پاس ورڈ', currentPassword:'موجودہ پاس ورڈ',
+    save:'محفوظ کریں', cancel:'منسوخ', logout:'لاگ آؤٹ', language:'زبان',
+    nav_home:'ہوم', nav_entries:'اندراجات', nav_handoffs:'ترسیل', nav_report:'سیلز رپورٹ', nav_admin:'ایڈمن',
+    home_pendingForMe:'آپ کی تصدیق کے منتظر', home_heldByMe:'آپ کے پاس موجود رقم', home_disputes:'جاری اعتراضات',
+    home_companyOutstanding:'کل غیر جمع شدہ نقدی', home_openDisputes:'کھلے اعتراضات (ادارہ)',
+    entry_new:'نئی روزانہ انٹری', entry_date:'تاریخ', entry_sourceType:'ذریعہ', entry_source_store:'اسٹور برانچ',
+    entry_source_car:'گاڑی', entry_source_pos:'POS مشین', entry_cash:'نقد فروخت', entry_delivery:'ڈلیوری فیس (بینک)',
+    entry_pos:'POS فروخت', entry_note:'نوٹ', entry_submit:'انٹری محفوظ کریں', entry_list:'حالیہ اندراجات',
+    entry_product:'پروڈکٹ', entry_product_none:'کوئی مخصوص پروڈکٹ نہیں',
+    handoff_createLocation:'برانچ نقدی کلسٹر منیجر کو دیں', handoff_createCluster:'کلکٹر کو ترسیل کریں',
+    handoff_pending:'زیر التواء', handoff_confirmed:'تصدیق شدہ', handoff_disputed:'متنازعہ', handoff_rejected:'مسترد', handoff_completed:'مکمل',
+    handoff_confirm:'وصولی کی تصدیق', handoff_dispute:'اعتراض', handoff_disputeNote:'اعتراض کی وجہ',
+    handoff_from:'سے', handoff_to:'کو', handoff_amount:'رقم', handoff_created:'تاریخ',
+    handoff_deposit:'بینک جمع درج کریں', handoff_bankRef:'بینک ریفرنس', handoff_slip:'جمع رسید کی تصویر',
+    handoff_takePhoto:'کیمرے سے تصویر لیں', handoff_chooseFile:'گیلری سے منتخب کریں',
+    handoff_resolve:'اعتراض حل کریں', handoff_resolveConfirm:'درست کے طور پر تصدیق کریں', handoff_resolveReject:'ترسیل منسوخ کریں',
+    report_title:'سیلز رپورٹ', report_from:'تاریخ سے', report_to:'تاریخ تک', report_city:'شہر', report_run:'رپورٹ دیکھیں',
+    report_storeCash:'برانچ نقدی', report_carCash:'گاڑی نقدی', report_delivery:'ڈلیوری فیس', report_vat:'ویٹ',
+    report_net:'خالص واجب الادا', report_outstanding:'ابھی تک وصول نہیں ہوا', report_pos:'POS فروخت', report_byLocation:'مقام کے مطابق',
+    report_byProduct:'پروڈکٹ کے مطابق', report_product:'پروڈکٹ', report_cashChannel:'نقد', report_posChannel:'POS',
+    report_total:'کل', report_trend:'روزانہ سیلز رجحان', report_unspecified:'غیر متعین', report_sortHint:'ترتیب کے لیے ہیڈر دبائیں',
+    admin_users:'صارفین', admin_locations:'مقامات', admin_stores:'اسٹور برانچز', admin_cars:'گاڑیاں', admin_pos:'POS مشینیں',
+    admin_clusters:'کلسٹرز', admin_products:'پروڈکٹس', admin_config:'ترتیبات', admin_audit:'آڈٹ لاگ',
+    admin_addProduct:'پروڈکٹ شامل کریں', admin_productName:'پروڈکٹ کا نام',
+    admin_groupSystem:'نظام اور صارفین', admin_groupMaster:'بنیادی ڈیٹا', admin_groupOther:'دیگر',
+    admin_permissions:'اجازتوں کی میٹرکس', perm_screen:'اسکرین/اجازت', perm_note:'یہ میٹرکس نظام کے اصل رسائی قوانین سے تیار ہوتی ہے، ایک الگ دستاویز نہیں جو پرانی ہو سکے۔',
+    perm_home:'ہوم (اپنا دائرہ)', perm_home_company:'ہوم (پوری کمپنی کے اعداد و شمار)', perm_entries:'روزانہ ڈیٹا درج کریں',
+    perm_handoffs_own:'ترسیل (اپنی)', perm_handoffs_all:'ترسیل (پوری کمپنی)', perm_report_own:'سیلز رپورٹ (صرف اپنا کلسٹر)',
+    perm_report_all:'سیلز رپورٹ (پوری کمپنی)', perm_audit:'آڈٹ لاگ', perm_resolve:'اعتراضات حل کریں', perm_manage:'صارفین اور بنیادی ڈیٹا کا انتظام',
+    admin_addUser:'صارف شامل کریں', admin_name:'نام', admin_role:'کردار', admin_active:'فعال', admin_resetPw:'پاس ورڈ ری سیٹ کریں',
+    admin_addLocation:'مقام شامل کریں', admin_city:'شہر', admin_locName:'مقام کا نام', admin_cluster:'کلسٹر',
+    admin_addStore:'برانچ شامل کریں', admin_storeName:'برانچ کا نام', admin_manager:'اسٹور منیجر', admin_location:'مقام',
+    admin_addCar:'گاڑی شامل کریں', admin_carLabel:'پلیٹ / ڈرائیور کا نام', admin_driver:'ڈرائیور',
+    admin_addPos:'POS مشین شامل کریں', admin_posLabel:'ٹرمینل نمبر', admin_ownerType:'سے منسلک', admin_owner:'مالک', admin_assignedDriver:'ذمہ دار ملازم',
+    admin_addCluster:'کلسٹر شامل کریں', admin_clusterName:'کلسٹر کا نام', admin_clusterManager:'کلسٹر منیجر', admin_collector:'کلکٹر',
+    admin_vatRate:'ویٹ کی شرح', admin_delete:'حذف کریں', admin_edit:'ترمیم', admin_hasChildren:'حذف نہیں ہو سکتا — ذیلی ریکارڈز موجود ہیں',
+    role_admin:'ایڈمن', role_finance:'فنانس منیجر', role_accountant:'اکاؤنٹنٹ', role_operations_manager:'آپریشنز منیجر',
+    role_cluster_manager:'کلسٹر منیجر', role_store_manager:'اسٹور منیجر',
+    role_collector:'کلکٹر', role_driver:'ڈرائیور', settings_url:'سسٹم لنک (Apps Script)', settings_save:'لنک محفوظ کریں',
+    err_generic:'کچھ غلط ہوگیا، دوبارہ کوشش کریں', ok_saved:'کامیابی سے محفوظ ہوگیا', confirm_delete:'کیا آپ واقعی حذف کرنا چاہتے ہیں؟',
+    noData:'کوئی ڈیٹا نہیں', loading:'لوڈ ہو رہا ہے...', total:'کل', kind_location_to_cluster:'برانچ ← کلسٹر',
+    kind_cluster_to_collector:'کلسٹر ← کلکٹر', kind_deposit:'بینک جمع', filter:'فلٹر', all:'تمام'
+  }
+};
+function t(k){ var l=L[state.lang]||L.ar; return l[k]!==undefined ? l[k] : (L.en[k]!==undefined?L.en[k]:k); }
+function dirFor(lang){ return lang==='en' ? 'ltr' : 'rtl'; }
+
+// ---------------- state ----------------
+var state = {
+  lang: localStorage.getItem('bgc_lang') || 'ar',
+  apiUrl: localStorage.getItem('bgc_apiUrl') || '',
+  token: localStorage.getItem('bgc_token') || '',
+  user: null,
+  screen: 'home',
+  meta: null,
+  msg: null
+};
+
+function setLang(l){ state.lang = l; localStorage.setItem('bgc_lang', l); document.documentElement.lang=l; document.documentElement.dir=dirFor(l); }
+setLang(state.lang);
+
+// ---------------- helpers ----------------
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+function money(n){ n=Number(n||0); return n.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function el(html){
+  html = html.trim();
+  // A bare <tr>/<td>/<th> fragment gets silently stripped by the HTML
+  // parser when set via a plain <div>'s innerHTML (no enclosing <table> in
+  // that same string) — verified: div.innerHTML='<tr><td>a</td></tr>'
+  // leaves a single text node "a", not the row. Give it a <table> context.
+  var m = /^<(tr|td|th|tbody|thead)[ >]/i.exec(html);
+  if (m) {
+    var table = document.createElement('table');
+    table.innerHTML = html;
+    return table.querySelector(m[1].toLowerCase());
+  }
+  var d=document.createElement('div'); d.innerHTML=html; return d.firstChild;
+}
+function qs(sel,root){ return (root||document).querySelector(sel); }
+function qsa(sel,root){ return Array.prototype.slice.call((root||document).querySelectorAll(sel)); }
+
+function api(action, payload){
+  payload = payload || {};
+  payload.action = action;
+  payload.token = state.token;
+  return fetch(state.apiUrl, {
+    method:'POST',
+    headers:{'Content-Type':'text/plain;charset=utf-8'},
+    body: JSON.stringify(payload)
+  }).then(function(r){ return r.json(); }).then(function(res){
+    if (res.token) { state.token = res.token; localStorage.setItem('bgc_token', res.token); }
+    return res;
+  }).catch(function(err){
+    return { ok:false, error:'network' };
+  });
+}
+
+function toast(msgKey, type){
+  state.msg = { text: t(msgKey), type: type||'err' };
+  render();
+  setTimeout(function(){ state.msg=null; var m=qs('#msgBox'); if(m) m.remove(); }, 4000);
+}
+
+// ---------------- bootstrap: ask for the Apps Script URL once ----------------
+function renderUrlSetup(){
+  var root = qs('#app');
+  root.innerHTML = '';
+  var wrap = el('<div class="brand-page">' +
+    '<img class="brand-logo" src="'+LOGO_SRC+'" alt="Best Gas Carrier Co.">' +
+    '<div class="card login-card">' +
+    '<h2>'+esc(t('settings_url'))+'</h2>' +
+    '<div class="field"><input id="urlInput" placeholder="https://script.google.com/macros/s/.../exec"></div>' +
+    '<button class="btn" id="saveUrlBtn">'+esc(t('settings_save'))+'</button>' +
+    '</div></div>');
+  root.appendChild(wrap);
+  qs('#saveUrlBtn').addEventListener('click', function(){
+    var v = qs('#urlInput').value.trim();
+    if(!v) return;
+    state.apiUrl = v;
+    localStorage.setItem('bgc_apiUrl', v);
+    render();
+  });
+}
+
+// ---------------- login ----------------
+function langPills(activeId){
+  var langs = [['ar','العربية'],['en','English'],['ur','اردو']];
+  return '<div class="login-lang">' + langs.map(function(l){
+    return '<button type="button" data-lang="'+l[0]+'" class="'+(state.lang===l[0]?'active':'')+'">'+l[1]+'</button>';
+  }).join('') + '</div>';
+}
+
+function wireLangPills(onPicked){
+  Array.prototype.forEach.call(document.querySelectorAll('.login-lang button'), function(b){
+    b.addEventListener('click', function(){ setLang(b.getAttribute('data-lang')); onPicked(); });
+  });
+}
+
+function renderLogin(){
+  var root = qs('#app'); root.innerHTML='';
+  var box = el('<div class="brand-page">' +
+    '<img class="brand-logo" src="'+LOGO_SRC+'" alt="Best Gas Carrier Co.">' +
+    '<div class="brand-title">'+esc(t('appName'))+'</div>' +
+    '<div class="brand-tagline">'+esc(t('appTagline'))+'</div>' +
+    '<div class="card login-card">' +
+      langPills() +
+    '<div id="loginMsg"></div>' +
+    '<div class="field"><label>'+esc(t('email'))+'</label><input id="loginEmail" type="email" autocomplete="username"></div>' +
+    '<div class="field"><label>'+esc(t('password'))+'</label><input id="loginPw" type="password" autocomplete="current-password"></div>' +
+    '<button class="btn" id="loginBtn">'+esc(t('signIn'))+'</button>' +
+    '<button type="button" class="login-forgot" id="forgotBtn">'+esc(t('forgotPassword'))+'</button>' +
+    '</div>' +
+    '<div class="login-footer">Best Gas Carrier Co.</div>' +
+    '</div>');
+  root.appendChild(box);
+  wireLangPills(renderLogin);
+  qs('#loginBtn').addEventListener('click', doLogin);
+  qs('#loginPw').addEventListener('keydown', function(e){ if(e.key==='Enter') doLogin(); });
+  qs('#forgotBtn').addEventListener('click', renderForgotPassword);
+}
+
+function doLogin(){
+  var email = qs('#loginEmail').value.trim();
+  var pw = qs('#loginPw').value.trim();
+  var btn = qs('#loginBtn'); btn.disabled = true;
+  api('login', { email: email, password: pw }).then(function(res){
+    btn.disabled = false;
+    if (!res.ok) {
+      var box = qs('#loginMsg');
+      box.innerHTML = '<div class="msg err">'+esc(t(res.error==='locked'?'locked':'invalidCredentials'))+'</div>';
+      return;
+    }
+    state.user = res.user;
+    setLang(res.user.language || state.lang);
+    loadMetaAndRender();
+  });
+}
+
+// ---------------- forgot password (self-service) ----------------
+function renderForgotPassword(){
+  var root = qs('#app'); root.innerHTML='';
+  var box = el('<div class="brand-page">' +
+    '<img class="brand-logo" src="'+LOGO_SRC+'" alt="Best Gas Carrier Co.">' +
+    '<div class="brand-title">'+esc(t('appName'))+'</div>' +
+    '<div class="card login-card">' +
+      langPills() +
+    '<h2>'+esc(t('forgotPasswordTitle'))+'</h2>' +
+    '<p class="login-hint">'+esc(t('forgotPasswordHint'))+'</p>' +
+    '<div id="fpMsg"></div>' +
+    '<div class="field"><label>'+esc(t('email'))+'</label><input id="fpEmail" type="email" autocomplete="username"></div>' +
+    '<button class="btn" id="fpBtn">'+esc(t('sendReset'))+'</button>' +
+    '<button type="button" class="login-forgot" id="fpBack">'+esc(t('backToLogin'))+'</button>' +
+    '</div>' +
+    '<div class="login-footer">Best Gas Carrier Co.</div>' +
+    '</div>');
+  root.appendChild(box);
+  wireLangPills(renderForgotPassword);
+  qs('#fpBack').addEventListener('click', renderLogin);
+  qs('#fpEmail').addEventListener('keydown', function(e){ if(e.key==='Enter') doForgotPassword(); });
+  qs('#fpBtn').addEventListener('click', doForgotPassword);
+}
+
+function doForgotPassword(){
+  var email = qs('#fpEmail').value.trim();
+  if(!email) return;
+  var btn = qs('#fpBtn'); btn.disabled = true;
+  api('forgotPassword', { email: email }).then(function(res){
+    btn.disabled = false;
+    var box = qs('#fpMsg');
+    if (!res.ok) { box.innerHTML = '<div class="msg err">'+esc(t('err_generic'))+'</div>'; return; }
+    box.innerHTML = '<div class="msg ok">'+esc(t('forgotPasswordSent'))+'</div>';
+    qs('#fpEmail').value='';
+  });
+}
+
+function logout(){
+  state.token=''; state.user=null; state.meta=null;
+  localStorage.removeItem('bgc_token');
+  render();
+}
+
+// ---------------- change password (forced) ----------------
+function renderChangePw(){
+  var root = qs('#app'); root.innerHTML='';
+  var box = el('<div class="brand-page">' +
+    '<img class="brand-logo" src="'+LOGO_SRC+'" alt="Best Gas Carrier Co.">' +
+    '<div class="card login-card">' +
+    '<h2>'+esc(t('mustChangePw'))+'</h2>' +
+    '<div id="cpMsg"></div>' +
+    '<div class="field"><label>'+esc(t('newPassword'))+'</label><input id="newPw" type="password"></div>' +
+    '<button class="btn" id="cpBtn" style="width:100%">'+esc(t('save'))+'</button>' +
+    '</div></div>');
+  root.appendChild(box);
+  qs('#cpBtn').addEventListener('click', function(){
+    var pw = qs('#newPw').value.trim();
+    api('changePassword', { newPassword: pw }).then(function(res){
+      if(!res.ok){ qs('#cpMsg').innerHTML='<div class="msg err">'+esc(t('err_generic'))+'</div>'; return; }
+      state.user.mustChangePw = false;
+      render();
+    });
+  });
+}
+
+// ---------------- shell ----------------
+function roleLabel(r){ return t('role_'+r); }
+
+function renderShell(){
+  var root = qs('#app'); root.innerHTML='';
+  var navItems = [['home','nav_home']];
+  if (['store_manager','driver','admin'].indexOf(state.user.role)>=0) navItems.push(['entries','nav_entries']);
+  navItems.push(['handoffs','nav_handoffs']);
+  if (['admin','finance','accountant','operations_manager','cluster_manager'].indexOf(state.user.role)>=0) navItems.push(['report','nav_report']);
+  if (state.user.role==='admin') navItems.push(['admin','nav_admin']);
+
+  var header = el('<header>' +
+    '<div class="brand"><img src="'+ICON_SRC+'" alt=""> '+esc(t('appName'))+'</div>' +
+    '<div class="row">' +
+      '<span class="who">'+esc(state.user.name)+' · '+esc(roleLabel(state.user.role))+'</span>' +
+      '<select id="langSel">' +
+        '<option value="ar"'+(state.lang==='ar'?' selected':'')+'>العربية</option>' +
+        '<option value="en"'+(state.lang==='en'?' selected':'')+'>English</option>' +
+        '<option value="ur"'+(state.lang==='ur'?' selected':'')+'>اردو</option>' +
+      '</select>' +
+      '<button id="logoutBtn">'+esc(t('logout'))+'</button>' +
+    '</div></header>');
+  root.appendChild(header);
+  qs('#logoutBtn', header).addEventListener('click', logout);
+  qs('#langSel', header).addEventListener('change', function(e){
+    setLang(e.target.value);
+    api('setLanguage', { language: e.target.value });
+    render();
+  });
+
+  var nav = el('<nav></nav>');
+  navItems.forEach(function(it){
+    var b = el('<button'+(state.screen===it[0]?' class="active"':'')+'>'+esc(t(it[1]))+'</button>');
+    b.addEventListener('click', function(){ state.screen = it[0]; render(); });
+    nav.appendChild(b);
+  });
+  root.appendChild(nav);
+
+  var main = el('<main></main>');
+  root.appendChild(main);
+
+  if (state.msg) {
+    main.appendChild(el('<div id="msgBox" class="msg '+(state.msg.type==='ok'?'ok':'err')+'">'+esc(state.msg.text)+'</div>'));
+  }
+
+  var body = el('<div id="screenBody"></div>');
+  main.appendChild(body);
+
+  var renderers = { home: renderHome, entries: renderEntries, handoffs: renderHandoffs, report: renderReport, admin: renderAdmin };
+  (renderers[state.screen] || renderHome)(body);
+}
+
+// ---------------- meta loading ----------------
+function loadMetaAndRender(){
+  api('listMeta', {}).then(function(res){
+    if (res.ok) state.meta = res;
+    if (state.user.mustChangePw) { render(); return; }
+    render();
+  });
+}
+
+function byId(list, id){ for(var i=0;i<(list||[]).length;i++) if(list[i].id===id) return list[i]; return null; }
+function userName(id){ var u = byId(state.meta && state.meta.users, id); return u ? u.name : '—'; }
+function locationName(id){ var l = byId(state.meta && state.meta.locations, id); return l ? (l.city+' — '+l.name) : '—'; }
+
+// ---------------- home ----------------
+function renderHome(body){
+  body.innerHTML = '<div class="card">'+esc(t('loading'))+'</div>';
+  var isCompanyWide = ['admin','finance','accountant','operations_manager'].indexOf(state.user.role) >= 0;
+
+  var dashP = api('listDashboard', {});
+  var reportP = isCompanyWide ? api('getSalesReport', {}) : Promise.resolve(null);
+
+  Promise.all([dashP, reportP]).then(function(results){
+    var res = results[0], report = results[1];
+    if(!res.ok){ body.innerHTML = '<div class="msg err">'+esc(t('err_generic'))+'</div>'; return; }
+    body.innerHTML = '';
+
+    var greeting = el('<div class="card" style="background:var(--green);color:#fff;">' +
+      '<div style="font-size:19px;font-weight:800;">'+esc(state.user.name)+'</div>' +
+      '<div style="opacity:.85;font-size:13px;margin-top:2px;">'+esc(roleLabel(state.user.role))+'</div>' +
+    '</div>');
+    body.appendChild(greeting);
+
+    var statsWrap = el('<div class="grid"></div>');
+    statsWrap.innerHTML =
+      statCard(res.pendingForMe.length, t('home_pendingForMe')) +
+      statCard(money(res.heldAmount), t('home_heldByMe')) +
+      statCard(res.disputedInvolvingMe.length, t('home_disputes')) +
+      (res.companyOutstanding!=null ? statCard(money(res.companyOutstanding), t('home_companyOutstanding')) : '') +
+      (report ? statCard(money(report.totals.netCashOwed), t('report_net')) : '') +
+      (report ? statCard(money(report.totals.posSales), t('report_pos')) : '');
+    body.appendChild(statsWrap);
+
+    if (res.pendingForMe.length){
+      var pendingCard = el('<div class="card"><h2>'+esc(t('home_pendingForMe'))+'</h2><div id="pendingList"></div></div>');
+      body.appendChild(pendingCard);
+      var pl = qs('#pendingList', pendingCard);
+      res.pendingForMe.forEach(function(h){ pl.appendChild(handoffItem(h, true)); });
+    }
+    if (res.openDisputes && res.openDisputes.length){
+      var disputeCard = el('<div class="card"><h2>'+esc(t('home_openDisputes'))+'</h2><div id="disputeList"></div></div>');
+      body.appendChild(disputeCard);
+      var dl = qs('#disputeList', disputeCard);
+      res.openDisputes.forEach(function(h){ dl.appendChild(handoffItem(h, false, true)); });
+    }
+
+    // Company-wide dashboard: real business shape, not just a to-do list —
+    // a trend, who's currently holding cash, and top products at a glance.
+    if (report){
+      if (report.byDate && report.byDate.length){
+        var trendCard = el('<div class="card"><h2>'+esc(t('report_trend'))+'</h2></div>');
+        trendCard.appendChild(trendChart(report.byDate));
+        body.appendChild(trendCard);
+      }
+      if (res.companyHeldByHolder && Object.keys(res.companyHeldByHolder).length){
+        var holderRows = Object.keys(res.companyHeldByHolder).map(function(uid){
+          return { uid: uid, amount: res.companyHeldByHolder[uid] };
+        }).sort(function(a,b){ return b.amount - a.amount; });
+        var holderCard = el('<div class="card"><h2>'+esc(t('home_companyOutstanding'))+'</h2></div>');
+        holderCard.appendChild(barList(holderRows, function(r){ return userName(r.uid); }, function(r){ return r.amount; }, function(){ return 0; }));
+        body.appendChild(holderCard);
+      }
+      if (report.byProduct && report.byProduct.length){
+        var topProductsCard = el('<div class="card"><h2>'+esc(t('report_byProduct'))+'</h2></div>');
+        topProductsCard.appendChild(barList(report.byProduct.slice(0,5),
+          function(r){ return r.name || t('report_unspecified'); },
+          function(r){ return r.cashAmount; }, function(r){ return r.posAmount; }));
+        body.appendChild(topProductsCard);
+      }
+    }
+  });
+}
+
+function statCard(n, label){
+  return '<div class="card stat"><div class="n">'+esc(n)+'</div><div class="l">'+esc(label)+'</div></div>';
+}
+
+// ---------------- entries ----------------
+function renderEntries(body){
+  var role = state.user.role;
+  var sourceOptions = '';
+  var meta = state.meta || {};
+
+  var form = el('<div class="card">' +
+    '<h2>'+esc(t('entry_new'))+'</h2>' +
+    '<div id="entryMsg"></div>' +
+    '<div class="grid">' +
+      '<div class="field"><label>'+esc(t('entry_date'))+'</label><input id="eDate" type="date" value="'+new Date().toISOString().slice(0,10)+'"></div>' +
+      '<div class="field"><label>'+esc(t('entry_sourceType'))+'</label><select id="eType"></select></div>' +
+      '<div class="field"><label id="eSourceLabel"></label><select id="eSource"></select></div>' +
+    '</div>' +
+    '<div class="grid">' +
+      '<div class="field" id="eCashWrap"><label>'+esc(t('entry_cash'))+'</label><input id="eCash" type="number" step="0.01" value="0"></div>' +
+      '<div class="field" id="eDeliveryWrap"><label>'+esc(t('entry_delivery'))+'</label><input id="eDelivery" type="number" step="0.01" value="0">' +
+        '<small class="hint" id="eDeliveryHint"></small></div>' +
+      '<div class="field" id="ePosWrap"><label>'+esc(t('entry_pos'))+'</label><input id="ePos" type="number" step="0.01" value="0"></div>' +
+      '<div class="field" id="eProductWrap"><label>'+esc(t('entry_product'))+'</label><select id="eProduct"></select></div>' +
+    '</div>' +
+    '<div class="field"><label>'+esc(t('entry_note'))+'</label><input id="eNote"></div>' +
+    '<button class="btn" id="eSubmit">'+esc(t('entry_submit'))+'</button>' +
+  '</div>');
+  body.innerHTML = '';
+  body.appendChild(form);
+
+  var typeSel = qs('#eType', form);
+  var opts = [];
+  if (role==='store_manager' || role==='admin') opts.push(['store', t('entry_source_store')]);
+  if (role==='store_manager' || role==='admin' || role==='driver') opts.push(['car', t('entry_source_car')]);
+  opts.push(['pos', t('entry_source_pos')]);
+  typeSel.innerHTML = opts.map(function(o){ return '<option value="'+o[0]+'">'+esc(o[1])+'</option>'; }).join('');
+
+  function populateSourceOptions(){
+    var type = typeSel.value;
+    var srcSel = qs('#eSource', form);
+    var list = [];
+    if (type==='store'){
+      list = (meta.stores||[]).filter(function(s){ return role==='admin' || s.storeManagerUserId===state.user.id; });
+    } else if (type==='car'){
+      list = (meta.cars||[]).filter(function(c){ return role==='admin' || role==='store_manager' || c.driverUserId===state.user.id; });
+    } else if (type==='pos'){
+      list = (meta.pos||[]).filter(function(p){ return role==='admin' || role==='store_manager' || p.assignedUserId===state.user.id; });
+    }
+    srcSel.innerHTML = list.map(function(x){
+      var label = x.label || x.name || x.id;
+      return '<option value="'+x.id+'">'+esc(label)+'</option>';
+    }).join('') || '<option value="">'+esc(t('noData'))+'</option>';
+
+    qs('#eCashWrap', form).style.display = (type==='pos') ? 'none' : '';
+    qs('#eDeliveryWrap', form).style.display = (type==='car') ? '' : 'none';
+    qs('#ePosWrap', form).style.display = (type==='pos') ? '' : 'none';
+    // this field only ever applies to a car entry — say so right where
+    // people look for it when it's (correctly) not on screen.
+    qs('#eDeliveryHint', form).textContent = (type==='car') ? '' : t('entry_delivery') + ' — ' + t('entry_source_car');
+    qs('#eDeliveryHint', form).style.display = (type==='car') ? 'none' : 'block';
+  }
+  typeSel.addEventListener('change', populateSourceOptions);
+  populateSourceOptions();
+
+  var productSel = qs('#eProduct', form);
+  var products = (meta.products||[]).filter(function(p){ return p.active !== false; });
+  productSel.innerHTML = '<option value="">'+esc(t('entry_product_none'))+'</option>' +
+    products.map(function(p){ return '<option value="'+p.id+'">'+esc(p.name)+'</option>'; }).join('');
+
+  qs('#eSubmit', form).addEventListener('click', function(){
+    var payload = {
+      date: qs('#eDate', form).value,
+      sourceType: typeSel.value,
+      sourceId: qs('#eSource', form).value,
+      productId: productSel.value || null,
+      cashSales: Number(qs('#eCash', form).value||0),
+      deliveryFeeBankAmount: Number(qs('#eDelivery', form).value||0),
+      posSales: Number(qs('#ePos', form).value||0),
+      note: qs('#eNote', form).value
+    };
+    if (!payload.sourceId){ qs('#entryMsg',form).innerHTML='<div class="msg err">'+esc(t('err_generic'))+'</div>'; return; }
+    api('createDailyEntry', payload).then(function(res){
+      if(!res.ok){ qs('#entryMsg',form).innerHTML='<div class="msg err">'+esc(t('err_generic'))+'</div>'; return; }
+      qs('#entryMsg',form).innerHTML='<div class="msg ok">'+esc(t('ok_saved'))+'</div>';
+      loadEntryList();
+    });
+  });
+
+  var listCard = el('<div class="card"><h2>'+esc(t('entry_list'))+'</h2><div id="entryListBody"></div></div>');
+  body.appendChild(listCard);
+  loadEntryList();
+
+  function loadEntryList(){
+    api('listEntries', {}).then(function(res){
+      var wrap = qs('#entryListBody');
+      if(!res.ok || !res.entries.length){ wrap.innerHTML = '<div class="muted">'+esc(t('noData'))+'</div>'; return; }
+      var rows = res.entries.slice(0,30).map(function(e){
+        var amt = e.sourceType==='pos' ? e.posSales : e.cashSales;
+        return '<tr><td>'+esc(e.date)+'</td><td>'+esc(t('entry_source_'+e.sourceType))+'</td><td>'+money(amt)+'</td><td>'+(e.consumedBy?'✓':'')+'</td></tr>';
+      }).join('');
+      wrap.innerHTML = '<table><thead><tr><th>'+esc(t('entry_date'))+'</th><th>'+esc(t('entry_sourceType'))+'</th><th>'+esc(t('handoff_amount'))+'</th><th></th></tr></thead><tbody>'+rows+'</tbody></table>';
+    });
+  }
+}
+
+// ---------------- handoffs ----------------
+function statusBadge(s){
+  return '<span class="badge '+esc(s)+'">'+esc(t('handoff_'+s))+'</span>';
+}
+
+function handoffItem(h, showConfirm, showResolve){
+  var div = el('<div class="list-item">' +
+    '<div class="top">' +
+      '<div><strong>'+esc(t('kind_'+h.kind))+'</strong> ' + statusBadge(h.status) + '</div>' +
+      '<div class="amount">'+money(h.amount)+'</div>' +
+    '</div>' +
+    '<div class="muted">'+esc(t('handoff_from'))+': '+esc(userName(h.fromUserId))+' · '+esc(t('handoff_to'))+': '+esc(h.toUserId?userName(h.toUserId):'Bank')+' · '+esc((h.createdAt||'').slice(0,16).replace('T',' '))+'</div>' +
+    (h.disputeNote ? '<div class="muted">📝 '+esc(h.disputeNote)+'</div>' : '') +
+    '<div class="actions" id="hActions"></div>' +
+  '</div>');
+
+  var actions = qs('#hActions', div);
+  if (showConfirm && h.status==='pending'){
+    var cb = el('<button class="btn">'+esc(t('handoff_confirm'))+'</button>');
+    cb.addEventListener('click', function(){ api('confirmHandoff',{id:h.id}).then(function(){ render(); }); });
+    var db = el('<button class="btn danger">'+esc(t('handoff_dispute'))+'</button>');
+    db.addEventListener('click', function(){
+      var note = prompt(t('handoff_disputeNote'))||'';
+      api('disputeHandoff',{id:h.id, note:note}).then(function(){ render(); });
+    });
+    actions.appendChild(cb); actions.appendChild(db);
+  }
+  if (showResolve && h.status==='disputed'){
+    var rc = el('<button class="btn">'+esc(t('handoff_resolveConfirm'))+'</button>');
+    rc.addEventListener('click', function(){ api('resolveDispute',{id:h.id, resolution:'confirm'}).then(function(){ render(); }); });
+    var rr = el('<button class="btn danger">'+esc(t('handoff_resolveReject'))+'</button>');
+    rr.addEventListener('click', function(){ api('resolveDispute',{id:h.id, resolution:'reject'}).then(function(){ render(); }); });
+    actions.appendChild(rc); actions.appendChild(rr);
+  }
+  return div;
+}
+
+function renderHandoffs(body){
+  body.innerHTML = '<div class="card">'+esc(t('loading'))+'</div>';
+  var role = state.user.role;
+
+  api('listHandoffs', {}).then(function(res){
+    if(!res.ok){ body.innerHTML='<div class="msg err">'+esc(t('err_generic'))+'</div>'; return; }
+    body.innerHTML = '';
+
+    // action card: create outgoing handoff / record deposit
+    if (role==='store_manager' || role==='admin'){
+      var locId = null;
+      var myStore = (state.meta.stores||[]).find(function(s){ return s.storeManagerUserId===state.user.id; });
+      if (myStore) locId = myStore.locationId;
+      var lc = el('<div class="card"><h2>'+esc(t('handoff_createLocation'))+'</h2>' +
+        (role==='admin' ? '<div class="field"><select id="hLoc">'+(state.meta.locations||[]).map(function(l){return '<option value="'+l.id+'">'+esc(l.city+' — '+l.name)+'</option>';}).join('')+'</select></div>' : '') +
+        '<button class="btn" id="hCreateLoc">'+esc(t('handoff_createLocation'))+'</button><div id="hLocMsg"></div></div>');
+      body.appendChild(lc);
+      qs('#hCreateLoc', lc).addEventListener('click', function(){
+        var lid = role==='admin' ? qs('#hLoc',lc).value : locId;
+        api('createHandoff', {kind:'location_to_cluster', locationId: lid}).then(function(res2){
+          qs('#hLocMsg',lc).innerHTML = res2.ok ? '<div class="msg ok">'+esc(t('ok_saved'))+'</div>' : '<div class="msg err">'+esc(t('err_generic'))+'</div>';
+          if(res2.ok) render();
+        });
+      });
+    }
+
+    if (role==='cluster_manager' || role==='admin'){
+      var myCluster = (state.meta.clusters||[]).find(function(c){ return c.clusterManagerUserId===state.user.id; });
+      var cc = el('<div class="card"><h2>'+esc(t('handoff_createCluster'))+'</h2>' +
+        (role==='admin' ? '<div class="field"><select id="hClu">'+(state.meta.clusters||[]).map(function(c){return '<option value="'+c.id+'">'+esc(c.name)+'</option>';}).join('')+'</select></div>' : '') +
+        '<button class="btn" id="hCreateClu">'+esc(t('handoff_createCluster'))+'</button><div id="hCluMsg"></div></div>');
+      body.appendChild(cc);
+      qs('#hCreateClu', cc).addEventListener('click', function(){
+        var cid = role==='admin' ? qs('#hClu',cc).value : (myCluster && myCluster.id);
+        api('createHandoff', {kind:'cluster_to_collector', clusterId: cid}).then(function(res2){
+          qs('#hCluMsg',cc).innerHTML = res2.ok ? '<div class="msg ok">'+esc(t('ok_saved'))+'</div>' : '<div class="msg err">'+esc(t('err_generic'))+'</div>';
+          if(res2.ok) render();
+        });
+      });
+    }
+
+    if (role==='collector' || role==='admin'){
+      var dc = el('<div class="card"><h2>'+esc(t('handoff_deposit'))+'</h2>' +
+        '<div class="field"><label>'+esc(t('handoff_bankRef'))+'</label><input id="hBankRef"></div>' +
+        '<div class="field"><label>'+esc(t('handoff_slip'))+'</label>' +
+          '<div class="row">' +
+            '<button type="button" class="btn secondary" id="hSlipCameraBtn">'+esc(t('handoff_takePhoto'))+'</button>' +
+            '<button type="button" class="btn secondary" id="hSlipFileBtn">'+esc(t('handoff_chooseFile'))+'</button>' +
+          '</div>' +
+          '<input id="hSlipCamera" type="file" accept="image/*" capture="environment" hidden>' +
+          '<input id="hSlipFile" type="file" accept="image/*" hidden>' +
+          '<img id="hSlipPreview" hidden style="max-width:160px;max-height:160px;border-radius:8px;margin-top:8px;display:block;">' +
+        '</div>' +
+        '<button class="btn" id="hDeposit">'+esc(t('handoff_deposit'))+'</button><div id="hDepMsg"></div></div>');
+      body.appendChild(dc);
+
+      var pickedFile = null;
+      var preview = qs('#hSlipPreview', dc);
+      function onPicked(input){
+        return function(){
+          var f = input.files && input.files[0];
+          if (!f) return;
+          pickedFile = f;
+          var reader = new FileReader();
+          reader.onload = function(){ preview.src = reader.result; preview.hidden = false; };
+          reader.readAsDataURL(f);
+        };
+      }
+      qs('#hSlipCameraBtn', dc).addEventListener('click', function(){ qs('#hSlipCamera', dc).click(); });
+      qs('#hSlipFileBtn', dc).addEventListener('click', function(){ qs('#hSlipFile', dc).click(); });
+      qs('#hSlipCamera', dc).addEventListener('change', onPicked(qs('#hSlipCamera', dc)));
+      qs('#hSlipFile', dc).addEventListener('change', onPicked(qs('#hSlipFile', dc)));
+
+      qs('#hDeposit', dc).addEventListener('click', function(){
+        var bankRef = qs('#hBankRef', dc).value;
+        function submit(fileData){
+          var payload = { bankReference: bankRef };
+          if (fileData) { payload.fileBase64 = fileData.base64; payload.fileName = fileData.name; payload.fileMime = fileData.mime; }
+          api('recordDeposit', payload).then(function(res2){
+            qs('#hDepMsg',dc).innerHTML = res2.ok ? '<div class="msg ok">'+esc(t('ok_saved'))+'</div>' : '<div class="msg err">'+esc(t('err_generic'))+'</div>';
+            if(res2.ok) render();
+          });
+        }
+        if (pickedFile){
+          var reader = new FileReader();
+          reader.onload = function(){
+            var base64 = reader.result.split(',')[1];
+            submit({ base64: base64, name: pickedFile.name, mime: pickedFile.type });
+          };
+          reader.readAsDataURL(pickedFile);
+        } else {
+          submit(null);
+        }
+      });
+    }
+
+    // lists
+    var pending = res.handoffs.filter(function(h){ return h.status==='pending' && h.toUserId===state.user.id; });
+    var disputed = res.handoffs.filter(function(h){ return h.status==='disputed'; });
+    var history = res.handoffs.filter(function(h){ return pending.indexOf(h)<0; });
+
+    if (pending.length){
+      var pc = el('<div class="card"><h2>'+esc(t('handoff_pending'))+'</h2><div id="pList"></div></div>');
+      body.appendChild(pc);
+      var pl = qs('#pList', pc);
+      pending.forEach(function(h){ pl.appendChild(handoffItem(h, true)); });
+    }
+
+    if (disputed.length && (role==='admin' || role==='finance')){
+      var dcw = el('<div class="card"><h2>'+esc(t('handoff_disputed'))+'</h2><div id="dList"></div></div>');
+      body.appendChild(dcw);
+      var dl = qs('#dList', dcw);
+      disputed.forEach(function(h){ dl.appendChild(handoffItem(h, false, true)); });
+    }
+
+    var hc = el('<div class="card"><h2>'+esc(t('nav_handoffs'))+'</h2><div id="hList"></div></div>');
+    body.appendChild(hc);
+    var hl = qs('#hList', hc);
+    if (!history.length){ hl.innerHTML = '<div class="muted">'+esc(t('noData'))+'</div>'; }
+    history.slice(0,40).forEach(function(h){ hl.appendChild(handoffItem(h, false, false)); });
+  });
+}
+
+// ---------------- small viz helpers (no chart library — self-contained app) ----------------
+
+// A <table> that re-sorts itself in place when a header is clicked. Column
+// defs: {key, label, render?(row)->html, numeric?}. Keeps its own sort
+// state via closures, so callers just call sortableTable(...).el once.
+function sortableTable(rows, columns, opts){
+  opts = opts || {};
+  var sortKey = opts.sortKey || columns[0].key;
+  var sortDir = opts.sortDir || 'desc';
+  var wrap = el('<div></div>');
+  function render(){
+    var sorted = rows.slice().sort(function(a,b){
+      var av = a[sortKey], bv = b[sortKey];
+      var an = typeof av === 'number', bn = typeof bv === 'number';
+      if (an || bn) {
+        av = Number(av||0); bv = Number(bv||0);
+        return sortDir==='asc' ? av-bv : bv-av;
+      }
+      av = String(av==null?'':av); bv = String(bv==null?'':bv);
+      return sortDir==='asc' ? av.localeCompare(bv) : bv.localeCompare(av);
+    });
+    var thead = '<tr>'+columns.map(function(c){
+      var arrow = c.key===sortKey ? (sortDir==='asc'?' ▲':' ▼') : '';
+      return '<th data-key="'+c.key+'">'+esc(c.label)+arrow+'</th>';
+    }).join('')+'</tr>';
+    var tbody = sorted.map(function(r){
+      return '<tr>'+columns.map(function(c){ return '<td>'+(c.render?c.render(r):esc(r[c.key])) +'</td>'; }).join('')+'</tr>';
+    }).join('');
+    wrap.innerHTML = (rows.length ? '<table><thead>'+thead+'</thead><tbody>'+tbody+'</tbody></table>' : '<div class="muted">'+esc(t('noData'))+'</div>');
+    qsa('th[data-key]', wrap).forEach(function(th){
+      th.addEventListener('click', function(){
+        var k = th.getAttribute('data-key');
+        if (sortKey===k) sortDir = sortDir==='asc'?'desc':'asc'; else { sortKey=k; sortDir='desc'; }
+        render();
+      });
+    });
+  }
+  render();
+  return wrap;
+}
+
+// Horizontal bar list (e.g. top products) — two stacked bars per row (cash / pos).
+function barList(rows, labelFn, cashFn, posFn){
+  var max = Math.max.apply(null, rows.map(function(r){ return cashFn(r)+posFn(r); }).concat([1]));
+  var wrap = el('<div class="barlist"></div>');
+  rows.forEach(function(r){
+    var cash = cashFn(r), pos = posFn(r), total = cash+pos;
+    var item = el('<div>' +
+      '<div class="row-label"><span>'+esc(labelFn(r))+'</span><span>'+money(total)+'</span></div>' +
+      '<div class="track"><div class="fill" style="width:'+(max? (cash/max*100):0)+'%;display:inline-block;"></div>' +
+      '<div class="fill pos" style="width:'+(max? (pos/max*100):0)+'%;display:inline-block;"></div></div>' +
+    '</div>');
+    wrap.appendChild(item);
+  });
+  return wrap;
+}
+
+// Minimal inline SVG bar chart for a date trend — no charting library, self
+// contained like the rest of this app.
+function trendChart(rows){
+  var w = 700, h = 160, pad = 24;
+  if (!rows.length) return el('<div class="muted">'+esc(t('noData'))+'</div>');
+  var max = Math.max.apply(null, rows.map(function(r){ return r.total; }).concat([1]));
+  var barW = (w - pad*2) / rows.length;
+  var bars = rows.map(function(r, i){
+    var bh = max>0 ? (r.total/max) * (h - pad*2) : 0;
+    var x = pad + i*barW;
+    var y = h - pad - bh;
+    return '<rect x="'+(x+barW*0.15)+'" y="'+y+'" width="'+(barW*0.7)+'" height="'+bh+'" rx="3" fill="var(--green)"><title>'+esc(r.date)+': '+money(r.total)+'</title></rect>';
+  }).join('');
+  var baseline = '<line x1="'+pad+'" y1="'+(h-pad)+'" x2="'+(w-pad)+'" y2="'+(h-pad)+'" stroke="var(--border)" stroke-width="1"/>';
+  var firstLabel = rows[0] ? '<text x="'+pad+'" y="'+(h-4)+'" font-size="10" fill="var(--muted)">'+esc(rows[0].date)+'</text>' : '';
+  var lastLabel = rows.length>1 ? '<text x="'+(w-pad)+'" y="'+(h-4)+'" font-size="10" fill="var(--muted)" text-anchor="end">'+esc(rows[rows.length-1].date)+'</text>' : '';
+  return el('<svg class="trend-svg" viewBox="0 0 '+w+' '+h+'" preserveAspectRatio="none">'+baseline+bars+firstLabel+lastLabel+'</svg>');
+}
+
+// ---------------- sales report ----------------
+function renderReport(body){
+  body.innerHTML = '<div class="card">' +
+    '<h2>'+esc(t('report_title'))+'</h2>' +
+    '<div class="grid">' +
+      '<div class="field"><label>'+esc(t('report_from'))+'</label><input id="rFrom" type="date"></div>' +
+      '<div class="field"><label>'+esc(t('report_to'))+'</label><input id="rTo" type="date"></div>' +
+    '</div>' +
+    '<button class="btn" id="rRun">'+esc(t('report_run'))+'</button>' +
+  '</div><div id="rResult"></div>';
+
+  qs('#rRun').addEventListener('click', runReport);
+  runReport();
+
+  function runReport(){
+    var payload = { dateFrom: qs('#rFrom').value || undefined, dateTo: qs('#rTo').value || undefined };
+    api('getSalesReport', payload).then(function(res){
+      var out = qs('#rResult');
+      if(!res.ok){ out.innerHTML = '<div class="msg err">'+esc(t('err_generic'))+'</div>'; return; }
+      var t1 = res.totals, t2 = res.outstanding;
+
+      out.innerHTML = '';
+
+      var statsCard = el('<div class="grid">' +
+        statCard(money(t1.netCashOwed), t('report_net')) +
+        statCard(money(t2.netCashOwed), t('report_outstanding')) +
+        statCard(money(t1.storeCash), t('report_storeCash')) +
+        statCard(money(t1.carCash), t('report_carCash')) +
+        statCard(money(t1.posSales), t('report_pos')) +
+        statCard(money(t1.deliveryFee), t('report_delivery')) +
+        statCard(money(t1.vatOnDelivery), t('report_vat')) +
+      '</div>');
+      out.appendChild(statsCard);
+
+      // Daily trend — the shape of the dashboard, not just a number.
+      if (res.byDate && res.byDate.length){
+        var trendCard = el('<div class="card"><h2>'+esc(t('report_trend'))+'</h2></div>');
+        trendCard.appendChild(trendChart(res.byDate));
+        out.appendChild(trendCard);
+      }
+
+      // By product — cash vs POS, sortable, with a proportional bar per row
+      // so the biggest sellers are visible at a glance, not just numbers.
+      var productCard = el('<div class="card"><h2>'+esc(t('report_byProduct'))+'</h2></div>');
+      if (res.byProduct && res.byProduct.length){
+        productCard.appendChild(barList(res.byProduct.slice(0,8),
+          function(r){ return r.name || t('report_unspecified'); },
+          function(r){ return r.cashAmount; },
+          function(r){ return r.posAmount; }));
+        var productTableWrap = el('<div style="margin-top:14px;"></div>');
+        productTableWrap.appendChild(sortableTable(res.byProduct, [
+          { key:'name', label: t('report_product'), render: function(r){ return esc(r.name || t('report_unspecified')); } },
+          { key:'cashAmount', label: t('report_cashChannel'), render: function(r){ return money(r.cashAmount); } },
+          { key:'posAmount', label: t('report_posChannel'), render: function(r){ return money(r.posAmount); } },
+          { key:'total', label: t('report_total'), render: function(r){ return '<strong>'+money(r.total)+'</strong>'; } }
+        ], { sortKey:'total', sortDir:'desc' }));
+        productCard.appendChild(productTableWrap);
+        productCard.appendChild(el('<small class="hint">'+esc(t('report_sortHint'))+'</small>'));
+      } else {
+        productCard.appendChild(el('<div class="muted">'+esc(t('noData'))+'</div>'));
+      }
+      out.appendChild(productCard);
+
+      // By location — same sortable treatment. Flatten netCashOwed onto
+      // the row first so the table can sort on the real number, not the
+      // formatted string.
+      res.byLocation.forEach(function(r){ r.net = r.totals.netCashOwed; });
+      var locationCard = el('<div class="card"><h2>'+esc(t('report_byLocation'))+'</h2></div>');
+      locationCard.appendChild(sortableTable(res.byLocation, [
+        { key:'city', label: t('report_city') },
+        { key:'name', label: t('admin_location') },
+        { key:'net', label: t('report_net'), render: function(r){ return '<strong>'+money(r.net)+'</strong>'; } }
+      ], { sortKey:'city', sortDir:'asc' }));
+      out.appendChild(locationCard);
+
+      // finance/accountant/operations manager get the audit trail here —
+      // admin has its own dedicated tab under "nav_admin" already.
+      if (['finance','accountant','operations_manager'].indexOf(state.user.role) >= 0){
+        var auditCard = el('<div class="card"><h2>'+esc(t('admin_audit'))+'</h2><div id="rAudit">'+esc(t('loading'))+'</div></div>');
+        out.appendChild(auditCard);
+        api('listAudit', { limit: 100 }).then(function(res2){
+          var wrap = qs('#rAudit', auditCard);
+          if (!res2.ok || !res2.audit.length){ wrap.innerHTML = '<div class="muted">'+esc(t('noData'))+'</div>'; return; }
+          wrap.innerHTML = '<table><thead><tr><th>'+esc(t('handoff_created'))+'</th><th>action</th><th>'+esc(t('admin_name'))+'</th></tr></thead><tbody>' +
+            res2.audit.map(function(a){ return '<tr><td>'+esc((a.at||'').slice(0,19).replace('T',' '))+'</td><td>'+esc(a.action)+'</td><td>'+esc(userName(a.userId))+'</td></tr>'; }).join('') +
+            '</tbody></table>';
+        });
+      }
+    });
+  }
+}
+
+// ---------------- admin ----------------
+var adminTab = 'users';
+
+function renderAdmin(body){
+  // Grouped like a real ERP admin area: reference/catalog data the whole
+  // hierarchy is built from ("Master Data") is visually separate from
+  // system-level screens (accounts, settings, the trail of who-did-what).
+  var groups = [
+    { key:'system', label:'admin_groupSystem', tabs:[['users','admin_users'],['permissions','admin_permissions']] },
+    { key:'master', label:'admin_groupMaster', tabs:[['locations','admin_locations'],['stores','admin_stores'],
+        ['cars','admin_cars'],['pos','admin_pos'],['clusters','admin_clusters'],['products','admin_products']] },
+    { key:'other', label:'admin_groupOther', tabs:[['config','admin_config'],['audit','admin_audit']] }
+  ];
+  body.innerHTML = '';
+  groups.forEach(function(g){
+    var groupWrap = el('<div style="margin-bottom:8px;"><div class="muted" style="font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;">'+esc(t(g.label))+'</div></div>');
+    var tabBar = el('<div class="tabs"></div>');
+    g.tabs.forEach(function(tb){
+      var b = el('<button'+(adminTab===tb[0]?' class="active"':'')+'>'+esc(t(tb[1]))+'</button>');
+      b.addEventListener('click', function(){ adminTab=tb[0]; render(); });
+      tabBar.appendChild(b);
+    });
+    groupWrap.appendChild(tabBar);
+    body.appendChild(groupWrap);
+  });
+  var content = el('<div id="adminContent"></div>');
+  body.appendChild(content);
+
+  var renderers = {
+    users: renderAdminUsers, permissions: renderAdminPermissions,
+    locations: function(c){ renderAdminEntity(c,'location'); },
+    stores: function(c){ renderAdminEntity(c,'store'); }, cars: function(c){ renderAdminEntity(c,'car'); },
+    pos: function(c){ renderAdminEntity(c,'pos'); }, clusters: function(c){ renderAdminEntity(c,'cluster'); },
+    products: function(c){ renderAdminEntity(c,'product'); },
+    config: renderAdminConfig, audit: renderAdminAudit
+  };
+  (renderers[adminTab]||renderAdminUsers)(content);
+}
+
+function refreshMetaThen(cb){
+  api('listMeta', {}).then(function(res){ if(res.ok) state.meta = res; cb && cb(); });
+}
+
+// Mirrors the server's actual checks — COMPANY_WIDE_ROLES and
+// requireAdmin_/requireAdminOrFinance_ in Admin.gs and Collection.gs. If
+// those change, update this table in the same commit so it never drifts
+// into a stale separate document.
+var PERM_ROLES = ['admin','finance','accountant','operations_manager','cluster_manager','store_manager','collector','driver'];
+var PERM_ROWS = [
+  { key:'perm_home', roles:['admin','finance','accountant','operations_manager','cluster_manager','store_manager','collector','driver'] },
+  { key:'perm_home_company', roles:['admin','finance','accountant','operations_manager'] },
+  { key:'perm_entries', roles:['admin','store_manager','driver'] },
+  { key:'perm_handoffs_own', roles:['admin','finance','accountant','operations_manager','cluster_manager','store_manager','collector','driver'] },
+  { key:'perm_handoffs_all', roles:['admin','finance','accountant','operations_manager'] },
+  { key:'perm_report_own', roles:['cluster_manager'] },
+  { key:'perm_report_all', roles:['admin','finance','accountant','operations_manager'] },
+  { key:'perm_audit', roles:['admin','finance','accountant','operations_manager'] },
+  { key:'perm_resolve', roles:['admin','finance'] },
+  { key:'perm_manage', roles:['admin'] }
+];
+
+function renderAdminPermissions(content){
+  var table = el('<table><thead><tr><th>'+esc(t('perm_screen'))+'</th>' +
+    PERM_ROLES.map(function(r){ return '<th>'+esc(roleLabel(r))+'</th>'; }).join('') +
+    '</tr></thead><tbody>' +
+    PERM_ROWS.map(function(row){
+      return '<tr><td>'+esc(t(row.key))+'</td>' +
+        PERM_ROLES.map(function(r){ return '<td style="text-align:center;">'+(row.roles.indexOf(r)>=0 ? '<span style="color:var(--ok);font-weight:700;">✓</span>' : '<span class="muted">—</span>')+'</td>'; }).join('') +
+        '</tr>';
+    }).join('') +
+    '</tbody></table>');
+  var card = el('<div class="card"><h2>'+esc(t('admin_permissions'))+'</h2></div>');
+  card.appendChild(table);
+  card.appendChild(el('<small class="hint">'+esc(t('perm_note'))+'</small>'));
+  content.appendChild(card);
+}
+
+function renderAdminUsers(content){
+  var meta = state.meta || {};
+  var roles = ['admin','finance','accountant','operations_manager','cluster_manager','store_manager','collector','driver'];
+  var form = el('<div class="card"><h2>'+esc(t('admin_addUser'))+'</h2>' +
+    '<div class="grid">' +
+      '<div class="field"><label>'+esc(t('admin_name'))+'</label><input id="uName"></div>' +
+      '<div class="field"><label>'+esc(t('email'))+'</label><input id="uEmail" type="email"></div>' +
+      '<div class="field"><label>'+esc(t('admin_role'))+'</label><select id="uRole">'+roles.map(function(r){return '<option value="'+r+'">'+esc(roleLabel(r))+'</option>';}).join('')+'</select></div>' +
+    '</div>' +
+    '<button class="btn" id="uAdd">'+esc(t('admin_addUser'))+'</button><div id="uMsg"></div></div>');
+  content.appendChild(form);
+  qs('#uAdd', form).addEventListener('click', function(){
+    api('adminCreateUser', { data: { name: qs('#uName',form).value, email: qs('#uEmail',form).value, role: qs('#uRole',form).value } })
+      .then(function(res){
+        qs('#uMsg',form).innerHTML = res.ok ? '<div class="msg ok">'+esc(t('ok_saved'))+'</div>' : '<div class="msg err">'+esc(t('err_generic'))+'</div>';
+        if (res.ok) refreshMetaThen(function(){ renderAdmin(qs('#screenBody')); });
+      });
+  });
+
+  var listCard = el('<div class="card"><h2>'+esc(t('admin_users'))+'</h2><table><thead><tr>' +
+    '<th>'+esc(t('admin_name'))+'</th><th>'+esc(t('email'))+'</th><th>'+esc(t('admin_role'))+'</th><th>'+esc(t('admin_active'))+'</th><th></th>' +
+    '</tr></thead><tbody id="uBody"></tbody></table></div>');
+  content.appendChild(listCard);
+  var tbody = qs('#uBody', listCard);
+  (meta.users||[]).forEach(function(u){
+    var tr = el('<tr><td>'+esc(u.name)+'</td><td>'+esc(u.email||'')+'</td><td>'+esc(roleLabel(u.role))+'</td><td>'+(u.active?'✓':'—')+'</td><td></td></tr>');
+    var td = tr.lastChild;
+    var resetBtn = el('<button class="btn secondary">'+esc(t('admin_resetPw'))+'</button>');
+    resetBtn.addEventListener('click', function(){ api('adminResetPassword',{id:u.id}).then(function(){ toast('ok_saved','ok'); }); });
+    var toggleBtn = el('<button class="btn secondary">'+esc(u.active?t('admin_delete'):t('admin_edit'))+'</button>');
+    toggleBtn.addEventListener('click', function(){
+      api('adminUpdateUser',{id:u.id, data:{active: !u.active}}).then(function(){ refreshMetaThen(function(){ renderAdmin(qs('#screenBody')); }); });
+    });
+    td.appendChild(resetBtn); td.appendChild(toggleBtn);
+    tbody.appendChild(tr);
+  });
+}
+
+var ENTITY_FIELDS = {
+  location: { addKey:'admin_addLocation', fields:[
+    {k:'city', l:'admin_city'}, {k:'name', l:'admin_locName'},
+    {k:'clusterId', l:'admin_cluster', pick:'clusters', pickLabel:function(x){return x.name;}}
+  ], cols:['city','name'] },
+  store: { addKey:'admin_addStore', fields:[
+    {k:'locationId', l:'admin_location', pick:'locations', pickLabel:function(x){return x.city+' — '+x.name;}},
+    {k:'name', l:'admin_storeName'},
+    {k:'storeManagerUserId', l:'admin_manager', pick:'users', pickLabel:function(x){return x.name;}, pickFilter:function(x){return x.role==='store_manager';}}
+  ], cols:['name','locationId'] },
+  car: { addKey:'admin_addCar', fields:[
+    {k:'locationId', l:'admin_location', pick:'locations', pickLabel:function(x){return x.city+' — '+x.name;}},
+    {k:'label', l:'admin_carLabel'},
+    {k:'driverUserId', l:'admin_driver', pick:'users', pickLabel:function(x){return x.name;}, pickFilter:function(x){return x.role==='driver';}}
+  ], cols:['label','locationId'] },
+  pos: { addKey:'admin_addPos', fields:[
+    {k:'ownerType', l:'admin_ownerType', options:[['store','admin_stores'],['car','admin_cars']]},
+    {k:'ownerId', l:'admin_owner'},
+    {k:'label', l:'admin_posLabel'},
+    {k:'assignedUserId', l:'admin_assignedDriver', pick:'users', pickLabel:function(x){return x.name;}, pickFilter:function(x){return x.role==='driver';}}
+  ], cols:['label','ownerType'] },
+  cluster: { addKey:'admin_addCluster', fields:[
+    {k:'name', l:'admin_clusterName'},
+    {k:'clusterManagerUserId', l:'admin_clusterManager', pick:'users', pickLabel:function(x){return x.name;}, pickFilter:function(x){return x.role==='cluster_manager';}},
+    {k:'collectorUserId', l:'admin_collector', pick:'users', pickLabel:function(x){return x.name;}, pickFilter:function(x){return x.role==='collector';}}
+  ], cols:['name'] },
+  product: { addKey:'admin_addProduct', fields:[
+    {k:'name', l:'admin_productName'}
+  ], cols:['name'] }
+};
+
+function metaListFor_(kind){
+  var m = state.meta||{};
+  var map = { location:'locations', store:'stores', car:'cars', pos:'pos', cluster:'clusters', product:'products' };
+  return m[map[kind]]||[];
+}
+
+function renderAdminEntity(content, kind){
+  var spec = ENTITY_FIELDS[kind];
+  var meta = state.meta || {};
+  var form = el('<div class="card"><h2>'+esc(t(spec.addKey))+'</h2><div class="grid" id="eFields"></div><button class="btn" id="eAdd">'+esc(t(spec.addKey))+'</button><div id="eMsg"></div></div>');
+  content.appendChild(form);
+  var fieldsWrap = qs('#eFields', form);
+
+  spec.fields.forEach(function(f){
+    var wrap = el('<div class="field"><label>'+esc(t(f.l))+'</label></div>');
+    var input;
+    if (f.pick){
+      var options = (meta[f.pick]||[]).filter(function(x){ return !f.pickFilter || f.pickFilter(x); });
+      input = el('<select data-k="'+f.k+'"><option value="">—</option>'+options.map(function(x){return '<option value="'+x.id+'">'+esc(f.pickLabel(x))+'</option>';}).join('')+'</select>');
+    } else if (f.options){
+      input = el('<select data-k="'+f.k+'">'+f.options.map(function(o){return '<option value="'+o[0]+'">'+esc(t(o[1]))+'</option>';}).join('')+'</select>');
+    } else {
+      input = el('<input data-k="'+f.k+'">');
+    }
+    wrap.appendChild(input);
+    fieldsWrap.appendChild(wrap);
+  });
+
+  // pos owner picker depends on ownerType
+  if (kind==='pos'){
+    var ownerTypeSel = qs('[data-k="ownerType"]', fieldsWrap);
+    var ownerIdWrap = qs('[data-k="ownerId"]', fieldsWrap).parentNode;
+    function refreshOwnerOptions(){
+      var type = ownerTypeSel.value;
+      var list = type==='store' ? (meta.stores||[]) : (meta.cars||[]);
+      var sel = el('<select data-k="ownerId">'+list.map(function(x){return '<option value="'+x.id+'">'+esc(x.name||x.label)+'</option>';}).join('')+'</select>');
+      ownerIdWrap.replaceChild(sel, qs('[data-k="ownerId"]', ownerIdWrap));
+    }
+    ownerTypeSel.addEventListener('change', refreshOwnerOptions);
+    refreshOwnerOptions();
+  }
+
+  qs('#eAdd', form).addEventListener('click', function(){
+    var data = {};
+    spec.fields.forEach(function(f){
+      var input = qs('[data-k="'+f.k+'"]', fieldsWrap);
+      data[f.k] = input.value;
+    });
+    api('adminSaveEntity', { kind: kind, data: data }).then(function(res){
+      qs('#eMsg', form).innerHTML = res.ok ? '<div class="msg ok">'+esc(t('ok_saved'))+'</div>' : '<div class="msg err">'+esc(t('err_generic'))+'</div>';
+      if (res.ok) refreshMetaThen(function(){ renderAdmin(qs('#screenBody')); });
+    });
+  });
+
+  var list = metaListFor_(kind);
+  // column header = the matching field's own label translation, not the
+  // raw storage key (that showed literal "locationId"/"name" on screen).
+  function colLabel_(c){
+    var f = spec.fields.filter(function(x){ return x.k===c; })[0];
+    return f ? t(f.l) : c;
+  }
+  var listCard = el('<div class="card"><h2>'+esc(t('admin_'+({location:'locations',store:'stores',car:'cars',pos:'pos',cluster:'clusters',product:'products'})[kind]))+'</h2><table><thead><tr>' +
+    spec.cols.map(function(c){ return '<th>'+esc(colLabel_(c))+'</th>'; }).join('') + '<th></th></tr></thead><tbody id="entBody"></tbody></table></div>');
+  content.appendChild(listCard);
+  var tbody = qs('#entBody', listCard);
+  list.forEach(function(item){
+    var tds = spec.cols.map(function(c){
+      var v = item[c];
+      if (c==='locationId') v = locationName(v);
+      return '<td>'+esc(v)+'</td>';
+    }).join('');
+    var tr = el('<tr>'+tds+'<td></td></tr>');
+    var delBtn = el('<button class="btn danger">'+esc(t('admin_delete'))+'</button>');
+    delBtn.addEventListener('click', function(){
+      if (!confirm(t('confirm_delete'))) return;
+      api('adminDeleteEntity', { kind: kind, id: item.id }).then(function(res){
+        if (!res.ok){ toast(res.error==='has_children' ? 'admin_hasChildren' : 'err_generic', 'err'); return; }
+        refreshMetaThen(function(){ renderAdmin(qs('#screenBody')); });
+      });
+    });
+    tr.lastChild.appendChild(delBtn);
+    tbody.appendChild(tr);
+  });
+}
+
+function renderAdminConfig(content){
+  var cfg = (state.meta && state.meta.config) || {};
+  var form = el('<div class="card"><h2>'+esc(t('admin_config'))+'</h2>' +
+    '<div class="field"><label>'+esc(t('admin_vatRate'))+'</label><input id="cVat" type="number" step="0.01" value="'+(cfg.vatRate!=null?cfg.vatRate:0.15)+'"></div>' +
+    '<button class="btn" id="cSave">'+esc(t('save'))+'</button><div id="cMsg"></div></div>');
+  content.appendChild(form);
+  qs('#cSave', form).addEventListener('click', function(){
+    api('adminSetConfig', { data: { vatRate: Number(qs('#cVat',form).value) } }).then(function(res){
+      qs('#cMsg',form).innerHTML = res.ok ? '<div class="msg ok">'+esc(t('ok_saved'))+'</div>' : '<div class="msg err">'+esc(t('err_generic'))+'</div>';
+    });
+  });
+}
+
+function renderAdminAudit(content){
+  content.innerHTML = '<div class="card">'+esc(t('loading'))+'</div>';
+  api('listAudit', { limit: 200 }).then(function(res){
+    if(!res.ok){ content.innerHTML = '<div class="msg err">'+esc(t('err_generic'))+'</div>'; return; }
+    var rows = res.audit.map(function(a){
+      return '<tr><td>'+esc((a.at||'').slice(0,19).replace('T',' '))+'</td><td>'+esc(a.action)+'</td><td>'+esc(userName(a.userId))+'</td><td>'+esc(a.detail||'')+'</td></tr>';
+    }).join('');
+    content.innerHTML = '<div class="card"><table><thead><tr><th>'+esc(t('handoff_created'))+'</th><th>action</th><th>'+esc(t('admin_name'))+'</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+  });
+}
+
+// ---------------- render dispatcher ----------------
+function render(){
+  document.documentElement.lang = state.lang;
+  document.documentElement.dir = dirFor(state.lang);
+  if (!state.apiUrl) { renderUrlSetup(); return; }
+  if (!state.token) { renderLogin(); return; }
+  if (!state.user) { loadWhoAmI(); return; }
+  if (state.user.mustChangePw) { renderChangePw(); return; }
+  if (!state.meta) { loadMetaAndRender(); return; }
+  renderShell();
+}
+
+function loadWhoAmI(){
+  api('whoami', {}).then(function(res){
+    if (!res.ok){ state.token=''; localStorage.removeItem('bgc_token'); render(); return; }
+    state.user = res.user;
+    setLang(res.user.language || state.lang);
+    render();
+  });
+}
+
+render();
+})();
+</script>
+</body>
+</html>
