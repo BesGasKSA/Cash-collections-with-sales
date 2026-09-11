@@ -400,14 +400,22 @@ function actionLogin_(req) {
 
 // Self-service password reset — no session required, since a locked-out user
 // has no session. Always returns { ok:true } whether or not the email has an
-// account, so this can't be used to enumerate registered addresses; the
-// per-email lockout counter (namespaced 'fp_') doubles as abuse throttling.
+// account, so this can't be used to enumerate registered addresses.
+//
+// Throttling is a short per-email cooldown (30s), separate from the login
+// brute-force lockout (checkLock_/noteFail_, 8 strikes/15min) — reusing that
+// mechanism here backfired: a nervous user clicking "send" a few times while
+// waiting for the email locked themselves out for 15 minutes, silently, with
+// the UI still showing "check your email" every time. `throttled: true`
+// lets the client say "you already asked, wait a bit" instead of repeating
+// the success message — it still never reveals whether the account exists.
 function actionForgotPassword_(req) {
   var login = String(req.email || '').trim();
   if (!login) return { ok: true };
-  var key = 'fp_' + login.toLowerCase();
-  if (checkLock_(key)) return { ok: true };
-  noteFail_(key);
+  var cache = CacheService.getScriptCache();
+  var throttleKey = 'fpwait_' + login.toLowerCase();
+  if (cache.get(throttleKey)) return { ok: true, throttled: true };
+  cache.put(throttleKey, '1', 30);
   var user = userByEmail_(login);
   if (user && user.active !== false) {
     var temp = randomPassword_();

@@ -161,6 +161,7 @@ var L = {
     forgotPassword:'نسيت كلمة المرور؟', forgotPasswordTitle:'استعادة كلمة المرور',
     forgotPasswordHint:'أدخل بريدك الإلكتروني وسنرسل لك كلمة مرور مؤقتة جديدة.',
     forgotPasswordSent:'إذا كان البريد مسجلاً لدينا، ستصلك كلمة مرور مؤقتة جديدة خلال لحظات.',
+    forgotPasswordThrottled:'تم إرسال الطلب بالفعل قبل قليل — يرجى الانتظار نصف دقيقة قبل المحاولة مرة أخرى، والتحقق من مجلد الرسائل غير المرغوب فيها.',
     sendReset:'إرسال', backToLogin:'العودة لتسجيل الدخول', appTagline:'تحصيل النقدية والموافقات',
     mustChangePw:'يجب تغيير كلمة المرور', newPassword:'كلمة المرور الجديدة', currentPassword:'كلمة المرور الحالية',
     save:'حفظ', cancel:'إلغاء', logout:'خروج', language:'اللغة',
@@ -211,6 +212,7 @@ var L = {
     forgotPassword:'Forgot password?', forgotPasswordTitle:'Reset your password',
     forgotPasswordHint:'Enter your email and we\'ll send you a new temporary password.',
     forgotPasswordSent:'If that email is registered, a new temporary password is on its way.',
+    forgotPasswordThrottled:'You already asked a moment ago — wait about 30 seconds before trying again, and check your spam folder.',
     sendReset:'Send', backToLogin:'Back to sign in', appTagline:'Cash Collection & Approvals',
     mustChangePw:'You must change your password', newPassword:'New password', currentPassword:'Current password',
     save:'Save', cancel:'Cancel', logout:'Log out', language:'Language',
@@ -261,6 +263,7 @@ var L = {
     forgotPassword:'پاس ورڈ بھول گئے؟', forgotPasswordTitle:'پاس ورڈ بحال کریں',
     forgotPasswordHint:'اپنا ای میل درج کریں، ہم آپ کو نیا عارضی پاس ورڈ بھیج دیں گے۔',
     forgotPasswordSent:'اگر یہ ای میل رجسٹرڈ ہے، تو تھوڑی دیر میں نیا عارضی پاس ورڈ آپ کو مل جائے گا۔',
+    forgotPasswordThrottled:'یہ درخواست ابھی ابھی بھیجی جا چکی ہے — دوبارہ کوشش کرنے سے پہلے تقریباً 30 سیکنڈ انتظار کریں، اور اسپام فولڈر بھی چیک کریں۔',
     sendReset:'بھیجیں', backToLogin:'لاگ ان پر واپس جائیں', appTagline:'نقد وصولی اور منظوری کا نظام',
     mustChangePw:'پاس ورڈ تبدیل کرنا ضروری ہے', newPassword:'نیا پاس ورڈ', currentPassword:'موجودہ پاس ورڈ',
     save:'محفوظ کریں', cancel:'منسوخ', logout:'لاگ آؤٹ', language:'زبان',
@@ -310,9 +313,14 @@ function t(k){ var l=L[state.lang]||L.ar; return l[k]!==undefined ? l[k] : (L.en
 function dirFor(lang){ return lang==='en' ? 'ltr' : 'rtl'; }
 
 // ---------------- state ----------------
+// Baked-in default so this file works out of the box wherever it's opened —
+// no per-browser/per-profile localStorage setup step. localStorage can still
+// override it (used when pointing a copy at a different deployment, e.g.
+// local testing against mock-backend-server.js).
+var DEFAULT_API_URL = 'https://script.google.com/macros/s/AKfycbxgS7bhn4Nn0szYnKVRb6rjGEKumqCJkQ8jY2uNjDrf2wP2YQYgTvltLrwsbKviD7I/exec';
 var state = {
   lang: localStorage.getItem('bgc_lang') || 'ar',
-  apiUrl: localStorage.getItem('bgc_apiUrl') || '',
+  apiUrl: localStorage.getItem('bgc_apiUrl') || DEFAULT_API_URL,
   token: localStorage.getItem('bgc_token') || '',
   user: null,
   screen: 'home',
@@ -472,7 +480,7 @@ function doForgotPassword(){
     btn.disabled = false;
     var box = qs('#fpMsg');
     if (!res.ok) { box.innerHTML = '<div class="msg err">'+esc(t('err_generic'))+'</div>'; return; }
-    box.innerHTML = '<div class="msg ok">'+esc(t('forgotPasswordSent'))+'</div>';
+    box.innerHTML = '<div class="msg ok">'+esc(t(res.throttled ? 'forgotPasswordThrottled' : 'forgotPasswordSent'))+'</div>';
     qs('#fpEmail').value='';
   });
 }

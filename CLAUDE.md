@@ -127,10 +127,16 @@ the system URL when asked, and sign in as one of the printed accounts.
 `tests/` has no bearing on the client — to eyeball `index.html` changes,
 `.claude/launch.json` (at the workspace root, `C:\Claude\.claude\launch.json`)
 has a `bestgas-cash-collection` entry (`npx http-server` on port 8903) since
-this is a static file with no build step. The app will ask for the deployed
-Apps Script `/exec` URL on first load in a given browser; that's expected
-when just checking layout/i18n — most screens beyond login need a real
-backend to call.
+this is a static file with no build step. `index.html` has the live `/exec`
+URL baked in as `DEFAULT_API_URL` (falls back to it whenever `localStorage`
+has nothing saved), so opening any copy — including via `file://`, which
+doesn't always persist `localStorage` reliably across sessions/browsers —
+just works with no setup screen. That URL-entry screen (`renderUrlSetup`)
+still exists for pointing a copy at a *different* deployment (e.g. local
+testing against `tests/mock-backend-server.js`, which serves its own
+`index.html` copy and overrides via `localStorage`) — set it manually in
+that case, or just edit `DEFAULT_API_URL` for a fork against a different
+Sheet/script entirely.
 
 ## Deploying — live since 2026-09-10
 
@@ -154,17 +160,34 @@ back into the pulled, correctly-named files:
 
 ```bash
 mkdir /tmp/bgc-push && cd /tmp/bgc-push
-echo '{"scriptId":"1IvXuVjao9KsxrXDgT8Z51QOpgTnUSWSNVWT08G5KFMMXLwz9_9IQEukD","rootDir":"."}' > .clasp.json
+cat > .clasp.json <<'JSON'
+{"scriptId":"1IvXuVjao9KsxrXDgT8Z51QOpgTnUSWSNVWT08G5KFMMXLwz9_9IQEukD","rootDir":".","filePushOrder":["الرمز.js","Admin.js","Collection.js"]}
+JSON
 clasp pull                     # fetches الرمز.js / Admin.js / Collection.js / appsscript.json
 # copy the updated content from this repo's Code.gs/Admin.gs/Collection.gs
 # into the correspondingly-named pulled files, then:
-clasp push
+clasp push -f
 clasp deploy -i AKfycbxgS7bhn4Nn0szYnKVRb6rjGEKumqCJkQ8jY2uNjDrf2wP2YQYgTvltLrwsbKviD7I -d "what changed"
 ```
 
 `clasp deploy -i <id>` creates a new version *and* points that existing
-deployment at it in one step — the `/exec` URL never changes. Verify with a
-POST to `/exec` (e.g. `{"action":"login",...}`) rather than trusting the UI.
+deployment at it in one step — the `/exec` URL never changes.
+
+**Gotcha #2, took the site down for real once**: without `filePushOrder`,
+`clasp push` reorders files (looked alphabetical: `Admin.js`/`Collection.js`
+before `الرمز.js`, since Arabic sorts after ASCII). Apps Script executes each
+file's top-level code in project file order at load time, and `Admin.gs`'s
+top-level `var ENTITY_SHEET = { location: SHEETS.LOCATIONS, ... }` reads
+`SHEETS`, a top-level `var` defined in `الرمز`/`Code.gs` — so with `Admin`
+loaded first, every request failed with `TypeError: Cannot read properties
+of undefined (reading 'LOCATIONS')`. The `filePushOrder` above pins it.
+`clasp push` also silently no-ops ("Script is already up to date") if it
+diffs local content as unchanged from its last-known state, which can mask
+that an *order* fix didn't actually get sent — force a real push (append/
+remove a blank line, whatever) when you're specifically trying to fix
+ordering with unchanged file contents. **Always re-fetch `/exec` with a
+`doGet` ping right after any deploy** — don't assume success from the CLI
+output alone; that's what caught this the one time it happened.
 
 ### First-time setup (for a fresh clone/fork)
 
@@ -192,11 +215,27 @@ Self-service now exists: the login screen's "Forgot password?" link calls
 user — generates a new temp password, sets `mustChangePw`, and emails it via
 the same `sendInvite_` (`Admin.gs`) used for new accounts and admin resets.
 It always returns `{ok:true}` regardless of whether the email exists, to
-avoid leaking which addresses are registered; a per-email counter reusing
-`checkLock_`/`noteFail_` (namespaced `fp_`) throttles repeat requests. If
-*every* admin account is locked out with no working password and no access
-to the invite emails, there's no in-app recovery — you'd need to add a
-one-off maintenance function in the Apps Script editor (Run menu, not
+avoid leaking which addresses are registered. Throttling is a **30-second
+per-email cooldown** (`CacheService`, key `fpwait_<email>`), deliberately
+*not* the login brute-force lockout (`checkLock_`/`noteFail_`, 8
+strikes/15min) — the first version reused that mechanism and it backfired
+in production: a user unsure whether their first click worked clicked "send"
+a few more times, each of which counted as a strike, and after 8 they were
+silently locked out of requesting a new password for 15 minutes — with the
+UI still showing "check your email" every single time, since the generic
+`{ok:true}` gave no hint anything had changed. Now a throttled request
+returns `{ok:true, throttled:true}` and the client shows a distinct "you
+already asked, wait ~30s" message instead — still no leak about whether the
+account exists, but at least an honest reason when nothing arrives. If you
+ever see this symptom again ("temp password isn't arriving, I've tried a
+lot"), check `CacheService` state and MailApp's quota
+(`MailApp.getRemainingDailyQuota()`, 100/day on a consumer Gmail account)
+before assuming the mail pipeline itself is broken — both times so far it
+was throttling, not delivery.
+
+If *every* admin account is locked out with no working password and no
+access to the invite emails, there's no in-app recovery — you'd need to add
+a one-off maintenance function in the Apps Script editor (Run menu, not
 exposed via `doPost`) that calls the same reset+`sendInvite_` logic for a
 specific email, exactly as done once during initial setup.
 
