@@ -49,6 +49,8 @@
   header button:active{transform:scale(.97);}
   .notif-bell{position:relative;padding:8px !important;display:flex;align-items:center;justify-content:center;line-height:1;}
   .notif-bell svg{width:19px;height:19px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block;}
+  #topLoadBar{position:fixed;top:0;inset-inline-start:0;height:3px;width:0;background:linear-gradient(90deg,#8fae7a,var(--green) 55%,var(--green-dark));z-index:9999;opacity:0;box-shadow:0 0 8px rgba(77,109,81,.5);pointer-events:none;}
+  #topLoadBar.active{opacity:1;}
   .notif-badge{position:absolute;top:-4px;inset-inline-end:-4px;background:var(--danger);color:#fff;border-radius:999px;min-width:17px;height:17px;padding:0 4px;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;border:2px solid var(--green);}
   nav{display:flex;gap:6px;flex-wrap:wrap;background:var(--green-dark);padding:10px 18px;position:relative;z-index:1;}
   nav button{background:transparent;border:1px solid rgba(255,255,255,.28);color:rgba(255,255,255,.92);padding:7px 15px;border-radius:999px;font-size:13px;cursor:pointer;font-weight:600;transition:background .15s ease, border-color .15s ease, transform .1s ease;font-family:inherit;}
@@ -199,6 +201,7 @@ var L = {
     mustChangePw:'يجب تغيير كلمة المرور', newPassword:'كلمة المرور الجديدة', currentPassword:'كلمة المرور الحالية',
     save:'حفظ', cancel:'إلغاء', logout:'خروج', language:'اللغة',
     nav_home:'الرئيسية', nav_entries:'الإدخالات', nav_handoffs:'التسليمات', nav_report:'تقرير المبيعات', nav_admin:'الإدارة', nav_notifications:'الإشعارات — تسليمات بانتظارك',
+    greeting_morning:'صباح الخير', greeting_afternoon:'مساء الخير', greeting_evening:'مساء الخير', greeting_night:'مرحباً بك',
     home_pendingForMe:'بانتظار تأكيدك', home_heldByMe:'المبلغ الموجود لديك', home_disputes:'اعتراضات جارية',
     home_companyOutstanding:'إجمالي النقدية غير المودعة', home_openDisputes:'اعتراضات مفتوحة (الإدارة)',
     entry_new:'إدخال يومي جديد', entry_date:'التاريخ', entry_sourceType:'المصدر', entry_source_store:'الفرع',
@@ -254,6 +257,7 @@ var L = {
     mustChangePw:'You must change your password', newPassword:'New password', currentPassword:'Current password',
     save:'Save', cancel:'Cancel', logout:'Log out', language:'Language',
     nav_home:'Home', nav_entries:'Entries', nav_handoffs:'Handoffs', nav_report:'Sales Report', nav_admin:'Admin', nav_notifications:'Notifications — handoffs awaiting you',
+    greeting_morning:'Good morning', greeting_afternoon:'Good afternoon', greeting_evening:'Good evening', greeting_night:'Welcome',
     home_pendingForMe:'Awaiting your confirmation', home_heldByMe:'Cash currently held by you', home_disputes:'Open disputes',
     home_companyOutstanding:'Total cash not yet deposited', home_openDisputes:'Open disputes (company-wide)',
     entry_new:'New daily entry', entry_date:'Date', entry_sourceType:'Source', entry_source_store:'Store branch',
@@ -309,6 +313,7 @@ var L = {
     mustChangePw:'پاس ورڈ تبدیل کرنا ضروری ہے', newPassword:'نیا پاس ورڈ', currentPassword:'موجودہ پاس ورڈ',
     save:'محفوظ کریں', cancel:'منسوخ', logout:'لاگ آؤٹ', language:'زبان',
     nav_home:'ہوم', nav_entries:'اندراجات', nav_handoffs:'ترسیل', nav_report:'سیلز رپورٹ', nav_admin:'ایڈمن', nav_notifications:'اطلاعات — آپ کی منتظر ترسیل',
+    greeting_morning:'صبح بخیر', greeting_afternoon:'دوپہر بخیر', greeting_evening:'شام بخیر', greeting_night:'خوش آمدید',
     home_pendingForMe:'آپ کی تصدیق کے منتظر', home_heldByMe:'آپ کے پاس موجود رقم', home_disputes:'جاری اعتراضات',
     home_companyOutstanding:'کل غیر جمع شدہ نقدی', home_openDisputes:'کھلے اعتراضات (ادارہ)',
     entry_new:'نئی روزانہ انٹری', entry_date:'تاریخ', entry_sourceType:'ذریعہ', entry_source_store:'اسٹور برانچ',
@@ -397,18 +402,58 @@ function el(html){
 function qs(sel,root){ return (root||document).querySelector(sel); }
 function qsa(sel,root){ return Array.prototype.slice.call((root||document).querySelectorAll(sel)); }
 
+// ---------------- top loading bar ----------------
+// Lives outside #app (appended to <body> directly) so it survives every
+// screen's `root.innerHTML=''` re-render instead of being wiped along with
+// it. A request count rather than a boolean so overlapping calls (e.g. the
+// dashboard's parallel listDashboard+getSalesReport) don't let an earlier
+// finish hide the bar while a later one is still in flight.
+var loadingCount = 0;
+function loadBarEl(){
+  var bar = document.getElementById('topLoadBar');
+  if (!bar) { bar = document.createElement('div'); bar.id = 'topLoadBar'; document.body.appendChild(bar); }
+  return bar;
+}
+function startLoading(){
+  loadingCount++;
+  if (loadingCount !== 1) return;
+  var bar = loadBarEl();
+  bar.style.transition = 'none';
+  bar.style.width = '0';
+  bar.classList.add('active');
+  void bar.offsetWidth; // force reflow so the transition below actually animates from 0
+  bar.style.transition = 'width 4s cubic-bezier(.1,.6,.2,1)';
+  bar.style.width = '75%';
+}
+function stopLoading(){
+  loadingCount = Math.max(0, loadingCount - 1);
+  if (loadingCount !== 0) return;
+  var bar = loadBarEl();
+  bar.style.transition = 'width .25s ease';
+  bar.style.width = '100%';
+  setTimeout(function(){
+    if (loadingCount !== 0) return; // a new request started before the fade-out
+    bar.classList.remove('active');
+    bar.style.transition = 'none';
+    bar.style.width = '0';
+  }, 250);
+}
+
 function api(action, payload){
   payload = payload || {};
   payload.action = action;
   payload.token = state.token;
+  startLoading();
   return fetch(state.apiUrl, {
     method:'POST',
     headers:{'Content-Type':'text/plain;charset=utf-8'},
     body: JSON.stringify(payload)
   }).then(function(r){ return r.json(); }).then(function(res){
+    stopLoading();
     if (res.token) { state.token = res.token; localStorage.setItem('bgc_token', res.token); }
     return res;
   }).catch(function(err){
+    stopLoading();
     return { ok:false, error:'network' };
   });
 }
@@ -561,6 +606,11 @@ function renderChangePw(){
 
 // ---------------- shell ----------------
 function roleLabel(r){ return t('role_'+r); }
+function timeGreeting(){
+  var h = new Date().getHours();
+  var key = h < 5 ? 'greeting_night' : h < 12 ? 'greeting_morning' : h < 18 ? 'greeting_afternoon' : 'greeting_evening';
+  return t(key);
+}
 
 function renderShell(){
   var root = qs('#app'); root.innerHTML='';
@@ -668,7 +718,8 @@ function renderHome(body){
     body.innerHTML = '';
 
     var greeting = el('<div class="card" style="background:var(--green);color:#fff;">' +
-      '<div style="font-size:19px;font-weight:800;">'+esc(state.user.name)+'</div>' +
+      '<div style="font-size:13.5px;font-weight:700;opacity:.85;">'+esc(timeGreeting())+'</div>' +
+      '<div style="font-size:19px;font-weight:800;margin-top:1px;">'+esc(state.user.name)+'</div>' +
       '<div style="opacity:.85;font-size:13px;margin-top:2px;">'+esc(roleLabel(state.user.role))+'</div>' +
     '</div>');
     body.appendChild(greeting);
