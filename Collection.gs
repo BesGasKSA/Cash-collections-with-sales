@@ -156,6 +156,26 @@ function computeNet_(entries) {
   };
 }
 
+// A cluster-to-collector handoff batches several already-confirmed
+// location handoffs, and a deposit batches several cluster handoffs — each
+// carries its own breakdown already, so the batch's breakdown is just their
+// sum, never recomputed from entries (that would double-apply the VAT
+// clawback). Without this, receivers only ever saw one flat total with no
+// way to see what it was made of.
+function sumBreakdowns_(breakdowns) {
+  var out = { storeCash: 0, carCash: 0, deliveryFee: 0, posSales: 0, vatOnDelivery: 0, netCashOwed: 0 };
+  breakdowns.forEach(function (b) {
+    if (!b) return;
+    out.storeCash += Number(b.storeCash || 0);
+    out.carCash += Number(b.carCash || 0);
+    out.deliveryFee += Number(b.deliveryFee || 0);
+    out.posSales += Number(b.posSales || 0);
+    out.vatOnDelivery += Number(b.vatOnDelivery || 0);
+    out.netCashOwed += Number(b.netCashOwed || 0);
+  });
+  return out;
+}
+
 // ---------- Handoffs (the approval gate) ----------
 
 function actionCreateHandoff_(req, user) {
@@ -218,6 +238,10 @@ function createClusterHandoff_(req, user) {
   });
   if (!held.length) return { ok: false, error: 'no_held_cash' };
   var amount = held.reduce(function (s, h) { return s + Number(h.amount || 0); }, 0);
+  var breakdown = sumBreakdowns_(held.map(function (h) { return h.breakdown; }));
+  var perLocation = held.map(function (h) {
+    return { locationId: h.locationId, amount: h.amount, breakdown: h.breakdown };
+  });
 
   var handoff = {
     id: Utilities.getUuid(),
@@ -226,6 +250,8 @@ function createClusterHandoff_(req, user) {
     toUserId: cluster.collectorUserId,
     clusterId: cluster.id,
     amount: amount,
+    breakdown: breakdown,
+    perLocation: perLocation,
     sourceEntryIds: [],
     sourceHandoffIds: held.map(function (h) { return h.id; }),
     consumedBy: null,
@@ -245,6 +271,19 @@ function createClusterHandoff_(req, user) {
 // receipt. An admin may still act on behalf of an unavailable receiver
 // (toUserId check is relaxed for admin below), but never on their own
 // submission.
+// Confirming asks the receiver how much cash actually changed hands, not
+// just "yes/no" — cash handoffs routinely arrive short. A shortfall does
+// NOT block the chain waiting on admin review: the receiver accepts what
+// they actually got right now (h.amount becomes the real received figure
+// immediately, so everything downstream — the next batch up the chain, the
+// eventual deposit — moves real cash, never the original overstated claim),
+// and every level above this handoff (the cluster manager and collector for
+// this cluster, plus admin/finance) is emailed immediately so a shortfall
+// is never quietly absorbed at one level and hidden from the rest of the
+// chain. The original declared amount and the shortfall stay on the record
+// (originalAmount/shortfall) for audit. The separate "dispute" action still
+// exists for a receiver who wants to flag something (e.g. suspected fraud,
+// refuses to accept it at all) rather than simply accept a shortfall.
 function actionConfirmHandoff_(req, user) {
   var h = getById_(SHEETS.HANDOFFS, req.id);
   if (!h) return { ok: false, error: 'not_found' };
@@ -252,11 +291,31 @@ function actionConfirmHandoff_(req, user) {
   if (h.fromUserId === user.id) return { ok: false, error: 'conflict_of_interest' };
   if (user.role !== 'admin' && h.toUserId !== user.id) return { ok: false, error: 'forbidden' };
 
+  var declared = Number(h.amount);
+  var received = req.receivedAmount === undefined || req.receivedAmount === null || req.receivedAmount === ''
+    ? declared : Number(req.receivedAmount);
+  var shortfall = Math.round((declared - received) * 100) / 100;
+
+  h.receivedAmount = received;
   h.status = 'confirmed';
   h.confirmedAt = new Date().toISOString();
   h.confirmedBy = user.id;
+
+  var hasVariance = Math.abs(shortfall) > 0.01;
+  if (hasVariance) {
+    h.originalAmount = declared;
+    h.amount = received;
+    h.shortfall = shortfall;
+    if (h.breakdown) { h.breakdown = Object.assign({}, h.breakdown, { netCashOwed: received }); }
+  }
+
   writeRow(SHEETS.HANDOFFS, h);
-  logAudit_(h.toUserId === user.id ? 'confirm_handoff' : 'admin_confirm_on_behalf', user.id, h.id);
+  logAudit_(
+    hasVariance ? (h.toUserId === user.id ? 'confirm_partial' : 'admin_confirm_partial') :
+      (h.toUserId === user.id ? 'confirm_handoff' : 'admin_confirm_on_behalf'),
+    user.id, h.id
+  );
+  if (hasVariance) escalateShortfall_(h);
   return { ok: true, handoff: h };
 }
 
@@ -325,6 +384,10 @@ function actionRecordDeposit_(req, user) {
   });
   if (!held.length) return { ok: false, error: 'no_held_cash' };
   var amount = held.reduce(function (s, h) { return s + Number(h.amount || 0); }, 0);
+  var breakdown = sumBreakdowns_(held.map(function (h) { return h.breakdown; }));
+  var perCluster = held.map(function (h) {
+    return { clusterId: h.clusterId, amount: h.amount, breakdown: h.breakdown, perLocation: h.perLocation || [] };
+  });
 
   var attachmentId = null;
   if (req.fileBase64) {
@@ -337,6 +400,8 @@ function actionRecordDeposit_(req, user) {
     fromUserId: user.id,
     toUserId: null,
     amount: amount,
+    breakdown: breakdown,
+    perCluster: perCluster,
     bankReference: req.bankReference || '',
     attachmentId: attachmentId,
     sourceEntryIds: [],
@@ -422,6 +487,43 @@ function notifyDispute_(handoff) {
         'تم الاعتراض على طلب رقم ' + handoff.id + ' بمبلغ ' + handoff.amount.toFixed(2) + '.\n' +
         'Handoff ' + handoff.id + ' (' + handoff.amount.toFixed(2) + ') was disputed.');
     } catch (e) { /* email is best-effort */ }
+  });
+}
+
+// A shortfall accepted at any one level must not stay visible only to that
+// level and to admin — the cluster manager and collector responsible for
+// this same cluster are exactly the people who need to know a shortfall
+// happened somewhere below them before it reaches (or fails to reach) them,
+// so both get emailed alongside every admin/finance account, regardless of
+// which of the two handoff kinds (location->cluster or cluster->collector)
+// this was.
+function escalateShortfall_(handoff) {
+  var recipients = {};
+  function add(u) { if (u && u.email) recipients[u.id] = u; }
+
+  if (handoff.clusterId) {
+    var cluster = getById_(SHEETS.CLUSTERS, handoff.clusterId);
+    if (cluster) {
+      add(getById_(SHEETS.USERS, cluster.clusterManagerUserId));
+      add(getById_(SHEETS.USERS, cluster.collectorUserId));
+    }
+  }
+  readSheet(SHEETS.USERS)
+    .filter(function (u) { return (u.role === 'admin' || u.role === 'finance') && u.email; })
+    .forEach(add);
+
+  var subject = 'نقص في مبلغ مُستلم / Cash handoff received short';
+  var body = 'التسليم رقم ' + handoff.id + ':\n' +
+    'المبلغ المُعلن: ' + Number(handoff.originalAmount).toFixed(2) + '\n' +
+    'المبلغ المُستلم فعلياً: ' + Number(handoff.amount).toFixed(2) + '\n' +
+    'الفرق: ' + Number(handoff.shortfall).toFixed(2) + '\n\n' +
+    'Handoff ' + handoff.id + ' was received short.\n' +
+    'Declared: ' + Number(handoff.originalAmount).toFixed(2) + '\n' +
+    'Actually received: ' + Number(handoff.amount).toFixed(2) + '\n' +
+    'Shortfall: ' + Number(handoff.shortfall).toFixed(2);
+
+  Object.keys(recipients).forEach(function (id) {
+    try { MailApp.sendEmail(recipients[id].email, subject, body); } catch (e) { /* best-effort */ }
   });
 }
 

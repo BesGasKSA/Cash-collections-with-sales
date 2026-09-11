@@ -106,6 +106,14 @@ check(confirm1.ok && confirm1.handoff.status === 'confirmed', 'cluster manager c
 var handoff2 = call({ action: 'createHandoff', token: saraTok, kind: 'cluster_to_collector', clusterId: cluster.entity.id });
 check(handoff2.ok, 'cluster manager creates handoff to collector');
 close(handoff2.handoff.amount, 7652.173913043478, 'cluster-to-collector amount carries forward unchanged');
+check(!!handoff2.handoff.breakdown, 'cluster-to-collector handoff carries a breakdown, not just a flat amount');
+close(handoff2.handoff.breakdown.storeCash, 7000, 'breakdown store cash carries forward');
+close(handoff2.handoff.breakdown.carCash, 5000, 'breakdown car cash carries forward');
+close(handoff2.handoff.breakdown.deliveryFee, 5000, 'breakdown delivery fee carries forward');
+close(handoff2.handoff.breakdown.vatOnDelivery, 652.1739130434783, 'breakdown VAT clawback carries forward');
+check(handoff2.handoff.perLocation && handoff2.handoff.perLocation.length === 1
+  && handoff2.handoff.perLocation[0].locationId === location.entity.id,
+  'cluster-to-collector handoff itemizes which location(s) it batches');
 
 var confirm2 = call({ action: 'confirmHandoff', token: musaTok, id: handoff2.handoff.id });
 check(confirm2.ok && confirm2.handoff.status === 'confirmed', 'collector confirms receipt');
@@ -113,6 +121,11 @@ check(confirm2.ok && confirm2.handoff.status === 'confirmed', 'collector confirm
 var deposit = call({ action: 'recordDeposit', token: musaTok, bankReference: 'REF-001' });
 check(deposit.ok && deposit.handoff.status === 'completed', 'collector records deposit, chain closes');
 close(deposit.handoff.amount, 7652.173913043478, 'deposit amount matches the whole chain');
+check(!!deposit.handoff.breakdown, 'deposit carries a breakdown too');
+close(deposit.handoff.breakdown.netCashOwed, 7652.173913043478, 'deposit breakdown net matches the flat amount');
+check(deposit.handoff.perCluster && deposit.handoff.perCluster.length === 1
+  && deposit.handoff.perCluster[0].clusterId === cluster.entity.id,
+  'deposit itemizes which cluster(s) it batches, each carrying its own perLocation trail');
 
 console.log('--- sales report reflects the closed chain ---');
 var report1 = call({ action: 'getSalesReport', token: adminTok });
@@ -139,6 +152,40 @@ var dispute3b = call({ action: 'disputeHandoff', token: saraTok, id: handoff3b.h
 check(dispute3b.ok, 'disputed again');
 var resolve3b = call({ action: 'resolveDispute', token: adminTok, id: handoff3b.handoff.id, resolution: 'confirm' });
 check(resolve3b.ok && resolve3b.handoff.status === 'confirmed', 'admin confirms the disputed handoff as correct');
+
+// close out handoff3b's chain so it isn't still sitting confirmed-and-unconsumed
+// when the next cluster batch is built below (createHandoff cluster_to_collector
+// sweeps up every confirmed, unconsumed location handoff in the cluster).
+var closeOut = call({ action: 'createHandoff', token: saraTok, kind: 'cluster_to_collector', clusterId: cluster.entity.id });
+check(closeOut.ok, 'cluster manager closes out the 1000 handoff separately');
+call({ action: 'confirmHandoff', token: musaTok, id: closeOut.handoff.id, receivedAmount: closeOut.handoff.amount });
+call({ action: 'recordDeposit', token: musaTok, bankReference: 'REF-CLEANUP' });
+
+console.log('--- partial receipt: confirming with a lower amount accepts it immediately, no blocking ---');
+var e4 = call({ action: 'createDailyEntry', token: aliTok, date: '2026-09-03', sourceType: 'store', sourceId: store.entity.id, cashSales: 2000 });
+check(e4.ok, 'third-round entry');
+var handoff4 = call({ action: 'createHandoff', token: aliTok, kind: 'location_to_cluster', locationId: location.entity.id });
+close(handoff4.handoff.amount, 2000, 'third handoff declared amount');
+
+var shortConfirm = call({ action: 'confirmHandoff', token: saraTok, id: handoff4.handoff.id, receivedAmount: 1800 });
+check(shortConfirm.ok && shortConfirm.handoff.status === 'confirmed', 'confirming 1800 of 2000 confirms immediately — a shortfall is accepted, not blocked pending admin review');
+close(shortConfirm.handoff.receivedAmount, 1800, 'received amount recorded');
+close(shortConfirm.handoff.shortfall, 200, 'shortfall computed and recorded as data');
+close(shortConfirm.handoff.amount, 1800, 'handoff amount moves to what was actually received, not the original claim');
+close(shortConfirm.handoff.originalAmount, 2000, 'the original declared amount is preserved for audit');
+close(shortConfirm.handoff.breakdown.netCashOwed, 1800, 'breakdown net is updated to match so downstream reports stay consistent');
+
+var handoff4b = call({ action: 'createHandoff', token: saraTok, kind: 'cluster_to_collector', clusterId: cluster.entity.id });
+check(handoff4b.ok, 'cluster manager batches the already-confirmed location handoff — no admin step was needed in between');
+close(handoff4b.handoff.amount, 1800, 'cluster-to-collector amount reflects the actually-received figure, not the original overstated claim');
+
+var exactConfirm = call({ action: 'confirmHandoff', token: musaTok, id: handoff4b.handoff.id, receivedAmount: 1800 });
+check(exactConfirm.ok && exactConfirm.handoff.status === 'confirmed', 'confirming with a matching amount still confirms normally, no variance fields set');
+check(exactConfirm.handoff.originalAmount === undefined, 'no variance means no originalAmount is recorded');
+
+var deposit4 = call({ action: 'recordDeposit', token: musaTok, bankReference: 'REF-002' });
+check(deposit4.ok, 'collector deposits the corrected amount');
+close(deposit4.handoff.amount, 1800, 'deposit reflects the real cash collected, not the original inflated declaration');
 
 console.log('--- conflict of interest: structural guards ---');
 var badCluster = call({ action: 'adminSaveEntity', token: adminTok, kind: 'cluster', data: { name: 'Bad', clusterManagerUserId: sara.id, collectorUserId: sara.id } });

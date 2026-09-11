@@ -81,6 +81,42 @@ interest" sections. If you change any handoff-creation or confirm/dispute
 code, re-run the tests; a passing structural check does not prove the
 runtime one still holds and vice versa.
 
+## Amount breakdown, partial receipt, and notifications
+
+Every handoff carries a `breakdown` object (`storeCash`/`carCash`/
+`deliveryFee`/`posSales`/`vatOnDelivery`/`netCashOwed`) — `Collection.gs`
+`computeNet_()` builds it for a location handoff; `sumBreakdowns_()` sums
+several already-broken-down handoffs' breakdowns for a cluster handoff
+(`perLocation`, one line per contributing location) and a deposit
+(`perCluster`, one line per contributing cluster) — **never recomputed from
+raw entries at the batch level**, since that would double-apply the VAT
+clawback. The client (`index.html` `handoffItem`/`breakdownGrid`/
+`handoffDetailRows`) renders this as an expandable panel, auto-expanded
+specifically at *the receiving step* (a pending handoff the viewer can
+confirm) and collapsed everywhere else, since that's where "what exactly am
+I confirming?" actually matters.
+
+**Confirming asks for the amount actually received, not just yes/no** —
+`actionConfirmHandoff_` takes `receivedAmount`. A shortfall does **not**
+block the chain waiting on admin review: it confirms immediately with the
+real received amount (`h.amount` becomes `receivedAmount`, the original
+claim moves to `h.originalAmount`, the gap to `h.shortfall`), so every
+handoff further up the chain moves real cash, never the original overstated
+claim. `escalateShortfall_` emails the cluster manager, the collector for
+that cluster, and every admin/finance account the moment a shortfall is
+accepted — not just the next person in line — so a shortfall absorbed at
+one level is never invisible to the rest of the chain. The separate
+"dispute" button (`actionDisputeHandoff_`, free-text note, blocks pending
+`resolveDispute`) still exists for a receiver who wants to flag something
+rather than simply accept a shortfall — e.g. suspected fraud, refusing the
+handoff outright.
+
+The header's 🔔 bell (`state.notifCount`, patched via `setNotifCount()`
+rather than a full `render()`) is a count of "things needing this viewer's
+attention right now" — their own pending handoffs, plus open disputes for
+admin/finance — refreshed after login and whenever Home or Handoffs loads
+fresh data; clicking it jumps to the Handoffs screen.
+
 ## Testing
 
 The `.gs` files are pure JS with Apps Script globals — `tests/stub-harness.js`
