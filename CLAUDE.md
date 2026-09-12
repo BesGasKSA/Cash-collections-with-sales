@@ -66,7 +66,13 @@ netCashOwed   = storeCash + Σ carCash - Σ carDeliveryFeeBankAmount + vatOnDeli
 ```
 
 POS sales never enter this formula — card/bank payments carry no cash risk;
-they're tracked (per machine) for reconciliation and reporting only.
+they're tracked (per machine, or per car if the car carries its own mounted
+terminal — a `car` entry's `posSales` field counts toward `totals.posSales`
+and the per-product POS breakdown exactly like a dedicated `pos` entry does,
+just without a separate pos_machines row) for reconciliation and reporting
+only. The entry form (`index.html`) also shows a read-only Location field
+that auto-resolves from whichever store/car/pos is picked (`resolveLocationIdForSource_`)
+so the person entering data can confirm where it will actually count.
 
 ## The approval chain *is* the conflict-of-interest control
 
@@ -503,7 +509,36 @@ so the Settings screen always showed the hardcoded defaults and a naive save
 could silently revert a live config back to them — is covered by the
 `listMeta` assertion in the "large-amount second approval" section.
 
-### 4. A one-shot "clear all transactions" bulk-delete is hard-blocked
+### 4. Any `for...in` merge loop or lookup table keyed by client input must use `safeOwnKeys_`/`hasOwn_` (Code.gs)
+
+A security review (2026-09-13) found the one place in this codebase that
+merges client-supplied JSON into a plain object with a bare `for (var k in d)
+{ if (d.hasOwnProperty(k)) obj[k] = d[k]; }` loop — `actionAdminSaveEntity_`
+(Admin.gs) — was vulnerable in principle to prototype pollution: `JSON.parse`
+creates a key literally named `"__proto__"` as a genuine **own** property (so
+a bare `hasOwnProperty` check does not exclude it), but the later `obj[k] =
+value` assignment, with `k` holding that exact string, invokes the real
+`Object.prototype.__proto__` setter and reassigns `obj`'s actual prototype.
+Same class of bug for any object used as a lookup table keyed by client
+input — `ENTITY_SHEET[kind]`, `ENTITY_CHILDREN[kind]`, `handlers[action]` in
+`route_` — a crafted `kind`/`action` like `"__proto__"` or `"constructor"`
+resolves to an inherited `Object.prototype` member instead of correctly
+missing.
+
+In this specific codebase the real-world impact was near-nil (every affected
+action already requires `requireAdmin_`, and `writeRow`'s own
+`hasOwnProperty` filter happens to exclude the polluted prototype's
+properties from what actually gets persisted) — but it's fixed anyway as
+defense-in-depth, since the fix is cheap and the pattern is worth blocking on
+principle for a system handling real money. `safeOwnKeys_(obj)` (Code.gs)
+returns only own keys that aren't `__proto__`/`constructor`/`prototype`, for
+merge loops; `hasOwn_(obj, key)` (`Object.prototype.hasOwnProperty.call`) is
+for lookup-table existence checks — **use these, never a bare `for...in` +
+assignment or a bare `table[key]` truthy-check, on anything built from
+`req.data` or another client-supplied field.** Covered by
+`tests/run.js`'s "crafted `__proto__`/`constructor` keys" section.
+
+### 5. A one-shot "clear all transactions" bulk-delete is hard-blocked
 
 Claude Code's auto-mode safety classifier refuses any code edit that adds a
 function wiping every row of a sheet in one shot — confirmed twice on a

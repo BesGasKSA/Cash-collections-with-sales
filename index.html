@@ -276,6 +276,7 @@ var L = {
     entry_new:'إدخال يومي جديد', entry_date:'التاريخ', entry_sourceType:'المصدر', entry_source_store:'الفرع',
     entry_source_car:'سيارة', entry_source_pos:'جهاز نقاط بيع', entry_cash:'المبيعات النقدية', entry_delivery:'رسوم التوصيل (بنك)',
     entry_pos:'مبيعات نقاط البيع', entry_note:'ملاحظة', entry_submit:'حفظ الإدخال', entry_list:'الإدخالات الأخيرة',
+    entry_location:'الموقع',
     entry_importTitle:'استيراد من CSV / إكسل', entry_importHint:'حمّل قالب CSV واملأه، ثم ارفعه هنا. الأعمدة: date, sourceType, sourceName, product, cashSales, deliveryFee, posSales, note',
     entry_importTemplate:'تحميل القالب', entry_importChoose:'اختر ملف CSV', entry_importPreview:'معاينة قبل الاستيراد',
     entry_importCol_row:'#', entry_importCol_date:'التاريخ', entry_importCol_type:'النوع', entry_importCol_source:'المصدر',
@@ -371,6 +372,7 @@ var L = {
     entry_new:'New daily entry', entry_date:'Date', entry_sourceType:'Source', entry_source_store:'Store branch',
     entry_source_car:'Car', entry_source_pos:'POS machine', entry_cash:'Cash sales', entry_delivery:'Delivery fee (bank)',
     entry_pos:'POS sales', entry_note:'Note', entry_submit:'Save entry', entry_list:'Recent entries',
+    entry_location:'Location',
     entry_importTitle:'Import from CSV / Excel', entry_importHint:'Download the CSV template, fill it in, then upload it here. Columns: date, sourceType, sourceName, product, cashSales, deliveryFee, posSales, note',
     entry_importTemplate:'Download template', entry_importChoose:'Choose CSV file', entry_importPreview:'Preview before import',
     entry_importCol_row:'#', entry_importCol_date:'Date', entry_importCol_type:'Type', entry_importCol_source:'Source',
@@ -466,6 +468,7 @@ var L = {
     entry_new:'نیا روزانہ اندراج', entry_date:'تاریخ', entry_sourceType:'ذریعہ', entry_source_store:'برانچ',
     entry_source_car:'گاڑی', entry_source_pos:'POS مشین', entry_cash:'نقد فروخت', entry_delivery:'ڈلیوری فیس (بینک)',
     entry_pos:'POS فروخت', entry_note:'نوٹ', entry_submit:'اندراج محفوظ کریں', entry_list:'حالیہ اندراجات',
+    entry_location:'مقام',
     entry_importTitle:'CSV / ایکسل سے درآمد کریں', entry_importHint:'CSV ٹیمپلیٹ ڈاؤن لوڈ کریں، اسے پُر کریں، پھر یہاں اپ لوڈ کریں۔ کالمز: date, sourceType, sourceName, product, cashSales, deliveryFee, posSales, note',
     entry_importTemplate:'ٹیمپلیٹ ڈاؤن لوڈ کریں', entry_importChoose:'CSV فائل منتخب کریں', entry_importPreview:'درآمد سے پہلے معائنہ',
     entry_importCol_row:'#', entry_importCol_date:'تاریخ', entry_importCol_type:'قسم', entry_importCol_source:'ذریعہ',
@@ -1275,6 +1278,7 @@ function renderEntries(body){
       '<div class="field"><label>'+esc(t('entry_date'))+'</label><input id="eDate" type="date" value="'+new Date().toISOString().slice(0,10)+'"></div>' +
       '<div class="field"><label>'+esc(t('entry_sourceType'))+'</label><select id="eType"></select></div>' +
       '<div class="field"><label id="eSourceLabel"></label><select id="eSource"></select></div>' +
+      '<div class="field"><label>'+esc(t('entry_location'))+'</label><input id="eLocation" type="text" readonly value="—"></div>' +
     '</div>' +
     '<div class="grid">' +
       '<div class="field" id="eCashWrap"><label>'+esc(t('entry_cash'))+'</label><input id="eCash" type="number" step="0.01" value="0"></div>' +
@@ -1326,17 +1330,35 @@ function renderEntries(body){
 
     // A POS machine can take cash too (not just card), and can carry its own
     // bank-paid delivery fee just like a car — both fields apply to car AND
-    // pos now, only a plain store branch has neither.
+    // pos now, only a plain store branch has neither. A car can also carry
+    // its own mounted POS terminal, so its entry can report card/bank sales
+    // too — same field, same no-cash-risk treatment as a dedicated pos entry.
     var showDelivery = (type==='car' || type==='pos');
     qs('#eCashWrap', form).style.display = '';
     qs('#eDeliveryWrap', form).style.display = showDelivery ? '' : 'none';
-    qs('#ePosWrap', form).style.display = (type==='pos') ? '' : 'none';
+    qs('#ePosWrap', form).style.display = showDelivery ? '' : 'none';
     // this field only ever applies to a car/pos entry — say so right where
     // people look for it when it's (correctly) not on screen.
     qs('#eDeliveryHint', form).textContent = showDelivery ? '' : t('entry_delivery') + ' — ' + t('entry_source_car') + ' / ' + t('entry_source_pos');
     qs('#eDeliveryHint', form).style.display = showDelivery ? 'none' : 'block';
+    updateLocationDisplay();
+  }
+  // Store/car/pos are all ultimately tied to one location (a POS machine's
+  // through whichever store or car owns it) — showing it read-only the
+  // moment a source is picked confirms where an entry will actually count,
+  // without making the person go look it up separately.
+  function resolveLocationIdForSource_(type, sourceId){
+    if (type === 'store') { var s = byId(meta.stores, sourceId); return s ? s.locationId : null; }
+    if (type === 'car') { var c = byId(meta.cars, sourceId); return c ? c.locationId : null; }
+    if (type === 'pos') { var p = byId(meta.pos, sourceId); return p ? posOwnerLocationId_(p) : null; }
+    return null;
+  }
+  function updateLocationDisplay(){
+    var locId = resolveLocationIdForSource_(typeSel.value, qs('#eSource', form).value);
+    qs('#eLocation', form).value = locId ? locationName(locId) : '—';
   }
   typeSel.addEventListener('change', populateSourceOptions);
+  qs('#eSource', form).addEventListener('change', updateLocationDisplay);
   populateSourceOptions();
 
   var productSel = qs('#eProduct', form);

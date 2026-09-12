@@ -357,6 +357,20 @@ var posVat = (100 / 1.15) * 0.15;
 close(posReport.totals.deliveryFee, 100, 'POS delivery fee counted in the total delivery fee, same as a car');
 close(posReport.totals.netCashOwed, 400 - 100 + posVat, 'POS cash + its own delivery-fee deduction + VAT clawback feed net cash owed exactly like a car');
 
+console.log('--- a car with its own mounted POS terminal can report card/bank sales too, not just cash ---');
+var carPosEntry = call({
+  action: 'createDailyEntry', token: hassanTok, date: '2026-09-14',
+  sourceType: 'car', sourceId: car.entity.id, cashSales: 300, deliveryFeeBankAmount: 50, posSales: 120
+});
+check(carPosEntry.ok, 'driver records a car entry with cash + delivery fee + its own POS card sales together');
+var carPosReport = call({ action: 'getSalesReport', token: adminTok, dateFrom: '2026-09-14', dateTo: '2026-09-14' });
+close(carPosReport.totals.carCash, 300, 'car cash sales unaffected by the new posSales field');
+close(carPosReport.totals.posSales, 120, "a car's own card/bank sales now count toward posSales, previously silently dropped");
+var carPosVat = (50 / 1.15) * 0.15;
+close(carPosReport.totals.netCashOwed, 300 - 50 + carPosVat, "posSales carries no cash risk — net cash owed still comes only from the car's cash and delivery fee");
+var carPosProductRow = carPosReport.byProduct.find(function (r) { return r.productId === null; });
+check(carPosProductRow && carPosProductRow.posAmount >= 120, "a car's posSales also counts in the per-product POS breakdown, same as a dedicated pos entry");
+
 console.log('--- bank reconciliation: matching declared deposits against the real bank statement ---');
 var finance = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Fatima (Finance)', email: 'fatima@bestgas.sa', role: 'finance' } }).user;
 var financeTok = acceptInvite('fatima@bestgas.sa');
@@ -553,6 +567,32 @@ var resolveByStoreManager = call({ action: 'updateRiskItemStatus', token: aliTok
 check(!resolveByStoreManager.ok && resolveByStoreManager.error === 'forbidden', 'only admin/finance can change a risk item\'s status');
 var resolve = call({ action: 'updateRiskItemStatus', token: adminTok, id: riskItem.item.id, status: 'resolved', resolutionNote: 'Valve replaced' });
 check(resolve.ok && resolve.item.status === 'resolved' && !!resolve.item.resolvedAt, 'admin resolves the risk item with a note');
+
+console.log('--- security: crafted __proto__/constructor keys cannot pollute objects or bypass lookup tables ---');
+// Every for...in merge loop over client-supplied JSON, and every object used
+// as a lookup table keyed by client input (action names, entity kinds), is a
+// potential prototype-pollution / lookup-bypass surface. JSON.parse creates
+// a "__proto__" key as a genuine own property (not real prototype mutation),
+// but a later `obj[k] = value` assignment with k === '__proto__' *does*
+// invoke the real setter — so the attack has to be built exactly the way a
+// real attacker's JSON body would arrive: parsed from a string, not an
+// object literal (an object literal's __proto__ key is special-cased by the
+// parser itself and never reaches this code path the same way).
+var pollutedData = JSON.parse('{"city":"Riyadh","name":"Proto Test","__proto__":{"polluted":"yes"}}');
+var pollutedSave = call({ action: 'adminSaveEntity', token: adminTok, kind: 'zone', data: pollutedData });
+check(pollutedSave.ok, 'entity still saves normally despite the crafted key');
+check(pollutedSave.entity.polluted === undefined, 'the saved entity does not carry the injected field');
+check(({}).polluted === undefined, "Object.prototype itself was never touched — a later {} doesn't inherit 'polluted'");
+
+var protoAction = call({ action: '__proto__', token: adminTok });
+check(!protoAction.ok && protoAction.error === 'unknown_action', 'action:"__proto__" is rejected as unknown, not resolved to an inherited Object.prototype member');
+var ctorAction = call({ action: 'constructor', token: adminTok });
+check(!ctorAction.ok && ctorAction.error === 'unknown_action', 'action:"constructor" is rejected the same way');
+
+var protoKind = call({ action: 'adminSaveEntity', token: adminTok, kind: '__proto__', data: { name: 'x' } });
+check(!protoKind.ok && protoKind.error === 'invalid_kind', 'entity kind:"__proto__" is rejected as invalid, not resolved to an inherited member of ENTITY_SHEET');
+var protoDeleteKind = call({ action: 'adminDeleteEntity', token: adminTok, kind: 'constructor', id: 'x' });
+check(!protoDeleteKind.ok && protoDeleteKind.error === 'invalid_kind', 'same for adminDeleteEntity with kind:"constructor"');
 
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);
