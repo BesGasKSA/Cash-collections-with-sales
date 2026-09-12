@@ -232,6 +232,8 @@ function actionAdminSetConfig_(req, user) {
   var d = req.data || {};
   if (d.vatRate != null) cfg.vatRate = Number(d.vatRate);
   if (d.senderName != null) cfg.senderName = String(d.senderName);
+  if (d.staleThresholdHours != null) cfg.staleThresholdHours = Number(d.staleThresholdHours);
+  if (d.secondApprovalThreshold != null) cfg.secondApprovalThreshold = Number(d.secondApprovalThreshold);
   writeRow(SHEETS.CONFIG, cfg);
   logAudit_('admin_set_config', user.id, null);
   return { ok: true, config: cfg };

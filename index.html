@@ -317,7 +317,8 @@ var L = {
     admin_permissions:'مصفوفة الصلاحيات', perm_screen:'الشاشة/الصلاحية', perm_note:'تُبنى هذه المصفوفة من قواعد النظام الفعلية، وليست وثيقة منفصلة قد تصبح قديمة.',
     perm_home:'الرئيسية (نطاقه الخاص)', perm_home_company:'الرئيسية (بيانات الشركة كاملة)', perm_entries:'إدخال البيانات اليومية',
     perm_handoffs_own:'التسليمات (الخاصة به)', perm_handoffs_all:'التسليمات (كل الشركة)', perm_report_own:'تقرير المبيعات (مجمّعه فقط)',
-    perm_report_all:'تقرير المبيعات (كل الشركة)', perm_audit:'سجل التدقيق', perm_resolve:'حل الاعتراضات', perm_reconcile:'التسوية البنكية', perm_manage:'إدارة المستخدمين والبيانات الأساسية',
+    perm_report_all:'تقرير المبيعات (كل الشركة)', perm_audit:'سجل التدقيق', perm_resolve:'حل الاعتراضات', perm_reconcile:'التسوية البنكية',
+    perm_risk_report:'إبلاغ عن خطر/شكوى', perm_risk_view:'عرض سجل المخاطر والشكاوى', perm_manage:'إدارة المستخدمين والبيانات الأساسية',
     admin_addUser:'إضافة مستخدم', admin_name:'الاسم', admin_role:'الدور', admin_active:'نشط', admin_resetPw:'إعادة تعيين كلمة المرور',
     admin_addLocation:'إضافة موقع', admin_city:'المدينة', admin_locName:'اسم الموقع', admin_cluster:'المجمّع',
     admin_zones:'المناطق', admin_addZone:'إضافة منطقة', admin_zoneName:'اسم المنطقة', admin_zone:'المنطقة',
@@ -327,6 +328,16 @@ var L = {
     admin_addPos:'إضافة جهاز', admin_posLabel:'رقم الجهاز', admin_ownerType:'مرتبط بـ', admin_owner:'الجهة', admin_assignedDriver:'الموظف المسؤول',
     admin_addCluster:'إضافة مجمّع', admin_clusterName:'اسم المجمّع', admin_clusterManager:'مدير المجمّع', admin_collector:'المُحصّل',
     admin_vatRate:'نسبة الضريبة', admin_delete:'حذف', admin_edit:'تعديل', admin_hasChildren:'لا يمكن الحذف — توجد عناصر تابعة',
+    admin_staleThreshold:'ساعات التنبيه للتسليمات المتأخرة', admin_secondApprovalThreshold:'حد المبلغ للموافقة الثانية (0 = تعطيل)',
+    admin_runStaleCheck:'فحص التسليمات المتأخرة الآن', admin_installStaleTrigger:'تفعيل الفحص اليومي التلقائي',
+    admin_staleCheckResult:'تم تصعيد {n} تسليم متأخر', admin_triggerInstalled:'تم التفعيل', admin_triggerAlready:'مُفعّل مسبقاً',
+    handoff_needsSecondApproval:'يحتاج موافقة ثانية', handoff_acknowledgeSecond:'إقرار الموافقة الثانية', handoff_secondApproved:'تمت الموافقة الثانية',
+    nav_risk:'المخاطر والشكاوى', risk_title:'المخاطر والشكاوى', risk_reportNew:'إبلاغ جديد', risk_type:'النوع',
+    risk_type_risk:'خطر تشغيلي', risk_type_complaint:'شكوى', risk_titleLabel:'العنوان', risk_description:'الوصف',
+    risk_severity:'مستوى الخطورة', risk_severity_low:'منخفض', risk_severity_medium:'متوسط', risk_severity_high:'عالٍ',
+    risk_submit:'إرسال البلاغ', risk_list:'السجل', risk_status:'الحالة', risk_status_open:'مفتوح',
+    risk_status_in_progress:'قيد المعالجة', risk_status_resolved:'تم الحل', risk_resolutionNote:'ملاحظة الحل',
+    risk_updateStatus:'تحديث الحالة', risk_reportedBy:'المُبلِّغ', risk_noItems:'لا توجد بلاغات', risk_submitted:'تم إرسال البلاغ بنجاح',
     role_admin:'مدير النظام', role_finance:'مدير مالي', role_accountant:'محاسب', role_operations_manager:'مدير العمليات',
     role_cluster_manager:'مدير مجمّع', role_store_manager:'مشرف فرع',
     role_collector:'مُحصّل', role_driver:'سائق', settings_url:'رابط النظام (Apps Script)', settings_save:'حفظ الرابط',
@@ -401,7 +412,8 @@ var L = {
     admin_permissions:'Permissions matrix', perm_screen:'Screen / permission', perm_note:"This matrix is generated from the system's actual access rules, not a separate document that can go stale.",
     perm_home:'Home (own scope)', perm_home_company:'Home (company-wide figures)', perm_entries:'Enter daily data',
     perm_handoffs_own:'Handoffs (own)', perm_handoffs_all:'Handoffs (company-wide)', perm_report_own:'Sales report (own cluster only)',
-    perm_report_all:'Sales report (company-wide)', perm_audit:'Audit log', perm_resolve:'Resolve disputes', perm_reconcile:'Bank reconciliation', perm_manage:'Manage users & master data',
+    perm_report_all:'Sales report (company-wide)', perm_audit:'Audit log', perm_resolve:'Resolve disputes', perm_reconcile:'Bank reconciliation',
+    perm_risk_report:'Report a risk/complaint', perm_risk_view:'View the risk/complaint register', perm_manage:'Manage users & master data',
     admin_addUser:'Add user', admin_name:'Name', admin_role:'Role', admin_active:'Active', admin_resetPw:'Reset password',
     admin_addLocation:'Add location', admin_city:'City', admin_locName:'Location name', admin_cluster:'Cluster',
     admin_zones:'Zones', admin_addZone:'Add zone', admin_zoneName:'Zone name', admin_zone:'Zone',
@@ -411,6 +423,16 @@ var L = {
     admin_addPos:'Add POS machine', admin_posLabel:'Terminal id', admin_ownerType:'Belongs to', admin_owner:'Owner', admin_assignedDriver:'Assigned employee',
     admin_addCluster:'Add cluster', admin_clusterName:'Cluster name', admin_clusterManager:'Cluster manager', admin_collector:'Collector',
     admin_vatRate:'VAT rate', admin_delete:'Delete', admin_edit:'Edit', admin_hasChildren:'Cannot delete — has child records',
+    admin_staleThreshold:'Stale-handoff alert hours', admin_secondApprovalThreshold:'Second-approval amount threshold (0 = off)',
+    admin_runStaleCheck:'Check stale handoffs now', admin_installStaleTrigger:'Enable daily automatic check',
+    admin_staleCheckResult:'Escalated {n} stale handoff(s)', admin_triggerInstalled:'Enabled', admin_triggerAlready:'Already enabled',
+    handoff_needsSecondApproval:'Needs second approval', handoff_acknowledgeSecond:'Acknowledge second approval', handoff_secondApproved:'Second approval done',
+    nav_risk:'Risks & Complaints', risk_title:'Risks & Complaints', risk_reportNew:'Report new', risk_type:'Type',
+    risk_type_risk:'Operational risk', risk_type_complaint:'Complaint', risk_titleLabel:'Title', risk_description:'Description',
+    risk_severity:'Severity', risk_severity_low:'Low', risk_severity_medium:'Medium', risk_severity_high:'High',
+    risk_submit:'Submit report', risk_list:'Register', risk_status:'Status', risk_status_open:'Open',
+    risk_status_in_progress:'In progress', risk_status_resolved:'Resolved', risk_resolutionNote:'Resolution note',
+    risk_updateStatus:'Update status', risk_reportedBy:'Reported by', risk_noItems:'No reports', risk_submitted:'Report submitted successfully',
     role_admin:'Admin', role_finance:'Finance Manager', role_accountant:'Accountant', role_operations_manager:'Operations Manager',
     role_cluster_manager:'Cluster Manager', role_store_manager:'Store Manager',
     role_collector:'Collector', role_driver:'Driver', settings_url:'System URL (Apps Script)', settings_save:'Save URL',
@@ -485,7 +507,8 @@ var L = {
     admin_permissions:'اجازتوں کی میٹرکس', perm_screen:'اسکرین/اجازت', perm_note:'یہ میٹرکس نظام کے اصل رسائی قوانین سے تیار ہوتی ہے، ایک الگ دستاویز نہیں جو پرانی ہو سکے۔',
     perm_home:'ہوم (اپنا دائرہ)', perm_home_company:'ہوم (پوری کمپنی کے اعداد و شمار)', perm_entries:'روزانہ ڈیٹا درج کریں',
     perm_handoffs_own:'ترسیل (اپنی)', perm_handoffs_all:'ترسیل (پوری کمپنی)', perm_report_own:'سیلز رپورٹ (صرف اپنا کلسٹر)',
-    perm_report_all:'سیلز رپورٹ (پوری کمپنی)', perm_audit:'آڈٹ لاگ', perm_resolve:'اعتراضات حل کریں', perm_reconcile:'بینک مطابقت', perm_manage:'صارفین اور بنیادی ڈیٹا کا انتظام',
+    perm_report_all:'سیلز رپورٹ (پوری کمپنی)', perm_audit:'آڈٹ لاگ', perm_resolve:'اعتراضات حل کریں', perm_reconcile:'بینک مطابقت',
+    perm_risk_report:'خطرہ/شکایت رپورٹ کریں', perm_risk_view:'خطرات/شکایات کا رجسٹر دیکھیں', perm_manage:'صارفین اور بنیادی ڈیٹا کا انتظام',
     admin_addUser:'صارف شامل کریں', admin_name:'نام', admin_role:'کردار', admin_active:'فعال', admin_resetPw:'پاس ورڈ ری سیٹ کریں',
     admin_addLocation:'مقام شامل کریں', admin_city:'شہر', admin_locName:'مقام کا نام', admin_cluster:'کلسٹر',
     admin_zones:'زونز', admin_addZone:'زون شامل کریں', admin_zoneName:'زون کا نام', admin_zone:'زون',
@@ -495,6 +518,16 @@ var L = {
     admin_addPos:'POS مشین شامل کریں', admin_posLabel:'ٹرمینل نمبر', admin_ownerType:'سے منسلک', admin_owner:'مالک', admin_assignedDriver:'ذمہ دار ملازم',
     admin_addCluster:'کلسٹر شامل کریں', admin_clusterName:'کلسٹر کا نام', admin_clusterManager:'کلسٹر منیجر', admin_collector:'کلکٹر',
     admin_vatRate:'ویٹ کی شرح', admin_delete:'حذف کریں', admin_edit:'ترمیم', admin_hasChildren:'حذف نہیں ہو سکتا — ذیلی ریکارڈز موجود ہیں',
+    admin_staleThreshold:'تاخیر شدہ ترسیل الرٹ گھنٹے', admin_secondApprovalThreshold:'دوسری منظوری کی رقم کی حد (0 = بند)',
+    admin_runStaleCheck:'تاخیر شدہ ترسیل ابھی چیک کریں', admin_installStaleTrigger:'روزانہ خودکار چیک فعال کریں',
+    admin_staleCheckResult:'{n} تاخیر شدہ ترسیل کو مطلع کیا گیا', admin_triggerInstalled:'فعال ہوگیا', admin_triggerAlready:'پہلے سے فعال',
+    handoff_needsSecondApproval:'دوسری منظوری درکار ہے', handoff_acknowledgeSecond:'دوسری منظوری کی تصدیق', handoff_secondApproved:'دوسری منظوری مکمل',
+    nav_risk:'خطرات اور شکایات', risk_title:'خطرات اور شکایات', risk_reportNew:'نئی رپورٹ', risk_type:'قسم',
+    risk_type_risk:'آپریشنل خطرہ', risk_type_complaint:'شکایت', risk_titleLabel:'عنوان', risk_description:'تفصیل',
+    risk_severity:'شدت', risk_severity_low:'کم', risk_severity_medium:'درمیانی', risk_severity_high:'زیادہ',
+    risk_submit:'رپورٹ بھیجیں', risk_list:'رجسٹر', risk_status:'حالت', risk_status_open:'کھلا',
+    risk_status_in_progress:'زیر عمل', risk_status_resolved:'حل ہوگیا', risk_resolutionNote:'حل کا نوٹ',
+    risk_updateStatus:'حالت اپ ڈیٹ کریں', risk_reportedBy:'رپورٹ کنندہ', risk_noItems:'کوئی رپورٹ نہیں', risk_submitted:'رپورٹ کامیابی سے بھیج دی گئی',
     role_admin:'ایڈمن', role_finance:'فنانس منیجر', role_accountant:'اکاؤنٹنٹ', role_operations_manager:'آپریشنز منیجر',
     role_cluster_manager:'کلسٹر منیجر', role_store_manager:'اسٹور منیجر',
     role_collector:'کلکٹر', role_driver:'ڈرائیور', settings_url:'سسٹم لنک (Apps Script)', settings_save:'لنک محفوظ کریں',
@@ -781,6 +814,7 @@ function renderShell(){
   navItems.push(['handoffs','nav_handoffs']);
   if (['admin','finance','accountant','operations_manager','cluster_manager'].indexOf(state.user.role)>=0) navItems.push(['report','nav_report']);
   if (['admin','finance'].indexOf(state.user.role)>=0) navItems.push(['reconciliation','nav_reconciliation']);
+  navItems.push(['risk','nav_risk']);
   if (state.user.role==='admin') navItems.push(['admin','nav_admin']);
 
   var header = el('<header>' +
@@ -814,6 +848,7 @@ function renderShell(){
     report: '<path d="M18 20V10M12 20V4M6 20v-6"/>',
     dashboard: '<rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/>',
     reconciliation: '<rect x="3" y="6" width="18" height="14" rx="2"/><path d="M3 10h18"/><path d="M8 15l2.5 2.5L16 12"/>',
+    risk: '<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/>',
     admin: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>'
   };
   var nav = el('<nav></nav>');
@@ -837,7 +872,7 @@ function renderShell(){
   var body = el('<div id="screenBody"></div>');
   main.appendChild(body);
 
-  var renderers = { home: renderHome, dashboard: renderDashboard, entries: renderEntries, handoffs: renderHandoffs, report: renderReport, reconciliation: renderReconciliation, admin: renderAdmin };
+  var renderers = { home: renderHome, dashboard: renderDashboard, entries: renderEntries, handoffs: renderHandoffs, report: renderReport, reconciliation: renderReconciliation, risk: renderRisk, admin: renderAdmin };
   (renderers[state.screen] || renderHome)(body);
 }
 
@@ -1505,6 +1540,7 @@ function handoffItem(h, showConfirm, showResolve){
     '<div class="muted">'+esc(t('handoff_from'))+': '+esc(userName(h.fromUserId))+' · '+esc(t('handoff_to'))+': '+esc(h.toUserId?userName(h.toUserId):'Bank')+' · '+esc((h.createdAt||'').slice(0,16).replace('T',' '))+'</div>' +
     (h.disputeNote ? '<div class="muted">📝 '+esc(h.disputeNote)+'</div>' : '') +
     varianceLine(h) +
+    (h.requiresSecondApproval ? '<div class="msg '+(h.secondApprovedBy?'ok':'err')+'" style="margin-top:8px;">'+esc(t(h.secondApprovedBy?'handoff_secondApproved':'handoff_needsSecondApproval'))+'</div>' : '') +
     (h.breakdown ? (
       '<button type="button" class="details-toggle" id="hBrkToggle">'+esc(t(isReceivingStep ? 'handoff_hideBreakdown' : 'handoff_showBreakdown'))+'</button>' +
       '<div id="hBrkBody"'+(isReceivingStep?'':' hidden')+'>' + breakdownGrid(h.breakdown) + handoffDetailRows(h) + '</div>'
@@ -1548,6 +1584,11 @@ function handoffItem(h, showConfirm, showResolve){
     var rr = el('<button class="btn danger">'+esc(t('handoff_resolveReject'))+'</button>');
     rr.addEventListener('click', function(){ api('resolveDispute',{id:h.id, resolution:'reject'}).then(function(){ render(); }); });
     actions.appendChild(rc); actions.appendChild(rr);
+  }
+  if (h.requiresSecondApproval && !h.secondApprovedBy && (state.user.role==='admin' || state.user.role==='finance')){
+    var ackBtn = el('<button class="btn secondary">'+esc(t('handoff_acknowledgeSecond'))+'</button>');
+    ackBtn.addEventListener('click', function(){ api('acknowledgeSecondApproval',{id:h.id}).then(function(){ render(); }); });
+    actions.appendChild(ackBtn);
   }
   return div;
 }
@@ -2027,6 +2068,87 @@ function renderReconciliation(body){
   }
 }
 
+// ---------------- risk / complaints register ----------------
+function renderRisk(body){
+  body.innerHTML = '';
+  var isCompanyWide = ['admin','finance','accountant','operations_manager'].indexOf(state.user.role)>=0;
+
+  var form = el('<div class="card"><h2>'+esc(t('risk_reportNew'))+'</h2>' +
+    '<div id="riskMsg"></div>' +
+    '<div class="grid">' +
+      '<div class="field"><label>'+esc(t('risk_type'))+'</label><select id="rkType">' +
+        '<option value="risk">'+esc(t('risk_type_risk'))+'</option>' +
+        '<option value="complaint">'+esc(t('risk_type_complaint'))+'</option>' +
+      '</select></div>' +
+      '<div class="field"><label>'+esc(t('risk_severity'))+'</label><select id="rkSeverity">' +
+        '<option value="low">'+esc(t('risk_severity_low'))+'</option>' +
+        '<option value="medium" selected>'+esc(t('risk_severity_medium'))+'</option>' +
+        '<option value="high">'+esc(t('risk_severity_high'))+'</option>' +
+      '</select></div>' +
+    '</div>' +
+    '<div class="field"><label>'+esc(t('risk_titleLabel'))+'</label><input id="rkTitle"></div>' +
+    '<div class="field"><label>'+esc(t('risk_description'))+'</label><textarea id="rkDesc" rows="3"></textarea></div>' +
+    '<button class="btn" id="rkSubmit">'+esc(t('risk_submit'))+'</button>' +
+  '</div>');
+  body.appendChild(form);
+  qs('#rkSubmit', form).addEventListener('click', function(){
+    var title = qs('#rkTitle', form).value.trim();
+    if (!title){ qs('#riskMsg',form).innerHTML = '<div class="msg err">'+esc(t('err_generic'))+'</div>'; return; }
+    api('createRiskItem', {
+      type: qs('#rkType', form).value,
+      severity: qs('#rkSeverity', form).value,
+      title: title,
+      description: qs('#rkDesc', form).value
+    }).then(function(res){
+      if (!res.ok){ qs('#riskMsg',form).innerHTML = '<div class="msg err">'+esc(t('err_generic'))+'</div>'; return; }
+      qs('#riskMsg',form).innerHTML = '<div class="msg ok">'+esc(t('risk_submitted'))+'</div>';
+      qs('#rkTitle', form).value = ''; qs('#rkDesc', form).value = '';
+      if (isCompanyWide) loadRiskList();
+    });
+  });
+
+  if (!isCompanyWide) return;
+
+  var listCard = el('<div class="card"><h2>'+esc(t('risk_list'))+'</h2><div id="riskListBody">'+esc(t('loading'))+'</div></div>');
+  body.appendChild(listCard);
+  loadRiskList();
+
+  function loadRiskList(){
+    api('listRiskItems', {}).then(function(res){
+      var wrap = qs('#riskListBody', listCard);
+      if (!res.ok){ wrap.innerHTML = '<div class="msg err">'+esc(t('err_generic'))+'</div>'; return; }
+      if (!res.items.length){ wrap.innerHTML = '<div class="muted">'+esc(t('risk_noItems'))+'</div>'; return; }
+      wrap.innerHTML = '';
+      var statusClass = { open:'pending', in_progress:'rejected', resolved:'confirmed' };
+      res.items.forEach(function(it){
+        var row = el('<div class="list-item">' +
+          '<div class="top"><div><strong>'+esc(it.title)+'</strong> <span class="badge '+statusClass[it.status]+'">'+esc(t('risk_status_'+it.status))+'</span></div>' +
+            '<div class="muted">'+esc(t(it.type==='risk'?'risk_type_risk':'risk_type_complaint'))+' · '+esc(t('risk_severity_'+it.severity))+'</div></div>' +
+          '<div class="muted">'+esc(it.description||'')+'</div>' +
+          '<div class="muted">'+esc(t('risk_reportedBy'))+': '+esc(userName(it.reportedBy))+' · '+esc((it.createdAt||'').slice(0,16).replace('T',' '))+'</div>' +
+          (it.resolutionNote ? '<div class="muted">📝 '+esc(it.resolutionNote)+'</div>' : '') +
+          '<div class="actions" id="rkActions-'+it.id+'"></div>' +
+        '</div>');
+        if (['admin','finance'].indexOf(state.user.role)>=0 && it.status !== 'resolved'){
+          var actions = qs('#rkActions-'+it.id, row);
+          if (it.status === 'open'){
+            var progressBtn = el('<button class="btn secondary">'+esc(t('risk_status_in_progress'))+'</button>');
+            progressBtn.addEventListener('click', function(){ api('updateRiskItemStatus',{id:it.id, status:'in_progress'}).then(loadRiskList); });
+            actions.appendChild(progressBtn);
+          }
+          var resolveBtn = el('<button class="btn">'+esc(t('risk_status_resolved'))+'</button>');
+          resolveBtn.addEventListener('click', function(){
+            var note = prompt(t('risk_resolutionNote')) || '';
+            api('updateRiskItemStatus',{id:it.id, status:'resolved', resolutionNote:note}).then(loadRiskList);
+          });
+          actions.appendChild(resolveBtn);
+        }
+        wrap.appendChild(row);
+      });
+    });
+  }
+}
+
 // ---------------- admin ----------------
 var adminTab = 'users';
 
@@ -2087,6 +2209,8 @@ var PERM_ROWS = [
   { key:'perm_audit', roles:['admin','finance','accountant','operations_manager'] },
   { key:'perm_resolve', roles:['admin','finance'] },
   { key:'perm_reconcile', roles:['admin','finance'] },
+  { key:'perm_risk_report', roles:['admin','finance','accountant','operations_manager','cluster_manager','store_manager','collector','driver'] },
+  { key:'perm_risk_view', roles:['admin','finance','accountant','operations_manager'] },
   { key:'perm_manage', roles:['admin'] }
 ];
 
@@ -2273,11 +2397,35 @@ function renderAdminConfig(content){
   var cfg = (state.meta && state.meta.config) || {};
   var form = el('<div class="card"><h2>'+esc(t('admin_config'))+'</h2>' +
     '<div class="field"><label>'+esc(t('admin_vatRate'))+'</label><input id="cVat" type="number" step="0.01" value="'+(cfg.vatRate!=null?cfg.vatRate:0.15)+'"></div>' +
+    '<div class="field"><label>'+esc(t('admin_staleThreshold'))+'</label><input id="cStale" type="number" step="1" value="'+(cfg.staleThresholdHours!=null?cfg.staleThresholdHours:24)+'"></div>' +
+    '<div class="field"><label>'+esc(t('admin_secondApprovalThreshold'))+'</label><input id="cSecondApproval" type="number" step="1" value="'+(cfg.secondApprovalThreshold!=null?cfg.secondApprovalThreshold:0)+'"></div>' +
     '<button class="btn" id="cSave">'+esc(t('save'))+'</button><div id="cMsg"></div></div>');
   content.appendChild(form);
   qs('#cSave', form).addEventListener('click', function(){
-    api('adminSetConfig', { data: { vatRate: Number(qs('#cVat',form).value) } }).then(function(res){
+    api('adminSetConfig', { data: {
+      vatRate: Number(qs('#cVat',form).value),
+      staleThresholdHours: Number(qs('#cStale',form).value),
+      secondApprovalThreshold: Number(qs('#cSecondApproval',form).value)
+    } }).then(function(res){
       qs('#cMsg',form).innerHTML = res.ok ? '<div class="msg ok">'+esc(t('ok_saved'))+'</div>' : '<div class="msg err">'+esc(t('err_generic'))+'</div>';
+    });
+  });
+
+  var slaCard = el('<div class="card"><h2>'+esc(t('admin_runStaleCheck'))+'</h2>' +
+    '<div class="row" style="gap:10px;flex-wrap:wrap;">' +
+      '<button class="btn secondary" id="cRunStale">'+esc(t('admin_runStaleCheck'))+'</button>' +
+      '<button class="btn secondary" id="cInstallTrigger">'+esc(t('admin_installStaleTrigger'))+'</button>' +
+    '</div><div id="slaMsg"></div></div>');
+  content.appendChild(slaCard);
+  qs('#cRunStale', slaCard).addEventListener('click', function(){
+    api('runStaleCheck', {}).then(function(res){
+      qs('#slaMsg',slaCard).innerHTML = res.ok ? '<div class="msg ok">'+esc(t('admin_staleCheckResult').replace('{n}',res.escalated))+'</div>' : '<div class="msg err">'+esc(t('err_generic'))+'</div>';
+    });
+  });
+  qs('#cInstallTrigger', slaCard).addEventListener('click', function(){
+    api('adminInstallStaleTrigger', {}).then(function(res){
+      if (!res.ok){ qs('#slaMsg',slaCard).innerHTML = '<div class="msg err">'+esc(t('err_generic'))+'</div>'; return; }
+      qs('#slaMsg',slaCard).innerHTML = '<div class="msg ok">'+esc(t(res.alreadyInstalled ? 'admin_triggerAlready' : 'admin_triggerInstalled'))+'</div>';
     });
   });
 }

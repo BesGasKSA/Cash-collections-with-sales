@@ -364,6 +364,17 @@ function actionConfirmHandoff_(req, user) {
     if (h.breakdown) { h.breakdown = Object.assign({}, h.breakdown, { netCashOwed: received }); }
   }
 
+  // Four-eyes on large amounts — never blocks the chain (the receiver's
+  // confirmation still lands immediately, same non-blocking philosophy as
+  // a shortfall), just flags it for a second admin/finance sign-off and
+  // escalates the same way a shortfall does. Threshold 0 = feature off.
+  var threshold = secondApprovalThreshold_();
+  var needsSecondApproval = threshold > 0 && received >= threshold;
+  if (needsSecondApproval) {
+    h.requiresSecondApproval = true;
+    h.secondApprovalThresholdAtTime = threshold;
+  }
+
   writeRow(SHEETS.HANDOFFS, h);
   logAudit_(
     hasVariance ? (h.toUserId === user.id ? 'confirm_partial' : 'admin_confirm_partial') :
@@ -371,6 +382,31 @@ function actionConfirmHandoff_(req, user) {
     user.id, h.id
   );
   if (hasVariance) escalateShortfall_(h);
+  if (needsSecondApproval) escalateLargeAmount_(h);
+  return { ok: true, handoff: h };
+}
+
+function escalateLargeAmount_(handoff) {
+  var recipients = readSheet(SHEETS.USERS).filter(function (u) { return (u.role === 'admin' || u.role === 'finance') && u.email; });
+  var subject = 'تسليم كبير يحتاج موافقة ثانية / Large handoff needs a second sign-off';
+  var body = 'التسليم رقم ' + handoff.id + ' بمبلغ ' + Number(handoff.amount).toFixed(2) +
+    ' تجاوز الحد المحدد ويحتاج موافقة إدارية/مالية إضافية.\n\n' +
+    'Handoff ' + handoff.id + ' (' + Number(handoff.amount).toFixed(2) + ') exceeded the configured threshold and needs a second admin/finance sign-off.';
+  recipients.forEach(function (u) {
+    try { MailApp.sendEmail(u.email, subject, body); } catch (e) { /* best-effort */ }
+  });
+}
+
+function actionAcknowledgeSecondApproval_(req, user) {
+  requireAdminOrFinance_(user);
+  var h = getById_(SHEETS.HANDOFFS, req.id);
+  if (!h) return { ok: false, error: 'not_found' };
+  if (!h.requiresSecondApproval) return { ok: false, error: 'not_flagged' };
+  if (h.secondApprovedBy) return { ok: false, error: 'already_acknowledged' };
+  h.secondApprovedBy = user.id;
+  h.secondApprovedAt = new Date().toISOString();
+  writeRow(SHEETS.HANDOFFS, h);
+  logAudit_('acknowledge_second_approval', user.id, h.id);
   return { ok: true, handoff: h };
 }
 
@@ -580,6 +616,74 @@ function escalateShortfall_(handoff) {
   Object.keys(recipients).forEach(function (id) {
     try { MailApp.sendEmail(recipients[id].email, subject, body); } catch (e) { /* best-effort */ }
   });
+}
+
+// A handoff sitting 'pending' too long is a real risk (cash held by one
+// person, un-acknowledged) that the receiver alone might not notice or
+// might be sitting on — same recipient set as a shortfall (that cluster's
+// manager + collector, plus every admin/finance account), same
+// best-effort email, never blocks anything.
+function escalateStaleHandoff_(handoff, hoursOld) {
+  var recipients = {};
+  function add(u) { if (u && u.email) recipients[u.id] = u; }
+  add(getById_(SHEETS.USERS, handoff.toUserId));
+  if (handoff.clusterId) {
+    var cluster = getById_(SHEETS.CLUSTERS, handoff.clusterId);
+    if (cluster) {
+      add(getById_(SHEETS.USERS, cluster.clusterManagerUserId));
+      add(getById_(SHEETS.USERS, cluster.collectorUserId));
+    }
+  }
+  readSheet(SHEETS.USERS)
+    .filter(function (u) { return (u.role === 'admin' || u.role === 'finance') && u.email; })
+    .forEach(add);
+
+  var subject = 'تسليم معلّق منذ فترة طويلة / Handoff pending too long';
+  var body = 'التسليم رقم ' + handoff.id + ' بمبلغ ' + Number(handoff.amount).toFixed(2) +
+    ' لا يزال بانتظار التأكيد منذ ' + Math.round(hoursOld) + ' ساعة.\n\n' +
+    'Handoff ' + handoff.id + ' (' + Number(handoff.amount).toFixed(2) + ') has been pending confirmation for ' + Math.round(hoursOld) + ' hours.';
+
+  Object.keys(recipients).forEach(function (id) {
+    try { MailApp.sendEmail(recipients[id].email, subject, body); } catch (e) { /* best-effort */ }
+  });
+}
+
+// Meant to run on a daily time trigger (installed via
+// actionAdminInstallStaleTrigger_) — also callable on demand via
+// actionRunStaleCheck_ for a manual "check now" and for tests. Each stale
+// handoff is escalated once (staleEscalatedAt guards against emailing the
+// same person daily for the same still-pending handoff).
+function checkStaleHandoffs_() {
+  var thresholdMs = staleThresholdHours_() * 3600000;
+  var now = Date.now();
+  var escalated = 0;
+  readSheet(SHEETS.HANDOFFS)
+    .filter(function (h) { return h.status === 'pending' && !h.staleEscalatedAt; })
+    .forEach(function (h) {
+      var ageMs = now - new Date(h.createdAt).getTime();
+      if (ageMs < thresholdMs) return;
+      escalateStaleHandoff_(h, ageMs / 3600000);
+      h.staleEscalatedAt = new Date().toISOString();
+      writeRow(SHEETS.HANDOFFS, h);
+      escalated++;
+    });
+  return escalated;
+}
+
+function actionRunStaleCheck_(req, user) {
+  requireAdminOrFinance_(user);
+  var escalated = checkStaleHandoffs_();
+  logAudit_('run_stale_check', user.id, escalated + ' escalated');
+  return { ok: true, escalated: escalated };
+}
+
+function actionAdminInstallStaleTrigger_(req, user) {
+  requireAdmin_(user);
+  var already = ScriptApp.getProjectTriggers().some(function (t) { return t.getHandlerFunction() === 'checkStaleHandoffs_'; });
+  if (already) return { ok: true, alreadyInstalled: true };
+  ScriptApp.newTrigger('checkStaleHandoffs_').timeBased().everyDays(1).atHour(6).create();
+  logAudit_('admin_install_stale_trigger', user.id, null);
+  return { ok: true, alreadyInstalled: false };
 }
 
 // ---------- Dashboard ----------
