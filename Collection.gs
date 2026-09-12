@@ -386,14 +386,30 @@ function actionConfirmHandoff_(req, user) {
   return { ok: true, handoff: h };
 }
 
+// Same recipient set as escalateShortfall_/escalateStaleHandoff_ — the
+// cluster's manager and collector are exactly the people who need to know a
+// large amount just moved through their cluster, not just admin/finance.
 function escalateLargeAmount_(handoff) {
-  var recipients = readSheet(SHEETS.USERS).filter(function (u) { return (u.role === 'admin' || u.role === 'finance') && u.email; });
+  var recipients = {};
+  function add(u) { if (u && u.email) recipients[u.id] = u; }
+
+  if (handoff.clusterId) {
+    var cluster = getById_(SHEETS.CLUSTERS, handoff.clusterId);
+    if (cluster) {
+      add(getById_(SHEETS.USERS, cluster.clusterManagerUserId));
+      add(getById_(SHEETS.USERS, cluster.collectorUserId));
+    }
+  }
+  readSheet(SHEETS.USERS)
+    .filter(function (u) { return (u.role === 'admin' || u.role === 'finance') && u.email; })
+    .forEach(add);
+
   var subject = 'تسليم كبير يحتاج موافقة ثانية / Large handoff needs a second sign-off';
   var body = 'التسليم رقم ' + handoff.id + ' بمبلغ ' + Number(handoff.amount).toFixed(2) +
     ' تجاوز الحد المحدد ويحتاج موافقة إدارية/مالية إضافية.\n\n' +
     'Handoff ' + handoff.id + ' (' + Number(handoff.amount).toFixed(2) + ') exceeded the configured threshold and needs a second admin/finance sign-off.';
-  recipients.forEach(function (u) {
-    try { MailApp.sendEmail(u.email, subject, body); } catch (e) { /* best-effort */ }
+  Object.keys(recipients).forEach(function (id) {
+    try { MailApp.sendEmail(recipients[id].email, subject, body); } catch (e) { /* best-effort */ }
   });
 }
 
@@ -403,6 +419,14 @@ function actionAcknowledgeSecondApproval_(req, user) {
   if (!h) return { ok: false, error: 'not_found' };
   if (!h.requiresSecondApproval) return { ok: false, error: 'not_flagged' };
   if (h.secondApprovedBy) return { ok: false, error: 'already_acknowledged' };
+  // Four eyes means two different people — nothing upstream of this stops an
+  // admin/finance account from also being the assigned collector/cluster
+  // manager who confirmed the handoff (validateEntity_ only checks that the
+  // two chain roles differ from each other, not that either differs from
+  // every admin/finance account), so the confirmer must be blocked here
+  // explicitly, same reasoning as the fromUserId/toUserId guard on
+  // actionResolveDispute_.
+  if (h.confirmedBy === user.id) return { ok: false, error: 'conflict_of_interest' };
   h.secondApprovedBy = user.id;
   h.secondApprovedAt = new Date().toISOString();
   writeRow(SHEETS.HANDOFFS, h);
