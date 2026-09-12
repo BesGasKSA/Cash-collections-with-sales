@@ -286,7 +286,7 @@ check(rowB && rowB.cashAmount >= 200, 'product B aggregates its cash entry');
 
 var sumCashByProduct = fullReport.byProduct.reduce(function (s, r) { return s + r.cashAmount; }, 0);
 var sumPosByProduct = fullReport.byProduct.reduce(function (s, r) { return s + r.posAmount; }, 0);
-close(sumCashByProduct, fullReport.totals.storeCash + fullReport.totals.carCash, 'byProduct cash amounts reconcile with the report totals (store+car)');
+close(sumCashByProduct, fullReport.totals.storeCash + fullReport.totals.carCash + fullReport.totals.posCash, 'byProduct cash amounts reconcile with the report totals (store+car+pos)');
 close(sumPosByProduct, fullReport.totals.posSales, 'byProduct POS amounts reconcile with the report totals');
 
 var blockedDelete = call({ action: 'adminDeleteEntity', token: adminTok, kind: 'product', id: prodA.id });
@@ -342,6 +342,20 @@ var goodsProduct = call({ action: 'adminSaveEntity', token: adminTok, kind: 'pro
 check(goodsProduct.ok && goodsProduct.entity.type === 'goods', 'product saved with type=goods');
 var servicesProduct = call({ action: 'adminSaveEntity', token: adminTok, kind: 'product', data: { name: 'Installation Service', type: 'services' } });
 check(servicesProduct.ok && servicesProduct.entity.type === 'services', 'product saved with type=services');
+
+console.log('--- POS machines: cash sales and delivery fee count toward net cash owed, same as a car ---');
+var posEntry = call({
+  action: 'createDailyEntry', token: aliTok, date: '2026-09-13',
+  sourceType: 'pos', sourceId: pos.entity.id, cashSales: 400, deliveryFeeBankAmount: 100, posSales: 250
+});
+check(posEntry.ok, 'store manager records a POS entry with cash + delivery fee + card sales together');
+
+var posReport = call({ action: 'getSalesReport', token: adminTok, dateFrom: '2026-09-13', dateTo: '2026-09-13' });
+close(posReport.totals.posCash, 400, 'POS cash sales are tracked separately from card/bank posSales');
+close(posReport.totals.posSales, 250, 'POS card/bank sales still tracked as before, no cash risk');
+var posVat = (100 / 1.15) * 0.15;
+close(posReport.totals.deliveryFee, 100, 'POS delivery fee counted in the total delivery fee, same as a car');
+close(posReport.totals.netCashOwed, 400 - 100 + posVat, 'POS cash + its own delivery-fee deduction + VAT clawback feed net cash owed exactly like a car');
 
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);

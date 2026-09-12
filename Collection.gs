@@ -176,10 +176,13 @@ function unconsumedEntriesForLocation_(locationId) {
   return readSheet(SHEETS.ENTRIES).filter(function (e) { return e.locationId === locationId && !e.consumedBy; });
 }
 
-// mirrors the xlsx formula exactly:
-// netCashOwed = branchCash + carCash - deliveryFeeBankAmount + vatOnDelivery
+// mirrors the xlsx formula, extended to POS: a POS machine can also take cash
+// (not just card) and can also carry its own delivery fee paid to the bank —
+// both are real cash risk / real deductions exactly like a car's, so they
+// feed the same net-cash formula. posSales stays card/bank-only, no cash risk.
+// netCashOwed = branchCash + carCash + posCash - (carDeliveryFee + posDeliveryFee) + vatOnDelivery
 function computeNet_(entries) {
-  var storeCash = 0, carCash = 0, deliveryFee = 0, posSales = 0;
+  var storeCash = 0, carCash = 0, posCash = 0, deliveryFee = 0, posSales = 0;
   entries.forEach(function (e) {
     if (e.sourceType === 'store') {
       storeCash += Number(e.cashSales || 0);
@@ -187,14 +190,16 @@ function computeNet_(entries) {
       carCash += Number(e.cashSales || 0);
       deliveryFee += Number(e.deliveryFeeBankAmount || 0);
     } else if (e.sourceType === 'pos') {
+      posCash += Number(e.cashSales || 0);
+      deliveryFee += Number(e.deliveryFeeBankAmount || 0);
       posSales += Number(e.posSales || 0);
     }
   });
   var vat = vatRate_();
   var vatOnDelivery = deliveryFee > 0 ? (deliveryFee / (1 + vat)) * vat : 0;
-  var netCashOwed = storeCash + carCash - deliveryFee + vatOnDelivery;
+  var netCashOwed = storeCash + carCash + posCash - deliveryFee + vatOnDelivery;
   return {
-    storeCash: storeCash, carCash: carCash, deliveryFee: deliveryFee,
+    storeCash: storeCash, carCash: carCash, posCash: posCash, deliveryFee: deliveryFee,
     posSales: posSales, vatOnDelivery: vatOnDelivery, netCashOwed: netCashOwed
   };
 }
@@ -206,11 +211,12 @@ function computeNet_(entries) {
 // clawback). Without this, receivers only ever saw one flat total with no
 // way to see what it was made of.
 function sumBreakdowns_(breakdowns) {
-  var out = { storeCash: 0, carCash: 0, deliveryFee: 0, posSales: 0, vatOnDelivery: 0, netCashOwed: 0 };
+  var out = { storeCash: 0, carCash: 0, posCash: 0, deliveryFee: 0, posSales: 0, vatOnDelivery: 0, netCashOwed: 0 };
   breakdowns.forEach(function (b) {
     if (!b) return;
     out.storeCash += Number(b.storeCash || 0);
     out.carCash += Number(b.carCash || 0);
+    out.posCash += Number(b.posCash || 0);
     out.deliveryFee += Number(b.deliveryFee || 0);
     out.posSales += Number(b.posSales || 0);
     out.vatOnDelivery += Number(b.vatOnDelivery || 0);
@@ -653,8 +659,10 @@ function actionSalesReport_(req, user) {
     var key = e.productId || '__unspecified__';
     if (!byProductMap[key]) byProductMap[key] = { productId: e.productId || null, cashAmount: 0, posAmount: 0, qty: 0 };
     var bucket = byProductMap[key];
+    // a POS entry can carry both a cash portion and a card/bank portion now,
+    // so both are counted — not either/or like it used to be.
     if (e.sourceType === 'pos') bucket.posAmount += Number(e.posSales || 0);
-    else bucket.cashAmount += Number(e.cashSales || 0);
+    bucket.cashAmount += Number(e.cashSales || 0);
     bucket.qty += 1;
   });
   var productRows = Object.keys(byProductMap).map(function (key) {

@@ -290,7 +290,7 @@ var L = {
     report_title:'تقرير المبيعات', report_from:'من تاريخ', report_to:'إلى تاريخ', report_city:'المدينة', report_run:'عرض التقرير',
     report_location:'الموقع', report_allLocations:'كل المواقع', report_allTypes:'كل الأنواع', report_allSources:'الكل',
     report_zone:'المنطقة', report_allZones:'كل المناطق',
-    report_storeCash:'نقدية الفرع', report_carCash:'نقدية السيارات', report_delivery:'رسوم التوصيل', report_vat:'ضريبة القيمة المضافة',
+    report_storeCash:'نقدية الفرع', report_carCash:'نقدية السيارات', report_posCash:'نقدية أجهزة نقاط البيع', report_delivery:'رسوم التوصيل', report_vat:'ضريبة القيمة المضافة',
     report_net:'صافي المستحق', report_outstanding:'غير محصّل بعد', report_pos:'مبيعات نقاط البيع', report_byLocation:'حسب الموقع',
     report_byProduct:'حسب المنتج', report_product:'المنتج', report_cashChannel:'نقدي', report_posChannel:'نقاط بيع',
     report_total:'الإجمالي', report_trend:'اتجاه المبيعات اليومي', report_unspecified:'غير محدد', report_sortHint:'اضغط على العنوان للترتيب',
@@ -364,7 +364,7 @@ var L = {
     report_title:'Sales Report', report_from:'From date', report_to:'To date', report_city:'City', report_run:'Run report',
     report_location:'Location', report_allLocations:'All locations', report_allTypes:'All types', report_allSources:'All',
     report_zone:'Zone', report_allZones:'All zones',
-    report_storeCash:'Branch cash', report_carCash:'Car cash', report_delivery:'Delivery fees', report_vat:'VAT',
+    report_storeCash:'Branch cash', report_carCash:'Car cash', report_posCash:'POS machine cash', report_delivery:'Delivery fees', report_vat:'VAT',
     report_net:'Net owed', report_outstanding:'Still outstanding', report_pos:'POS sales', report_byLocation:'By location',
     report_byProduct:'By product', report_product:'Product', report_cashChannel:'Cash', report_posChannel:'POS',
     report_total:'Total', report_trend:'Daily sales trend', report_unspecified:'Unspecified', report_sortHint:'Click a header to sort',
@@ -438,7 +438,7 @@ var L = {
     report_title:'سیلز رپورٹ', report_from:'تاریخ سے', report_to:'تاریخ تک', report_city:'شہر', report_run:'رپورٹ دیکھیں',
     report_location:'مقام', report_allLocations:'تمام مقامات', report_allTypes:'تمام اقسام', report_allSources:'تمام',
     report_zone:'زون', report_allZones:'تمام زونز',
-    report_storeCash:'برانچ نقدی', report_carCash:'گاڑی نقدی', report_delivery:'ڈلیوری فیس', report_vat:'ویٹ',
+    report_storeCash:'برانچ نقدی', report_carCash:'گاڑی نقدی', report_posCash:'POS مشین نقدی', report_delivery:'ڈلیوری فیس', report_vat:'ویٹ',
     report_net:'خالص واجب الادا', report_outstanding:'ابھی تک وصول نہیں ہوا', report_pos:'POS فروخت', report_byLocation:'مقام کے مطابق',
     report_byProduct:'پروڈکٹ کے مطابق', report_product:'پروڈکٹ', report_cashChannel:'نقد', report_posChannel:'POS',
     report_total:'کل', report_trend:'روزانہ سیلز رجحان', report_unspecified:'غیر متعین', report_sortHint:'ترتیب کے لیے ہیڈر دبائیں',
@@ -998,7 +998,10 @@ function renderDashboard(body){
 
     var sourceTotals = { store:0, car:0, pos:0 };
     entries.forEach(function(e){
-      if (e.sourceType === 'pos') sourceTotals.pos += Number(e.posSales||0);
+      // "by source type" is a gross-sales-by-channel view, so a POS
+      // machine's cash and card portions are combined here — the cash-risk
+      // vs. no-risk split is what computeNet_'s breakdown is for, not this chart.
+      if (e.sourceType === 'pos') sourceTotals.pos += Number(e.cashSales||0) + Number(e.posSales||0);
       else if (e.sourceType === 'store') sourceTotals.store += Number(e.cashSales||0);
       else if (e.sourceType === 'car') sourceTotals.car += Number(e.cashSales||0);
     });
@@ -1237,13 +1240,17 @@ function renderEntries(body){
     qs('#eDelivery', form).value = '0';
     qs('#ePos', form).value = '0';
 
-    qs('#eCashWrap', form).style.display = (type==='pos') ? 'none' : '';
-    qs('#eDeliveryWrap', form).style.display = (type==='car') ? '' : 'none';
+    // A POS machine can take cash too (not just card), and can carry its own
+    // bank-paid delivery fee just like a car — both fields apply to car AND
+    // pos now, only a plain store branch has neither.
+    var showDelivery = (type==='car' || type==='pos');
+    qs('#eCashWrap', form).style.display = '';
+    qs('#eDeliveryWrap', form).style.display = showDelivery ? '' : 'none';
     qs('#ePosWrap', form).style.display = (type==='pos') ? '' : 'none';
-    // this field only ever applies to a car entry — say so right where
+    // this field only ever applies to a car/pos entry — say so right where
     // people look for it when it's (correctly) not on screen.
-    qs('#eDeliveryHint', form).textContent = (type==='car') ? '' : t('entry_delivery') + ' — ' + t('entry_source_car');
-    qs('#eDeliveryHint', form).style.display = (type==='car') ? 'none' : 'block';
+    qs('#eDeliveryHint', form).textContent = showDelivery ? '' : t('entry_delivery') + ' — ' + t('entry_source_car') + ' / ' + t('entry_source_pos');
+    qs('#eDeliveryHint', form).style.display = showDelivery ? 'none' : 'block';
   }
   typeSel.addEventListener('change', populateSourceOptions);
   populateSourceOptions();
@@ -1385,6 +1392,7 @@ function breakdownGrid(b){
   var items = [
     ['report_storeCash', b.storeCash],
     ['report_carCash', b.carCash],
+    ['report_posCash', b.posCash],
     ['report_delivery', b.deliveryFee],
     ['report_vat', b.vatOnDelivery],
     ['report_net', b.netCashOwed]
