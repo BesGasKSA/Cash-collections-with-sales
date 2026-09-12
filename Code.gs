@@ -27,7 +27,10 @@ var SHEETS = {
   // Imported bank-statement rows for reconciliation (Reconciliation.gs) —
   // closes the loop between "the collector said they deposited it" and
   // "the bank actually shows it arrived".
-  BANK_LINES: 'bank_statement_lines'
+  BANK_LINES: 'bank_statement_lines',
+  // Operational risks and complaints (Risk.gs) — anyone can submit, only
+  // company-wide roles can browse/resolve. See CLAUDE.md.
+  RISK_ITEMS: 'risk_items'
 };
 
 var IDLE_MS = 12 * 3600 * 1000;      // 12h idle session expiry
@@ -180,6 +183,21 @@ function config_() {
 function vatRate_() {
   var c = config_();
   return typeof c.vatRate === 'number' ? c.vatRate : 0.15;
+}
+
+// Hours a handoff can sit 'pending' before checkStaleHandoffs_ escalates it.
+function staleThresholdHours_() {
+  var c = config_();
+  return typeof c.staleThresholdHours === 'number' ? c.staleThresholdHours : 24;
+}
+
+// SAR amount above which a confirmed handoff also needs a second
+// admin/finance sign-off (see actionConfirmHandoff_ / escalateLargeAmount_
+// in Collection.gs). 0 = disabled — a live system shouldn't suddenly start
+// flagging existing large handoffs just because this code shipped.
+function secondApprovalThreshold_() {
+  var c = config_();
+  return typeof c.secondApprovalThreshold === 'number' ? c.secondApprovalThreshold : 0;
 }
 
 // ---------- Crypto / auth ----------
@@ -376,6 +394,17 @@ function route_(req) {
     getReconciliation: function () { return actionReconciliationSummary_(req, user); },
     manualMatchReconciliation: function () { return actionManualMatchReconciliation_(req, user); },
     unmatchReconciliation: function () { return actionUnmatchReconciliation_(req, user); },
+
+    // SLA escalation on stale (long-pending) handoffs, and a second
+    // sign-off flag on large confirmed amounts (see Collection.gs)
+    runStaleCheck: function () { return actionRunStaleCheck_(req, user); },
+    adminInstallStaleTrigger: function () { return actionAdminInstallStaleTrigger_(req, user); },
+    acknowledgeSecondApproval: function () { return actionAcknowledgeSecondApproval_(req, user); },
+
+    // operational risk / complaint register (see Risk.gs)
+    createRiskItem: function () { return actionCreateRiskItem_(req, user); },
+    listRiskItems: function () { return actionListRiskItems_(req, user); },
+    updateRiskItemStatus: function () { return actionUpdateRiskItemStatus_(req, user); },
 
     // admin — users (special: password/invite logic)
     adminCreateUser: function () { return actionAdminCreateUser_(req, user); },

@@ -16,8 +16,11 @@ reliable) `clasp`-based redeploy procedure.
 BestGas-Cash-Collection/
 ├── index.html      the whole client — plain JS, ar/en/ur, RTL/LTR by language
 ├── Code.gs          sheet-as-db helpers, auth, doGet/doPost/route_
-├── Collection.gs     entries, the handoff/confirm/dispute/deposit chain, reports
+├── Collection.gs     entries, the handoff/confirm/dispute/deposit chain, reports,
+│                      SLA stale-handoff escalation, large-amount second approval
 ├── Admin.gs          user management + full CRUD over the entity hierarchy
+├── Reconciliation.gs bank statement import + auto/manual matching
+├── Risk.gs            operational risk / complaint register
 ├── tests/
 │   ├── stub-harness.js   rebuilds SpreadsheetApp/PropertiesService/etc. under
 │   │                      Node's vm module so the real .gs files run unmodified
@@ -177,13 +180,70 @@ both real flags worth Finance's attention — the former means "we said we
 deposited it but the bank doesn't show it (yet, or ever)", the latter
 means "money arrived at the bank with no declared deposit behind it".
 
+## SLA timeout escalation (stale handoffs)
+
+A `pending` handoff that nobody confirms is invisible risk — cash sitting
+declared-but-unconfirmed with no one chasing it. `staleThresholdHours_()`
+(`Code.gs`, default 24, editable by admin via `adminSetConfig` →
+`config.staleThresholdHours`) defines "too long." `checkStaleHandoffs_`
+(`Collection.gs`) scans all `pending` handoffs, and for any older than the
+threshold calls `escalateStaleHandoff_` — same non-blocking philosophy as
+the shortfall/large-amount escalations below: **the handoff is not touched,
+still fully confirmable**, it's purely a notification. The email goes to the
+intended receiver plus the relevant cluster manager/collector plus every
+admin/finance account, same "never invisible to the rest of the chain"
+pattern as `escalateShortfall_`.
+
+Escalates **once per handoff** — `h.staleEscalatedAt` is set the first time
+and checked before re-escalating, so a handoff that stays stale across
+multiple trigger runs doesn't spam the same people daily. `actionRunStaleCheck_`
+(admin/finance only) runs the scan on demand from Admin → Settings; for it to
+run automatically, an admin installs a daily time-based trigger via
+`actionAdminInstallStaleTrigger_` → `adminInstallStaleTrigger`, which is
+idempotent (checks `ScriptApp.getProjectTriggers()` for an existing
+`checkStaleHandoffs_` trigger before creating a second one).
+
+## Large-amount second approval (non-blocking four-eyes)
+
+`secondApprovalThreshold_()` (`Code.gs`, default 0 = off, editable via the
+same `adminSetConfig` path as the stale threshold) flags any handoff whose
+*received* amount is at or above it. Same non-blocking pattern as everywhere
+else in this chain: crossing the threshold never delays the handoff —
+`actionConfirmHandoff_` still confirms immediately, it just also sets
+`h.requiresSecondApproval = true` and fires `escalateLargeAmount_` (same
+recipient set as the stale/shortfall escalations). An admin/finance account
+later calls `actionAcknowledgeSecondApproval_` (`acknowledgeSecondApproval`)
+to record `secondApprovedBy`/`secondApprovedAt` — a paper-trail sign-off,
+not a gate; acknowledging twice is rejected (`already_acknowledged`) so the
+record can't be silently overwritten. The client (`handoffItem` in
+`index.html`) shows a banner (needs-second-approval vs. already-acknowledged)
+and, for admin/finance only, an "Acknowledge" button.
+
+## Risk / complaints register (`Risk.gs`)
+
+A general-purpose operational log, deliberately outside the cash-handoff
+chain — for anything worth flagging that isn't a specific handoff dispute
+(a safety concern, a recurring customer complaint, anything an employee
+wants on record). Anyone authenticated can submit one
+(`actionCreateRiskItem_` — reporting a problem should never itself require
+permission); only company-wide roles can browse the register
+(`requireCompanyWide_`, visibility only, same split as everywhere else in
+this app); only admin/finance can change its status
+(`requireAdminOrFinance_` — authority, not visibility). A `high`-severity
+item triggers an immediate email to every admin/finance account
+(`notifyRiskItem_`) — `low`/`medium` ones just sit in the list for the next
+review, same "only interrupt someone for the things that actually need
+interrupting" judgment used for the stale/large-amount escalations above.
+
 ## Testing
 
 The `.gs` files are pure JS with Apps Script globals — `tests/stub-harness.js`
 rebuilds those globals (`SpreadsheetApp`, `PropertiesService`, `CacheService`,
 `LockService`, `Utilities`, `MailApp`, `DriveApp`, `ContentService`) as
 in-memory fakes under Node's `vm` module, then loads the real `Code.gs` +
-`Admin.gs` + `Collection.gs` unmodified into that context. `tests/run.js`
+`Admin.gs` + `Collection.gs` + `Reconciliation.gs` + `Risk.gs` unmodified
+into that context (plus a mock `ScriptApp` for the stale-handoff trigger).
+`tests/run.js`
 drives `route_()` exactly as `doPost` would — same file the harness in
 `rental-contracts`/`7777` uses this approach for the same reason: it proves
 the actual logic, not a reimplementation of it.
@@ -287,11 +347,11 @@ back into the pulled, correctly-named files:
 ```bash
 mkdir /tmp/bgc-push && cd /tmp/bgc-push
 cat > .clasp.json <<'JSON'
-{"scriptId":"1IvXuVjao9KsxrXDgT8Z51QOpgTnUSWSNVWT08G5KFMMXLwz9_9IQEukD","rootDir":".","filePushOrder":["الرمز.js","Admin.js","Collection.js"]}
+{"scriptId":"1IvXuVjao9KsxrXDgT8Z51QOpgTnUSWSNVWT08G5KFMMXLwz9_9IQEukD","rootDir":".","filePushOrder":["الرمز.js","Admin.js","Collection.js","Reconciliation.js","Risk.js"]}
 JSON
-clasp pull                     # fetches الرمز.js / Admin.js / Collection.js / appsscript.json
-# copy the updated content from this repo's Code.gs/Admin.gs/Collection.gs
-# into the correspondingly-named pulled files, then:
+clasp pull                     # fetches الرمز.js / Admin.js / Collection.js / Reconciliation.js / Risk.js / appsscript.json
+# copy the updated content from this repo's Code.gs/Admin.gs/Collection.gs/
+# Reconciliation.gs/Risk.gs into the correspondingly-named pulled files, then:
 clasp push -f
 clasp deploy -i AKfycbxgS7bhn4Nn0szYnKVRb6rjGEKumqCJkQ8jY2uNjDrf2wP2YQYgTvltLrwsbKviD7I -d "what changed"
 ```
@@ -430,7 +490,5 @@ denial message. Don't retry the same edit hoping it clears.
 
 ## Deliberately out of scope for this build
 
-- No client-side obfuscation / white-labeling of the Google backend (unlike
-  `7777`, which hides that it's Apps Script — this system has no reason to)
 - No PWA/offline install or custom subdomain
 - No free-form peer-to-peer transfers outside the defined chain

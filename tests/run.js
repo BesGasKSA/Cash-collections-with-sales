@@ -446,5 +446,81 @@ check(cylEntryNoProduct.ok, 'an entry without a product can still be saved');
 var cylReport2 = call({ action: 'getSalesReport', token: adminTok, locationId: cylLocation.id });
 check(cylReport2.cylinderByLocation.length === 1, 'an entry with no productId is excluded from cylinderByLocation — cylinder tracking is meaningless without knowing which cylinder type');
 
+console.log('--- SLA escalation: a handoff left pending too long gets flagged, once ---');
+var slaLocation = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: 'Riyadh', name: 'SLA Test', clusterId: cluster.entity.id } }).entity;
+var slaStore = call({ action: 'adminSaveEntity', token: adminTok, kind: 'store', data: { locationId: slaLocation.id, name: 'SLA Store' } }).entity;
+call({ action: 'createDailyEntry', token: adminTok, date: '2026-09-13', sourceType: 'store', sourceId: slaStore.id, cashSales: 200 });
+var slaHandoff = call({ action: 'createHandoff', token: adminTok, kind: 'location_to_cluster', locationId: slaLocation.id }).handoff;
+// backdate it directly (createHandoff always stamps "now") so the
+// threshold check has something real to trip on, without waiting hours
+var slaRow = ctx.getById_(SHEETS.HANDOFFS, slaHandoff.id);
+slaRow.createdAt = new Date(Date.now() - 48 * 3600000).toISOString();
+ctx.writeRow(SHEETS.HANDOFFS, slaRow);
+
+var mailBefore = ctx._debug.mailLog.length;
+var runRes = call({ action: 'runStaleCheck', token: adminTok });
+check(runRes.ok && runRes.escalated >= 1, 'stale check escalates the 48h-old pending handoff (default threshold 24h)');
+check(ctx._debug.mailLog.length > mailBefore, 'an escalation email actually went out');
+var slaRowAfter = ctx.getById_(SHEETS.HANDOFFS, slaHandoff.id);
+check(!!slaRowAfter.staleEscalatedAt, 'the handoff is marked so it is not re-escalated every run');
+
+var mailBefore2 = ctx._debug.mailLog.length;
+var runRes2 = call({ action: 'runStaleCheck', token: adminTok });
+check(runRes2.ok && runRes2.escalated === 0, 'running the check again finds nothing new to escalate (already flagged)');
+check(ctx._debug.mailLog.length === mailBefore2, 'no duplicate email on the second run');
+
+var storeManagerStaleCheck = call({ action: 'runStaleCheck', token: aliTok });
+check(!storeManagerStaleCheck.ok && storeManagerStaleCheck.error === 'forbidden', 'a store manager cannot trigger the stale check');
+
+var installRes = call({ action: 'adminInstallStaleTrigger', token: adminTok });
+check(installRes.ok && installRes.alreadyInstalled === false, 'admin installs the daily trigger');
+var installAgain = call({ action: 'adminInstallStaleTrigger', token: adminTok });
+check(installAgain.ok && installAgain.alreadyInstalled === true, 'installing again is a safe no-op, not a duplicate trigger');
+
+console.log('--- large-amount second approval: non-blocking four-eyes on big handoffs ---');
+call({ action: 'adminSetConfig', token: adminTok, data: { secondApprovalThreshold: 5000 } });
+var bigLocation = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: 'Riyadh', name: 'Big Amount Test', clusterId: cluster.entity.id } }).entity;
+var bigStore = call({ action: 'adminSaveEntity', token: adminTok, kind: 'store', data: { locationId: bigLocation.id, name: 'Big Store' } }).entity;
+call({ action: 'createDailyEntry', token: adminTok, date: '2026-09-13', sourceType: 'store', sourceId: bigStore.id, cashSales: 6000 });
+var bigHandoff = call({ action: 'createHandoff', token: adminTok, kind: 'location_to_cluster', locationId: bigLocation.id }).handoff;
+var mailBefore3 = ctx._debug.mailLog.length;
+var bigConfirm = call({ action: 'confirmHandoff', token: saraTok, id: bigHandoff.id });
+check(bigConfirm.ok && bigConfirm.handoff.status === 'confirmed', 'confirmation still lands immediately — the flag never blocks the chain');
+check(bigConfirm.handoff.requiresSecondApproval === true, 'a 6,000 handoff against a 5,000 threshold is flagged for a second sign-off');
+check(ctx._debug.mailLog.length > mailBefore3, 'admin/finance got emailed about the large amount');
+
+var smallLocation = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: 'Riyadh', name: 'Small Amount Test', clusterId: cluster.entity.id } }).entity;
+var smallStore = call({ action: 'adminSaveEntity', token: adminTok, kind: 'store', data: { locationId: smallLocation.id, name: 'Small Store' } }).entity;
+call({ action: 'createDailyEntry', token: adminTok, date: '2026-09-13', sourceType: 'store', sourceId: smallStore.id, cashSales: 300 });
+var smallHandoff = call({ action: 'createHandoff', token: adminTok, kind: 'location_to_cluster', locationId: smallLocation.id }).handoff;
+var smallConfirm = call({ action: 'confirmHandoff', token: saraTok, id: smallHandoff.id });
+check(!smallConfirm.handoff.requiresSecondApproval, 'a 300 handoff stays under the threshold — not flagged');
+
+var ackByStoreManager = call({ action: 'acknowledgeSecondApproval', token: aliTok, id: bigHandoff.id });
+check(!ackByStoreManager.ok && ackByStoreManager.error === 'forbidden', 'a store manager cannot acknowledge a second approval');
+var ack = call({ action: 'acknowledgeSecondApproval', token: adminTok, id: bigHandoff.id });
+check(ack.ok && !!ack.handoff.secondApprovedBy, 'admin acknowledges the large handoff');
+var ackAgain = call({ action: 'acknowledgeSecondApproval', token: adminTok, id: bigHandoff.id });
+check(!ackAgain.ok && ackAgain.error === 'already_acknowledged', 'acknowledging twice is rejected, not silently repeated');
+
+console.log('--- risk / complaint register ---');
+var riskItem = call({ action: 'createRiskItem', token: aliTok, type: 'risk', title: 'Leaking valve reported', description: 'Driver flagged a valve leak on Truck-1', severity: 'high' });
+check(riskItem.ok, 'any authenticated user (a store manager here) can report a risk');
+var complaintItem = call({ action: 'createRiskItem', token: hassanTok, type: 'complaint', title: 'Customer complaint', description: 'Late delivery', severity: 'low' });
+check(complaintItem.ok, 'a driver can report a complaint too');
+var badType = call({ action: 'createRiskItem', token: adminTok, type: 'not-a-type', title: 'x' });
+check(!badType.ok && badType.error === 'invalid_type', 'an invalid type is rejected');
+
+var listByStoreManager = call({ action: 'listRiskItems', token: aliTok });
+check(!listByStoreManager.ok && listByStoreManager.error === 'forbidden', 'a store manager can report but not browse the register (company-wide roles only)');
+var listByAdmin = call({ action: 'listRiskItems', token: adminTok });
+check(listByAdmin.ok && listByAdmin.items.some(function (i) { return i.id === riskItem.item.id; }), 'admin sees the full register, including the store manager\'s report');
+check(ctx._debug.mailLog.some(function (m) { return m.subject.indexOf('High-severity risk') >= 0; }), 'the high-severity risk triggered an immediate email; the low-severity complaint did not need to');
+
+var resolveByStoreManager = call({ action: 'updateRiskItemStatus', token: aliTok, id: riskItem.item.id, status: 'resolved' });
+check(!resolveByStoreManager.ok && resolveByStoreManager.error === 'forbidden', 'only admin/finance can change a risk item\'s status');
+var resolve = call({ action: 'updateRiskItemStatus', token: adminTok, id: riskItem.item.id, status: 'resolved', resolutionNote: 'Valve replaced' });
+check(resolve.ok && resolve.item.status === 'resolved' && !!resolve.item.resolvedAt, 'admin resolves the risk item with a note');
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);

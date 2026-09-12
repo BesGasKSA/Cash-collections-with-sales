@@ -159,14 +159,33 @@ function buildContext() {
     }
   };
 
+  var triggers = [];
+  var ScriptApp = {
+    getProjectTriggers: function () { return triggers.slice(); },
+    newTrigger: function (handlerFn) {
+      var built = { handlerFunction: handlerFn, timeBased: false };
+      var builder = {
+        timeBased: function () { built.timeBased = true; return builder; },
+        everyDays: function (n) { built.everyDays = n; return builder; },
+        atHour: function (h) { built.atHour = h; return builder; },
+        create: function () {
+          var trigger = { getHandlerFunction: function () { return handlerFn; } };
+          triggers.push(trigger);
+          return trigger;
+        }
+      };
+      return builder;
+    }
+  };
+
   var sandbox = {
     SpreadsheetApp: SpreadsheetApp, PropertiesService: PropertiesService, CacheService: CacheService,
     LockService: LockService, Utilities: Utilities, MailApp: MailApp, DriveApp: DriveApp,
-    ContentService: ContentService, Logger: { log: function () {} },
+    ContentService: ContentService, ScriptApp: ScriptApp, Logger: { log: function () {} },
     console: console
   };
 
-  var files = ['Code.gs', 'Admin.gs', 'Collection.gs', 'Reconciliation.gs'];
+  var files = ['Code.gs', 'Admin.gs', 'Collection.gs', 'Reconciliation.gs', 'Risk.gs'];
   var src = files.map(function (f) { return fs.readFileSync(path.join(__dirname, '..', f), 'utf8'); }).join('\n');
   var context = vm.createContext(sandbox);
   vm.runInContext(src, context, { filename: 'apps-script-bundle.js' });
