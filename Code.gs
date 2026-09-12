@@ -23,7 +23,11 @@ var SHEETS = {
   ENTRIES: 'daily_entries',
   HANDOFFS: 'handoffs',
   CONFIG: 'config',
-  AUDIT: 'audit'
+  AUDIT: 'audit',
+  // Imported bank-statement rows for reconciliation (Reconciliation.gs) —
+  // closes the loop between "the collector said they deposited it" and
+  // "the bank actually shows it arrived".
+  BANK_LINES: 'bank_statement_lines'
 };
 
 var IDLE_MS = 12 * 3600 * 1000;      // 12h idle session expiry
@@ -365,6 +369,13 @@ function route_(req) {
     getSalesReport: function () { return actionSalesReport_(req, user); },
     listAudit: function () { return actionListAudit_(req, user); },
     getFile: function () { return actionGetFile_(req, user); },
+
+    // bank reconciliation — admin/finance only, same authority split as
+    // dispute resolution (see Reconciliation.gs)
+    importBankStatement: function () { return actionImportBankStatement_(req, user); },
+    getReconciliation: function () { return actionReconciliationSummary_(req, user); },
+    manualMatchReconciliation: function () { return actionManualMatchReconciliation_(req, user); },
+    unmatchReconciliation: function () { return actionUnmatchReconciliation_(req, user); },
 
     // admin — users (special: password/invite logic)
     adminCreateUser: function () { return actionAdminCreateUser_(req, user); },

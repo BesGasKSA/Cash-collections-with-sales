@@ -130,6 +130,32 @@ attention right now" — their own pending handoffs, plus open disputes for
 admin/finance — refreshed after login and whenever Home or Handoffs loads
 fresh data; clicking it jumps to the Handoffs screen.
 
+## Bank reconciliation (`Reconciliation.gs`)
+
+Closes the gap the rest of the chain can't: `recordDeposit` only ever
+records what the collector *says* they deposited (a self-reported
+`bankReference`), with nothing checking it against what the bank actually
+received. Admin/Finance (`requireReconciliationAccess_` — same authority
+split as dispute resolution, not just company-wide visibility) upload a
+bank statement as CSV (`date,amount,reference` columns) via the
+"Bank Reconciliation" screen; each row becomes a `bank_statement_lines`
+row, and `autoMatchBankLines_` runs immediately after import.
+
+Auto-match rule, deliberately conservative: a bank line links to a
+`deposit`-kind handoff only when the amount matches to the cent **and**
+exactly one unmatched deposit falls within `RECON_DATE_WINDOW_DAYS` (3)
+of it. More than one candidate at that amount/window is left unmatched
+for a human to resolve manually (`manualMatchReconciliation`) rather than
+guessed at — silently picking the wrong one of two same-amount deposits
+would be worse than leaving both flagged. `unmatchReconciliation` undoes
+a link without touching the underlying deposit record itself.
+
+A matched deposit gets `reconciled: true` / `reconciledAt` /
+`reconciledLineId`; an unmatched deposit or an unmatched bank line are
+both real flags worth Finance's attention — the former means "we said we
+deposited it but the bank doesn't show it (yet, or ever)", the latter
+means "money arrived at the bank with no declared deposit behind it".
+
 ## Testing
 
 The `.gs` files are pure JS with Apps Script globals — `tests/stub-harness.js`

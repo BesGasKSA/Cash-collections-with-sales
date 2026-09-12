@@ -357,5 +357,68 @@ var posVat = (100 / 1.15) * 0.15;
 close(posReport.totals.deliveryFee, 100, 'POS delivery fee counted in the total delivery fee, same as a car');
 close(posReport.totals.netCashOwed, 400 - 100 + posVat, 'POS cash + its own delivery-fee deduction + VAT clawback feed net cash owed exactly like a car');
 
+console.log('--- bank reconciliation: matching declared deposits against the real bank statement ---');
+var finance = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Fatima (Finance)', email: 'fatima@bestgas.sa', role: 'finance' } }).user;
+var financeTok = acceptInvite('fatima@bestgas.sa');
+
+// A fresh location/cluster pair, isolated from every earlier test's
+// leftover unconsumed entries, so the deposit amount here is known exactly
+// rather than inherited from whatever else this shared cluster is still
+// holding by this point in the file.
+var reconCluster = call({ action: 'adminSaveEntity', token: adminTok, kind: 'cluster', data: { name: 'ReconCluster', clusterManagerUserId: sara.id, collectorUserId: musa.id } }).entity;
+var reconLocation = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: 'Jeddah', name: 'Recon Location', clusterId: reconCluster.id } }).entity;
+var reconStore = call({ action: 'adminSaveEntity', token: adminTok, kind: 'store', data: { locationId: reconLocation.id, name: 'Recon Branch' } }).entity;
+var reconEntry = call({ action: 'createDailyEntry', token: adminTok, date: '2026-09-14', sourceType: 'store', sourceId: reconStore.id, cashSales: 555 });
+check(reconEntry.ok, 'entry for reconciliation scenario');
+var reconHandoff1 = call({ action: 'createHandoff', token: adminTok, kind: 'location_to_cluster', locationId: reconLocation.id });
+close(reconHandoff1.handoff.amount, 555, 'fresh location, so the handoff amount is exactly the one entry');
+call({ action: 'confirmHandoff', token: saraTok, id: reconHandoff1.handoff.id });
+var reconHandoff2 = call({ action: 'createHandoff', token: saraTok, kind: 'cluster_to_collector', clusterId: reconCluster.id });
+call({ action: 'confirmHandoff', token: musaTok, id: reconHandoff2.handoff.id });
+var reconDeposit = call({ action: 'recordDeposit', token: musaTok, bankReference: 'BANKREF-555' });
+check(reconDeposit.ok, 'deposit recorded for reconciliation scenario');
+close(reconDeposit.handoff.amount, 555, 'deposit amount is exactly the entry amount (store-only, no VAT/delivery)');
+
+var nonFinanceRecon = call({ action: 'getReconciliation', token: aliTok });
+check(!nonFinanceRecon.ok && nonFinanceRecon.error === 'forbidden', 'a store manager cannot access reconciliation');
+
+var beforeImport = call({ action: 'getReconciliation', token: financeTok });
+check(beforeImport.ok, 'finance role can access reconciliation');
+check(beforeImport.unmatchedDeposits.some(function (d) { return d.id === reconDeposit.handoff.id; }), 'the fresh deposit starts out unmatched');
+
+var importRes = call({
+  action: 'importBankStatement', token: financeTok,
+  rows: [
+    { date: '2026-09-14', amount: 555, reference: 'BANKREF-555' },
+    { date: '2026-09-14', amount: 999999, reference: 'unrelated-noise' }
+  ]
+});
+check(importRes.ok && importRes.imported === 2, 'both statement rows imported');
+check(importRes.autoMatched === 1, 'the matching row (same amount, same day) auto-matched, the unrelated one did not');
+
+var afterImport = call({ action: 'getReconciliation', token: financeTok });
+check(!afterImport.unmatchedDeposits.some(function (d) { return d.id === reconDeposit.handoff.id; }), 'the deposit is no longer in the unmatched list after auto-match');
+check(afterImport.unmatchedLines.length === 1 && afterImport.unmatchedLines[0].amount === 999999, 'the unrelated statement line stays unmatched, waiting for a human');
+check(afterImport.reconciledCount === 1, 'reconciled count reflects the one auto-matched deposit');
+
+var matchedLineId = null;
+(function () {
+  var all = call({ action: 'getReconciliation', token: financeTok });
+  // the matched line isn't in unmatchedLines by definition — fetch it via the deposit's own reconciledLineId
+  var dep = call({ action: 'listHandoffs', token: financeTok, kind: 'deposit' }).handoffs.find(function (h) { return h.id === reconDeposit.handoff.id; });
+  matchedLineId = dep && dep.reconciledLineId;
+})();
+check(!!matchedLineId, 'the deposit records which statement line it was matched to');
+
+var unmatchRes = call({ action: 'unmatchReconciliation', token: financeTok, lineId: matchedLineId });
+check(unmatchRes.ok, 'a match can be undone');
+var afterUnmatch = call({ action: 'getReconciliation', token: financeTok });
+check(afterUnmatch.unmatchedDeposits.some(function (d) { return d.id === reconDeposit.handoff.id; }), 'the deposit is back in the unmatched list after undoing the match');
+
+var manualRes = call({ action: 'manualMatchReconciliation', token: adminTok, lineId: matchedLineId, handoffId: reconDeposit.handoff.id });
+check(manualRes.ok, 'admin can manually re-link the same line and deposit');
+var afterManual = call({ action: 'getReconciliation', token: financeTok });
+check(!afterManual.unmatchedDeposits.some(function (d) { return d.id === reconDeposit.handoff.id; }), 'manual match clears the deposit from the unmatched list again');
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);

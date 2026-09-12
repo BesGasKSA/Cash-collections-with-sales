@@ -261,6 +261,13 @@ var L = {
     mustChangePw:'يجب تغيير كلمة المرور', newPassword:'كلمة المرور الجديدة', currentPassword:'كلمة المرور الحالية',
     save:'حفظ', cancel:'إلغاء', logout:'خروج', language:'اللغة',
     nav_home:'الرئيسية', nav_entries:'الإدخالات', nav_handoffs:'التسليمات', nav_report:'تقرير المبيعات', nav_admin:'الإدارة', nav_notifications:'الإشعارات — تسليمات بانتظارك',
+    nav_reconciliation:'التسوية البنكية', recon_title:'التسوية البنكية', recon_hint:'حمّل كشف الحساب البنكي (CSV) لمطابقة الإيداعات المُسجّلة تلقائياً بما وصل فعلياً للبنك.',
+    recon_import:'استيراد كشف الحساب', recon_result:'تم استيراد {imported} صف — {matched} مطابقة تلقائية',
+    recon_totalDeposits:'إجمالي الإيداعات', recon_reconciled:'مُسوّاة', recon_unmatchedDeposits:'إيداعات غير مطابقة',
+    recon_unmatchedLines:'حركات بنكية غير مطابقة', recon_noUnmatchedDeposits:'كل الإيداعات مطابقة — لا يوجد شيء معلّق',
+    recon_noUnmatchedLines:'لا توجد حركات بنكية غير مطابقة', recon_matchManually:'مطابقة يدوية', recon_pickLine:'اختر حركة بنكية',
+    recon_link:'ربط', recon_unlink:'إلغاء المطابقة', recon_matched:'مطابق', recon_reference:'المرجع', recon_date:'التاريخ',
+    recon_col_date:'التاريخ', recon_col_amount:'المبلغ', recon_col_reference:'المرجع',
     greeting_morning:'صباح الخير', greeting_afternoon:'مساء الخير', greeting_evening:'مساء الخير', greeting_night:'مرحباً بك',
     home_pendingForMe:'بانتظار تأكيدك', home_heldByMe:'المبلغ الموجود لديك', home_disputes:'اعتراضات جارية',
     home_companyOutstanding:'إجمالي النقدية غير المودعة', home_openDisputes:'اعتراضات مفتوحة (الإدارة)',
@@ -307,7 +314,7 @@ var L = {
     admin_permissions:'مصفوفة الصلاحيات', perm_screen:'الشاشة/الصلاحية', perm_note:'تُبنى هذه المصفوفة من قواعد النظام الفعلية، وليست وثيقة منفصلة قد تصبح قديمة.',
     perm_home:'الرئيسية (نطاقه الخاص)', perm_home_company:'الرئيسية (بيانات الشركة كاملة)', perm_entries:'إدخال البيانات اليومية',
     perm_handoffs_own:'التسليمات (الخاصة به)', perm_handoffs_all:'التسليمات (كل الشركة)', perm_report_own:'تقرير المبيعات (مجمّعه فقط)',
-    perm_report_all:'تقرير المبيعات (كل الشركة)', perm_audit:'سجل التدقيق', perm_resolve:'حل الاعتراضات', perm_manage:'إدارة المستخدمين والبيانات الأساسية',
+    perm_report_all:'تقرير المبيعات (كل الشركة)', perm_audit:'سجل التدقيق', perm_resolve:'حل الاعتراضات', perm_reconcile:'التسوية البنكية', perm_manage:'إدارة المستخدمين والبيانات الأساسية',
     admin_addUser:'إضافة مستخدم', admin_name:'الاسم', admin_role:'الدور', admin_active:'نشط', admin_resetPw:'إعادة تعيين كلمة المرور',
     admin_addLocation:'إضافة موقع', admin_city:'المدينة', admin_locName:'اسم الموقع', admin_cluster:'المجمّع',
     admin_zones:'المناطق', admin_addZone:'إضافة منطقة', admin_zoneName:'اسم المنطقة', admin_zone:'المنطقة',
@@ -335,6 +342,13 @@ var L = {
     mustChangePw:'You must change your password', newPassword:'New password', currentPassword:'Current password',
     save:'Save', cancel:'Cancel', logout:'Log out', language:'Language',
     nav_home:'Home', nav_entries:'Entries', nav_handoffs:'Handoffs', nav_report:'Sales Report', nav_admin:'Admin', nav_notifications:'Notifications — handoffs awaiting you',
+    nav_reconciliation:'Bank Reconciliation', recon_title:'Bank Reconciliation', recon_hint:'Upload the bank statement (CSV) to automatically match recorded deposits against what actually arrived at the bank.',
+    recon_import:'Import statement', recon_result:'Imported {imported} rows — {matched} auto-matched',
+    recon_totalDeposits:'Total deposits', recon_reconciled:'Reconciled', recon_unmatchedDeposits:'Unmatched deposits',
+    recon_unmatchedLines:'Unmatched bank lines', recon_noUnmatchedDeposits:'Every deposit is matched — nothing pending',
+    recon_noUnmatchedLines:'No unmatched bank lines', recon_matchManually:'Match manually', recon_pickLine:'Pick a bank line',
+    recon_link:'Link', recon_unlink:'Undo match', recon_matched:'Matched', recon_reference:'Reference', recon_date:'Date',
+    recon_col_date:'Date', recon_col_amount:'Amount', recon_col_reference:'Reference',
     greeting_morning:'Good morning', greeting_afternoon:'Good afternoon', greeting_evening:'Good evening', greeting_night:'Welcome',
     home_pendingForMe:'Awaiting your confirmation', home_heldByMe:'Cash currently held by you', home_disputes:'Open disputes',
     home_companyOutstanding:'Total cash not yet deposited', home_openDisputes:'Open disputes (company-wide)',
@@ -381,7 +395,7 @@ var L = {
     admin_permissions:'Permissions matrix', perm_screen:'Screen / permission', perm_note:"This matrix is generated from the system's actual access rules, not a separate document that can go stale.",
     perm_home:'Home (own scope)', perm_home_company:'Home (company-wide figures)', perm_entries:'Enter daily data',
     perm_handoffs_own:'Handoffs (own)', perm_handoffs_all:'Handoffs (company-wide)', perm_report_own:'Sales report (own cluster only)',
-    perm_report_all:'Sales report (company-wide)', perm_audit:'Audit log', perm_resolve:'Resolve disputes', perm_manage:'Manage users & master data',
+    perm_report_all:'Sales report (company-wide)', perm_audit:'Audit log', perm_resolve:'Resolve disputes', perm_reconcile:'Bank reconciliation', perm_manage:'Manage users & master data',
     admin_addUser:'Add user', admin_name:'Name', admin_role:'Role', admin_active:'Active', admin_resetPw:'Reset password',
     admin_addLocation:'Add location', admin_city:'City', admin_locName:'Location name', admin_cluster:'Cluster',
     admin_zones:'Zones', admin_addZone:'Add zone', admin_zoneName:'Zone name', admin_zone:'Zone',
@@ -409,6 +423,13 @@ var L = {
     mustChangePw:'پاس ورڈ تبدیل کرنا ضروری ہے', newPassword:'نیا پاس ورڈ', currentPassword:'موجودہ پاس ورڈ',
     save:'محفوظ کریں', cancel:'منسوخ', logout:'لاگ آؤٹ', language:'زبان',
     nav_home:'ہوم', nav_entries:'اندراجات', nav_handoffs:'ترسیل', nav_report:'سیلز رپورٹ', nav_admin:'ایڈمن', nav_notifications:'اطلاعات — آپ کی منتظر ترسیل',
+    nav_reconciliation:'بینک مطابقت', recon_title:'بینک مطابقت', recon_hint:'بینک اسٹیٹمنٹ (CSV) اپ لوڈ کریں تاکہ درج شدہ جمع رقوم خودکار طور پر اصل بینک ریکارڈ سے ملائی جائیں۔',
+    recon_import:'اسٹیٹمنٹ درآمد کریں', recon_result:'{imported} قطاریں درآمد ہوئیں — {matched} خودکار مطابقت',
+    recon_totalDeposits:'کل جمع رقوم', recon_reconciled:'مطابقت شدہ', recon_unmatchedDeposits:'غیر مطابقت شدہ جمع رقوم',
+    recon_unmatchedLines:'غیر مطابقت شدہ بینک اندراجات', recon_noUnmatchedDeposits:'ہر جمع رقم مطابقت شدہ ہے — کچھ باقی نہیں',
+    recon_noUnmatchedLines:'کوئی غیر مطابقت شدہ بینک اندراج نہیں', recon_matchManually:'دستی مطابقت', recon_pickLine:'بینک اندراج منتخب کریں',
+    recon_link:'جوڑیں', recon_unlink:'مطابقت ختم کریں', recon_matched:'مطابقت شدہ', recon_reference:'ریفرنس', recon_date:'تاریخ',
+    recon_col_date:'تاریخ', recon_col_amount:'رقم', recon_col_reference:'ریفرنس',
     greeting_morning:'صبح بخیر', greeting_afternoon:'دوپہر بخیر', greeting_evening:'شام بخیر', greeting_night:'خوش آمدید',
     home_pendingForMe:'آپ کی تصدیق کے منتظر', home_heldByMe:'آپ کے پاس موجود رقم', home_disputes:'جاری اعتراضات',
     home_companyOutstanding:'کل غیر جمع شدہ نقدی', home_openDisputes:'کھلے اعتراضات (ادارہ)',
@@ -455,7 +476,7 @@ var L = {
     admin_permissions:'اجازتوں کی میٹرکس', perm_screen:'اسکرین/اجازت', perm_note:'یہ میٹرکس نظام کے اصل رسائی قوانین سے تیار ہوتی ہے، ایک الگ دستاویز نہیں جو پرانی ہو سکے۔',
     perm_home:'ہوم (اپنا دائرہ)', perm_home_company:'ہوم (پوری کمپنی کے اعداد و شمار)', perm_entries:'روزانہ ڈیٹا درج کریں',
     perm_handoffs_own:'ترسیل (اپنی)', perm_handoffs_all:'ترسیل (پوری کمپنی)', perm_report_own:'سیلز رپورٹ (صرف اپنا کلسٹر)',
-    perm_report_all:'سیلز رپورٹ (پوری کمپنی)', perm_audit:'آڈٹ لاگ', perm_resolve:'اعتراضات حل کریں', perm_manage:'صارفین اور بنیادی ڈیٹا کا انتظام',
+    perm_report_all:'سیلز رپورٹ (پوری کمپنی)', perm_audit:'آڈٹ لاگ', perm_resolve:'اعتراضات حل کریں', perm_reconcile:'بینک مطابقت', perm_manage:'صارفین اور بنیادی ڈیٹا کا انتظام',
     admin_addUser:'صارف شامل کریں', admin_name:'نام', admin_role:'کردار', admin_active:'فعال', admin_resetPw:'پاس ورڈ ری سیٹ کریں',
     admin_addLocation:'مقام شامل کریں', admin_city:'شہر', admin_locName:'مقام کا نام', admin_cluster:'کلسٹر',
     admin_zones:'زونز', admin_addZone:'زون شامل کریں', admin_zoneName:'زون کا نام', admin_zone:'زون',
@@ -750,6 +771,7 @@ function renderShell(){
   if (['store_manager','driver','admin'].indexOf(state.user.role)>=0) navItems.push(['entries','nav_entries']);
   navItems.push(['handoffs','nav_handoffs']);
   if (['admin','finance','accountant','operations_manager','cluster_manager'].indexOf(state.user.role)>=0) navItems.push(['report','nav_report']);
+  if (['admin','finance'].indexOf(state.user.role)>=0) navItems.push(['reconciliation','nav_reconciliation']);
   if (state.user.role==='admin') navItems.push(['admin','nav_admin']);
 
   var header = el('<header>' +
@@ -782,6 +804,7 @@ function renderShell(){
     handoffs: '<path d="M17 2l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>',
     report: '<path d="M18 20V10M12 20V4M6 20v-6"/>',
     dashboard: '<rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/>',
+    reconciliation: '<rect x="3" y="6" width="18" height="14" rx="2"/><path d="M3 10h18"/><path d="M8 15l2.5 2.5L16 12"/>',
     admin: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>'
   };
   var nav = el('<nav></nav>');
@@ -805,7 +828,7 @@ function renderShell(){
   var body = el('<div id="screenBody"></div>');
   main.appendChild(body);
 
-  var renderers = { home: renderHome, dashboard: renderDashboard, entries: renderEntries, handoffs: renderHandoffs, report: renderReport, admin: renderAdmin };
+  var renderers = { home: renderHome, dashboard: renderDashboard, entries: renderEntries, handoffs: renderHandoffs, report: renderReport, reconciliation: renderReconciliation, admin: renderAdmin };
   (renderers[state.screen] || renderHome)(body);
 }
 
@@ -1876,6 +1899,96 @@ function renderReport(body){
   }
 }
 
+// ---------------- bank reconciliation ----------------
+function renderReconciliation(body){
+  body.innerHTML = '<div class="card">'+esc(t('loading'))+'</div>';
+  loadReconciliation();
+
+  function loadReconciliation(){
+    api('getReconciliation', {}).then(function(res){
+      if (!res.ok){ body.innerHTML = '<div class="msg err">'+esc(t('err_generic'))+'</div>'; return; }
+      body.innerHTML = '';
+
+      var importCard = el('<div class="card">' +
+        '<h2>'+esc(t('recon_title'))+'</h2>' +
+        '<div class="muted" style="font-size:12.5px;margin-bottom:10px;">'+esc(t('recon_hint'))+'</div>' +
+        '<input type="file" id="reconFile" accept=".csv,text/csv">' +
+        '<div id="reconMsg"></div>' +
+      '</div>');
+      body.appendChild(importCard);
+      qs('#reconFile', importCard).addEventListener('change', function(e){
+        var file = e.target.files[0];
+        if (!file) return;
+        var reader = new FileReader();
+        reader.onload = function(){
+          var parsed;
+          try { parsed = parseCsv_(String(reader.result||'')); } catch(err){ parsed = null; }
+          if (!parsed || parsed.length < 2){ qs('#reconMsg',importCard).innerHTML = '<div class="msg err">'+esc(t('entry_importParseError'))+'</div>'; return; }
+          var header = parsed[0].map(function(h){ return String(h||'').trim(); });
+          var idx = {};
+          header.forEach(function(h,i){ idx[h]=i; });
+          var dataRows = parsed.slice(1).filter(function(r){ return r.some(function(c){ return String(c||'').trim()!==''; }); });
+          function cell(r,key){ var i=idx[key]; return (i!=null && r[i]!=null) ? String(r[i]) : ''; }
+          var rows = dataRows.map(function(r){
+            return { date: cell(r,'date').trim(), amount: cell(r,'amount').trim(), reference: cell(r,'reference').trim() };
+          });
+          api('importBankStatement', { rows: rows }).then(function(res2){
+            if (!res2.ok){ qs('#reconMsg',importCard).innerHTML = '<div class="msg err">'+esc(t('err_generic'))+'</div>'; return; }
+            qs('#reconMsg',importCard).innerHTML = '<div class="msg ok">'+esc(t('recon_result').replace('{imported}',res2.imported).replace('{matched}',res2.autoMatched))+'</div>';
+            loadReconciliation();
+          });
+        };
+        reader.readAsText(file);
+      });
+
+      body.appendChild(kpiRow([
+        [res.totalDeposits, t('recon_totalDeposits')],
+        [res.reconciledCount, t('recon_reconciled')],
+        [res.unmatchedDeposits.length, t('recon_unmatchedDeposits')],
+        [res.unmatchedLines.length, t('recon_unmatchedLines')]
+      ]));
+
+      var depCard = el('<div class="card"><h2>'+esc(t('recon_unmatchedDeposits'))+'</h2><div id="reconDepList"></div></div>');
+      body.appendChild(depCard);
+      var depList = qs('#reconDepList', depCard);
+      if (!res.unmatchedDeposits.length){
+        depList.innerHTML = '<div class="muted">'+esc(t('recon_noUnmatchedDeposits'))+'</div>';
+      } else {
+        res.unmatchedDeposits.forEach(function(d){
+          var row = el('<div class="list-item">' +
+            '<div class="top"><div class="amount">'+money(d.amount)+'</div><div class="muted">'+esc((d.createdAt||'').slice(0,10))+' · '+esc(d.bankReference||'—')+'</div></div>' +
+            '<div class="field"><label>'+esc(t('recon_matchManually'))+'</label><select class="reconLineSel"><option value="">'+esc(t('recon_pickLine'))+'</option>' +
+              res.unmatchedLines.map(function(l){ return '<option value="'+l.id+'">'+esc(l.date)+' — '+money(l.amount)+' — '+esc(l.reference||'—')+'</option>'; }).join('') +
+            '</select></div>' +
+            '<button class="btn secondary">'+esc(t('recon_link'))+'</button>' +
+          '</div>');
+          var sel = qs('select', row);
+          qs('button', row).addEventListener('click', function(){
+            if (!sel.value) return;
+            api('manualMatchReconciliation', { lineId: sel.value, handoffId: d.id }).then(function(res3){
+              if (res3.ok) loadReconciliation(); else toast('err_generic','err');
+            });
+          });
+          depList.appendChild(row);
+        });
+      }
+
+      var lineCard = el('<div class="card"><h2>'+esc(t('recon_unmatchedLines'))+'</h2><div id="reconLineList"></div></div>');
+      body.appendChild(lineCard);
+      var lineList = qs('#reconLineList', lineCard);
+      if (!res.unmatchedLines.length){
+        lineList.innerHTML = '<div class="muted">'+esc(t('recon_noUnmatchedLines'))+'</div>';
+      } else {
+        lineList.appendChild(sortableTable(res.unmatchedLines, [
+          { key:'date', label: t('recon_col_date') },
+          { key:'amount', label: t('recon_col_amount'), render: function(r){ return money(r.amount); } },
+          { key:'reference', label: t('recon_col_reference') }
+        ]));
+      }
+    });
+  }
+}
+
 // ---------------- admin ----------------
 var adminTab = 'users';
 
@@ -1935,6 +2048,7 @@ var PERM_ROWS = [
   { key:'perm_report_all', roles:['admin','finance','accountant','operations_manager'] },
   { key:'perm_audit', roles:['admin','finance','accountant','operations_manager'] },
   { key:'perm_resolve', roles:['admin','finance'] },
+  { key:'perm_reconcile', roles:['admin','finance'] },
   { key:'perm_manage', roles:['admin'] }
 ];
 
