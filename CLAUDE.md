@@ -130,6 +130,27 @@ attention right now" — their own pending handoffs, plus open disputes for
 admin/finance — refreshed after login and whenever Home or Handoffs loads
 fresh data; clicking it jumps to the Handoffs screen.
 
+## LPG cylinder tracking (empty-for-full exchange)
+
+Best Gas's actual business — LPG delivered in refillable cylinders, sold
+on the standard "bring back the empty, take a full one" exchange model.
+`daily_entries` carries two extra counts, `cylindersOut` (full delivered)
+and `cylindersIn` (empty returned), entered per row alongside the cash
+figures — but they are **completely independent of `computeNet_`**, pure
+physical-inventory counts, never touching the cash-owed formula. The
+entry form only shows the two fields once a specific product is picked
+(`toggleCylFields` in `index.html`) — a cylinder count means nothing
+without knowing which cylinder type.
+
+`actionSalesReport_` (Collection.gs) aggregates them two ways from the
+same already-filtered `entries` array: `byProduct[].cylinderBalance`
+(company-wide per product) and the finer `cylinderByLocation` (per
+location × product — the actual operational question, "which branch/car
+owes how many empties back"), both `out − in`. An entry with no
+`productId` is excluded from `cylinderByLocation` on purpose. Surfaced on
+the Dashboard as a sortable table, defaulted to sort by balance
+descending so the biggest outstanding exchanges surface first.
+
 ## Bank reconciliation (`Reconciliation.gs`)
 
 Closes the gap the rest of the chain can't: `recordDeposit` only ever
