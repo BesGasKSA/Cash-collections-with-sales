@@ -317,5 +317,31 @@ var otherCar = call({ action: 'adminSaveEntity', token: adminTok, kind: 'car', d
 var scopedImport = call({ action: 'importDailyEntries', token: aliTok, rows: [{ date: '2026-09-11', sourceType: 'car', sourceId: otherCar.id, cashSales: 10 }] });
 check(scopedImport.ok && scopedImport.created === 0 && scopedImport.results[0].error === 'forbidden', 'store manager importing a source outside their own location is rejected per-row, same as a single entry');
 
+console.log('--- zones: pure geography, separate from cluster (employee assignment) ---');
+var zoneRiyadhEast = call({ action: 'adminSaveEntity', token: adminTok, kind: 'zone', data: { city: 'Riyadh', name: 'East' } });
+check(zoneRiyadhEast.ok, 'admin creates a zone');
+var zoneNoCity = call({ action: 'adminSaveEntity', token: adminTok, kind: 'zone', data: { name: 'No city' } });
+check(!zoneNoCity.ok && zoneNoCity.error === 'invalid_input', 'zone requires both city and name');
+
+var zonedLocation = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: 'Riyadh', name: 'Yasmeen Branch', clusterId: cluster.entity.id, zoneId: zoneRiyadhEast.entity.id } });
+check(zonedLocation.ok && zonedLocation.entity.zoneId === zoneRiyadhEast.entity.id, 'a location can optionally carry a zoneId, independent of its clusterId (cluster still the money-chain assignment)');
+
+var zonedStore = call({ action: 'adminSaveEntity', token: adminTok, kind: 'store', data: { locationId: zonedLocation.entity.id, name: 'Yasmeen Store' } });
+check(zonedStore.ok, 'store created under the zoned location');
+var zonedEntry = call({ action: 'createDailyEntry', token: adminTok, date: '2026-09-12', sourceType: 'store', sourceId: zonedStore.entity.id, cashSales: 777 });
+check(zonedEntry.ok, 'entry recorded against the zoned location (admin, since Ali already manages a different store)');
+
+var zoneFilteredReport = call({ action: 'getSalesReport', token: adminTok, zoneId: zoneRiyadhEast.entity.id });
+check(zoneFilteredReport.ok && zoneFilteredReport.totals.storeCash === 777, 'sales report filters by zoneId to just that zone\'s entries');
+
+var blockedZoneDelete = call({ action: 'adminDeleteEntity', token: adminTok, kind: 'zone', id: zoneRiyadhEast.entity.id });
+check(!blockedZoneDelete.ok && blockedZoneDelete.error === 'has_children', 'a zone referenced by a location cannot be deleted');
+
+console.log('--- products: goods vs services classification ---');
+var goodsProduct = call({ action: 'adminSaveEntity', token: adminTok, kind: 'product', data: { name: 'Cylinder Refill', type: 'goods' } });
+check(goodsProduct.ok && goodsProduct.entity.type === 'goods', 'product saved with type=goods');
+var servicesProduct = call({ action: 'adminSaveEntity', token: adminTok, kind: 'product', data: { name: 'Installation Service', type: 'services' } });
+check(servicesProduct.ok && servicesProduct.entity.type === 'services', 'product saved with type=services');
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);

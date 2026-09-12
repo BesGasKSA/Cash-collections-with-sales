@@ -623,6 +623,7 @@ function actionSalesReport_(req, user) {
   if (req.dateTo) entries = entries.filter(function (e) { return e.date <= req.dateTo; });
   if (req.locationId) entries = entries.filter(function (e) { return e.locationId === req.locationId; });
   if (req.city) entries = entries.filter(function (e) { var l = locById[e.locationId]; return l && l.city === req.city; });
+  if (req.zoneId) entries = entries.filter(function (e) { var l = locById[e.locationId]; return l && l.zoneId === req.zoneId; });
   if (req.sourceType) entries = entries.filter(function (e) { return e.sourceType === req.sourceType; });
   if (req.sourceId) entries = entries.filter(function (e) { return e.sourceId === req.sourceId; });
   if (req.productId) entries = entries.filter(function (e) { return e.productId === req.productId; });

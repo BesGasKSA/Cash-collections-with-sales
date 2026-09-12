@@ -14,6 +14,11 @@ var SHEETS = {
   CARS: 'cars',
   POS: 'pos_machines',
   CLUSTERS: 'clusters',
+  // Pure geography (Country[KSA, implicit]/City/Zone), independent of
+  // Cluster — Cluster is an employee's management assignment (cluster
+  // manager + collector) and can cut across zones; Zone is just a label
+  // for filtering/reporting, no assignment of its own. See CLAUDE.md.
+  ZONES: 'zones',
   PRODUCTS: 'products',
   ENTRIES: 'daily_entries',
   HANDOFFS: 'handoffs',
