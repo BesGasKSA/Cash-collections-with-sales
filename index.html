@@ -1081,12 +1081,14 @@ function renderDashboard(body){
 
     var sourceTotals = { store:0, car:0, pos:0 };
     entries.forEach(function(e){
-      // "by source type" is a gross-sales-by-channel view, so a POS
-      // machine's cash and card portions are combined here — the cash-risk
-      // vs. no-risk split is what computeNet_'s breakdown is for, not this chart.
-      if (e.sourceType === 'pos') sourceTotals.pos += Number(e.cashSales||0) + Number(e.posSales||0);
-      else if (e.sourceType === 'store') sourceTotals.store += Number(e.cashSales||0);
-      else if (e.sourceType === 'car') sourceTotals.car += Number(e.cashSales||0) + Number(e.posSales||0);
+      // "by source type" is a gross-sales-by-channel view, so every
+      // source's cash and card/POS portions are combined here — the
+      // cash-risk vs. no-risk split is what computeNet_'s breakdown is for,
+      // not this chart. All three source types can carry posSales now.
+      var total = Number(e.cashSales||0) + Number(e.posSales||0);
+      if (e.sourceType === 'pos') sourceTotals.pos += total;
+      else if (e.sourceType === 'store') sourceTotals.store += total;
+      else if (e.sourceType === 'car') sourceTotals.car += total;
     });
     var sourceCard = el('<div class="card"><h2>'+esc(t('dash_bySourceType'))+'</h2></div>');
     sourceCard.appendChild(donutChart([
@@ -1348,13 +1350,14 @@ function renderEntries(body){
 
     // A POS machine can take cash too (not just card), and can carry its own
     // bank-paid delivery fee just like a car — both fields apply to car AND
-    // pos now, only a plain store branch has neither. A car can also carry
-    // its own mounted POS terminal, so its entry can report card/bank sales
-    // too — same field, same no-cash-risk treatment as a dedicated pos entry.
+    // pos. A store or car can also carry its own mounted POS terminal, so
+    // either can report card/bank posSales alongside its cash too — every
+    // source type supports that field now. Delivery fee stays car/pos only
+    // though: a store branch has nothing to deliver.
     var showDelivery = (type==='car' || type==='pos');
     qs('#eCashWrap', form).style.display = '';
     qs('#eDeliveryWrap', form).style.display = showDelivery ? '' : 'none';
-    qs('#ePosWrap', form).style.display = showDelivery ? '' : 'none';
+    qs('#ePosWrap', form).style.display = '';
     // this field only ever applies to a car/pos entry — say so right where
     // people look for it when it's (correctly) not on screen.
     qs('#eDeliveryHint', form).textContent = showDelivery ? '' : t('entry_delivery') + ' — ' + t('entry_source_car') + ' / ' + t('entry_source_pos');
@@ -2343,7 +2346,14 @@ var ENTITY_FIELDS = {
     {k:'ownerId', l:'admin_owner'},
     {k:'label', l:'admin_posLabel'},
     {k:'assignedUserId', l:'admin_assignedDriver', pick:'users', pickLabel:function(x){return x.name;}, pickFilter:function(x){return x.role==='driver';}}
-  ], cols:['label','ownerType'] },
+  ],
+  // 'owner' is a virtual column (not a real stored field) — a bare
+  // ownerType only ever said "Car" or "Store", the generic category, never
+  // which specific one or where — so a POS machine looked disconnected
+  // from the location its own car/store already shows in their own admin
+  // lists. Shows the actual store/car name plus its location instead, same
+  // information store/car rows already carry via locationId.
+  cols:['label','owner'] },
   cluster: { addKey:'admin_addCluster', fields:[
     {k:'name', l:'admin_clusterName'},
     {k:'clusterManagerUserId', l:'admin_clusterManager', pick:'users', pickLabel:function(x){return x.name;}, pickFilter:function(x){return x.role==='cluster_manager';}},
@@ -2419,6 +2429,7 @@ function renderAdminEntity(content, kind){
   // column header = the matching field's own label translation, not the
   // raw storage key (that showed literal "locationId"/"name" on screen).
   function colLabel_(c){
+    if (kind === 'pos' && c === 'owner') return t('admin_owner');
     var f = spec.fields.filter(function(x){ return x.k===c; })[0];
     return f ? t(f.l) : c;
   }
@@ -2430,6 +2441,7 @@ function renderAdminEntity(content, kind){
   // stored value — same reasoning as locationId already being resolved to
   // a readable name instead of a bare id.
   function colValue_(item, c){
+    if (kind === 'pos' && c === 'owner') return posOwnerName_(item) + ' — ' + locationName(posOwnerLocationId_(item));
     var v = item[c];
     if (c === 'locationId') return locationName(v);
     var f = spec.fields.filter(function(x){ return x.k===c; })[0];

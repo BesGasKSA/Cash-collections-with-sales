@@ -66,10 +66,11 @@ netCashOwed   = storeCash + Σ carCash - Σ carDeliveryFeeBankAmount + vatOnDeli
 ```
 
 POS sales never enter this formula — card/bank payments carry no cash risk;
-they're tracked (per machine, or per car if the car carries its own mounted
-terminal — a `car` entry's `posSales` field counts toward `totals.posSales`
-and the per-product POS breakdown exactly like a dedicated `pos` entry does,
-just without a separate pos_machines row) for reconciliation and reporting
+they're tracked (per machine, or per store/car if either carries its own
+mounted terminal — a `store`/`car` entry's `posSales` field counts toward
+`totals.posSales` and the per-product POS breakdown exactly like a dedicated
+`pos` entry does, just without a separate pos_machines row; a store still
+never has a delivery fee, that stays car/pos-only) for reconciliation and reporting
 only. The entry form (`index.html`) also shows a read-only Location field
 that auto-resolves from whichever store/car/pos is picked (`resolveLocationIdForSource_`)
 so the person entering data can confirm where it will actually count.
