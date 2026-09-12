@@ -89,12 +89,19 @@
   button.btn.danger{background:var(--danger);}
   button.btn.danger:hover{background:#a13c26;}
   button.btn:disabled{opacity:.45;cursor:not-allowed;transform:none;box-shadow:none;}
-  table{width:100%;border-collapse:collapse;font-size:13.5px;}
-  th,td{padding:10px 12px;border-bottom:1px solid var(--border-soft);text-align:start;}
-  th{color:var(--muted);font-weight:700;font-size:11.5px;text-transform:uppercase;letter-spacing:.04em;background:var(--bg);position:sticky;top:0;}
+  table{width:100%;border-collapse:separate;border-spacing:0;font-size:13.5px;border:1px solid var(--border-soft);border-radius:var(--radius-sm);overflow:hidden;}
+  th,td{padding:11px 14px;border-bottom:1px solid var(--border-soft);text-align:start;}
+  th{color:var(--muted);font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.05em;background:var(--bg);border-bottom:1.5px solid var(--border);}
   html[dir="rtl"] th{text-transform:none;letter-spacing:0;}
   tbody tr{transition:background .1s ease;}
+  tbody tr:nth-child(even){background:rgba(32,36,31,.014);}
+  tbody tr:last-child td{border-bottom:none;}
   tbody tr:hover{background:var(--green-pale);}
+  td{color:var(--text);}
+  .col-actions{width:1%;white-space:nowrap;text-align:end;}
+  .btn-icon{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;padding:0;border-radius:8px;border:1px solid transparent;background:transparent;color:var(--muted);cursor:pointer;transition:background .15s ease,color .15s ease;}
+  .btn-icon svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+  .btn-icon:hover{background:var(--danger-bg);color:var(--danger);}
   .badge{display:inline-flex;align-items:center;gap:4px;padding:3px 11px;border-radius:999px;font-size:11.5px;font-weight:700;letter-spacing:.01em;}
   .badge::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor;}
   .badge.pending{background:var(--warn-bg);color:var(--warn);}
@@ -1958,13 +1965,14 @@ function renderAdminUsers(content){
   });
 
   var listCard = el('<div class="card"><h2>'+esc(t('admin_users'))+'</h2><table><thead><tr>' +
-    '<th>'+esc(t('admin_name'))+'</th><th>'+esc(t('email'))+'</th><th>'+esc(t('admin_role'))+'</th><th>'+esc(t('admin_active'))+'</th><th></th>' +
+    '<th>'+esc(t('admin_name'))+'</th><th>'+esc(t('email'))+'</th><th>'+esc(t('admin_role'))+'</th><th>'+esc(t('admin_active'))+'</th><th class="col-actions"></th>' +
     '</tr></thead><tbody id="uBody"></tbody></table></div>');
   content.appendChild(listCard);
   var tbody = qs('#uBody', listCard);
   (meta.users||[]).forEach(function(u){
-    var tr = el('<tr><td>'+esc(u.name)+'</td><td>'+esc(u.email||'')+'</td><td>'+esc(roleLabel(u.role))+'</td><td>'+(u.active?'✓':'—')+'</td><td></td></tr>');
+    var tr = el('<tr><td>'+esc(u.name)+'</td><td>'+esc(u.email||'')+'</td><td>'+esc(roleLabel(u.role))+'</td><td>'+(u.active?'✓':'—')+'</td><td class="col-actions"></td></tr>');
     var td = tr.lastChild;
+    td.style.display = 'flex'; td.style.gap = '6px'; td.style.justifyContent = 'flex-end';
     var resetBtn = el('<button class="btn secondary">'+esc(t('admin_resetPw'))+'</button>');
     resetBtn.addEventListener('click', function(){ api('adminResetPassword',{id:u.id}).then(function(){ toast('ok_saved','ok'); }); });
     var toggleBtn = el('<button class="btn secondary">'+esc(u.active?t('admin_delete'):t('admin_edit'))+'</button>');
@@ -2077,7 +2085,7 @@ function renderAdminEntity(content, kind){
     return f ? t(f.l) : c;
   }
   var listCard = el('<div class="card"><h2>'+esc(t('admin_'+({location:'locations',store:'stores',car:'cars',pos:'pos',cluster:'clusters',zone:'zones',product:'products'})[kind]))+'</h2><table><thead><tr>' +
-    spec.cols.map(function(c){ return '<th>'+esc(colLabel_(c))+'</th>'; }).join('') + '<th></th></tr></thead><tbody id="entBody"></tbody></table></div>');
+    spec.cols.map(function(c){ return '<th>'+esc(colLabel_(c))+'</th>'; }).join('') + '<th class="col-actions"></th></tr></thead><tbody id="entBody"></tbody></table></div>');
   content.appendChild(listCard);
   var tbody = qs('#entBody', listCard);
   list.forEach(function(item){
@@ -2086,8 +2094,8 @@ function renderAdminEntity(content, kind){
       if (c==='locationId') v = locationName(v);
       return '<td>'+esc(v)+'</td>';
     }).join('');
-    var tr = el('<tr>'+tds+'<td></td></tr>');
-    var delBtn = el('<button class="btn danger">'+esc(t('admin_delete'))+'</button>');
+    var tr = el('<tr>'+tds+'<td class="col-actions"></td></tr>');
+    var delBtn = el('<button class="btn-icon" title="'+esc(t('admin_delete'))+'"><svg viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg></button>');
     delBtn.addEventListener('click', function(){
       if (!confirm(t('confirm_delete'))) return;
       api('adminDeleteEntity', { kind: kind, id: item.id }).then(function(res){
