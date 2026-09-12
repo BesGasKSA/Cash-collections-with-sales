@@ -297,6 +297,7 @@ function actionMeta_(req, user) {
   return {
     ok: true,
     locations: locations, stores: stores, cars: cars, pos: pos,
-    clusters: clusters, zones: zones, products: products, users: users, config: { vatRate: vatRate_() }
+    clusters: clusters, zones: zones, products: products, users: users,
+    config: { vatRate: vatRate_(), staleThresholdHours: staleThresholdHours_(), secondApprovalThreshold: secondApprovalThreshold_() }
   };
 }

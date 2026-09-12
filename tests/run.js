@@ -478,7 +478,11 @@ var installAgain = call({ action: 'adminInstallStaleTrigger', token: adminTok })
 check(installAgain.ok && installAgain.alreadyInstalled === true, 'installing again is a safe no-op, not a duplicate trigger');
 
 console.log('--- large-amount second approval: non-blocking four-eyes on big handoffs ---');
-call({ action: 'adminSetConfig', token: adminTok, data: { secondApprovalThreshold: 5000 } });
+call({ action: 'adminSetConfig', token: adminTok, data: { secondApprovalThreshold: 5000, staleThresholdHours: 48 } });
+var metaAfterConfig = call({ action: 'listMeta', token: adminTok });
+check(metaAfterConfig.ok && metaAfterConfig.config.secondApprovalThreshold === 5000 && metaAfterConfig.config.staleThresholdHours === 48,
+  'listMeta reflects the saved SLA/second-approval config, not just vatRate — the Settings screen reads this on every load');
+
 var bigLocation = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: 'Riyadh', name: 'Big Amount Test', clusterId: cluster.entity.id } }).entity;
 var bigStore = call({ action: 'adminSaveEntity', token: adminTok, kind: 'store', data: { locationId: bigLocation.id, name: 'Big Store' } }).entity;
 call({ action: 'createDailyEntry', token: adminTok, date: '2026-09-13', sourceType: 'store', sourceId: bigStore.id, cashSales: 6000 });
@@ -487,7 +491,10 @@ var mailBefore3 = ctx._debug.mailLog.length;
 var bigConfirm = call({ action: 'confirmHandoff', token: saraTok, id: bigHandoff.id });
 check(bigConfirm.ok && bigConfirm.handoff.status === 'confirmed', 'confirmation still lands immediately — the flag never blocks the chain');
 check(bigConfirm.handoff.requiresSecondApproval === true, 'a 6,000 handoff against a 5,000 threshold is flagged for a second sign-off');
-check(ctx._debug.mailLog.length > mailBefore3, 'admin/finance got emailed about the large amount');
+var largeAmountMail = ctx._debug.mailLog.slice(mailBefore3);
+check(largeAmountMail.length > 0, 'admin/finance got emailed about the large amount');
+check(largeAmountMail.some(function (m) { return m.to === sara.email; }) && largeAmountMail.some(function (m) { return m.to === musa.email; }),
+  'the cluster\'s own manager and collector are also notified, same recipient set as the shortfall/stale escalations — not just admin/finance');
 
 var smallLocation = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: 'Riyadh', name: 'Small Amount Test', clusterId: cluster.entity.id } }).entity;
 var smallStore = call({ action: 'adminSaveEntity', token: adminTok, kind: 'store', data: { locationId: smallLocation.id, name: 'Small Store' } }).entity;
@@ -502,6 +509,31 @@ var ack = call({ action: 'acknowledgeSecondApproval', token: adminTok, id: bigHa
 check(ack.ok && !!ack.handoff.secondApprovedBy, 'admin acknowledges the large handoff');
 var ackAgain = call({ action: 'acknowledgeSecondApproval', token: adminTok, id: bigHandoff.id });
 check(!ackAgain.ok && ackAgain.error === 'already_acknowledged', 'acknowledging twice is rejected, not silently repeated');
+
+console.log('--- second approval: four eyes means two different people, even when the receiver is admin/finance ---');
+// Nothing structurally stops an admin/finance account from also being the
+// assigned cluster manager/collector for a cluster (validateEntity_ only
+// checks the two chain roles differ from each other, not that either
+// differs from every admin/finance account) — so a real setup where, say,
+// Finance also acts as a cluster's collector is entirely possible. That
+// person genuinely receiving a large handoff (no conflict — they're not
+// declaring and approving their own submission) must still not be able to
+// also acknowledge their own second-approval sign-off; that has to be a
+// different person, exactly like resolving a dispute you're a party to.
+var selfAckCluster = call({ action: 'adminSaveEntity', token: adminTok, kind: 'cluster', data: { name: 'Self-Ack Cluster', clusterManagerUserId: admin.id, collectorUserId: musa.id } }).entity;
+var selfAckManager = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Self-Ack Store Manager', email: 'selfack@bestgas.sa', role: 'store_manager' } }).user;
+var selfAckManagerTok = acceptInvite('selfack@bestgas.sa');
+var selfAckLocation = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: 'Riyadh', name: 'Self-Ack Test', clusterId: selfAckCluster.id } }).entity;
+var selfAckStore = call({ action: 'adminSaveEntity', token: adminTok, kind: 'store', data: { locationId: selfAckLocation.id, name: 'Self-Ack Store', storeManagerUserId: selfAckManager.id } }).entity;
+call({ action: 'createDailyEntry', token: selfAckManagerTok, date: '2026-09-13', sourceType: 'store', sourceId: selfAckStore.id, cashSales: 7000 });
+var selfAckHandoff = call({ action: 'createHandoff', token: selfAckManagerTok, kind: 'location_to_cluster', locationId: selfAckLocation.id }).handoff;
+check(selfAckHandoff.toUserId === admin.id, 'this handoff genuinely routes to admin as the cluster manager (not an on-behalf-of confirmation)');
+var selfConfirm = call({ action: 'confirmHandoff', token: adminTok, id: selfAckHandoff.id });
+check(selfConfirm.ok && selfConfirm.handoff.requiresSecondApproval, 'admin, genuinely the receiver here, confirms — still flagged for second approval');
+var selfAck = call({ action: 'acknowledgeSecondApproval', token: adminTok, id: selfAckHandoff.id });
+check(!selfAck.ok && selfAck.error === 'conflict_of_interest', 'the same admin who confirmed it cannot also acknowledge their own second approval');
+var otherAck = call({ action: 'acknowledgeSecondApproval', token: financeTok, id: selfAckHandoff.id });
+check(otherAck.ok && otherAck.handoff.secondApprovedBy === finance.id, 'a different admin/finance account can still acknowledge it — four eyes intact');
 
 console.log('--- risk / complaint register ---');
 var riskItem = call({ action: 'createRiskItem', token: aliTok, type: 'risk', title: 'Leaking valve reported', description: 'Driver flagged a valve leak on Truck-1', severity: 'high' });

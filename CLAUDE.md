@@ -475,7 +475,35 @@ explicitly. If a future role needs to see something new, extend
 `COMPANY_WIDE_ROLES`; if it needs to *act* on something, that's a separate,
 narrower decision — don't fold it into the same check by reflex.
 
-### 3. A one-shot "clear all transactions" bulk-delete is hard-blocked
+### 3. "Admin/finance only" doesn't mean "a different person" — conflict-of-interest checks must be added explicitly, per action
+
+`validateEntity_` only checks that a cluster's `clusterManagerUserId` and
+`collectorUserId` differ **from each other** — nothing stops either from
+also being an admin/finance account's own user id. That's a completely
+realistic setup (a small company reusing a finance person as a collector),
+and it means "requires admin/finance" is not the same guarantee as "requires
+someone else." A deep review (2026-09-13) found `actionAcknowledgeSecondApproval_`
+missing exactly this check: the same admin/finance user who confirmed a
+large handoff (legitimately, as its real receiver — no conflict at that
+step) could also acknowledge their own second-approval sign-off, silently
+defeating "four eyes." Fixed by adding `if (h.confirmedBy === user.id) return
+conflict_of_interest` — same reasoning as the `fromUserId`/`toUserId` guard
+already on `actionResolveDispute_`. **Whenever a new action requires
+admin/finance and is meant as an independent check on something another
+admin/finance action already touched, add the self-check explicitly — it is
+never implied by the role requirement alone.** The same review also found
+`escalateLargeAmount_` only emailing admin/finance, unlike
+`escalateShortfall_`/`escalateStaleHandoff_` which also reach the cluster's
+own manager and collector — widened to match, since a narrower recipient
+list on one of three near-identical escalation functions was very likely a
+copy-paste gap, not a deliberate choice. Both are covered by new
+`tests/run.js` sections; a third bug from the same review —
+`actionMeta_` never returning `staleThresholdHours`/`secondApprovalThreshold`,
+so the Settings screen always showed the hardcoded defaults and a naive save
+could silently revert a live config back to them — is covered by the
+`listMeta` assertion in the "large-amount second approval" section.
+
+### 4. A one-shot "clear all transactions" bulk-delete is hard-blocked
 
 Claude Code's auto-mode safety classifier refuses any code edit that adds a
 function wiping every row of a sheet in one shot — confirmed twice on a
