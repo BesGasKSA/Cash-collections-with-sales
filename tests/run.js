@@ -295,5 +295,27 @@ check(!blockedDelete.ok && blockedDelete.error === 'has_children', 'a product wi
 var deactivate = call({ action: 'adminSaveEntity', token: adminTok, kind: 'product', id: prodA.id, data: { active: false } });
 check(deactivate.ok && deactivate.entity.active === false, 'a product can be deactivated instead');
 
+console.log('--- bulk import (CSV/Excel entry import) ---');
+var importRes = call({
+  action: 'importDailyEntries', token: adminTok,
+  rows: [
+    { date: '2026-09-11', sourceType: 'store', sourceId: store.entity.id, cashSales: 111 },
+    { date: '2026-09-11', sourceType: 'car', sourceId: car.entity.id, cashSales: 222, deliveryFeeBankAmount: 50 },
+    { date: '2026-09-11', sourceType: 'store', sourceId: 'does-not-exist', cashSales: 999 },
+    { date: '2026-09-11', sourceType: 'car', sourceId: car2.id, cashSales: 50 } // belongs to a different location, admin is allowed
+  ]
+});
+check(importRes.ok, 'import call succeeds');
+check(importRes.total === 4 && importRes.created === 3, 'imports the valid rows and reports the bad one separately (got created=' + importRes.created + ')');
+check(importRes.results[2].ok === false && importRes.results[2].error === 'not_found', 'unknown sourceId is rejected per-row, not for the whole batch');
+
+var nonAdminImport = call({ action: 'importDailyEntries', token: aliTok, rows: [{ date: '2026-09-11', sourceType: 'store', sourceId: store.entity.id, cashSales: 10 }] });
+check(nonAdminImport.ok, 'store manager can also import within their own scope (same checkEntryScope_ as a single entry)');
+
+var otherLocation = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: 'Jeddah', name: 'Other Branch', clusterId: cluster.entity.id } }).entity;
+var otherCar = call({ action: 'adminSaveEntity', token: adminTok, kind: 'car', data: { locationId: otherLocation.id, label: 'Truck-Other', driverUserId: null } }).entity;
+var scopedImport = call({ action: 'importDailyEntries', token: aliTok, rows: [{ date: '2026-09-11', sourceType: 'car', sourceId: otherCar.id, cashSales: 10 }] });
+check(scopedImport.ok && scopedImport.created === 0 && scopedImport.results[0].error === 'forbidden', 'store manager importing a source outside their own location is rejected per-row, same as a single entry');
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);

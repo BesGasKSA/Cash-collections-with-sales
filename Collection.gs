@@ -103,6 +103,49 @@ function actionCreateEntry_(req, user) {
   return { ok: true, entry: entry };
 }
 
+// Bulk version of actionCreateEntry_ for CSV/Excel import — same per-row
+// scope check and field shape, just looped, so a bad row can't silently
+// corrupt a good one. Capped well under Apps Script's execution limit.
+function actionImportEntries_(req, user) {
+  var rows = Array.isArray(req.rows) ? req.rows : [];
+  if (!rows.length) return { ok: false, error: 'invalid_input' };
+  if (rows.length > 500) return { ok: false, error: 'too_many_rows' };
+
+  var results = [];
+  var created = 0;
+  for (var i = 0; i < rows.length; i++) {
+    var r = rows[i] || {};
+    if (!r.date || !r.sourceType || !r.sourceId) {
+      results.push({ row: i, ok: false, error: 'invalid_input' });
+      continue;
+    }
+    var scope = checkEntryScope_(user, r.sourceType, r.sourceId);
+    if (!scope.ok) {
+      results.push({ row: i, ok: false, error: scope.error });
+      continue;
+    }
+    var entry = {
+      id: Utilities.getUuid(),
+      date: r.date,
+      sourceType: r.sourceType,
+      sourceId: r.sourceId,
+      locationId: scope.locationId,
+      enteredBy: user.id,
+      productId: r.productId || null,
+      cashSales: Number(r.cashSales || 0),
+      deliveryFeeBankAmount: Number(r.deliveryFeeBankAmount || 0),
+      posSales: Number(r.posSales || 0),
+      note: r.note || '',
+      consumedBy: null
+    };
+    writeRow(SHEETS.ENTRIES, entry);
+    created++;
+    results.push({ row: i, ok: true, id: entry.id });
+  }
+  logAudit_('import_entries', user.id, created + '/' + rows.length);
+  return { ok: true, created: created, total: rows.length, results: results };
+}
+
 function actionListEntries_(req, user) {
   var rows = readSheet(SHEETS.ENTRIES);
 
