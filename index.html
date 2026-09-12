@@ -565,6 +565,19 @@ setLang(state.lang);
 // ---------------- helpers ----------------
 function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
 function money(n){ n=Number(n||0); return n.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}); }
+// A plain type="number" input can never show thousand separators while
+// being typed (browsers reject the comma outright), so every amount/count
+// field the user types into is a plain type="text" input instead, reusing
+// this same comma-on-blur + comma-stripped-on-read pattern already proven
+// on the handoff receivedAmount field.
+function numFromInput_(el){ return Number(String(el.value||'').replace(/,/g,'').trim() || 0); }
+function wireCommaInput_(input, decimals){
+  input.addEventListener('blur', function(){
+    var raw = String(input.value||'').replace(/,/g,'').trim();
+    if (raw === '' || isNaN(Number(raw))) return;
+    input.value = decimals ? money(Number(raw)) : Math.round(Number(raw)).toLocaleString();
+  });
+}
 function el(html){
   html = html.trim();
   // A bare <tr>/<td>/<th> fragment gets silently stripped by the HTML
@@ -1281,21 +1294,26 @@ function renderEntries(body){
       '<div class="field"><label>'+esc(t('entry_location'))+'</label><input id="eLocation" type="text" readonly value="—"></div>' +
     '</div>' +
     '<div class="grid">' +
-      '<div class="field" id="eCashWrap"><label>'+esc(t('entry_cash'))+'</label><input id="eCash" type="number" step="0.01" value="0"></div>' +
-      '<div class="field" id="eDeliveryWrap"><label>'+esc(t('entry_delivery'))+'</label><input id="eDelivery" type="number" step="0.01" value="0">' +
+      '<div class="field" id="eCashWrap"><label>'+esc(t('entry_cash'))+'</label><input id="eCash" type="text" inputmode="decimal" value="0"></div>' +
+      '<div class="field" id="eDeliveryWrap"><label>'+esc(t('entry_delivery'))+'</label><input id="eDelivery" type="text" inputmode="decimal" value="0">' +
         '<small class="hint" id="eDeliveryHint"></small></div>' +
-      '<div class="field" id="ePosWrap"><label>'+esc(t('entry_pos'))+'</label><input id="ePos" type="number" step="0.01" value="0"></div>' +
+      '<div class="field" id="ePosWrap"><label>'+esc(t('entry_pos'))+'</label><input id="ePos" type="text" inputmode="decimal" value="0"></div>' +
       '<div class="field" id="eProductWrap"><label>'+esc(t('entry_product'))+'</label><select id="eProduct"></select></div>' +
     '</div>' +
     '<div class="grid" id="eCylWrap" style="display:none;">' +
-      '<div class="field"><label>'+esc(t('entry_cylindersOut'))+'</label><input id="eCylOut" type="number" step="1" min="0" value="0"></div>' +
-      '<div class="field"><label>'+esc(t('entry_cylindersIn'))+'</label><input id="eCylIn" type="number" step="1" min="0" value="0"></div>' +
+      '<div class="field"><label>'+esc(t('entry_cylindersOut'))+'</label><input id="eCylOut" type="text" inputmode="numeric" value="0"></div>' +
+      '<div class="field"><label>'+esc(t('entry_cylindersIn'))+'</label><input id="eCylIn" type="text" inputmode="numeric" value="0"></div>' +
     '</div>' +
     '<div class="field"><label>'+esc(t('entry_note'))+'</label><input id="eNote"></div>' +
     '<button class="btn" id="eSubmit">'+esc(t('entry_submit'))+'</button>' +
   '</div>');
   body.innerHTML = '';
   body.appendChild(form);
+  wireCommaInput_(qs('#eCash', form), true);
+  wireCommaInput_(qs('#eDelivery', form), true);
+  wireCommaInput_(qs('#ePos', form), true);
+  wireCommaInput_(qs('#eCylOut', form), false);
+  wireCommaInput_(qs('#eCylIn', form), false);
 
   var typeSel = qs('#eType', form);
   var opts = [];
@@ -1381,12 +1399,12 @@ function renderEntries(body){
       date: qs('#eDate', form).value,
       sourceType: typeSel.value,
       sourceId: qs('#eSource', form).value,
-      cylindersOut: Number(qs('#eCylOut', form).value||0),
-      cylindersIn: Number(qs('#eCylIn', form).value||0),
+      cylindersOut: numFromInput_(qs('#eCylOut', form)),
+      cylindersIn: numFromInput_(qs('#eCylIn', form)),
       productId: productSel.value || null,
-      cashSales: Number(qs('#eCash', form).value||0),
-      deliveryFeeBankAmount: Number(qs('#eDelivery', form).value||0),
-      posSales: Number(qs('#ePos', form).value||0),
+      cashSales: numFromInput_(qs('#eCash', form)),
+      deliveryFeeBankAmount: numFromInput_(qs('#eDelivery', form)),
+      posSales: numFromInput_(qs('#ePos', form)),
       note: qs('#eNote', form).value
     };
     if (!payload.sourceId){ qs('#entryMsg',form).innerHTML='<div class="msg err">'+esc(t('err_generic'))+'</div>'; return; }
