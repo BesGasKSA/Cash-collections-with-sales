@@ -538,7 +538,33 @@ assignment or a bare `table[key]` truthy-check, on anything built from
 `req.data` or another client-supplied field.** Covered by
 `tests/run.js`'s "crafted `__proto__`/`constructor` keys" section.
 
-### 5. A one-shot "clear all transactions" bulk-delete is hard-blocked
+### 5. A field added to one entry type has several places that must all learn about it
+
+A bug sweep (2026-09-13) found that letting a `car` entry carry `posSales`
+(so a car with its own mounted POS terminal can report card sales, not just
+cash) had only actually been wired into `computeNet_` and the by-product
+breakdown — four other places still assumed only a dedicated `pos` source
+could have `posSales`, so a car's card sales were silently dropped from: the
+dashboard's "by source type" donut (`index.html`, `sourceTotals` — fixed to
+add `e.posSales` for `car` too), the Entries screen's "Recent entries" amount
+column (was `e.sourceType==='pos' ? e.posSales : e.cashSales`, a ternary that
+can't represent an entry carrying both — fixed to always show
+`cashSales + posSales`), and the CSV bulk-import path end to end (the column
+hint text, the template generator, and the row parser never mentioned
+`cylindersOut`/`cylindersIn` at all — not specific to `posSales`, but the
+same root problem: a field that exists on the manual entry form was never
+propagated to the bulk-import equivalent). **Whenever a new field is added to
+`daily_entries`, grep the client for every place that reads `cashSales`/
+`posSales`/`cylindersOut`/`cylindersIn` off an entry or aggregates per
+`sourceType` — a per-entry-type ternary or a `case` that only lists some
+source types is the shape this bug takes.** The same sweep also found the
+`admin` role had no way to actually reach the documented "confirm on behalf
+of an unavailable receiver" backend capability (Traps, "conflict of
+interest" — the Handoffs screen's pending list was filtered to
+`toUserId===me` for every role including admin); fixed by letting admin see
+every pending handoff there, not just their own.
+
+### 6. A one-shot "clear all transactions" bulk-delete is hard-blocked
 
 Claude Code's auto-mode safety classifier refuses any code edit that adds a
 function wiping every row of a sheet in one shot — confirmed twice on a

@@ -277,7 +277,7 @@ var L = {
     entry_source_car:'سيارة', entry_source_pos:'جهاز نقاط بيع', entry_cash:'المبيعات النقدية', entry_delivery:'رسوم التوصيل (بنك)',
     entry_pos:'مبيعات نقاط البيع', entry_note:'ملاحظة', entry_submit:'حفظ الإدخال', entry_list:'الإدخالات الأخيرة',
     entry_location:'الموقع',
-    entry_importTitle:'استيراد من CSV / إكسل', entry_importHint:'حمّل قالب CSV واملأه، ثم ارفعه هنا. الأعمدة: date, sourceType, sourceName, product, cashSales, deliveryFee, posSales, note',
+    entry_importTitle:'استيراد من CSV / إكسل', entry_importHint:'حمّل قالب CSV واملأه، ثم ارفعه هنا. الأعمدة: date, sourceType, sourceName, product, cashSales, deliveryFee, posSales, cylindersOut, cylindersIn, note',
     entry_importTemplate:'تحميل القالب', entry_importChoose:'اختر ملف CSV', entry_importPreview:'معاينة قبل الاستيراد',
     entry_importCol_row:'#', entry_importCol_date:'التاريخ', entry_importCol_type:'النوع', entry_importCol_source:'المصدر',
     entry_importCol_status:'الحالة', entry_importValid:'جاهز', entry_importSubmit:'استيراد الصفوف الصحيحة',
@@ -344,7 +344,7 @@ var L = {
     role_collector:'مُحصّل', role_driver:'سائق', settings_url:'رابط النظام (Apps Script)', settings_save:'حفظ الرابط',
     err_generic:'حدث خطأ، حاول مرة أخرى', ok_saved:'تم الحفظ بنجاح', confirm_delete:'هل أنت متأكد من الحذف؟',
     noData:'لا توجد بيانات', loading:'جارِ التحميل...', total:'الإجمالي', kind_location_to_cluster:'فرع ← مجمّع',
-    kind_cluster_to_collector:'مجمّع ← مُحصّل', kind_deposit:'إيداع بنكي', filter:'تصفية', all:'الكل'
+    kind_cluster_to_collector:'مجمّع ← مُحصّل', kind_deposit:'إيداع بنكي', filter:'تصفية', all:'الكل', entity_bank:'البنك'
   },
   en: {
     appName:'Best Gas — Cash Collection', login:'Sign In', email:'Email', password:'Password',
@@ -373,7 +373,7 @@ var L = {
     entry_source_car:'Car', entry_source_pos:'POS machine', entry_cash:'Cash sales', entry_delivery:'Delivery fee (bank)',
     entry_pos:'POS sales', entry_note:'Note', entry_submit:'Save entry', entry_list:'Recent entries',
     entry_location:'Location',
-    entry_importTitle:'Import from CSV / Excel', entry_importHint:'Download the CSV template, fill it in, then upload it here. Columns: date, sourceType, sourceName, product, cashSales, deliveryFee, posSales, note',
+    entry_importTitle:'Import from CSV / Excel', entry_importHint:'Download the CSV template, fill it in, then upload it here. Columns: date, sourceType, sourceName, product, cashSales, deliveryFee, posSales, cylindersOut, cylindersIn, note',
     entry_importTemplate:'Download template', entry_importChoose:'Choose CSV file', entry_importPreview:'Preview before import',
     entry_importCol_row:'#', entry_importCol_date:'Date', entry_importCol_type:'Type', entry_importCol_source:'Source',
     entry_importCol_status:'Status', entry_importValid:'Ready', entry_importSubmit:'Import valid rows',
@@ -440,7 +440,7 @@ var L = {
     role_collector:'Collector', role_driver:'Driver', settings_url:'System URL (Apps Script)', settings_save:'Save URL',
     err_generic:'Something went wrong, please try again', ok_saved:'Saved successfully', confirm_delete:'Are you sure you want to delete this?',
     noData:'No data', loading:'Loading...', total:'Total', kind_location_to_cluster:'Branch → Cluster',
-    kind_cluster_to_collector:'Cluster → Collector', kind_deposit:'Bank deposit', filter:'Filter', all:'All'
+    kind_cluster_to_collector:'Cluster → Collector', kind_deposit:'Bank deposit', filter:'Filter', all:'All', entity_bank:'Bank'
   },
   ur: {
     appName:'بیسٹ گیس — نقد وصولی نظام', login:'لاگ ان', email:'ای میل', password:'پاس ورڈ',
@@ -469,7 +469,7 @@ var L = {
     entry_source_car:'گاڑی', entry_source_pos:'POS مشین', entry_cash:'نقد فروخت', entry_delivery:'ڈلیوری فیس (بینک)',
     entry_pos:'POS فروخت', entry_note:'نوٹ', entry_submit:'اندراج محفوظ کریں', entry_list:'حالیہ اندراجات',
     entry_location:'مقام',
-    entry_importTitle:'CSV / ایکسل سے درآمد کریں', entry_importHint:'CSV ٹیمپلیٹ ڈاؤن لوڈ کریں، اسے پُر کریں، پھر یہاں اپ لوڈ کریں۔ کالمز: date, sourceType, sourceName, product, cashSales, deliveryFee, posSales, note',
+    entry_importTitle:'CSV / ایکسل سے درآمد کریں', entry_importHint:'CSV ٹیمپلیٹ ڈاؤن لوڈ کریں، اسے پُر کریں، پھر یہاں اپ لوڈ کریں۔ کالمز: date, sourceType, sourceName, product, cashSales, deliveryFee, posSales, cylindersOut, cylindersIn, note',
     entry_importTemplate:'ٹیمپلیٹ ڈاؤن لوڈ کریں', entry_importChoose:'CSV فائل منتخب کریں', entry_importPreview:'درآمد سے پہلے معائنہ',
     entry_importCol_row:'#', entry_importCol_date:'تاریخ', entry_importCol_type:'قسم', entry_importCol_source:'ذریعہ',
     entry_importCol_status:'حالت', entry_importValid:'تیار', entry_importSubmit:'درست قطاریں درآمد کریں',
@@ -536,7 +536,7 @@ var L = {
     role_collector:'کلکٹر', role_driver:'ڈرائیور', settings_url:'سسٹم لنک (Apps Script)', settings_save:'لنک محفوظ کریں',
     err_generic:'کچھ غلط ہوگیا، دوبارہ کوشش کریں', ok_saved:'کامیابی سے محفوظ ہوگیا', confirm_delete:'کیا آپ واقعی حذف کرنا چاہتے ہیں؟',
     noData:'کوئی ڈیٹا نہیں', loading:'لوڈ ہو رہا ہے...', total:'کل', kind_location_to_cluster:'برانچ ← کلسٹر',
-    kind_cluster_to_collector:'کلسٹر ← کلکٹر', kind_deposit:'بینک جمع', filter:'فلٹر', all:'تمام'
+    kind_cluster_to_collector:'کلسٹر ← کلکٹر', kind_deposit:'بینک جمع', filter:'فلٹر', all:'تمام', entity_bank:'بینک'
   }
 };
 function t(k){ var l=L[state.lang]||L.ar; return l[k]!==undefined ? l[k] : (L.en[k]!==undefined?L.en[k]:k); }
@@ -1073,7 +1073,7 @@ function renderDashboard(body){
       // vs. no-risk split is what computeNet_'s breakdown is for, not this chart.
       if (e.sourceType === 'pos') sourceTotals.pos += Number(e.cashSales||0) + Number(e.posSales||0);
       else if (e.sourceType === 'store') sourceTotals.store += Number(e.cashSales||0);
-      else if (e.sourceType === 'car') sourceTotals.car += Number(e.cashSales||0);
+      else if (e.sourceType === 'car') sourceTotals.car += Number(e.cashSales||0) + Number(e.posSales||0);
     });
     var sourceCard = el('<div class="card"><h2>'+esc(t('dash_bySourceType'))+'</h2></div>');
     sourceCard.appendChild(donutChart([
@@ -1255,8 +1255,8 @@ function resolveProductByName_(name){
 function downloadCsvTemplate_(){
   var meta = state.meta || {};
   var sampleStore = (meta.stores && meta.stores[0] && meta.stores[0].name) || 'Store name';
-  var header = 'date,sourceType,sourceName,product,cashSales,deliveryFee,posSales,note';
-  var sample = new Date().toISOString().slice(0,10)+',store,'+sampleStore+',,1000,,0,';
+  var header = 'date,sourceType,sourceName,product,cashSales,deliveryFee,posSales,cylindersOut,cylindersIn,note';
+  var sample = new Date().toISOString().slice(0,10)+',store,'+sampleStore+',,1000,,0,,,';
   var csv = header+'\n'+sample+'\n';
   var blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
   var url = URL.createObjectURL(blob);
@@ -1435,6 +1435,8 @@ function renderEntries(body){
           var cashSales = cell(r,'cashSales');
           var deliveryFee = cell(r,'deliveryFee');
           var posSales = cell(r,'posSales');
+          var cylindersOut = cell(r,'cylindersOut');
+          var cylindersIn = cell(r,'cylindersIn');
           var note = cell(r,'note');
 
           var status = 'ok', sourceId = null, productId = null;
@@ -1446,7 +1448,8 @@ function renderEntries(body){
           if (status === 'ok' && productName) productId = resolveProductByName_(productName);
           return {
             date: date, sourceType: sourceType, sourceId: sourceId, sourceName: sourceName,
-            productId: productId, cashSales: cashSales, deliveryFeeBankAmount: deliveryFee, posSales: posSales, note: note,
+            productId: productId, cashSales: cashSales, deliveryFeeBankAmount: deliveryFee, posSales: posSales,
+            cylindersOut: cylindersOut, cylindersIn: cylindersIn, note: note,
             status: status
           };
         });
@@ -1492,7 +1495,10 @@ function renderEntries(body){
       var wrap = qs('#entryListBody');
       if(!res.ok || !res.entries.length){ wrap.innerHTML = '<div class="muted">'+esc(t('noData'))+'</div>'; return; }
       var rows = res.entries.slice(0,30).map(function(e){
-        var amt = e.sourceType==='pos' ? e.posSales : e.cashSales;
+        // A car or pos entry can carry both cash and card/POS sales at once
+        // now, so a single-column quick list shows their sum rather than
+        // picking just one and silently dropping the other.
+        var amt = Number(e.cashSales||0) + Number(e.posSales||0);
         return '<tr><td>'+esc(e.date)+'</td><td>'+esc(t('entry_source_'+e.sourceType))+'</td><td>'+money(amt)+'</td><td>'+(e.consumedBy?'✓':'')+'</td></tr>';
       }).join('');
       wrap.innerHTML = '<table><thead><tr><th>'+esc(t('entry_date'))+'</th><th>'+esc(t('entry_sourceType'))+'</th><th>'+esc(t('handoff_amount'))+'</th><th></th></tr></thead><tbody>'+rows+'</tbody></table>';
@@ -1559,7 +1565,7 @@ function handoffItem(h, showConfirm, showResolve){
       '<div><strong>'+esc(t('kind_'+h.kind))+'</strong> ' + statusBadge(h.status) + '</div>' +
       '<div class="amount">'+money(h.amount)+'</div>' +
     '</div>' +
-    '<div class="muted">'+esc(t('handoff_from'))+': '+esc(userName(h.fromUserId))+' · '+esc(t('handoff_to'))+': '+esc(h.toUserId?userName(h.toUserId):'Bank')+' · '+esc((h.createdAt||'').slice(0,16).replace('T',' '))+'</div>' +
+    '<div class="muted">'+esc(t('handoff_from'))+': '+esc(userName(h.fromUserId))+' · '+esc(t('handoff_to'))+': '+esc(h.toUserId?userName(h.toUserId):t('entity_bank'))+' · '+esc((h.createdAt||'').slice(0,16).replace('T',' '))+'</div>' +
     (h.disputeNote ? '<div class="muted">📝 '+esc(h.disputeNote)+'</div>' : '') +
     varianceLine(h) +
     (h.requiresSecondApproval ? '<div class="msg '+(h.secondApprovedBy?'ok':'err')+'" style="margin-top:8px;">'+esc(t(h.secondApprovedBy?'handoff_secondApproved':'handoff_needsSecondApproval'))+'</div>' : '') +
@@ -1712,7 +1718,14 @@ function renderHandoffs(body){
     }
 
     // lists
-    var pending = res.handoffs.filter(function(h){ return h.status==='pending' && h.toUserId===state.user.id; });
+    // Admin can confirm/dispute on behalf of an unavailable receiver — a
+    // real, tested backend capability (actionConfirmHandoff_/
+    // actionDisputeHandoff_ relax the toUserId check for admin only, see
+    // CLAUDE.md "conflict of interest"). Restricting this list to
+    // toUserId===me for everyone, admin included, would leave that
+    // capability with no way to actually reach it, so admin sees every
+    // pending handoff here, not just their own.
+    var pending = res.handoffs.filter(function(h){ return h.status==='pending' && (h.toUserId===state.user.id || role==='admin'); });
     var disputed = res.handoffs.filter(function(h){ return h.status==='disputed'; });
     var history = res.handoffs.filter(function(h){ return pending.indexOf(h)<0; });
     setNotifCount(pending.length + ((role==='admin'||role==='finance') ? disputed.length : 0));
@@ -2394,12 +2407,24 @@ function renderAdminEntity(content, kind){
   var listCard = el('<div class="card"><h2>'+esc(t('admin_'+({location:'locations',store:'stores',car:'cars',pos:'pos',cluster:'clusters',zone:'zones',product:'products'})[kind]))+'</h2><table><thead><tr>' +
     spec.cols.map(function(c){ return '<th>'+esc(colLabel_(c))+'</th>'; }).join('') + '<th class="col-actions"></th></tr></thead><tbody id="entBody"></tbody></table></div>');
   content.appendChild(listCard);
+  // A column backed by an options-based field (e.g. pos's ownerType:
+  // 'store'/'car') must show the translated option label, not the raw
+  // stored value — same reasoning as locationId already being resolved to
+  // a readable name instead of a bare id.
+  function colValue_(item, c){
+    var v = item[c];
+    if (c === 'locationId') return locationName(v);
+    var f = spec.fields.filter(function(x){ return x.k===c; })[0];
+    if (f && f.options) {
+      var opt = f.options.filter(function(o){ return o[0]===v; })[0];
+      return opt ? t(opt[1]) : v;
+    }
+    return v;
+  }
   var tbody = qs('#entBody', listCard);
   list.forEach(function(item){
     var tds = spec.cols.map(function(c){
-      var v = item[c];
-      if (c==='locationId') v = locationName(v);
-      return '<td>'+esc(v)+'</td>';
+      return '<td>'+esc(colValue_(item, c))+'</td>';
     }).join('');
     var tr = el('<tr>'+tds+'<td class="col-actions"></td></tr>');
     var delBtn = el('<button class="btn-icon" title="'+esc(t('admin_delete'))+'"><svg viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg></button>');
