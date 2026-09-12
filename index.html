@@ -44,8 +44,9 @@
     header .brand{font-size:20px;gap:9px;}
     header .brand img{height:58px;}
   }
-  header .who{font-size:13px;opacity:.85;font-weight:500;}
-  header select, header button{background:rgba(255,255,255,.14);color:#fff;border:1px solid rgba(255,255,255,.22);border-radius:9px;padding:7px 12px;font-size:13px;cursor:pointer;font-weight:600;transition:background .15s ease, transform .1s ease;font-family:inherit;}
+  header .who{font-size:13px;opacity:.85;font-weight:500;white-space:nowrap;padding-inline-end:12px;margin-inline-end:2px;border-inline-end:1px solid rgba(255,255,255,.22);}
+  header .header-controls{display:flex;gap:8px;align-items:center;flex-wrap:nowrap;flex-shrink:0;}
+  header select, header button{background:rgba(255,255,255,.14);color:#fff;border:1px solid rgba(255,255,255,.22);border-radius:9px;padding:7px 12px;height:34px;font-size:13px;cursor:pointer;font-weight:600;transition:background .15s ease, transform .1s ease;font-family:inherit;box-sizing:border-box;}
   header select{background:#fff;color:var(--green-dark);border-color:transparent;}
   header button:hover{background:rgba(255,255,255,.24);}
   header button:active{transform:scale(.97);}
@@ -281,6 +282,7 @@ var L = {
     handoff_originalAmount:'المبلغ المُعلن أصلاً', handoff_shortfallAccepted:'تم تأكيد الاستلام مع وجود فرق — تم إبلاغ جميع المستويات الأعلى (المدير، المُحصّل، الإدارة) فوراً بالبريد الإلكتروني',
     report_title:'تقرير المبيعات', report_from:'من تاريخ', report_to:'إلى تاريخ', report_city:'المدينة', report_run:'عرض التقرير',
     report_location:'الموقع', report_allLocations:'كل المواقع', report_allTypes:'كل الأنواع', report_allSources:'الكل',
+    report_zone:'المنطقة', report_allZones:'كل المناطق',
     report_storeCash:'نقدية الفرع', report_carCash:'نقدية السيارات', report_delivery:'رسوم التوصيل', report_vat:'ضريبة القيمة المضافة',
     report_net:'صافي المستحق', report_outstanding:'غير محصّل بعد', report_pos:'مبيعات نقاط البيع', report_byLocation:'حسب الموقع',
     report_byProduct:'حسب المنتج', report_product:'المنتج', report_cashChannel:'نقدي', report_posChannel:'نقاط بيع',
@@ -301,6 +303,8 @@ var L = {
     perm_report_all:'تقرير المبيعات (كل الشركة)', perm_audit:'سجل التدقيق', perm_resolve:'حل الاعتراضات', perm_manage:'إدارة المستخدمين والبيانات الأساسية',
     admin_addUser:'إضافة مستخدم', admin_name:'الاسم', admin_role:'الدور', admin_active:'نشط', admin_resetPw:'إعادة تعيين كلمة المرور',
     admin_addLocation:'إضافة موقع', admin_city:'المدينة', admin_locName:'اسم الموقع', admin_cluster:'المجمّع',
+    admin_zones:'المناطق', admin_addZone:'إضافة منطقة', admin_zoneName:'اسم المنطقة', admin_zone:'المنطقة',
+    admin_productType:'نوع المنتج', admin_typeGoods:'سلع', admin_typeServices:'خدمات',
     admin_addStore:'إضافة فرع', admin_storeName:'اسم الفرع', admin_manager:'المشرف', admin_location:'الموقع',
     admin_addCar:'إضافة سيارة', admin_carLabel:'رقم اللوحة/السائق', admin_driver:'السائق',
     admin_addPos:'إضافة جهاز', admin_posLabel:'رقم الجهاز', admin_ownerType:'مرتبط بـ', admin_owner:'الجهة', admin_assignedDriver:'الموظف المسؤول',
@@ -352,6 +356,7 @@ var L = {
     handoff_originalAmount:'Originally declared amount', handoff_shortfallAccepted:'Receipt confirmed with a shortfall — every level above (manager, collector, admin/finance) was just emailed',
     report_title:'Sales Report', report_from:'From date', report_to:'To date', report_city:'City', report_run:'Run report',
     report_location:'Location', report_allLocations:'All locations', report_allTypes:'All types', report_allSources:'All',
+    report_zone:'Zone', report_allZones:'All zones',
     report_storeCash:'Branch cash', report_carCash:'Car cash', report_delivery:'Delivery fees', report_vat:'VAT',
     report_net:'Net owed', report_outstanding:'Still outstanding', report_pos:'POS sales', report_byLocation:'By location',
     report_byProduct:'By product', report_product:'Product', report_cashChannel:'Cash', report_posChannel:'POS',
@@ -372,6 +377,8 @@ var L = {
     perm_report_all:'Sales report (company-wide)', perm_audit:'Audit log', perm_resolve:'Resolve disputes', perm_manage:'Manage users & master data',
     admin_addUser:'Add user', admin_name:'Name', admin_role:'Role', admin_active:'Active', admin_resetPw:'Reset password',
     admin_addLocation:'Add location', admin_city:'City', admin_locName:'Location name', admin_cluster:'Cluster',
+    admin_zones:'Zones', admin_addZone:'Add zone', admin_zoneName:'Zone name', admin_zone:'Zone',
+    admin_productType:'Product type', admin_typeGoods:'Goods', admin_typeServices:'Services',
     admin_addStore:'Add branch', admin_storeName:'Branch name', admin_manager:'Store manager', admin_location:'Location',
     admin_addCar:'Add car', admin_carLabel:'Plate / driver label', admin_driver:'Driver',
     admin_addPos:'Add POS machine', admin_posLabel:'Terminal id', admin_ownerType:'Belongs to', admin_owner:'Owner', admin_assignedDriver:'Assigned employee',
@@ -423,6 +430,7 @@ var L = {
     handoff_originalAmount:'اصل اعلان کردہ رقم', handoff_shortfallAccepted:'کمی کے ساتھ وصولی کی تصدیق ہو گئی — تمام اعلیٰ سطحوں (منیجر، وصول کنندہ، ایڈمن) کو فوری ای میل کر دی گئی ہے',
     report_title:'سیلز رپورٹ', report_from:'تاریخ سے', report_to:'تاریخ تک', report_city:'شہر', report_run:'رپورٹ دیکھیں',
     report_location:'مقام', report_allLocations:'تمام مقامات', report_allTypes:'تمام اقسام', report_allSources:'تمام',
+    report_zone:'زون', report_allZones:'تمام زونز',
     report_storeCash:'برانچ نقدی', report_carCash:'گاڑی نقدی', report_delivery:'ڈلیوری فیس', report_vat:'ویٹ',
     report_net:'خالص واجب الادا', report_outstanding:'ابھی تک وصول نہیں ہوا', report_pos:'POS فروخت', report_byLocation:'مقام کے مطابق',
     report_byProduct:'پروڈکٹ کے مطابق', report_product:'پروڈکٹ', report_cashChannel:'نقد', report_posChannel:'POS',
@@ -443,6 +451,8 @@ var L = {
     perm_report_all:'سیلز رپورٹ (پوری کمپنی)', perm_audit:'آڈٹ لاگ', perm_resolve:'اعتراضات حل کریں', perm_manage:'صارفین اور بنیادی ڈیٹا کا انتظام',
     admin_addUser:'صارف شامل کریں', admin_name:'نام', admin_role:'کردار', admin_active:'فعال', admin_resetPw:'پاس ورڈ ری سیٹ کریں',
     admin_addLocation:'مقام شامل کریں', admin_city:'شہر', admin_locName:'مقام کا نام', admin_cluster:'کلسٹر',
+    admin_zones:'زونز', admin_addZone:'زون شامل کریں', admin_zoneName:'زون کا نام', admin_zone:'زون',
+    admin_productType:'پروڈکٹ کی قسم', admin_typeGoods:'اشیاء', admin_typeServices:'خدمات',
     admin_addStore:'برانچ شامل کریں', admin_storeName:'برانچ کا نام', admin_manager:'اسٹور منیجر', admin_location:'مقام',
     admin_addCar:'گاڑی شامل کریں', admin_carLabel:'پلیٹ / ڈرائیور کا نام', admin_driver:'ڈرائیور',
     admin_addPos:'POS مشین شامل کریں', admin_posLabel:'ٹرمینل نمبر', admin_ownerType:'سے منسلک', admin_owner:'مالک', admin_assignedDriver:'ذمہ دار ملازم',
@@ -737,7 +747,7 @@ function renderShell(){
 
   var header = el('<header>' +
     '<div class="brand"><img src="'+ICON_SRC+'" alt=""> '+esc(t('appName'))+'</div>' +
-    '<div class="row">' +
+    '<div class="header-controls">' +
       '<span class="who">'+esc(state.user.name)+' · '+esc(roleLabel(state.user.role))+'</span>' +
       '<button class="notif-bell" id="notifBell" title="'+esc(t('nav_notifications'))+'">' +
         '<svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>' +
@@ -1702,12 +1712,17 @@ var CHART_PALETTE = ['#4D6D51','#8fae7a','#b3820f','#3b5540','#c14a30','#98988f'
 function renderReport(body){
   var meta = state.meta || {};
   var locations = meta.locations || [];
+  var zones = meta.zones || [];
 
   body.innerHTML = '<div class="card">' +
     '<h2>'+esc(t('report_title'))+'</h2>' +
     '<div class="grid">' +
       '<div class="field"><label>'+esc(t('report_from'))+'</label><input id="rFrom" type="date"></div>' +
       '<div class="field"><label>'+esc(t('report_to'))+'</label><input id="rTo" type="date"></div>' +
+      '<div class="field"><label>'+esc(t('report_zone'))+'</label><select id="rZone">' +
+        '<option value="">'+esc(t('report_allZones'))+'</option>' +
+        zones.map(function(z){ return '<option value="'+z.id+'">'+esc(z.city+' — '+z.name)+'</option>'; }).join('') +
+      '</select></div>' +
       '<div class="field"><label>'+esc(t('report_location'))+'</label><select id="rLoc">' +
         '<option value="">'+esc(t('report_allLocations'))+'</option>' +
         locations.map(function(l){ return '<option value="'+l.id+'">'+esc(l.city+' — '+l.name)+'</option>'; }).join('') +
@@ -1742,8 +1757,20 @@ function renderReport(body){
     srcSel.innerHTML = '<option value="">'+esc(t('report_allSources'))+'</option>' +
       list.map(function(x){ return '<option value="'+x.id+'">'+esc(sourceOptionLabel_(type, x))+'</option>'; }).join('');
   }
+  // Zone narrows the location list the same way location narrows the
+  // source list — Country > City > Zone > Location > Store/Car, so picking
+  // a zone should immediately shrink the location picker to just its own.
+  function populateLocationFilter(){
+    var zoneId = qs('#rZone').value;
+    var locSel = qs('#rLoc');
+    var list = locations.filter(function(l){ return !zoneId || l.zoneId === zoneId; });
+    locSel.innerHTML = '<option value="">'+esc(t('report_allLocations'))+'</option>' +
+      list.map(function(l){ return '<option value="'+l.id+'">'+esc(l.city+' — '+l.name)+'</option>'; }).join('');
+    populateSourceFilter();
+  }
   qs('#rType').addEventListener('change', populateSourceFilter);
   qs('#rLoc').addEventListener('change', populateSourceFilter);
+  qs('#rZone').addEventListener('change', populateLocationFilter);
 
   qs('#rRun').addEventListener('click', runReport);
   runReport();
@@ -1752,6 +1779,7 @@ function renderReport(body){
     var payload = {
       dateFrom: qs('#rFrom').value || undefined,
       dateTo: qs('#rTo').value || undefined,
+      zoneId: qs('#rZone').value || undefined,
       locationId: qs('#rLoc').value || undefined,
       sourceType: qs('#rType').value || undefined,
       sourceId: qs('#rSource').value || undefined
@@ -1842,7 +1870,7 @@ function renderAdmin(body){
   var groups = [
     { key:'system', label:'admin_groupSystem', tabs:[['users','admin_users'],['permissions','admin_permissions']] },
     { key:'master', label:'admin_groupMaster', tabs:[['locations','admin_locations'],['stores','admin_stores'],
-        ['cars','admin_cars'],['pos','admin_pos'],['clusters','admin_clusters'],['products','admin_products']] },
+        ['cars','admin_cars'],['pos','admin_pos'],['clusters','admin_clusters'],['zones','admin_zones'],['products','admin_products']] },
     { key:'other', label:'admin_groupOther', tabs:[['config','admin_config'],['audit','admin_audit']] }
   ];
   body.innerHTML = '';
@@ -1865,6 +1893,7 @@ function renderAdmin(body){
     locations: function(c){ renderAdminEntity(c,'location'); },
     stores: function(c){ renderAdminEntity(c,'store'); }, cars: function(c){ renderAdminEntity(c,'car'); },
     pos: function(c){ renderAdminEntity(c,'pos'); }, clusters: function(c){ renderAdminEntity(c,'cluster'); },
+    zones: function(c){ renderAdminEntity(c,'zone'); },
     products: function(c){ renderAdminEntity(c,'product'); },
     config: renderAdminConfig, audit: renderAdminAudit
   };
@@ -1950,7 +1979,8 @@ function renderAdminUsers(content){
 var ENTITY_FIELDS = {
   location: { addKey:'admin_addLocation', fields:[
     {k:'city', l:'admin_city'}, {k:'name', l:'admin_locName'},
-    {k:'clusterId', l:'admin_cluster', pick:'clusters', pickLabel:function(x){return x.name;}}
+    {k:'clusterId', l:'admin_cluster', pick:'clusters', pickLabel:function(x){return x.name;}},
+    {k:'zoneId', l:'admin_zone', pick:'zones', pickLabel:function(x){return x.city+' — '+x.name;}}
   ], cols:['city','name'] },
   store: { addKey:'admin_addStore', fields:[
     {k:'locationId', l:'admin_location', pick:'locations', pickLabel:function(x){return x.city+' — '+x.name;}},
@@ -1973,14 +2003,21 @@ var ENTITY_FIELDS = {
     {k:'clusterManagerUserId', l:'admin_clusterManager', pick:'users', pickLabel:function(x){return x.name;}, pickFilter:function(x){return x.role==='cluster_manager';}},
     {k:'collectorUserId', l:'admin_collector', pick:'users', pickLabel:function(x){return x.name;}, pickFilter:function(x){return x.role==='collector';}}
   ], cols:['name'] },
+  // Pure geography — City/Zone, independent of Cluster (which is the
+  // employee-based management assignment above). A location can optionally
+  // point at a zone for the Country > City > Zone > Location filtering view.
+  zone: { addKey:'admin_addZone', fields:[
+    {k:'city', l:'admin_city'}, {k:'name', l:'admin_zoneName'}
+  ], cols:['city','name'] },
   product: { addKey:'admin_addProduct', fields:[
-    {k:'name', l:'admin_productName'}
+    {k:'name', l:'admin_productName'},
+    {k:'type', l:'admin_productType', options:[['goods','admin_typeGoods'],['services','admin_typeServices']]}
   ], cols:['name'] }
 };
 
 function metaListFor_(kind){
   var m = state.meta||{};
-  var map = { location:'locations', store:'stores', car:'cars', pos:'pos', cluster:'clusters', product:'products' };
+  var map = { location:'locations', store:'stores', car:'cars', pos:'pos', cluster:'clusters', zone:'zones', product:'products' };
   return m[map[kind]]||[];
 }
 
@@ -2039,7 +2076,7 @@ function renderAdminEntity(content, kind){
     var f = spec.fields.filter(function(x){ return x.k===c; })[0];
     return f ? t(f.l) : c;
   }
-  var listCard = el('<div class="card"><h2>'+esc(t('admin_'+({location:'locations',store:'stores',car:'cars',pos:'pos',cluster:'clusters',product:'products'})[kind]))+'</h2><table><thead><tr>' +
+  var listCard = el('<div class="card"><h2>'+esc(t('admin_'+({location:'locations',store:'stores',car:'cars',pos:'pos',cluster:'clusters',zone:'zones',product:'products'})[kind]))+'</h2><table><thead><tr>' +
     spec.cols.map(function(c){ return '<th>'+esc(colLabel_(c))+'</th>'; }).join('') + '<th></th></tr></thead><tbody id="entBody"></tbody></table></div>');
   content.appendChild(listCard);
   var tbody = qs('#entBody', listCard);

@@ -11,6 +11,7 @@ var ENTITY_SHEET = {
   car: SHEETS.CARS,
   pos: SHEETS.POS,
   cluster: SHEETS.CLUSTERS,
+  zone: SHEETS.ZONES,
   product: SHEETS.PRODUCTS
 };
 
@@ -21,6 +22,7 @@ var ENTITY_CHILDREN = {
   store: [{ sheet: SHEETS.POS, field: 'ownerId', ownerType: 'store' }],
   car: [{ sheet: SHEETS.POS, field: 'ownerId', ownerType: 'car' }],
   cluster: [{ sheet: SHEETS.LOCATIONS, field: 'clusterId' }],
+  zone: [{ sheet: SHEETS.LOCATIONS, field: 'zoneId' }],
   pos: [],
   // a product with existing sales history stays selectable in entry forms
   // (deactivate instead) but blocking delete protects the report from
@@ -160,6 +162,8 @@ function validateEntity_(kind, d) {
     if (d.clusterManagerUserId && d.collectorUserId && d.clusterManagerUserId === d.collectorUserId) {
       return 'conflict_of_interest';
     }
+  } else if (kind === 'zone') {
+    if (!d.city || !d.name) return 'invalid_input';
   } else if (kind === 'product') {
     if (!d.name) return 'invalid_input';
   } else {
@@ -276,6 +280,7 @@ function actionMeta_(req, user) {
   var cars = readSheet(SHEETS.CARS);
   var pos = readSheet(SHEETS.POS);
   var clusters = readSheet(SHEETS.CLUSTERS);
+  var zones = readSheet(SHEETS.ZONES);
   var products = readSheet(SHEETS.PRODUCTS);
   var users = readSheet(SHEETS.USERS).map(publicUser_);
 
@@ -290,6 +295,6 @@ function actionMeta_(req, user) {
   return {
     ok: true,
     locations: locations, stores: stores, cars: cars, pos: pos,
-    clusters: clusters, products: products, users: users, config: { vatRate: vatRate_() }
+    clusters: clusters, zones: zones, products: products, users: users, config: { vatRate: vatRate_() }
   };
 }
