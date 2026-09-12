@@ -443,7 +443,7 @@ function actionSetLanguage_(req, user) {
 }
 
 function actionChangePassword_(req, user) {
-  if (!req.newPassword || String(req.newPassword).length < 6) {
+  if (!req.newPassword || String(req.newPassword).length < 8) {
     return { ok: false, error: 'weak_password' };
   }
   if (!user.mustChangePw && !verifyPw_(req.currentPassword, user.salt, user.pass)) {

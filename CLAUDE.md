@@ -187,6 +187,36 @@ testing against `tests/mock-backend-server.js`, which serves its own
 that case, or just edit `DEFAULT_API_URL` for a fork against a different
 Sheet/script entirely.
 
+## Distributing the client — index.html vs. index.protected.html
+
+`index.html` is the source — always read and edit this one. `node
+tools/obfuscate.js` builds `index.protected.html`, an obfuscated copy
+(the whole app script XOR'd + base64'd behind a tiny loader) meant for
+actual sharing/hosting, since the plain file is fully readable via
+"view source" in any browser. Regenerate it after every `index.html`
+change that should reach distribution — it is not kept in sync
+automatically.
+
+This is obfuscation, not real security: there is no secret in the client
+to protect, since every actual authorization check (who can see what,
+who can approve what, password verification) already runs server-side
+in `Code.gs`/`Admin.gs`/`Collection.gs`, none of which this touches. It
+only raises the bar against casual copy-paste of the UI/business logic.
+A determined reader can always deobfuscate client-side JS. See the
+sibling `Downloads/7777` rental app for the same tradeoff, including the
+trap it hit: an obfuscated bundle makes a real bug read exactly like a
+"swallowed rejection" — decode/execution errors here are deliberately
+*not* caught in a try/catch, so they still surface normally in the
+console instead of failing silently. Debug against `index.html` directly
+(mock server or file), never the obfuscated output.
+
+Other hardening done alongside this: password minimum bumped from 6 to
+8 chars (`actionChangePassword_`, `Code.gs`); an XSS audit of every
+`innerHTML`/`el()` call site in `index.html` found the existing `esc()`
+discipline already consistent everywhere user/admin-entered text renders
+(names, notes, dispute reasons, audit log, CSV-import preview) — no gaps
+found, nothing to fix there.
+
 ## Deploying — live since 2026-09-10
 
 Deployed. Script project id `1IvXuVjao9KsxrXDgT8Z51QOpgTnUSWSNVWT08G5KFMMXLwz9_9IQEukD`,
