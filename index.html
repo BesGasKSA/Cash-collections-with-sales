@@ -53,6 +53,10 @@
   #loadOverlay .ring-inner{width:52px;height:52px;border-radius:50%;background:var(--card);display:flex;align-items:center;justify-content:center;}
   #loadOverlay .pct{font-size:13.5px;font-weight:800;color:var(--green-dark);}
   .notif-badge{position:absolute;top:-4px;inset-inline-end:-4px;background:var(--danger);color:#fff;border-radius:999px;min-width:17px;height:17px;padding:0 4px;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;border:2px solid var(--green);}
+  .home-action{margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,.22);font-size:13px;font-weight:600;opacity:.95;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;}
+  .home-action.has-action{cursor:pointer;}
+  .home-action.has-action:hover{opacity:1;}
+  .home-action-cta{font-size:12px;font-weight:800;white-space:nowrap;text-decoration:underline;text-underline-offset:2px;}
   nav{display:flex;gap:6px;flex-wrap:wrap;background:var(--green-dark);padding:10px 18px;position:relative;z-index:1;}
   nav button{background:transparent;border:1px solid rgba(255,255,255,.28);color:rgba(255,255,255,.92);padding:7px 15px 7px 12px;border-radius:999px;font-size:13px;cursor:pointer;font-weight:600;transition:background .15s ease, border-color .15s ease, transform .1s ease;font-family:inherit;display:inline-flex;align-items:center;gap:6px;}
   html[dir="rtl"] nav button{padding:7px 12px 7px 15px;}
@@ -233,6 +237,8 @@ var L = {
     greeting_morning:'صباح الخير', greeting_afternoon:'مساء الخير', greeting_evening:'مساء الخير', greeting_night:'مرحباً بك',
     home_pendingForMe:'بانتظار تأكيدك', home_heldByMe:'المبلغ الموجود لديك', home_disputes:'اعتراضات جارية',
     home_companyOutstanding:'إجمالي النقدية غير المودعة', home_openDisputes:'اعتراضات مفتوحة (الإدارة)',
+    home_actionPending:'{n} تسليم بانتظار تأكيدك', home_actionDisputes:'{n} اعتراض يحتاج إلى حل',
+    home_actionNone:'لا يوجد إجراء مطلوب الآن — كل شيء محدّث', home_actionCta:'عرض التسليمات ←',
     entry_new:'إدخال يومي جديد', entry_date:'التاريخ', entry_sourceType:'المصدر', entry_source_store:'الفرع',
     entry_source_car:'سيارة', entry_source_pos:'جهاز نقاط بيع', entry_cash:'المبيعات النقدية', entry_delivery:'رسوم التوصيل (بنك)',
     entry_pos:'مبيعات نقاط البيع', entry_note:'ملاحظة', entry_submit:'حفظ الإدخال', entry_list:'الإدخالات الأخيرة',
@@ -289,6 +295,8 @@ var L = {
     greeting_morning:'Good morning', greeting_afternoon:'Good afternoon', greeting_evening:'Good evening', greeting_night:'Welcome',
     home_pendingForMe:'Awaiting your confirmation', home_heldByMe:'Cash currently held by you', home_disputes:'Open disputes',
     home_companyOutstanding:'Total cash not yet deposited', home_openDisputes:'Open disputes (company-wide)',
+    home_actionPending:'{n} handoff(s) awaiting your confirmation', home_actionDisputes:'{n} dispute(s) need resolving',
+    home_actionNone:'Nothing needs your attention right now — you\'re all caught up', home_actionCta:'View handoffs →',
     entry_new:'New daily entry', entry_date:'Date', entry_sourceType:'Source', entry_source_store:'Store branch',
     entry_source_car:'Car', entry_source_pos:'POS machine', entry_cash:'Cash sales', entry_delivery:'Delivery fee (bank)',
     entry_pos:'POS sales', entry_note:'Note', entry_submit:'Save entry', entry_list:'Recent entries',
@@ -345,6 +353,8 @@ var L = {
     greeting_morning:'صبح بخیر', greeting_afternoon:'دوپہر بخیر', greeting_evening:'شام بخیر', greeting_night:'خوش آمدید',
     home_pendingForMe:'آپ کی تصدیق کے منتظر', home_heldByMe:'آپ کے پاس موجود رقم', home_disputes:'جاری اعتراضات',
     home_companyOutstanding:'کل غیر جمع شدہ نقدی', home_openDisputes:'کھلے اعتراضات (ادارہ)',
+    home_actionPending:'{n} ترسیل آپ کی تصدیق کے منتظر ہیں', home_actionDisputes:'{n} اعتراضات کو حل کرنے کی ضرورت ہے',
+    home_actionNone:'ابھی کوئی کارروائی درکار نہیں — سب کچھ مکمل ہے', home_actionCta:'ترسیلات دیکھیں ←',
     entry_new:'نئی روزانہ انٹری', entry_date:'تاریخ', entry_sourceType:'ذریعہ', entry_source_store:'اسٹور برانچ',
     entry_source_car:'گاڑی', entry_source_pos:'POS مشین', entry_cash:'نقد فروخت', entry_delivery:'ڈلیوری فیس (بینک)',
     entry_pos:'POS فروخت', entry_note:'نوٹ', entry_submit:'انٹری محفوظ کریں', entry_list:'حالیہ اندراجات',
@@ -778,12 +788,23 @@ function renderHome(body){
     setNotifCount((res.pendingForMe||[]).length + (res.openDisputes||[]).length);
     body.innerHTML = '';
 
+    var actionParts = [];
+    if (res.pendingForMe.length) actionParts.push(t('home_actionPending').replace('{n}', res.pendingForMe.length));
+    if (res.openDisputes && res.openDisputes.length) actionParts.push(t('home_actionDisputes').replace('{n}', res.openDisputes.length));
+    var hasAction = actionParts.length > 0;
+
     var greeting = el('<div class="card" style="background:var(--green);color:#fff;">' +
       '<div style="font-size:13.5px;font-weight:700;opacity:.85;">'+esc(timeGreeting())+'</div>' +
       '<div style="font-size:19px;font-weight:800;margin-top:1px;">'+esc(state.user.name)+'</div>' +
       '<div style="opacity:.85;font-size:13px;margin-top:2px;">'+esc(roleLabel(state.user.role))+'</div>' +
+      '<div class="home-action'+(hasAction?' has-action':'')+'"'+(hasAction?' id="homeActionLine"':'')+'>' +
+        (hasAction
+          ? esc(actionParts.join(' · ')) + '<span class="home-action-cta">'+esc(t('home_actionCta'))+'</span>'
+          : esc(t('home_actionNone'))) +
+      '</div>' +
     '</div>');
     body.appendChild(greeting);
+    if (hasAction) qs('#homeActionLine', greeting).addEventListener('click', function(){ state.screen = 'handoffs'; render(); });
 
     var statsWrap = el('<div class="grid"></div>');
     statsWrap.innerHTML =
