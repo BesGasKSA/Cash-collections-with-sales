@@ -95,6 +95,10 @@ function actionCreateEntry_(req, user) {
     cashSales: Number(req.cashSales || 0),
     deliveryFeeBankAmount: Number(req.deliveryFeeBankAmount || 0),
     posSales: Number(req.posSales || 0),
+    // LPG cylinder exchange — independent of the cash formula, pure
+    // physical-inventory counts (see CLAUDE.md "Cylinder tracking").
+    cylindersOut: Number(req.cylindersOut || 0),
+    cylindersIn: Number(req.cylindersIn || 0),
     note: req.note || '',
     consumedBy: null
   };
@@ -135,6 +139,8 @@ function actionImportEntries_(req, user) {
       cashSales: Number(r.cashSales || 0),
       deliveryFeeBankAmount: Number(r.deliveryFeeBankAmount || 0),
       posSales: Number(r.posSales || 0),
+      cylindersOut: Number(r.cylindersOut || 0),
+      cylindersIn: Number(r.cylindersIn || 0),
       note: r.note || '',
       consumedBy: null
     };
@@ -657,12 +663,14 @@ function actionSalesReport_(req, user) {
   var byProductMap = {};
   entries.forEach(function (e) {
     var key = e.productId || '__unspecified__';
-    if (!byProductMap[key]) byProductMap[key] = { productId: e.productId || null, cashAmount: 0, posAmount: 0, qty: 0 };
+    if (!byProductMap[key]) byProductMap[key] = { productId: e.productId || null, cashAmount: 0, posAmount: 0, qty: 0, cylindersOut: 0, cylindersIn: 0 };
     var bucket = byProductMap[key];
     // a POS entry can carry both a cash portion and a card/bank portion now,
     // so both are counted — not either/or like it used to be.
     if (e.sourceType === 'pos') bucket.posAmount += Number(e.posSales || 0);
     bucket.cashAmount += Number(e.cashSales || 0);
+    bucket.cylindersOut += Number(e.cylindersOut || 0);
+    bucket.cylindersIn += Number(e.cylindersIn || 0);
     bucket.qty += 1;
   });
   var productRows = Object.keys(byProductMap).map(function (key) {
@@ -671,9 +679,35 @@ function actionSalesReport_(req, user) {
     return {
       productId: bucket.productId, name: p ? p.name : null,
       cashAmount: bucket.cashAmount, posAmount: bucket.posAmount,
-      total: bucket.cashAmount + bucket.posAmount, entryCount: bucket.qty
+      total: bucket.cashAmount + bucket.posAmount, entryCount: bucket.qty,
+      cylindersOut: bucket.cylindersOut, cylindersIn: bucket.cylindersIn,
+      cylinderBalance: bucket.cylindersOut - bucket.cylindersIn
     };
   }).sort(function (a, b) { return b.total - a.total; });
+
+  // LPG cylinder exchange, by location x product — the operational question
+  // is "which branch/car owes how many empties back", not just a company
+  // total, so this is deliberately the finer of the two cylinder views.
+  var cylByKey = {};
+  entries.forEach(function (e) {
+    if (!e.productId) return;
+    if (!Number(e.cylindersOut) && !Number(e.cylindersIn)) return;
+    var key = e.locationId + '|' + e.productId;
+    if (!cylByKey[key]) cylByKey[key] = { locationId: e.locationId, productId: e.productId, cylindersOut: 0, cylindersIn: 0 };
+    cylByKey[key].cylindersOut += Number(e.cylindersOut || 0);
+    cylByKey[key].cylindersIn += Number(e.cylindersIn || 0);
+  });
+  var cylinderByLocation = Object.keys(cylByKey).map(function (key) {
+    var row = cylByKey[key];
+    var loc = locById[row.locationId] || {};
+    var p = productById[row.productId];
+    return {
+      locationId: row.locationId, locationName: loc.name, city: loc.city,
+      productId: row.productId, productName: p ? p.name : null,
+      cylindersOut: row.cylindersOut, cylindersIn: row.cylindersIn,
+      cylinderBalance: row.cylindersOut - row.cylindersIn
+    };
+  }).sort(function (a, b) { return b.cylinderBalance - a.cylinderBalance; });
 
   // Daily trend (gross sales, both channels) — feeds the dashboard chart.
   var byDateMap = {};
@@ -686,6 +720,7 @@ function actionSalesReport_(req, user) {
   return {
     ok: true, totals: totals, outstanding: outstanding,
     byLocation: locationRows, byProduct: productRows, byDate: dateRows,
+    cylinderByLocation: cylinderByLocation,
     entries: entries
   };
 }

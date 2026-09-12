@@ -420,5 +420,31 @@ check(manualRes.ok, 'admin can manually re-link the same line and deposit');
 var afterManual = call({ action: 'getReconciliation', token: financeTok });
 check(!afterManual.unmatchedDeposits.some(function (d) { return d.id === reconDeposit.handoff.id; }), 'manual match clears the deposit from the unmatched list again');
 
+console.log('--- LPG cylinder exchange tracking: full delivered vs empty returned, independent of the cash formula ---');
+var cylProduct = call({ action: 'adminSaveEntity', token: adminTok, kind: 'product', data: { name: 'Cylinder 20kg', type: 'goods' } }).entity;
+var cylLocation = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: 'Dammam', name: 'Cylinder Depot', clusterId: cluster.entity.id } }).entity;
+var cylStore = call({ action: 'adminSaveEntity', token: adminTok, kind: 'store', data: { locationId: cylLocation.id, name: 'Cylinder Store' } }).entity;
+
+var cylEntry1 = call({ action: 'createDailyEntry', token: adminTok, date: '2026-09-15', sourceType: 'store', sourceId: cylStore.id, productId: cylProduct.id, cashSales: 100, cylindersOut: 30, cylindersIn: 22 });
+check(cylEntry1.ok, 'entry with cylinder counts saved');
+check(cylEntry1.entry.cylindersOut === 30 && cylEntry1.entry.cylindersIn === 22, 'cylinder counts stored exactly as entered');
+
+var cylEntry2 = call({ action: 'createDailyEntry', token: adminTok, date: '2026-09-16', sourceType: 'store', sourceId: cylStore.id, productId: cylProduct.id, cashSales: 50, cylindersOut: 10, cylindersIn: 10 });
+check(cylEntry2.ok, 'second cylinder entry saved (balanced this time)');
+
+var cylReport = call({ action: 'getSalesReport', token: adminTok, locationId: cylLocation.id });
+close(cylReport.totals.netCashOwed, 150, 'cylinder counts never touch the cash formula — net owed is just the cash (100+50)');
+var cylProductRow = cylReport.byProduct.find(function (r) { return r.productId === cylProduct.id; });
+check(!!cylProductRow, 'the cylinder product appears in byProduct');
+check(cylProductRow.cylindersOut === 40 && cylProductRow.cylindersIn === 32 && cylProductRow.cylinderBalance === 8, 'byProduct sums cylinders out/in across both entries and nets the balance (40-32=8 still owed back)');
+
+var cylByLoc = cylReport.cylinderByLocation.find(function (r) { return r.locationId === cylLocation.id && r.productId === cylProduct.id; });
+check(!!cylByLoc && cylByLoc.cylinderBalance === 8, 'cylinderByLocation gives the same balance at the location level, the actual operational question ("who owes empties back")');
+
+var cylEntryNoProduct = call({ action: 'createDailyEntry', token: adminTok, date: '2026-09-16', sourceType: 'store', sourceId: cylStore.id, cashSales: 20, cylindersOut: 5 });
+check(cylEntryNoProduct.ok, 'an entry without a product can still be saved');
+var cylReport2 = call({ action: 'getSalesReport', token: adminTok, locationId: cylLocation.id });
+check(cylReport2.cylinderByLocation.length === 1, 'an entry with no productId is excluded from cylinderByLocation — cylinder tracking is meaningless without knowing which cylinder type');
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);
