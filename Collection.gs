@@ -186,16 +186,19 @@ function unconsumedEntriesForLocation_(locationId) {
 // (not just card) and can also carry its own delivery fee paid to the bank —
 // both are real cash risk / real deductions exactly like a car's, so they
 // feed the same net-cash formula. posSales stays card/bank-only, no cash risk.
-// A car can carry its own mounted POS terminal too, so a car entry can also
-// report card/bank posSales alongside its cash — same no-cash-risk treatment
-// as a dedicated 'pos' source, just logged on the car's own entry instead of
-// a separate pos_machines row.
+// A store or car can carry its own mounted POS terminal too, so a store/car
+// entry can also report card/bank posSales alongside its cash — same
+// no-cash-risk treatment as a dedicated 'pos' source, just logged on the
+// store's/car's own entry instead of a separate pos_machines row. A store
+// never has a delivery fee though (nothing to deliver), so that field stays
+// car/pos-only.
 // netCashOwed = branchCash + carCash + posCash - (carDeliveryFee + posDeliveryFee) + vatOnDelivery
 function computeNet_(entries) {
   var storeCash = 0, carCash = 0, posCash = 0, deliveryFee = 0, posSales = 0;
   entries.forEach(function (e) {
     if (e.sourceType === 'store') {
       storeCash += Number(e.cashSales || 0);
+      posSales += Number(e.posSales || 0);
     } else if (e.sourceType === 'car') {
       carCash += Number(e.cashSales || 0);
       deliveryFee += Number(e.deliveryFeeBankAmount || 0);
@@ -798,9 +801,10 @@ function actionSalesReport_(req, user) {
     var key = e.productId || '__unspecified__';
     if (!byProductMap[key]) byProductMap[key] = { productId: e.productId || null, cashAmount: 0, posAmount: 0, qty: 0, cylindersOut: 0, cylindersIn: 0 };
     var bucket = byProductMap[key];
-    // a POS or car entry can carry both a cash portion and a card/bank
-    // portion now, so both are counted — not either/or like it used to be.
-    if (e.sourceType === 'pos' || e.sourceType === 'car') bucket.posAmount += Number(e.posSales || 0);
+    // Any entry can carry both a cash portion and a card/bank portion now
+    // (store/car/pos all support posSales), so both are counted — not
+    // either/or like it used to be.
+    bucket.posAmount += Number(e.posSales || 0);
     bucket.cashAmount += Number(e.cashSales || 0);
     bucket.cylindersOut += Number(e.cylindersOut || 0);
     bucket.cylindersIn += Number(e.cylindersIn || 0);

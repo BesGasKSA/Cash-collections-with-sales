@@ -371,6 +371,20 @@ close(carPosReport.totals.netCashOwed, 300 - 50 + carPosVat, "posSales carries n
 var carPosProductRow = carPosReport.byProduct.find(function (r) { return r.productId === null; });
 check(carPosProductRow && carPosProductRow.posAmount >= 120, "a car's posSales also counts in the per-product POS breakdown, same as a dedicated pos entry");
 
+console.log('--- a store branch with its own mounted POS terminal can report card/bank sales too, not just cash ---');
+var storePosEntry = call({
+  action: 'createDailyEntry', token: aliTok, date: '2026-09-15',
+  sourceType: 'store', sourceId: store.entity.id, cashSales: 500, posSales: 200
+});
+check(storePosEntry.ok, 'store manager records a store entry with cash + its own POS card sales together');
+var storePosReport = call({ action: 'getSalesReport', token: adminTok, dateFrom: '2026-09-15', dateTo: '2026-09-15' });
+close(storePosReport.totals.storeCash, 500, 'store cash sales unaffected by the new posSales field');
+close(storePosReport.totals.posSales, 200, "a store's own card/bank sales now count toward posSales, previously silently dropped");
+close(storePosReport.totals.deliveryFee, 0, 'a store has no delivery fee concept — unaffected');
+close(storePosReport.totals.netCashOwed, 500, "posSales carries no cash risk — net cash owed still comes only from the store's cash");
+var storePosProductRow = storePosReport.byProduct.find(function (r) { return r.productId === null; });
+check(storePosProductRow && storePosProductRow.posAmount >= 200, "a store's posSales also counts in the per-product POS breakdown");
+
 console.log('--- bank reconciliation: matching declared deposits against the real bank statement ---');
 var finance = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Fatima (Finance)', email: 'fatima@bestgas.sa', role: 'finance' } }).user;
 var financeTok = acceptInvite('fatima@bestgas.sa');
