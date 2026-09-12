@@ -1462,12 +1462,13 @@ function handoffItem(h, showConfirm, showResolve){
   var actions = qs('#hActions', div);
   if (showConfirm && h.status==='pending'){
     var recv = el('<div class="field"><label>'+esc(t('handoff_receivedAmount'))+'</label>' +
-      '<input id="hRecvAmt" type="number" step="0.01" value="'+esc(Number(h.amount).toFixed(2))+'"></div>');
+      '<input id="hRecvAmt" type="text" inputmode="decimal" value="'+esc(money(h.amount))+'"></div>');
     actions.parentNode.insertBefore(recv, actions);
     var cb = el('<button class="btn">'+esc(t('handoff_confirm'))+'</button>');
     cb.addEventListener('click', function(){
       var recvInput = qs('#hRecvAmt', div);
-      var receivedAmount = recvInput.value === '' ? h.amount : Number(recvInput.value);
+      var raw = String(recvInput.value || '').replace(/,/g, '').trim();
+      var receivedAmount = raw === '' ? h.amount : Number(raw);
       api('confirmHandoff',{id:h.id, receivedAmount:receivedAmount}).then(function(res){
         if (res.ok && res.handoff && res.handoff.shortfall != null) { toast('handoff_shortfallAccepted', 'ok'); return; }
         render();
