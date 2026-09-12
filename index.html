@@ -121,6 +121,23 @@
   .barlist .track{height:10px;border-radius:6px;background:var(--bg-2,#eee9dd);overflow:hidden;}
   .barlist .fill{height:100%;border-radius:6px;background:var(--green);}
   .barlist .fill.pos{background:#8fae7a;}
+  .dash-section-title{font-size:14px;font-weight:800;color:var(--green-dark);text-transform:uppercase;letter-spacing:.04em;margin:22px 0 10px;display:flex;align-items:center;gap:8px;}
+  .dash-section-title:first-child{margin-top:0;}
+  .dash-section-title::before{content:'';width:4px;height:15px;border-radius:3px;background:var(--green);display:inline-block;}
+  .donut-wrap{display:flex;align-items:center;gap:20px;flex-wrap:wrap;}
+  .donut-wrap svg{flex-shrink:0;}
+  .donut-legend{display:flex;flex-direction:column;gap:8px;flex:1;min-width:150px;}
+  .donut-legend-row{display:flex;align-items:center;gap:8px;font-size:12.5px;}
+  .donut-legend-row .dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+  .donut-legend-row .dl-label{flex:1;color:var(--text);font-weight:600;}
+  .donut-legend-row .dl-val{color:var(--muted);font-weight:700;white-space:nowrap;}
+  .kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:8px;}
+  .kpi{background:var(--card);border:1px solid var(--border-soft);border-radius:var(--radius);padding:15px 16px;box-shadow:var(--shadow-sm);}
+  .kpi .n{font-size:22px;font-weight:800;color:var(--text);letter-spacing:-.02em;line-height:1.15;}
+  .kpi .l{font-size:11.5px;color:var(--muted);font-weight:600;margin-top:3px;}
+  .mini-table{width:100%;font-size:12.5px;}
+  .mini-table td{padding:6px 8px;border-bottom:1px solid var(--border-soft);}
+  .mini-table tr:last-child td{border-bottom:none;}
   .trend-svg{width:100%;height:auto;display:block;}
   .login-card{width:100%;max-width:380px;box-shadow:var(--shadow-lg);border:none;border-radius:var(--radius-lg);padding:30px 26px 26px;}
   .brand-title{color:#fff;font-weight:800;font-size:21px;letter-spacing:-.02em;text-align:center;margin:0;}
@@ -262,6 +279,12 @@ var L = {
     report_net:'صافي المستحق', report_outstanding:'غير محصّل بعد', report_pos:'مبيعات نقاط البيع', report_byLocation:'حسب الموقع',
     report_byProduct:'حسب المنتج', report_product:'المنتج', report_cashChannel:'نقدي', report_posChannel:'نقاط بيع',
     report_total:'الإجمالي', report_trend:'اتجاه المبيعات اليومي', report_unspecified:'غير محدد', report_sortHint:'اضغط على العنوان للترتيب',
+    nav_dashboard:'لوحة التحكم', dash_salesTitle:'لوحة المبيعات', dash_collectionsTitle:'لوحة التحصيل', dash_grossSales:'إجمالي المبيعات',
+    dash_locationsReporting:'المواقع المُبلِّغة', dash_avgPerLocation:'متوسط لكل موقع', dash_topLocation:'أعلى موقع', dash_topProduct:'أعلى منتج',
+    dash_bySourceType:'حسب نوع المصدر', dash_byCity:'حسب المدينة', dash_totalHandoffs:'إجمالي التسليمات', dash_disputeRate:'نسبة الاعتراضات',
+    dash_avgHandoffAmount:'متوسط مبلغ التسليم', dash_statusBreakdown:'حسب الحالة', dash_kindBreakdown:'حسب مرحلة السلسلة',
+    dash_agingTitle:'مدة بقاء النقدية دون إيداع', dash_age0_1:'٠–١ يوم', dash_age1_3:'١–٣ أيام', dash_age3_7:'٣–٧ أيام', dash_age7plus:'أكثر من ٧ أيام',
+    dash_recentHandoffs:'أحدث التسليمات', dash_deposits:'الإيداعات المسجّلة', dash_noData:'لا توجد بيانات لعرضها بعد',
     admin_users:'المستخدمون', admin_locations:'المواقع', admin_stores:'الفروع', admin_cars:'السيارات', admin_pos:'أجهزة نقاط البيع',
     admin_clusters:'المجمّعات', admin_products:'المنتجات', admin_config:'الإعدادات', admin_audit:'سجل التدقيق',
     admin_addProduct:'إضافة منتج', admin_productName:'اسم المنتج',
@@ -321,6 +344,12 @@ var L = {
     report_net:'Net owed', report_outstanding:'Still outstanding', report_pos:'POS sales', report_byLocation:'By location',
     report_byProduct:'By product', report_product:'Product', report_cashChannel:'Cash', report_posChannel:'POS',
     report_total:'Total', report_trend:'Daily sales trend', report_unspecified:'Unspecified', report_sortHint:'Click a header to sort',
+    nav_dashboard:'Dashboard', dash_salesTitle:'Sales dashboard', dash_collectionsTitle:'Collections dashboard', dash_grossSales:'Gross sales',
+    dash_locationsReporting:'Locations reporting', dash_avgPerLocation:'Avg. per location', dash_topLocation:'Top location', dash_topProduct:'Top product',
+    dash_bySourceType:'By source type', dash_byCity:'By city', dash_totalHandoffs:'Total handoffs', dash_disputeRate:'Dispute rate',
+    dash_avgHandoffAmount:'Avg. handoff amount', dash_statusBreakdown:'By status', dash_kindBreakdown:'By chain step',
+    dash_agingTitle:'How long cash has sat uncollected', dash_age0_1:'0–1 day', dash_age1_3:'1–3 days', dash_age3_7:'3–7 days', dash_age7plus:'7+ days',
+    dash_recentHandoffs:'Recent handoffs', dash_deposits:'Deposits recorded', dash_noData:'Nothing to show yet',
     admin_users:'Users', admin_locations:'Locations', admin_stores:'Store branches', admin_cars:'Cars', admin_pos:'POS machines',
     admin_clusters:'Clusters', admin_products:'Products', admin_config:'Settings', admin_audit:'Audit log',
     admin_addProduct:'Add product', admin_productName:'Product name',
@@ -380,6 +409,12 @@ var L = {
     report_net:'خالص واجب الادا', report_outstanding:'ابھی تک وصول نہیں ہوا', report_pos:'POS فروخت', report_byLocation:'مقام کے مطابق',
     report_byProduct:'پروڈکٹ کے مطابق', report_product:'پروڈکٹ', report_cashChannel:'نقد', report_posChannel:'POS',
     report_total:'کل', report_trend:'روزانہ سیلز رجحان', report_unspecified:'غیر متعین', report_sortHint:'ترتیب کے لیے ہیڈر دبائیں',
+    nav_dashboard:'ڈیش بورڈ', dash_salesTitle:'سیلز ڈیش بورڈ', dash_collectionsTitle:'کلیکشن ڈیش بورڈ', dash_grossSales:'کل فروخت',
+    dash_locationsReporting:'رپورٹ کرنے والے مقامات', dash_avgPerLocation:'اوسط فی مقام', dash_topLocation:'سب سے اوپر مقام', dash_topProduct:'سب سے اوپر پروڈکٹ',
+    dash_bySourceType:'ذریعہ کی قسم کے مطابق', dash_byCity:'شہر کے مطابق', dash_totalHandoffs:'کل ترسیل', dash_disputeRate:'اعتراض کی شرح',
+    dash_avgHandoffAmount:'اوسط ترسیل رقم', dash_statusBreakdown:'حالت کے مطابق', dash_kindBreakdown:'چین کے مرحلے کے مطابق',
+    dash_agingTitle:'نقدی کتنے عرصے سے جمع نہیں ہوئی', dash_age0_1:'٠–١ دن', dash_age1_3:'١–٣ دن', dash_age3_7:'٣–٧ دن', dash_age7plus:'٧ دن سے زیادہ',
+    dash_recentHandoffs:'حالیہ ترسیل', dash_deposits:'درج شدہ جمع رقوم', dash_noData:'دکھانے کے لیے ابھی کوئی ڈیٹا نہیں',
     admin_users:'صارفین', admin_locations:'مقامات', admin_stores:'اسٹور برانچز', admin_cars:'گاڑیاں', admin_pos:'POS مشینیں',
     admin_clusters:'کلسٹرز', admin_products:'پروڈکٹس', admin_config:'ترتیبات', admin_audit:'آڈٹ لاگ',
     admin_addProduct:'پروڈکٹ شامل کریں', admin_productName:'پروڈکٹ کا نام',
@@ -675,6 +710,8 @@ function timeGreeting(){
 function renderShell(){
   var root = qs('#app'); root.innerHTML='';
   var navItems = [['home','nav_home']];
+  var isCompanyWideRole = ['admin','finance','accountant','operations_manager'].indexOf(state.user.role)>=0;
+  if (isCompanyWideRole) navItems.push(['dashboard','nav_dashboard']);
   if (['store_manager','driver','admin'].indexOf(state.user.role)>=0) navItems.push(['entries','nav_entries']);
   navItems.push(['handoffs','nav_handoffs']);
   if (['admin','finance','accountant','operations_manager','cluster_manager'].indexOf(state.user.role)>=0) navItems.push(['report','nav_report']);
@@ -709,6 +746,7 @@ function renderShell(){
     entries: '<path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>',
     handoffs: '<path d="M17 2l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>',
     report: '<path d="M18 20V10M12 20V4M6 20v-6"/>',
+    dashboard: '<rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/>',
     admin: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>'
   };
   var nav = el('<nav></nav>');
@@ -732,7 +770,7 @@ function renderShell(){
   var body = el('<div id="screenBody"></div>');
   main.appendChild(body);
 
-  var renderers = { home: renderHome, entries: renderEntries, handoffs: renderHandoffs, report: renderReport, admin: renderAdmin };
+  var renderers = { home: renderHome, dashboard: renderDashboard, entries: renderEntries, handoffs: renderHandoffs, report: renderReport, admin: renderAdmin };
   (renderers[state.screen] || renderHome)(body);
 }
 
@@ -882,6 +920,161 @@ function renderHome(body){
           function(r){ return r.cashAmount; }, function(r){ return r.posAmount; }));
         body.appendChild(topProductsCard);
       }
+    }
+  });
+}
+
+// ---------------- dashboard (company-wide: sales + collections) ----------------
+function renderDashboard(body){
+  body.innerHTML = '<div class="card">'+esc(t('loading'))+'</div>';
+  Promise.all([api('getSalesReport', {}), api('listHandoffs', {}), api('listDashboard', {})]).then(function(results){
+    var report = results[0], ho = results[1], dash = results[2];
+    if (!report.ok || !ho.ok || !dash.ok){ body.innerHTML = '<div class="msg err">'+esc(t('err_generic'))+'</div>'; return; }
+    body.innerHTML = '';
+
+    // ---------- Sales ----------
+    body.appendChild(el('<div class="dash-section-title">'+esc(t('dash_salesTitle'))+'</div>'));
+
+    var entries = report.entries || [];
+    var grossSales = entries.reduce(function(s,e){ return s + Number(e.cashSales||0) + Number(e.posSales||0); }, 0);
+    var locsReporting = {};
+    entries.forEach(function(e){ if (e.locationId) locsReporting[e.locationId] = 1; });
+    var locCount = Object.keys(locsReporting).length;
+    var avgPerLoc = locCount ? grossSales/locCount : 0;
+    var topLoc = report.byLocation.slice().sort(function(a,b){ return b.totals.netCashOwed - a.totals.netCashOwed; })[0];
+    var topProd = report.byProduct[0];
+
+    body.appendChild(kpiRow([
+      [money(grossSales), t('dash_grossSales')],
+      [money(report.totals.netCashOwed), t('report_net')],
+      [money(report.outstanding.netCashOwed), t('report_outstanding')],
+      [money(report.totals.posSales), t('report_pos')],
+      [money(report.totals.deliveryFee), t('report_delivery')],
+      [money(report.totals.vatOnDelivery), t('report_vat')],
+      [locCount, t('dash_locationsReporting')],
+      [money(avgPerLoc), t('dash_avgPerLocation')]
+    ]));
+
+    if (report.byDate && report.byDate.length){
+      var trendCard = el('<div class="card"><h2>'+esc(t('report_trend'))+'</h2></div>');
+      trendCard.appendChild(trendChart(report.byDate));
+      body.appendChild(trendCard);
+    }
+
+    var sourceTotals = { store:0, car:0, pos:0 };
+    entries.forEach(function(e){
+      if (e.sourceType === 'pos') sourceTotals.pos += Number(e.posSales||0);
+      else if (e.sourceType === 'store') sourceTotals.store += Number(e.cashSales||0);
+      else if (e.sourceType === 'car') sourceTotals.car += Number(e.cashSales||0);
+    });
+    var sourceCard = el('<div class="card"><h2>'+esc(t('dash_bySourceType'))+'</h2></div>');
+    sourceCard.appendChild(donutChart([
+      { label: t('entry_source_store'), value: sourceTotals.store, color: CHART_PALETTE[0] },
+      { label: t('entry_source_car'), value: sourceTotals.car, color: CHART_PALETTE[1] },
+      { label: t('entry_source_pos'), value: sourceTotals.pos, color: CHART_PALETTE[2] }
+    ]));
+    body.appendChild(sourceCard);
+
+    if (topLoc || topProd){
+      var topRow = el('<div class="grid"></div>');
+      if (topLoc) topRow.appendChild(el('<div class="card stat"><div class="n">'+esc(money(topLoc.totals.netCashOwed))+'</div><div class="l">'+esc(t('dash_topLocation'))+' — '+esc(topLoc.name||topLoc.locationId)+'</div></div>'));
+      if (topProd) topRow.appendChild(el('<div class="card stat"><div class="n">'+esc(money(topProd.total))+'</div><div class="l">'+esc(t('dash_topProduct'))+' — '+esc(topProd.name||t('report_unspecified'))+'</div></div>'));
+      body.appendChild(topRow);
+    }
+
+    var cityTotals = {};
+    report.byLocation.forEach(function(r){
+      var city = r.city || t('report_unspecified');
+      cityTotals[city] = (cityTotals[city]||0) + r.totals.netCashOwed;
+    });
+    var cityRows = Object.keys(cityTotals).map(function(c){ return { city:c, amount:cityTotals[c] }; }).sort(function(a,b){ return b.amount-a.amount; });
+    if (cityRows.length){
+      var cityCard = el('<div class="card"><h2>'+esc(t('dash_byCity'))+'</h2></div>');
+      cityCard.appendChild(barList(cityRows, function(r){ return r.city; }, function(r){ return r.amount; }, function(){ return 0; }));
+      body.appendChild(cityCard);
+    }
+
+    if (report.byProduct && report.byProduct.length){
+      var productCard = el('<div class="card"><h2>'+esc(t('report_byProduct'))+'</h2></div>');
+      productCard.appendChild(barList(report.byProduct.slice(0,8),
+        function(r){ return r.name || t('report_unspecified'); },
+        function(r){ return r.cashAmount; }, function(r){ return r.posAmount; }));
+      body.appendChild(productCard);
+    }
+
+    // ---------- Collections ----------
+    body.appendChild(el('<div class="dash-section-title">'+esc(t('dash_collectionsTitle'))+'</div>'));
+
+    var handoffs = ho.handoffs || [];
+    var total = handoffs.length;
+    var byStatus = { pending:0, confirmed:0, disputed:0, rejected:0 };
+    handoffs.forEach(function(h){ if (byStatus.hasOwnProperty(h.status)) byStatus[h.status]++; });
+    var disputeRate = total ? Math.round((byStatus.disputed+byStatus.rejected)/total*100) : 0;
+    var avgAmount = total ? handoffs.reduce(function(s,h){ return s+Number(h.amount||0); },0)/total : 0;
+    var depositsCount = handoffs.filter(function(h){ return h.kind==='deposit'; }).length;
+
+    body.appendChild(kpiRow([
+      [total, t('dash_totalHandoffs')],
+      [byStatus.pending, t('handoff_pending')],
+      [byStatus.confirmed, t('handoff_confirmed')],
+      [byStatus.disputed, t('handoff_disputed')],
+      [disputeRate+'%', t('dash_disputeRate')],
+      [money(avgAmount), t('dash_avgHandoffAmount')],
+      [depositsCount, t('dash_deposits')],
+      [dash.companyOutstanding!=null ? money(dash.companyOutstanding) : '—', t('home_companyOutstanding')]
+    ]));
+
+    var statusCard = el('<div class="card"><h2>'+esc(t('dash_statusBreakdown'))+'</h2></div>');
+    statusCard.appendChild(donutChart([
+      { label:t('handoff_pending'), value:byStatus.pending, color:CHART_PALETTE[2] },
+      { label:t('handoff_confirmed'), value:byStatus.confirmed, color:CHART_PALETTE[0] },
+      { label:t('handoff_disputed'), value:byStatus.disputed, color:CHART_PALETTE[4] },
+      { label:t('handoff_rejected'), value:byStatus.rejected, color:CHART_PALETTE[5] }
+    ]));
+    body.appendChild(statusCard);
+
+    var byKind = { location_to_cluster:0, cluster_to_collector:0, deposit:0 };
+    handoffs.forEach(function(h){ if (byKind.hasOwnProperty(h.kind)) byKind[h.kind] += Number(h.amount||0); });
+    var kindCard = el('<div class="card"><h2>'+esc(t('dash_kindBreakdown'))+'</h2></div>');
+    kindCard.appendChild(barList(
+      [{k:'location_to_cluster'},{k:'cluster_to_collector'},{k:'deposit'}],
+      function(r){ return t('kind_'+r.k); }, function(r){ return byKind[r.k]; }, function(){ return 0; }
+    ));
+    body.appendChild(kindCard);
+
+    if (dash.companyHeldByHolder && Object.keys(dash.companyHeldByHolder).length){
+      var holderRows = Object.keys(dash.companyHeldByHolder).map(function(uid){ return { uid:uid, amount:dash.companyHeldByHolder[uid] }; })
+        .sort(function(a,b){ return b.amount-a.amount; });
+      var holderCard = el('<div class="card"><h2>'+esc(t('home_companyOutstanding'))+'</h2></div>');
+      holderCard.appendChild(barList(holderRows, function(r){ return userName(r.uid); }, function(r){ return r.amount; }, function(){ return 0; }));
+      body.appendChild(holderCard);
+    }
+
+    var now = Date.now();
+    var buckets = { a:0, b:0, c:0, d:0 };
+    handoffs.filter(function(h){ return h.status==='confirmed' && !h.consumedBy && h.kind!=='deposit'; }).forEach(function(h){
+      var ageMs = now - new Date(h.confirmedAt||h.createdAt).getTime();
+      var days = ageMs / 86400000;
+      var amt = Number(h.amount||0);
+      if (days < 1) buckets.a += amt; else if (days < 3) buckets.b += amt; else if (days < 7) buckets.c += amt; else buckets.d += amt;
+    });
+    if (buckets.a+buckets.b+buckets.c+buckets.d > 0){
+      var agingCard = el('<div class="card"><h2>'+esc(t('dash_agingTitle'))+'</h2></div>');
+      agingCard.appendChild(barList(
+        [{k:'a',l:t('dash_age0_1')},{k:'b',l:t('dash_age1_3')},{k:'c',l:t('dash_age3_7')},{k:'d',l:t('dash_age7plus')}],
+        function(r){ return r.l; }, function(r){ return buckets[r.k]; }, function(){ return 0; }
+      ));
+      body.appendChild(agingCard);
+    }
+
+    var recent = handoffs.slice(0,10);
+    if (recent.length){
+      var recentCard = el('<div class="card"><h2>'+esc(t('dash_recentHandoffs'))+'</h2></div>');
+      var rows = recent.map(function(h){
+        return '<tr><td>'+esc(t('kind_'+h.kind))+'</td><td>'+money(h.amount)+'</td><td>'+statusBadge(h.status)+'</td><td>'+esc((h.createdAt||'').slice(0,10))+'</td></tr>';
+      }).join('');
+      recentCard.appendChild(el('<table class="mini-table"><tbody>'+rows+'</tbody></table>'));
+      body.appendChild(recentCard);
     }
   });
 }
@@ -1306,6 +1499,39 @@ function trendChart(rows){
   var lastLabel = rows.length>1 ? '<text x="'+(w-pad)+'" y="'+(h-4)+'" font-size="10" fill="var(--muted)" text-anchor="end">'+esc(rows[rows.length-1].date)+'</text>' : '';
   return el('<svg class="trend-svg" viewBox="0 0 '+w+' '+h+'" preserveAspectRatio="none">'+baseline+bars+firstLabel+lastLabel+'</svg>');
 }
+
+// Inline SVG donut with a legend — segments: [{label, value, color}].
+function donutChart(segments){
+  segments = segments.filter(function(s){ return s.value > 0; });
+  var total = segments.reduce(function(s,x){ return s+x.value; }, 0);
+  if (!total) return el('<div class="muted">'+esc(t('dash_noData'))+'</div>');
+  var r = 54, cx = 70, cy = 70, circumference = 2*Math.PI*r;
+  var offset = 0;
+  var arcs = segments.map(function(seg){
+    var frac = seg.value/total;
+    var len = frac*circumference;
+    var circle = '<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="none" stroke="'+seg.color+'" stroke-width="20" ' +
+      'stroke-dasharray="'+len+' '+(circumference-len)+'" stroke-dashoffset="'+(-offset)+'"><title>'+esc(seg.label)+': '+money(seg.value)+'</title></circle>';
+    offset += len;
+    return circle;
+  }).join('');
+  var svg = '<svg viewBox="0 0 140 140" width="140" height="140" style="transform:rotate(-90deg)">'+arcs+'</svg>';
+  var legend = '<div class="donut-legend">'+segments.map(function(seg){
+    var pct = Math.round(seg.value/total*100);
+    return '<div class="donut-legend-row"><span class="dot" style="background:'+seg.color+'"></span>' +
+      '<span class="dl-label">'+esc(seg.label)+'</span><span class="dl-val">'+money(seg.value)+' ('+pct+'%)</span></div>';
+  }).join('')+'</div>';
+  return el('<div class="donut-wrap">'+svg+legend+'</div>');
+}
+
+// A row of small KPI tiles — [[value, label], ...], value pre-formatted.
+function kpiRow(items){
+  return el('<div class="kpi-grid">'+items.map(function(it){
+    return '<div class="kpi"><div class="n">'+esc(it[0])+'</div><div class="l">'+esc(it[1])+'</div></div>';
+  }).join('')+'</div>');
+}
+
+var CHART_PALETTE = ['#4D6D51','#8fae7a','#b3820f','#3b5540','#c14a30','#98988f'];
 
 // ---------------- sales report ----------------
 function renderReport(body){
