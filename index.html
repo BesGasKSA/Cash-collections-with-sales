@@ -4,12 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Best Gas — Cash Collection</title>
-<!-- Icon: browser tab favicon, and iOS "Add to Home Screen" icon. The
-     Android manifest (for its own home-screen icon + standalone launch) is
-     built and attached at runtime below, from this same base64 image, so
-     the icon only has to live in one place in this single-file app. -->
-<link rel="icon" type="image/png" href="data:image/png;base64,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">
-<link rel="apple-touch-icon" href="data:image/png;base64,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">
+<!-- Favicon, apple-touch-icon, and the Android manifest are all built at
+     runtime from LOGO_SRC (see attachIcons() near the bottom of the script)
+     instead of duplicated here — this single-file app has exactly one
+     confirmed-good logo asset and every icon surface reuses it. -->
 <meta name="theme-color" content="#4D6D51">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -38,10 +36,10 @@
      no transparency around the emblem, so anything but an exact match shows
      as a visible rectangle behind it. */
   .brand-page{background:var(--green);min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px 16px;gap:22px;}
-  .brand-logo{width:150px;max-width:55vw;display:block;filter:drop-shadow(0 8px 24px rgba(0,0,0,.18));}
+  .brand-logo{width:150px;max-width:55vw;display:block;}
   header{background:var(--green);color:#fff;padding:13px 22px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;box-shadow:var(--shadow-md);position:relative;z-index:2;}
   header .brand{font-weight:800;font-size:17px;display:flex;align-items:center;gap:10px;letter-spacing:-.02em;}
-  header .brand img{height:38px;width:38px;object-fit:contain;}
+  header .brand img{height:34px;width:auto;object-fit:contain;border-radius:6px;}
   header .who{font-size:13px;opacity:.85;font-weight:500;}
   header select, header button{background:rgba(255,255,255,.14);color:#fff;border:1px solid rgba(255,255,255,.22);border-radius:9px;padding:7px 12px;font-size:13px;cursor:pointer;font-weight:600;transition:background .15s ease, transform .1s ease;font-family:inherit;}
   header select{background:#fff;color:var(--green-dark);border-color:transparent;}
@@ -49,14 +47,20 @@
   header button:active{transform:scale(.97);}
   .notif-bell{position:relative;padding:8px !important;display:flex;align-items:center;justify-content:center;line-height:1;}
   .notif-bell svg{width:19px;height:19px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block;}
-  #topLoadBar{position:fixed;top:0;inset-inline-start:0;height:3px;width:0;background:linear-gradient(90deg,#8fae7a,var(--green) 55%,var(--green-dark));z-index:9999;opacity:0;box-shadow:0 0 8px rgba(77,109,81,.5);pointer-events:none;}
-  #topLoadBar.active{opacity:1;}
+  #loadOverlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(32,36,31,.22);z-index:9999;opacity:0;pointer-events:none;transition:opacity .2s ease;}
+  #loadOverlay.active{opacity:1;}
+  #loadOverlay .ring{width:68px;height:68px;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow-lg);}
+  #loadOverlay .ring-inner{width:52px;height:52px;border-radius:50%;background:var(--card);display:flex;align-items:center;justify-content:center;}
+  #loadOverlay .pct{font-size:13.5px;font-weight:800;color:var(--green-dark);}
   .notif-badge{position:absolute;top:-4px;inset-inline-end:-4px;background:var(--danger);color:#fff;border-radius:999px;min-width:17px;height:17px;padding:0 4px;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;border:2px solid var(--green);}
   nav{display:flex;gap:6px;flex-wrap:wrap;background:var(--green-dark);padding:10px 18px;position:relative;z-index:1;}
-  nav button{background:transparent;border:1px solid rgba(255,255,255,.28);color:rgba(255,255,255,.92);padding:7px 15px;border-radius:999px;font-size:13px;cursor:pointer;font-weight:600;transition:background .15s ease, border-color .15s ease, transform .1s ease;font-family:inherit;}
+  nav button{background:transparent;border:1px solid rgba(255,255,255,.28);color:rgba(255,255,255,.92);padding:7px 15px 7px 12px;border-radius:999px;font-size:13px;cursor:pointer;font-weight:600;transition:background .15s ease, border-color .15s ease, transform .1s ease;font-family:inherit;display:inline-flex;align-items:center;gap:6px;}
+  html[dir="rtl"] nav button{padding:7px 12px 7px 15px;}
   nav button:hover{background:rgba(255,255,255,.1);}
   nav button.active{background:#fff;color:var(--green-dark);border-color:#fff;box-shadow:var(--shadow-sm);}
+  nav button.active .nav-icon{stroke:var(--green-dark);}
   nav button:active{transform:scale(.96);}
+  .nav-icon{width:15px;height:15px;stroke:rgba(255,255,255,.92);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0;}
   main{max-width:1080px;margin:0 auto;padding:22px 18px 60px;}
   .card{background:var(--card);border:1px solid var(--border-soft);border-radius:var(--radius);padding:20px;margin-bottom:18px;overflow-x:auto;box-shadow:var(--shadow-sm);transition:box-shadow .2s ease;}
   .card h2{margin:0 0 14px;font-size:15px;font-weight:700;color:var(--text);letter-spacing:-.01em;display:flex;align-items:center;gap:8px;}
@@ -147,6 +151,21 @@
   th.sortable{cursor:pointer;user-select:none;white-space:nowrap;}
   th.sortable:hover{color:var(--green-dark);}
   th.sortable .arrow{color:var(--green);margin-inline-start:3px;}
+
+  /* Small phones — tighten spacing to reclaim width rather than relying on
+     auto-fit grids alone, and keep the header from feeling cramped once the
+     bell + language switch + logout are all fighting for the same row. */
+  @media (max-width: 420px){
+    main{padding:14px 10px 50px;}
+    .card{padding:14px;}
+    header{padding:10px 12px;gap:8px;}
+    header .brand{font-size:14px;gap:6px;}
+    header .who{display:none;}
+    .grid{grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;}
+    .login-card{padding:22px 18px 20px;}
+    .brand-logo{width:118px;}
+    table{font-size:12.5px;}
+  }
 </style>
 </head>
 <body>
@@ -158,34 +177,43 @@
 // Best Gas Carrier Co. logo — embedded so the client stays a single file.
 // Its background is a flat #4D6D51 baked into the PNG; only place it on a
 // page painted the same exact green (see .brand-page), never on white.
-// Small header badge: the simple gas-cylinder glyph (icon-512.png), not the
-// detailed wordmark below — cropping the wordmark's fine linework/text down
-// to header-icon size read as a blurry smear, not a resolution problem with
-// either source file. A bold, simple mark stays legible small; a detailed
-// one doesn't, regardless of source pixel count.
-var ICON_B64 = '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';
+// There used to be a second, separate asset here (a small gas-cylinder
+// glyph for the header/favicon/home-screen icon) — it turned out to be a
+// fully transparent PNG (0% opaque pixels, confirmed by sampling it), which
+// is exactly why the header/tab/home-screen icon was invisible rather than
+// blurry. Everywhere that used to reference it now just uses this one
+// confirmed-good logo asset instead — see attachIcons() below.
 var LOGO_B64 = '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';
 var LOGO_SRC = 'data:image/png;base64,' + LOGO_B64;
-var ICON_SRC = 'data:image/png;base64,' + ICON_B64;
+var ICON_SRC = LOGO_SRC; // same asset — see the comment above LOGO_B64
 
-// Android "Add to Home Screen" reads a Web App Manifest, not the favicon —
-// built here from the same icon data instead of duplicating it a third
-// time as a separate file (this app is deliberately single-file). iOS reads
-// apple-touch-icon directly from <head> instead, no manifest needed there.
-(function attachManifest(){
+// Favicon, apple-touch-icon, and the Android manifest (for its own home-
+// screen icon + standalone launch) are all attached here at runtime, all
+// from LOGO_SRC, instead of duplicating a large base64 string three times
+// in a single-file app. iOS reads apple-touch-icon directly; Android reads
+// the manifest.
+(function attachIcons(){
   try {
+    var favicon = document.createElement('link');
+    favicon.rel = 'icon'; favicon.type = 'image/png'; favicon.href = LOGO_SRC;
+    document.head.appendChild(favicon);
+
+    var appleTouch = document.createElement('link');
+    appleTouch.rel = 'apple-touch-icon'; appleTouch.href = LOGO_SRC;
+    document.head.appendChild(appleTouch);
+
     var manifest = {
       name: 'Best Gas — Cash Collection', short_name: 'Best Gas',
       start_url: '.', scope: '.', display: 'standalone',
       background_color: '#4D6D51', theme_color: '#4D6D51',
-      icons: [{ src: ICON_SRC, sizes: '512x512', type: 'image/png', purpose: 'any maskable' }]
+      icons: [{ src: LOGO_SRC, sizes: '402x352', type: 'image/png', purpose: 'any' }]
     };
     var blob = new Blob([JSON.stringify(manifest)], { type: 'application/manifest+json' });
-    var link = document.createElement('link');
-    link.rel = 'manifest';
-    link.href = URL.createObjectURL(blob);
-    document.head.appendChild(link);
-  } catch (e) { /* manifest is a nice-to-have, never block the app on it */ }
+    var manifestLink = document.createElement('link');
+    manifestLink.rel = 'manifest';
+    manifestLink.href = URL.createObjectURL(blob);
+    document.head.appendChild(manifestLink);
+  } catch (e) { /* icons are a nice-to-have, never block the app on them */ }
 })();
 
 // ---------------- i18n ----------------
@@ -402,40 +430,56 @@ function el(html){
 function qs(sel,root){ return (root||document).querySelector(sel); }
 function qsa(sel,root){ return Array.prototype.slice.call((root||document).querySelectorAll(sel)); }
 
-// ---------------- top loading bar ----------------
+// ---------------- centered % loading overlay ----------------
 // Lives outside #app (appended to <body> directly) so it survives every
-// screen's `root.innerHTML=''` re-render instead of being wiped along with
-// it. A request count rather than a boolean so overlapping calls (e.g. the
-// dashboard's parallel listDashboard+getSalesReport) don't let an earlier
-// finish hide the bar while a later one is still in flight.
+// screen's `root.innerHTML=''` re-render. A request count rather than a
+// boolean so overlapping calls (e.g. the dashboard's parallel
+// listDashboard+getSalesReport) don't let an earlier finish hide it while a
+// later one is still in flight. There's no real progress to report (Apps
+// Script gives no partial-completion signal), so the percentage eases
+// toward 90% while waiting and jumps to 100% the moment a response lands —
+// same honest-but-approximate approach as every "loading %" UI that isn't
+// backed by a real byte counter.
 var loadingCount = 0;
-function loadBarEl(){
-  var bar = document.getElementById('topLoadBar');
-  if (!bar) { bar = document.createElement('div'); bar.id = 'topLoadBar'; document.body.appendChild(bar); }
-  return bar;
+var loadProgress = 0;
+var loadTimer = null;
+function loadOverlayEls(){
+  var overlay = document.getElementById('loadOverlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'loadOverlay';
+    overlay.innerHTML = '<div class="ring" id="loadRing"><div class="ring-inner"><span class="pct" id="loadPct">0%</span></div></div>';
+    document.body.appendChild(overlay);
+  }
+  return { overlay: overlay, ring: qs('#loadRing', overlay), pct: qs('#loadPct', overlay) };
+}
+function setLoadProgress(p){
+  loadProgress = p;
+  var els = loadOverlayEls();
+  var deg = Math.round(p * 3.6);
+  els.ring.style.background = 'conic-gradient(var(--green) ' + deg + 'deg, var(--border-soft) 0deg)';
+  els.pct.textContent = Math.round(p) + '%';
 }
 function startLoading(){
   loadingCount++;
   if (loadingCount !== 1) return;
-  var bar = loadBarEl();
-  bar.style.transition = 'none';
-  bar.style.width = '0';
-  bar.classList.add('active');
-  void bar.offsetWidth; // force reflow so the transition below actually animates from 0
-  bar.style.transition = 'width 4s cubic-bezier(.1,.6,.2,1)';
-  bar.style.width = '75%';
+  var els = loadOverlayEls();
+  els.overlay.classList.add('active');
+  setLoadProgress(0);
+  clearInterval(loadTimer);
+  loadTimer = setInterval(function(){
+    setLoadProgress(Math.min(loadProgress + (90 - loadProgress) * 0.12, 90));
+  }, 120);
 }
 function stopLoading(){
   loadingCount = Math.max(0, loadingCount - 1);
   if (loadingCount !== 0) return;
-  var bar = loadBarEl();
-  bar.style.transition = 'width .25s ease';
-  bar.style.width = '100%';
+  clearInterval(loadTimer);
+  setLoadProgress(100);
   setTimeout(function(){
     if (loadingCount !== 0) return; // a new request started before the fade-out
-    bar.classList.remove('active');
-    bar.style.transition = 'none';
-    bar.style.width = '0';
+    loadOverlayEls().overlay.classList.remove('active');
+    setLoadProgress(0);
   }, 250);
 }
 
@@ -644,9 +688,19 @@ function renderShell(){
     render();
   });
 
+  var navIcons = {
+    home: '<path d="M3 11l9-8 9 8"/><path d="M5 10v10h5v-6h4v6h5V10"/>',
+    entries: '<path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>',
+    handoffs: '<path d="M17 2l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>',
+    report: '<path d="M18 20V10M12 20V4M6 20v-6"/>',
+    admin: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>'
+  };
   var nav = el('<nav></nav>');
   navItems.forEach(function(it){
-    var b = el('<button'+(state.screen===it[0]?' class="active"':'')+'>'+esc(t(it[1]))+'</button>');
+    var b = el('<button'+(state.screen===it[0]?' class="active"':'')+'>' +
+      '<svg class="nav-icon" viewBox="0 0 24 24">'+(navIcons[it[0]]||'')+'</svg>' +
+      '<span>'+esc(t(it[1]))+'</span>' +
+    '</button>');
     b.addEventListener('click', function(){ state.screen = it[0]; render(); });
     nav.appendChild(b);
   });
@@ -672,7 +726,13 @@ function loadMetaAndRender(){
     if (res.ok) state.meta = res;
     if (state.user.mustChangePw) { render(); return; }
     render();
-    refreshNotifCount();
+    // renderHome and renderHandoffs already populate the count from data
+    // they fetch anyway — firing a second, separate listDashboard call
+    // right after login just to do it again here wastes a full extra round
+    // trip to Apps Script on every single login for most users, who land
+    // on Home. Only screens that don't otherwise touch dashboard data need
+    // this fallback fetch.
+    if (state.screen !== 'home' && state.screen !== 'handoffs') refreshNotifCount();
   });
 }
 
@@ -812,9 +872,32 @@ function renderEntries(body){
   opts.push(['pos', t('entry_source_pos')]);
   typeSel.innerHTML = opts.map(function(o){ return '<option value="'+o[0]+'">'+esc(o[1])+'</option>'; }).join('');
 
+  // A location only ever has stores and cars as direct children (per the
+  // entity hierarchy) — a POS machine is a grandchild, owned by one of
+  // those. Showing it as a bare label alongside store/car names with no
+  // context made it look like a disconnected third category floating next
+  // to Store/Car rather than a device attached to one of them, so every
+  // option here now says which store/car (and location) it actually
+  // belongs to.
+  function posOwnerName_(p){
+    if (p.ownerType === 'store') { var s = byId(meta.stores, p.ownerId); return s ? s.name : '—'; }
+    var c = byId(meta.cars, p.ownerId); return c ? c.label : '—';
+  }
+  function posOwnerLocationId_(p){
+    if (p.ownerType === 'store') { var s = byId(meta.stores, p.ownerId); return s && s.locationId; }
+    var c = byId(meta.cars, p.ownerId); return c && c.locationId;
+  }
+  function sourceOptionLabel_(type, x){
+    if (type === 'store') return (x.name || x.id) + ' — ' + locationName(x.locationId);
+    if (type === 'car') return (x.label || x.id) + ' — ' + locationName(x.locationId);
+    if (type === 'pos') return (x.label || x.id) + ' — ' + posOwnerName_(x) + ' — ' + locationName(posOwnerLocationId_(x));
+    return x.label || x.name || x.id;
+  }
+
   function populateSourceOptions(){
     var type = typeSel.value;
     var srcSel = qs('#eSource', form);
+    qs('#eSourceLabel', form).textContent = t('entry_source_' + type);
     var list = [];
     if (type==='store'){
       list = (meta.stores||[]).filter(function(s){ return role==='admin' || s.storeManagerUserId===state.user.id; });
@@ -824,9 +907,16 @@ function renderEntries(body){
       list = (meta.pos||[]).filter(function(p){ return role==='admin' || role==='store_manager' || p.assignedUserId===state.user.id; });
     }
     srcSel.innerHTML = list.map(function(x){
-      var label = x.label || x.name || x.id;
-      return '<option value="'+x.id+'">'+esc(label)+'</option>';
+      return '<option value="'+x.id+'">'+esc(sourceOptionLabel_(type, x))+'</option>';
     }).join('') || '<option value="">'+esc(t('noData'))+'</option>';
+
+    // Switching source type carries no meaning across types (a car's cash
+    // figure has nothing to do with a store's), so leftover numbers from
+    // whatever was last on screen would silently get submitted against the
+    // new source if left in place.
+    qs('#eCash', form).value = '0';
+    qs('#eDelivery', form).value = '0';
+    qs('#ePos', form).value = '0';
 
     qs('#eCashWrap', form).style.display = (type==='pos') ? 'none' : '';
     qs('#eDeliveryWrap', form).style.display = (type==='car') ? '' : 'none';
