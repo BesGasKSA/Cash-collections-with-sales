@@ -345,6 +345,7 @@ function route_(req) {
 
     // entries
     createDailyEntry: function () { return actionCreateEntry_(req, user); },
+    importDailyEntries: function () { return actionImportEntries_(req, user); },
     listEntries: function () { return actionListEntries_(req, user); },
 
     // handoffs
