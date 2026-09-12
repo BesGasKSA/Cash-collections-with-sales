@@ -175,7 +175,7 @@ function validateEntity_(kind, d) {
 function actionAdminSaveEntity_(req, user) {
   requireAdmin_(user);
   var kind = req.kind;
-  var sheetName = ENTITY_SHEET[kind];
+  var sheetName = hasOwn_(ENTITY_SHEET, kind) ? ENTITY_SHEET[kind] : null;
   if (!sheetName) return { ok: false, error: 'invalid_kind' };
   var d = req.data || {};
 
@@ -186,14 +186,16 @@ function actionAdminSaveEntity_(req, user) {
   // Validate the merged result, not the raw patch — a partial update (e.g.
   // just toggling `active`) must not fail validation for omitting fields
   // it never intended to touch. writeRow only persists on success, so a
-  // failed validation here never partially applies.
+  // failed validation here never partially applies. safeOwnKeys_ (not a
+  // bare hasOwnProperty loop) keeps a client-supplied "__proto__" key from
+  // reassigning obj's/merged's actual prototype — see Code.gs.
   var merged = {};
-  for (var k0 in obj) { if (obj.hasOwnProperty(k0)) merged[k0] = obj[k0]; }
-  for (var k1 in d) { if (d.hasOwnProperty(k1)) merged[k1] = d[k1]; }
+  safeOwnKeys_(obj).forEach(function (k0) { merged[k0] = obj[k0]; });
+  safeOwnKeys_(d).forEach(function (k1) { merged[k1] = d[k1]; });
   var err = validateEntity_(kind, merged);
   if (err) return { ok: false, error: err };
 
-  for (var k in d) { if (d.hasOwnProperty(k)) obj[k] = d[k]; }
+  safeOwnKeys_(d).forEach(function (k) { obj[k] = d[k]; });
   if (obj.active === undefined) obj.active = true;
 
   var saved = writeRow(sheetName, obj);
@@ -204,11 +206,11 @@ function actionAdminSaveEntity_(req, user) {
 function actionAdminDeleteEntity_(req, user) {
   requireAdmin_(user);
   var kind = req.kind;
-  var sheetName = ENTITY_SHEET[kind];
+  var sheetName = hasOwn_(ENTITY_SHEET, kind) ? ENTITY_SHEET[kind] : null;
   if (!sheetName) return { ok: false, error: 'invalid_kind' };
   if (!getById_(sheetName, req.id)) return { ok: false, error: 'not_found' };
 
-  var children = ENTITY_CHILDREN[kind] || [];
+  var children = hasOwn_(ENTITY_CHILDREN, kind) ? ENTITY_CHILDREN[kind] : [];
   for (var i = 0; i < children.length; i++) {
     var rule = children[i];
     var rows = readSheet(rule.sheet);

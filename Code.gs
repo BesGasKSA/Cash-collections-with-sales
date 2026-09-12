@@ -149,6 +149,32 @@ function deleteRow_(name, id) {
   }
 }
 
+// ---------- Safe object access ----------
+// Defense-in-depth against prototype pollution: `for...in` merge loops over
+// client-supplied JSON (req.data) must never let a key literally named
+// __proto__/constructor/prototype reach a plain `obj[k] = ...` assignment.
+// JSON.parse creates such a key as a genuine own property, so a bare
+// hasOwnProperty(k) check on the *source* object does not exclude it — and
+// `obj[k] = value` with k === '__proto__' invokes the real
+// Object.prototype.__proto__ setter, reassigning obj's prototype rather than
+// storing a field. Every merge loop over req.data in this app must go
+// through safeOwnKeys_ instead of a bare hasOwnProperty check.
+var UNSAFE_KEYS_ = { '__proto__': true, 'constructor': true, 'prototype': true };
+function safeOwnKeys_(obj) {
+  var out = [];
+  for (var k in obj) {
+    if (obj.hasOwnProperty(k) && !UNSAFE_KEYS_.hasOwnProperty(k)) out.push(k);
+  }
+  return out;
+}
+// For any object used as a lookup table keyed by client-supplied input
+// (action names, entity kinds): a bare `table[key]` truthy-check lets a key
+// like "__proto__"/"constructor"/"toString" resolve to an inherited
+// Object.prototype member instead of correctly failing as "not found".
+function hasOwn_(obj, key) {
+  return Object.prototype.hasOwnProperty.call(obj, key);
+}
+
 function getById_(name, id) {
   var rows = readSheet(name);
   for (var i = 0; i < rows.length; i++) if (rows[i].id === id) return rows[i];
@@ -420,7 +446,7 @@ function route_(req) {
     adminSetConfig: function () { return actionAdminSetConfig_(req, user); }
   };
 
-  if (!handlers[action]) throw new Error('unknown_action');
+  if (!hasOwn_(handlers, action)) throw new Error('unknown_action');
   var result = handlers[action]();
   result.token = newToken;
   return result;
