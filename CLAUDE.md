@@ -30,6 +30,15 @@ BestGas-Cash-Collection/
 
 ## Entity hierarchy
 
+**Naming note (2026-09-13):** the UI now labels this "Area"/"Area Manager"
+in all three languages (`role_cluster_manager`, `admin_clusters`,
+`admin_clusterManager`, `handoff_perCluster`, etc. — every *translated
+string value*), per the user's own job-title terminology. The underlying
+data model, sheet name, and every internal identifier are still literally
+`cluster`/`Cluster`/`clusterId`/`SHEETS.CLUSTERS` — only display text
+changed, nothing structural. Don't be thrown by the mismatch when reading
+code next to a screenshot.
+
 ```
 Cluster ── clusterManagerUserId, collectorUserId
   └── Location (city + name) ── optional zoneId
