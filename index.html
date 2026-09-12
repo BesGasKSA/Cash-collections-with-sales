@@ -38,8 +38,8 @@
   .brand-page{background:var(--green);min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px 16px;gap:22px;}
   .brand-logo{width:150px;max-width:55vw;display:block;}
   header{background:var(--green);color:#fff;padding:13px 22px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;box-shadow:var(--shadow-md);position:relative;z-index:2;}
-  header .brand{font-weight:800;font-size:clamp(15px,3.6vw,21px);display:flex;align-items:center;gap:10px;letter-spacing:-.02em;min-width:0;flex-shrink:1;}
-  header .brand img{height:clamp(34px,9vw,48px);width:auto;object-fit:contain;border-radius:6px;flex-shrink:0;}
+  header .brand{font-weight:800;font-size:clamp(17px,4.6vw,26px);display:flex;align-items:center;gap:12px;letter-spacing:-.02em;min-width:0;flex-shrink:1;}
+  header .brand img{height:clamp(40px,11vw,60px);width:auto;object-fit:contain;border-radius:6px;flex-shrink:0;}
   header .who{font-size:13px;opacity:.85;font-weight:500;}
   header select, header button{background:rgba(255,255,255,.14);color:#fff;border:1px solid rgba(255,255,255,.22);border-radius:9px;padding:7px 12px;font-size:13px;cursor:pointer;font-weight:600;transition:background .15s ease, transform .1s ease;font-family:inherit;}
   header select{background:#fff;color:var(--green-dark);border-color:transparent;}
@@ -253,6 +253,7 @@ var L = {
     handoff_receivedAmount:'المبلغ المستلم فعلياً', handoff_shortfall:'الفرق (عجز)',
     handoff_originalAmount:'المبلغ المُعلن أصلاً', handoff_shortfallAccepted:'تم تأكيد الاستلام مع وجود فرق — تم إبلاغ جميع المستويات الأعلى (المدير، المُحصّل، الإدارة) فوراً بالبريد الإلكتروني',
     report_title:'تقرير المبيعات', report_from:'من تاريخ', report_to:'إلى تاريخ', report_city:'المدينة', report_run:'عرض التقرير',
+    report_location:'الموقع', report_allLocations:'كل المواقع', report_allTypes:'كل الأنواع', report_allSources:'الكل',
     report_storeCash:'نقدية الفرع', report_carCash:'نقدية السيارات', report_delivery:'رسوم التوصيل', report_vat:'ضريبة القيمة المضافة',
     report_net:'صافي المستحق', report_outstanding:'غير محصّل بعد', report_pos:'مبيعات نقاط البيع', report_byLocation:'حسب الموقع',
     report_byProduct:'حسب المنتج', report_product:'المنتج', report_cashChannel:'نقدي', report_posChannel:'نقاط بيع',
@@ -311,6 +312,7 @@ var L = {
     handoff_receivedAmount:'Amount actually received', handoff_shortfall:'Shortfall',
     handoff_originalAmount:'Originally declared amount', handoff_shortfallAccepted:'Receipt confirmed with a shortfall — every level above (manager, collector, admin/finance) was just emailed',
     report_title:'Sales Report', report_from:'From date', report_to:'To date', report_city:'City', report_run:'Run report',
+    report_location:'Location', report_allLocations:'All locations', report_allTypes:'All types', report_allSources:'All',
     report_storeCash:'Branch cash', report_carCash:'Car cash', report_delivery:'Delivery fees', report_vat:'VAT',
     report_net:'Net owed', report_outstanding:'Still outstanding', report_pos:'POS sales', report_byLocation:'By location',
     report_byProduct:'By product', report_product:'Product', report_cashChannel:'Cash', report_posChannel:'POS',
@@ -369,6 +371,7 @@ var L = {
     handoff_receivedAmount:'موصولہ اصل رقم', handoff_shortfall:'کمی',
     handoff_originalAmount:'اصل اعلان کردہ رقم', handoff_shortfallAccepted:'کمی کے ساتھ وصولی کی تصدیق ہو گئی — تمام اعلیٰ سطحوں (منیجر، وصول کنندہ، ایڈمن) کو فوری ای میل کر دی گئی ہے',
     report_title:'سیلز رپورٹ', report_from:'تاریخ سے', report_to:'تاریخ تک', report_city:'شہر', report_run:'رپورٹ دیکھیں',
+    report_location:'مقام', report_allLocations:'تمام مقامات', report_allTypes:'تمام اقسام', report_allSources:'تمام',
     report_storeCash:'برانچ نقدی', report_carCash:'گاڑی نقدی', report_delivery:'ڈلیوری فیس', report_vat:'ویٹ',
     report_net:'خالص واجب الادا', report_outstanding:'ابھی تک وصول نہیں ہوا', report_pos:'POS فروخت', report_byLocation:'مقام کے مطابق',
     report_byProduct:'پروڈکٹ کے مطابق', report_product:'پروڈکٹ', report_cashChannel:'نقد', report_posChannel:'POS',
@@ -772,6 +775,31 @@ function userName(id){ var u = byId(state.meta && state.meta.users, id); return 
 function locationName(id){ var l = byId(state.meta && state.meta.locations, id); return l ? (l.city+' — '+l.name) : '—'; }
 function clusterName(id){ var c = byId(state.meta && state.meta.clusters, id); return c ? c.name : '—'; }
 
+// A location only ever has stores and cars as direct children (per the
+// entity hierarchy) — a POS machine is a grandchild, owned by one of those.
+// Showing it as a bare label alongside store/car names with no context made
+// it look like a disconnected third category floating next to Store/Car
+// rather than a device attached to one of them, so every option built from
+// these says which store/car (and location) it actually belongs to. Shared
+// by the daily-entry form and the sales report filters — anywhere someone
+// picks a specific store/car/POS.
+function posOwnerName_(p){
+  var meta = state.meta || {};
+  if (p.ownerType === 'store') { var s = byId(meta.stores, p.ownerId); return s ? s.name : '—'; }
+  var c = byId(meta.cars, p.ownerId); return c ? c.label : '—';
+}
+function posOwnerLocationId_(p){
+  var meta = state.meta || {};
+  if (p.ownerType === 'store') { var s = byId(meta.stores, p.ownerId); return s && s.locationId; }
+  var c = byId(meta.cars, p.ownerId); return c && c.locationId;
+}
+function sourceOptionLabel_(type, x){
+  if (type === 'store') return (x.name || x.id) + ' — ' + locationName(x.locationId);
+  if (type === 'car') return (x.label || x.id) + ' — ' + locationName(x.locationId);
+  if (type === 'pos') return (x.label || x.id) + ' — ' + posOwnerName_(x) + ' — ' + locationName(posOwnerLocationId_(x));
+  return x.label || x.name || x.id;
+}
+
 // ---------------- home ----------------
 function renderHome(body){
   body.innerHTML = '<div class="card">'+esc(t('loading'))+'</div>';
@@ -891,28 +919,6 @@ function renderEntries(body){
   if (role==='store_manager' || role==='admin' || role==='driver') opts.push(['car', t('entry_source_car')]);
   opts.push(['pos', t('entry_source_pos')]);
   typeSel.innerHTML = opts.map(function(o){ return '<option value="'+o[0]+'">'+esc(o[1])+'</option>'; }).join('');
-
-  // A location only ever has stores and cars as direct children (per the
-  // entity hierarchy) — a POS machine is a grandchild, owned by one of
-  // those. Showing it as a bare label alongside store/car names with no
-  // context made it look like a disconnected third category floating next
-  // to Store/Car rather than a device attached to one of them, so every
-  // option here now says which store/car (and location) it actually
-  // belongs to.
-  function posOwnerName_(p){
-    if (p.ownerType === 'store') { var s = byId(meta.stores, p.ownerId); return s ? s.name : '—'; }
-    var c = byId(meta.cars, p.ownerId); return c ? c.label : '—';
-  }
-  function posOwnerLocationId_(p){
-    if (p.ownerType === 'store') { var s = byId(meta.stores, p.ownerId); return s && s.locationId; }
-    var c = byId(meta.cars, p.ownerId); return c && c.locationId;
-  }
-  function sourceOptionLabel_(type, x){
-    if (type === 'store') return (x.name || x.id) + ' — ' + locationName(x.locationId);
-    if (type === 'car') return (x.label || x.id) + ' — ' + locationName(x.locationId);
-    if (type === 'pos') return (x.label || x.id) + ' — ' + posOwnerName_(x) + ' — ' + locationName(posOwnerLocationId_(x));
-    return x.label || x.name || x.id;
-  }
 
   function populateSourceOptions(){
     var type = typeSel.value;
@@ -1299,20 +1305,62 @@ function trendChart(rows){
 
 // ---------------- sales report ----------------
 function renderReport(body){
+  var meta = state.meta || {};
+  var locations = meta.locations || [];
+
   body.innerHTML = '<div class="card">' +
     '<h2>'+esc(t('report_title'))+'</h2>' +
     '<div class="grid">' +
       '<div class="field"><label>'+esc(t('report_from'))+'</label><input id="rFrom" type="date"></div>' +
       '<div class="field"><label>'+esc(t('report_to'))+'</label><input id="rTo" type="date"></div>' +
+      '<div class="field"><label>'+esc(t('report_location'))+'</label><select id="rLoc">' +
+        '<option value="">'+esc(t('report_allLocations'))+'</option>' +
+        locations.map(function(l){ return '<option value="'+l.id+'">'+esc(l.city+' — '+l.name)+'</option>'; }).join('') +
+      '</select></div>' +
+      '<div class="field"><label>'+esc(t('entry_sourceType'))+'</label><select id="rType">' +
+        '<option value="">'+esc(t('report_allTypes'))+'</option>' +
+        '<option value="store">'+esc(t('entry_source_store'))+'</option>' +
+        '<option value="car">'+esc(t('entry_source_car'))+'</option>' +
+        '<option value="pos">'+esc(t('entry_source_pos'))+'</option>' +
+      '</select></div>' +
+      '<div class="field"><label id="rSourceLabel">'+esc(t('report_allSources'))+'</label><select id="rSource"><option value="">'+esc(t('report_allSources'))+'</option></select></div>' +
     '</div>' +
     '<button class="btn" id="rRun">'+esc(t('report_run'))+'</button>' +
   '</div><div id="rResult"></div>';
+
+  // Location and source-type narrow the specific-source list together (a
+  // store/car/POS picked while a location is set only shows that
+  // location's own) — same cascading pattern as the daily-entry form, so
+  // "give me just this cluster's third car" doesn't mean scrolling a flat
+  // company-wide list.
+  function populateSourceFilter(){
+    var type = qs('#rType').value;
+    var locId = qs('#rLoc').value;
+    var srcSel = qs('#rSource');
+    qs('#rSourceLabel').textContent = type ? t('entry_source_' + type) : t('report_allSources');
+    if (!type) { srcSel.innerHTML = '<option value="">'+esc(t('report_allSources'))+'</option>'; srcSel.disabled = true; return; }
+    srcSel.disabled = false;
+    var list = [];
+    if (type === 'store') list = (meta.stores||[]).filter(function(s){ return !locId || s.locationId===locId; });
+    else if (type === 'car') list = (meta.cars||[]).filter(function(c){ return !locId || c.locationId===locId; });
+    else if (type === 'pos') list = (meta.pos||[]).filter(function(p){ return !locId || posOwnerLocationId_(p)===locId; });
+    srcSel.innerHTML = '<option value="">'+esc(t('report_allSources'))+'</option>' +
+      list.map(function(x){ return '<option value="'+x.id+'">'+esc(sourceOptionLabel_(type, x))+'</option>'; }).join('');
+  }
+  qs('#rType').addEventListener('change', populateSourceFilter);
+  qs('#rLoc').addEventListener('change', populateSourceFilter);
 
   qs('#rRun').addEventListener('click', runReport);
   runReport();
 
   function runReport(){
-    var payload = { dateFrom: qs('#rFrom').value || undefined, dateTo: qs('#rTo').value || undefined };
+    var payload = {
+      dateFrom: qs('#rFrom').value || undefined,
+      dateTo: qs('#rTo').value || undefined,
+      locationId: qs('#rLoc').value || undefined,
+      sourceType: qs('#rType').value || undefined,
+      sourceId: qs('#rSource').value || undefined
+    };
     api('getSalesReport', payload).then(function(res){
       var out = qs('#rResult');
       if(!res.ok){ out.innerHTML = '<div class="msg err">'+esc(t('err_generic'))+'</div>'; return; }
