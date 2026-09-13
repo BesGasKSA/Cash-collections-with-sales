@@ -907,6 +907,40 @@ function actionShortfallByEntrant_(req, user) {
   return { ok: true, byEntrant: byEntrantList, handoffs: rows };
 }
 
+// ---------- Dashboard period comparison ----------
+// Last 7 days vs. the 7 days before that — a fixed, no-input comparison so
+// the dashboard always has something to show without the viewer having to
+// configure a date range first. `date` on daily_entries is a plain
+// YYYY-MM-DD string (same as everywhere else this app filters by date), so
+// comparing as strings avoids any timezone ambiguity from parsing into Date.
+function actionDashboardComparison_(req, user) {
+  requireCompanyWide_(user);
+  var entries = readSheet(SHEETS.ENTRIES);
+
+  function isoDateOffset_(daysAgo) {
+    var d = new Date();
+    d.setDate(d.getDate() - daysAgo);
+    return d.toISOString().slice(0, 10);
+  }
+  var todayStr = isoDateOffset_(0);
+  var currentStart = isoDateOffset_(6);
+  var previousStart = isoDateOffset_(13);
+  var previousEnd = isoDateOffset_(7);
+
+  function rangeTotals_(fromStr, toStr) {
+    var inRange = entries.filter(function (e) { return e.date >= fromStr && e.date <= toStr; });
+    var net = computeNet_(inRange);
+    var gross = inRange.reduce(function (s, e) { return s + Number(e.cashSales || 0) + Number(e.posSales || 0); }, 0);
+    return { gross: gross, netCashOwed: net.netCashOwed, entryCount: inRange.length };
+  }
+
+  return {
+    ok: true,
+    current: rangeTotals_(currentStart, todayStr),
+    previous: rangeTotals_(previousStart, previousEnd)
+  };
+}
+
 function actionListAudit_(req, user) {
   requireCompanyWide_(user);
   var rows = readSheet(SHEETS.AUDIT);

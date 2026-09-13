@@ -295,6 +295,9 @@ var L = {
     handoff_takePhoto:'التقاط صورة بالكاميرا', handoff_chooseFile:'اختيار من المعرض',
     handoff_resolve:'حل الاعتراض', handoff_resolveConfirm:'تأكيد كصحيح', handoff_resolveReject:'إلغاء التسليم',
     handoff_breakdown:'تفاصيل المبلغ', handoff_showBreakdown:'عرض تفاصيل المبلغ', handoff_hideBreakdown:'إخفاء التفاصيل',
+    audit_showTrail:'عرض سجل العملية', audit_hideTrail:'إخفاء سجل العملية', audit_created:'تم الإنشاء',
+    audit_confirmed:'تم التأكيد', audit_disputed:'تم الاعتراض', audit_resolved:'تم حل الاعتراض',
+    audit_staleEscalated:'تم التصعيد (تأخر طويل)', audit_secondApproved:'تم إقرار الموافقة الثانية',
     handoff_perLocation:'حسب الموقع', handoff_perCluster:'حسب القطاع', handoff_posNote:'مبيعات نقاط البيع للعلم فقط — لا تدخل ضمن النقدية المطلوبة',
     handoff_receivedAmount:'المبلغ المستلم فعلياً', handoff_shortfall:'الفرق (عجز)',
     handoff_originalAmount:'المبلغ المُعلن أصلاً', handoff_shortfallAccepted:'تم تأكيد الاستلام مع وجود فرق — تم إبلاغ جميع المستويات الأعلى (المدير، المُحصّل، الإدارة) فوراً بالبريد الإلكتروني',
@@ -309,6 +312,7 @@ var L = {
     report_shortfallPerson:'الشخص', report_shortfallAmount:'إجمالي العجز المنسوب', report_shortfallCount:'عدد التسليمات',
     report_shortfallNone:'لا يوجد عجز مسجَّل حالياً',
     nav_dashboard:'لوحة التحكم', dash_salesTitle:'لوحة المبيعات', dash_collectionsTitle:'لوحة التحصيل', dash_grossSales:'إجمالي المبيعات',
+    dash_comparisonTitle:'آخر 7 أيام مقابل الأسبوع السابق', dash_comparisonPrevious:'الأسبوع السابق', dash_comparisonGross:'إجمالي المبيعات',
     dash_locationsReporting:'المواقع المُبلِّغة', dash_avgPerLocation:'متوسط لكل موقع', dash_topLocation:'أعلى موقع', dash_topProduct:'أعلى منتج',
     dash_bySourceType:'حسب نوع المصدر', dash_byCity:'حسب المدينة', dash_totalHandoffs:'إجمالي التسليمات', dash_disputeRate:'نسبة الاعتراضات',
     dash_avgHandoffAmount:'متوسط مبلغ التسليم', dash_statusBreakdown:'حسب الحالة', dash_kindBreakdown:'حسب مرحلة السلسلة',
@@ -409,6 +413,9 @@ var L = {
     handoff_takePhoto:'Take photo', handoff_chooseFile:'Choose from gallery',
     handoff_resolve:'Resolve dispute', handoff_resolveConfirm:'Confirm as correct', handoff_resolveReject:'Cancel handoff',
     handoff_breakdown:'Amount breakdown', handoff_showBreakdown:'Show amount breakdown', handoff_hideBreakdown:'Hide breakdown',
+    audit_showTrail:'Show transaction log', audit_hideTrail:'Hide transaction log', audit_created:'Created',
+    audit_confirmed:'Confirmed', audit_disputed:'Disputed', audit_resolved:'Dispute resolved',
+    audit_staleEscalated:'Escalated (pending too long)', audit_secondApproved:'Second approval acknowledged',
     handoff_perLocation:'By location', handoff_perCluster:'By area', handoff_posNote:'POS sales — informational only, not part of the cash owed',
     handoff_receivedAmount:'Amount actually received', handoff_shortfall:'Shortfall',
     handoff_originalAmount:'Originally declared amount', handoff_shortfallAccepted:'Receipt confirmed with a shortfall — every level above (manager, collector, admin/finance) was just emailed',
@@ -423,6 +430,7 @@ var L = {
     report_shortfallPerson:'Person', report_shortfallAmount:'Total attributed shortfall', report_shortfallCount:'Handoffs involved',
     report_shortfallNone:'No shortfall recorded yet',
     nav_dashboard:'Dashboard', dash_salesTitle:'Sales dashboard', dash_collectionsTitle:'Collections dashboard', dash_grossSales:'Gross sales',
+    dash_comparisonTitle:'Last 7 days vs. the week before', dash_comparisonPrevious:'Previous week', dash_comparisonGross:'Gross sales',
     dash_locationsReporting:'Locations reporting', dash_avgPerLocation:'Avg. per location', dash_topLocation:'Top location', dash_topProduct:'Top product',
     dash_bySourceType:'By source type', dash_byCity:'By city', dash_totalHandoffs:'Total handoffs', dash_disputeRate:'Dispute rate',
     dash_avgHandoffAmount:'Avg. handoff amount', dash_statusBreakdown:'By status', dash_kindBreakdown:'By chain step',
@@ -523,6 +531,9 @@ var L = {
     handoff_takePhoto:'کیمرے سے تصویر لیں', handoff_chooseFile:'گیلری سے منتخب کریں',
     handoff_resolve:'اعتراض حل کریں', handoff_resolveConfirm:'درست کے طور پر تصدیق کریں', handoff_resolveReject:'ترسیل منسوخ کریں',
     handoff_breakdown:'رقم کی تفصیل', handoff_showBreakdown:'رقم کی تفصیل دیکھیں', handoff_hideBreakdown:'تفصیل چھپائیں',
+    audit_showTrail:'ٹرانزیکشن لاگ دیکھیں', audit_hideTrail:'ٹرانزیکشن لاگ چھپائیں', audit_created:'بنایا گیا',
+    audit_confirmed:'تصدیق ہوئی', audit_disputed:'اعتراض کیا گیا', audit_resolved:'اعتراض حل ہوا',
+    audit_staleEscalated:'تصعید ہوئی (زیادہ تاخیر)', audit_secondApproved:'دوسری منظوری کی تصدیق ہوئی',
     handoff_perLocation:'مقام کے مطابق', handoff_perCluster:'علاقے کے مطابق', handoff_posNote:'POS فروخت صرف معلومات کے لیے ہے — واجب الادا نقدی میں شامل نہیں',
     handoff_receivedAmount:'موصولہ اصل رقم', handoff_shortfall:'کمی',
     handoff_originalAmount:'اصل اعلان کردہ رقم', handoff_shortfallAccepted:'کمی کے ساتھ وصولی کی تصدیق ہو گئی — تمام اعلیٰ سطحوں (منیجر، کلکٹر، ایڈمن) کو فوری ای میل کر دی گئی ہے',
@@ -537,6 +548,7 @@ var L = {
     report_shortfallPerson:'شخص', report_shortfallAmount:'کل منسوب کمی', report_shortfallCount:'شامل ترسیلیں',
     report_shortfallNone:'ابھی تک کوئی کمی درج نہیں',
     nav_dashboard:'ڈیش بورڈ', dash_salesTitle:'سیلز ڈیش بورڈ', dash_collectionsTitle:'کلیکشن ڈیش بورڈ', dash_grossSales:'کل فروخت',
+    dash_comparisonTitle:'پچھلے 7 دن بمقابلہ اس سے پچھلا ہفتہ', dash_comparisonPrevious:'پچھلا ہفتہ', dash_comparisonGross:'کل فروخت',
     dash_locationsReporting:'رپورٹ کرنے والے مقامات', dash_avgPerLocation:'اوسط فی مقام', dash_topLocation:'سرفہرست مقام', dash_topProduct:'سرفہرست پروڈکٹ',
     dash_bySourceType:'ذریعہ کی قسم کے مطابق', dash_byCity:'شہر کے مطابق', dash_totalHandoffs:'کل ترسیل', dash_disputeRate:'اعتراض کی شرح',
     dash_avgHandoffAmount:'اوسط ترسیل رقم', dash_statusBreakdown:'حالت کے مطابق', dash_kindBreakdown:'سلسلے کے مرحلے کے مطابق',
@@ -1162,6 +1174,19 @@ function renderDashboard(body){
       [money(avgPerLoc), t('dash_avgPerLocation')]
     ]));
 
+    // Fixed last-7-days-vs-previous-7-days comparison — no date picker to
+    // configure, so there's always something useful on screen immediately.
+    // Loaded separately so a slow/failed comparison never blocks the rest
+    // of a dashboard that's otherwise ready.
+    var comparisonCard = el('<div class="card"><h2>'+esc(t('dash_comparisonTitle'))+'</h2><div id="dashComparison">'+esc(t('loading'))+'</div></div>');
+    body.appendChild(comparisonCard);
+    api('getDashboardComparison', {}).then(function(cmp){
+      var wrap = qs('#dashComparison', comparisonCard);
+      if (!cmp.ok){ wrap.innerHTML = '<div class="msg err">'+esc(errMsg_(cmp))+'</div>'; return; }
+      wrap.innerHTML = comparisonRow_(t('dash_comparisonGross'), cmp.current.gross, cmp.previous.gross) +
+                        comparisonRow_(t('report_net'), cmp.current.netCashOwed, cmp.previous.netCashOwed);
+    });
+
     if (report.byDate && report.byDate.length){
       var trendCard = el('<div class="card"><h2>'+esc(t('report_trend'))+'</h2></div>');
       trendCard.appendChild(trendChart(report.byDate));
@@ -1665,6 +1690,31 @@ function varianceLine(h){
     ' · '+esc(t('handoff_shortfall'))+': '+money(h.shortfall)+'</div>';
 }
 
+// Reconstructs a chronological who/when timeline directly from the
+// handoff's own timestamp fields — every state change already stamps who
+// did it and when onto the record itself, so no separate audit-log fetch
+// is needed to show it per-transaction.
+function handoffAuditTrail_(h){
+  var events = [];
+  function add(at, key, actorId, extra){ if (at) events.push({ at:at, key:key, actorId:actorId, extra:extra }); }
+  add(h.createdAt, 'audit_created', h.fromUserId);
+  if (h.staleEscalatedAt) add(h.staleEscalatedAt, 'audit_staleEscalated', null);
+  if (h.disputedAt) add(h.disputedAt, 'audit_disputed', h.toUserId, h.disputeNote);
+  // A dispute resolved as "confirm" sets both confirmedAt and resolvedAt at
+  // the same moment — show only the resolution event then, since it's the
+  // more complete/accurate one (carries the resolver and note too).
+  if (h.resolvedAt) add(h.resolvedAt, 'audit_resolved', h.resolvedBy, h.resolutionNote);
+  else if (h.confirmedAt) add(h.confirmedAt, 'audit_confirmed', h.confirmedBy);
+  if (h.secondApprovedAt) add(h.secondApprovedAt, 'audit_secondApproved', h.secondApprovedBy);
+  events.sort(function(a,b){ return new Date(a.at) - new Date(b.at); });
+  if (!events.length) return '';
+  return events.map(function(e){
+    return '<div class="row" style="justify-content:space-between;font-size:12px;padding:3px 0;border-top:1px dashed var(--border-soft);">' +
+      '<span>'+esc(t(e.key))+(e.actorId?' — '+esc(userName(e.actorId)):'')+(e.extra?' («'+esc(e.extra)+'»)':'')+'</span>' +
+      '<span class="muted">'+esc(String(e.at).slice(0,16).replace('T',' '))+'</span></div>';
+  }).join('');
+}
+
 function handoffItem(h, showConfirm, showResolve){
   // The receiving step is exactly where "what am I actually confirming?"
   // matters most — default the breakdown open there instead of behind an
@@ -1683,8 +1733,16 @@ function handoffItem(h, showConfirm, showResolve){
       '<button type="button" class="details-toggle" id="hBrkToggle">'+esc(t(isReceivingStep ? 'handoff_hideBreakdown' : 'handoff_showBreakdown'))+'</button>' +
       '<div id="hBrkBody"'+(isReceivingStep?'':' hidden')+'>' + breakdownGrid(h.breakdown) + handoffDetailRows(h) + '</div>'
     ) : '') +
+    ('<button type="button" class="details-toggle" id="hAuditToggle">'+esc(t('audit_showTrail'))+'</button>' +
+      '<div id="hAuditBody" hidden>' + handoffAuditTrail_(h) + '</div>') +
     '<div class="actions" id="hActions"></div>' +
   '</div>');
+
+  var auditToggle = qs('#hAuditToggle', div), auditBody = qs('#hAuditBody', div);
+  auditToggle.addEventListener('click', function(){
+    auditBody.hidden = !auditBody.hidden;
+    auditToggle.textContent = t(auditBody.hidden ? 'audit_showTrail' : 'audit_hideTrail');
+  });
 
   if (h.breakdown) {
     var toggle = qs('#hBrkToggle', div), brkBody = qs('#hBrkBody', div);
@@ -1967,6 +2025,24 @@ function kpiRow(items){
   return el('<div class="kpi-grid">'+items.map(function(it){
     return '<div class="kpi"><div class="n">'+esc(it[0])+'</div><div class="l">'+esc(it[1])+'</div></div>';
   }).join('')+'</div>');
+}
+
+// One line of a period-over-period comparison — current figure large and
+// prominent, previous figure as context underneath, and a colored up/down
+// percentage badge (0% previous with something now reads as +100%, not a
+// divide-by-zero NaN).
+function comparisonRow_(label, current, previous){
+  var delta = current - previous;
+  var pct = previous > 0 ? (delta / previous * 100) : (current > 0 ? 100 : 0);
+  var up = delta >= 0;
+  var color = up ? 'var(--ok)' : 'var(--danger)';
+  var arrow = up ? '▲' : '▼';
+  return '<div class="row" style="justify-content:space-between;align-items:center;padding:10px 0;border-top:1px dashed var(--border-soft);">' +
+    '<div><div class="muted" style="font-size:12px;">'+esc(label)+'</div>' +
+      '<div style="font-size:18px;font-weight:800;">'+money(current)+'</div>' +
+      '<div class="muted" style="font-size:11.5px;">'+esc(t('dash_comparisonPrevious'))+': '+money(previous)+'</div></div>' +
+    '<div style="color:'+color+';font-weight:800;font-size:15px;white-space:nowrap;">'+arrow+' '+Math.abs(Math.round(pct))+'%</div>' +
+  '</div>';
 }
 
 var CHART_PALETTE = ['#4D6D51','#8fae7a','#b3820f','#3b5540','#c14a30','#98988f'];

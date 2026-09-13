@@ -621,5 +621,18 @@ check(!protoKind.ok && protoKind.error === 'invalid_kind', 'entity kind:"__proto
 var protoDeleteKind = call({ action: 'adminDeleteEntity', token: adminTok, kind: 'constructor', id: 'x' });
 check(!protoDeleteKind.ok && protoDeleteKind.error === 'invalid_kind', 'same for adminDeleteEntity with kind:"constructor"');
 
+console.log('--- dashboard period comparison: last 7 days vs. the 7 days before ---');
+function isoOffset(daysAgo) { var d = new Date(); d.setDate(d.getDate() - daysAgo); return d.toISOString().slice(0, 10); }
+var cmpLocation = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: 'Riyadh', name: 'Comparison Test', clusterId: cluster.entity.id } }).entity;
+var cmpStore = call({ action: 'adminSaveEntity', token: adminTok, kind: 'store', data: { locationId: cmpLocation.id, name: 'Comparison Store' } }).entity;
+call({ action: 'createDailyEntry', token: adminTok, date: isoOffset(0), sourceType: 'store', sourceId: cmpStore.id, cashSales: 400 });
+call({ action: 'createDailyEntry', token: adminTok, date: isoOffset(9), sourceType: 'store', sourceId: cmpStore.id, cashSales: 300 });
+var cmpForbidden = call({ action: 'getDashboardComparison', token: aliTok });
+check(!cmpForbidden.ok && cmpForbidden.error === 'forbidden', 'a store manager cannot see the comparison — company-wide visibility only');
+var cmp = call({ action: 'getDashboardComparison', token: adminTok });
+check(cmp.ok, 'admin can see the comparison');
+check(cmp.current.gross >= 400, "today's entry counted in the current 7-day window");
+check(cmp.previous.gross >= 300, "the 9-days-ago entry counted in the previous 7-day window, not the current one");
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);
