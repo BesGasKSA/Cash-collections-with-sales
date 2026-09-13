@@ -305,6 +305,9 @@ var L = {
     report_net:'صافي المستحق', report_outstanding:'غير محصّل بعد', report_pos:'مبيعات نقاط البيع', report_byLocation:'حسب الموقع',
     report_byProduct:'حسب المنتج', report_product:'المنتج', report_cashChannel:'نقدي', report_posChannel:'نقاط بيع',
     report_total:'الإجمالي', report_trend:'اتجاه المبيعات اليومي', report_unspecified:'غير محدد', report_sortHint:'اضغط على العنوان للترتيب',
+    report_shortfallTitle:'العجز حسب مُدخِل البيانات', report_shortfallHint:'عند وجود فرق بين المبلغ المُعلن والمُستلم فعلياً، يُنسب هنا بشكل تقديري (متناسب مع حصة كل إدخال) إلى من أدخل البيانات أصلاً — سائق أو مشرف فرع — لتتبّع الأنماط المتكررة. هذا تقدير وليس إثبات مسؤولية قاطع.',
+    report_shortfallPerson:'الشخص', report_shortfallAmount:'إجمالي العجز المنسوب', report_shortfallCount:'عدد التسليمات',
+    report_shortfallNone:'لا يوجد عجز مسجَّل حالياً',
     nav_dashboard:'لوحة التحكم', dash_salesTitle:'لوحة المبيعات', dash_collectionsTitle:'لوحة التحصيل', dash_grossSales:'إجمالي المبيعات',
     dash_locationsReporting:'المواقع المُبلِّغة', dash_avgPerLocation:'متوسط لكل موقع', dash_topLocation:'أعلى موقع', dash_topProduct:'أعلى منتج',
     dash_bySourceType:'حسب نوع المصدر', dash_byCity:'حسب المدينة', dash_totalHandoffs:'إجمالي التسليمات', dash_disputeRate:'نسبة الاعتراضات',
@@ -343,6 +346,21 @@ var L = {
     role_cluster_manager:'مدير قطاع', role_store_manager:'مشرف فرع',
     role_collector:'مُحصّل', role_driver:'سائق', settings_url:'رابط النظام (Apps Script)', settings_save:'حفظ الرابط',
     err_generic:'حدث خطأ، حاول مرة أخرى', ok_saved:'تم الحفظ بنجاح', confirm_delete:'هل أنت متأكد من الحذف؟',
+    err_alreadyAcknowledged:'تم إقرار هذا مسبقاً', err_authRequired:'انتهت الجلسة، الرجاء تسجيل الدخول مجدداً',
+    err_badRequest:'طلب غير صالح', err_conflictOfInterest:'لا يمكنك تنفيذ هذا الإجراء على معاملة أنت طرف فيها (تعارض مصالح)',
+    err_depositNotEligible:'هذا الإيداع غير مؤهل للمطابقة', err_emailExists:'هذا البريد الإلكتروني مسجَّل بالفعل',
+    err_forbidden:'لا تملك صلاحية لتنفيذ هذا الإجراء', err_invalidInput:'بيانات ناقصة أو غير صحيحة',
+    err_invalidKind:'نوع العنصر غير صالح', err_invalidResolution:'نوع الحل غير صالح', err_invalidStatus:'الحالة المطلوبة غير صالحة',
+    err_invalidType:'النوع غير صالح', err_lineAlreadyMatched:'هذا السطر البنكي مطابَق مسبقاً',
+    err_missingAction:'لم يتم تحديد الإجراء', err_missingEmail:'الرجاء إدخال البريد الإلكتروني',
+    err_noClusterManager:'لا يوجد مدير قطاع معيّن لهذا الموقع', err_noCollector:'لا يوجد مُحصّل معيّن لهذا القطاع',
+    err_noEntries:'لا توجد إدخالات غير مُسلَّمة لهذا الموقع', err_noHeldCash:'لا توجد نقدية محتجزة حالياً لتسليمها',
+    err_notDisputed:'هذه المعاملة ليست محل اعتراض', err_notFlagged:'هذه المعاملة غير مُعلَّمة كمحتاجة لموافقة ثانية',
+    err_notFound:'لم يتم العثور على العنصر', err_notPending:'هذه المعاملة لم تعد قيد الانتظار',
+    err_nothingOwed:'لا يوجد مبلغ مستحق حالياً', err_tooManyRows:'عدد الصفوف كبير جداً',
+    err_unknownAction:'إجراء غير معروف', err_weakPassword:'كلمة المرور ضعيفة جداً (8 أحرف على الأقل)',
+    err_wrongCurrentPassword:'كلمة المرور الحالية غير صحيحة', err_network:'تعذّر الاتصال بالخادم — تحقق من الإنترنت',
+    err_noSourceSelected:'الرجاء اختيار مصدر أولاً', err_titleRequired:'الرجاء إدخال عنوان',
     noData:'لا توجد بيانات', loading:'جارِ التحميل...', total:'الإجمالي', kind_location_to_cluster:'فرع ← قطاع',
     kind_cluster_to_collector:'قطاع ← مُحصّل', kind_deposit:'إيداع بنكي', filter:'تصفية', all:'الكل', entity_bank:'البنك'
   },
@@ -401,6 +419,9 @@ var L = {
     report_net:'Net owed', report_outstanding:'Still outstanding', report_pos:'POS sales', report_byLocation:'By location',
     report_byProduct:'By product', report_product:'Product', report_cashChannel:'Cash', report_posChannel:'POS',
     report_total:'Total', report_trend:'Daily sales trend', report_unspecified:'Unspecified', report_sortHint:'Click a header to sort',
+    report_shortfallTitle:'Shortfall by data entrant', report_shortfallHint:'When a declared amount and what was actually received differ, it is attributed here as an estimate (proportional to each entry\'s share) back to whoever originally entered the data — a driver or store manager — to help spot repeated patterns. This is an estimate, not proof of fault.',
+    report_shortfallPerson:'Person', report_shortfallAmount:'Total attributed shortfall', report_shortfallCount:'Handoffs involved',
+    report_shortfallNone:'No shortfall recorded yet',
     nav_dashboard:'Dashboard', dash_salesTitle:'Sales dashboard', dash_collectionsTitle:'Collections dashboard', dash_grossSales:'Gross sales',
     dash_locationsReporting:'Locations reporting', dash_avgPerLocation:'Avg. per location', dash_topLocation:'Top location', dash_topProduct:'Top product',
     dash_bySourceType:'By source type', dash_byCity:'By city', dash_totalHandoffs:'Total handoffs', dash_disputeRate:'Dispute rate',
@@ -439,6 +460,21 @@ var L = {
     role_cluster_manager:'Area Manager', role_store_manager:'Store Manager',
     role_collector:'Collector', role_driver:'Driver', settings_url:'System URL (Apps Script)', settings_save:'Save URL',
     err_generic:'Something went wrong, please try again', ok_saved:'Saved successfully', confirm_delete:'Are you sure you want to delete this?',
+    err_alreadyAcknowledged:'Already acknowledged', err_authRequired:'Your session expired — please log in again',
+    err_badRequest:'Invalid request', err_conflictOfInterest:"You can't act on a transaction you're a party to (conflict of interest)",
+    err_depositNotEligible:"This deposit isn't eligible for matching", err_emailExists:'This email is already registered',
+    err_forbidden:"You don't have permission for this", err_invalidInput:'Missing or invalid data',
+    err_invalidKind:'Invalid item type', err_invalidResolution:'Invalid resolution type', err_invalidStatus:'Invalid status',
+    err_invalidType:'Invalid type', err_lineAlreadyMatched:'This bank line is already matched',
+    err_missingAction:'No action specified', err_missingEmail:'Please enter an email',
+    err_noClusterManager:'No area manager assigned to this location', err_noCollector:'No collector assigned to this area',
+    err_noEntries:'No unhanded-off entries for this location', err_noHeldCash:'No cash currently held to hand off',
+    err_notDisputed:"This isn't under dispute", err_notFlagged:"This isn't flagged as needing a second approval",
+    err_notFound:'Not found', err_notPending:"This is no longer pending",
+    err_nothingOwed:'Nothing currently owed', err_tooManyRows:'Too many rows',
+    err_unknownAction:'Unknown action', err_weakPassword:'Password too weak (8+ characters)',
+    err_wrongCurrentPassword:'Current password is incorrect', err_network:"Couldn't reach the server — check your connection",
+    err_noSourceSelected:'Please pick a source first', err_titleRequired:'Please enter a title',
     noData:'No data', loading:'Loading...', total:'Total', kind_location_to_cluster:'Branch → Area',
     kind_cluster_to_collector:'Area → Collector', kind_deposit:'Bank deposit', filter:'Filter', all:'All', entity_bank:'Bank'
   },
@@ -497,6 +533,9 @@ var L = {
     report_net:'خالص واجب الادا', report_outstanding:'ابھی تک وصول نہیں ہوا', report_pos:'POS فروخت', report_byLocation:'مقام کے مطابق',
     report_byProduct:'پروڈکٹ کے مطابق', report_product:'پروڈکٹ', report_cashChannel:'نقد', report_posChannel:'POS',
     report_total:'کل', report_trend:'روزانہ سیلز رجحان', report_unspecified:'غیر متعین', report_sortHint:'ترتیب کے لیے ہیڈر دبائیں',
+    report_shortfallTitle:'اندراج کرنے والے کے مطابق کمی', report_shortfallHint:'جب اعلان کردہ رقم اور اصل موصولہ رقم میں فرق ہو، تو یہاں یہ تخمیناً (ہر اندراج کے حصے کے تناسب سے) اس شخص سے منسوب کی جاتی ہے جس نے ڈیٹا اصل میں درج کیا — ڈرائیور یا اسٹور منیجر — تاکہ بار بار ہونے والے پیٹرن کا پتہ چل سکے۔ یہ ایک تخمینہ ہے، قصور کا حتمی ثبوت نہیں۔',
+    report_shortfallPerson:'شخص', report_shortfallAmount:'کل منسوب کمی', report_shortfallCount:'شامل ترسیلیں',
+    report_shortfallNone:'ابھی تک کوئی کمی درج نہیں',
     nav_dashboard:'ڈیش بورڈ', dash_salesTitle:'سیلز ڈیش بورڈ', dash_collectionsTitle:'کلیکشن ڈیش بورڈ', dash_grossSales:'کل فروخت',
     dash_locationsReporting:'رپورٹ کرنے والے مقامات', dash_avgPerLocation:'اوسط فی مقام', dash_topLocation:'سرفہرست مقام', dash_topProduct:'سرفہرست پروڈکٹ',
     dash_bySourceType:'ذریعہ کی قسم کے مطابق', dash_byCity:'شہر کے مطابق', dash_totalHandoffs:'کل ترسیل', dash_disputeRate:'اعتراض کی شرح',
@@ -535,6 +574,21 @@ var L = {
     role_cluster_manager:'علاقہ منیجر', role_store_manager:'اسٹور منیجر',
     role_collector:'کلکٹر', role_driver:'ڈرائیور', settings_url:'سسٹم لنک (Apps Script)', settings_save:'لنک محفوظ کریں',
     err_generic:'کچھ غلط ہوگیا، دوبارہ کوشش کریں', ok_saved:'کامیابی سے محفوظ ہوگیا', confirm_delete:'کیا آپ واقعی حذف کرنا چاہتے ہیں؟',
+    err_alreadyAcknowledged:'پہلے سے تصدیق شدہ', err_authRequired:'سیشن ختم ہوگیا — دوبارہ لاگ ان کریں',
+    err_badRequest:'غلط درخواست', err_conflictOfInterest:'آپ اس لین دین پر کارروائی نہیں کر سکتے جس میں آپ خود شامل ہیں (مفادات کا تصادم)',
+    err_depositNotEligible:'یہ جمع رقم مطابقت کے لیے اہل نہیں', err_emailExists:'یہ ای میل پہلے سے رجسٹرڈ ہے',
+    err_forbidden:'آپ کو اس کی اجازت نہیں ہے', err_invalidInput:'نامکمل یا غلط ڈیٹا',
+    err_invalidKind:'غلط آئٹم کی قسم', err_invalidResolution:'غلط حل کی قسم', err_invalidStatus:'غلط حالت',
+    err_invalidType:'غلط قسم', err_lineAlreadyMatched:'یہ بینک لائن پہلے سے مماثل ہے',
+    err_missingAction:'کوئی ایکشن متعین نہیں', err_missingEmail:'براہ کرم ای میل درج کریں',
+    err_noClusterManager:'اس مقام کے لیے کوئی علاقہ منیجر مقرر نہیں', err_noCollector:'اس علاقے کے لیے کوئی کلکٹر مقرر نہیں',
+    err_noEntries:'اس مقام کے لیے کوئی غیر تسلیم شدہ اندراج نہیں', err_noHeldCash:'فی الحال تسلیم کے لیے کوئی نقدی موجود نہیں',
+    err_notDisputed:'یہ اعتراض کے تحت نہیں ہے', err_notFlagged:'یہ دوسری منظوری کے لیے نشان زد نہیں',
+    err_notFound:'نہیں ملا', err_notPending:'یہ اب زیر التواء نہیں ہے',
+    err_nothingOwed:'فی الحال کوئی رقم واجب الادا نہیں', err_tooManyRows:'بہت زیادہ قطاریں',
+    err_unknownAction:'نامعلوم ایکشن', err_weakPassword:'پاس ورڈ بہت کمزور ہے (کم از کم 8 حروف)',
+    err_wrongCurrentPassword:'موجودہ پاس ورڈ غلط ہے', err_network:'سرور سے رابطہ نہیں ہو سکا — انٹرنیٹ چیک کریں',
+    err_noSourceSelected:'پہلے ایک ذریعہ منتخب کریں', err_titleRequired:'براہ کرم عنوان درج کریں',
     noData:'کوئی ڈیٹا نہیں', loading:'لوڈ ہو رہا ہے...', total:'کل', kind_location_to_cluster:'برانچ ← علاقہ',
     kind_cluster_to_collector:'علاقہ ← کلکٹر', kind_deposit:'بینک جمع', filter:'فلٹر', all:'تمام', entity_bank:'بینک'
   }
@@ -672,6 +726,41 @@ function toast(msgKey, type){
   render();
   setTimeout(function(){ state.msg=null; var m=qs('#msgBox'); if(m) m.remove(); }, 4000);
 }
+// Same as toast(), but takes an already-resolved string instead of an
+// i18n key — for errMsg_() output, which is itself already translated
+// (and may include a raw, untranslated server error code as a fallback).
+function toastRaw_(text, type){
+  state.msg = { text: text, type: type||'err' };
+  render();
+  setTimeout(function(){ state.msg=null; var m=qs('#msgBox'); if(m) m.remove(); }, 4000);
+}
+
+// A bare "something went wrong" swallowed exactly which action failed and
+// why — every server-side action returns a specific error CODE (forbidden,
+// not_found, conflict_of_interest, ...), and this surfaces the real one.
+// Known codes get a clear, specific translated message; an unrecognized
+// code still shows the generic message but with the raw code appended in
+// parentheses, so the real reason is never fully hidden even for a code
+// this table hasn't been taught yet.
+var ERROR_KEYS_ = {
+  already_acknowledged:'err_alreadyAcknowledged', auth_required:'err_authRequired', bad_request:'err_badRequest',
+  conflict_of_interest:'err_conflictOfInterest', deposit_not_eligible:'err_depositNotEligible', email_exists:'err_emailExists',
+  forbidden:'err_forbidden', has_children:'admin_hasChildren', invalid_input:'err_invalidInput', invalid_kind:'err_invalidKind',
+  invalid_resolution:'err_invalidResolution', invalid_status:'err_invalidStatus', invalid_type:'err_invalidType',
+  line_already_matched:'err_lineAlreadyMatched', missing_action:'err_missingAction', missing_email:'err_missingEmail',
+  no_cluster_manager:'err_noClusterManager', no_collector:'err_noCollector', no_entries:'err_noEntries',
+  no_held_cash:'err_noHeldCash', not_disputed:'err_notDisputed', not_flagged:'err_notFlagged', not_found:'err_notFound',
+  not_pending:'err_notPending', nothing_owed:'err_nothingOwed', too_many_rows:'err_tooManyRows',
+  unknown_action:'err_unknownAction', weak_password:'err_weakPassword', wrong_current_password:'err_wrongCurrentPassword',
+  network:'err_network'
+};
+function errMsg_(res){
+  var code = res && res.error;
+  if (!code) return t('err_generic');
+  var key = ERROR_KEYS_[code];
+  if (key) return t(key);
+  return t('err_generic') + ' (' + code + ')';
+}
 
 // ---------------- bootstrap: ask for the Apps Script URL once ----------------
 function renderUrlSetup(){
@@ -779,7 +868,7 @@ function doForgotPassword(){
   api('forgotPassword', { email: email }).then(function(res){
     btn.disabled = false;
     var box = qs('#fpMsg');
-    if (!res.ok) { box.innerHTML = '<div class="msg err">'+esc(t('err_generic'))+'</div>'; return; }
+    if (!res.ok) { box.innerHTML = '<div class="msg err">'+esc(errMsg_(res))+'</div>'; return; }
     box.innerHTML = '<div class="msg ok">'+esc(t(res.throttled ? 'forgotPasswordThrottled' : 'forgotPasswordSent'))+'</div>';
     qs('#fpEmail').value='';
   });
@@ -806,7 +895,7 @@ function renderChangePw(){
   qs('#cpBtn').addEventListener('click', function(){
     var pw = qs('#newPw').value.trim();
     api('changePassword', { newPassword: pw }).then(function(res){
-      if(!res.ok){ qs('#cpMsg').innerHTML='<div class="msg err">'+esc(t('err_generic'))+'</div>'; return; }
+      if(!res.ok){ qs('#cpMsg').innerHTML='<div class="msg err">'+esc(errMsg_(res))+'</div>'; return; }
       state.user.mustChangePw = false;
       render();
     });
@@ -970,7 +1059,7 @@ function renderHome(body){
 
   Promise.all([dashP, reportP]).then(function(results){
     var res = results[0], report = results[1];
-    if(!res.ok){ body.innerHTML = '<div class="msg err">'+esc(t('err_generic'))+'</div>'; return; }
+    if(!res.ok){ body.innerHTML = '<div class="msg err">'+esc(errMsg_(res))+'</div>'; return; }
     setNotifCount((res.pendingForMe||[]).length + (res.openDisputes||[]).length);
     body.innerHTML = '';
 
@@ -1047,7 +1136,7 @@ function renderDashboard(body){
   body.innerHTML = '<div class="card">'+esc(t('loading'))+'</div>';
   Promise.all([api('getSalesReport', {}), api('listHandoffs', {}), api('listDashboard', {})]).then(function(results){
     var report = results[0], ho = results[1], dash = results[2];
-    if (!report.ok || !ho.ok || !dash.ok){ body.innerHTML = '<div class="msg err">'+esc(t('err_generic'))+'</div>'; return; }
+    if (!report.ok || !ho.ok || !dash.ok){ body.innerHTML = '<div class="msg err">'+esc(errMsg_(!report.ok?report:!ho.ok?ho:dash))+'</div>'; return; }
     body.innerHTML = '';
 
     // ---------- Sales ----------
@@ -1410,9 +1499,9 @@ function renderEntries(body){
       posSales: numFromInput_(qs('#ePos', form)),
       note: qs('#eNote', form).value
     };
-    if (!payload.sourceId){ qs('#entryMsg',form).innerHTML='<div class="msg err">'+esc(t('err_generic'))+'</div>'; return; }
+    if (!payload.sourceId){ qs('#entryMsg',form).innerHTML='<div class="msg err">'+esc(t('err_noSourceSelected'))+'</div>'; return; }
     api('createDailyEntry', payload).then(function(res){
-      if(!res.ok){ qs('#entryMsg',form).innerHTML='<div class="msg err">'+esc(t('err_generic'))+'</div>'; return; }
+      if(!res.ok){ qs('#entryMsg',form).innerHTML='<div class="msg err">'+esc(errMsg_(res))+'</div>'; return; }
       qs('#entryMsg',form).innerHTML='<div class="msg ok">'+esc(t('ok_saved'))+'</div>';
       loadEntryList();
     });
@@ -1497,7 +1586,7 @@ function renderEntries(body){
         var validRows = pendingImportRows.filter(function(r){ return r.status==='ok'; });
         if (!validRows.length) return;
         api('importDailyEntries', { rows: validRows }).then(function(res){
-          if (!res.ok){ qs('#impMsg',importCard).innerHTML='<div class="msg err">'+esc(t('err_generic'))+'</div>'; return; }
+          if (!res.ok){ qs('#impMsg',importCard).innerHTML='<div class="msg err">'+esc(errMsg_(res))+'</div>'; return; }
           qs('#impMsg',importCard).innerHTML='<div class="msg ok">'+esc(t('entry_importResult').replace('{created}',res.created).replace('{total}',res.total))+'</div>';
           pendingImportRows = [];
           renderImportPreview();
@@ -1647,7 +1736,7 @@ function renderHandoffs(body){
   var role = state.user.role;
 
   api('listHandoffs', {}).then(function(res){
-    if(!res.ok){ body.innerHTML='<div class="msg err">'+esc(t('err_generic'))+'</div>'; return; }
+    if(!res.ok){ body.innerHTML='<div class="msg err">'+esc(errMsg_(res))+'</div>'; return; }
     body.innerHTML = '';
 
     // action card: create outgoing handoff / record deposit
@@ -1662,7 +1751,7 @@ function renderHandoffs(body){
       qs('#hCreateLoc', lc).addEventListener('click', function(){
         var lid = role==='admin' ? qs('#hLoc',lc).value : locId;
         api('createHandoff', {kind:'location_to_cluster', locationId: lid}).then(function(res2){
-          qs('#hLocMsg',lc).innerHTML = res2.ok ? '<div class="msg ok">'+esc(t('ok_saved'))+'</div>' : '<div class="msg err">'+esc(t('err_generic'))+'</div>';
+          qs('#hLocMsg',lc).innerHTML = res2.ok ? '<div class="msg ok">'+esc(t('ok_saved'))+'</div>' : '<div class="msg err">'+esc(errMsg_(res2))+'</div>';
           if(res2.ok) render();
         });
       });
@@ -1677,7 +1766,7 @@ function renderHandoffs(body){
       qs('#hCreateClu', cc).addEventListener('click', function(){
         var cid = role==='admin' ? qs('#hClu',cc).value : (myCluster && myCluster.id);
         api('createHandoff', {kind:'cluster_to_collector', clusterId: cid}).then(function(res2){
-          qs('#hCluMsg',cc).innerHTML = res2.ok ? '<div class="msg ok">'+esc(t('ok_saved'))+'</div>' : '<div class="msg err">'+esc(t('err_generic'))+'</div>';
+          qs('#hCluMsg',cc).innerHTML = res2.ok ? '<div class="msg ok">'+esc(t('ok_saved'))+'</div>' : '<div class="msg err">'+esc(errMsg_(res2))+'</div>';
           if(res2.ok) render();
         });
       });
@@ -1721,7 +1810,7 @@ function renderHandoffs(body){
           var payload = { bankReference: bankRef };
           if (fileData) { payload.fileBase64 = fileData.base64; payload.fileName = fileData.name; payload.fileMime = fileData.mime; }
           api('recordDeposit', payload).then(function(res2){
-            qs('#hDepMsg',dc).innerHTML = res2.ok ? '<div class="msg ok">'+esc(t('ok_saved'))+'</div>' : '<div class="msg err">'+esc(t('err_generic'))+'</div>';
+            qs('#hDepMsg',dc).innerHTML = res2.ok ? '<div class="msg ok">'+esc(t('ok_saved'))+'</div>' : '<div class="msg err">'+esc(errMsg_(res2))+'</div>';
             if(res2.ok) render();
           });
         }
@@ -1887,6 +1976,10 @@ function renderReport(body){
   var meta = state.meta || {};
   var locations = meta.locations || [];
   var zones = meta.zones || [];
+  // Mirrors requireCompanyWide_ on the server — a cluster (area) manager
+  // can reach this screen too (their own area's report), but the
+  // shortfall-accountability card is company-wide only.
+  var isCompanyWide = ['admin','finance','accountant','operations_manager'].indexOf(state.user.role) >= 0;
 
   body.innerHTML = '<div class="card">' +
     '<h2>'+esc(t('report_title'))+'</h2>' +
@@ -1960,7 +2053,7 @@ function renderReport(body){
     };
     api('getSalesReport', payload).then(function(res){
       var out = qs('#rResult');
-      if(!res.ok){ out.innerHTML = '<div class="msg err">'+esc(t('err_generic'))+'</div>'; return; }
+      if(!res.ok){ out.innerHTML = '<div class="msg err">'+esc(errMsg_(res))+'</div>'; return; }
       var t1 = res.totals, t2 = res.outstanding;
 
       out.innerHTML = '';
@@ -2017,6 +2110,27 @@ function renderReport(body){
       ], { sortKey:'city', sortDir:'asc' }));
       out.appendChild(locationCard);
 
+      // Who a repeated shortfall traces back to — company-wide visibility
+      // only (isCompanyWide_ on the client mirrors requireCompanyWide_ on
+      // the server), same as every other accountability-adjacent view.
+      if (isCompanyWide){
+        var shortfallCard = el('<div class="card"><h2>'+esc(t('report_shortfallTitle'))+'</h2>' +
+          '<div class="muted" style="font-size:12px;margin-bottom:10px;">'+esc(t('report_shortfallHint'))+'</div>' +
+          '<div id="rShortfall">'+esc(t('loading'))+'</div></div>');
+        out.appendChild(shortfallCard);
+        api('getShortfallByEntrant', {}).then(function(res3){
+          var wrap = qs('#rShortfall', shortfallCard);
+          if (!res3.ok){ wrap.innerHTML = '<div class="msg err">'+esc(errMsg_(res3))+'</div>'; return; }
+          if (!res3.byEntrant.length){ wrap.innerHTML = '<div class="muted">'+esc(t('report_shortfallNone'))+'</div>'; return; }
+          wrap.innerHTML = '';
+          wrap.appendChild(sortableTable(res3.byEntrant, [
+            { key:'userId', label: t('report_shortfallPerson'), render: function(r){ return esc(userName(r.userId)); } },
+            { key:'totalShortfall', label: t('report_shortfallAmount'), render: function(r){ return '<strong>'+money(r.totalShortfall)+'</strong>'; } },
+            { key:'handoffCount', label: t('report_shortfallCount') }
+          ], { sortKey:'totalShortfall', sortDir:'desc' }));
+        });
+      }
+
       // finance/accountant/operations manager get the audit trail here —
       // admin has its own dedicated tab under "nav_admin" already.
       if (['finance','accountant','operations_manager'].indexOf(state.user.role) >= 0){
@@ -2041,7 +2155,7 @@ function renderReconciliation(body){
 
   function loadReconciliation(){
     api('getReconciliation', {}).then(function(res){
-      if (!res.ok){ body.innerHTML = '<div class="msg err">'+esc(t('err_generic'))+'</div>'; return; }
+      if (!res.ok){ body.innerHTML = '<div class="msg err">'+esc(errMsg_(res))+'</div>'; return; }
       body.innerHTML = '';
 
       var importCard = el('<div class="card">' +
@@ -2068,7 +2182,7 @@ function renderReconciliation(body){
             return { date: cell(r,'date').trim(), amount: cell(r,'amount').trim(), reference: cell(r,'reference').trim() };
           });
           api('importBankStatement', { rows: rows }).then(function(res2){
-            if (!res2.ok){ qs('#reconMsg',importCard).innerHTML = '<div class="msg err">'+esc(t('err_generic'))+'</div>'; return; }
+            if (!res2.ok){ qs('#reconMsg',importCard).innerHTML = '<div class="msg err">'+esc(errMsg_(res2))+'</div>'; return; }
             qs('#reconMsg',importCard).innerHTML = '<div class="msg ok">'+esc(t('recon_result').replace('{imported}',res2.imported).replace('{matched}',res2.autoMatched))+'</div>';
             loadReconciliation();
           });
@@ -2101,7 +2215,7 @@ function renderReconciliation(body){
           qs('button', row).addEventListener('click', function(){
             if (!sel.value) return;
             api('manualMatchReconciliation', { lineId: sel.value, handoffId: d.id }).then(function(res3){
-              if (res3.ok) loadReconciliation(); else toast('err_generic','err');
+              if (res3.ok) loadReconciliation(); else toastRaw_(errMsg_(res3), 'err');
             });
           });
           depList.appendChild(row);
@@ -2149,14 +2263,14 @@ function renderRisk(body){
   body.appendChild(form);
   qs('#rkSubmit', form).addEventListener('click', function(){
     var title = qs('#rkTitle', form).value.trim();
-    if (!title){ qs('#riskMsg',form).innerHTML = '<div class="msg err">'+esc(t('err_generic'))+'</div>'; return; }
+    if (!title){ qs('#riskMsg',form).innerHTML = '<div class="msg err">'+esc(t('err_titleRequired'))+'</div>'; return; }
     api('createRiskItem', {
       type: qs('#rkType', form).value,
       severity: qs('#rkSeverity', form).value,
       title: title,
       description: qs('#rkDesc', form).value
     }).then(function(res){
-      if (!res.ok){ qs('#riskMsg',form).innerHTML = '<div class="msg err">'+esc(t('err_generic'))+'</div>'; return; }
+      if (!res.ok){ qs('#riskMsg',form).innerHTML = '<div class="msg err">'+esc(errMsg_(res))+'</div>'; return; }
       qs('#riskMsg',form).innerHTML = '<div class="msg ok">'+esc(t('risk_submitted'))+'</div>';
       qs('#rkTitle', form).value = ''; qs('#rkDesc', form).value = '';
       if (isCompanyWide) loadRiskList();
@@ -2172,7 +2286,7 @@ function renderRisk(body){
   function loadRiskList(){
     api('listRiskItems', {}).then(function(res){
       var wrap = qs('#riskListBody', listCard);
-      if (!res.ok){ wrap.innerHTML = '<div class="msg err">'+esc(t('err_generic'))+'</div>'; return; }
+      if (!res.ok){ wrap.innerHTML = '<div class="msg err">'+esc(errMsg_(res))+'</div>'; return; }
       if (!res.items.length){ wrap.innerHTML = '<div class="muted">'+esc(t('risk_noItems'))+'</div>'; return; }
       wrap.innerHTML = '';
       var statusClass = { open:'pending', in_progress:'rejected', resolved:'confirmed' };
@@ -2300,7 +2414,7 @@ function renderAdminUsers(content){
   qs('#uAdd', form).addEventListener('click', function(){
     api('adminCreateUser', { data: { name: qs('#uName',form).value, email: qs('#uEmail',form).value, role: qs('#uRole',form).value } })
       .then(function(res){
-        qs('#uMsg',form).innerHTML = res.ok ? '<div class="msg ok">'+esc(t('ok_saved'))+'</div>' : '<div class="msg err">'+esc(t('err_generic'))+'</div>';
+        qs('#uMsg',form).innerHTML = res.ok ? '<div class="msg ok">'+esc(t('ok_saved'))+'</div>' : '<div class="msg err">'+esc(errMsg_(res))+'</div>';
         if (res.ok) refreshMetaThen(function(){ renderAdmin(qs('#screenBody')); });
       });
   });
@@ -2420,7 +2534,7 @@ function renderAdminEntity(content, kind){
       data[f.k] = input.value;
     });
     api('adminSaveEntity', { kind: kind, data: data }).then(function(res){
-      qs('#eMsg', form).innerHTML = res.ok ? '<div class="msg ok">'+esc(t('ok_saved'))+'</div>' : '<div class="msg err">'+esc(t('err_generic'))+'</div>';
+      qs('#eMsg', form).innerHTML = res.ok ? '<div class="msg ok">'+esc(t('ok_saved'))+'</div>' : '<div class="msg err">'+esc(errMsg_(res))+'</div>';
       if (res.ok) refreshMetaThen(function(){ renderAdmin(qs('#screenBody')); });
     });
   });
@@ -2461,7 +2575,7 @@ function renderAdminEntity(content, kind){
     delBtn.addEventListener('click', function(){
       if (!confirm(t('confirm_delete'))) return;
       api('adminDeleteEntity', { kind: kind, id: item.id }).then(function(res){
-        if (!res.ok){ toast(res.error==='has_children' ? 'admin_hasChildren' : 'err_generic', 'err'); return; }
+        if (!res.ok){ toastRaw_(errMsg_(res), 'err'); return; }
         refreshMetaThen(function(){ renderAdmin(qs('#screenBody')); });
       });
     });
@@ -2484,7 +2598,7 @@ function renderAdminConfig(content){
       staleThresholdHours: Number(qs('#cStale',form).value),
       secondApprovalThreshold: Number(qs('#cSecondApproval',form).value)
     } }).then(function(res){
-      qs('#cMsg',form).innerHTML = res.ok ? '<div class="msg ok">'+esc(t('ok_saved'))+'</div>' : '<div class="msg err">'+esc(t('err_generic'))+'</div>';
+      qs('#cMsg',form).innerHTML = res.ok ? '<div class="msg ok">'+esc(t('ok_saved'))+'</div>' : '<div class="msg err">'+esc(errMsg_(res))+'</div>';
     });
   });
 
@@ -2496,12 +2610,12 @@ function renderAdminConfig(content){
   content.appendChild(slaCard);
   qs('#cRunStale', slaCard).addEventListener('click', function(){
     api('runStaleCheck', {}).then(function(res){
-      qs('#slaMsg',slaCard).innerHTML = res.ok ? '<div class="msg ok">'+esc(t('admin_staleCheckResult').replace('{n}',res.escalated))+'</div>' : '<div class="msg err">'+esc(t('err_generic'))+'</div>';
+      qs('#slaMsg',slaCard).innerHTML = res.ok ? '<div class="msg ok">'+esc(t('admin_staleCheckResult').replace('{n}',res.escalated))+'</div>' : '<div class="msg err">'+esc(errMsg_(res))+'</div>';
     });
   });
   qs('#cInstallTrigger', slaCard).addEventListener('click', function(){
     api('adminInstallStaleTrigger', {}).then(function(res){
-      if (!res.ok){ qs('#slaMsg',slaCard).innerHTML = '<div class="msg err">'+esc(t('err_generic'))+'</div>'; return; }
+      if (!res.ok){ qs('#slaMsg',slaCard).innerHTML = '<div class="msg err">'+esc(errMsg_(res))+'</div>'; return; }
       qs('#slaMsg',slaCard).innerHTML = '<div class="msg ok">'+esc(t(res.alreadyInstalled ? 'admin_triggerAlready' : 'admin_triggerInstalled'))+'</div>';
     });
   });
@@ -2510,7 +2624,7 @@ function renderAdminConfig(content){
 function renderAdminAudit(content){
   content.innerHTML = '<div class="card">'+esc(t('loading'))+'</div>';
   api('listAudit', { limit: 200 }).then(function(res){
-    if(!res.ok){ content.innerHTML = '<div class="msg err">'+esc(t('err_generic'))+'</div>'; return; }
+    if(!res.ok){ content.innerHTML = '<div class="msg err">'+esc(errMsg_(res))+'</div>'; return; }
     var rows = res.audit.map(function(a){
       return '<tr><td>'+esc((a.at||'').slice(0,19).replace('T',' '))+'</td><td>'+esc(a.action)+'</td><td>'+esc(userName(a.userId))+'</td><td>'+esc(a.detail||'')+'</td></tr>';
     }).join('');

@@ -862,6 +862,51 @@ function actionSalesReport_(req, user) {
   };
 }
 
+// ---------- Shortfall accountability ----------
+// A handoff's shortfall (declared vs. actually received) is recorded at
+// the handoff level — but the handoff can bundle several daily_entries,
+// each possibly entered by a different person (a store manager's own cash
+// plus one or more drivers' car cash, all swept into one location→cluster
+// handoff). There is no way to know with certainty *whose* cash was
+// actually short, so this attributes each entry's share of the shortfall
+// proportionally to its share of the handoff's total declared cash —
+// an honest estimate, not a claim of proven fault. Deliberately scoped to
+// location_to_cluster handoffs only, since those are the ones directly
+// backed by sourceEntryIds/enteredBy; a shortfall discovered later, at the
+// cluster_to_collector step, is the area manager's own accountability
+// (cash they had already accepted), not something to pin back on a driver.
+function actionShortfallByEntrant_(req, user) {
+  requireCompanyWide_(user);
+  var flagged = readSheet(SHEETS.HANDOFFS).filter(function (h) {
+    return h.kind === 'location_to_cluster' && h.shortfall != null && Math.abs(Number(h.shortfall)) > 0.01;
+  });
+
+  var byEntrant = {}; // userId -> { userId, totalShortfall, handoffIds:{} }
+  var rows = flagged.map(function (h) {
+    var entries = (h.sourceEntryIds || []).map(function (id) { return getById_(SHEETS.ENTRIES, id); }).filter(Boolean);
+    var totalDeclaredCash = entries.reduce(function (s, e) { return s + Number(e.cashSales || 0); }, 0);
+    var entrants = entries.map(function (e) {
+      var share = totalDeclaredCash > 0 ? Number(e.cashSales || 0) / totalDeclaredCash : 0;
+      var attributed = Math.round(Number(h.shortfall) * share * 100) / 100;
+      if (!byEntrant[e.enteredBy]) byEntrant[e.enteredBy] = { userId: e.enteredBy, totalShortfall: 0, handoffIds: {} };
+      byEntrant[e.enteredBy].totalShortfall += attributed;
+      byEntrant[e.enteredBy].handoffIds[h.id] = true;
+      return { userId: e.enteredBy, sourceType: e.sourceType, sourceId: e.sourceId, cashSales: Number(e.cashSales || 0), attributedShortfall: attributed };
+    });
+    return {
+      handoffId: h.id, locationId: h.locationId, originalAmount: h.originalAmount,
+      receivedAmount: h.amount, shortfall: h.shortfall, confirmedAt: h.confirmedAt, entrants: entrants
+    };
+  });
+
+  var byEntrantList = Object.keys(byEntrant).map(function (uid) {
+    var b = byEntrant[uid];
+    return { userId: b.userId, totalShortfall: Math.round(b.totalShortfall * 100) / 100, handoffCount: Object.keys(b.handoffIds).length };
+  }).sort(function (a, b) { return b.totalShortfall - a.totalShortfall; });
+
+  return { ok: true, byEntrant: byEntrantList, handoffs: rows };
+}
+
 function actionListAudit_(req, user) {
   requireCompanyWide_(user);
   var rows = readSheet(SHEETS.AUDIT);

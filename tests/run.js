@@ -187,6 +187,19 @@ var deposit4 = call({ action: 'recordDeposit', token: musaTok, bankReference: 'R
 check(deposit4.ok, 'collector deposits the corrected amount');
 close(deposit4.handoff.amount, 1800, 'deposit reflects the real cash collected, not the original inflated declaration');
 
+console.log('--- shortfall accountability: attributing a handoff\'s shortfall back to whoever actually entered the cash figure ---');
+var shortfallForbidden = call({ action: 'getShortfallByEntrant', token: aliTok });
+check(!shortfallForbidden.ok && shortfallForbidden.error === 'forbidden', 'a store manager cannot see the accountability report — company-wide visibility only');
+var shortfallReport = call({ action: 'getShortfallByEntrant', token: adminTok });
+check(shortfallReport.ok, 'admin can see the accountability report');
+var aliEntry = shortfallReport.byEntrant.find(function (r) { return r.userId === ali.id; });
+check(!!aliEntry, 'ali (who entered the 2000 that came up 200 short) appears in the by-entrant list');
+close(aliEntry.totalShortfall, 200, 'the full 200 shortfall is attributed to ali — he was the only entry bundled into that handoff');
+check(aliEntry.handoffCount === 1, 'counted against exactly one flagged handoff');
+var reportedHandoff = shortfallReport.handoffs.find(function (h) { return h.handoffId === handoff4.handoff.id; });
+check(!!reportedHandoff && reportedHandoff.entrants.length === 1 && reportedHandoff.entrants[0].userId === ali.id,
+  'the handoff-level detail traces the shortfall back to the exact entry and who entered it');
+
 console.log('--- conflict of interest: structural guards ---');
 var badCluster = call({ action: 'adminSaveEntity', token: adminTok, kind: 'cluster', data: { name: 'Bad', clusterManagerUserId: sara.id, collectorUserId: sara.id } });
 check(!badCluster.ok && badCluster.error === 'conflict_of_interest', 'cluster manager cannot also be the collector for the same cluster');
