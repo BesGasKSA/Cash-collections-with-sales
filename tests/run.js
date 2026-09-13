@@ -790,5 +790,25 @@ check(!blankNameRejected.ok && blankNameRejected.error === 'invalid_input', 'a b
 var storeManagerEditUser = call({ action: 'adminUpdateUser', token: aliTok, id: editTarget.id, data: { name: 'Hijack' } });
 check(!storeManagerEditUser.ok && storeManagerEditUser.error === 'forbidden', 'only admin can edit another user\'s profile');
 
+console.log('--- product-level entry: qty x unit price is stored as informational passthrough, never touches the cash formula ---');
+var qtyEntry = call({ action: 'createDailyEntry', token: aliTok, date: '2026-09-20', sourceType: 'store', sourceId: store.entity.id, cashSales: 300, qty: 3, unitPrice: 100 });
+check(qtyEntry.ok, 'entry with qty/unitPrice saves successfully');
+check(qtyEntry.entry.qty === 3 && qtyEntry.entry.unitPrice === 100, 'qty and unitPrice are stored on the entry exactly as sent');
+
+var noQtyEntry = call({ action: 'createDailyEntry', token: aliTok, date: '2026-09-20', sourceType: 'store', sourceId: store.entity.id, cashSales: 50 });
+check(noQtyEntry.ok && noQtyEntry.entry.qty === null && noQtyEntry.entry.unitPrice === null, 'qty/unitPrice default to null when omitted — direct-amount entries are unaffected');
+
+var bulkQtyImport = call({ action: 'importDailyEntries', token: adminTok, rows: [
+  { date: '2026-09-20', sourceType: 'store', sourceId: store.entity.id, cashSales: 200, qty: 2, unitPrice: 100 },
+  { date: '2026-09-20', sourceType: 'store', sourceId: store.entity.id, cashSales: 75 }
+] });
+check(bulkQtyImport.ok && bulkQtyImport.created === 2, 'bulk import accepts rows with and without qty/unitPrice in the same batch');
+var bulkQtyEntries = call({ action: 'listEntries', token: adminTok, locationId: location.entity.id, date: '2026-09-20' }).entries;
+var withQty = bulkQtyEntries.filter(function (e) { return e.cashSales === 200; })[0];
+check(withQty && withQty.qty === 2 && withQty.unitPrice === 100, 'the bulk-imported row with qty/unitPrice carries them through to the stored entry');
+
+var qtyReport = call({ action: 'getSalesReport', token: adminTok, dateFrom: '2026-09-20', dateTo: '2026-09-20' });
+close(qtyReport.totals.storeCash, 300 + 50 + 200 + 75, 'qty/unitPrice never leak into the cash formula — totals still come from cashSales alone');
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);

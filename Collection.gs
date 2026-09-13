@@ -114,6 +114,16 @@ function actionCreateEntry_(req, user) {
     cashSales: Number(req.cashSales || 0),
     deliveryFeeBankAmount: Number(req.deliveryFeeBankAmount || 0),
     posSales: Number(req.posSales || 0),
+    // Qty/unit price are optional, purely informational passthrough for the
+    // client's "product-level" entry mode (qty x unitPrice = the amount
+    // already folded into cashSales/posSales/deliveryFeeBankAmount above,
+    // per whichever payment method the line was tagged with) — never
+    // touched by computeNet_ or anything downstream, so there is nothing
+    // here for a mismatch between these two and the real amount fields to
+    // break; they exist only so a receipt/report can show the per-product
+    // subtotal that produced the figure.
+    qty: req.qty != null && req.qty !== '' ? Number(req.qty) : null,
+    unitPrice: req.unitPrice != null && req.unitPrice !== '' ? Number(req.unitPrice) : null,
     // LPG cylinder exchange — independent of the cash formula, pure
     // physical-inventory counts (see CLAUDE.md "Cylinder tracking").
     cylindersOut: Number(req.cylindersOut || 0),
@@ -158,6 +168,8 @@ function actionImportEntries_(req, user) {
       cashSales: Number(r.cashSales || 0),
       deliveryFeeBankAmount: Number(r.deliveryFeeBankAmount || 0),
       posSales: Number(r.posSales || 0),
+      qty: r.qty != null && r.qty !== '' ? Number(r.qty) : null,
+      unitPrice: r.unitPrice != null && r.unitPrice !== '' ? Number(r.unitPrice) : null,
       cylindersOut: Number(r.cylindersOut || 0),
       cylindersIn: Number(r.cylindersIn || 0),
       note: r.note || '',
