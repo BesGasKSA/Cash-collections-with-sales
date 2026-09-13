@@ -98,10 +98,32 @@ function checkEntryScope_(user, sourceType, sourceId) {
 
 // ---------- Daily entries ----------
 
+// A delivery fee is charged for delivering something that was sold — it
+// can never stand alone. Shared by both the single-entry and bulk-import
+// paths below: `siblingHasSale` lets a caller vouch that another row in
+// the very same submission already carries the cash/POS sale (the normal
+// case for "product mode", where the sale and its delivery fee are split
+// across two separate product lines/entries in one batch); failing that,
+// there must already be an entry on file for this exact source+date that
+// sold something, or the delivery fee is rejected outright.
+function deliveryNeedsSale_(sourceType, sourceId, date, cashSales, posSales, siblingHasSale) {
+  if (Number(cashSales || 0) > 0 || Number(posSales || 0) > 0) return true;
+  if (siblingHasSale) return true;
+  return readSheet(SHEETS.ENTRIES).some(function (e) {
+    return e.sourceType === sourceType && e.sourceId === sourceId && e.date === date &&
+      (Number(e.cashSales || 0) > 0 || Number(e.posSales || 0) > 0);
+  });
+}
+
 function actionCreateEntry_(req, user) {
   if (!req.date || !req.sourceType || !req.sourceId) return { ok: false, error: 'invalid_input' };
   var scope = checkEntryScope_(user, req.sourceType, req.sourceId);
   if (!scope.ok) return { ok: false, error: scope.error };
+
+  if (Number(req.deliveryFeeBankAmount || 0) > 0 &&
+    !deliveryNeedsSale_(req.sourceType, req.sourceId, req.date, req.cashSales, req.posSales, false)) {
+    return { ok: false, error: 'delivery_without_sale' };
+  }
 
   var entry = {
     id: Utilities.getUuid(),
@@ -144,6 +166,17 @@ function actionImportEntries_(req, user) {
   if (!rows.length) return { ok: false, error: 'invalid_input' };
   if (rows.length > 500) return { ok: false, error: 'too_many_rows' };
 
+  // "Product mode" on the client splits one real-world sale into several
+  // rows in the same submission (e.g. a cash-tagged goods line plus a
+  // separate delivery-tagged line) — so a delivery-only row here has to be
+  // checked against its siblings in this same batch, not just itself.
+  function batchHasSale(sourceType, sourceId, date) {
+    return rows.some(function (row) {
+      return row.sourceType === sourceType && row.sourceId === sourceId && row.date === date &&
+        (Number(row.cashSales || 0) > 0 || Number(row.posSales || 0) > 0);
+    });
+  }
+
   var results = [];
   var created = 0;
   for (var i = 0; i < rows.length; i++) {
@@ -155,6 +188,11 @@ function actionImportEntries_(req, user) {
     var scope = checkEntryScope_(user, r.sourceType, r.sourceId);
     if (!scope.ok) {
       results.push({ row: i, ok: false, error: scope.error });
+      continue;
+    }
+    if (Number(r.deliveryFeeBankAmount || 0) > 0 &&
+      !deliveryNeedsSale_(r.sourceType, r.sourceId, r.date, r.cashSales, r.posSales, batchHasSale(r.sourceType, r.sourceId, r.date))) {
+      results.push({ row: i, ok: false, error: 'delivery_without_sale' });
       continue;
     }
     var entry = {

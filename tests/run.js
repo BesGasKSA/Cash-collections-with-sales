@@ -810,5 +810,27 @@ check(withQty && withQty.qty === 2 && withQty.unitPrice === 100, 'the bulk-impor
 var qtyReport = call({ action: 'getSalesReport', token: adminTok, dateFrom: '2026-09-20', dateTo: '2026-09-20' });
 close(qtyReport.totals.storeCash, 300 + 50 + 200 + 75, 'qty/unitPrice never leak into the cash formula — totals still come from cashSales alone');
 
+console.log('--- a delivery fee can never stand alone: it must accompany a cash/POS sale (same source and date) ---');
+var deliveryAloneEntry = call({ action: 'createDailyEntry', token: hassanTok, date: '2026-09-21', sourceType: 'car', sourceId: car.entity.id, deliveryFeeBankAmount: 500 });
+check(!deliveryAloneEntry.ok && deliveryAloneEntry.error === 'delivery_without_sale', 'a delivery fee with no cash/POS sale that day, and no prior sale on file, is rejected');
+
+var saleFirst = call({ action: 'createDailyEntry', token: hassanTok, date: '2026-09-21', sourceType: 'car', sourceId: car.entity.id, cashSales: 300 });
+check(saleFirst.ok, 'the cash sale itself saves fine');
+
+var deliveryAfterSale = call({ action: 'createDailyEntry', token: hassanTok, date: '2026-09-21', sourceType: 'car', sourceId: car.entity.id, deliveryFeeBankAmount: 500 });
+check(deliveryAfterSale.ok, 'now that a same-day sale is on file for this exact car, a separate delivery-fee-only entry is accepted');
+
+var bulkSaleAndDelivery = call({ action: 'importDailyEntries', token: adminTok, rows: [
+  { date: '2026-09-22', sourceType: 'car', sourceId: car.entity.id, deliveryFeeBankAmount: 200 },
+  { date: '2026-09-22', sourceType: 'car', sourceId: car.entity.id, cashSales: 150 }
+] });
+check(bulkSaleAndDelivery.ok && bulkSaleAndDelivery.created === 2, "product-mode's split rows (a delivery line plus a cash line in the same batch) both succeed, regardless of order");
+
+var bulkDeliveryOnly = call({ action: 'importDailyEntries', token: adminTok, rows: [
+  { date: '2026-09-23', sourceType: 'car', sourceId: car.entity.id, deliveryFeeBankAmount: 400 }
+] });
+check(bulkDeliveryOnly.ok && bulkDeliveryOnly.created === 0 && bulkDeliveryOnly.results[0].error === 'delivery_without_sale',
+  'a lone delivery-only row with no sibling sale in the batch, and no prior sale that day, is rejected');
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);
