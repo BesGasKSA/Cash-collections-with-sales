@@ -673,5 +673,122 @@ check(amountMaxReport.ok && !amountMaxReport.entries.some(function (e) { return 
 var amountRangeReport = call({ action: 'getSalesReport', token: adminTok, amountMin: 900, amountMax: 900 });
 check(amountRangeReport.ok && amountRangeReport.entries.some(function (e) { return e.sourceId === filterStore.id; }), 'amount range exactly matching the entry includes it');
 
+console.log("--- the missed cycle: a car's cash must clear its own driver -> store-manager handoff before the location can sweep it up ---");
+// a fresh store manager, not ali — storeOfManager_ resolves a user's FIRST
+// matching store row, and ali already manages Malaz Branch from the very
+// top of this suite, so reusing ali here would silently resolve back to
+// that store instead of this test's own.
+var layla = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Layla', email: 'layla@bestgas.sa', role: 'store_manager' } }).user;
+var laylaTok = acceptInvite('layla@bestgas.sa');
+var carCycleLocation = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: 'Riyadh', name: 'Car Cycle Test', clusterId: cluster.entity.id } }).entity;
+var carCycleStore = call({ action: 'adminSaveEntity', token: adminTok, kind: 'store', data: { locationId: carCycleLocation.id, name: 'Car Cycle Store', storeManagerUserId: layla.id } }).entity;
+var carCycleCar = call({ action: 'adminSaveEntity', token: adminTok, kind: 'car', data: { locationId: carCycleLocation.id, label: 'Truck-CycleTest', driverUserId: hassan.id } }).entity;
+
+var driverEntry = call({ action: 'createDailyEntry', token: hassanTok, date: '2026-09-05', sourceType: 'car', sourceId: carCycleCar.id, cashSales: 1200, deliveryFeeBankAmount: 200 });
+check(driverEntry.ok, 'driver records their own car entry');
+var storeEntry = call({ action: 'createDailyEntry', token: laylaTok, date: '2026-09-05', sourceType: 'store', sourceId: carCycleStore.id, cashSales: 300 });
+check(storeEntry.ok, 'store manager records their own store entry the same day');
+
+var earlyLocationHandoff = call({ action: 'createHandoff', token: laylaTok, kind: 'location_to_cluster', locationId: carCycleLocation.id });
+check(earlyLocationHandoff.ok, 'store manager can still submit before the car handoff clears');
+close(earlyLocationHandoff.handoff.amount, 300, "the driver's car cash is excluded until its own handoff is confirmed — only the store's own 300 goes up");
+
+var bogusCarHandoff = call({ action: 'createHandoff', token: hassanTok, kind: 'car_to_location', carId: 'not-a-real-car' });
+check(!bogusCarHandoff.ok && bogusCarHandoff.error === 'not_found', 'a bogus car id is rejected');
+
+var wrongDriverHandoff = call({ action: 'createHandoff', token: laylaTok, kind: 'car_to_location', carId: carCycleCar.id });
+check(!wrongDriverHandoff.ok && wrongDriverHandoff.error === 'forbidden', "only the car's own driver (or admin) can hand its cash to the store manager");
+
+var carHandoff = call({ action: 'createHandoff', token: hassanTok, kind: 'car_to_location', carId: carCycleCar.id });
+check(carHandoff.ok, 'driver hands their car cash to the store manager');
+close(carHandoff.handoff.amount, 1200, 'only the physical cash moves — the delivery fee was paid to the bank directly, never part of this handoff amount');
+check(carHandoff.handoff.toUserId === layla.id, "addressed to the location's store manager");
+
+var driverConfirmOwn = call({ action: 'confirmHandoff', token: hassanTok, id: carHandoff.handoff.id });
+check(!driverConfirmOwn.ok && driverConfirmOwn.error === 'conflict_of_interest', 'the driver cannot confirm their own submission');
+
+var carConfirm = call({ action: 'confirmHandoff', token: laylaTok, id: carHandoff.handoff.id });
+check(carConfirm.ok && carConfirm.handoff.status === 'confirmed', 'store manager confirms receiving the car cash');
+
+var secondLocationHandoff = call({ action: 'createHandoff', token: laylaTok, kind: 'location_to_cluster', locationId: carCycleLocation.id });
+check(secondLocationHandoff.ok, 'store manager batches the location handoff again, now that the car handoff cleared');
+var carVat = (200 / 1.15) * 0.15;
+close(secondLocationHandoff.handoff.amount, 1200 - 200 + carVat, "the confirmed car handoff's netted breakdown (cash - delivery fee + VAT clawback) is folded in, exactly like the xlsx formula");
+check(secondLocationHandoff.handoff.sourceHandoffIds.indexOf(carHandoff.handoff.id) >= 0, 'the location handoff records the car handoff as one of its sources, for dispute-release and audit');
+
+call({ action: 'confirmHandoff', token: saraTok, id: earlyLocationHandoff.handoff.id });
+call({ action: 'confirmHandoff', token: saraTok, id: secondLocationHandoff.handoff.id });
+
+console.log('--- the same-person exception: a store manager who is also the store sales rep can enter a car themself with no extra handoff ---');
+var selfCarEntry = call({ action: 'createDailyEntry', token: laylaTok, date: '2026-09-06', sourceType: 'car', sourceId: carCycleCar.id, cashSales: 400 });
+check(selfCarEntry.ok, 'store manager enters a car figure directly (e.g. no separate driver account for this car)');
+var selfCarHandoff = call({ action: 'createHandoff', token: laylaTok, kind: 'location_to_cluster', locationId: carCycleLocation.id });
+check(selfCarHandoff.ok, 'location handoff includes the self-entered car cash with no car_to_location step in between');
+close(selfCarHandoff.handoff.amount, 400, "self-entered car cash flows straight through, since it was never anyone else's cash to hand over");
+call({ action: 'confirmHandoff', token: saraTok, id: selfCarHandoff.handoff.id });
+
+console.log('--- car_to_location shortfall attributes directly to the driver, no proportional split needed ---');
+var shortfallCarEntry = call({ action: 'createDailyEntry', token: hassanTok, date: '2026-09-07', sourceType: 'car', sourceId: carCycleCar.id, cashSales: 500 });
+var shortfallCarHandoff = call({ action: 'createHandoff', token: hassanTok, kind: 'car_to_location', carId: carCycleCar.id });
+var shortfallCarConfirm = call({ action: 'confirmHandoff', token: laylaTok, id: shortfallCarHandoff.handoff.id, receivedAmount: 450 });
+check(shortfallCarConfirm.ok && shortfallCarConfirm.handoff.shortfall === 50, 'store manager confirms 450 of the declared 500');
+var carShortfallReport = call({ action: 'getShortfallByEntrant', token: adminTok });
+var hassanShortfall = carShortfallReport.byEntrant.find(function (r) { return r.userId === hassan.id; });
+check(hassanShortfall && hassanShortfall.totalShortfall >= 50, "the driver's own shortfall is attributed to them directly, not split proportionally");
+// leave this car handoff (and its downstream location handoff) unconsumed —
+// it doubles as fixture data for the held-cash-aging test right below.
+
+console.log('--- held-cash aging alert: a CONFIRMED handoff nobody has moved further gets escalated too, separately from a still-pending one ---');
+call({ action: 'adminSetConfig', token: adminTok, data: { heldThresholdHours: 24 } });
+var heldMetaCheck = call({ action: 'listMeta', token: adminTok });
+check(heldMetaCheck.ok && heldMetaCheck.config.heldThresholdHours === 24, 'listMeta reflects the saved held-threshold config');
+
+// backdate the confirmation of the shortfall car handoff above so it reads
+// as held for 48h — same backdate-then-run pattern as the pending-handoff
+// SLA test, just on confirmedAt instead of createdAt.
+var heldRow = ctx.getById_(SHEETS.HANDOFFS, shortfallCarHandoff.handoff.id);
+heldRow.confirmedAt = new Date(Date.now() - 48 * 3600000).toISOString();
+ctx.writeRow(SHEETS.HANDOFFS, heldRow);
+
+var heldMailBefore = ctx._debug.mailLog.length;
+var heldRunRes = call({ action: 'runStaleCheck', token: adminTok });
+check(heldRunRes.ok && heldRunRes.heldEscalated >= 1, 'the held-too-long check escalates the 48h-held confirmed handoff (threshold 24h)');
+check(ctx._debug.mailLog.length > heldMailBefore, 'a held-cash-aging email actually went out');
+var heldRowAfter = ctx.getById_(SHEETS.HANDOFFS, shortfallCarHandoff.handoff.id);
+check(!!heldRowAfter.heldEscalatedAt, 'the handoff is marked so it is not re-escalated every run');
+
+var heldMailBefore2 = ctx._debug.mailLog.length;
+var heldRunRes2 = call({ action: 'runStaleCheck', token: adminTok });
+check(heldRunRes2.ok && heldRunRes2.heldEscalated === 0, 'running the check again finds nothing new to escalate for the held check (already flagged)');
+check(ctx._debug.mailLog.length === heldMailBefore2, 'no duplicate held-cash email on the second run');
+
+// clear the fixture so it doesn't skew the held-cash-trend test above if
+// suite ordering ever changes.
+call({ action: 'createHandoff', token: laylaTok, kind: 'location_to_cluster', locationId: carCycleLocation.id });
+
+console.log('--- admin can edit a user\'s full profile, not just toggle active/inactive ---');
+var editTarget = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Edit Target', email: 'edittarget@bestgas.sa', role: 'driver' } }).user;
+var profileEdit = call({
+  action: 'adminUpdateUser', token: adminTok, id: editTarget.id,
+  data: { name: 'Edit Target Renamed', email: 'edittarget-new@bestgas.sa', role: 'collector', language: 'en', active: true }
+});
+check(profileEdit.ok, 'admin edits name, email, role, and language together');
+check(profileEdit.user.name === 'Edit Target Renamed', 'name updated');
+check(profileEdit.user.email === 'edittarget-new@bestgas.sa', 'email updated');
+check(profileEdit.user.role === 'collector', 'role updated');
+check(profileEdit.user.language === 'en', 'language updated');
+
+var emailConflict = call({ action: 'adminUpdateUser', token: adminTok, id: editTarget.id, data: { email: 'ali@bestgas.sa' } });
+check(!emailConflict.ok && emailConflict.error === 'email_exists', "editing a user's email to one already in use is rejected");
+
+var selfEmailNoop = call({ action: 'adminUpdateUser', token: adminTok, id: editTarget.id, data: { email: 'edittarget-new@bestgas.sa' } });
+check(selfEmailNoop.ok, 'saving a user with their own unchanged email is not treated as a conflict with themself');
+
+var blankNameRejected = call({ action: 'adminUpdateUser', token: adminTok, id: editTarget.id, data: { name: '   ' } });
+check(!blankNameRejected.ok && blankNameRejected.error === 'invalid_input', 'a blank name is rejected, not silently saved');
+
+var storeManagerEditUser = call({ action: 'adminUpdateUser', token: aliTok, id: editTarget.id, data: { name: 'Hijack' } });
+check(!storeManagerEditUser.ok && storeManagerEditUser.error === 'forbidden', 'only admin can edit another user\'s profile');
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);

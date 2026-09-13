@@ -1,8 +1,9 @@
 # Best Gas Cash Collection & Approval System — working notes
 
 Cash-reconciliation and handoff-approval system for Best Gas Carrier Co.,
-built from `555.xlsx` (the "Architect"/"Example" sheets describing the
-store-manager → cluster-manager → collector → bank chain). Same architecture
+built from `555.xlsx` (the "Architect"/"Example"/"Cycle" sheets describing
+the driver/car → store-manager → cluster-manager → collector → bank chain).
+Same architecture
 as the standalone rental system in `Downloads/7777/` — a single `index.html`
 client talking to a Google Apps Script backend, a Google Sheet as the
 database — but a **separate, independent deployment**: its own Sheet, its
@@ -84,11 +85,59 @@ only. The entry form (`index.html`) also shows a read-only Location field
 that auto-resolves from whichever store/car/pos is picked (`resolveLocationIdForSource_`)
 so the person entering data can confirm where it will actually count.
 
+## The missed cycle: a car's cash clears its own driver → store-manager hop
+
+Added 2026-09-13, after the user re-annotated `555.xlsx`'s "Example" sheet
+directly (row 45) pointing out the gap: a car's cash was being aggregated
+straight into the location's `location_to_cluster` batch with no receiving-
+party confirmation at all — the physical "driver hands the store manager
+cash" moment the "Cycle" sheet actually depicts had no handoff+confirm gate
+of its own, unlike every other hop in the chain. `createCarHandoff_`
+(`Collection.gs`) closes it: a `car_to_location` handoff, same
+create→confirm/dispute→resolve machinery as the other two kinds (all three
+share `actionConfirmHandoff_`/`actionDisputeHandoff_`/`actionResolveDispute_`
+— nothing kind-specific there), addressed from the driver to the location's
+store manager (`storeOfLocation_`).
+
+Only the **physical cash** moves in this handoff (`amount` = Σ `cashSales`
+for the car's unconsumed entries) — the delivery fee was paid to the bank
+directly, never cash in anyone's hand, so it isn't part of what the store
+manager "receives"; it stays in the handoff's `breakdown` (computed via the
+normal `computeNet_`, so `vatOnDelivery`/`netCashOwed` are there for
+transparency) and gets netted out later, at the `location_to_cluster` step,
+exactly like the xlsx formula. `createLocationHandoff_` now splits a
+location's unconsumed entries: store/pos entries (and any car entry the
+store manager *entered themself* — see below) go straight in as before;
+every other car entry is excluded until its own confirmed `car_to_location`
+handoff shows up, at which point that handoff's breakdown is folded in via
+`sumBreakdowns_` (same pattern `createClusterHandoff_` already used for
+batching confirmed location handoffs) and the handoff is recorded on
+`sourceHandoffIds`, not `sourceEntryIds` — so a disputed-then-rejected
+location handoff correctly releases the car handoff back to unconsumed too
+(`releaseConsumed_` already walked both fields).
+
+**The same-person exception** (also from the user's note: "if the same user
+handled the 2 positions... he can add the store and accept the cars amounts
+... directly"): a car entry whose `enteredBy` equals the location's own
+store manager needs no separate handoff — it was never anyone else's cash
+to hand over — and flows directly into the location batch exactly like a
+store entry always has. `checkEntryScope_` already let a store manager log
+a car/pos entry at their own location (not just `store` entries), so this
+case was already reachable before this change; it just wasn't recognized as
+"already home" at aggregation time.
+
+Shortfall attribution (`actionShortfallByEntrant_`) now also covers
+`car_to_location`: a car handoff never bundles more than one driver's own
+entries, so its shortfall attributes 100% to `h.fromUserId` directly — no
+proportional split needed (that's only for `location_to_cluster`, which
+really can bundle several entrants).
+
 ## The approval chain *is* the conflict-of-interest control
 
-Money moves in one direction — Store → Cluster Manager → Collector → Bank —
-and at every step **the person who declares an amount can never be the one
-who approves receiving it**. This is enforced in layers, not just at the UI:
+Money moves in one direction — Driver/Car → Store Manager → Cluster Manager
+→ Collector → Bank — and at every step **the person who declares an amount
+can never be the one who approves receiving it**. This is enforced in
+layers, not just at the UI:
 
 1. **Structural, at entity-save time** (`Admin.gs` `validateEntity_`): a
    cluster's `clusterManagerUserId` and `collectorUserId` must differ; a
@@ -219,6 +268,23 @@ run automatically, an admin installs a daily time-based trigger via
 idempotent (checks `ScriptApp.getProjectTriggers()` for an existing
 `checkStaleHandoffs_` trigger before creating a second one).
 
+**Held-cash aging (added 2026-09-13) rides the same trigger.** A
+`confirmed`-and-still-`!consumedBy` handoff (the same "held" definition the
+dashboard's held-cash-by-holder snapshot and 14-day trend already use) is a
+*later*-stage risk than a still-pending one — someone legitimately has the
+cash, they just haven't batched it onward. `heldThresholdHours_()` (default
+48, `config.heldThresholdHours`, separate from `staleThresholdHours_` since
+the two risks warrant different patience) and `checkHeldTooLong_` /
+`escalateHeldTooLong_` mirror the stale-handoff functions exactly —
+`h.heldEscalatedAt` guards the once-only email, aged from `resolvedAt ||
+confirmedAt` (same rule `actionHeldCashTrend_` uses, so the trend chart and
+this alert never disagree about when "holding" started). Rather than a
+second trigger, `checkStaleHandoffs_` just calls `checkHeldTooLong_` at the
+end of its own run and sums the counts — one daily trigger, one "check now"
+button, both aging risks. `actionRunStaleCheck_`'s response carries
+`staleEscalated`/`heldEscalated` separately (plus `escalated` = their sum,
+kept for anything still reading the old single-number shape).
+
 ## Large-amount second approval (non-blocking four-eyes)
 
 `secondApprovalThreshold_()` (`Code.gs`, default 0 = off, editable via the
@@ -269,7 +335,7 @@ node tests/run.js
 ```
 
 Covers: the xlsx formula against the Example sheet's own numbers, the full
-four-step chain (location → cluster → collector → deposit), both dispute
+five-step chain (car → location → cluster → collector → deposit), both dispute
 outcomes (reject releases entries back to the unconsumed pool; confirm
 accepts the variance), every conflict-of-interest layer above, and
 authorization boundaries (a driver logging cash for someone else's car, a

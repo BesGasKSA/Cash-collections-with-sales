@@ -340,9 +340,12 @@ var L = {
     admin_addPos:'إضافة جهاز', admin_posLabel:'رقم الجهاز', admin_ownerType:'مرتبط بـ', admin_owner:'الجهة', admin_assignedDriver:'الموظف المسؤول',
     admin_addCluster:'إضافة قطاع', admin_clusterName:'اسم القطاع', admin_clusterManager:'مدير القطاع', admin_collector:'المُحصّل',
     admin_vatRate:'نسبة الضريبة', admin_delete:'حذف', admin_edit:'تعديل', admin_hasChildren:'لا يمكن الحذف — توجد عناصر تابعة',
-    admin_staleThreshold:'ساعات التنبيه للتسليمات المتأخرة', admin_secondApprovalThreshold:'حد المبلغ للموافقة الثانية (0 = تعطيل)',
-    admin_runStaleCheck:'فحص التسليمات المتأخرة الآن', admin_installStaleTrigger:'تفعيل الفحص اليومي التلقائي',
-    admin_staleCheckResult:'تم تصعيد {n} تسليم متأخر', admin_triggerInstalled:'تم التفعيل', admin_triggerAlready:'مُفعّل مسبقاً',
+    admin_staleThreshold:'ساعات التنبيه للتسليمات المتأخرة (لم تُؤكَّد بعد)', admin_secondApprovalThreshold:'حد المبلغ للموافقة الثانية (0 = تعطيل)',
+    admin_heldThreshold:'ساعات التنبيه للنقدية المحتفظ بها (مؤكَّدة ولم تُسلَّم للمرحلة التالية)',
+    admin_runStaleCheck:'فحص التأخيرات الآن', admin_installStaleTrigger:'تفعيل الفحص اليومي التلقائي',
+    admin_staleCheckResult:'تم تصعيد {stale} تسليم متأخر و{held} نقدية محتفظ بها لفترة طويلة', admin_triggerInstalled:'تم التفعيل', admin_triggerAlready:'مُفعّل مسبقاً',
+    admin_editProfile:'الملف الكامل للمستخدم', err_noStoreManager:'لا يوجد مشرف فرع معيّن لهذا الموقع',
+    handoff_createCar:'تسليم نقدية السيارة لمشرف الفرع', kind_car_to_location:'سيارة ← فرع',
     handoff_needsSecondApproval:'يحتاج موافقة ثانية', handoff_acknowledgeSecond:'إقرار الموافقة الثانية', handoff_secondApproved:'تمت الموافقة الثانية',
     nav_risk:'المخاطر والشكاوى', risk_title:'المخاطر والشكاوى', risk_reportNew:'إبلاغ جديد', risk_type:'النوع',
     risk_type_risk:'خطر تشغيلي', risk_type_complaint:'شكوى', risk_titleLabel:'العنوان', risk_description:'الوصف',
@@ -462,9 +465,12 @@ var L = {
     admin_addPos:'Add POS machine', admin_posLabel:'Terminal id', admin_ownerType:'Belongs to', admin_owner:'Owner', admin_assignedDriver:'Assigned employee',
     admin_addCluster:'Add area', admin_clusterName:'Area name', admin_clusterManager:'Area manager', admin_collector:'Collector',
     admin_vatRate:'VAT rate', admin_delete:'Delete', admin_edit:'Edit', admin_hasChildren:'Cannot delete — has child records',
-    admin_staleThreshold:'Stale-handoff alert hours', admin_secondApprovalThreshold:'Second-approval amount threshold (0 = off)',
-    admin_runStaleCheck:'Check stale handoffs now', admin_installStaleTrigger:'Enable daily automatic check',
-    admin_staleCheckResult:'Escalated {n} stale handoff(s)', admin_triggerInstalled:'Enabled', admin_triggerAlready:'Already enabled',
+    admin_staleThreshold:'Stale-handoff alert hours (not yet confirmed)', admin_secondApprovalThreshold:'Second-approval amount threshold (0 = off)',
+    admin_heldThreshold:'Held-cash alert hours (confirmed but not passed on)',
+    admin_runStaleCheck:'Check aging now', admin_installStaleTrigger:'Enable daily automatic check',
+    admin_staleCheckResult:'Escalated {stale} stale handoff(s) and {held} held-too-long handoff(s)', admin_triggerInstalled:'Enabled', admin_triggerAlready:'Already enabled',
+    admin_editProfile:'Full user profile', err_noStoreManager:'This location has no store manager assigned',
+    handoff_createCar:'Hand car cash to store manager', kind_car_to_location:'Car → Branch',
     handoff_needsSecondApproval:'Needs second approval', handoff_acknowledgeSecond:'Acknowledge second approval', handoff_secondApproved:'Second approval done',
     nav_risk:'Risks & Complaints', risk_title:'Risks & Complaints', risk_reportNew:'Report new', risk_type:'Type',
     risk_type_risk:'Operational risk', risk_type_complaint:'Complaint', risk_titleLabel:'Title', risk_description:'Description',
@@ -584,9 +590,12 @@ var L = {
     admin_addPos:'POS مشین شامل کریں', admin_posLabel:'ٹرمینل نمبر', admin_ownerType:'سے منسلک', admin_owner:'مالک', admin_assignedDriver:'ذمہ دار ملازم',
     admin_addCluster:'علاقہ شامل کریں', admin_clusterName:'علاقے کا نام', admin_clusterManager:'علاقہ منیجر', admin_collector:'کلکٹر',
     admin_vatRate:'ویٹ کی شرح', admin_delete:'حذف کریں', admin_edit:'ترمیم کریں', admin_hasChildren:'حذف نہیں ہو سکتا — ذیلی ریکارڈز موجود ہیں',
-    admin_staleThreshold:'تاخیر شدہ ترسیل کی اطلاع (گھنٹے)', admin_secondApprovalThreshold:'دوسری منظوری کی رقم کی حد (0 = بند)',
-    admin_runStaleCheck:'تاخیر شدہ ترسیل ابھی چیک کریں', admin_installStaleTrigger:'روزانہ خودکار چیک فعال کریں',
-    admin_staleCheckResult:'{n} تاخیر شدہ ترسیل کو مطلع کیا گیا', admin_triggerInstalled:'فعال ہوگیا', admin_triggerAlready:'پہلے سے فعال',
+    admin_staleThreshold:'تاخیر شدہ ترسیل کی اطلاع (گھنٹے، ابھی تک غیر تصدیق شدہ)', admin_secondApprovalThreshold:'دوسری منظوری کی رقم کی حد (0 = بند)',
+    admin_heldThreshold:'محفوظ نقدی کی اطلاع (گھنٹے، تصدیق شدہ مگر آگے منتقل نہیں ہوئی)',
+    admin_runStaleCheck:'تاخیر ابھی چیک کریں', admin_installStaleTrigger:'روزانہ خودکار چیک فعال کریں',
+    admin_staleCheckResult:'{stale} تاخیر شدہ ترسیل اور {held} دیر تک محفوظ نقدی کو مطلع کیا گیا', admin_triggerInstalled:'فعال ہوگیا', admin_triggerAlready:'پہلے سے فعال',
+    admin_editProfile:'صارف کا مکمل پروفائل', err_noStoreManager:'اس مقام کے لیے کوئی اسٹور منیجر مقرر نہیں',
+    handoff_createCar:'گاڑی کی نقدی اسٹور منیجر کے حوالے کریں', kind_car_to_location:'گاڑی ← برانچ',
     handoff_needsSecondApproval:'دوسری منظوری درکار ہے', handoff_acknowledgeSecond:'دوسری منظوری کی تصدیق', handoff_secondApproved:'دوسری منظوری مکمل',
     nav_risk:'خطرات اور شکایات', risk_title:'خطرات اور شکایات', risk_reportNew:'نئی رپورٹ', risk_type:'قسم',
     risk_type_risk:'آپریشنل خطرہ', risk_type_complaint:'شکایت', risk_titleLabel:'عنوان', risk_description:'تفصیل',
@@ -773,7 +782,7 @@ var ERROR_KEYS_ = {
   invalid_resolution:'err_invalidResolution', invalid_status:'err_invalidStatus', invalid_type:'err_invalidType',
   line_already_matched:'err_lineAlreadyMatched', missing_action:'err_missingAction', missing_email:'err_missingEmail',
   no_cluster_manager:'err_noClusterManager', no_collector:'err_noCollector', no_entries:'err_noEntries',
-  no_held_cash:'err_noHeldCash', not_disputed:'err_notDisputed', not_flagged:'err_notFlagged', not_found:'err_notFound',
+  no_held_cash:'err_noHeldCash', no_store_manager:'err_noStoreManager', not_disputed:'err_notDisputed', not_flagged:'err_notFlagged', not_found:'err_notFound',
   not_pending:'err_notPending', nothing_owed:'err_nothingOwed', too_many_rows:'err_tooManyRows',
   unknown_action:'err_unknownAction', weak_password:'err_weakPassword', wrong_current_password:'err_wrongCurrentPassword',
   network:'err_network'
@@ -1295,11 +1304,11 @@ function renderDashboard(body){
     ]));
     body.appendChild(statusCard);
 
-    var byKind = { location_to_cluster:0, cluster_to_collector:0, deposit:0 };
+    var byKind = { car_to_location:0, location_to_cluster:0, cluster_to_collector:0, deposit:0 };
     handoffs.forEach(function(h){ if (byKind.hasOwnProperty(h.kind)) byKind[h.kind] += Number(h.amount||0); });
     var kindCard = el('<div class="card"><h2>'+esc(t('dash_kindBreakdown'))+'</h2></div>');
     kindCard.appendChild(barList(
-      [{k:'location_to_cluster'},{k:'cluster_to_collector'},{k:'deposit'}],
+      [{k:'car_to_location'},{k:'location_to_cluster'},{k:'cluster_to_collector'},{k:'deposit'}],
       function(r){ return t('kind_'+r.k); }, function(r){ return byKind[r.k]; }, function(){ return 0; }
     ));
     body.appendChild(kindCard);
@@ -1829,6 +1838,23 @@ function renderHandoffs(body){
     body.innerHTML = '';
 
     // action card: create outgoing handoff / record deposit
+    if (role==='driver' || role==='admin'){
+      var myCars = (state.meta.cars||[]).filter(function(c){ return role==='admin' || c.driverUserId===state.user.id; });
+      if (myCars.length){
+        var crc = el('<div class="card"><h2>'+esc(t('handoff_createCar'))+'</h2>' +
+          '<div class="field"><select id="hCar">'+myCars.map(function(c){return '<option value="'+c.id+'">'+esc(c.label)+'</option>';}).join('')+'</select></div>' +
+          '<button class="btn" id="hCreateCar">'+esc(t('handoff_createCar'))+'</button><div id="hCarMsg"></div></div>');
+        body.appendChild(crc);
+        qs('#hCreateCar', crc).addEventListener('click', function(){
+          var carId = qs('#hCar',crc).value;
+          api('createHandoff', {kind:'car_to_location', carId: carId}).then(function(res2){
+            qs('#hCarMsg',crc).innerHTML = res2.ok ? '<div class="msg ok">'+esc(t('ok_saved'))+'</div>' : '<div class="msg err">'+esc(errMsg_(res2))+'</div>';
+            if(res2.ok) render();
+          });
+        });
+      }
+    }
+
     if (role==='store_manager' || role==='admin'){
       var locId = null;
       var myStore = (state.meta.stores||[]).find(function(s){ return s.storeManagerUserId===state.user.id; });
@@ -2617,18 +2643,55 @@ function renderAdminUsers(content){
     '</tr></thead><tbody id="uBody"></tbody></table></div>');
   content.appendChild(listCard);
   var tbody = qs('#uBody', listCard);
+  var langOpts = [['ar','العربية'],['en','English'],['ur','اردو']];
   (meta.users||[]).forEach(function(u){
     var tr = el('<tr><td>'+esc(u.name)+'</td><td>'+esc(u.email||'')+'</td><td>'+esc(roleLabel(u.role))+'</td><td>'+(u.active?'✓':'—')+'</td><td class="col-actions"></td></tr>');
     var td = tr.lastChild;
     td.style.display = 'flex'; td.style.gap = '6px'; td.style.justifyContent = 'flex-end';
     var resetBtn = el('<button class="btn secondary">'+esc(t('admin_resetPw'))+'</button>');
     resetBtn.addEventListener('click', function(){ api('adminResetPassword',{id:u.id}).then(function(){ toast('ok_saved','ok'); }); });
-    var toggleBtn = el('<button class="btn secondary">'+esc(u.active?t('admin_delete'):t('admin_edit'))+'</button>');
+    var toggleBtn = el('<button class="btn secondary">'+esc(u.active?t('admin_delete'):t('admin_active'))+'</button>');
     toggleBtn.addEventListener('click', function(){
       api('adminUpdateUser',{id:u.id, data:{active: !u.active}}).then(function(){ refreshMetaThen(function(){ renderAdmin(qs('#screenBody')); }); });
     });
-    td.appendChild(resetBtn); td.appendChild(toggleBtn);
+    var editBtn = el('<button class="btn secondary">'+esc(t('admin_edit'))+'</button>');
+    td.appendChild(resetBtn); td.appendChild(toggleBtn); td.appendChild(editBtn);
     tbody.appendChild(tr);
+
+    var editRow = el('<tr hidden><td colspan="5"></td></tr>');
+    var editCell = editRow.firstChild;
+    editCell.appendChild(el(
+      '<div class="card" style="margin:0;background:var(--bg-soft,#f7f5ef);">' +
+        '<h2 style="font-size:14px;">'+esc(t('admin_editProfile'))+'</h2>' +
+        '<div class="grid">' +
+          '<div class="field"><label>'+esc(t('admin_name'))+'</label><input class="ueName" value="'+esc(u.name)+'"></div>' +
+          '<div class="field"><label>'+esc(t('email'))+'</label><input class="ueEmail" type="email" value="'+esc(u.email||'')+'"></div>' +
+          '<div class="field"><label>'+esc(t('admin_role'))+'</label><select class="ueRole">'+roles.map(function(r){return '<option value="'+r+'"'+(r===u.role?' selected':'')+'>'+esc(roleLabel(r))+'</option>';}).join('')+'</select></div>' +
+          '<div class="field"><label>'+esc(t('language'))+'</label><select class="ueLang">'+langOpts.map(function(l){return '<option value="'+l[0]+'"'+(l[0]===(u.language||'ar')?' selected':'')+'>'+l[1]+'</option>';}).join('')+'</select></div>' +
+          '<div class="field"><label>'+esc(t('admin_active'))+'</label><select class="ueActive"><option value="1"'+(u.active?' selected':'')+'>'+esc(t('admin_active'))+'</option><option value="0"'+(!u.active?' selected':'')+'>—</option></select></div>' +
+        '</div>' +
+        '<div class="row" style="gap:10px;">' +
+          '<button type="button" class="btn ueSave">'+esc(t('save'))+'</button>' +
+          '<button type="button" class="btn secondary ueCancel">'+esc(t('cancel'))+'</button>' +
+        '</div><div class="ueMsg"></div>' +
+      '</div>'
+    ));
+    tbody.appendChild(editRow);
+
+    editBtn.addEventListener('click', function(){ editRow.hidden = !editRow.hidden; });
+    qs('.ueCancel', editCell).addEventListener('click', function(){ editRow.hidden = true; });
+    qs('.ueSave', editCell).addEventListener('click', function(){
+      api('adminUpdateUser', { id: u.id, data: {
+        name: qs('.ueName', editCell).value,
+        email: qs('.ueEmail', editCell).value,
+        role: qs('.ueRole', editCell).value,
+        language: qs('.ueLang', editCell).value,
+        active: qs('.ueActive', editCell).value === '1'
+      } }).then(function(res){
+        if (!res.ok){ qs('.ueMsg', editCell).innerHTML = '<div class="msg err">'+esc(errMsg_(res))+'</div>'; return; }
+        refreshMetaThen(function(){ renderAdmin(qs('#screenBody')); });
+      });
+    });
   });
 }
 
@@ -2782,6 +2845,7 @@ function renderAdminConfig(content){
   var form = el('<div class="card"><h2>'+esc(t('admin_config'))+'</h2>' +
     '<div class="field"><label>'+esc(t('admin_vatRate'))+'</label><input id="cVat" type="number" step="0.01" value="'+(cfg.vatRate!=null?cfg.vatRate:0.15)+'"></div>' +
     '<div class="field"><label>'+esc(t('admin_staleThreshold'))+'</label><input id="cStale" type="number" step="1" value="'+(cfg.staleThresholdHours!=null?cfg.staleThresholdHours:24)+'"></div>' +
+    '<div class="field"><label>'+esc(t('admin_heldThreshold'))+'</label><input id="cHeld" type="number" step="1" value="'+(cfg.heldThresholdHours!=null?cfg.heldThresholdHours:48)+'"></div>' +
     '<div class="field"><label>'+esc(t('admin_secondApprovalThreshold'))+'</label><input id="cSecondApproval" type="number" step="1" value="'+(cfg.secondApprovalThreshold!=null?cfg.secondApprovalThreshold:0)+'"></div>' +
     '<button class="btn" id="cSave">'+esc(t('save'))+'</button><div id="cMsg"></div></div>');
   content.appendChild(form);
@@ -2789,6 +2853,7 @@ function renderAdminConfig(content){
     api('adminSetConfig', { data: {
       vatRate: Number(qs('#cVat',form).value),
       staleThresholdHours: Number(qs('#cStale',form).value),
+      heldThresholdHours: Number(qs('#cHeld',form).value),
       secondApprovalThreshold: Number(qs('#cSecondApproval',form).value)
     } }).then(function(res){
       qs('#cMsg',form).innerHTML = res.ok ? '<div class="msg ok">'+esc(t('ok_saved'))+'</div>' : '<div class="msg err">'+esc(errMsg_(res))+'</div>';
@@ -2803,7 +2868,7 @@ function renderAdminConfig(content){
   content.appendChild(slaCard);
   qs('#cRunStale', slaCard).addEventListener('click', function(){
     api('runStaleCheck', {}).then(function(res){
-      qs('#slaMsg',slaCard).innerHTML = res.ok ? '<div class="msg ok">'+esc(t('admin_staleCheckResult').replace('{n}',res.escalated))+'</div>' : '<div class="msg err">'+esc(errMsg_(res))+'</div>';
+      qs('#slaMsg',slaCard).innerHTML = res.ok ? '<div class="msg ok">'+esc(t('admin_staleCheckResult').replace('{stale}',res.staleEscalated).replace('{held}',res.heldEscalated))+'</div>' : '<div class="msg err">'+esc(errMsg_(res))+'</div>';
     });
   });
   qs('#cInstallTrigger', slaCard).addEventListener('click', function(){

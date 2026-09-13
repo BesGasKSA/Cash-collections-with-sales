@@ -86,8 +86,22 @@ function actionAdminUpdateUser_(req, user) {
   var target = getById_(SHEETS.USERS, req.id);
   if (!target) return { ok: false, error: 'not_found' };
   var d = req.data || {};
-  if (d.name != null) target.name = d.name;
-  if (d.role != null && validRole_(d.role)) target.role = d.role;
+  if (d.name != null) {
+    if (!String(d.name).trim()) return { ok: false, error: 'invalid_input' };
+    target.name = d.name;
+  }
+  if (d.email != null) {
+    var email = String(d.email).trim();
+    if (!email) return { ok: false, error: 'invalid_input' };
+    var existing = userByEmail_(email);
+    if (existing && existing.id !== target.id) return { ok: false, error: 'email_exists' };
+    target.email = email;
+  }
+  if (d.role != null) {
+    if (!validRole_(d.role)) return { ok: false, error: 'invalid_input' };
+    target.role = d.role;
+  }
+  if (d.language != null) target.language = d.language;
   if (d.active != null) target.active = !!d.active;
   if (d.locationId !== undefined) target.locationId = d.locationId;
   if (d.clusterId !== undefined) target.clusterId = d.clusterId;
@@ -235,6 +249,7 @@ function actionAdminSetConfig_(req, user) {
   if (d.vatRate != null) cfg.vatRate = Number(d.vatRate);
   if (d.senderName != null) cfg.senderName = String(d.senderName);
   if (d.staleThresholdHours != null) cfg.staleThresholdHours = Number(d.staleThresholdHours);
+  if (d.heldThresholdHours != null) cfg.heldThresholdHours = Number(d.heldThresholdHours);
   if (d.secondApprovalThreshold != null) cfg.secondApprovalThreshold = Number(d.secondApprovalThreshold);
   writeRow(SHEETS.CONFIG, cfg);
   logAudit_('admin_set_config', user.id, null);
@@ -300,6 +315,6 @@ function actionMeta_(req, user) {
     ok: true,
     locations: locations, stores: stores, cars: cars, pos: pos,
     clusters: clusters, zones: zones, products: products, users: users,
-    config: { vatRate: vatRate_(), staleThresholdHours: staleThresholdHours_(), secondApprovalThreshold: secondApprovalThreshold_() }
+    config: { vatRate: vatRate_(), staleThresholdHours: staleThresholdHours_(), heldThresholdHours: heldThresholdHours_(), secondApprovalThreshold: secondApprovalThreshold_() }
   };
 }
