@@ -268,16 +268,20 @@ function actionCreateHandoff_(req, user) {
 }
 
 // The cycle the xlsx "Cycle" sheet actually describes starts one hop earlier
-// than location_to_cluster: a driver physically hands their car's cash to
-// the store manager first, and that handoff needs its own confirm/dispute
-// gate exactly like every other hop in the chain — before this, a car's
-// cash was just aggregated straight into the location's totals with no
-// receiving-party confirmation at all, which was the "missed cycle".
-// Only the cash itself moves here (cashSales) — the delivery fee was paid
-// to the bank directly, never physical cash, so it isn't something the
-// store manager can "receive"; its deduction (and the VAT clawback on it)
-// stays in the breakdown for transparency but is netted out later, at the
-// location_to_cluster step, exactly as the xlsx formula does.
+// than location_to_cluster: a driver physically hands the store manager
+// what he owes the company first, and that handoff needs its own
+// confirm/dispute gate exactly like every other hop in the chain — before
+// this, a car's cash was just aggregated straight into the location's
+// totals with no receiving-party confirmation at all, which was the
+// "missed cycle".
+// The driver nets it out himself before handing anything over — the
+// delivery fee was paid to the bank directly and is the driver's own
+// incentive to keep (per the xlsx note), except the VAT portion of it,
+// which the company still claws back. So what actually changes hands here
+// is cashSales - deliveryFeeBankAmount + vatOnDelivery (computeNet_'s
+// netCashOwed for this car alone), not the raw cash figure — confirmed
+// directly by the user against their own process (2026-09-13): a driver
+// handing over the full, un-netted cash was wrong.
 function createCarHandoff_(req, user) {
   var car = getById_(SHEETS.CARS, req.carId);
   if (!car) return { ok: false, error: 'not_found' };
@@ -296,8 +300,7 @@ function createCarHandoff_(req, user) {
   });
   if (!entries.length) return { ok: false, error: 'no_entries' };
   var totals = computeNet_(entries);
-  var cashAmount = entries.reduce(function (s, e) { return s + Number(e.cashSales || 0); }, 0);
-  if (cashAmount <= 0) return { ok: false, error: 'nothing_owed' };
+  if (totals.netCashOwed <= 0) return { ok: false, error: 'nothing_owed' };
 
   var handoff = {
     id: Utilities.getUuid(),
@@ -306,7 +309,7 @@ function createCarHandoff_(req, user) {
     toUserId: store.storeManagerUserId,
     locationId: location.id,
     carId: car.id,
-    amount: cashAmount,
+    amount: totals.netCashOwed,
     breakdown: totals,
     sourceEntryIds: entries.map(function (e) { return e.id; }),
     sourceHandoffIds: [],
