@@ -701,7 +701,8 @@ check(!wrongDriverHandoff.ok && wrongDriverHandoff.error === 'forbidden', "only 
 
 var carHandoff = call({ action: 'createHandoff', token: hassanTok, kind: 'car_to_location', carId: carCycleCar.id });
 check(carHandoff.ok, 'driver hands their car cash to the store manager');
-close(carHandoff.handoff.amount, 1200, 'only the physical cash moves — the delivery fee was paid to the bank directly, never part of this handoff amount');
+var carVat = (200 / 1.15) * 0.15;
+close(carHandoff.handoff.amount, 1200 - 200 + carVat, 'the driver nets it out himself before handing anything over — cash minus the delivery fee plus the VAT clawback, not the raw cash figure');
 check(carHandoff.handoff.toUserId === layla.id, "addressed to the location's store manager");
 
 var driverConfirmOwn = call({ action: 'confirmHandoff', token: hassanTok, id: carHandoff.handoff.id });
@@ -712,7 +713,6 @@ check(carConfirm.ok && carConfirm.handoff.status === 'confirmed', 'store manager
 
 var secondLocationHandoff = call({ action: 'createHandoff', token: laylaTok, kind: 'location_to_cluster', locationId: carCycleLocation.id });
 check(secondLocationHandoff.ok, 'store manager batches the location handoff again, now that the car handoff cleared');
-var carVat = (200 / 1.15) * 0.15;
 close(secondLocationHandoff.handoff.amount, 1200 - 200 + carVat, "the confirmed car handoff's netted breakdown (cash - delivery fee + VAT clawback) is folded in, exactly like the xlsx formula");
 check(secondLocationHandoff.handoff.sourceHandoffIds.indexOf(carHandoff.handoff.id) >= 0, 'the location handoff records the car handoff as one of its sources, for dispute-release and audit');
 

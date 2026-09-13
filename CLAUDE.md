@@ -99,13 +99,21 @@ share `actionConfirmHandoff_`/`actionDisputeHandoff_`/`actionResolveDispute_`
 — nothing kind-specific there), addressed from the driver to the location's
 store manager (`storeOfLocation_`).
 
-Only the **physical cash** moves in this handoff (`amount` = Σ `cashSales`
-for the car's unconsumed entries) — the delivery fee was paid to the bank
-directly, never cash in anyone's hand, so it isn't part of what the store
-manager "receives"; it stays in the handoff's `breakdown` (computed via the
-normal `computeNet_`, so `vatOnDelivery`/`netCashOwed` are there for
-transparency) and gets netted out later, at the `location_to_cluster` step,
-exactly like the xlsx formula. `createLocationHandoff_` now splits a
+**Correction (2026-09-13, confirmed directly against the user's own
+process):** the amount that actually changes hands is the *net* figure —
+`computeNet_`'s `netCashOwed` for that car's entries alone
+(cashSales − deliveryFeeBankAmount + vatOnDelivery), not the raw cash. The
+driver nets it out himself before handing anything to the store manager:
+the delivery fee was paid to the bank directly and is the driver's own
+incentive to keep (per the xlsx note), except the VAT portion, which the
+company still claws back — that's the only piece the driver actually owes
+and hands over. An earlier version of this handoff used the raw cashSales
+figure instead, reasoning that the delivery fee "was never cash in anyone's
+hand" — the user corrected this live while testing (`amount` must be
+652.17 in the xlsx example, not 5,000), so `createCarHandoff_` now sets
+`amount: totals.netCashOwed`, matching the same formula the
+`location_to_cluster` step already used. The full breakdown (still via
+`computeNet_`) is kept regardless, for transparency. `createLocationHandoff_` now splits a
 location's unconsumed entries: store/pos entries (and any car entry the
 store manager *entered themself* — see below) go straight in as before;
 every other car entry is excluded until its own confirmed `car_to_location`
