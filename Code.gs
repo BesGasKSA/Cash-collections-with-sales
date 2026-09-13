@@ -413,6 +413,7 @@ function route_(req) {
     getSalesReport: function () { return actionSalesReport_(req, user); },
     getShortfallByEntrant: function () { return actionShortfallByEntrant_(req, user); },
     getDashboardComparison: function () { return actionDashboardComparison_(req, user); },
+    getHeldCashTrend: function () { return actionHeldCashTrend_(req, user); },
     listAudit: function () { return actionListAudit_(req, user); },
     getFile: function () { return actionGetFile_(req, user); },
 

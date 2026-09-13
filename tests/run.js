@@ -634,5 +634,44 @@ check(cmp.ok, 'admin can see the comparison');
 check(cmp.current.gross >= 400, "today's entry counted in the current 7-day window");
 check(cmp.previous.gross >= 300, "the 9-days-ago entry counted in the previous 7-day window, not the current one");
 
+console.log('--- held cash by person trend: a day-by-day snapshot of who is currently holding cash ---');
+var trendEntry = call({ action: 'createDailyEntry', token: aliTok, date: isoOffset(0), sourceType: 'store', sourceId: store.entity.id, cashSales: 500 });
+var trendHandoff = call({ action: 'createHandoff', token: aliTok, kind: 'location_to_cluster', locationId: location.entity.id });
+var trendConfirm = call({ action: 'confirmHandoff', token: saraTok, id: trendHandoff.handoff.id });
+
+var trendForbidden = call({ action: 'getHeldCashTrend', token: aliTok });
+check(!trendForbidden.ok && trendForbidden.error === 'forbidden', 'a store manager cannot see the held-cash trend — company-wide visibility only');
+
+var trend = call({ action: 'getHeldCashTrend', token: adminTok });
+check(trend.ok, 'admin can see the held-cash trend');
+check(trend.dates.length === 14, 'the trend covers a 14-day window');
+check(trend.dates[trend.dates.length - 1] === isoOffset(0), "the trend's last day is today");
+var todaySnapshot = trend.series[trend.series.length - 1];
+check(todaySnapshot.byHolder[sara.id] >= 500, "today's snapshot shows Sara currently holding the newly confirmed cash");
+var yesterdaySnapshot = trend.series[trend.series.length - 2];
+check(!yesterdaySnapshot.byHolder[sara.id], "yesterday's snapshot does not include cash confirmed only today");
+
+console.log('--- sales report filters: city, entered-by, product, and amount range narrow results independently ---');
+var filterLoc = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: 'Jeddah', name: 'Filter Test', clusterId: cluster.entity.id } }).entity;
+var filterStore = call({ action: 'adminSaveEntity', token: adminTok, kind: 'store', data: { locationId: filterLoc.id, name: 'Filter Store' } }).entity;
+call({ action: 'createDailyEntry', token: adminTok, date: '2026-09-11', sourceType: 'store', sourceId: filterStore.id, productId: prodA.id, cashSales: 900 });
+
+var cityReport = call({ action: 'getSalesReport', token: adminTok, city: 'Jeddah' });
+check(cityReport.ok && cityReport.totals.netCashOwed >= 900, 'city filter includes the Jeddah entry');
+check(!cityReport.byLocation.some(function (r) { return r.city === 'Riyadh'; }), 'city filter excludes Riyadh locations');
+
+var productReport = call({ action: 'getSalesReport', token: adminTok, productId: prodA.id });
+check(productReport.ok && productReport.entries.every(function (e) { return e.productId === prodA.id; }), 'product filter only returns entries tagged with that product');
+
+var entererReport = call({ action: 'getSalesReport', token: adminTok, enteredBy: admin.id });
+check(entererReport.ok && entererReport.entries.every(function (e) { return e.enteredBy === admin.id; }), 'entered-by filter only returns entries submitted by that person');
+
+var amountMinReport = call({ action: 'getSalesReport', token: adminTok, amountMin: 901 });
+check(amountMinReport.ok && !amountMinReport.entries.some(function (e) { return e.sourceId === filterStore.id; }), 'amountMin above the entry excludes it');
+var amountMaxReport = call({ action: 'getSalesReport', token: adminTok, amountMax: 800 });
+check(amountMaxReport.ok && !amountMaxReport.entries.some(function (e) { return e.sourceId === filterStore.id; }), 'amountMax below the entry excludes it');
+var amountRangeReport = call({ action: 'getSalesReport', token: adminTok, amountMin: 900, amountMax: 900 });
+check(amountRangeReport.ok && amountRangeReport.entries.some(function (e) { return e.sourceId === filterStore.id; }), 'amount range exactly matching the entry includes it');
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);

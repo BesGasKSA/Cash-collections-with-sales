@@ -311,8 +311,12 @@ var L = {
     report_shortfallTitle:'العجز حسب مُدخِل البيانات', report_shortfallHint:'عند وجود فرق بين المبلغ المُعلن والمُستلم فعلياً، يُنسب هنا بشكل تقديري (متناسب مع حصة كل إدخال) إلى من أدخل البيانات أصلاً — سائق أو مشرف فرع — لتتبّع الأنماط المتكررة. هذا تقدير وليس إثبات مسؤولية قاطع.',
     report_shortfallPerson:'الشخص', report_shortfallAmount:'إجمالي العجز المنسوب', report_shortfallCount:'عدد التسليمات',
     report_shortfallNone:'لا يوجد عجز مسجَّل حالياً',
+    report_allCities:'كل المدن', report_allProducts:'كل المنتجات', report_enteredBy:'مُدخِل البيانات', report_allEnterers:'الجميع',
+    report_amountMin:'أقل مبلغ', report_amountMax:'أعلى مبلغ', report_editFilters:'تعديل الفلاتر', report_hideFilters:'إخفاء الفلاتر',
+    report_activeFilters:'فلتر نشط', report_noActiveFilters:'بدون فلاتر — عرض كل البيانات',
     nav_dashboard:'لوحة التحكم', dash_salesTitle:'لوحة المبيعات', dash_collectionsTitle:'لوحة التحصيل', dash_grossSales:'إجمالي المبيعات',
     dash_comparisonTitle:'آخر 7 أيام مقابل الأسبوع السابق', dash_comparisonPrevious:'الأسبوع السابق', dash_comparisonGross:'إجمالي المبيعات',
+    dash_heldTrendTitle:'اتجاه النقدية المحتفظ بها لكل شخص (14 يوماً)', dash_heldTrendHint:'من كان يحتفظ بنقدية مؤكَّدة ولم تُسلَّم للمرحلة التالية بعد، في نهاية كل يوم خلال آخر 14 يوماً.',
     dash_locationsReporting:'المواقع المُبلِّغة', dash_avgPerLocation:'متوسط لكل موقع', dash_topLocation:'أعلى موقع', dash_topProduct:'أعلى منتج',
     dash_bySourceType:'حسب نوع المصدر', dash_byCity:'حسب المدينة', dash_totalHandoffs:'إجمالي التسليمات', dash_disputeRate:'نسبة الاعتراضات',
     dash_avgHandoffAmount:'متوسط مبلغ التسليم', dash_statusBreakdown:'حسب الحالة', dash_kindBreakdown:'حسب مرحلة السلسلة',
@@ -429,8 +433,12 @@ var L = {
     report_shortfallTitle:'Shortfall by data entrant', report_shortfallHint:'When a declared amount and what was actually received differ, it is attributed here as an estimate (proportional to each entry\'s share) back to whoever originally entered the data — a driver or store manager — to help spot repeated patterns. This is an estimate, not proof of fault.',
     report_shortfallPerson:'Person', report_shortfallAmount:'Total attributed shortfall', report_shortfallCount:'Handoffs involved',
     report_shortfallNone:'No shortfall recorded yet',
+    report_allCities:'All cities', report_allProducts:'All products', report_enteredBy:'Entered by', report_allEnterers:'Everyone',
+    report_amountMin:'Min amount', report_amountMax:'Max amount', report_editFilters:'Edit filters', report_hideFilters:'Hide filters',
+    report_activeFilters:'active filter(s)', report_noActiveFilters:'No filters — showing all data',
     nav_dashboard:'Dashboard', dash_salesTitle:'Sales dashboard', dash_collectionsTitle:'Collections dashboard', dash_grossSales:'Gross sales',
     dash_comparisonTitle:'Last 7 days vs. the week before', dash_comparisonPrevious:'Previous week', dash_comparisonGross:'Gross sales',
+    dash_heldTrendTitle:'Held cash by person — 14-day trend', dash_heldTrendHint:'Who was holding confirmed cash not yet handed to the next stage, at the end of each of the last 14 days.',
     dash_locationsReporting:'Locations reporting', dash_avgPerLocation:'Avg. per location', dash_topLocation:'Top location', dash_topProduct:'Top product',
     dash_bySourceType:'By source type', dash_byCity:'By city', dash_totalHandoffs:'Total handoffs', dash_disputeRate:'Dispute rate',
     dash_avgHandoffAmount:'Avg. handoff amount', dash_statusBreakdown:'By status', dash_kindBreakdown:'By chain step',
@@ -547,8 +555,12 @@ var L = {
     report_shortfallTitle:'اندراج کرنے والے کے مطابق کمی', report_shortfallHint:'جب اعلان کردہ رقم اور اصل موصولہ رقم میں فرق ہو، تو یہاں یہ تخمیناً (ہر اندراج کے حصے کے تناسب سے) اس شخص سے منسوب کی جاتی ہے جس نے ڈیٹا اصل میں درج کیا — ڈرائیور یا اسٹور منیجر — تاکہ بار بار ہونے والے پیٹرن کا پتہ چل سکے۔ یہ ایک تخمینہ ہے، قصور کا حتمی ثبوت نہیں۔',
     report_shortfallPerson:'شخص', report_shortfallAmount:'کل منسوب کمی', report_shortfallCount:'شامل ترسیلیں',
     report_shortfallNone:'ابھی تک کوئی کمی درج نہیں',
+    report_allCities:'تمام شہر', report_allProducts:'تمام پروڈکٹس', report_enteredBy:'درج کنندہ', report_allEnterers:'سب',
+    report_amountMin:'کم از کم رقم', report_amountMax:'زیادہ سے زیادہ رقم', report_editFilters:'فلٹرز میں تبدیلی', report_hideFilters:'فلٹرز چھپائیں',
+    report_activeFilters:'فعال فلٹر', report_noActiveFilters:'کوئی فلٹر نہیں — تمام ڈیٹا دکھایا جا رہا ہے',
     nav_dashboard:'ڈیش بورڈ', dash_salesTitle:'سیلز ڈیش بورڈ', dash_collectionsTitle:'کلیکشن ڈیش بورڈ', dash_grossSales:'کل فروخت',
     dash_comparisonTitle:'پچھلے 7 دن بمقابلہ اس سے پچھلا ہفتہ', dash_comparisonPrevious:'پچھلا ہفتہ', dash_comparisonGross:'کل فروخت',
+    dash_heldTrendTitle:'فی شخص محفوظ نقدی — 14 دن کا رجحان', dash_heldTrendHint:'پچھلے 14 دنوں میں سے ہر دن کے اختتام پر کس کے پاس تصدیق شدہ نقدی موجود تھی جو ابھی اگلے مرحلے کو حوالے نہیں ہوئی۔',
     dash_locationsReporting:'رپورٹ کرنے والے مقامات', dash_avgPerLocation:'اوسط فی مقام', dash_topLocation:'سرفہرست مقام', dash_topProduct:'سرفہرست پروڈکٹ',
     dash_bySourceType:'ذریعہ کی قسم کے مطابق', dash_byCity:'شہر کے مطابق', dash_totalHandoffs:'کل ترسیل', dash_disputeRate:'اعتراض کی شرح',
     dash_avgHandoffAmount:'اوسط ترسیل رقم', dash_statusBreakdown:'حالت کے مطابق', dash_kindBreakdown:'سلسلے کے مرحلے کے مطابق',
@@ -1300,6 +1312,25 @@ function renderDashboard(body){
       body.appendChild(holderCard);
     }
 
+    var heldTrendCard = el('<div class="card"><h2>'+esc(t('dash_heldTrendTitle'))+'</h2>' +
+      '<div class="muted" style="font-size:12px;margin-bottom:10px;">'+esc(t('dash_heldTrendHint'))+'</div>' +
+      '<div id="dashHeldTrend">'+esc(t('loading'))+'</div></div>');
+    body.appendChild(heldTrendCard);
+    api('getHeldCashTrend', {}).then(function(trend){
+      var wrap = qs('#dashHeldTrend', heldTrendCard);
+      if (!trend.ok){ wrap.innerHTML = '<div class="msg err">'+esc(errMsg_(trend))+'</div>'; return; }
+      if (!trend.holderIds.length){ wrap.innerHTML = '<div class="muted">'+esc(t('dash_noData'))+'</div>'; return; }
+      var trendSeries = trend.holderIds.map(function(uid, i){
+        return {
+          label: userName(uid),
+          color: CHART_PALETTE[i % CHART_PALETTE.length],
+          values: trend.series.map(function(day){ return day.byHolder[uid] || 0; })
+        };
+      });
+      wrap.innerHTML = '';
+      wrap.appendChild(lineChart(trend.dates, trendSeries));
+    });
+
     var now = Date.now();
     var buckets = { a:0, b:0, c:0, d:0 };
     handoffs.filter(function(h){ return h.status==='confirmed' && !h.consumedBy && h.kind!=='deposit'; }).forEach(function(h){
@@ -2020,6 +2051,35 @@ function donutChart(segments){
   return el('<div class="donut-wrap">'+svg+legend+'</div>');
 }
 
+// Multi-series inline SVG line chart — series: [{label, color, values:[...]}]
+// all aligned to the same `dates` array. Same no-library, self-contained
+// approach as trendChart/donutChart above.
+function lineChart(dates, series){
+  var w = 700, h = 200, pad = 28;
+  if (!dates.length || !series.length) return el('<div class="muted">'+esc(t('noData'))+'</div>');
+  var max = Math.max.apply(null, series.reduce(function(acc,s){ return acc.concat(s.values); }, []).concat([1]));
+  var stepX = dates.length > 1 ? (w - pad*2) / (dates.length - 1) : 0;
+  function xAt(i){ return pad + i*stepX; }
+  function yAt(v){ return h - pad - (max>0 ? (v/max)*(h-pad*2) : 0); }
+  var lines = series.map(function(s){
+    var points = s.values.map(function(v,i){ return xAt(i)+','+yAt(v); }).join(' ');
+    var dots = s.values.map(function(v,i){
+      return '<circle cx="'+xAt(i)+'" cy="'+yAt(v)+'" r="2.5" fill="'+s.color+'"><title>'+esc(s.label)+' — '+esc(dates[i])+': '+money(v)+'</title></circle>';
+    }).join('');
+    return '<polyline points="'+points+'" fill="none" stroke="'+s.color+'" stroke-width="2"/>'+dots;
+  }).join('');
+  var baseline = '<line x1="'+pad+'" y1="'+(h-pad)+'" x2="'+(w-pad)+'" y2="'+(h-pad)+'" stroke="var(--border)" stroke-width="1"/>';
+  var firstLabel = '<text x="'+pad+'" y="'+(h-6)+'" font-size="10" fill="var(--muted)">'+esc(dates[0])+'</text>';
+  var lastLabel = dates.length>1 ? '<text x="'+(w-pad)+'" y="'+(h-6)+'" font-size="10" fill="var(--muted)" text-anchor="end">'+esc(dates[dates.length-1])+'</text>' : '';
+  var svg = '<svg class="trend-svg" viewBox="0 0 '+w+' '+h+'" preserveAspectRatio="none">'+baseline+lines+firstLabel+lastLabel+'</svg>';
+  var legend = '<div class="donut-legend">'+series.map(function(s){
+    var last = s.values[s.values.length-1];
+    return '<div class="donut-legend-row"><span class="dot" style="background:'+s.color+'"></span>' +
+      '<span class="dl-label">'+esc(s.label)+'</span><span class="dl-val">'+money(last)+'</span></div>';
+  }).join('')+'</div>';
+  return el('<div>'+svg+legend+'</div>');
+}
+
 // A row of small KPI tiles — [[value, label], ...], value pre-formatted.
 function kpiRow(items){
   return el('<div class="kpi-grid">'+items.map(function(it){
@@ -2052,38 +2112,71 @@ function renderReport(body){
   var meta = state.meta || {};
   var locations = meta.locations || [];
   var zones = meta.zones || [];
+  var products = (meta.products||[]).filter(function(p){ return p.active !== false; });
+  // Only roles that can actually submit a daily entry ever appear as
+  // "entered by" — matches the nav_entries gate (store_manager/driver/admin).
+  var enterers = (meta.users||[]).filter(function(u){ return ['driver','store_manager','admin'].indexOf(u.role) >= 0; });
+  var cities = [];
+  locations.forEach(function(l){ if (l.city && cities.indexOf(l.city) < 0) cities.push(l.city); });
+  cities.sort();
   // Mirrors requireCompanyWide_ on the server — a cluster (area) manager
   // can reach this screen too (their own area's report), but the
   // shortfall-accountability card is company-wide only.
   var isCompanyWide = ['admin','finance','accountant','operations_manager'].indexOf(state.user.role) >= 0;
 
   body.innerHTML = '<div class="card">' +
-    '<h2>'+esc(t('report_title'))+'</h2>' +
-    '<div class="grid">' +
-      '<div class="field"><label>'+esc(t('report_from'))+'</label><input id="rFrom" type="date"></div>' +
-      '<div class="field"><label>'+esc(t('report_to'))+'</label><input id="rTo" type="date"></div>' +
-      '<div class="field"><label>'+esc(t('report_zone'))+'</label><select id="rZone">' +
-        '<option value="">'+esc(t('report_allZones'))+'</option>' +
-        zones.map(function(z){ return '<option value="'+z.id+'">'+esc(z.city+' — '+z.name)+'</option>'; }).join('') +
-      '</select></div>' +
-      '<div class="field"><label>'+esc(t('report_location'))+'</label><select id="rLoc">' +
-        '<option value="">'+esc(t('report_allLocations'))+'</option>' +
-        locations.map(function(l){ return '<option value="'+l.id+'">'+esc(l.city+' — '+l.name)+'</option>'; }).join('') +
-      '</select></div>' +
-      '<div class="field"><label>'+esc(t('entry_sourceType'))+'</label><select id="rType">' +
-        '<option value="">'+esc(t('report_allTypes'))+'</option>' +
-        '<option value="store">'+esc(t('entry_source_store'))+'</option>' +
-        '<option value="car">'+esc(t('entry_source_car'))+'</option>' +
-        '<option value="pos">'+esc(t('entry_source_pos'))+'</option>' +
-      '</select></div>' +
-      '<div class="field"><label id="rSourceLabel">'+esc(t('report_allSources'))+'</label><select id="rSource"><option value="">'+esc(t('report_allSources'))+'</option></select></div>' +
+    '<div class="row" style="justify-content:space-between;align-items:center;">' +
+      '<h2 style="margin:0;">'+esc(t('report_title'))+'</h2>' +
+      '<button type="button" class="details-toggle" id="rFilterToggle">'+esc(t('report_editFilters'))+'</button>' +
     '</div>' +
-    '<button class="btn" id="rRun">'+esc(t('report_run'))+'</button>' +
+    '<div class="muted" id="rFilterSummary" style="font-size:12px;margin-top:4px;"></div>' +
+    '<div id="rFilterBody" hidden style="margin-top:12px;">' +
+      '<div class="grid">' +
+        '<div class="field"><label>'+esc(t('report_from'))+'</label><input id="rFrom" type="date"></div>' +
+        '<div class="field"><label>'+esc(t('report_to'))+'</label><input id="rTo" type="date"></div>' +
+        '<div class="field"><label>'+esc(t('report_city'))+'</label><select id="rCity">' +
+          '<option value="">'+esc(t('report_allCities'))+'</option>' +
+          cities.map(function(c){ return '<option value="'+esc(c)+'">'+esc(c)+'</option>'; }).join('') +
+        '</select></div>' +
+        '<div class="field"><label>'+esc(t('report_zone'))+'</label><select id="rZone">' +
+          '<option value="">'+esc(t('report_allZones'))+'</option>' +
+          zones.map(function(z){ return '<option value="'+z.id+'">'+esc(z.city+' — '+z.name)+'</option>'; }).join('') +
+        '</select></div>' +
+        '<div class="field"><label>'+esc(t('report_location'))+'</label><select id="rLoc">' +
+          '<option value="">'+esc(t('report_allLocations'))+'</option>' +
+          locations.map(function(l){ return '<option value="'+l.id+'">'+esc(l.city+' — '+l.name)+'</option>'; }).join('') +
+        '</select></div>' +
+        '<div class="field"><label>'+esc(t('entry_sourceType'))+'</label><select id="rType">' +
+          '<option value="">'+esc(t('report_allTypes'))+'</option>' +
+          '<option value="store">'+esc(t('entry_source_store'))+'</option>' +
+          '<option value="car">'+esc(t('entry_source_car'))+'</option>' +
+          '<option value="pos">'+esc(t('entry_source_pos'))+'</option>' +
+        '</select></div>' +
+        '<div class="field"><label id="rSourceLabel">'+esc(t('report_allSources'))+'</label><select id="rSource"><option value="">'+esc(t('report_allSources'))+'</option></select></div>' +
+        '<div class="field"><label>'+esc(t('report_enteredBy'))+'</label><select id="rEnteredBy">' +
+          '<option value="">'+esc(t('report_allEnterers'))+'</option>' +
+          enterers.map(function(u){ return '<option value="'+u.id+'">'+esc(u.name)+'</option>'; }).join('') +
+        '</select></div>' +
+        '<div class="field"><label>'+esc(t('report_product'))+'</label><select id="rProduct">' +
+          '<option value="">'+esc(t('report_allProducts'))+'</option>' +
+          products.map(function(p){ return '<option value="'+p.id+'">'+esc(p.name)+'</option>'; }).join('') +
+        '</select></div>' +
+        '<div class="field"><label>'+esc(t('report_amountMin'))+'</label><input id="rAmountMin" type="number" step="0.01" min="0"></div>' +
+        '<div class="field"><label>'+esc(t('report_amountMax'))+'</label><input id="rAmountMax" type="number" step="0.01" min="0"></div>' +
+      '</div>' +
+      '<button class="btn" id="rRun" style="margin-top:10px;">'+esc(t('report_run'))+'</button>' +
+    '</div>' +
   '</div><div id="rResult"></div>';
 
-  // Location and source-type narrow the specific-source list together (a
-  // store/car/POS picked while a location is set only shows that
-  // location's own) — same cascading pattern as the daily-entry form, so
+  var filterBody = qs('#rFilterBody');
+  var filterToggle = qs('#rFilterToggle');
+  filterToggle.addEventListener('click', function(){
+    filterBody.hidden = !filterBody.hidden;
+    filterToggle.textContent = t(filterBody.hidden ? 'report_editFilters' : 'report_hideFilters');
+  });
+
+  // City > Zone > Location > source-type > specific source, each narrowing
+  // the next picker — same cascading pattern as the daily-entry form, so
   // "give me just this cluster's third car" doesn't mean scrolling a flat
   // company-wide list.
   function populateSourceFilter(){
@@ -2100,33 +2193,57 @@ function renderReport(body){
     srcSel.innerHTML = '<option value="">'+esc(t('report_allSources'))+'</option>' +
       list.map(function(x){ return '<option value="'+x.id+'">'+esc(sourceOptionLabel_(type, x))+'</option>'; }).join('');
   }
-  // Zone narrows the location list the same way location narrows the
-  // source list — Country > City > Zone > Location > Store/Car, so picking
-  // a zone should immediately shrink the location picker to just its own.
   function populateLocationFilter(){
     var zoneId = qs('#rZone').value;
+    var cityVal = qs('#rCity').value;
     var locSel = qs('#rLoc');
-    var list = locations.filter(function(l){ return !zoneId || l.zoneId === zoneId; });
+    var list = locations.filter(function(l){ return (!zoneId || l.zoneId === zoneId) && (!cityVal || l.city === cityVal); });
     locSel.innerHTML = '<option value="">'+esc(t('report_allLocations'))+'</option>' +
       list.map(function(l){ return '<option value="'+l.id+'">'+esc(l.city+' — '+l.name)+'</option>'; }).join('');
     populateSourceFilter();
   }
+  function populateZoneFilter(){
+    var cityVal = qs('#rCity').value;
+    var zoneSel = qs('#rZone');
+    var list = zones.filter(function(z){ return !cityVal || z.city === cityVal; });
+    zoneSel.innerHTML = '<option value="">'+esc(t('report_allZones'))+'</option>' +
+      list.map(function(z){ return '<option value="'+z.id+'">'+esc(z.city+' — '+z.name)+'</option>'; }).join('');
+    populateLocationFilter();
+  }
   qs('#rType').addEventListener('change', populateSourceFilter);
   qs('#rLoc').addEventListener('change', populateSourceFilter);
   qs('#rZone').addEventListener('change', populateLocationFilter);
+  qs('#rCity').addEventListener('change', populateZoneFilter);
 
   qs('#rRun').addEventListener('click', runReport);
   runReport();
+
+  function activeFilterCount_(payload){
+    var keys = ['dateFrom','dateTo','city','zoneId','locationId','sourceType','sourceId','enteredBy','productId','amountMin','amountMax'];
+    return keys.reduce(function(n,k){ return n + (payload[k] ? 1 : 0); }, 0);
+  }
 
   function runReport(){
     var payload = {
       dateFrom: qs('#rFrom').value || undefined,
       dateTo: qs('#rTo').value || undefined,
+      city: qs('#rCity').value || undefined,
       zoneId: qs('#rZone').value || undefined,
       locationId: qs('#rLoc').value || undefined,
       sourceType: qs('#rType').value || undefined,
-      sourceId: qs('#rSource').value || undefined
+      sourceId: qs('#rSource').value || undefined,
+      enteredBy: qs('#rEnteredBy').value || undefined,
+      productId: qs('#rProduct').value || undefined,
+      amountMin: qs('#rAmountMin').value || undefined,
+      amountMax: qs('#rAmountMax').value || undefined
     };
+    // Auto-collapse — once you've applied the filters, the pane just takes
+    // up space over the results; "Edit filters" brings it back with every
+    // value still in place.
+    var n = activeFilterCount_(payload);
+    qs('#rFilterSummary').textContent = n ? (n + ' ' + t('report_activeFilters')) : t('report_noActiveFilters');
+    filterBody.hidden = true;
+    filterToggle.textContent = t('report_editFilters');
     api('getSalesReport', payload).then(function(res){
       var out = qs('#rResult');
       if(!res.ok){ out.innerHTML = '<div class="msg err">'+esc(errMsg_(res))+'</div>'; return; }
