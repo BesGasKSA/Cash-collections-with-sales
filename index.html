@@ -285,6 +285,12 @@ var L = {
     entry_importResult:'تم استيراد {created} من أصل {total} صف', entry_importParseError:'تعذّرت قراءة الملف — تأكد أنه CSV صحيح',
     entry_product:'المنتج', entry_product_none:'بدون منتج محدد',
     entry_cylindersOut:'أسطوانات ممتلئة مُسلَّمة', entry_cylindersIn:'أسطوانات فارغة مُستلَمة',
+    entry_mode:'طريقة الإدخال', entry_modeDirect:'مبالغ مباشرة (بدون تحديد منتج)', entry_modeProduct:'حسب المنتج (كمية × سعر)',
+    entry_computedHint:'يتم احتساب هذه الحقول تلقائياً من بنود المنتجات أدناه — غير قابلة للتعديل هنا.',
+    entry_qty:'الكمية', entry_unitPrice:'سعر الوحدة', entry_paymentMethod:'طريقة الدفع', entry_lineSubtotal:'الإجمالي الفرعي',
+    entry_payment_cash:'نقدي', entry_payment_pos:'نقاط بيع (بطاقة/بنك)', entry_payment_delivery:'رسوم توصيل (خدمة - بنك)',
+    entry_addLine:'إضافة منتج', entry_removeLine:'حذف البند', entry_productLines:'بنود المنتجات',
+    entry_lineProduct:'المنتج', err_noProductLines:'الرجاء إضافة بند منتج واحد على الأقل', err_lineIncomplete:'أكمل بيانات كل بند (المنتج، الكمية، السعر، طريقة الدفع)',
     dash_cylinderTitle:'رصيد الأسطوانات (تبادل الفارغ بالممتلئ)', dash_cylinderHint:'الفرق بين الأسطوانات الممتلئة المُسلَّمة والفارغة المُستلَمة — رصيد موجب يعني أسطوانات لا تزال في الميدان.',
     dash_cylinderLocation:'الموقع', dash_cylinderProduct:'المنتج', dash_cylinderOut:'ممتلئة', dash_cylinderIn:'فارغة', dash_cylinderBalance:'الرصيد المتبقي',
     handoff_createLocation:'تسليم نقدية الفرع للمشرف', handoff_createCluster:'تسليم القطاع للمُحصّل',
@@ -410,6 +416,12 @@ var L = {
     entry_importResult:'Imported {created} of {total} rows', entry_importParseError:'Could not read the file — make sure it is a valid CSV',
     entry_product:'Product', entry_product_none:'No specific product',
     entry_cylindersOut:'Full cylinders delivered', entry_cylindersIn:'Empty cylinders returned',
+    entry_mode:'Entry method', entry_modeDirect:'Direct amounts (no specific product)', entry_modeProduct:'By product (qty × price)',
+    entry_computedHint:'These fields are computed automatically from the product lines below — not editable here.',
+    entry_qty:'Qty', entry_unitPrice:'Unit price', entry_paymentMethod:'Payment method', entry_lineSubtotal:'Subtotal',
+    entry_payment_cash:'Cash', entry_payment_pos:'POS (card/bank)', entry_payment_delivery:'Delivery fee (service — bank)',
+    entry_addLine:'Add product', entry_removeLine:'Remove line', entry_productLines:'Product lines',
+    entry_lineProduct:'Product', err_noProductLines:'Please add at least one product line', err_lineIncomplete:'Complete every line (product, quantity, price, payment method)',
     dash_cylinderTitle:'Cylinder balance (empty-for-full exchange)', dash_cylinderHint:'The gap between full cylinders delivered and empty ones returned — a positive balance means cylinders are still out in the field.',
     dash_cylinderLocation:'Location', dash_cylinderProduct:'Product', dash_cylinderOut:'Full', dash_cylinderIn:'Empty', dash_cylinderBalance:'Balance owed back',
     handoff_createLocation:'Hand off branch cash to Area Manager', handoff_createCluster:'Hand off to Collector',
@@ -535,6 +547,12 @@ var L = {
     entry_importResult:'{total} میں سے {created} قطاریں درآمد ہوئیں', entry_importParseError:'فائل پڑھی نہیں جا سکی — درست CSV یقینی بنائیں',
     entry_product:'پروڈکٹ', entry_product_none:'کوئی مخصوص پروڈکٹ نہیں',
     entry_cylindersOut:'بھرے سلنڈر ترسیل شدہ', entry_cylindersIn:'خالی سلنڈر واپس موصول',
+    entry_mode:'اندراج کا طریقہ', entry_modeDirect:'براہ راست رقوم (بغیر مخصوص پروڈکٹ)', entry_modeProduct:'پروڈکٹ کے مطابق (مقدار × قیمت)',
+    entry_computedHint:'یہ خانے نیچے دیے گئے پروڈکٹ بندوں سے خودکار طور پر شمار ہوتے ہیں — یہاں قابلِ ترمیم نہیں۔',
+    entry_qty:'مقدار', entry_unitPrice:'یونٹ قیمت', entry_paymentMethod:'ادائیگی کا طریقہ', entry_lineSubtotal:'ذیلی مجموعہ',
+    entry_payment_cash:'نقد', entry_payment_pos:'POS (کارڈ/بینک)', entry_payment_delivery:'ڈلیوری فیس (سروس — بینک)',
+    entry_addLine:'پروڈکٹ شامل کریں', entry_removeLine:'بند حذف کریں', entry_productLines:'پروڈکٹ بند',
+    entry_lineProduct:'پروڈکٹ', err_noProductLines:'براہ کرم کم از کم ایک پروڈکٹ بند شامل کریں', err_lineIncomplete:'ہر بند مکمل کریں (پروڈکٹ، مقدار، قیمت، ادائیگی کا طریقہ)',
     dash_cylinderTitle:'سلنڈر بیلنس (خالی کے بدلے بھرا تبادلہ)', dash_cylinderHint:'ترسیل شدہ بھرے سلنڈروں اور واپس آئے خالی سلنڈروں کا فرق — مثبت بیلنس کا مطلب سلنڈر ابھی میدان میں موجود ہیں۔',
     dash_cylinderLocation:'مقام', dash_cylinderProduct:'پروڈکٹ', dash_cylinderOut:'بھرے', dash_cylinderIn:'خالی', dash_cylinderBalance:'باقی بیلنس',
     handoff_createLocation:'برانچ نقدی علاقہ منیجر کو دیں', handoff_createCluster:'کلکٹر کو ترسیل کریں',
@@ -1449,6 +1467,10 @@ function renderEntries(body){
       '<div class="field"><label id="eSourceLabel"></label><select id="eSource"></select></div>' +
       '<div class="field"><label>'+esc(t('entry_location'))+'</label><input id="eLocation" type="text" readonly value="—"></div>' +
     '</div>' +
+    '<div class="field"><label>'+esc(t('entry_mode'))+'</label><select id="eMode">' +
+      '<option value="direct">'+esc(t('entry_modeDirect'))+'</option>' +
+      '<option value="product">'+esc(t('entry_modeProduct'))+'</option>' +
+    '</select></div>' +
     '<div class="grid">' +
       '<div class="field" id="eCashWrap"><label>'+esc(t('entry_cash'))+'</label><input id="eCash" type="text" inputmode="decimal" value="0"></div>' +
       '<div class="field" id="eDeliveryWrap"><label>'+esc(t('entry_delivery'))+'</label><input id="eDelivery" type="text" inputmode="decimal" value="0">' +
@@ -1456,11 +1478,17 @@ function renderEntries(body){
       '<div class="field" id="ePosWrap"><label>'+esc(t('entry_pos'))+'</label><input id="ePos" type="text" inputmode="decimal" value="0"></div>' +
       '<div class="field" id="eProductWrap"><label>'+esc(t('entry_product'))+'</label><select id="eProduct"></select></div>' +
     '</div>' +
+    '<small class="hint" id="eComputedHint" style="display:none;">'+esc(t('entry_computedHint'))+'</small>' +
     '<div class="grid" id="eCylWrap" style="display:none;">' +
       '<div class="field"><label>'+esc(t('entry_cylindersOut'))+'</label><input id="eCylOut" type="text" inputmode="numeric" value="0"></div>' +
       '<div class="field"><label>'+esc(t('entry_cylindersIn'))+'</label><input id="eCylIn" type="text" inputmode="numeric" value="0"></div>' +
     '</div>' +
-    '<div class="field"><label>'+esc(t('entry_note'))+'</label><input id="eNote"></div>' +
+    '<div id="eLinesWrap" style="display:none;margin-top:10px;">' +
+      '<h2 style="font-size:15px;">'+esc(t('entry_productLines'))+'</h2>' +
+      '<div id="eLinesBody"></div>' +
+      '<button type="button" class="btn secondary" id="eAddLine">'+esc(t('entry_addLine'))+'</button>' +
+    '</div>' +
+    '<div class="field" style="margin-top:10px;"><label>'+esc(t('entry_note'))+'</label><input id="eNote"></div>' +
     '<button class="btn" id="eSubmit">'+esc(t('entry_submit'))+'</button>' +
   '</div>');
   body.innerHTML = '';
@@ -1477,6 +1505,15 @@ function renderEntries(body){
   if (role==='store_manager' || role==='admin' || role==='driver') opts.push(['car', t('entry_source_car')]);
   opts.push(['pos', t('entry_source_pos')]);
   typeSel.innerHTML = opts.map(function(o){ return '<option value="'+o[0]+'">'+esc(o[1])+'</option>'; }).join('');
+
+  // Needed by resetLines_/addLine_ below, so computed before the first
+  // populateSourceOptions() call that triggers them.
+  var products = (meta.products||[]).filter(function(p){ return p.active !== false; });
+  var productSel = qs('#eProduct', form);
+  productSel.innerHTML = '<option value="">'+esc(t('entry_product_none'))+'</option>' +
+    products.map(function(p){ return '<option value="'+p.id+'">'+esc(p.name)+'</option>'; }).join('');
+
+  var lastShowDelivery = true;
 
   function populateSourceOptions(){
     var type = typeSel.value;
@@ -1497,7 +1534,9 @@ function renderEntries(body){
     // Switching source type carries no meaning across types (a car's cash
     // figure has nothing to do with a store's), so leftover numbers from
     // whatever was last on screen would silently get submitted against the
-    // new source if left in place.
+    // new source if left in place. Same reasoning for product-mode lines —
+    // a store can never carry a delivery-fee line, so stale lines from a
+    // car/pos source have to go too, not just be re-labeled.
     qs('#eCash', form).value = '0';
     qs('#eDelivery', form).value = '0';
     qs('#ePos', form).value = '0';
@@ -1509,6 +1548,7 @@ function renderEntries(body){
     // source type supports that field now. Delivery fee stays car/pos only
     // though: a store branch has nothing to deliver.
     var showDelivery = (type==='car' || type==='pos');
+    lastShowDelivery = showDelivery;
     qs('#eCashWrap', form).style.display = '';
     qs('#eDeliveryWrap', form).style.display = showDelivery ? '' : 'none';
     qs('#ePosWrap', form).style.display = '';
@@ -1517,6 +1557,7 @@ function renderEntries(body){
     qs('#eDeliveryHint', form).textContent = showDelivery ? '' : t('entry_delivery') + ' — ' + t('entry_source_car') + ' / ' + t('entry_source_pos');
     qs('#eDeliveryHint', form).style.display = showDelivery ? 'none' : 'block';
     updateLocationDisplay();
+    resetLines_();
   }
   // Store/car/pos are all ultimately tied to one location (a POS machine's
   // through whichever store or car owns it) — showing it read-only the
@@ -1532,43 +1573,206 @@ function renderEntries(body){
     var locId = resolveLocationIdForSource_(typeSel.value, qs('#eSource', form).value);
     qs('#eLocation', form).value = locId ? locationName(locId) : '—';
   }
-  typeSel.addEventListener('change', populateSourceOptions);
-  qs('#eSource', form).addEventListener('change', updateLocationDisplay);
-  populateSourceOptions();
-
-  var productSel = qs('#eProduct', form);
-  var products = (meta.products||[]).filter(function(p){ return p.active !== false; });
-  productSel.innerHTML = '<option value="">'+esc(t('entry_product_none'))+'</option>' +
-    products.map(function(p){ return '<option value="'+p.id+'">'+esc(p.name)+'</option>'; }).join('');
   // Cylinder in/out only means anything once a specific product (which
   // cylinder type) is picked — a company selling anything beyond LPG
-  // cylinders alone just never fills these in, no harm either way.
+  // cylinders alone just never fills these in, no harm either way. Only
+  // relevant in direct mode — product mode has its own per-line cylinder
+  // fields instead.
   function toggleCylFields(){
-    var show = !!productSel.value;
+    var show = qs('#eMode', form).value === 'direct' && !!productSel.value;
     qs('#eCylWrap', form).style.display = show ? '' : 'none';
     if (!show) { qs('#eCylOut', form).value = '0'; qs('#eCylIn', form).value = '0'; }
   }
+
+  // ---------- product-level lines (qty x unit price, per payment method) ----------
+  var linesBody = qs('#eLinesBody', form);
+  var lineSeq = 0;
+
+  function paymentOptionsHtml_(){
+    var opts2 = [['cash', t('entry_payment_cash')], ['pos', t('entry_payment_pos')]];
+    if (lastShowDelivery) opts2.push(['delivery', t('entry_payment_delivery')]);
+    return opts2.map(function(o){ return '<option value="'+o[0]+'">'+esc(o[1])+'</option>'; }).join('');
+  }
+  // The xlsx note is explicit: delivery fees are a *service*, paid to the
+  // bank, never cash — so a line tagged "delivery" only ever offers
+  // services-type products, not goods. Keeps a data-entry person from
+  // accidentally booking a cylinder sale as a delivery fee or vice versa.
+  function lineProductOptionsHtml_(payment){
+    var list = payment === 'delivery' ? products.filter(function(p){ return p.type === 'services'; }) : products;
+    return '<option value="">'+esc(t('entry_product_none'))+'</option>' +
+      list.map(function(p){ return '<option value="'+p.id+'">'+esc(p.name)+'</option>'; }).join('');
+  }
+  function refreshLineProductOptions_(lineEl){
+    var paySel = qs('.lnPayment', lineEl), prodSel = qs('.lnProduct', lineEl);
+    var current = prodSel.value;
+    prodSel.innerHTML = lineProductOptionsHtml_(paySel.value);
+    if (list_hasOption_(prodSel, current)) prodSel.value = current; else recomputeLineCyl_(lineEl);
+  }
+  function list_hasOption_(sel, val){
+    for (var i=0;i<sel.options.length;i++) if (sel.options[i].value===val) return true;
+    return false;
+  }
+  function recomputeLineCyl_(lineEl){
+    var show = !!qs('.lnProduct', lineEl).value;
+    var wrap = qs('.lnCylWrap', lineEl);
+    wrap.style.display = show ? '' : 'none';
+    if (!show) { qs('.lnCylOut', lineEl).value = '0'; qs('.lnCylIn', lineEl).value = '0'; }
+  }
+  function recomputeLineSubtotal_(lineEl){
+    var qty = numFromInput_(qs('.lnQty', lineEl));
+    var price = numFromInput_(qs('.lnPrice', lineEl));
+    qs('.lnSubtotal', lineEl).textContent = money(qty * price);
+  }
+  function recomputeTotals_(){
+    var sums = { cash: 0, pos: 0, delivery: 0 };
+    qsa('.eLine', linesBody).forEach(function(lineEl){
+      var qty = numFromInput_(qs('.lnQty', lineEl));
+      var price = numFromInput_(qs('.lnPrice', lineEl));
+      var payment = qs('.lnPayment', lineEl).value;
+      if (sums.hasOwnProperty(payment)) sums[payment] += qty * price;
+    });
+    qs('#eCash', form).value = money(sums.cash);
+    qs('#ePos', form).value = money(sums.pos);
+    qs('#eDelivery', form).value = money(sums.delivery);
+  }
+  function addLine_(){
+    lineSeq++;
+    var lineEl = el(
+      '<div class="card eLine" style="margin-bottom:10px;background:var(--bg-soft,#f7f5ef);" data-seq="'+lineSeq+'">' +
+        '<div class="grid">' +
+          '<div class="field"><label>'+esc(t('entry_lineProduct'))+'</label><select class="lnProduct">'+lineProductOptionsHtml_('cash')+'</select></div>' +
+          '<div class="field"><label>'+esc(t('entry_qty'))+'</label><input class="lnQty" type="text" inputmode="decimal" value="0"></div>' +
+          '<div class="field"><label>'+esc(t('entry_unitPrice'))+'</label><input class="lnPrice" type="text" inputmode="decimal" value="0"></div>' +
+          '<div class="field"><label>'+esc(t('entry_paymentMethod'))+'</label><select class="lnPayment">'+paymentOptionsHtml_()+'</select></div>' +
+        '</div>' +
+        '<div class="grid lnCylWrap" style="display:none;">' +
+          '<div class="field"><label>'+esc(t('entry_cylindersOut'))+'</label><input class="lnCylOut" type="text" inputmode="numeric" value="0"></div>' +
+          '<div class="field"><label>'+esc(t('entry_cylindersIn'))+'</label><input class="lnCylIn" type="text" inputmode="numeric" value="0"></div>' +
+        '</div>' +
+        '<div class="row" style="justify-content:space-between;align-items:center;margin-top:6px;">' +
+          '<div><span class="muted">'+esc(t('entry_lineSubtotal'))+':</span> <strong class="lnSubtotal">0.00</strong></div>' +
+          '<button type="button" class="btn-icon lnRemove" title="'+esc(t('entry_removeLine'))+'"><svg viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg></button>' +
+        '</div>' +
+      '</div>'
+    );
+    linesBody.appendChild(lineEl);
+    wireCommaInput_(qs('.lnQty', lineEl), true);
+    wireCommaInput_(qs('.lnPrice', lineEl), true);
+    wireCommaInput_(qs('.lnCylOut', lineEl), false);
+    wireCommaInput_(qs('.lnCylIn', lineEl), false);
+    qs('.lnProduct', lineEl).addEventListener('change', function(){ recomputeLineCyl_(lineEl); });
+    qs('.lnPayment', lineEl).addEventListener('change', function(){ refreshLineProductOptions_(lineEl); recomputeTotals_(); });
+    ['input','blur'].forEach(function(evt){
+      qs('.lnQty', lineEl).addEventListener(evt, function(){ recomputeLineSubtotal_(lineEl); recomputeTotals_(); });
+      qs('.lnPrice', lineEl).addEventListener(evt, function(){ recomputeLineSubtotal_(lineEl); recomputeTotals_(); });
+    });
+    qs('.lnRemove', lineEl).addEventListener('click', function(){
+      lineEl.remove();
+      recomputeTotals_();
+    });
+  }
+  function resetLines_(){
+    linesBody.innerHTML = '';
+    if (qs('#eMode', form).value === 'product') addLine_();
+    recomputeTotals_();
+  }
+  qs('#eAddLine', form).addEventListener('click', addLine_);
+
+  function applyMode_(){
+    var mode = qs('#eMode', form).value;
+    var isProduct = mode === 'product';
+    qs('#eProductWrap', form).style.display = isProduct ? 'none' : '';
+    qs('#eLinesWrap', form).style.display = isProduct ? '' : 'none';
+    qs('#eComputedHint', form).style.display = isProduct ? '' : 'none';
+    ['#eCash','#eDelivery','#ePos'].forEach(function(sel){
+      var input = qs(sel, form);
+      input.disabled = isProduct;
+      input.readOnly = isProduct;
+    });
+    toggleCylFields();
+    if (isProduct) {
+      if (!qsa('.eLine', linesBody).length) addLine_();
+      recomputeTotals_();
+    } else {
+      // Switching back to direct mode starts the amount fields fresh
+      // rather than carrying over whatever the (now-hidden) product lines
+      // last summed to — the two entry paths shouldn't silently blend.
+      qs('#eCash', form).value = '0';
+      qs('#eDelivery', form).value = '0';
+      qs('#ePos', form).value = '0';
+    }
+  }
+  qs('#eMode', form).addEventListener('change', applyMode_);
+
+  typeSel.addEventListener('change', populateSourceOptions);
+  qs('#eSource', form).addEventListener('change', updateLocationDisplay);
+  populateSourceOptions();
   productSel.addEventListener('change', toggleCylFields);
-  toggleCylFields();
+  applyMode_();
 
   qs('#eSubmit', form).addEventListener('click', function(){
-    var payload = {
-      date: qs('#eDate', form).value,
-      sourceType: typeSel.value,
-      sourceId: qs('#eSource', form).value,
-      cylindersOut: numFromInput_(qs('#eCylOut', form)),
-      cylindersIn: numFromInput_(qs('#eCylIn', form)),
-      productId: productSel.value || null,
-      cashSales: numFromInput_(qs('#eCash', form)),
-      deliveryFeeBankAmount: numFromInput_(qs('#eDelivery', form)),
-      posSales: numFromInput_(qs('#ePos', form)),
-      note: qs('#eNote', form).value
-    };
-    if (!payload.sourceId){ qs('#entryMsg',form).innerHTML='<div class="msg err">'+esc(t('err_noSourceSelected'))+'</div>'; return; }
-    api('createDailyEntry', payload).then(function(res){
+    var mode = qs('#eMode', form).value;
+    var date = qs('#eDate', form).value;
+    var sourceType = typeSel.value;
+    var sourceId = qs('#eSource', form).value;
+    var note = qs('#eNote', form).value;
+    if (!sourceId){ qs('#entryMsg',form).innerHTML='<div class="msg err">'+esc(t('err_noSourceSelected'))+'</div>'; return; }
+
+    if (mode === 'direct') {
+      var payload = {
+        date: date, sourceType: sourceType, sourceId: sourceId,
+        cylindersOut: numFromInput_(qs('#eCylOut', form)),
+        cylindersIn: numFromInput_(qs('#eCylIn', form)),
+        productId: productSel.value || null,
+        cashSales: numFromInput_(qs('#eCash', form)),
+        deliveryFeeBankAmount: numFromInput_(qs('#eDelivery', form)),
+        posSales: numFromInput_(qs('#ePos', form)),
+        note: note
+      };
+      api('createDailyEntry', payload).then(function(res){
+        if(!res.ok){ qs('#entryMsg',form).innerHTML='<div class="msg err">'+esc(errMsg_(res))+'</div>'; return; }
+        qs('#entryMsg',form).innerHTML='<div class="msg ok">'+esc(t('ok_saved'))+'</div>';
+        loadEntryList();
+      });
+      return;
+    }
+
+    // product mode: one daily_entries row per product line, all sharing the
+    // same date/source/note — the existing bulk-import action already does
+    // exactly this per-row validation, so it's reused instead of adding a
+    // second entry-creation code path on the server.
+    var lineEls = qsa('.eLine', linesBody);
+    if (!lineEls.length){ qs('#entryMsg',form).innerHTML='<div class="msg err">'+esc(t('err_noProductLines'))+'</div>'; return; }
+    var rows = [];
+    for (var i=0;i<lineEls.length;i++){
+      var lineEl = lineEls[i];
+      var productId = qs('.lnProduct', lineEl).value;
+      var qty = numFromInput_(qs('.lnQty', lineEl));
+      var price = numFromInput_(qs('.lnPrice', lineEl));
+      var payment = qs('.lnPayment', lineEl).value;
+      if (!productId || !(qty > 0) || !(price > 0) || !payment){
+        qs('#entryMsg',form).innerHTML='<div class="msg err">'+esc(t('err_lineIncomplete'))+'</div>';
+        return;
+      }
+      var subtotal = qty * price;
+      rows.push({
+        date: date, sourceType: sourceType, sourceId: sourceId, productId: productId,
+        qty: qty, unitPrice: price,
+        cashSales: payment==='cash' ? subtotal : 0,
+        posSales: payment==='pos' ? subtotal : 0,
+        deliveryFeeBankAmount: payment==='delivery' ? subtotal : 0,
+        cylindersOut: numFromInput_(qs('.lnCylOut', lineEl)),
+        cylindersIn: numFromInput_(qs('.lnCylIn', lineEl)),
+        note: note
+      });
+    }
+    api('importDailyEntries', { rows: rows }).then(function(res){
       if(!res.ok){ qs('#entryMsg',form).innerHTML='<div class="msg err">'+esc(errMsg_(res))+'</div>'; return; }
-      qs('#entryMsg',form).innerHTML='<div class="msg ok">'+esc(t('ok_saved'))+'</div>';
-      loadEntryList();
+      var failed = (res.results||[]).filter(function(r){ return !r.ok; });
+      qs('#entryMsg',form).innerHTML = failed.length
+        ? '<div class="msg err">'+esc(t('entry_importResult').replace('{created}',res.created).replace('{total}',res.total))+'</div>'
+        : '<div class="msg ok">'+esc(t('ok_saved'))+'</div>';
+      if (res.created > 0){ resetLines_(); loadEntryList(); }
     });
   });
 
