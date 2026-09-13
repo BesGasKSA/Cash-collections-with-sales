@@ -775,6 +775,15 @@ function actionSalesReport_(req, user) {
   if (req.sourceType) entries = entries.filter(function (e) { return e.sourceType === req.sourceType; });
   if (req.sourceId) entries = entries.filter(function (e) { return e.sourceId === req.sourceId; });
   if (req.productId) entries = entries.filter(function (e) { return e.productId === req.productId; });
+  if (req.enteredBy) entries = entries.filter(function (e) { return e.enteredBy === req.enteredBy; });
+  if (req.amountMin != null && req.amountMin !== '') {
+    var amtMin = Number(req.amountMin);
+    entries = entries.filter(function (e) { return (Number(e.cashSales || 0) + Number(e.posSales || 0)) >= amtMin; });
+  }
+  if (req.amountMax != null && req.amountMax !== '') {
+    var amtMax = Number(req.amountMax);
+    entries = entries.filter(function (e) { return (Number(e.cashSales || 0) + Number(e.posSales || 0)) <= amtMax; });
+  }
 
   var totals = computeNet_(entries);
   var outstanding = computeNet_(entries.filter(function (e) { return !e.consumedBy; }));
@@ -939,6 +948,61 @@ function actionDashboardComparison_(req, user) {
     current: rangeTotals_(currentStart, todayStr),
     previous: rangeTotals_(previousStart, previousEnd)
   };
+}
+
+// ---------- Held-cash-by-person trend ----------
+// A day-by-day reconstruction of who was holding confirmed-but-not-yet-
+// handed-on cash, for the last 14 days. Uses the exact same "held" rule as
+// actionDashboard_'s companyHeldByHolder snapshot (status === 'confirmed'
+// or resolved-as-confirm, and not yet consumedBy a further handoff) so the
+// trend's last day always matches that live snapshot — it just replays the
+// same rule at each day's end instead of only "now". No new sheet or
+// history table: everything needed (confirmedAt/resolvedAt, consumedBy,
+// and the createdAt of whatever consumed it) already lives on the handoff
+// rows themselves.
+function actionHeldCashTrend_(req, user) {
+  requireCompanyWide_(user);
+  var days = 14;
+  var handoffs = readSheet(SHEETS.HANDOFFS);
+
+  function isoDateOffset_(daysAgo) {
+    var d = new Date();
+    d.setDate(d.getDate() - daysAgo);
+    return d.toISOString().slice(0, 10);
+  }
+
+  var createdAtById = {};
+  handoffs.forEach(function (h) { createdAtById[h.id] = h.createdAt; });
+
+  var windows = handoffs.map(function (h) {
+    var heldFromAt = h.resolvedAt || h.confirmedAt;
+    if (!heldFromAt || !h.toUserId) return null;
+    var untilAt = h.consumedBy ? createdAtById[h.consumedBy] : null;
+    return {
+      holderId: h.toUserId,
+      amount: Number(h.amount || 0),
+      fromDay: String(heldFromAt).slice(0, 10),
+      untilDay: untilAt ? String(untilAt).slice(0, 10) : null
+    };
+  }).filter(function (w) { return w; });
+
+  var holderIds = {};
+  windows.forEach(function (w) { holderIds[w.holderId] = true; });
+
+  var dates = [];
+  for (var i = days - 1; i >= 0; i--) dates.push(isoDateOffset_(i));
+
+  var series = dates.map(function (dayStr) {
+    var byHolder = {};
+    windows.forEach(function (w) {
+      if (w.fromDay <= dayStr && (!w.untilDay || w.untilDay > dayStr)) {
+        byHolder[w.holderId] = (byHolder[w.holderId] || 0) + w.amount;
+      }
+    });
+    return { date: dayStr, byHolder: byHolder };
+  });
+
+  return { ok: true, dates: dates, holderIds: Object.keys(holderIds), series: series };
 }
 
 function actionListAudit_(req, user) {
