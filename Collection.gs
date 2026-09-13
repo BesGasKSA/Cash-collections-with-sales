@@ -13,6 +13,25 @@ function storeOfManager_(userId) {
   return null;
 }
 
+function storeOfLocation_(locationId) {
+  var rows = readSheet(SHEETS.STORES);
+  for (var i = 0; i < rows.length; i++) if (rows[i].locationId === locationId) return rows[i];
+  return null;
+}
+
+// location_to_cluster/cluster_to_collector handoffs carry clusterId
+// directly; a car_to_location handoff only carries locationId, so its
+// cluster (for escalation-recipient purposes) has to be resolved one hop
+// up through the location instead.
+function clusterIdForHandoff_(handoff) {
+  if (handoff.clusterId) return handoff.clusterId;
+  if (handoff.locationId) {
+    var loc = getById_(SHEETS.LOCATIONS, handoff.locationId);
+    if (loc) return loc.clusterId;
+  }
+  return null;
+}
+
 function clusterManagerOwnsCluster_(userId, clusterId) {
   var c = getById_(SHEETS.CLUSTERS, clusterId);
   return !!c && c.clusterManagerUserId === userId;
@@ -242,9 +261,64 @@ function sumBreakdowns_(breakdowns) {
 // ---------- Handoffs (the approval gate) ----------
 
 function actionCreateHandoff_(req, user) {
+  if (req.kind === 'car_to_location') return createCarHandoff_(req, user);
   if (req.kind === 'location_to_cluster') return createLocationHandoff_(req, user);
   if (req.kind === 'cluster_to_collector') return createClusterHandoff_(req, user);
   return { ok: false, error: 'invalid_kind' };
+}
+
+// The cycle the xlsx "Cycle" sheet actually describes starts one hop earlier
+// than location_to_cluster: a driver physically hands their car's cash to
+// the store manager first, and that handoff needs its own confirm/dispute
+// gate exactly like every other hop in the chain — before this, a car's
+// cash was just aggregated straight into the location's totals with no
+// receiving-party confirmation at all, which was the "missed cycle".
+// Only the cash itself moves here (cashSales) — the delivery fee was paid
+// to the bank directly, never physical cash, so it isn't something the
+// store manager can "receive"; its deduction (and the VAT clawback on it)
+// stays in the breakdown for transparency but is netted out later, at the
+// location_to_cluster step, exactly as the xlsx formula does.
+function createCarHandoff_(req, user) {
+  var car = getById_(SHEETS.CARS, req.carId);
+  if (!car) return { ok: false, error: 'not_found' };
+  if (user.role !== 'admin' && (user.role !== 'driver' || car.driverUserId !== user.id)) {
+    return { ok: false, error: 'forbidden' };
+  }
+
+  var location = getById_(SHEETS.LOCATIONS, car.locationId);
+  if (!location) return { ok: false, error: 'not_found' };
+  var store = storeOfLocation_(location.id);
+  if (!store || !store.storeManagerUserId) return { ok: false, error: 'no_store_manager' };
+  if (store.storeManagerUserId === user.id) return { ok: false, error: 'conflict_of_interest' };
+
+  var entries = readSheet(SHEETS.ENTRIES).filter(function (e) {
+    return e.sourceType === 'car' && e.sourceId === car.id && !e.consumedBy;
+  });
+  if (!entries.length) return { ok: false, error: 'no_entries' };
+  var totals = computeNet_(entries);
+  var cashAmount = entries.reduce(function (s, e) { return s + Number(e.cashSales || 0); }, 0);
+  if (cashAmount <= 0) return { ok: false, error: 'nothing_owed' };
+
+  var handoff = {
+    id: Utilities.getUuid(),
+    kind: 'car_to_location',
+    fromUserId: user.id,
+    toUserId: store.storeManagerUserId,
+    locationId: location.id,
+    carId: car.id,
+    amount: cashAmount,
+    breakdown: totals,
+    sourceEntryIds: entries.map(function (e) { return e.id; }),
+    sourceHandoffIds: [],
+    consumedBy: null,
+    status: 'pending',
+    createdAt: new Date().toISOString()
+  };
+  writeRow(SHEETS.HANDOFFS, handoff);
+  entries.forEach(function (e) { e.consumedBy = handoff.id; writeRow(SHEETS.ENTRIES, e); });
+  logAudit_('create_handoff_car', user.id, handoff.id);
+  notifyPending_(handoff);
+  return { ok: true, handoff: handoff };
 }
 
 function createLocationHandoff_(req, user) {
@@ -252,8 +326,8 @@ function createLocationHandoff_(req, user) {
   if (!location) return { ok: false, error: 'not_found' };
 
   if (user.role !== 'admin') {
-    var store = storeOfManager_(user.id);
-    if (user.role !== 'store_manager' || !store || store.locationId !== location.id) {
+    var storeCheck = storeOfManager_(user.id);
+    if (user.role !== 'store_manager' || !storeCheck || storeCheck.locationId !== location.id) {
       return { ok: false, error: 'forbidden' };
     }
   }
@@ -262,9 +336,25 @@ function createLocationHandoff_(req, user) {
   if (!cluster || !cluster.clusterManagerUserId) return { ok: false, error: 'no_cluster_manager' };
   if (cluster.clusterManagerUserId === user.id) return { ok: false, error: 'conflict_of_interest' };
 
-  var entries = unconsumedEntriesForLocation_(location.id);
-  if (!entries.length) return { ok: false, error: 'no_entries' };
-  var totals = computeNet_(entries);
+  // A car entry normally has to clear its own driver -> store-manager
+  // handoff first (createCarHandoff_ above) before it can be swept up into
+  // this batch — the one exception is a car entry the store manager
+  // entered themself (the "same person wears both hats" case the xlsx
+  // notes call out: a store manager who is also the store sales rep and
+  // just types the car's numbers in directly), which was never anyone
+  // else's cash to hand over in the first place.
+  var store = storeOfLocation_(location.id);
+  var allUnconsumed = unconsumedEntriesForLocation_(location.id);
+  var directEntries = allUnconsumed.filter(function (e) {
+    return e.sourceType !== 'car' || (store && e.enteredBy === store.storeManagerUserId);
+  });
+
+  var heldCarHandoffs = readSheet(SHEETS.HANDOFFS).filter(function (h) {
+    return h.kind === 'car_to_location' && h.locationId === location.id && h.status === 'confirmed' && !h.consumedBy;
+  });
+
+  if (!directEntries.length && !heldCarHandoffs.length) return { ok: false, error: 'no_entries' };
+  var totals = sumBreakdowns_([computeNet_(directEntries)].concat(heldCarHandoffs.map(function (h) { return h.breakdown; })));
   if (totals.netCashOwed <= 0) return { ok: false, error: 'nothing_owed' };
 
   var handoff = {
@@ -276,14 +366,15 @@ function createLocationHandoff_(req, user) {
     clusterId: cluster.id,
     amount: totals.netCashOwed,
     breakdown: totals,
-    sourceEntryIds: entries.map(function (e) { return e.id; }),
-    sourceHandoffIds: [],
+    sourceEntryIds: directEntries.map(function (e) { return e.id; }),
+    sourceHandoffIds: heldCarHandoffs.map(function (h) { return h.id; }),
     consumedBy: null,
     status: 'pending',
     createdAt: new Date().toISOString()
   };
   writeRow(SHEETS.HANDOFFS, handoff);
-  entries.forEach(function (e) { e.consumedBy = handoff.id; writeRow(SHEETS.ENTRIES, e); });
+  directEntries.forEach(function (e) { e.consumedBy = handoff.id; writeRow(SHEETS.ENTRIES, e); });
+  heldCarHandoffs.forEach(function (h) { h.consumedBy = handoff.id; writeRow(SHEETS.HANDOFFS, h); });
   logAudit_('create_handoff_location', user.id, handoff.id);
   notifyPending_(handoff);
   return { ok: true, handoff: handoff };
@@ -624,8 +715,9 @@ function escalateShortfall_(handoff) {
   var recipients = {};
   function add(u) { if (u && u.email) recipients[u.id] = u; }
 
-  if (handoff.clusterId) {
-    var cluster = getById_(SHEETS.CLUSTERS, handoff.clusterId);
+  var clusterId = clusterIdForHandoff_(handoff);
+  if (clusterId) {
+    var cluster = getById_(SHEETS.CLUSTERS, clusterId);
     if (cluster) {
       add(getById_(SHEETS.USERS, cluster.clusterManagerUserId));
       add(getById_(SHEETS.USERS, cluster.collectorUserId));
@@ -659,8 +751,9 @@ function escalateStaleHandoff_(handoff, hoursOld) {
   var recipients = {};
   function add(u) { if (u && u.email) recipients[u.id] = u; }
   add(getById_(SHEETS.USERS, handoff.toUserId));
-  if (handoff.clusterId) {
-    var cluster = getById_(SHEETS.CLUSTERS, handoff.clusterId);
+  var clusterId = clusterIdForHandoff_(handoff);
+  if (clusterId) {
+    var cluster = getById_(SHEETS.CLUSTERS, clusterId);
     if (cluster) {
       add(getById_(SHEETS.USERS, cluster.clusterManagerUserId));
       add(getById_(SHEETS.USERS, cluster.collectorUserId));
@@ -680,11 +773,75 @@ function escalateStaleHandoff_(handoff, hoursOld) {
   });
 }
 
+// A confirmed handoff that's still sitting un-consumed (nobody has batched
+// it into the next step up the chain yet) is cash physically held by one
+// person with no forward motion — the same real risk as a still-pending
+// handoff, just one stage later, and one the aging buckets on the dashboard
+// only show passively. Same escalate-once guard (heldEscalatedAt) as
+// staleEscalatedAt above, same recipient set, and a 'deposit' is excluded
+// since it's the end of the chain by definition, not cash "held" waiting to
+// move further.
+function escalateHeldTooLong_(handoff, hoursHeld) {
+  var recipients = {};
+  function add(u) { if (u && u.email) recipients[u.id] = u; }
+  add(getById_(SHEETS.USERS, handoff.toUserId));
+  var clusterId = clusterIdForHandoff_(handoff);
+  if (clusterId) {
+    var cluster = getById_(SHEETS.CLUSTERS, clusterId);
+    if (cluster) {
+      add(getById_(SHEETS.USERS, cluster.clusterManagerUserId));
+      add(getById_(SHEETS.USERS, cluster.collectorUserId));
+    }
+  }
+  readSheet(SHEETS.USERS)
+    .filter(function (u) { return (u.role === 'admin' || u.role === 'finance') && u.email; })
+    .forEach(add);
+
+  var holder = getById_(SHEETS.USERS, handoff.toUserId);
+  var subject = 'نقدية محتفظ بها لفترة طويلة / Cash held too long';
+  var body = 'المبلغ ' + Number(handoff.amount).toFixed(2) + ' ما زال محتفظاً به لدى ' + (holder ? holder.name : handoff.toUserId) +
+    ' منذ ' + Math.round(hoursHeld) + ' ساعة ولم يُسلَّم للمرحلة التالية بعد (التسليم رقم ' + handoff.id + ').\n\n' +
+    (holder ? holder.name : handoff.toUserId) + ' has been holding ' + Number(handoff.amount).toFixed(2) +
+    ' for ' + Math.round(hoursHeld) + ' hours without passing it on to the next stage (handoff ' + handoff.id + ').';
+
+  Object.keys(recipients).forEach(function (id) {
+    try { MailApp.sendEmail(recipients[id].email, subject, body); } catch (e) { /* best-effort */ }
+  });
+}
+
+// Confirmed-and-still-held handoffs (the same "held" definition used
+// everywhere else — status==='confirmed' && !consumedBy) aged past
+// heldThresholdHours_(), aged from the moment they were actually confirmed
+// (resolvedAt if this came through a dispute, confirmedAt otherwise — same
+// rule as actionHeldCashTrend_ in the reporting layer, so the trend chart
+// and this alert never disagree about when "holding" started).
+function checkHeldTooLong_() {
+  var thresholdMs = heldThresholdHours_() * 3600000;
+  var now = Date.now();
+  var escalated = 0;
+  readSheet(SHEETS.HANDOFFS)
+    .filter(function (h) { return h.status === 'confirmed' && !h.consumedBy && h.kind !== 'deposit' && !h.heldEscalatedAt; })
+    .forEach(function (h) {
+      var heldFromAt = h.resolvedAt || h.confirmedAt;
+      if (!heldFromAt) return;
+      var ageMs = now - new Date(heldFromAt).getTime();
+      if (ageMs < thresholdMs) return;
+      escalateHeldTooLong_(h, ageMs / 3600000);
+      h.heldEscalatedAt = new Date().toISOString();
+      writeRow(SHEETS.HANDOFFS, h);
+      escalated++;
+    });
+  return escalated;
+}
+
 // Meant to run on a daily time trigger (installed via
 // actionAdminInstallStaleTrigger_) — also callable on demand via
 // actionRunStaleCheck_ for a manual "check now" and for tests. Each stale
 // handoff is escalated once (staleEscalatedAt guards against emailing the
-// same person daily for the same still-pending handoff).
+// same person daily for the same still-pending handoff). Runs the
+// held-too-long check (checkHeldTooLong_) in the same pass, so the one
+// existing daily trigger covers both aging alerts — no separate trigger to
+// install.
 function checkStaleHandoffs_() {
   var thresholdMs = staleThresholdHours_() * 3600000;
   var now = Date.now();
@@ -699,14 +856,19 @@ function checkStaleHandoffs_() {
       writeRow(SHEETS.HANDOFFS, h);
       escalated++;
     });
+  escalated += checkHeldTooLong_();
   return escalated;
 }
 
 function actionRunStaleCheck_(req, user) {
   requireAdminOrFinance_(user);
+  var beforeHeld = readSheet(SHEETS.HANDOFFS).filter(function (h) { return h.heldEscalatedAt; }).length;
+  var beforeStale = readSheet(SHEETS.HANDOFFS).filter(function (h) { return h.staleEscalatedAt; }).length;
   var escalated = checkStaleHandoffs_();
+  var afterHeld = readSheet(SHEETS.HANDOFFS).filter(function (h) { return h.heldEscalatedAt; }).length;
+  var afterStale = readSheet(SHEETS.HANDOFFS).filter(function (h) { return h.staleEscalatedAt; }).length;
   logAudit_('run_stale_check', user.id, escalated + ' escalated');
-  return { ok: true, escalated: escalated };
+  return { ok: true, escalated: escalated, staleEscalated: afterStale - beforeStale, heldEscalated: afterHeld - beforeHeld };
 }
 
 function actionAdminInstallStaleTrigger_(req, user) {
@@ -879,15 +1041,21 @@ function actionSalesReport_(req, user) {
 // handoff). There is no way to know with certainty *whose* cash was
 // actually short, so this attributes each entry's share of the shortfall
 // proportionally to its share of the handoff's total declared cash —
-// an honest estimate, not a claim of proven fault. Deliberately scoped to
-// location_to_cluster handoffs only, since those are the ones directly
-// backed by sourceEntryIds/enteredBy; a shortfall discovered later, at the
-// cluster_to_collector step, is the area manager's own accountability
-// (cash they had already accepted), not something to pin back on a driver.
+// an honest estimate, not a claim of proven fault. Proportional attribution
+// is scoped to location_to_cluster handoffs only, since those are the ones
+// that can bundle several entrants' entries into one batch; a shortfall
+// discovered later, at the cluster_to_collector step, is the area manager's
+// own accountability (cash they had already accepted), not something to pin
+// back on a driver. A car_to_location handoff never needs the proportional
+// split at all — it only ever carries one driver's own entries, so its
+// shortfall is attributed to that driver directly (h.fromUserId).
 function actionShortfallByEntrant_(req, user) {
   requireCompanyWide_(user);
   var flagged = readSheet(SHEETS.HANDOFFS).filter(function (h) {
     return h.kind === 'location_to_cluster' && h.shortfall != null && Math.abs(Number(h.shortfall)) > 0.01;
+  });
+  var flaggedCar = readSheet(SHEETS.HANDOFFS).filter(function (h) {
+    return h.kind === 'car_to_location' && h.shortfall != null && Math.abs(Number(h.shortfall)) > 0.01;
   });
 
   var byEntrant = {}; // userId -> { userId, totalShortfall, handoffIds:{} }
@@ -906,7 +1074,17 @@ function actionShortfallByEntrant_(req, user) {
       handoffId: h.id, locationId: h.locationId, originalAmount: h.originalAmount,
       receivedAmount: h.amount, shortfall: h.shortfall, confirmedAt: h.confirmedAt, entrants: entrants
     };
-  });
+  }).concat(flaggedCar.map(function (h) {
+    var attributed = Math.round(Number(h.shortfall) * 100) / 100;
+    if (!byEntrant[h.fromUserId]) byEntrant[h.fromUserId] = { userId: h.fromUserId, totalShortfall: 0, handoffIds: {} };
+    byEntrant[h.fromUserId].totalShortfall += attributed;
+    byEntrant[h.fromUserId].handoffIds[h.id] = true;
+    return {
+      handoffId: h.id, locationId: h.locationId, originalAmount: h.originalAmount,
+      receivedAmount: h.amount, shortfall: h.shortfall, confirmedAt: h.confirmedAt,
+      entrants: [{ userId: h.fromUserId, sourceType: 'car', sourceId: h.carId, cashSales: Number(h.originalAmount || h.amount || 0), attributedShortfall: attributed }]
+    };
+  }));
 
   var byEntrantList = Object.keys(byEntrant).map(function (uid) {
     var b = byEntrant[uid];

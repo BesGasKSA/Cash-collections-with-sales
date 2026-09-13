@@ -217,6 +217,17 @@ function staleThresholdHours_() {
   return typeof c.staleThresholdHours === 'number' ? c.staleThresholdHours : 24;
 }
 
+// Hours a CONFIRMED handoff can sit held (not yet consumed by the next
+// step up the chain) before checkHeldTooLong_ escalates it — a separate,
+// later-stage risk from staleThresholdHours_ above, so it gets its own
+// configurable threshold. Default is longer than the pending threshold:
+// a still-unconfirmed handoff is more urgent than cash someone is
+// legitimately sitting on for a day while batching the next handoff.
+function heldThresholdHours_() {
+  var c = config_();
+  return typeof c.heldThresholdHours === 'number' ? c.heldThresholdHours : 48;
+}
+
 // SAR amount above which a confirmed handoff also needs a second
 // admin/finance sign-off (see actionConfirmHandoff_ / escalateLargeAmount_
 // in Collection.gs). 0 = disabled — a live system shouldn't suddenly start
