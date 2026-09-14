@@ -42,22 +42,44 @@
   .brand-logo{width:210px;max-width:60vw;display:block;}
   header{background:var(--green);color:#fff;padding:16px 22px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;box-shadow:var(--shadow-md);position:relative;z-index:2;}
   header .brand{font-weight:800;font-size:36px;display:flex;align-items:center;gap:14px;letter-spacing:-.02em;min-width:0;flex-shrink:1;line-height:1.15;}
-  header .brand img{height:112px;width:auto;object-fit:contain;flex-shrink:0;}
+  /* LOGO_B64 is one full lockup (circular emblem + "BEST GAS CARRIER CO."
+     wordmark + Arabic tagline stacked below it, 555x457) on a solid
+     background that happens to match the header exactly (both var(--green))
+     — so showing the whole image here at a small header height rendered the
+     circular mark itself at barely half that height, with the wordmark/
+     tagline beneath it too tiny to read and blending invisibly into the
+     same-color header: the "logo" effectively read as a small, soft blob.
+     .logo-mark crops to just the circular emblem (its bounding box in the
+     source image is x:[148,392] y:[43,287], a 244x244 square — measured by
+     sampling the PNG for non-background pixels) via a fixed-size round
+     window with the source image scaled/offset so that box exactly fills
+     it, then adds a ring + shadow for real contrast against the flat green
+     header, independent of the source art. --logo-size drives both the
+     window and the math together, so one number keeps them in sync. */
+  header .brand .logo-mark{--logo-size:108px;width:var(--logo-size);height:var(--logo-size);border-radius:50%;overflow:hidden;flex-shrink:0;position:relative;box-shadow:0 3px 10px rgba(0,0,0,.35),0 0 0 3px rgba(255,255,255,.55);}
+  header .brand .logo-mark img{position:absolute;max-width:none;width:calc(var(--logo-size) * 555 / 244);height:calc(var(--logo-size) * 457 / 244);left:calc(var(--logo-size) * -148 / 244);top:calc(var(--logo-size) * -43 / 244);}
   @media (max-width:700px){
     header .brand{font-size:20px;gap:9px;}
-    header .brand img{height:58px;}
+    header .brand .logo-mark{--logo-size:60px;}
   }
   header .who{font-size:13px;opacity:.85;font-weight:500;white-space:nowrap;padding-inline-end:12px;margin-inline-end:2px;border-inline-end:1px solid rgba(255,255,255,.22);}
   header .header-controls{display:flex;gap:8px;align-items:center;flex-wrap:nowrap;flex-shrink:0;}
-  header select, header button{background:rgba(255,255,255,.14);color:#fff;border:1px solid rgba(255,255,255,.22);border-radius:9px;padding:7px 12px;height:34px;font-size:13px;cursor:pointer;font-weight:600;transition:background .15s ease, transform .1s ease;font-family:inherit;box-sizing:border-box;}
-  /* The native <select> arrow always renders at the box's physical right edge
-     regardless of RTL direction/text-align, so with no reserved space on
-     that side the widest option ("العربية") was rendering partly underneath
-     it — clipped, not actually cut off in the DOM. Fixed width covers every
-     language label at this font-size; extra right padding clears the arrow;
-     text-align-last centers the label text itself (Chrome respects plain
-     text-align on a closed select, but Firefox needs text-align-last). */
-  header select{background:#fff;color:var(--green-dark);border-color:transparent;width:118px;padding-inline-end:22px;text-align:center;text-align-last:center;}
+  /* flex-shrink:0 on both: header-controls sits in the same flex row as the
+     (sometimes long, Arabic) brand title, and a plain flex child has no
+     guaranteed minimum size against its sibling — without this the browser
+     can compress the select/button narrower than their own label needs
+     before it ever wraps the row, silently clipping the text inside. */
+  header select, header button{background:rgba(255,255,255,.14);color:#fff;border:1px solid rgba(255,255,255,.22);border-radius:9px;padding:7px 12px;height:34px;font-size:13px;cursor:pointer;font-weight:600;transition:background .15s ease, transform .1s ease;font-family:inherit;box-sizing:border-box;flex-shrink:0;}
+  /* appearance:none replaces the browser's own dropdown arrow with a fixed
+     SVG chevron drawn in our own reserved padding. The native arrow's
+     reserved width is OS/font-dependent and not something author CSS can
+     measure — on some platforms it ate into the label text itself, most
+     visibly clipping "العربية"/"English". With appearance:none the box's
+     size is entirely ours: width:auto plus a safe min-width means it can
+     only ever grow to fit a label, never shrink below a size that was
+     already tested against every language, in every browser. */
+  header select{-webkit-appearance:none;-moz-appearance:none;appearance:none;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23244027' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") no-repeat right 10px center;background-size:13px;color:var(--green-dark);border-color:transparent;width:auto;min-width:104px;padding-inline-start:14px;padding-inline-end:30px;text-align:center;text-align-last:center;}
+  html[dir="rtl"] header select{background-position:left 10px center;}
   header button:hover{background:rgba(255,255,255,.24);}
   header button:active{transform:scale(.97);}
   .notif-bell{position:relative;padding:8px !important;display:flex;align-items:center;justify-content:center;line-height:1;}
@@ -1143,7 +1165,7 @@ function renderShell(){
   if (state.user.role==='admin') navItems.push(['admin','nav_admin']);
 
   var header = el('<header>' +
-    '<div class="brand"><img src="'+ICON_SRC+'" alt=""> '+esc(t('appName'))+'</div>' +
+    '<div class="brand"><span class="logo-mark"><img src="'+ICON_SRC+'" alt=""></span> '+esc(t('appName'))+'</div>' +
     '<div class="header-controls">' +
       '<span class="who">'+esc(state.user.name)+' · '+esc(roleLabel(state.user.role))+'</span>' +
       '<button class="notif-bell" id="notifBell" title="'+esc(t('nav_notifications'))+'">' +
