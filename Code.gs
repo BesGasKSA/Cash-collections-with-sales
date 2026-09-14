@@ -479,9 +479,15 @@ function actionLogin_(req) {
     return { ok: false, error: 'invalid_credentials' };
   }
   clearFail_(login.toLowerCase());
+  // The value on file is *before* this login overwrites it, i.e. the
+  // previous session's login time — that's the one worth showing back to
+  // the user ("last login: ..."), not the one that's happening right now.
+  var previousLoginAt = user.lastLoginAt || null;
+  user.lastLoginAt = new Date().toISOString();
+  writeRow(SHEETS.USERS, user);
   var token = issueToken_(user.id);
   logAudit_('login', user.id, null);
-  return { ok: true, token: token, user: publicUser_(user) };
+  return { ok: true, token: token, user: publicUser_(user), previousLoginAt: previousLoginAt };
 }
 
 // Self-service password reset — no session required, since a locked-out user

@@ -4,10 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Best Gas — Cash Collection</title>
-<!-- Favicon, apple-touch-icon, and the Android manifest are all built at
-     runtime from LOGO_SRC (see attachIcons() near the bottom of the script)
-     instead of duplicated here — this single-file app has exactly one
-     confirmed-good logo asset and every icon surface reuses it. -->
+<!-- Favicon is static (not JS-injected) so the browser tab/address-bar
+     icon shows immediately on first paint, before any script runs -- same
+     pattern as the rental app (Downloads/7777). apple-touch-icon and the
+     Android manifest are still attached at runtime from LOGO_SRC
+     (attachIcons() near the bottom of the script) since those only matter
+     once, at "Add to Home Screen" time, not on every normal page load. -->
+<link rel="icon" type="image/png" href="data:image/png;base64,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">
 <meta name="theme-color" content="#4D6D51">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -62,6 +65,14 @@
   .home-action.has-action{cursor:pointer;}
   .home-action.has-action:hover{opacity:1;}
   .home-action-cta{font-size:12px;font-weight:800;white-space:nowrap;text-decoration:underline;text-underline-offset:2px;}
+  .card.welcome-card{position:relative;overflow:hidden;background:linear-gradient(135deg,var(--green) 0%,var(--green-dark) 55%,#2f4a33 100%);transition:box-shadow .6s ease;}
+  .card.welcome-card.splash{background-size:220% 220%;animation:bgcWelcomeGradient 4s ease infinite, bgcWelcomeIn .7s cubic-bezier(.2,.8,.2,1);box-shadow:0 10px 34px rgba(77,109,81,.35),0 2px 8px rgba(32,36,31,.15);}
+  .card.welcome-card.splash::after{content:'';position:absolute;inset:0;background:linear-gradient(115deg,transparent 30%,rgba(255,255,255,.18) 45%,transparent 60%);background-size:200% 100%;animation:bgcWelcomeShine 2.2s ease-in-out infinite;pointer-events:none;}
+  @keyframes bgcWelcomeGradient{0%{background-position:0% 50%;}50%{background-position:100% 50%;}100%{background-position:0% 50%;}}
+  @keyframes bgcWelcomeShine{0%{background-position:200% 0;}100%{background-position:-200% 0;}}
+  @keyframes bgcWelcomeIn{0%{opacity:0;transform:translateY(-6px) scale(.98);}100%{opacity:1;transform:translateY(0) scale(1);}}
+  @media (prefers-reduced-motion: reduce){ .card.welcome-card.splash, .card.welcome-card.splash::after{animation:none;} }
+  .welcome-meta{margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.22);font-size:12px;opacity:.92;display:flex;flex-direction:column;gap:3px;}
   nav{display:flex;gap:6px;flex-wrap:wrap;background:var(--green-dark);padding:10px 18px;position:relative;z-index:1;}
   nav button{background:transparent;border:1px solid rgba(255,255,255,.28);color:rgba(255,255,255,.92);padding:7px 15px 7px 12px;border-radius:999px;font-size:13px;cursor:pointer;font-weight:600;transition:background .15s ease, border-color .15s ease, transform .1s ease;font-family:inherit;display:inline-flex;align-items:center;gap:6px;}
   html[dir="rtl"] nav button{padding:7px 12px 7px 15px;}
@@ -129,6 +140,7 @@
   .barlist .track{height:10px;border-radius:6px;background:var(--bg-2,#eee9dd);overflow:hidden;}
   .barlist .fill{height:100%;border-radius:6px;background:var(--green);}
   .barlist .fill.pos{background:#8fae7a;}
+  .barlist .fill.credit{background:#c9a227;}
   .dash-section-title{font-size:14px;font-weight:800;color:var(--green-dark);text-transform:uppercase;letter-spacing:.04em;margin:22px 0 10px;display:flex;align-items:center;gap:8px;}
   .dash-section-title:first-child{margin-top:0;}
   .dash-section-title::before{content:'';width:4px;height:15px;border-radius:3px;background:var(--green);display:inline-block;}
@@ -219,17 +231,14 @@ var LOGO_B64 = 'iVBORw0KGgoAAAANSUhEUgAAAisAAAHJCAYAAABEynk8AAAAAXNSR0IArs4c6QAA
 var LOGO_SRC = 'data:image/png;base64,' + LOGO_B64;
 var ICON_SRC = LOGO_SRC; // same asset — see the comment above LOGO_B64
 
-// Favicon, apple-touch-icon, and the Android manifest (for its own home-
-// screen icon + standalone launch) are all attached here at runtime, all
-// from LOGO_SRC, instead of duplicating a large base64 string three times
-// in a single-file app. iOS reads apple-touch-icon directly; Android reads
+// apple-touch-icon and the Android manifest (for its own home-screen icon +
+// standalone launch) are attached here at runtime from LOGO_SRC — the
+// favicon itself is a static <link> in <head> instead (see the comment
+// there) so the browser tab/address-bar icon is available before this
+// script even runs. iOS reads apple-touch-icon directly; Android reads
 // the manifest.
 (function attachIcons(){
   try {
-    var favicon = document.createElement('link');
-    favicon.rel = 'icon'; favicon.type = 'image/png'; favicon.href = LOGO_SRC;
-    document.head.appendChild(favicon);
-
     var appleTouch = document.createElement('link');
     appleTouch.rel = 'apple-touch-icon'; appleTouch.href = LOGO_SRC;
     document.head.appendChild(appleTouch);
@@ -273,11 +282,14 @@ var L = {
     home_companyOutstanding:'إجمالي النقدية غير المودعة', home_openDisputes:'اعتراضات مفتوحة (الإدارة)',
     home_actionPending:'{n} تسليم بانتظار تأكيدك', home_actionDisputes:'{n} اعتراض يحتاج إلى حل',
     home_actionNone:'لا يوجد إجراء مطلوب الآن — كل شيء محدّث', home_actionCta:'عرض التسليمات ←',
+    home_lastLogin:'آخر تسجيل دخول ناجح', home_firstLogin:'هذا أول تسجيل دخول لك', home_city:'الموقع',
+    home_hijriSuffix:'هـ',
     entry_new:'إدخال يومي جديد', entry_date:'التاريخ', entry_sourceType:'المصدر', entry_source_store:'الفرع',
     entry_source_car:'سيارة', entry_source_pos:'جهاز نقاط بيع', entry_cash:'المبيعات النقدية', entry_delivery:'رسوم التوصيل (بنك)',
     entry_pos:'مبيعات نقاط البيع', entry_note:'ملاحظة', entry_submit:'حفظ الإدخال', entry_list:'الإدخالات الأخيرة',
+    entry_credit:'المبيعات الآجلة (كريدت)', entry_creditHint:'مبيعات آجلة — تُضاف إلى إجمالي المبيعات لكن بلا أي أثر نقدي (لا تدخل في صافي المستحق تسليمه)',
     entry_location:'الموقع',
-    entry_importTitle:'استيراد من CSV / إكسل', entry_importHint:'حمّل قالب CSV واملأه، ثم ارفعه هنا. الأعمدة: date, sourceType, sourceName, product, cashSales, deliveryFee, posSales, cylindersOut, cylindersIn, note',
+    entry_importTitle:'استيراد من CSV / إكسل', entry_importHint:'حمّل قالب CSV واملأه، ثم ارفعه هنا. الأعمدة: date, sourceType, sourceName, product, cashSales, deliveryFee, posSales, creditSales, cylindersOut, cylindersIn, note',
     entry_importTemplate:'تحميل القالب', entry_importChoose:'اختر ملف CSV', entry_importPreview:'معاينة قبل الاستيراد',
     entry_importCol_row:'#', entry_importCol_date:'التاريخ', entry_importCol_type:'النوع', entry_importCol_source:'المصدر',
     entry_importCol_status:'الحالة', entry_importValid:'جاهز', entry_importSubmit:'استيراد الصفوف الصحيحة',
@@ -289,9 +301,10 @@ var L = {
     entry_computedHint:'يتم احتساب هذه الحقول تلقائياً من بنود المنتجات أدناه — غير قابلة للتعديل هنا.',
     entry_qty:'الكمية', entry_unitPrice:'سعر الوحدة', entry_paymentMethod:'طريقة الدفع', entry_lineSubtotal:'الإجمالي الفرعي',
     entry_payment_cash:'نقدي', entry_payment_pos:'نقاط بيع (بطاقة/بنك)', entry_payment_delivery:'رسوم توصيل (خدمة - بنك)',
+    entry_payment_credit:'آجل (كريدت)',
     entry_addLine:'إضافة منتج', entry_removeLine:'حذف البند', entry_productLines:'بنود المنتجات',
     entry_lineProduct:'المنتج', err_noProductLines:'الرجاء إضافة بند منتج واحد على الأقل', err_lineIncomplete:'أكمل بيانات كل بند (المنتج، الكمية، السعر، طريقة الدفع)',
-    err_deliveryWithoutSale:'رسوم التوصيل لا يمكن أن تكون بدون مبيعات نقدية أو نقاط بيع مرتبطة بها (لنفس المصدر والتاريخ)',
+    err_deliveryWithoutSale:'رسوم التوصيل لا يمكن أن تكون بدون مبيعات نقدية أو نقاط بيع أو آجلة مرتبطة بها (لنفس المصدر والتاريخ)',
     dash_cylinderTitle:'رصيد الأسطوانات (تبادل الفارغ بالممتلئ)', dash_cylinderHint:'الفرق بين الأسطوانات الممتلئة المُسلَّمة والفارغة المُستلَمة — رصيد موجب يعني أسطوانات لا تزال في الميدان.',
     dash_cylinderLocation:'الموقع', dash_cylinderProduct:'المنتج', dash_cylinderOut:'ممتلئة', dash_cylinderIn:'فارغة', dash_cylinderBalance:'الرصيد المتبقي',
     handoff_createLocation:'تسليم نقدية الفرع للمشرف', handoff_createCluster:'تسليم القطاع للمُحصّل',
@@ -306,14 +319,15 @@ var L = {
     audit_confirmed:'تم التأكيد', audit_disputed:'تم الاعتراض', audit_resolved:'تم حل الاعتراض',
     audit_staleEscalated:'تم التصعيد (تأخر طويل)', audit_secondApproved:'تم إقرار الموافقة الثانية',
     handoff_perLocation:'حسب الموقع', handoff_perCluster:'حسب القطاع', handoff_posNote:'مبيعات نقاط البيع للعلم فقط — لا تدخل ضمن النقدية المطلوبة',
+    handoff_creditNote:'مبيعات آجلة (كريدت) للعلم فقط — لا تدخل ضمن النقدية المطلوبة',
     handoff_receivedAmount:'المبلغ المستلم فعلياً', handoff_shortfall:'الفرق (عجز)',
     handoff_originalAmount:'المبلغ المُعلن أصلاً', handoff_shortfallAccepted:'تم تأكيد الاستلام مع وجود فرق — تم إبلاغ جميع المستويات الأعلى (المدير، المُحصّل، الإدارة) فوراً بالبريد الإلكتروني',
     report_title:'تقرير المبيعات', report_from:'من تاريخ', report_to:'إلى تاريخ', report_city:'المدينة', report_run:'عرض التقرير',
     report_location:'الموقع', report_allLocations:'كل المواقع', report_allTypes:'كل الأنواع', report_allSources:'الكل',
     report_zone:'المنطقة', report_allZones:'كل المناطق',
     report_storeCash:'نقدية الفرع', report_carCash:'نقدية السيارات', report_posCash:'نقدية أجهزة نقاط البيع', report_delivery:'رسوم التوصيل', report_vat:'ضريبة القيمة المضافة',
-    report_net:'صافي المستحق', report_outstanding:'غير محصّل بعد', report_pos:'مبيعات نقاط البيع', report_byLocation:'حسب الموقع',
-    report_byProduct:'حسب المنتج', report_product:'المنتج', report_cashChannel:'نقدي', report_posChannel:'نقاط بيع',
+    report_net:'صافي المستحق', report_outstanding:'غير محصّل بعد', report_pos:'مبيعات نقاط البيع', report_credit:'المبيعات الآجلة (كريدت)', report_byLocation:'حسب الموقع',
+    report_byProduct:'حسب المنتج', report_product:'المنتج', report_cashChannel:'نقدي', report_posChannel:'نقاط بيع', report_creditChannel:'آجل',
     report_total:'الإجمالي', report_trend:'اتجاه المبيعات اليومي', report_unspecified:'غير محدد', report_sortHint:'اضغط على العنوان للترتيب',
     report_shortfallTitle:'العجز حسب مُدخِل البيانات', report_shortfallHint:'عند وجود فرق بين المبلغ المُعلن والمُستلم فعلياً، يُنسب هنا بشكل تقديري (متناسب مع حصة كل إدخال) إلى من أدخل البيانات أصلاً — سائق أو مشرف فرع — لتتبّع الأنماط المتكررة. هذا تقدير وليس إثبات مسؤولية قاطع.',
     report_shortfallPerson:'الشخص', report_shortfallAmount:'إجمالي العجز المنسوب', report_shortfallCount:'عدد التسليمات',
@@ -405,11 +419,14 @@ var L = {
     home_companyOutstanding:'Total cash not yet deposited', home_openDisputes:'Open disputes (company-wide)',
     home_actionPending:'{n} handoff(s) awaiting your confirmation', home_actionDisputes:'{n} dispute(s) need resolving',
     home_actionNone:'Nothing needs your attention right now — you\'re all caught up', home_actionCta:'View handoffs →',
+    home_lastLogin:'Last successful login', home_firstLogin:'This is your first login', home_city:'Location',
+    home_hijriSuffix:'AH',
     entry_new:'New daily entry', entry_date:'Date', entry_sourceType:'Source', entry_source_store:'Store branch',
     entry_source_car:'Car', entry_source_pos:'POS machine', entry_cash:'Cash sales', entry_delivery:'Delivery fee (bank)',
     entry_pos:'POS sales', entry_note:'Note', entry_submit:'Save entry', entry_list:'Recent entries',
+    entry_credit:'Credit sales', entry_creditHint:'Sold on credit — counts toward total sales but has no cash impact (excluded from the net amount owed)',
     entry_location:'Location',
-    entry_importTitle:'Import from CSV / Excel', entry_importHint:'Download the CSV template, fill it in, then upload it here. Columns: date, sourceType, sourceName, product, cashSales, deliveryFee, posSales, cylindersOut, cylindersIn, note',
+    entry_importTitle:'Import from CSV / Excel', entry_importHint:'Download the CSV template, fill it in, then upload it here. Columns: date, sourceType, sourceName, product, cashSales, deliveryFee, posSales, creditSales, cylindersOut, cylindersIn, note',
     entry_importTemplate:'Download template', entry_importChoose:'Choose CSV file', entry_importPreview:'Preview before import',
     entry_importCol_row:'#', entry_importCol_date:'Date', entry_importCol_type:'Type', entry_importCol_source:'Source',
     entry_importCol_status:'Status', entry_importValid:'Ready', entry_importSubmit:'Import valid rows',
@@ -421,9 +438,10 @@ var L = {
     entry_computedHint:'These fields are computed automatically from the product lines below — not editable here.',
     entry_qty:'Qty', entry_unitPrice:'Unit price', entry_paymentMethod:'Payment method', entry_lineSubtotal:'Subtotal',
     entry_payment_cash:'Cash', entry_payment_pos:'POS (card/bank)', entry_payment_delivery:'Delivery fee (service — bank)',
+    entry_payment_credit:'Credit',
     entry_addLine:'Add product', entry_removeLine:'Remove line', entry_productLines:'Product lines',
     entry_lineProduct:'Product', err_noProductLines:'Please add at least one product line', err_lineIncomplete:'Complete every line (product, quantity, price, payment method)',
-    err_deliveryWithoutSale:'A delivery fee cannot exist without an accompanying cash or POS sale (same source and date)',
+    err_deliveryWithoutSale:'A delivery fee cannot exist without an accompanying cash, POS, or credit sale (same source and date)',
     dash_cylinderTitle:'Cylinder balance (empty-for-full exchange)', dash_cylinderHint:'The gap between full cylinders delivered and empty ones returned — a positive balance means cylinders are still out in the field.',
     dash_cylinderLocation:'Location', dash_cylinderProduct:'Product', dash_cylinderOut:'Full', dash_cylinderIn:'Empty', dash_cylinderBalance:'Balance owed back',
     handoff_createLocation:'Hand off branch cash to Area Manager', handoff_createCluster:'Hand off to Collector',
@@ -438,14 +456,15 @@ var L = {
     audit_confirmed:'Confirmed', audit_disputed:'Disputed', audit_resolved:'Dispute resolved',
     audit_staleEscalated:'Escalated (pending too long)', audit_secondApproved:'Second approval acknowledged',
     handoff_perLocation:'By location', handoff_perCluster:'By area', handoff_posNote:'POS sales — informational only, not part of the cash owed',
+    handoff_creditNote:'Credit sales — informational only, not part of the cash owed',
     handoff_receivedAmount:'Amount actually received', handoff_shortfall:'Shortfall',
     handoff_originalAmount:'Originally declared amount', handoff_shortfallAccepted:'Receipt confirmed with a shortfall — every level above (manager, collector, admin/finance) was just emailed',
     report_title:'Sales Report', report_from:'From date', report_to:'To date', report_city:'City', report_run:'Run report',
     report_location:'Location', report_allLocations:'All locations', report_allTypes:'All types', report_allSources:'All',
     report_zone:'Zone', report_allZones:'All zones',
     report_storeCash:'Branch cash', report_carCash:'Car cash', report_posCash:'POS machine cash', report_delivery:'Delivery fees', report_vat:'VAT',
-    report_net:'Net owed', report_outstanding:'Still outstanding', report_pos:'POS sales', report_byLocation:'By location',
-    report_byProduct:'By product', report_product:'Product', report_cashChannel:'Cash', report_posChannel:'POS',
+    report_net:'Net owed', report_outstanding:'Still outstanding', report_pos:'POS sales', report_credit:'Credit sales', report_byLocation:'By location',
+    report_byProduct:'By product', report_product:'Product', report_cashChannel:'Cash', report_posChannel:'POS', report_creditChannel:'Credit',
     report_total:'Total', report_trend:'Daily sales trend', report_unspecified:'Unspecified', report_sortHint:'Click a header to sort',
     report_shortfallTitle:'Shortfall by data entrant', report_shortfallHint:'When a declared amount and what was actually received differ, it is attributed here as an estimate (proportional to each entry\'s share) back to whoever originally entered the data — a driver or store manager — to help spot repeated patterns. This is an estimate, not proof of fault.',
     report_shortfallPerson:'Person', report_shortfallAmount:'Total attributed shortfall', report_shortfallCount:'Handoffs involved',
@@ -537,11 +556,14 @@ var L = {
     home_companyOutstanding:'کل غیر جمع شدہ نقدی', home_openDisputes:'کھلے اعتراضات (پوری کمپنی)',
     home_actionPending:'{n} ترسیل آپ کی تصدیق کے منتظر ہیں', home_actionDisputes:'{n} اعتراضات کو حل کرنے کی ضرورت ہے',
     home_actionNone:'ابھی کوئی کارروائی درکار نہیں — سب کچھ مکمل ہے', home_actionCta:'ترسیل دیکھیں ←',
+    home_lastLogin:'آخری کامیاب لاگ اِن', home_firstLogin:'یہ آپ کا پہلا لاگ اِن ہے', home_city:'مقام',
+    home_hijriSuffix:'ھ',
     entry_new:'نیا روزانہ اندراج', entry_date:'تاریخ', entry_sourceType:'ذریعہ', entry_source_store:'برانچ',
     entry_source_car:'گاڑی', entry_source_pos:'POS مشین', entry_cash:'نقد فروخت', entry_delivery:'ڈلیوری فیس (بینک)',
     entry_pos:'POS فروخت', entry_note:'نوٹ', entry_submit:'اندراج محفوظ کریں', entry_list:'حالیہ اندراجات',
+    entry_credit:'اُدھار فروخت (کریڈٹ)', entry_creditHint:'اُدھار فروخت — کل فروخت میں شامل ہوتی ہے لیکن اس کا نقدی پر کوئی اثر نہیں (واجب الادا خالص رقم میں شامل نہیں)',
     entry_location:'مقام',
-    entry_importTitle:'CSV / ایکسل سے درآمد کریں', entry_importHint:'CSV ٹیمپلیٹ ڈاؤن لوڈ کریں، اسے پُر کریں، پھر یہاں اپ لوڈ کریں۔ کالمز: date, sourceType, sourceName, product, cashSales, deliveryFee, posSales, cylindersOut, cylindersIn, note',
+    entry_importTitle:'CSV / ایکسل سے درآمد کریں', entry_importHint:'CSV ٹیمپلیٹ ڈاؤن لوڈ کریں، اسے پُر کریں، پھر یہاں اپ لوڈ کریں۔ کالمز: date, sourceType, sourceName, product, cashSales, deliveryFee, posSales, creditSales, cylindersOut, cylindersIn, note',
     entry_importTemplate:'ٹیمپلیٹ ڈاؤن لوڈ کریں', entry_importChoose:'CSV فائل منتخب کریں', entry_importPreview:'درآمد سے پہلے معائنہ',
     entry_importCol_row:'#', entry_importCol_date:'تاریخ', entry_importCol_type:'قسم', entry_importCol_source:'ذریعہ',
     entry_importCol_status:'حالت', entry_importValid:'تیار', entry_importSubmit:'درست قطاریں درآمد کریں',
@@ -553,9 +575,10 @@ var L = {
     entry_computedHint:'یہ خانے نیچے دیے گئے پروڈکٹ بندوں سے خودکار طور پر شمار ہوتے ہیں — یہاں قابلِ ترمیم نہیں۔',
     entry_qty:'مقدار', entry_unitPrice:'یونٹ قیمت', entry_paymentMethod:'ادائیگی کا طریقہ', entry_lineSubtotal:'ذیلی مجموعہ',
     entry_payment_cash:'نقد', entry_payment_pos:'POS (کارڈ/بینک)', entry_payment_delivery:'ڈلیوری فیس (سروس — بینک)',
+    entry_payment_credit:'اُدھار (کریڈٹ)',
     entry_addLine:'پروڈکٹ شامل کریں', entry_removeLine:'بند حذف کریں', entry_productLines:'پروڈکٹ بند',
     entry_lineProduct:'پروڈکٹ', err_noProductLines:'براہ کرم کم از کم ایک پروڈکٹ بند شامل کریں', err_lineIncomplete:'ہر بند مکمل کریں (پروڈکٹ، مقدار، قیمت، ادائیگی کا طریقہ)',
-    err_deliveryWithoutSale:'ڈلیوری فیس بغیر کسی نقد یا POS فروخت کے موجود نہیں ہو سکتی (اسی ذریعہ اور تاریخ کے لیے)',
+    err_deliveryWithoutSale:'ڈلیوری فیس بغیر کسی نقد، POS یا اُدھار فروخت کے موجود نہیں ہو سکتی (اسی ذریعہ اور تاریخ کے لیے)',
     dash_cylinderTitle:'سلنڈر بیلنس (خالی کے بدلے بھرا تبادلہ)', dash_cylinderHint:'ترسیل شدہ بھرے سلنڈروں اور واپس آئے خالی سلنڈروں کا فرق — مثبت بیلنس کا مطلب سلنڈر ابھی میدان میں موجود ہیں۔',
     dash_cylinderLocation:'مقام', dash_cylinderProduct:'پروڈکٹ', dash_cylinderOut:'بھرے', dash_cylinderIn:'خالی', dash_cylinderBalance:'باقی بیلنس',
     handoff_createLocation:'برانچ نقدی علاقہ منیجر کو دیں', handoff_createCluster:'کلکٹر کو ترسیل کریں',
@@ -570,14 +593,15 @@ var L = {
     audit_confirmed:'تصدیق ہوئی', audit_disputed:'اعتراض کیا گیا', audit_resolved:'اعتراض حل ہوا',
     audit_staleEscalated:'تصعید ہوئی (زیادہ تاخیر)', audit_secondApproved:'دوسری منظوری کی تصدیق ہوئی',
     handoff_perLocation:'مقام کے مطابق', handoff_perCluster:'علاقے کے مطابق', handoff_posNote:'POS فروخت صرف معلومات کے لیے ہے — واجب الادا نقدی میں شامل نہیں',
+    handoff_creditNote:'اُدھار فروخت (کریڈٹ) صرف معلومات کے لیے ہے — واجب الادا نقدی میں شامل نہیں',
     handoff_receivedAmount:'موصولہ اصل رقم', handoff_shortfall:'کمی',
     handoff_originalAmount:'اصل اعلان کردہ رقم', handoff_shortfallAccepted:'کمی کے ساتھ وصولی کی تصدیق ہو گئی — تمام اعلیٰ سطحوں (منیجر، کلکٹر، ایڈمن) کو فوری ای میل کر دی گئی ہے',
     report_title:'سیلز رپورٹ', report_from:'تاریخ سے', report_to:'تاریخ تک', report_city:'شہر', report_run:'رپورٹ دیکھیں',
     report_location:'مقام', report_allLocations:'تمام مقامات', report_allTypes:'تمام اقسام', report_allSources:'تمام',
     report_zone:'زون', report_allZones:'تمام زونز',
     report_storeCash:'برانچ نقدی', report_carCash:'گاڑی نقدی', report_posCash:'POS مشین نقدی', report_delivery:'ڈلیوری فیس', report_vat:'ویٹ',
-    report_net:'خالص واجب الادا', report_outstanding:'ابھی تک وصول نہیں ہوا', report_pos:'POS فروخت', report_byLocation:'مقام کے مطابق',
-    report_byProduct:'پروڈکٹ کے مطابق', report_product:'پروڈکٹ', report_cashChannel:'نقد', report_posChannel:'POS',
+    report_net:'خالص واجب الادا', report_outstanding:'ابھی تک وصول نہیں ہوا', report_pos:'POS فروخت', report_credit:'اُدھار فروخت (کریڈٹ)', report_byLocation:'مقام کے مطابق',
+    report_byProduct:'پروڈکٹ کے مطابق', report_product:'پروڈکٹ', report_cashChannel:'نقد', report_posChannel:'POS', report_creditChannel:'اُدھار',
     report_total:'کل', report_trend:'روزانہ سیلز رجحان', report_unspecified:'غیر متعین', report_sortHint:'ترتیب کے لیے ہیڈر دبائیں',
     report_shortfallTitle:'اندراج کرنے والے کے مطابق کمی', report_shortfallHint:'جب اعلان کردہ رقم اور اصل موصولہ رقم میں فرق ہو، تو یہاں یہ تخمیناً (ہر اندراج کے حصے کے تناسب سے) اس شخص سے منسوب کی جاتی ہے جس نے ڈیٹا اصل میں درج کیا — ڈرائیور یا اسٹور منیجر — تاکہ بار بار ہونے والے پیٹرن کا پتہ چل سکے۔ یہ ایک تخمینہ ہے، قصور کا حتمی ثبوت نہیں۔',
     report_shortfallPerson:'شخص', report_shortfallAmount:'کل منسوب کمی', report_shortfallCount:'شامل ترسیلیں',
@@ -886,6 +910,9 @@ function doLogin(){
       return;
     }
     state.user = res.user;
+    if (res.previousLoginAt) localStorage.setItem('bgc_lastLogin', res.previousLoginAt);
+    else localStorage.removeItem('bgc_lastLogin');
+    state.justLoggedIn = true;
     setLang(res.user.language || state.lang);
     loadMetaAndRender();
   });
@@ -931,6 +958,7 @@ function doForgotPassword(){
 function logout(){
   state.token=''; state.user=null; state.meta=null;
   localStorage.removeItem('bgc_token');
+  localStorage.removeItem('bgc_lastLogin');
   render();
 }
 
@@ -962,6 +990,46 @@ function timeGreeting(){
   var h = new Date().getHours();
   var key = h < 5 ? 'greeting_night' : h < 12 ? 'greeting_morning' : h < 18 ? 'greeting_afternoon' : 'greeting_evening';
   return t(key);
+}
+function langLocale_(){ return state.lang==='ar' ? 'ar-SA' : state.lang==='ur' ? 'ur-PK' : 'en-US'; }
+// Raw-timestamp convention (slice+replace 'T') matches every other
+// timestamp display in this app (handoff_created, audit log, risk items) —
+// unambiguous and locale-independent, unlike a "today's date" banner line
+// which is meant to read naturally, so that one goes through Intl instead.
+function lastLoginLabel_(){
+  var v = localStorage.getItem('bgc_lastLogin');
+  return v ? String(v).slice(0,16).replace('T',' ') : null;
+}
+function todayDatesLine_(){
+  var now = new Date();
+  var loc = langLocale_();
+  var greg;
+  try { greg = new Intl.DateTimeFormat(loc, { weekday:'long', day:'numeric', month:'long', year:'numeric' }).format(now); }
+  catch(e) { greg = now.toDateString(); }
+  var hijri = '';
+  try {
+    var parts = new Intl.DateTimeFormat(loc + '-u-ca-islamic-umalqura', { day:'numeric', month:'long', year:'numeric' }).formatToParts(now);
+    var d = {}; parts.forEach(function(p){ d[p.type] = p.value; });
+    if (d.day && d.month && d.year) hijri = d.day + ' ' + d.month + ' ' + d.year + ' ' + t('home_hijriSuffix');
+  } catch(e) { /* Hijri calendar not supported in this environment — Gregorian alone is still useful */ }
+  return hijri ? (greg + '  ·  ' + hijri) : greg;
+}
+// A driver has no locationId of their own — it only lives on the car they
+// drive — so this resolves both shapes rather than assuming state.user
+// always carries it directly.
+function myLocationId_(){
+  if (state.user.locationId) return state.user.locationId;
+  if (state.user.role === 'driver' && state.meta && state.meta.cars) {
+    var mine = state.meta.cars.filter(function(c){ return c.driverUserId === state.user.id; });
+    if (mine.length) return mine[0].locationId;
+  }
+  return null;
+}
+function myCityLabel_(){
+  var locId = myLocationId_();
+  if (!locId) return null;
+  var loc = byId(state.meta && state.meta.locations, locId);
+  return loc ? loc.city : null;
 }
 
 function renderShell(){
@@ -1122,10 +1190,20 @@ function renderHome(body){
     if (res.openDisputes && res.openDisputes.length) actionParts.push(t('home_actionDisputes').replace('{n}', res.openDisputes.length));
     var hasAction = actionParts.length > 0;
 
-    var greeting = el('<div class="card" style="background:var(--green);color:#fff;">' +
+    var splash = !!state.justLoggedIn;
+    state.justLoggedIn = false;
+    var lastLogin = lastLoginLabel_();
+    var city = myCityLabel_();
+    var metaLines = [];
+    metaLines.push(todayDatesLine_());
+    metaLines.push((lastLogin ? esc(t('home_lastLogin'))+': '+esc(lastLogin) : esc(t('home_firstLogin'))));
+    if (city) metaLines.push(esc(t('home_city'))+': '+esc(city));
+
+    var greeting = el('<div class="card welcome-card'+(splash?' splash':'')+'" style="color:#fff;">' +
       '<div style="font-size:13.5px;font-weight:700;opacity:.85;">'+esc(timeGreeting())+'</div>' +
       '<div style="font-size:19px;font-weight:800;margin-top:1px;">'+esc(state.user.name)+'</div>' +
       '<div style="opacity:.85;font-size:13px;margin-top:2px;">'+esc(roleLabel(state.user.role))+'</div>' +
+      '<div class="welcome-meta">' + metaLines.map(function(l){ return '<div>'+l+'</div>'; }).join('') + '</div>' +
       '<div class="home-action'+(hasAction?' has-action':'')+'"'+(hasAction?' id="homeActionLine"':'')+'>' +
         (hasAction
           ? esc(actionParts.join(' · ')) + '<span class="home-action-cta">'+esc(t('home_actionCta'))+'</span>'
@@ -1134,6 +1212,7 @@ function renderHome(body){
     '</div>');
     body.appendChild(greeting);
     if (hasAction) qs('#homeActionLine', greeting).addEventListener('click', function(){ state.screen = 'handoffs'; render(); });
+    if (splash) setTimeout(function(){ greeting.classList.remove('splash'); }, 4000);
 
     var statsWrap = el('<div class="grid"></div>');
     statsWrap.innerHTML =
@@ -1142,7 +1221,8 @@ function renderHome(body){
       statCard(res.disputedInvolvingMe.length, t('home_disputes')) +
       (res.companyOutstanding!=null ? statCard(money(res.companyOutstanding), t('home_companyOutstanding')) : '') +
       (report ? statCard(money(report.totals.netCashOwed), t('report_net')) : '') +
-      (report ? statCard(money(report.totals.posSales), t('report_pos')) : '');
+      (report ? statCard(money(report.totals.posSales), t('report_pos')) : '') +
+      (report ? statCard(money(report.totals.creditSales), t('report_credit')) : '');
     body.appendChild(statsWrap);
 
     if (res.pendingForMe.length){
@@ -1178,7 +1258,7 @@ function renderHome(body){
         var topProductsCard = el('<div class="card"><h2>'+esc(t('report_byProduct'))+'</h2></div>');
         topProductsCard.appendChild(barList(report.byProduct.slice(0,5),
           function(r){ return r.name || t('report_unspecified'); },
-          function(r){ return r.cashAmount; }, function(r){ return r.posAmount; }));
+          function(r){ return r.cashAmount; }, function(r){ return r.posAmount; }, function(r){ return r.creditAmount; }));
         body.appendChild(topProductsCard);
       }
     }
@@ -1197,7 +1277,7 @@ function renderDashboard(body){
     body.appendChild(el('<div class="dash-section-title">'+esc(t('dash_salesTitle'))+'</div>'));
 
     var entries = report.entries || [];
-    var grossSales = entries.reduce(function(s,e){ return s + Number(e.cashSales||0) + Number(e.posSales||0); }, 0);
+    var grossSales = entries.reduce(function(s,e){ return s + Number(e.cashSales||0) + Number(e.posSales||0) + Number(e.creditSales||0); }, 0);
     var locsReporting = {};
     entries.forEach(function(e){ if (e.locationId) locsReporting[e.locationId] = 1; });
     var locCount = Object.keys(locsReporting).length;
@@ -1210,6 +1290,7 @@ function renderDashboard(body){
       [money(report.totals.netCashOwed), t('report_net')],
       [money(report.outstanding.netCashOwed), t('report_outstanding')],
       [money(report.totals.posSales), t('report_pos')],
+      [money(report.totals.creditSales), t('report_credit')],
       [money(report.totals.deliveryFee), t('report_delivery')],
       [money(report.totals.vatOnDelivery), t('report_vat')],
       [locCount, t('dash_locationsReporting')],
@@ -1238,10 +1319,11 @@ function renderDashboard(body){
     var sourceTotals = { store:0, car:0, pos:0 };
     entries.forEach(function(e){
       // "by source type" is a gross-sales-by-channel view, so every
-      // source's cash and card/POS portions are combined here — the
-      // cash-risk vs. no-risk split is what computeNet_'s breakdown is for,
-      // not this chart. All three source types can carry posSales now.
-      var total = Number(e.cashSales||0) + Number(e.posSales||0);
+      // source's cash, card/POS, and credit portions are all combined here —
+      // the cash-risk vs. no-risk split is what computeNet_'s breakdown is
+      // for, not this chart. All three source types can carry posSales/
+      // creditSales now.
+      var total = Number(e.cashSales||0) + Number(e.posSales||0) + Number(e.creditSales||0);
       if (e.sourceType === 'pos') sourceTotals.pos += total;
       else if (e.sourceType === 'store') sourceTotals.store += total;
       else if (e.sourceType === 'car') sourceTotals.car += total;
@@ -1277,7 +1359,7 @@ function renderDashboard(body){
       var productCard = el('<div class="card"><h2>'+esc(t('report_byProduct'))+'</h2></div>');
       productCard.appendChild(barList(report.byProduct.slice(0,8),
         function(r){ return r.name || t('report_unspecified'); },
-        function(r){ return r.cashAmount; }, function(r){ return r.posAmount; }));
+        function(r){ return r.cashAmount; }, function(r){ return r.posAmount; }, function(r){ return r.creditAmount; }));
       body.appendChild(productCard);
     }
 
@@ -1445,8 +1527,8 @@ function resolveProductByName_(name){
 function downloadCsvTemplate_(){
   var meta = state.meta || {};
   var sampleStore = (meta.stores && meta.stores[0] && meta.stores[0].name) || 'Store name';
-  var header = 'date,sourceType,sourceName,product,cashSales,deliveryFee,posSales,cylindersOut,cylindersIn,note';
-  var sample = new Date().toISOString().slice(0,10)+',store,'+sampleStore+',,1000,,0,,,';
+  var header = 'date,sourceType,sourceName,product,cashSales,deliveryFee,posSales,creditSales,cylindersOut,cylindersIn,note';
+  var sample = new Date().toISOString().slice(0,10)+',store,'+sampleStore+',,1000,,0,0,,,';
   var csv = header+'\n'+sample+'\n';
   var blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
   var url = URL.createObjectURL(blob);
@@ -1479,6 +1561,8 @@ function renderEntries(body){
       '<div class="field" id="eDeliveryWrap"><label>'+esc(t('entry_delivery'))+'</label><input id="eDelivery" type="text" inputmode="decimal" value="0">' +
         '<small class="hint" id="eDeliveryHint"></small></div>' +
       '<div class="field" id="ePosWrap"><label>'+esc(t('entry_pos'))+'</label><input id="ePos" type="text" inputmode="decimal" value="0"></div>' +
+      '<div class="field" id="eCreditWrap"><label>'+esc(t('entry_credit'))+'</label><input id="eCredit" type="text" inputmode="decimal" value="0">' +
+        '<small class="hint">'+esc(t('entry_creditHint'))+'</small></div>' +
       '<div class="field" id="eProductWrap"><label>'+esc(t('entry_product'))+'</label><select id="eProduct"></select></div>' +
     '</div>' +
     '<small class="hint" id="eComputedHint" style="display:none;">'+esc(t('entry_computedHint'))+'</small>' +
@@ -1499,6 +1583,7 @@ function renderEntries(body){
   wireCommaInput_(qs('#eCash', form), true);
   wireCommaInput_(qs('#eDelivery', form), true);
   wireCommaInput_(qs('#ePos', form), true);
+  wireCommaInput_(qs('#eCredit', form), true);
   wireCommaInput_(qs('#eCylOut', form), false);
   wireCommaInput_(qs('#eCylIn', form), false);
 
@@ -1543,6 +1628,7 @@ function renderEntries(body){
     qs('#eCash', form).value = '0';
     qs('#eDelivery', form).value = '0';
     qs('#ePos', form).value = '0';
+    qs('#eCredit', form).value = '0';
 
     // A POS machine can take cash too (not just card), and can carry its own
     // bank-paid delivery fee just like a car — both fields apply to car AND
@@ -1592,7 +1678,7 @@ function renderEntries(body){
   var lineSeq = 0;
 
   function paymentOptionsHtml_(){
-    var opts2 = [['cash', t('entry_payment_cash')], ['pos', t('entry_payment_pos')]];
+    var opts2 = [['cash', t('entry_payment_cash')], ['pos', t('entry_payment_pos')], ['credit', t('entry_payment_credit')]];
     if (lastShowDelivery) opts2.push(['delivery', t('entry_payment_delivery')]);
     return opts2.map(function(o){ return '<option value="'+o[0]+'">'+esc(o[1])+'</option>'; }).join('');
   }
@@ -1627,7 +1713,7 @@ function renderEntries(body){
     qs('.lnSubtotal', lineEl).textContent = money(qty * price);
   }
   function recomputeTotals_(){
-    var sums = { cash: 0, pos: 0, delivery: 0 };
+    var sums = { cash: 0, pos: 0, delivery: 0, credit: 0 };
     qsa('.eLine', linesBody).forEach(function(lineEl){
       var qty = numFromInput_(qs('.lnQty', lineEl));
       var price = numFromInput_(qs('.lnPrice', lineEl));
@@ -1637,6 +1723,7 @@ function renderEntries(body){
     qs('#eCash', form).value = money(sums.cash);
     qs('#ePos', form).value = money(sums.pos);
     qs('#eDelivery', form).value = money(sums.delivery);
+    qs('#eCredit', form).value = money(sums.credit);
   }
   function addLine_(){
     lineSeq++;
@@ -1687,7 +1774,7 @@ function renderEntries(body){
     qs('#eProductWrap', form).style.display = isProduct ? 'none' : '';
     qs('#eLinesWrap', form).style.display = isProduct ? '' : 'none';
     qs('#eComputedHint', form).style.display = isProduct ? '' : 'none';
-    ['#eCash','#eDelivery','#ePos'].forEach(function(sel){
+    ['#eCash','#eDelivery','#ePos','#eCredit'].forEach(function(sel){
       var input = qs(sel, form);
       input.disabled = isProduct;
       input.readOnly = isProduct;
@@ -1703,6 +1790,7 @@ function renderEntries(body){
       qs('#eCash', form).value = '0';
       qs('#eDelivery', form).value = '0';
       qs('#ePos', form).value = '0';
+      qs('#eCredit', form).value = '0';
     }
   }
   qs('#eMode', form).addEventListener('change', applyMode_);
@@ -1730,6 +1818,7 @@ function renderEntries(body){
         cashSales: numFromInput_(qs('#eCash', form)),
         deliveryFeeBankAmount: numFromInput_(qs('#eDelivery', form)),
         posSales: numFromInput_(qs('#ePos', form)),
+        creditSales: numFromInput_(qs('#eCredit', form)),
         note: note
       };
       api('createDailyEntry', payload).then(function(res){
@@ -1764,6 +1853,7 @@ function renderEntries(body){
         cashSales: payment==='cash' ? subtotal : 0,
         posSales: payment==='pos' ? subtotal : 0,
         deliveryFeeBankAmount: payment==='delivery' ? subtotal : 0,
+        creditSales: payment==='credit' ? subtotal : 0,
         cylindersOut: numFromInput_(qs('.lnCylOut', lineEl)),
         cylindersIn: numFromInput_(qs('.lnCylIn', lineEl)),
         note: note
@@ -1817,6 +1907,7 @@ function renderEntries(body){
           var cashSales = cell(r,'cashSales');
           var deliveryFee = cell(r,'deliveryFee');
           var posSales = cell(r,'posSales');
+          var creditSales = cell(r,'creditSales');
           var cylindersOut = cell(r,'cylindersOut');
           var cylindersIn = cell(r,'cylindersIn');
           var note = cell(r,'note');
@@ -1831,7 +1922,7 @@ function renderEntries(body){
           return {
             date: date, sourceType: sourceType, sourceId: sourceId, sourceName: sourceName,
             productId: productId, cashSales: cashSales, deliveryFeeBankAmount: deliveryFee, posSales: posSales,
-            cylindersOut: cylindersOut, cylindersIn: cylindersIn, note: note,
+            creditSales: creditSales, cylindersOut: cylindersOut, cylindersIn: cylindersIn, note: note,
             status: status
           };
         });
@@ -1877,10 +1968,10 @@ function renderEntries(body){
       var wrap = qs('#entryListBody');
       if(!res.ok || !res.entries.length){ wrap.innerHTML = '<div class="muted">'+esc(t('noData'))+'</div>'; return; }
       var rows = res.entries.slice(0,30).map(function(e){
-        // A car or pos entry can carry both cash and card/POS sales at once
-        // now, so a single-column quick list shows their sum rather than
-        // picking just one and silently dropping the other.
-        var amt = Number(e.cashSales||0) + Number(e.posSales||0);
+        // A car or pos entry can carry cash, card/POS, and credit sales all
+        // at once now, so a single-column quick list shows their sum rather
+        // than picking just one and silently dropping the others.
+        var amt = Number(e.cashSales||0) + Number(e.posSales||0) + Number(e.creditSales||0);
         return '<tr><td>'+esc(e.date)+'</td><td>'+esc(t('entry_source_'+e.sourceType))+'</td><td>'+money(amt)+'</td><td>'+(e.consumedBy?'✓':'')+'</td></tr>';
       }).join('');
       wrap.innerHTML = '<table><thead><tr><th>'+esc(t('entry_date'))+'</th><th>'+esc(t('entry_sourceType'))+'</th><th>'+esc(t('handoff_amount'))+'</th><th></th></tr></thead><tbody>'+rows+'</tbody></table>';
@@ -1908,6 +1999,9 @@ function breakdownGrid(b){
   }).join('') + '</div>';
   if (Number(b.posSales||0) > 0) {
     grid += '<div class="muted" style="margin-top:8px;font-size:11.5px;">'+esc(t('report_pos'))+': '+money(b.posSales)+' — '+esc(t('handoff_posNote'))+'</div>';
+  }
+  if (Number(b.creditSales||0) > 0) {
+    grid += '<div class="muted" style="margin-top:4px;font-size:11.5px;">'+esc(t('report_credit'))+': '+money(b.creditSales)+' — '+esc(t('handoff_creditNote'))+'</div>';
   }
   return grid;
 }
@@ -2226,15 +2320,17 @@ function sortableTable(rows, columns, opts){
 }
 
 // Horizontal bar list (e.g. top products) — two stacked bars per row (cash / pos).
-function barList(rows, labelFn, cashFn, posFn){
-  var max = Math.max.apply(null, rows.map(function(r){ return cashFn(r)+posFn(r); }).concat([1]));
+function barList(rows, labelFn, cashFn, posFn, creditFn){
+  creditFn = creditFn || function(){ return 0; };
+  var max = Math.max.apply(null, rows.map(function(r){ return cashFn(r)+posFn(r)+creditFn(r); }).concat([1]));
   var wrap = el('<div class="barlist"></div>');
   rows.forEach(function(r){
-    var cash = cashFn(r), pos = posFn(r), total = cash+pos;
+    var cash = cashFn(r), pos = posFn(r), credit = creditFn(r), total = cash+pos+credit;
     var item = el('<div>' +
       '<div class="row-label"><span>'+esc(labelFn(r))+'</span><span>'+money(total)+'</span></div>' +
       '<div class="track"><div class="fill" style="width:'+(max? (cash/max*100):0)+'%;display:inline-block;"></div>' +
-      '<div class="fill pos" style="width:'+(max? (pos/max*100):0)+'%;display:inline-block;"></div></div>' +
+      '<div class="fill pos" style="width:'+(max? (pos/max*100):0)+'%;display:inline-block;"></div>' +
+      '<div class="fill credit" style="width:'+(max? (credit/max*100):0)+'%;display:inline-block;"></div></div>' +
     '</div>');
     wrap.appendChild(item);
   });
@@ -2490,6 +2586,7 @@ function renderReport(body){
         statCard(money(t1.storeCash), t('report_storeCash')) +
         statCard(money(t1.carCash), t('report_carCash')) +
         statCard(money(t1.posSales), t('report_pos')) +
+        statCard(money(t1.creditSales), t('report_credit')) +
         statCard(money(t1.deliveryFee), t('report_delivery')) +
         statCard(money(t1.vatOnDelivery), t('report_vat')) +
       '</div>');
@@ -2509,12 +2606,14 @@ function renderReport(body){
         productCard.appendChild(barList(res.byProduct.slice(0,8),
           function(r){ return r.name || t('report_unspecified'); },
           function(r){ return r.cashAmount; },
-          function(r){ return r.posAmount; }));
+          function(r){ return r.posAmount; },
+          function(r){ return r.creditAmount; }));
         var productTableWrap = el('<div style="margin-top:14px;"></div>');
         productTableWrap.appendChild(sortableTable(res.byProduct, [
           { key:'name', label: t('report_product'), render: function(r){ return esc(r.name || t('report_unspecified')); } },
           { key:'cashAmount', label: t('report_cashChannel'), render: function(r){ return money(r.cashAmount); } },
           { key:'posAmount', label: t('report_posChannel'), render: function(r){ return money(r.posAmount); } },
+          { key:'creditAmount', label: t('report_creditChannel'), render: function(r){ return money(r.creditAmount); } },
           { key:'total', label: t('report_total'), render: function(r){ return '<strong>'+money(r.total)+'</strong>'; } }
         ], { sortKey:'total', sortDir:'desc' }));
         productCard.appendChild(productTableWrap);

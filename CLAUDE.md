@@ -85,6 +85,21 @@ only. The entry form (`index.html`) also shows a read-only Location field
 that auto-resolves from whichever store/car/pos is picked (`resolveLocationIdForSource_`)
 so the person entering data can confirm where it will actually count.
 
+**Credit sales (added 2026-09-14) follow the exact same no-cash-risk pattern
+as `posSales`** — a fourth payment method (`creditSales`, alongside cash/POS/
+delivery) available on every source type and in the product-level entry
+mode's payment-method picker. `computeNet_`/`sumBreakdowns_` tally it in the
+returned breakdown for visibility, but it never enters `netCashOwed`: no
+money has actually moved for a sale on credit, so there is nothing yet to
+hand up the collection chain. It *does* count toward every "gross sales"
+number that isn't specifically the cash-owed figure — `entrySalesTotal_()`
+(Collection.gs) is the one place that sums cash+POS+credit together, used by
+the report's amountMin/Max filter and the daily trend; grep for it before
+adding another gross-sales aggregation rather than re-deriving the same sum
+inline. A credit sale also counts as "a sale" for `deliveryNeedsSale_` (see
+below) — a delivery fee with a same-day credit sale and nothing else is
+accepted, same as it would be with cash or POS.
+
 ## The missed cycle: a car's cash clears its own driver → store-manager hop
 
 Added 2026-09-13, after the user re-annotated `555.xlsx`'s "Example" sheet
@@ -660,6 +675,39 @@ action via a temporary diagnostic function (same pattern as the password-
 reset trap in "Redeploying" below — inject, run once, remove, redeploy
 clean), or (b) ask the user to add a permission rule allowing it, per the
 denial message. Don't retry the same edit hoping it clears.
+
+### 7. A single-class CSS rule silently loses to a same-specificity rule that appears later in the file
+
+Added 2026-09-14, found while building the welcome-message redesign: a new
+`.welcome-card{background:linear-gradient(...)}` rule was inserted near the
+top of the `<style>` block, but the generic `.card{background:var(--card)}`
+rule (white) is defined further down and — same specificity, later in
+source order — wins the cascade. The element (`class="card welcome-card"`)
+rendered as a plain white box with the right text inside and no visible bug
+in the DOM inspector's HTML, only in its computed `background`. **Any new
+single-class rule meant to override `.card`'s own styling must be written
+as a compound selector, `.card.your-class{...}`, not `.your-class{...}`
+alone** — two classes beats one regardless of source order, so it can't
+silently lose to wherever `.card` happens to sit in the file. Same fix
+applied to `.welcome-card.splash`/`.welcome-card.splash::after` for
+consistency, even though those specific rules didn't hit the bug (they set
+properties `.card` doesn't touch).
+
+### 8. A JS-injected favicon can lose the race to the browser's own tab-icon fetch
+
+The original favicon/apple-touch-icon/manifest were all attached at runtime
+via `attachIcons()` (a self-invoking function near the top of the main
+`<script>`) to avoid duplicating the ~21KB logo base64 three times in one
+file. In practice this made the browser-tab/address-bar icon unreliable —
+some browsers decide the tab icon before that script block finishes
+running, especially on first load, and a home-screen-installed PWA caches
+whatever it saw at install time and doesn't reliably re-check. Fixed by
+making the favicon a plain static `<link rel="icon">` in `<head>` (the logo
+base64 duplicated once more, accepted cost) so it's available before any
+script executes — same pattern the sibling rental app (`Downloads/7777`)
+already used. apple-touch-icon and the manifest stay JS-attached, since
+those only matter once, at "Add to Home Screen" time, not on every normal
+load.
 
 ## Deliberately out of scope for this build
 
