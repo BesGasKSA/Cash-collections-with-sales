@@ -862,6 +862,66 @@ guarantee: a dry run writes nothing (no entries, no batch), and a real
 submission with the identical payload right after computes the identical
 figure the dry run already showed.
 
+### 11. Area-manager bulk upload: product-level CSV rows, not one flat row per source per day
+
+Added 2026-09-15, in response to the area manager needing to see *what was
+actually sold* (product description, qty, unit price, subtotal, VAT 15%),
+not just a source's flat day-total — the original CSV format had one row
+per source per day with separate `cashSales`/`deliveryFee`/`posSales`/
+`creditSales` columns all on that one row, and an optional single `product`
+column that didn't actually break the amount down by product at all.
+
+**No backend change was needed.** `actionBulkSubmitAreaBatch_` already
+accepted `productId`/`qty`/`unitPrice` per row (Collection.gs:576-599) —
+the same shape `actionImportEntries_` uses for `renderEntries`'s product
+mode, where one product/service line becomes one `daily_entries` row. The
+whole rework is client-side: `downloadAreaBulkCsvTemplate_` and the CSV
+parser in `renderAreaBulk` (index.html) now read
+`date,locationName,sourceType,sourceName,product,qty,unitPrice,paymentMethod,cylindersOut,cylindersIn,note`
+— **one row = one product/service line**, `subtotal = qty * unitPrice`,
+routed to the one flat field matching `paymentMethod` (cash/pos/delivery/
+credit), exactly mirroring the product-mode submit logic already in
+`renderEntries` (index.html:1966-1977). Multiple lines for the same
+source/day are just multiple CSV rows now, the same way multiple product
+lines in the Entries screen become multiple entries.
+
+Validation gained the same rules product mode already enforces in the
+regular Entries screen, applied per row: product must resolve
+(`resolveProductByName_`), `qty > 0`, `unitPrice > 0`, `paymentMethod` one
+of cash/pos/delivery/credit, and — matching `lineProductOptionsHtml_`'s
+dropdown filtering exactly — a `delivery` payment method is rejected
+outright for a `store` source and requires the resolved product's
+`type === 'services'`. `deliveryNeedsSale_`'s batch-wide sibling-sale check
+(Collection.gs:109) still applies unchanged: a delivery line still needs a
+cash/pos/credit line for the same source+date somewhere in the batch (or
+already on file), same rule flat-amount rows always followed — it's
+evaluated per-row regardless of how many rows share a source/day now.
+
+**The VAT-15% "deep detail" the area manager asked for is a client-side
+display concern only, computed from the batch's own validated rows in the
+dry-run preview (`productBreakdownBlock_`, index.html) — it does NOT feed
+`computeNet_` and cannot change `netCashOwed`.** It groups the batch's rows
+by product and shows qty/subtotal/base-excl-VAT/VAT-amount per product,
+treating every line's price as VAT-inclusive (the normal Saudi retail-price
+convention) and extracting `base = subtotal / (1 + vatRate)`. This is
+deliberately informational for **every** product, goods included — the one
+VAT figure that actually changes `netCashOwed` is still only the delivery
+fee's VAT reclaim (`vatExplainBlock_`, unchanged, using the server's own
+`b.deliveryFee`), per "The formula" above. A goods line's price simply
+isn't VAT-adjusted anywhere in `computeNet_`, same as it never was before
+this change — this rework only adds a transparency display, it never
+touches the underlying cash formula.
+
+`tests/mock-backend-server.js` seeds two products (`LPG Cylinder 12kg`,
+type `goods`; `Delivery Fee`, type `services`) specifically so the area-bulk
+product-level format has something real to resolve against — it previously
+seeded none at all. `tests/run.js` gained a section proving the backend
+action really does carry `productId`/`qty`/`unitPrice` through end to end
+for the area-bulk path (it already did for the single-location product-mode
+path), plus that the sibling-sale rule for delivery lines still works
+batch-wide when the sale and the delivery fee are split across separate
+product lines for the same source/date.
+
 ## Deliberately out of scope for this build
 
 - No PWA/offline install or custom subdomain

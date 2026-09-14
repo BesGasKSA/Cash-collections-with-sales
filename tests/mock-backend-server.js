@@ -56,6 +56,41 @@ var store = call({ action: 'adminSaveEntity', token: adminTok, kind: 'store', da
 var car = call({ action: 'adminSaveEntity', token: adminTok, kind: 'car', data: { locationId: location.id, label: 'Truck-1', driverUserId: hassan.id } }).entity;
 call({ action: 'adminSaveEntity', token: adminTok, kind: 'pos', data: { ownerType: 'car', ownerId: car.id, label: 'POS-1', assignedUserId: hassan.id } });
 
+// ---- Larger multi-area-manager scenario, for exercising the bulk-upload
+// feature across several clusters/locations at once, each location carrying
+// all three source types (store + car + pos). ----
+var muzafer = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Muzafer (Area Manager)', email: 'muzafer@bestgas.sa', role: 'cluster_manager' } }).user;
+var muntasir = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Muntasir (Area Manager)', email: 'muntasir@bestgas.sa', role: 'cluster_manager' } }).user;
+var ahmed = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Ahmed (Deputy)', email: 'ahmed@bestgas.sa', role: 'deputy_operations_manager' } }).user;
+var mazen = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Mazen (Collector)', email: 'mazen@bestgas.sa', role: 'collector' } }).user;
+
+var northArea = call({ action: 'adminSaveEntity', token: adminTok, kind: 'cluster', data: { name: 'North Area', clusterManagerUserId: muzafer.id, collectorUserId: mazen.id } }).entity;
+var southArea = call({ action: 'adminSaveEntity', token: adminTok, kind: 'cluster', data: { name: 'South Area', clusterManagerUserId: muntasir.id, collectorUserId: mazen.id } }).entity;
+
+// city, location name, clusterId — one store + one car + one pos per location
+var multiLocations = [
+  ['Riyadh', 'Olaya', northArea.id],
+  ['Riyadh', 'Naseem', northArea.id],
+  ['Riyadh', 'Sulaimaniyah', northArea.id],
+  ['Jeddah', 'Rawdah', southArea.id],
+  ['Jeddah', 'Salamah', southArea.id],
+  ['Jeddah', 'Hamra', southArea.id]
+];
+multiLocations.forEach(function (row) {
+  var city = row[0], name = row[1], clusterId = row[2];
+  var loc = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: city, name: name, clusterId: clusterId } }).entity;
+  call({ action: 'adminSaveEntity', token: adminTok, kind: 'store', data: { locationId: loc.id, name: name + ' Branch', storeManagerUserId: null } });
+  var mCar = call({ action: 'adminSaveEntity', token: adminTok, kind: 'car', data: { locationId: loc.id, label: name + ' Truck', driverUserId: null } }).entity;
+  call({ action: 'adminSaveEntity', token: adminTok, kind: 'pos', data: { ownerType: 'car', ownerId: mCar.id, label: name + ' POS', assignedUserId: null } });
+});
+
+// Products — one goods line and one services line, so the area-bulk
+// product-level upload (product/qty/unitPrice/paymentMethod per row) has
+// something real to resolve against; without these the CSV template and
+// every row would fail product lookup.
+var cylinderProduct = call({ action: 'adminSaveEntity', token: adminTok, kind: 'product', data: { name: 'LPG Cylinder 12kg', type: 'goods', active: true } }).entity;
+var deliveryProduct = call({ action: 'adminSaveEntity', token: adminTok, kind: 'product', data: { name: 'Delivery Fee', type: 'services', active: true } }).entity;
+
 // Area-manager bulk upload is off by default (see CLAUDE.md) — enabled here
 // so the seeded scenario is immediately usable for testing that path too.
 call({ action: 'adminSetConfig', token: adminTok, data: { areaManagerBulkUploadEnabled: true } });
@@ -67,6 +102,12 @@ console.log('musa@bestgas.sa (collector)        / temp: ' + lastInviteFor('musa@
 console.log('ali@bestgas.sa  (store manager)    / temp: ' + lastInviteFor('ali@bestgas.sa'));
 console.log('hassan@bestgas.sa (driver)         / temp: ' + lastInviteFor('hassan@bestgas.sa'));
 console.log('deputy@bestgas.sa (deputy ops mgr) / temp: ' + lastInviteFor('deputy@bestgas.sa') + '  (area-manager bulk upload is ON)');
+console.log('');
+console.log('-- multi-area-manager scenario (North Area / South Area, 3 locations each) --');
+console.log('muzafer@bestgas.sa (area mgr, North) / temp: ' + lastInviteFor('muzafer@bestgas.sa'));
+console.log('muntasir@bestgas.sa (area mgr, South) / temp: ' + lastInviteFor('muntasir@bestgas.sa'));
+console.log('ahmed@bestgas.sa (deputy ops mgr)     / temp: ' + lastInviteFor('ahmed@bestgas.sa'));
+console.log('mazen@bestgas.sa (collector, both)    / temp: ' + lastInviteFor('mazen@bestgas.sa'));
 console.log('');
 
 var ROOT = path.join(__dirname, '..');

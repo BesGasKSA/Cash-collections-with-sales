@@ -291,9 +291,15 @@ var L = {
     entry_location:'الموقع',
     entry_importTitle:'استيراد من CSV / إكسل', entry_importHint:'حمّل قالب CSV واملأه، ثم ارفعه هنا. الأعمدة: date, sourceType, sourceName, product, cashSales, deliveryFee, posSales, creditSales, cylindersOut, cylindersIn, note',
     err_featureDisabled:'هذه الميزة معطّلة حالياً من الإدارة', err_invalidRows:'هناك صفوف غير صحيحة في الملف — صحّح الأخطاء ثم أعد الرفع',
-    areaBulk_title:'رفع دفعة بيانات المنطقة', areaBulk_hint:'حمّل قالب CSV واملأه ببيانات كل المواقع في منطقتك، ثم ارفعه هنا. الأعمدة: date, locationName, sourceType, sourceName, product, cashSales, deliveryFee, posSales, creditSales, cylindersOut, cylindersIn, note',
+    areaBulk_title:'رفع دفعة بيانات المنطقة', areaBulk_hint:'حمّل قالب CSV واملأه ببيانات كل المواقع في منطقتك — كل سطر يمثل بند منتج أو خدمة واحد (كمية × سعر الوحدة). الأعمدة: date, locationName, sourceType, sourceName, product, qty, unitPrice, paymentMethod, cylindersOut, cylindersIn, note',
     areaBulk_template:'تحميل القالب', areaBulk_col_row:'#', areaBulk_col_date:'التاريخ', areaBulk_col_location:'الموقع', areaBulk_col_type:'النوع', areaBulk_col_source:'المصدر', areaBulk_col_status:'الحالة',
     areaBulk_valid:'صحيح', areaBulk_err_missing:'بيانات ناقصة', areaBulk_err_location_notfound:'الموقع غير موجود في منطقتك', areaBulk_err_source_notfound:'المصدر غير موجود في هذا الموقع',
+    areaBulk_err_product_notfound:'المنتج غير موجود', areaBulk_err_invalid_qty:'الكمية يجب أن تكون أكبر من صفر', areaBulk_err_invalid_price:'سعر الوحدة يجب أن يكون أكبر من صفر',
+    areaBulk_err_invalid_payment:'طريقة الدفع غير صحيحة', areaBulk_err_delivery_not_allowed_store:'رسوم التوصيل غير مسموحة لمصدر من نوع متجر',
+    areaBulk_err_delivery_needs_services:'رسوم التوصيل تتطلب منتجاً من نوع خدمة',
+    areaBulk_productBreakdownTitle:'تفاصيل المنتجات على مستوى البند (شامل ضريبة القيمة المضافة ١٥٪)',
+    areaBulk_productBreakdownHint:'هذا التفصيل للتوضيح فقط — احتساب ضريبة رسوم التوصيل هو الوحيد الذي يُسترد فعلياً ضمن صافي المبلغ المستحق (انظر أدناه)، أما أسعار السلع فهي شاملة للضريبة كأي سعر بيع عادي.',
+    areaBulk_vatBase:'المبلغ الأساسي (قبل الضريبة)',
     areaBulk_submit:'اعتماد الدفعة وإرسالها لنائب مدير العمليات', areaBulk_needsAllValid:'يجب تصحيح كل الصفوف قبل الإرسال — لا يمكن اعتماد دفعة بها أخطاء',
     areaBulk_recentTitle:'دفعاتك السابقة', areaBulk_noBatches:'لا توجد دفعات بعد', areaBulk_rejectionNote:'سبب الرفض',
     areaBulk_calcTitle:'التفاصيل الكاملة قبل الإرسال للاعتماد', areaBulk_calcHint:'هذا هو الحساب الفعلي الذي سيراه نائب مدير العمليات بالضبط — راجعه جيداً قبل الاعتماد والإرسال.',
@@ -447,9 +453,15 @@ var L = {
     entry_location:'Location',
     entry_importTitle:'Import from CSV / Excel', entry_importHint:'Download the CSV template, fill it in, then upload it here. Columns: date, sourceType, sourceName, product, cashSales, deliveryFee, posSales, creditSales, cylindersOut, cylindersIn, note',
     err_featureDisabled:'This feature is currently disabled by admin', err_invalidRows:'The file has invalid rows — fix them and re-upload',
-    areaBulk_title:'Area Bulk Upload', areaBulk_hint:'Download the CSV template and fill it in with data for every location in your area, then upload it here. Columns: date, locationName, sourceType, sourceName, product, cashSales, deliveryFee, posSales, creditSales, cylindersOut, cylindersIn, note',
+    areaBulk_title:'Area Bulk Upload', areaBulk_hint:'Download the CSV template and fill it in with data for every location in your area — each row is one product or service line (qty x unit price). Columns: date, locationName, sourceType, sourceName, product, qty, unitPrice, paymentMethod, cylindersOut, cylindersIn, note',
     areaBulk_template:'Download template', areaBulk_col_row:'#', areaBulk_col_date:'Date', areaBulk_col_location:'Location', areaBulk_col_type:'Type', areaBulk_col_source:'Source', areaBulk_col_status:'Status',
     areaBulk_valid:'Valid', areaBulk_err_missing:'Missing data', areaBulk_err_location_notfound:'Location not found in your area', areaBulk_err_source_notfound:'Source not found at that location',
+    areaBulk_err_product_notfound:'Product not found', areaBulk_err_invalid_qty:'Quantity must be greater than zero', areaBulk_err_invalid_price:'Unit price must be greater than zero',
+    areaBulk_err_invalid_payment:'Invalid payment method', areaBulk_err_delivery_not_allowed_store:'Delivery fee is not allowed for a store source',
+    areaBulk_err_delivery_needs_services:'Delivery fee requires a services-type product',
+    areaBulk_productBreakdownTitle:'Product-level detail (VAT 15% included)',
+    areaBulk_productBreakdownHint:'This breakdown is for transparency only — only the delivery-fee VAT is actually reclaimed into the net cash owed (see below); goods prices are simply VAT-inclusive like any normal selling price.',
+    areaBulk_vatBase:'Base amount (excl. VAT)',
     areaBulk_submit:'Approve batch and send to Deputy Operations Manager', areaBulk_needsAllValid:'Every row must be fixed before submitting — a batch with errors can\'t be approved',
     areaBulk_recentTitle:'Your recent batches', areaBulk_noBatches:'No batches yet', areaBulk_rejectionNote:'Rejection reason',
     areaBulk_calcTitle:'Full details before sending for approval', areaBulk_calcHint:'This is the exact calculation the Deputy Operations Manager will see — review it carefully before approving and sending.',
@@ -603,9 +615,15 @@ var L = {
     entry_location:'مقام',
     entry_importTitle:'CSV / ایکسل سے درآمد کریں', entry_importHint:'CSV ٹیمپلیٹ ڈاؤن لوڈ کریں، اسے پُر کریں، پھر یہاں اپ لوڈ کریں۔ کالمز: date, sourceType, sourceName, product, cashSales, deliveryFee, posSales, creditSales, cylindersOut, cylindersIn, note',
     err_featureDisabled:'یہ فیچر فی الحال ایڈمن نے غیر فعال کر رکھا ہے', err_invalidRows:'فائل میں غلط قطاریں ہیں — درست کر کے دوبارہ اپ لوڈ کریں',
-    areaBulk_title:'ایریا بلک اپ لوڈ', areaBulk_hint:'CSV ٹیمپلیٹ ڈاؤن لوڈ کریں اور اپنے ایریا کے ہر مقام کا ڈیٹا بھریں، پھر یہاں اپ لوڈ کریں۔ کالمز: date, locationName, sourceType, sourceName, product, cashSales, deliveryFee, posSales, creditSales, cylindersOut, cylindersIn, note',
+    areaBulk_title:'ایریا بلک اپ لوڈ', areaBulk_hint:'CSV ٹیمپلیٹ ڈاؤن لوڈ کریں اور اپنے ایریا کے ہر مقام کا ڈیٹا بھریں — ہر قطار ایک پروڈکٹ یا سروس بند ہے (مقدار × یونٹ قیمت)۔ کالمز: date, locationName, sourceType, sourceName, product, qty, unitPrice, paymentMethod, cylindersOut, cylindersIn, note',
     areaBulk_template:'ٹیمپلیٹ ڈاؤن لوڈ کریں', areaBulk_col_row:'#', areaBulk_col_date:'تاریخ', areaBulk_col_location:'مقام', areaBulk_col_type:'قسم', areaBulk_col_source:'ذریعہ', areaBulk_col_status:'حیثیت',
     areaBulk_valid:'درست', areaBulk_err_missing:'ڈیٹا نامکمل', areaBulk_err_location_notfound:'مقام آپ کے ایریا میں نہیں ملا', areaBulk_err_source_notfound:'ذریعہ اس مقام پر نہیں ملا',
+    areaBulk_err_product_notfound:'پروڈکٹ نہیں ملی', areaBulk_err_invalid_qty:'مقدار صفر سے زیادہ ہونی چاہیے', areaBulk_err_invalid_price:'یونٹ قیمت صفر سے زیادہ ہونی چاہیے',
+    areaBulk_err_invalid_payment:'ادائیگی کا طریقہ غلط ہے', areaBulk_err_delivery_not_allowed_store:'اسٹور ذریعہ کے لیے ڈلیوری فیس کی اجازت نہیں',
+    areaBulk_err_delivery_needs_services:'ڈلیوری فیس کے لیے سروس قسم کی پروڈکٹ درکار ہے',
+    areaBulk_productBreakdownTitle:'پروڈکٹ کی سطح پر تفصیلات (ویٹ ١٥٪ شامل)',
+    areaBulk_productBreakdownHint:'یہ تفصیل صرف وضاحت کے لیے ہے — صرف ڈلیوری فیس کا ویٹ ہی خالص واجب الادا رقم میں واپس شامل کیا جاتا ہے (نیچے دیکھیں)؛ سامان کی قیمتیں کسی بھی عام فروخت قیمت کی طرح ویٹ سمیت ہوتی ہیں۔',
+    areaBulk_vatBase:'بنیادی رقم (ویٹ کے بغیر)',
     areaBulk_submit:'بیچ کی منظوری دیں اور ڈپٹی آپریشنز منیجر کو بھیجیں', areaBulk_needsAllValid:'جمع کروانے سے پہلے ہر قطار درست کریں — غلطیوں والا بیچ منظور نہیں ہو سکتا',
     areaBulk_recentTitle:'آپ کے حالیہ بیچز', areaBulk_noBatches:'ابھی تک کوئی بیچ نہیں', areaBulk_rejectionNote:'مسترد کرنے کی وجہ',
     areaBulk_calcTitle:'منظوری کے لیے بھیجنے سے پہلے مکمل تفصیلات', areaBulk_calcHint:'یہ بالکل وہی حساب ہے جو ڈپٹی آپریشنز منیجر دیکھے گا — منظوری اور بھیجنے سے پہلے اچھی طرح جائزہ لیں۔',
@@ -1636,17 +1654,30 @@ function downloadCsvTemplate_(){
   setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
 }
 
-// Same shape as downloadCsvTemplate_, plus a leading locationName column —
-// needed here (and not on the single-location admin import) because this
-// template spans every location in a whole cluster at once.
+// Product-level template: one row = one product/service line (qty x unit
+// price, routed to a single payment method), the same shape renderEntries'
+// product mode already writes one daily_entries row per line — not one row
+// per source per day like the old flat cashSales/deliveryFee/posSales/
+// creditSales columns used to be. Plus a leading locationName column, needed
+// here (and not on the single-location admin import) because this template
+// spans every location in a whole cluster at once.
 function downloadAreaBulkCsvTemplate_(clusterId){
   var meta = state.meta || {};
   var myLoc = (meta.locations||[]).filter(function(l){ return l.clusterId===clusterId; })[0];
   var sampleLocation = myLoc ? myLoc.name : 'Location name';
   var sampleStore = (meta.stores||[]).filter(function(s){ return !myLoc || s.locationId===myLoc.id; })[0];
-  var header = 'date,locationName,sourceType,sourceName,product,cashSales,deliveryFee,posSales,creditSales,cylindersOut,cylindersIn,note';
-  var sample = new Date().toISOString().slice(0,10)+','+sampleLocation+',store,'+(sampleStore?sampleStore.name:'Store name')+',,1000,,0,0,,,';
-  var csv = header+'\n'+sample+'\n';
+  var sampleCar = (meta.cars||[]).filter(function(c){ return !myLoc || c.locationId===myLoc.id; })[0];
+  var goodsProduct = (meta.products||[]).filter(function(p){ return p.type!=='services' && p.active!==false; })[0];
+  // Delivery fees are a service, never cash — the sample line demonstrates
+  // that the delivery paymentMethod pairs with a services-type product on
+  // a car/pos row, exactly like lineProductOptionsHtml_ enforces in the
+  // regular Entries screen.
+  var serviceProduct = (meta.products||[]).filter(function(p){ return p.type==='services' && p.active!==false; })[0];
+  var header = 'date,locationName,sourceType,sourceName,product,qty,unitPrice,paymentMethod,cylindersOut,cylindersIn,note';
+  var d = new Date().toISOString().slice(0,10);
+  var sample1 = d+','+sampleLocation+',store,'+(sampleStore?sampleStore.name:'Store name')+','+(goodsProduct?goodsProduct.name:'Product name')+',10,50,cash,10,0,';
+  var sample2 = d+','+sampleLocation+',car,'+(sampleCar?sampleCar.label:'Car name')+','+(serviceProduct?serviceProduct.name:'Delivery Fee')+',1,115,delivery,,,';
+  var csv = header+'\n'+sample1+'\n'+sample2+'\n';
   var blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
   var url = URL.createObjectURL(blob);
   var a = document.createElement('a');
@@ -2149,16 +2180,24 @@ function renderAreaBulk(body){
       header.forEach(function(h,i){ idx[h]=i; });
       function cell(r,key){ var i = idx[key]; return (i!=null && r[i]!=null) ? String(r[i]) : ''; }
 
+      // Product-level: one row = one product/service line (qty x unit price,
+      // one payment method) — mirrors exactly what renderEntries' product
+      // mode submits per line, so the same subtotal/routing logic applies
+      // here and the batch that reaches Deputy review always carries real
+      // product detail, never a bare day-total.
       pendingRows = dataRows.map(function(r){
         var date = cell(r,'date').trim();
         var locationName = cell(r,'locationName').trim();
         var sourceType = cell(r,'sourceType').trim().toLowerCase();
         var sourceName = cell(r,'sourceName').trim();
         var productName = cell(r,'product').trim();
+        var qty = Number(cell(r,'qty').replace(/,/g,'').trim() || 0);
+        var unitPrice = Number(cell(r,'unitPrice').replace(/,/g,'').trim() || 0);
+        var paymentMethod = cell(r,'paymentMethod').trim().toLowerCase();
         var note = cell(r,'note');
 
-        var status = 'ok', locationId = null, sourceId = null, productId = null;
-        if (!date || !locationName || ['store','car','pos'].indexOf(sourceType) < 0 || !sourceName) status = 'missing';
+        var status = 'ok', locationId = null, sourceId = null, productId = null, product = null;
+        if (!date || !locationName || ['store','car','pos'].indexOf(sourceType) < 0 || !sourceName || !productName || !paymentMethod) status = 'missing';
         if (status === 'ok') {
           locationId = resolveLocationByNameInCluster_(locationName, clusterId);
           if (!locationId) status = 'location_notfound';
@@ -2167,11 +2206,27 @@ function renderAreaBulk(body){
           sourceId = resolveSourceByNameInCluster_(sourceType, sourceName, locationId);
           if (!sourceId) status = 'source_notfound';
         }
-        if (status === 'ok' && productName) productId = resolveProductByName_(productName);
+        if (status === 'ok') {
+          productId = resolveProductByName_(productName);
+          if (!productId) status = 'product_notfound'; else product = byId(state.meta.products, productId);
+        }
+        if (status === 'ok' && !(qty > 0)) status = 'invalid_qty';
+        if (status === 'ok' && !(unitPrice > 0)) status = 'invalid_price';
+        if (status === 'ok' && ['cash','pos','credit','delivery'].indexOf(paymentMethod) < 0) status = 'invalid_payment';
+        // Same rule lineProductOptionsHtml_/showDelivery enforce in the
+        // regular Entries screen: delivery is car/pos only (a store branch
+        // has nothing to deliver), and only ever against a services product.
+        if (status === 'ok' && paymentMethod === 'delivery' && sourceType === 'store') status = 'delivery_not_allowed_store';
+        if (status === 'ok' && paymentMethod === 'delivery' && product && product.type !== 'services') status = 'delivery_needs_services';
+
+        var subtotal = qty * unitPrice;
         return {
           date: date, locationName: locationName, sourceType: sourceType, sourceId: sourceId, sourceName: sourceName,
-          productId: productId, cashSales: cell(r,'cashSales'), deliveryFeeBankAmount: cell(r,'deliveryFee'),
-          posSales: cell(r,'posSales'), creditSales: cell(r,'creditSales'),
+          productId: productId, productName: productName, qty: qty, unitPrice: unitPrice, paymentMethod: paymentMethod, subtotal: subtotal,
+          cashSales: paymentMethod==='cash' ? subtotal : 0,
+          posSales: paymentMethod==='pos' ? subtotal : 0,
+          deliveryFeeBankAmount: paymentMethod==='delivery' ? subtotal : 0,
+          creditSales: paymentMethod==='credit' ? subtotal : 0,
           cylindersOut: cell(r,'cylindersOut'), cylindersIn: cell(r,'cylindersIn'), note: note,
           status: status
         };
@@ -2185,16 +2240,32 @@ function renderAreaBulk(body){
     var wrap = qs('#abPreviewWrap', card);
     if (!pendingRows.length){ wrap.innerHTML=''; return; }
     var allValid = pendingRows.every(function(r){ return r.status==='ok'; });
+    var statusLabels = {
+      ok: '<span class="badge confirmed">'+esc(t('areaBulk_valid'))+'</span>',
+      location_notfound: '<span class="badge disputed">'+esc(t('areaBulk_err_location_notfound'))+'</span>',
+      source_notfound: '<span class="badge disputed">'+esc(t('areaBulk_err_source_notfound'))+'</span>',
+      product_notfound: '<span class="badge disputed">'+esc(t('areaBulk_err_product_notfound'))+'</span>',
+      invalid_qty: '<span class="badge rejected">'+esc(t('areaBulk_err_invalid_qty'))+'</span>',
+      invalid_price: '<span class="badge rejected">'+esc(t('areaBulk_err_invalid_price'))+'</span>',
+      invalid_payment: '<span class="badge rejected">'+esc(t('areaBulk_err_invalid_payment'))+'</span>',
+      delivery_not_allowed_store: '<span class="badge rejected">'+esc(t('areaBulk_err_delivery_not_allowed_store'))+'</span>',
+      delivery_needs_services: '<span class="badge rejected">'+esc(t('areaBulk_err_delivery_needs_services'))+'</span>'
+    };
+    var paymentLabels = { cash: t('entry_payment_cash'), pos: t('entry_payment_pos'), delivery: t('entry_payment_delivery'), credit: t('entry_payment_credit') };
     var rows = pendingRows.map(function(r, i){
-      var statusLabel = r.status==='ok' ? '<span class="badge confirmed">'+esc(t('areaBulk_valid'))+'</span>'
-        : r.status==='location_notfound' ? '<span class="badge disputed">'+esc(t('areaBulk_err_location_notfound'))+'</span>'
-        : r.status==='source_notfound' ? '<span class="badge disputed">'+esc(t('areaBulk_err_source_notfound'))+'</span>'
-        : '<span class="badge rejected">'+esc(t('areaBulk_err_missing'))+'</span>';
-      return '<tr><td>'+(i+1)+'</td><td>'+esc(r.date)+'</td><td>'+esc(r.locationName)+'</td><td>'+esc(r.sourceType)+'</td><td>'+esc(r.sourceName)+'</td><td>'+statusLabel+'</td></tr>';
+      var statusLabel = statusLabels[r.status] || '<span class="badge rejected">'+esc(t('areaBulk_err_missing'))+'</span>';
+      // An unrecognized paymentMethod has no i18n entry to translate — show
+      // whatever the file actually said instead of a raw, confusing
+      // "entry_payment_<junk>" key string falling out of t()'s not-found path.
+      return '<tr><td>'+(i+1)+'</td><td>'+esc(r.date)+'</td><td>'+esc(r.locationName)+'</td><td>'+esc(r.sourceType)+'</td><td>'+esc(r.sourceName)+'</td>' +
+        '<td>'+esc(r.productName)+'</td><td>'+(r.qty||0)+'</td><td>'+money(r.unitPrice)+'</td>' +
+        '<td>'+esc(paymentLabels[r.paymentMethod] || r.paymentMethod || '')+'</td><td>'+money(r.subtotal)+'</td><td>'+statusLabel+'</td></tr>';
     }).join('');
     wrap.innerHTML = '<h2 style="margin-top:14px;">'+esc(t('entry_importPreview'))+'</h2>' +
-      '<table><thead><tr><th>'+esc(t('areaBulk_col_row'))+'</th><th>'+esc(t('areaBulk_col_date'))+'</th>' +
-      '<th>'+esc(t('areaBulk_col_location'))+'</th><th>'+esc(t('areaBulk_col_type'))+'</th><th>'+esc(t('areaBulk_col_source'))+'</th><th>'+esc(t('areaBulk_col_status'))+'</th></tr></thead><tbody>'+rows+'</tbody></table>' +
+      '<div class="tbl-scroll"><table><thead><tr><th>'+esc(t('areaBulk_col_row'))+'</th><th>'+esc(t('areaBulk_col_date'))+'</th>' +
+      '<th>'+esc(t('areaBulk_col_location'))+'</th><th>'+esc(t('areaBulk_col_type'))+'</th><th>'+esc(t('areaBulk_col_source'))+'</th>' +
+      '<th>'+esc(t('entry_lineProduct'))+'</th><th>'+esc(t('entry_qty'))+'</th><th>'+esc(t('entry_unitPrice'))+'</th>' +
+      '<th>'+esc(t('entry_paymentMethod'))+'</th><th>'+esc(t('entry_lineSubtotal'))+'</th><th>'+esc(t('areaBulk_col_status'))+'</th></tr></thead><tbody>'+rows+'</tbody></table></div>' +
       (allValid ? '<div id="abCalcWrap">'+esc(t('loading'))+'</div>' : '<div class="msg err" style="margin-top:10px;">'+esc(t('areaBulk_needsAllValid'))+'</div>');
 
     if (!allValid) return;
@@ -2213,6 +2284,7 @@ function renderAreaBulk(body){
         '<div style="font-size:24px;font-weight:800;text-align:center;margin-bottom:6px;">'+money(b.netCashOwed)+'</div>' +
         breakdownGrid(b) +
         handoffDetailRows(res.batch) +
+        productBreakdownBlock_(pendingRows) +
         (b.deliveryFee > 0 ? vatExplainBlock_(b) : '') +
         '<button class="btn" id="abSubmit" style="margin-top:14px;">'+esc(t('areaBulk_submit'))+'</button>';
       qs('#abSubmit', calcWrap).addEventListener('click', function(){
@@ -2241,6 +2313,41 @@ function renderAreaBulk(body){
       str = str.split('{'+k+'}').join(vars[k]);
     });
     return str;
+  }
+  // Per-product "deep detail" the area manager asked to see before sending
+  // for approval: every product/service line, aggregated across all rows in
+  // this batch, with its own VAT 15% split shown out. This is purely
+  // informational display built from the validated rows already on screen
+  // — it does NOT feed computeNet_ or change netCashOwed in any way. Only
+  // the delivery-fee VAT (vatExplainBlock_ below, using the server's own
+  // b.deliveryFee) is ever actually reclaimed into the net cash figure, per
+  // the xlsx formula (see CLAUDE.md "The formula"); a goods line's price is
+  // simply assumed VAT-inclusive like any retail price tag, so its split
+  // here is shown for transparency only, never subtracted or added back.
+  function productBreakdownBlock_(rows){
+    var vatRate = state.meta.config.vatRate;
+    var byProduct = {};
+    rows.forEach(function(r){
+      var key = r.productId;
+      if (!byProduct[key]) {
+        var p = byId(state.meta.products, r.productId);
+        byProduct[key] = { name: r.productName, type: p ? p.type : 'goods', qty: 0, subtotal: 0 };
+      }
+      byProduct[key].qty += r.qty;
+      byProduct[key].subtotal += r.subtotal;
+    });
+    var list = Object.keys(byProduct).map(function(k){ return byProduct[k]; })
+      .sort(function(a,b){ return b.subtotal - a.subtotal; });
+    var rowsHtml = list.map(function(p){
+      var base = p.subtotal / (1 + vatRate);
+      var vat = base * vatRate;
+      return '<tr><td>'+esc(p.name)+'</td><td>'+esc(t(p.type==='services' ? 'admin_typeServices' : 'admin_typeGoods'))+'</td>' +
+        '<td>'+p.qty+'</td><td>'+money(p.subtotal)+'</td><td>'+money(base)+'</td><td>'+money(vat)+'</td></tr>';
+    }).join('');
+    return '<h2 style="margin-top:14px;">'+esc(t('areaBulk_productBreakdownTitle'))+'</h2>' +
+      '<div class="muted" style="font-size:12px;margin-bottom:6px;">'+esc(t('areaBulk_productBreakdownHint'))+'</div>' +
+      '<div class="tbl-scroll"><table><thead><tr><th>'+esc(t('entry_lineProduct'))+'</th><th>'+esc(t('admin_productType'))+'</th>' +
+      '<th>'+esc(t('entry_qty'))+'</th><th>'+esc(t('entry_lineSubtotal'))+'</th><th>'+esc(t('areaBulk_vatBase'))+'</th><th>'+esc(t('report_vat'))+'</th></tr></thead><tbody>'+rowsHtml+'</tbody></table></div>';
   }
   function vatExplainBlock_(b){
     var vatRate = state.meta.config.vatRate;
