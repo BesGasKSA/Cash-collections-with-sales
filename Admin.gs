@@ -41,8 +41,12 @@ function requireAdminOrFinance_(user) {
 // company-wide *authority* (resolving disputes, managing users/entities).
 // Accountant and Operations Manager can see everything Finance/Admin see,
 // but only Admin/Finance can act on a dispute — deliberately kept on
-// requireAdminOrFinance_ above, not folded into this. See CLAUDE.md.
-var COMPANY_WIDE_ROLES = ['admin', 'finance', 'accountant', 'operations_manager'];
+// requireAdminOrFinance_ above, not folded into this. Deputy Operations
+// Manager (added with the area-manager bulk-upload feature) is a second
+// worked example of the same split: full company-wide visibility, but its
+// only *authority* is approving/rejecting a bulk batch — gated separately
+// in Collection.gs, never implied by membership here. See CLAUDE.md.
+var COMPANY_WIDE_ROLES = ['admin', 'finance', 'accountant', 'operations_manager', 'deputy_operations_manager'];
 function isCompanyWide_(role) { return COMPANY_WIDE_ROLES.indexOf(role) >= 0; }
 function requireCompanyWide_(user) {
   if (!isCompanyWide_(user.role)) throw new Error('forbidden');
@@ -51,7 +55,7 @@ function requireCompanyWide_(user) {
 // ---------- Users ----------
 
 function validRole_(r) {
-  return ['admin', 'finance', 'accountant', 'operations_manager', 'cluster_manager', 'store_manager', 'collector', 'driver'].indexOf(r) >= 0;
+  return ['admin', 'finance', 'accountant', 'operations_manager', 'deputy_operations_manager', 'cluster_manager', 'store_manager', 'collector', 'driver'].indexOf(r) >= 0;
 }
 
 function actionAdminCreateUser_(req, user) {
@@ -251,6 +255,7 @@ function actionAdminSetConfig_(req, user) {
   if (d.staleThresholdHours != null) cfg.staleThresholdHours = Number(d.staleThresholdHours);
   if (d.heldThresholdHours != null) cfg.heldThresholdHours = Number(d.heldThresholdHours);
   if (d.secondApprovalThreshold != null) cfg.secondApprovalThreshold = Number(d.secondApprovalThreshold);
+  if (d.areaManagerBulkUploadEnabled != null) cfg.areaManagerBulkUploadEnabled = !!d.areaManagerBulkUploadEnabled;
   writeRow(SHEETS.CONFIG, cfg);
   logAudit_('admin_set_config', user.id, null);
   return { ok: true, config: cfg };
@@ -315,6 +320,6 @@ function actionMeta_(req, user) {
     ok: true,
     locations: locations, stores: stores, cars: cars, pos: pos,
     clusters: clusters, zones: zones, products: products, users: users,
-    config: { vatRate: vatRate_(), staleThresholdHours: staleThresholdHours_(), heldThresholdHours: heldThresholdHours_(), secondApprovalThreshold: secondApprovalThreshold_() }
+    config: { vatRate: vatRate_(), staleThresholdHours: staleThresholdHours_(), heldThresholdHours: heldThresholdHours_(), secondApprovalThreshold: secondApprovalThreshold_(), areaManagerBulkUploadEnabled: areaManagerBulkUploadEnabled_() }
   };
 }

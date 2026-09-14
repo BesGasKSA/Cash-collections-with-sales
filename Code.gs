@@ -30,7 +30,10 @@ var SHEETS = {
   BANK_LINES: 'bank_statement_lines',
   // Operational risks and complaints (Risk.gs) — anyone can submit, only
   // company-wide roles can browse/resolve. See CLAUDE.md.
-  RISK_ITEMS: 'risk_items'
+  RISK_ITEMS: 'risk_items',
+  // Area-manager bulk uploads awaiting Deputy Operations Manager approval —
+  // an explicit, toggleable exception to the normal chain. See CLAUDE.md.
+  AREA_BULK_BATCHES: 'area_bulk_batches'
 };
 
 var IDLE_MS = 12 * 3600 * 1000;      // 12h idle session expiry
@@ -235,6 +238,17 @@ function heldThresholdHours_() {
 function secondApprovalThreshold_() {
   var c = config_();
   return typeof c.secondApprovalThreshold === 'number' ? c.secondApprovalThreshold : 0;
+}
+
+// Gates the entire area-manager bulk-upload -> Deputy Operations Manager
+// approval path (Collection.gs: checkClusterBulkEntryScope_,
+// actionBulkSubmitAreaBatch_, actionDeputyApproveBatch_/RejectBatch_). Off
+// by default — this is a deliberate exception to the normal driver/store-
+// manager chain and must never turn itself on for a cluster that hasn't
+// asked for it. See CLAUDE.md.
+function areaManagerBulkUploadEnabled_() {
+  var c = config_();
+  return c.areaManagerBulkUploadEnabled === true;
 }
 
 // ---------- Crypto / auth ----------
@@ -445,6 +459,14 @@ function route_(req) {
     createRiskItem: function () { return actionCreateRiskItem_(req, user); },
     listRiskItems: function () { return actionListRiskItems_(req, user); },
     updateRiskItemStatus: function () { return actionUpdateRiskItemStatus_(req, user); },
+
+    // area-manager bulk upload -> Deputy Operations Manager approval — a
+    // toggleable exception to the normal driver/store-manager chain, see
+    // CLAUDE.md and checkClusterBulkEntryScope_ (Collection.gs).
+    bulkSubmitAreaBatch: function () { return actionBulkSubmitAreaBatch_(req, user); },
+    listAreaBulkBatches: function () { return actionListAreaBulkBatches_(req, user); },
+    deputyApproveBatch: function () { return actionDeputyApproveBatch_(req, user); },
+    deputyRejectBatch: function () { return actionDeputyRejectBatch_(req, user); },
 
     // admin — users (special: password/invite logic)
     adminCreateUser: function () { return actionAdminCreateUser_(req, user); },

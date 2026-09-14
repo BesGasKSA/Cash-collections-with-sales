@@ -48,6 +48,7 @@ var sara = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Sar
 var musa = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Musa (Collector)', email: 'musa@bestgas.sa', role: 'collector' } }).user;
 var ali = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Ali (Store Manager)', email: 'ali@bestgas.sa', role: 'store_manager' } }).user;
 var hassan = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Hassan (Driver)', email: 'hassan@bestgas.sa', role: 'driver' } }).user;
+var nasser = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Nasser (Deputy)', email: 'deputy@bestgas.sa', role: 'deputy_operations_manager' } }).user;
 
 var cluster = call({ action: 'adminSaveEntity', token: adminTok, kind: 'cluster', data: { name: 'Central', clusterManagerUserId: sara.id, collectorUserId: musa.id } }).entity;
 var location = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: 'Riyadh', name: 'Malaz', clusterId: cluster.id } }).entity;
@@ -55,12 +56,17 @@ var store = call({ action: 'adminSaveEntity', token: adminTok, kind: 'store', da
 var car = call({ action: 'adminSaveEntity', token: adminTok, kind: 'car', data: { locationId: location.id, label: 'Truck-1', driverUserId: hassan.id } }).entity;
 call({ action: 'adminSaveEntity', token: adminTok, kind: 'pos', data: { ownerType: 'car', ownerId: car.id, label: 'POS-1', assignedUserId: hassan.id } });
 
+// Area-manager bulk upload is off by default (see CLAUDE.md) — enabled here
+// so the seeded scenario is immediately usable for testing that path too.
+call({ action: 'adminSetConfig', token: adminTok, data: { areaManagerBulkUploadEnabled: true } });
+
 console.log('\nSeeded. Sign in at http://localhost:' + PORT + '/ with API URL http://localhost:' + PORT + '/api\n');
 console.log('admin@bestgas.sa         / Bootstrap#1               (mustChangePw: no)');
 console.log('sara@bestgas.sa (cluster manager)  / temp: ' + lastInviteFor('sara@bestgas.sa'));
 console.log('musa@bestgas.sa (collector)        / temp: ' + lastInviteFor('musa@bestgas.sa'));
 console.log('ali@bestgas.sa  (store manager)    / temp: ' + lastInviteFor('ali@bestgas.sa'));
 console.log('hassan@bestgas.sa (driver)         / temp: ' + lastInviteFor('hassan@bestgas.sa'));
+console.log('deputy@bestgas.sa (deputy ops mgr) / temp: ' + lastInviteFor('deputy@bestgas.sa') + '  (area-manager bulk upload is ON)');
 console.log('');
 
 var ROOT = path.join(__dirname, '..');
