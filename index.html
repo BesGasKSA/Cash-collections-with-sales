@@ -50,7 +50,14 @@
   header .who{font-size:13px;opacity:.85;font-weight:500;white-space:nowrap;padding-inline-end:12px;margin-inline-end:2px;border-inline-end:1px solid rgba(255,255,255,.22);}
   header .header-controls{display:flex;gap:8px;align-items:center;flex-wrap:nowrap;flex-shrink:0;}
   header select, header button{background:rgba(255,255,255,.14);color:#fff;border:1px solid rgba(255,255,255,.22);border-radius:9px;padding:7px 12px;height:34px;font-size:13px;cursor:pointer;font-weight:600;transition:background .15s ease, transform .1s ease;font-family:inherit;box-sizing:border-box;}
-  header select{background:#fff;color:var(--green-dark);border-color:transparent;}
+  /* The native <select> arrow always renders at the box's physical right edge
+     regardless of RTL direction/text-align, so with no reserved space on
+     that side the widest option ("العربية") was rendering partly underneath
+     it — clipped, not actually cut off in the DOM. Fixed width covers every
+     language label at this font-size; extra right padding clears the arrow;
+     text-align-last centers the label text itself (Chrome respects plain
+     text-align on a closed select, but Firefox needs text-align-last). */
+  header select{background:#fff;color:var(--green-dark);border-color:transparent;width:118px;padding-inline-end:22px;text-align:center;text-align-last:center;}
   header button:hover{background:rgba(255,255,255,.24);}
   header button:active{transform:scale(.97);}
   .notif-bell{position:relative;padding:8px !important;display:flex;align-items:center;justify-content:center;line-height:1;}
