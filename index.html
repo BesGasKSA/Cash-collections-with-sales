@@ -31,7 +31,13 @@
     --font-en:'Inter',-apple-system,'Segoe UI',Tahoma,Arial,sans-serif;
     --font-ar:'Cairo','Inter',-apple-system,'Segoe UI','Geeza Pro',Arial,sans-serif;
   }
-  *{box-sizing:border-box;}
+  /* Without this, mobile browsers keep their default double-tap-to-zoom
+     gesture on every element — so a tap that lands a few pixels off a
+     button/card can register as the first half of a "double tap", and the
+     page visibly zooms in on that spot. touch-action:manipulation drops
+     that gesture (pinch-zoom still works) and the ~300ms tap-delay some
+     browsers still add before dispatching click, on every element site-wide. */
+  *{box-sizing:border-box;touch-action:manipulation;}
   body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font-en);min-height:100vh;-webkit-font-smoothing:antialiased;letter-spacing:-.01em;}
   html[dir="rtl"] body{font-family:var(--font-ar);letter-spacing:0;}
   ::selection{background:var(--green);color:#fff;}
