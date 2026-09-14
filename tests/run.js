@@ -870,5 +870,107 @@ var bulkCreditAndDelivery = call({ action: 'importDailyEntries', token: adminTok
 ] });
 check(bulkCreditAndDelivery.ok && bulkCreditAndDelivery.created === 2, 'product-mode\'s split rows (a delivery line plus a credit-tagged line in the same batch) both succeed, regardless of order');
 
+console.log('--- area-manager bulk upload -> Deputy Operations Manager approval ---');
+
+console.log('--- deputy role creation ---');
+var deputy = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Deputy', email: 'deputy@bestgas.sa', role: 'deputy_operations_manager' } });
+check(deputy.ok, 'admin can create a deputy_operations_manager user');
+var deputyTok = acceptInvite('deputy@bestgas.sa');
+var badRole = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Bad', email: 'bad@bestgas.sa', role: 'made_up_role' } });
+check(!badRole.ok && badRole.error === 'invalid_input', 'validRole_ still rejects a garbage role — no regression from adding the new one');
+
+console.log('--- toggle gating, both directions ---');
+var metaOff = call({ action: 'listMeta', token: adminTok });
+check(metaOff.config.areaManagerBulkUploadEnabled === false, 'the feature defaults to off');
+var blockedWhileOff = call({
+  action: 'bulkSubmitAreaBatch', token: saraTok, clusterId: cluster.entity.id,
+  rows: [{ date: '2026-09-27', sourceType: 'store', sourceId: store.entity.id, cashSales: 500 }]
+});
+check(!blockedWhileOff.ok && blockedWhileOff.error === 'feature_disabled', 'submitting a bulk batch while the toggle is off is rejected, even with otherwise-valid input');
+
+var toggleOn = call({ action: 'adminSetConfig', token: adminTok, data: { areaManagerBulkUploadEnabled: true } });
+check(toggleOn.ok && toggleOn.config.areaManagerBulkUploadEnabled === true, 'admin flips the toggle on');
+var metaOn = call({ action: 'listMeta', token: adminTok });
+check(metaOn.config.areaManagerBulkUploadEnabled === true, 'listMeta reflects the change immediately — same bug class CLAUDE.md Trap #3 already documents for the other two flags');
+
+console.log('--- cluster-scoped entry check ---');
+var otherLocation = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: 'Jeddah', name: 'Rawdah', clusterId: cluster2.id } }).entity;
+var otherStore = call({ action: 'adminSaveEntity', token: adminTok, kind: 'store', data: { locationId: otherLocation.id, name: 'Rawdah Branch', storeManagerUserId: null } }).entity;
+var crossClusterSubmit = call({
+  action: 'bulkSubmitAreaBatch', token: saraTok, clusterId: cluster.entity.id,
+  rows: [{ date: '2026-09-27', sourceType: 'store', sourceId: otherStore.id, cashSales: 500 }]
+});
+check(!crossClusterSubmit.ok && crossClusterSubmit.error === 'invalid_rows' && crossClusterSubmit.results[0].error === 'forbidden',
+  "a cluster manager submitting a row for a location outside their own cluster is rejected — the whole batch, all-or-nothing");
+var storeManagerBulkAttempt = call({
+  action: 'bulkSubmitAreaBatch', token: aliTok, clusterId: cluster.entity.id,
+  rows: [{ date: '2026-09-27', sourceType: 'store', sourceId: store.entity.id, cashSales: 500 }]
+});
+check(!storeManagerBulkAttempt.ok && storeManagerBulkAttempt.error === 'forbidden', 'a store manager (not a cluster manager) cannot call the bulk action at all');
+
+console.log('--- full happy path: multi-location upload -> pending_deputy -> deputy approves -> cluster_to_collector handoff ---');
+var happyBatch = call({
+  action: 'bulkSubmitAreaBatch', token: saraTok, clusterId: cluster.entity.id,
+  rows: [
+    { date: '2026-09-28', sourceType: 'store', sourceId: store.entity.id, cashSales: 4000, posSales: 500 },
+    { date: '2026-09-28', sourceType: 'car', sourceId: car.entity.id, cashSales: 3000, deliveryFeeBankAmount: 1000 }
+  ]
+});
+check(happyBatch.ok && happyBatch.batch.status === 'pending_deputy', 'a clean multi-location batch is created and lands pending_deputy');
+close(happyBatch.batch.breakdown.storeCash, 4000, 'batch breakdown storeCash matches the uploaded rows');
+close(happyBatch.batch.breakdown.carCash, 3000, 'batch breakdown carCash matches the uploaded rows');
+
+var deputyApprove = call({ action: 'deputyApproveBatch', token: deputyTok, id: happyBatch.batch.id });
+check(deputyApprove.ok, 'the deputy approves the batch');
+check(deputyApprove.handoff.kind === 'cluster_to_collector' && deputyApprove.handoff.status === 'pending' && deputyApprove.handoff.toUserId === musa.id,
+  'approval creates a real cluster_to_collector handoff addressed to the cluster\'s collector');
+close(deputyApprove.handoff.amount, deputyApprove.batch.breakdown.netCashOwed, "the handoff's amount matches computeNet_ summed across the batch's locations");
+var entryAfterApprove = call({ action: 'listEntries', token: adminTok, locationId: location.entity.id, date: '2026-09-28' }).entries[0];
+check(entryAfterApprove.consumedBy === deputyApprove.handoff.id, "each entry's consumedBy now points at the real handoff, not the batch");
+
+var collectorConfirm = call({ action: 'confirmHandoff', token: musaTok, id: deputyApprove.handoff.id, receivedAmount: deputyApprove.handoff.amount });
+check(collectorConfirm.ok, 'the collector can confirm a bulk-originated handoff exactly like a normal one');
+var deposit = call({ action: 'recordDeposit', token: musaTok, bankReference: 'BULK-DEP-1' });
+check(deposit.ok, 'and deposit it — the rest of the chain is completely unmodified for a bulk-originated handoff');
+
+console.log('--- reject-and-resubmit ---');
+var rejectBatch = call({
+  action: 'bulkSubmitAreaBatch', token: saraTok, clusterId: cluster.entity.id,
+  rows: [{ date: '2026-09-29', sourceType: 'store', sourceId: store.entity.id, cashSales: 900 }]
+});
+check(rejectBatch.ok, 'a second batch is submitted');
+var deputyReject = call({ action: 'deputyRejectBatch', token: deputyTok, id: rejectBatch.batch.id, note: 'wrong figure, please recheck' });
+check(deputyReject.ok && deputyReject.batch.status === 'deputy_rejected' && deputyReject.batch.rejectionNote === 'wrong figure, please recheck',
+  'the deputy rejects with a note');
+var voidedEntry = call({ action: 'listEntries', token: adminTok, locationId: location.entity.id, date: '2026-09-29' }).entries[0];
+check(voidedEntry.voided === true && !voidedEntry.consumedBy, 'the rejected entry is marked voided, not just released back to unconsumed');
+var resubmitBatch = call({
+  action: 'bulkSubmitAreaBatch', token: saraTok, clusterId: cluster.entity.id,
+  rows: [{ date: '2026-09-29', sourceType: 'store', sourceId: store.entity.id, cashSales: 950 }]
+});
+check(resubmitBatch.ok, 'the area manager resubmits a corrected batch for the same date/source');
+var resubmitApprove = call({ action: 'deputyApproveBatch', token: deputyTok, id: resubmitBatch.batch.id });
+close(resubmitApprove.handoff.breakdown.storeCash, 950, "the corrected batch's handoff reflects only the resubmitted 950 — the voided 900 from the rejected batch is never double-counted");
+
+console.log('--- conflict-of-interest / role checks specific to this flow ---');
+var clusterManagerApproveAttempt = call({ action: 'deputyApproveBatch', token: saraTok, id: happyBatch.batch.id });
+check(!clusterManagerApproveAttempt.ok && clusterManagerApproveAttempt.error === 'forbidden', 'a cluster manager cannot call deputyApproveBatch directly');
+var clusterManagerRejectAttempt = call({ action: 'deputyRejectBatch', token: saraTok, id: happyBatch.batch.id });
+check(!clusterManagerRejectAttempt.ok && clusterManagerRejectAttempt.error === 'forbidden', 'a cluster manager cannot call deputyRejectBatch directly');
+var alreadyActedBatch = call({ action: 'deputyApproveBatch', token: deputyTok, id: happyBatch.batch.id });
+check(!alreadyActedBatch.ok && alreadyActedBatch.error === 'not_pending', 'approving an already-approved batch a second time is rejected');
+
+console.log('--- visibility vs. authority for the new role (mirrors the existing company-wide-roles assertions) ---');
+var deputyDashboard = call({ action: 'listDashboard', token: deputyTok });
+check(deputyDashboard.ok && deputyDashboard.companyOutstanding != null, 'the deputy has full company-wide dashboard visibility, same tier as accountant/operations manager');
+var deputyReport = call({ action: 'getSalesReport', token: deputyTok });
+check(deputyReport.ok, 'and full sales-report visibility');
+var deputyAudit = call({ action: 'listAudit', token: deputyTok, limit: 5 });
+check(deputyAudit.ok, 'and audit-log visibility');
+var deputyResolveAttempt = call({ action: 'resolveDispute', token: deputyTok, id: happyBatch.batch.id, resolution: 'confirm' });
+check(!deputyResolveAttempt.ok, 'but the deputy still cannot resolve a dispute — that authority stays admin/finance-only, exactly like accountant/operations manager');
+var deputyManageAttempt = call({ action: 'adminSaveEntity', token: deputyTok, kind: 'location', data: { city: 'X', name: 'Y', clusterId: cluster.entity.id } });
+check(!deputyManageAttempt.ok && deputyManageAttempt.error === 'forbidden', 'and cannot manage entities either — visibility is not authority');
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);

@@ -254,7 +254,7 @@ function actionListEntries_(req, user) {
 }
 
 function unconsumedEntriesForLocation_(locationId) {
-  return readSheet(SHEETS.ENTRIES).filter(function (e) { return e.locationId === locationId && !e.consumedBy; });
+  return readSheet(SHEETS.ENTRIES).filter(function (e) { return e.locationId === locationId && !e.consumedBy && !e.voided; });
 }
 
 // Gross "total sales" for one entry — cash + POS + credit, regardless of
@@ -488,6 +488,258 @@ function createClusterHandoff_(req, user) {
   logAudit_('create_handoff_cluster', user.id, handoff.id);
   notifyPending_(handoff);
   return { ok: true, handoff: handoff };
+}
+
+// ---------- Area-manager bulk upload -> Deputy Operations Manager approval ----------
+// A deliberate, toggleable exception to the normal chain above, for when a
+// cluster's drivers/store managers genuinely can't use the app themselves:
+// the Area (cluster) Manager uploads the whole cluster's day at once, and
+// one Deputy Operations Manager sign-off replaces what would otherwise be a
+// location_to_cluster handoff AND a cluster_to_collector handoff. Off by
+// default (areaManagerBulkUploadEnabled_(), Code.gs). See CLAUDE.md.
+
+// A parallel function to checkEntryScope_, deliberately NOT a branch added
+// to it — a cluster_manager branch in checkEntryScope_ itself would silently
+// let cluster managers use the ordinary single-entry/single-location-import
+// actions too, a real widening of authority that would stay live even with
+// this feature's toggle off (checkEntryScope_ has no knowledge of the
+// config flag).
+function checkClusterBulkEntryScope_(user, clusterId, sourceType, sourceId) {
+  if (!areaManagerBulkUploadEnabled_()) return { ok: false, error: 'feature_disabled' };
+  if (user.role !== 'cluster_manager' && user.role !== 'admin') return { ok: false, error: 'forbidden' };
+  if (user.role === 'cluster_manager' && !clusterManagerOwnsCluster_(user.id, clusterId)) {
+    return { ok: false, error: 'forbidden' };
+  }
+  var locationId = resolveSourceLocation_(sourceType, sourceId);
+  if (!locationId) return { ok: false, error: 'not_found' };
+  var loc = getById_(SHEETS.LOCATIONS, locationId);
+  if (!loc || loc.clusterId !== clusterId) return { ok: false, error: 'forbidden' };
+  return { ok: true, locationId: locationId };
+}
+
+// Same row shape and per-row checks as actionImportEntries_, but scoped to
+// one cluster and, unlike that action, all-or-nothing: the Deputy reviewing
+// this batch has no per-row visibility into what might have been silently
+// skipped, so a batch with any bad row is rejected whole, nothing written,
+// and the area manager fixes the file and resubmits clean.
+function actionBulkSubmitAreaBatch_(req, user) {
+  if (!areaManagerBulkUploadEnabled_()) return { ok: false, error: 'feature_disabled' };
+  var cluster = getById_(SHEETS.CLUSTERS, req.clusterId);
+  if (!cluster) return { ok: false, error: 'not_found' };
+  if (user.role !== 'admin' && (user.role !== 'cluster_manager' || cluster.clusterManagerUserId !== user.id)) {
+    return { ok: false, error: 'forbidden' };
+  }
+
+  var rows = Array.isArray(req.rows) ? req.rows : [];
+  if (!rows.length) return { ok: false, error: 'invalid_input' };
+  if (rows.length > 500) return { ok: false, error: 'too_many_rows' };
+
+  function batchHasSale(sourceType, sourceId, date) {
+    return rows.some(function (row) {
+      return row.sourceType === sourceType && row.sourceId === sourceId && row.date === date &&
+        (Number(row.cashSales || 0) > 0 || Number(row.posSales || 0) > 0 || Number(row.creditSales || 0) > 0);
+    });
+  }
+
+  var prepared = [];
+  var errors = [];
+  for (var i = 0; i < rows.length; i++) {
+    var r = rows[i] || {};
+    if (!r.date || !r.sourceType || !r.sourceId) {
+      errors.push({ row: i, error: 'invalid_input' });
+      continue;
+    }
+    var scope = checkClusterBulkEntryScope_(user, cluster.id, r.sourceType, r.sourceId);
+    if (!scope.ok) {
+      errors.push({ row: i, error: scope.error });
+      continue;
+    }
+    if (Number(r.deliveryFeeBankAmount || 0) > 0 &&
+      !deliveryNeedsSale_(r.sourceType, r.sourceId, r.date, r.cashSales, r.posSales, batchHasSale(r.sourceType, r.sourceId, r.date), r.creditSales)) {
+      errors.push({ row: i, error: 'delivery_without_sale' });
+      continue;
+    }
+    prepared.push({ row: r, locationId: scope.locationId });
+  }
+  if (errors.length) return { ok: false, error: 'invalid_rows', results: errors };
+
+  var batchId = Utilities.getUuid();
+  var entries = prepared.map(function (p) {
+    var r = p.row;
+    var entry = {
+      id: Utilities.getUuid(),
+      date: r.date,
+      sourceType: r.sourceType,
+      sourceId: r.sourceId,
+      locationId: p.locationId,
+      enteredBy: user.id,
+      productId: r.productId || null,
+      cashSales: Number(r.cashSales || 0),
+      deliveryFeeBankAmount: Number(r.deliveryFeeBankAmount || 0),
+      posSales: Number(r.posSales || 0),
+      creditSales: Number(r.creditSales || 0),
+      qty: r.qty != null && r.qty !== '' ? Number(r.qty) : null,
+      unitPrice: r.unitPrice != null && r.unitPrice !== '' ? Number(r.unitPrice) : null,
+      cylindersOut: Number(r.cylindersOut || 0),
+      cylindersIn: Number(r.cylindersIn || 0),
+      note: r.note || '',
+      batchId: batchId,
+      consumedBy: batchId,
+      voided: false
+    };
+    writeRow(SHEETS.ENTRIES, entry);
+    return entry;
+  });
+
+  var byLocation = {};
+  entries.forEach(function (e) {
+    if (!byLocation[e.locationId]) byLocation[e.locationId] = [];
+    byLocation[e.locationId].push(e);
+  });
+  var perLocation = Object.keys(byLocation).map(function (locationId) {
+    var t = computeNet_(byLocation[locationId]);
+    return { locationId: locationId, amount: t.netCashOwed, breakdown: t };
+  });
+  var breakdown = sumBreakdowns_(perLocation.map(function (p) { return p.breakdown; }));
+
+  var batch = {
+    id: batchId,
+    clusterId: cluster.id,
+    uploadedBy: user.id,
+    createdAt: new Date().toISOString(),
+    status: 'pending_deputy',
+    entryIds: entries.map(function (e) { return e.id; }),
+    breakdown: breakdown,
+    perLocation: perLocation,
+    rejectionNote: null,
+    deputyActedBy: null,
+    deputyActedAt: null,
+    resultHandoffId: null
+  };
+  writeRow(SHEETS.AREA_BULK_BATCHES, batch);
+  logAudit_('bulk_submit_area_batch', user.id, batch.id);
+  notifyDeputyPendingBatch_(batch);
+  return { ok: true, batch: batch };
+}
+
+function actionListAreaBulkBatches_(req, user) {
+  var rows = readSheet(SHEETS.AREA_BULK_BATCHES);
+  if (user.role === 'cluster_manager') {
+    rows = rows.filter(function (b) { return b.uploadedBy === user.id; });
+  } else if (user.role !== 'deputy_operations_manager' && !isCompanyWide_(user.role)) {
+    rows = [];
+  }
+  if (req.status) rows = rows.filter(function (b) { return b.status === req.status; });
+  rows.sort(function (a, b) { return new Date(b.createdAt) - new Date(a.createdAt); });
+  return { ok: true, batches: rows };
+}
+
+// Hand-builds a cluster_to_collector-shaped handoff directly rather than
+// routing the Deputy's decision through actionConfirmHandoff_/dispute — see
+// CLAUDE.md for the full reasoning. Short version: confirmHandoff_ exists to
+// capture a *received-cash* variance (shortfall/originalAmount), and the
+// Deputy isn't receiving cash here, they're approving whether the uploaded
+// *data* is accurate before any cash claim exists; forcing this through that
+// machinery would permanently no-op the shortfall path for every bulk batch.
+function actionDeputyApproveBatch_(req, user) {
+  if (user.role !== 'deputy_operations_manager' && user.role !== 'admin') return { ok: false, error: 'forbidden' };
+  var batch = getById_(SHEETS.AREA_BULK_BATCHES, req.id);
+  if (!batch) return { ok: false, error: 'not_found' };
+  if (batch.status !== 'pending_deputy') return { ok: false, error: 'not_pending' };
+  // Structurally near-impossible today (a user holds exactly one role), but
+  // checked explicitly anyway — a self-check is never implied by the role
+  // requirement alone (see CLAUDE.md Trap #3).
+  if (batch.uploadedBy === user.id) return { ok: false, error: 'conflict_of_interest' };
+
+  var cluster = getById_(SHEETS.CLUSTERS, batch.clusterId);
+  if (!cluster) return { ok: false, error: 'not_found' };
+  if (!cluster.collectorUserId) return { ok: false, error: 'no_collector' };
+  if (cluster.collectorUserId === user.id) return { ok: false, error: 'conflict_of_interest' };
+
+  var handoff = {
+    id: Utilities.getUuid(),
+    kind: 'cluster_to_collector',
+    fromUserId: batch.uploadedBy,
+    toUserId: cluster.collectorUserId,
+    clusterId: cluster.id,
+    amount: batch.breakdown.netCashOwed,
+    breakdown: batch.breakdown,
+    perLocation: batch.perLocation,
+    sourceEntryIds: batch.entryIds,
+    sourceHandoffIds: [],
+    consumedBy: null,
+    status: 'pending',
+    createdAt: new Date().toISOString(),
+    viaBulkBatch: batch.id
+  };
+  writeRow(SHEETS.HANDOFFS, handoff);
+  batch.entryIds.forEach(function (id) {
+    var e = getById_(SHEETS.ENTRIES, id);
+    if (e) { e.consumedBy = handoff.id; writeRow(SHEETS.ENTRIES, e); }
+  });
+
+  batch.status = 'deputy_approved';
+  batch.deputyActedBy = user.id;
+  batch.deputyActedAt = new Date().toISOString();
+  batch.resultHandoffId = handoff.id;
+  writeRow(SHEETS.AREA_BULK_BATCHES, batch);
+
+  logAudit_('deputy_approve_batch', user.id, batch.id + ' -> ' + handoff.id);
+  notifyPending_(handoff);
+  return { ok: true, batch: batch, handoff: handoff };
+}
+
+// Rejected entries are marked voided (not just released back to unconsumed)
+// so a corrected re-upload can never double-count them — see CLAUDE.md for
+// the double-counting gap this closes: a straight release would leave the
+// old rejected rows floating in the unconsumed pool while the corrected
+// resubmit creates a brand new set of entries for the same real-world cash.
+function actionDeputyRejectBatch_(req, user) {
+  if (user.role !== 'deputy_operations_manager' && user.role !== 'admin') return { ok: false, error: 'forbidden' };
+  var batch = getById_(SHEETS.AREA_BULK_BATCHES, req.id);
+  if (!batch) return { ok: false, error: 'not_found' };
+  if (batch.status !== 'pending_deputy') return { ok: false, error: 'not_pending' };
+  if (batch.uploadedBy === user.id) return { ok: false, error: 'conflict_of_interest' };
+
+  batch.entryIds.forEach(function (id) {
+    var e = getById_(SHEETS.ENTRIES, id);
+    if (e) { e.voided = true; e.consumedBy = null; writeRow(SHEETS.ENTRIES, e); }
+  });
+
+  batch.status = 'deputy_rejected';
+  batch.rejectionNote = req.note || '';
+  batch.deputyActedBy = user.id;
+  batch.deputyActedAt = new Date().toISOString();
+  writeRow(SHEETS.AREA_BULK_BATCHES, batch);
+
+  logAudit_('deputy_reject_batch', user.id, batch.id);
+  notifyAreaBatchRejected_(batch);
+  return { ok: true, batch: batch };
+}
+
+function notifyDeputyPendingBatch_(batch) {
+  var recipients = readSheet(SHEETS.USERS).filter(function (u) {
+    return (u.role === 'deputy_operations_manager' || u.role === 'admin' || u.role === 'finance') && u.email;
+  });
+  recipients.forEach(function (u) {
+    try {
+      MailApp.sendEmail(u.email,
+        'دفعة بيانات جديدة بانتظار الاعتماد / New bulk batch pending approval',
+        'رفع مدير المنطقة دفعة بيانات جديدة بمبلغ ' + batch.breakdown.netCashOwed.toFixed(2) + ' بانتظار اعتمادك.\n' +
+        'An area manager uploaded a new bulk batch of ' + batch.breakdown.netCashOwed.toFixed(2) + ' awaiting your approval.');
+    } catch (e) { /* email is best-effort */ }
+  });
+}
+
+function notifyAreaBatchRejected_(batch) {
+  var uploader = getById_(SHEETS.USERS, batch.uploadedBy);
+  if (!uploader || !uploader.email) return;
+  try {
+    MailApp.sendEmail(uploader.email,
+      'تم رفض دفعة البيانات المرفوعة / Your bulk batch was rejected',
+      'تم رفض الدفعة بواسطة نائب مدير العمليات. السبب: ' + (batch.rejectionNote || '—') + '\n' +
+      'Your bulk batch was rejected by the Deputy Operations Manager. Reason: ' + (batch.rejectionNote || '—'));
+  } catch (e) { /* email is best-effort */ }
 }
 
 // No one — not even an admin — may confirm or dispute a handoff they
@@ -988,7 +1240,11 @@ function actionSalesReport_(req, user) {
     return { ok: false, error: 'forbidden' };
   }
 
-  var entries = readSheet(SHEETS.ENTRIES);
+  // A voided entry (a rejected area-manager bulk batch, see
+  // actionDeputyRejectBatch_) was never real committed sales activity —
+  // exclude it from reporting the same way it's excluded from ever
+  // re-entering a handoff.
+  var entries = readSheet(SHEETS.ENTRIES).filter(function (e) { return !e.voided; });
   var locations = readSheet(SHEETS.LOCATIONS);
   var locById = {};
   locations.forEach(function (l) { locById[l.id] = l; });

@@ -72,7 +72,7 @@
   @keyframes bgcWelcomeShine{0%{background-position:200% 0;}100%{background-position:-200% 0;}}
   @keyframes bgcWelcomeIn{0%{opacity:0;transform:translateY(-6px) scale(.98);}100%{opacity:1;transform:translateY(0) scale(1);}}
   @media (prefers-reduced-motion: reduce){ .card.welcome-card.splash, .card.welcome-card.splash::after{animation:none;} }
-  .welcome-meta{margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.22);font-size:12px;opacity:.92;display:flex;flex-direction:column;gap:3px;}
+  .welcome-meta{margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.22);font-size:12px;opacity:.92;display:flex;flex-direction:column;align-items:center;gap:3px;text-align:center;}
   nav{display:flex;gap:6px;flex-wrap:wrap;background:var(--green-dark);padding:10px 18px;position:relative;z-index:1;}
   nav button{background:transparent;border:1px solid rgba(255,255,255,.28);color:rgba(255,255,255,.92);padding:7px 15px 7px 12px;border-radius:999px;font-size:13px;cursor:pointer;font-weight:600;transition:background .15s ease, border-color .15s ease, transform .1s ease;font-family:inherit;display:inline-flex;align-items:center;gap:6px;}
   html[dir="rtl"] nav button{padding:7px 12px 7px 15px;}
@@ -83,10 +83,10 @@
   .nav-icon{width:15px;height:15px;stroke:rgba(255,255,255,.92);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0;}
   main{max-width:1080px;margin:0 auto;padding:22px 18px 60px;}
   .card{background:var(--card);border:1px solid var(--border-soft);border-radius:var(--radius);padding:20px;margin-bottom:18px;overflow-x:auto;box-shadow:var(--shadow-sm);transition:box-shadow .2s ease;}
-  .card h2{margin:0 0 14px;font-size:15px;font-weight:700;color:var(--text);letter-spacing:-.01em;display:flex;align-items:center;gap:8px;}
+  .card h2{margin:0 0 14px;font-size:15px;font-weight:700;color:var(--text);letter-spacing:-.01em;display:flex;align-items:center;justify-content:center;text-align:center;gap:8px;}
   .card h2::before{content:'';width:4px;height:15px;border-radius:3px;background:var(--green);display:inline-block;flex-shrink:0;}
   .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;}
-  label{display:block;font-size:12px;color:var(--muted);margin-bottom:5px;font-weight:600;text-transform:uppercase;letter-spacing:.03em;}
+  label{display:block;font-size:12px;color:var(--muted);margin-bottom:5px;font-weight:600;text-transform:uppercase;letter-spacing:.03em;text-align:center;}
   html[dir="rtl"] label{text-transform:none;letter-spacing:0;}
   input,select,textarea{width:100%;padding:10px 13px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:14px;background:var(--bg);color:var(--text);font-family:inherit;transition:border-color .15s ease, background .15s ease, box-shadow .15s ease;}
   input:hover,select:hover,textarea:hover{border-color:var(--muted-2);}
@@ -174,12 +174,12 @@
   .login-forgot{display:block;width:100%;text-align:center;margin-top:16px;font-size:12.5px;color:var(--green-dark);font-weight:700;cursor:pointer;background:none;border:none;font-family:inherit;padding:4px;}
   .login-forgot:hover{text-decoration:underline;color:var(--green);}
   .login-footer{color:rgba(255,255,255,.65);font-size:11px;text-align:center;margin-top:-6px;}
-  small.hint{color:var(--muted);font-size:12px;}
+  small.hint{color:var(--muted);font-size:12px;text-align:center;display:block;}
   .list-item{padding:14px;border:1px solid var(--border-soft);border-radius:var(--radius-sm);margin-bottom:10px;background:#fff;transition:box-shadow .15s ease, border-color .15s ease;}
   .list-item:hover{box-shadow:var(--shadow-sm);border-color:var(--border);}
   .list-item .top{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;}
   .amount{font-weight:800;color:var(--text);font-size:15px;letter-spacing:-.01em;}
-  .muted{color:var(--muted);font-size:12px;}
+  .muted{color:var(--muted);font-size:12px;text-align:center;}
   .actions{display:flex;gap:8px;margin-top:10px;}
   .breakdown{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-top:10px;padding-top:10px;border-top:1px dashed var(--border);}
   .breakdown .bi{font-size:11.5px;color:var(--muted);}
@@ -269,7 +269,7 @@ var L = {
     sendReset:'إرسال', backToLogin:'العودة لتسجيل الدخول', appTagline:'تحصيل النقدية والموافقات',
     mustChangePw:'يجب تغيير كلمة المرور', newPassword:'كلمة المرور الجديدة', currentPassword:'كلمة المرور الحالية',
     save:'حفظ', cancel:'إلغاء', logout:'خروج', language:'اللغة',
-    nav_home:'الرئيسية', nav_entries:'الإدخالات', nav_handoffs:'التسليمات', nav_report:'تقرير المبيعات', nav_admin:'الإدارة', nav_notifications:'الإشعارات — تسليمات بانتظارك',
+    nav_home:'الرئيسية', nav_entries:'الإدخالات', nav_areaBulk:'رفع دفعة المنطقة', nav_deputyReview:'اعتماد دفعات المنطقة', nav_handoffs:'التسليمات', nav_report:'تقرير المبيعات', nav_admin:'الإدارة', nav_notifications:'الإشعارات — تسليمات بانتظارك',
     nav_reconciliation:'التسوية البنكية', recon_title:'التسوية البنكية', recon_hint:'حمّل كشف الحساب البنكي (CSV) لمطابقة الإيداعات المُسجّلة تلقائياً بما وصل فعلياً للبنك.',
     recon_import:'استيراد كشف الحساب', recon_result:'تم استيراد {imported} صف — {matched} مطابقة تلقائية',
     recon_totalDeposits:'إجمالي الإيداعات', recon_reconciled:'مُسوّاة', recon_unmatchedDeposits:'إيداعات غير مطابقة',
@@ -290,6 +290,16 @@ var L = {
     entry_credit:'المبيعات الآجلة (كريدت)', entry_creditHint:'مبيعات آجلة — تُضاف إلى إجمالي المبيعات لكن بلا أي أثر نقدي (لا تدخل في صافي المستحق تسليمه)',
     entry_location:'الموقع',
     entry_importTitle:'استيراد من CSV / إكسل', entry_importHint:'حمّل قالب CSV واملأه، ثم ارفعه هنا. الأعمدة: date, sourceType, sourceName, product, cashSales, deliveryFee, posSales, creditSales, cylindersOut, cylindersIn, note',
+    err_featureDisabled:'هذه الميزة معطّلة حالياً من الإدارة', err_invalidRows:'هناك صفوف غير صحيحة في الملف — صحّح الأخطاء ثم أعد الرفع',
+    areaBulk_title:'رفع دفعة بيانات المنطقة', areaBulk_hint:'حمّل قالب CSV واملأه ببيانات كل المواقع في منطقتك، ثم ارفعه هنا. الأعمدة: date, locationName, sourceType, sourceName, product, cashSales, deliveryFee, posSales, creditSales, cylindersOut, cylindersIn, note',
+    areaBulk_template:'تحميل القالب', areaBulk_col_row:'#', areaBulk_col_date:'التاريخ', areaBulk_col_location:'الموقع', areaBulk_col_type:'النوع', areaBulk_col_source:'المصدر', areaBulk_col_status:'الحالة',
+    areaBulk_valid:'صحيح', areaBulk_err_missing:'بيانات ناقصة', areaBulk_err_location_notfound:'الموقع غير موجود في منطقتك', areaBulk_err_source_notfound:'المصدر غير موجود في هذا الموقع',
+    areaBulk_submit:'اعتماد الدفعة وإرسالها لنائب مدير العمليات', areaBulk_needsAllValid:'يجب تصحيح كل الصفوف قبل الإرسال — لا يمكن اعتماد دفعة بها أخطاء',
+    areaBulk_recentTitle:'دفعاتك السابقة', areaBulk_noBatches:'لا توجد دفعات بعد', areaBulk_rejectionNote:'سبب الرفض',
+    batch_pending_deputy:'بانتظار اعتماد نائب مدير العمليات', batch_deputy_approved:'مُعتمدة — أُرسلت للمُحصِّل', batch_deputy_rejected:'مرفوضة',
+    deputy_title:'اعتماد دفعات المناطق', deputy_hint:'دفعات رفعها مديرو المناطق وبانتظار اعتمادك قبل تكليف المُحصِّل بالتحصيل.',
+    deputy_noPending:'لا توجد دفعات بانتظار الاعتماد', deputy_uploadedBy:'رفعها', deputy_cluster:'المنطقة', deputy_approve:'اعتماد', deputy_reject:'رفض',
+    deputy_rejectPrompt:'سبب الرفض (سيصل لمدير المنطقة):', deputy_approved_toast:'تم الاعتماد وإرسال التسليم للمُحصِّل', deputy_rejected_toast:'تم رفض الدفعة',
     entry_importTemplate:'تحميل القالب', entry_importChoose:'اختر ملف CSV', entry_importPreview:'معاينة قبل الاستيراد',
     entry_importCol_row:'#', entry_importCol_date:'التاريخ', entry_importCol_type:'النوع', entry_importCol_source:'المصدر',
     entry_importCol_status:'الحالة', entry_importValid:'جاهز', entry_importSubmit:'استيراد الصفوف الصحيحة',
@@ -349,6 +359,7 @@ var L = {
     admin_groupSystem:'النظام والمستخدمون', admin_groupMaster:'البيانات الأساسية', admin_groupOther:'أخرى',
     admin_permissions:'مصفوفة الصلاحيات', perm_screen:'الشاشة/الصلاحية', perm_note:'تُبنى هذه المصفوفة من قواعد النظام الفعلية، وليست وثيقة منفصلة قد تصبح قديمة.',
     perm_home:'الرئيسية (نطاقه الخاص)', perm_home_company:'الرئيسية (بيانات الشركة كاملة)', perm_entries:'إدخال البيانات اليومية',
+    perm_area_bulk_upload:'رفع دفعة بيانات المنطقة (ملف)', perm_deputy_approve:'اعتماد/رفض دفعات المنطقة',
     perm_handoffs_own:'التسليمات (الخاصة به)', perm_handoffs_all:'التسليمات (كل الشركة)', perm_report_own:'تقرير المبيعات (قطاعه فقط)',
     perm_report_all:'تقرير المبيعات (كل الشركة)', perm_audit:'سجل التدقيق', perm_resolve:'حل الاعتراضات', perm_reconcile:'التسوية البنكية',
     perm_risk_report:'إبلاغ عن خطر/شكوى', perm_risk_view:'عرض سجل المخاطر والشكاوى', perm_manage:'إدارة المستخدمين والبيانات الأساسية',
@@ -362,6 +373,7 @@ var L = {
     admin_addCluster:'إضافة قطاع', admin_clusterName:'اسم القطاع', admin_clusterManager:'مدير القطاع', admin_collector:'المُحصّل',
     admin_vatRate:'نسبة الضريبة', admin_delete:'حذف', admin_edit:'تعديل', admin_hasChildren:'لا يمكن الحذف — توجد عناصر تابعة',
     admin_staleThreshold:'ساعات التنبيه للتسليمات المتأخرة (لم تُؤكَّد بعد)', admin_secondApprovalThreshold:'حد المبلغ للموافقة الثانية (0 = تعطيل)',
+    admin_areaBulkUploadEnabled:'تفعيل رفع دفعة بيانات المنطقة (مدير المنطقة)', admin_areaBulkUploadHint:'يتيح لمدير المنطقة رفع ملف بيانات كامل للمنطقة يبدأ السلسلة من عنده مباشرة، بعد اعتماد نائب مدير العمليات، ويُخصَّص مباشرة للمُحصِّل — بدلاً من مسار السائق ومدير الفرع المعتاد',
     admin_heldThreshold:'ساعات التنبيه للنقدية المحتفظ بها (مؤكَّدة ولم تُسلَّم للمرحلة التالية)',
     admin_runStaleCheck:'فحص التأخيرات الآن', admin_installStaleTrigger:'تفعيل الفحص اليومي التلقائي',
     admin_staleCheckResult:'تم تصعيد {stale} تسليم متأخر و{held} نقدية محتفظ بها لفترة طويلة', admin_triggerInstalled:'تم التفعيل', admin_triggerAlready:'مُفعّل مسبقاً',
@@ -375,6 +387,7 @@ var L = {
     risk_status_in_progress:'قيد المعالجة', risk_status_resolved:'تم الحل', risk_resolutionNote:'ملاحظة الحل',
     risk_updateStatus:'تحديث الحالة', risk_reportedBy:'المُبلِّغ', risk_noItems:'لا توجد بلاغات', risk_submitted:'تم إرسال البلاغ بنجاح',
     role_admin:'مدير النظام', role_finance:'مدير مالي', role_accountant:'محاسب', role_operations_manager:'مدير العمليات',
+    role_deputy_operations_manager:'نائب مدير العمليات',
     role_cluster_manager:'مدير قطاع', role_store_manager:'مشرف فرع',
     role_collector:'مُحصّل', role_driver:'سائق', settings_url:'رابط النظام (Apps Script)', settings_save:'حفظ الرابط',
     err_generic:'حدث خطأ، حاول مرة أخرى', ok_saved:'تم الحفظ بنجاح', confirm_delete:'هل أنت متأكد من الحذف؟',
@@ -406,7 +419,7 @@ var L = {
     sendReset:'Send', backToLogin:'Back to sign in', appTagline:'Cash Collection & Approvals',
     mustChangePw:'You must change your password', newPassword:'New password', currentPassword:'Current password',
     save:'Save', cancel:'Cancel', logout:'Log out', language:'Language',
-    nav_home:'Home', nav_entries:'Entries', nav_handoffs:'Handoffs', nav_report:'Sales Report', nav_admin:'Admin', nav_notifications:'Notifications — handoffs awaiting you',
+    nav_home:'Home', nav_entries:'Entries', nav_areaBulk:'Area Bulk Upload', nav_deputyReview:'Area Batch Approvals', nav_handoffs:'Handoffs', nav_report:'Sales Report', nav_admin:'Admin', nav_notifications:'Notifications — handoffs awaiting you',
     nav_reconciliation:'Bank Reconciliation', recon_title:'Bank Reconciliation', recon_hint:'Upload the bank statement (CSV) to automatically match recorded deposits against what actually arrived at the bank.',
     recon_import:'Import statement', recon_result:'Imported {imported} rows — {matched} auto-matched',
     recon_totalDeposits:'Total deposits', recon_reconciled:'Reconciled', recon_unmatchedDeposits:'Unmatched deposits',
@@ -427,6 +440,16 @@ var L = {
     entry_credit:'Credit sales', entry_creditHint:'Sold on credit — counts toward total sales but has no cash impact (excluded from the net amount owed)',
     entry_location:'Location',
     entry_importTitle:'Import from CSV / Excel', entry_importHint:'Download the CSV template, fill it in, then upload it here. Columns: date, sourceType, sourceName, product, cashSales, deliveryFee, posSales, creditSales, cylindersOut, cylindersIn, note',
+    err_featureDisabled:'This feature is currently disabled by admin', err_invalidRows:'The file has invalid rows — fix them and re-upload',
+    areaBulk_title:'Area Bulk Upload', areaBulk_hint:'Download the CSV template and fill it in with data for every location in your area, then upload it here. Columns: date, locationName, sourceType, sourceName, product, cashSales, deliveryFee, posSales, creditSales, cylindersOut, cylindersIn, note',
+    areaBulk_template:'Download template', areaBulk_col_row:'#', areaBulk_col_date:'Date', areaBulk_col_location:'Location', areaBulk_col_type:'Type', areaBulk_col_source:'Source', areaBulk_col_status:'Status',
+    areaBulk_valid:'Valid', areaBulk_err_missing:'Missing data', areaBulk_err_location_notfound:'Location not found in your area', areaBulk_err_source_notfound:'Source not found at that location',
+    areaBulk_submit:'Approve batch and send to Deputy Operations Manager', areaBulk_needsAllValid:'Every row must be fixed before submitting — a batch with errors can\'t be approved',
+    areaBulk_recentTitle:'Your recent batches', areaBulk_noBatches:'No batches yet', areaBulk_rejectionNote:'Rejection reason',
+    batch_pending_deputy:'Awaiting Deputy Operations Manager approval', batch_deputy_approved:'Approved — sent to collector', batch_deputy_rejected:'Rejected',
+    deputy_title:'Area Batch Approvals', deputy_hint:'Batches area managers uploaded, awaiting your approval before the collector is assigned.',
+    deputy_noPending:'No batches awaiting approval', deputy_uploadedBy:'Uploaded by', deputy_cluster:'Area', deputy_approve:'Approve', deputy_reject:'Reject',
+    deputy_rejectPrompt:'Rejection reason (sent to the area manager):', deputy_approved_toast:'Approved and sent to the collector', deputy_rejected_toast:'Batch rejected',
     entry_importTemplate:'Download template', entry_importChoose:'Choose CSV file', entry_importPreview:'Preview before import',
     entry_importCol_row:'#', entry_importCol_date:'Date', entry_importCol_type:'Type', entry_importCol_source:'Source',
     entry_importCol_status:'Status', entry_importValid:'Ready', entry_importSubmit:'Import valid rows',
@@ -486,6 +509,7 @@ var L = {
     admin_groupSystem:'System & users', admin_groupMaster:'Master data', admin_groupOther:'Other',
     admin_permissions:'Permissions matrix', perm_screen:'Screen / permission', perm_note:"This matrix is generated from the system's actual access rules, not a separate document that can go stale.",
     perm_home:'Home (own scope)', perm_home_company:'Home (company-wide figures)', perm_entries:'Enter daily data',
+    perm_area_bulk_upload:'Upload area bulk batch (file)', perm_deputy_approve:'Approve/reject area batches',
     perm_handoffs_own:'Handoffs (own)', perm_handoffs_all:'Handoffs (company-wide)', perm_report_own:'Sales report (own area only)',
     perm_report_all:'Sales report (company-wide)', perm_audit:'Audit log', perm_resolve:'Resolve disputes', perm_reconcile:'Bank reconciliation',
     perm_risk_report:'Report a risk/complaint', perm_risk_view:'View the risk/complaint register', perm_manage:'Manage users & master data',
@@ -499,6 +523,7 @@ var L = {
     admin_addCluster:'Add area', admin_clusterName:'Area name', admin_clusterManager:'Area manager', admin_collector:'Collector',
     admin_vatRate:'VAT rate', admin_delete:'Delete', admin_edit:'Edit', admin_hasChildren:'Cannot delete — has child records',
     admin_staleThreshold:'Stale-handoff alert hours (not yet confirmed)', admin_secondApprovalThreshold:'Second-approval amount threshold (0 = off)',
+    admin_areaBulkUploadEnabled:'Enable area bulk upload (Area Manager)', admin_areaBulkUploadHint:'Lets an Area Manager upload a whole-cluster data file that starts the chain directly from there, goes to the Deputy Operations Manager for approval, then assigns straight to the collector — instead of the normal driver/store-manager path',
     admin_heldThreshold:'Held-cash alert hours (confirmed but not passed on)',
     admin_runStaleCheck:'Check aging now', admin_installStaleTrigger:'Enable daily automatic check',
     admin_staleCheckResult:'Escalated {stale} stale handoff(s) and {held} held-too-long handoff(s)', admin_triggerInstalled:'Enabled', admin_triggerAlready:'Already enabled',
@@ -512,6 +537,7 @@ var L = {
     risk_status_in_progress:'In progress', risk_status_resolved:'Resolved', risk_resolutionNote:'Resolution note',
     risk_updateStatus:'Update status', risk_reportedBy:'Reported by', risk_noItems:'No reports', risk_submitted:'Report submitted successfully',
     role_admin:'Admin', role_finance:'Finance Manager', role_accountant:'Accountant', role_operations_manager:'Operations Manager',
+    role_deputy_operations_manager:'Deputy Operations Manager',
     role_cluster_manager:'Area Manager', role_store_manager:'Store Manager',
     role_collector:'Collector', role_driver:'Driver', settings_url:'System URL (Apps Script)', settings_save:'Save URL',
     err_generic:'Something went wrong, please try again', ok_saved:'Saved successfully', confirm_delete:'Are you sure you want to delete this?',
@@ -543,7 +569,7 @@ var L = {
     sendReset:'بھیجیں', backToLogin:'لاگ ان پر واپس جائیں', appTagline:'نقد وصولی اور منظوری کا نظام',
     mustChangePw:'پاس ورڈ تبدیل کرنا ضروری ہے', newPassword:'نیا پاس ورڈ', currentPassword:'موجودہ پاس ورڈ',
     save:'محفوظ کریں', cancel:'منسوخ کریں', logout:'لاگ آؤٹ', language:'زبان',
-    nav_home:'ہوم', nav_entries:'اندراجات', nav_handoffs:'ترسیل', nav_report:'سیلز رپورٹ', nav_admin:'ایڈمن', nav_notifications:'اطلاعات — آپ کی زیر التواء ترسیل',
+    nav_home:'ہوم', nav_entries:'اندراجات', nav_areaBulk:'ایریا بلک اپ لوڈ', nav_deputyReview:'ایریا بیچ منظوری', nav_handoffs:'ترسیل', nav_report:'سیلز رپورٹ', nav_admin:'ایڈمن', nav_notifications:'اطلاعات — آپ کی زیر التواء ترسیل',
     nav_reconciliation:'بینک مطابقت', recon_title:'بینک مطابقت', recon_hint:'بینک اسٹیٹمنٹ (CSV) اپ لوڈ کریں تاکہ درج شدہ جمع رقوم خودکار طور پر اصل بینک ریکارڈ سے ملائی جائیں۔',
     recon_import:'اسٹیٹمنٹ درآمد کریں', recon_result:'{imported} قطاریں درآمد ہوئیں — {matched} خودکار مطابقت',
     recon_totalDeposits:'کل جمع رقوم', recon_reconciled:'مطابقت شدہ', recon_unmatchedDeposits:'غیر مطابقت شدہ جمع رقوم',
@@ -564,6 +590,16 @@ var L = {
     entry_credit:'اُدھار فروخت (کریڈٹ)', entry_creditHint:'اُدھار فروخت — کل فروخت میں شامل ہوتی ہے لیکن اس کا نقدی پر کوئی اثر نہیں (واجب الادا خالص رقم میں شامل نہیں)',
     entry_location:'مقام',
     entry_importTitle:'CSV / ایکسل سے درآمد کریں', entry_importHint:'CSV ٹیمپلیٹ ڈاؤن لوڈ کریں، اسے پُر کریں، پھر یہاں اپ لوڈ کریں۔ کالمز: date, sourceType, sourceName, product, cashSales, deliveryFee, posSales, creditSales, cylindersOut, cylindersIn, note',
+    err_featureDisabled:'یہ فیچر فی الحال ایڈمن نے غیر فعال کر رکھا ہے', err_invalidRows:'فائل میں غلط قطاریں ہیں — درست کر کے دوبارہ اپ لوڈ کریں',
+    areaBulk_title:'ایریا بلک اپ لوڈ', areaBulk_hint:'CSV ٹیمپلیٹ ڈاؤن لوڈ کریں اور اپنے ایریا کے ہر مقام کا ڈیٹا بھریں، پھر یہاں اپ لوڈ کریں۔ کالمز: date, locationName, sourceType, sourceName, product, cashSales, deliveryFee, posSales, creditSales, cylindersOut, cylindersIn, note',
+    areaBulk_template:'ٹیمپلیٹ ڈاؤن لوڈ کریں', areaBulk_col_row:'#', areaBulk_col_date:'تاریخ', areaBulk_col_location:'مقام', areaBulk_col_type:'قسم', areaBulk_col_source:'ذریعہ', areaBulk_col_status:'حیثیت',
+    areaBulk_valid:'درست', areaBulk_err_missing:'ڈیٹا نامکمل', areaBulk_err_location_notfound:'مقام آپ کے ایریا میں نہیں ملا', areaBulk_err_source_notfound:'ذریعہ اس مقام پر نہیں ملا',
+    areaBulk_submit:'بیچ کی منظوری دیں اور ڈپٹی آپریشنز منیجر کو بھیجیں', areaBulk_needsAllValid:'جمع کروانے سے پہلے ہر قطار درست کریں — غلطیوں والا بیچ منظور نہیں ہو سکتا',
+    areaBulk_recentTitle:'آپ کے حالیہ بیچز', areaBulk_noBatches:'ابھی تک کوئی بیچ نہیں', areaBulk_rejectionNote:'مسترد کرنے کی وجہ',
+    batch_pending_deputy:'ڈپٹی آپریشنز منیجر کی منظوری کا منتظر', batch_deputy_approved:'منظور — کلکٹر کو بھیج دیا گیا', batch_deputy_rejected:'مسترد شدہ',
+    deputy_title:'ایریا بیچ منظوری', deputy_hint:'ایریا منیجرز کے اپ لوڈ کردہ بیچز جو کلکٹر کی تفویض سے پہلے آپ کی منظوری کے منتظر ہیں۔',
+    deputy_noPending:'منظوری کے منتظر کوئی بیچ نہیں', deputy_uploadedBy:'اپ لوڈ کنندہ', deputy_cluster:'ایریا', deputy_approve:'منظور کریں', deputy_reject:'مسترد کریں',
+    deputy_rejectPrompt:'مسترد کرنے کی وجہ (ایریا منیجر کو بھیجی جائے گی):', deputy_approved_toast:'منظور کر کے کلکٹر کو بھیج دیا گیا', deputy_rejected_toast:'بیچ مسترد کر دیا گیا',
     entry_importTemplate:'ٹیمپلیٹ ڈاؤن لوڈ کریں', entry_importChoose:'CSV فائل منتخب کریں', entry_importPreview:'درآمد سے پہلے معائنہ',
     entry_importCol_row:'#', entry_importCol_date:'تاریخ', entry_importCol_type:'قسم', entry_importCol_source:'ذریعہ',
     entry_importCol_status:'حالت', entry_importValid:'تیار', entry_importSubmit:'درست قطاریں درآمد کریں',
@@ -623,6 +659,7 @@ var L = {
     admin_groupSystem:'نظام اور صارفین', admin_groupMaster:'بنیادی ڈیٹا', admin_groupOther:'دیگر',
     admin_permissions:'اجازتوں کی میٹرکس', perm_screen:'اسکرین/اجازت', perm_note:'یہ میٹرکس نظام کے اصل رسائی قوانین سے تیار ہوتی ہے، ایک الگ دستاویز نہیں جو پرانی ہو سکے۔',
     perm_home:'ہوم (اپنا دائرہ)', perm_home_company:'ہوم (پوری کمپنی کے اعداد و شمار)', perm_entries:'روزانہ ڈیٹا درج کریں',
+    perm_area_bulk_upload:'ایریا بلک بیچ اپ لوڈ کریں (فائل)', perm_deputy_approve:'ایریا بیچز کی منظوری/مسترد',
     perm_handoffs_own:'ترسیل (اپنی)', perm_handoffs_all:'ترسیل (پوری کمپنی)', perm_report_own:'سیلز رپورٹ (صرف اپنا علاقہ)',
     perm_report_all:'سیلز رپورٹ (پوری کمپنی)', perm_audit:'آڈٹ لاگ', perm_resolve:'اعتراضات حل کریں', perm_reconcile:'بینک مطابقت',
     perm_risk_report:'خطرہ/شکایت رپورٹ کریں', perm_risk_view:'خطرات/شکایات کا رجسٹر دیکھیں', perm_manage:'صارفین اور بنیادی ڈیٹا کا انتظام',
@@ -636,6 +673,7 @@ var L = {
     admin_addCluster:'علاقہ شامل کریں', admin_clusterName:'علاقے کا نام', admin_clusterManager:'علاقہ منیجر', admin_collector:'کلکٹر',
     admin_vatRate:'ویٹ کی شرح', admin_delete:'حذف کریں', admin_edit:'ترمیم کریں', admin_hasChildren:'حذف نہیں ہو سکتا — ذیلی ریکارڈز موجود ہیں',
     admin_staleThreshold:'تاخیر شدہ ترسیل کی اطلاع (گھنٹے، ابھی تک غیر تصدیق شدہ)', admin_secondApprovalThreshold:'دوسری منظوری کی رقم کی حد (0 = بند)',
+    admin_areaBulkUploadEnabled:'ایریا بلک اپ لوڈ فعال کریں (ایریا منیجر)', admin_areaBulkUploadHint:'ایریا منیجر کو پوری ایریا کی ڈیٹا فائل اپ لوڈ کرنے دیتا ہے جو وہیں سے سلسلہ شروع کرتی ہے، ڈپٹی آپریشنز منیجر کی منظوری کے بعد براہ راست کلکٹر کو تفویض ہوتی ہے — عام ڈرائیور/اسٹور منیجر والے راستے کے بجائے',
     admin_heldThreshold:'محفوظ نقدی کی اطلاع (گھنٹے، تصدیق شدہ مگر آگے منتقل نہیں ہوئی)',
     admin_runStaleCheck:'تاخیر ابھی چیک کریں', admin_installStaleTrigger:'روزانہ خودکار چیک فعال کریں',
     admin_staleCheckResult:'{stale} تاخیر شدہ ترسیل اور {held} دیر تک محفوظ نقدی کو مطلع کیا گیا', admin_triggerInstalled:'فعال ہوگیا', admin_triggerAlready:'پہلے سے فعال',
@@ -649,6 +687,7 @@ var L = {
     risk_status_in_progress:'زیر عمل', risk_status_resolved:'حل شدہ', risk_resolutionNote:'حل کا نوٹ',
     risk_updateStatus:'حالت اپ ڈیٹ کریں', risk_reportedBy:'رپورٹ کنندہ', risk_noItems:'کوئی رپورٹ نہیں', risk_submitted:'رپورٹ کامیابی سے بھیج دی گئی',
     role_admin:'ایڈمن', role_finance:'فنانس منیجر', role_accountant:'اکاؤنٹنٹ', role_operations_manager:'آپریشنز منیجر',
+    role_deputy_operations_manager:'ڈپٹی آپریشنز منیجر',
     role_cluster_manager:'علاقہ منیجر', role_store_manager:'اسٹور منیجر',
     role_collector:'کلکٹر', role_driver:'ڈرائیور', settings_url:'سسٹم لنک (Apps Script)', settings_save:'لنک محفوظ کریں',
     err_generic:'کچھ غلط ہوگیا، دوبارہ کوشش کریں', ok_saved:'کامیابی سے محفوظ ہوگیا', confirm_delete:'کیا آپ واقعی حذف کرنا چاہتے ہیں؟',
@@ -829,6 +868,7 @@ var ERROR_KEYS_ = {
   no_cluster_manager:'err_noClusterManager', no_collector:'err_noCollector', no_entries:'err_noEntries',
   no_held_cash:'err_noHeldCash', no_store_manager:'err_noStoreManager', delivery_without_sale:'err_deliveryWithoutSale', not_disputed:'err_notDisputed', not_flagged:'err_notFlagged', not_found:'err_notFound',
   not_pending:'err_notPending', nothing_owed:'err_nothingOwed', too_many_rows:'err_tooManyRows',
+  feature_disabled:'err_featureDisabled', invalid_rows:'err_invalidRows',
   unknown_action:'err_unknownAction', weak_password:'err_weakPassword', wrong_current_password:'err_wrongCurrentPassword',
   network:'err_network'
 };
@@ -996,11 +1036,17 @@ function langLocale_(){ return state.lang==='ar' ? 'ar-SA' : state.lang==='ur' ?
 // timestamp display in this app (handoff_created, audit log, risk items) —
 // unambiguous and locale-independent, unlike a "today's date" banner line
 // which is meant to read naturally, so that one goes through Intl instead.
+// Seconds-precision (slice to 19 chars, not 16) since this is a one-line
+// security-style "last login" notice, not a list of records where trailing
+// seconds would just be noise.
 function lastLoginLabel_(){
   var v = localStorage.getItem('bgc_lastLogin');
-  return v ? String(v).slice(0,16).replace('T',' ') : null;
+  return v ? String(v).slice(0,19).replace('T',' ') : null;
 }
-function todayDatesLine_(){
+// Returns {gregorian, hijri} as two separate strings — shown as two separate
+// lines in the welcome card, not joined, since Hijri and Gregorian are two
+// distinct calendars a reader may want to read independently.
+function todayDatesLines_(){
   var now = new Date();
   var loc = langLocale_();
   var greg;
@@ -1012,7 +1058,7 @@ function todayDatesLine_(){
     var d = {}; parts.forEach(function(p){ d[p.type] = p.value; });
     if (d.day && d.month && d.year) hijri = d.day + ' ' + d.month + ' ' + d.year + ' ' + t('home_hijriSuffix');
   } catch(e) { /* Hijri calendar not supported in this environment — Gregorian alone is still useful */ }
-  return hijri ? (greg + '  ·  ' + hijri) : greg;
+  return { gregorian: greg, hijri: hijri };
 }
 // A driver has no locationId of their own — it only lives on the car they
 // drive — so this resolves both shapes rather than assuming state.user
@@ -1035,11 +1081,13 @@ function myCityLabel_(){
 function renderShell(){
   var root = qs('#app'); root.innerHTML='';
   var navItems = [['home','nav_home']];
-  var isCompanyWideRole = ['admin','finance','accountant','operations_manager'].indexOf(state.user.role)>=0;
+  var isCompanyWideRole = ['admin','finance','accountant','operations_manager','deputy_operations_manager'].indexOf(state.user.role)>=0;
   if (isCompanyWideRole) navItems.push(['dashboard','nav_dashboard']);
   if (['store_manager','driver','admin'].indexOf(state.user.role)>=0) navItems.push(['entries','nav_entries']);
+  if ((state.user.role==='cluster_manager' || state.user.role==='admin') && state.meta && state.meta.config && state.meta.config.areaManagerBulkUploadEnabled) navItems.push(['areaBulk','nav_areaBulk']);
+  if (state.user.role==='deputy_operations_manager' || state.user.role==='admin') navItems.push(['deputyReview','nav_deputyReview']);
   navItems.push(['handoffs','nav_handoffs']);
-  if (['admin','finance','accountant','operations_manager','cluster_manager'].indexOf(state.user.role)>=0) navItems.push(['report','nav_report']);
+  if (['admin','finance','accountant','operations_manager','deputy_operations_manager','cluster_manager'].indexOf(state.user.role)>=0) navItems.push(['report','nav_report']);
   if (['admin','finance'].indexOf(state.user.role)>=0) navItems.push(['reconciliation','nav_reconciliation']);
   navItems.push(['risk','nav_risk']);
   if (state.user.role==='admin') navItems.push(['admin','nav_admin']);
@@ -1099,7 +1147,7 @@ function renderShell(){
   var body = el('<div id="screenBody"></div>');
   main.appendChild(body);
 
-  var renderers = { home: renderHome, dashboard: renderDashboard, entries: renderEntries, handoffs: renderHandoffs, report: renderReport, reconciliation: renderReconciliation, risk: renderRisk, admin: renderAdmin };
+  var renderers = { home: renderHome, dashboard: renderDashboard, entries: renderEntries, areaBulk: renderAreaBulk, deputyReview: renderDeputyReview, handoffs: renderHandoffs, report: renderReport, reconciliation: renderReconciliation, risk: renderRisk, admin: renderAdmin };
   (renderers[state.screen] || renderHome)(body);
 }
 
@@ -1174,7 +1222,7 @@ function sourceOptionLabel_(type, x){
 // ---------------- home ----------------
 function renderHome(body){
   body.innerHTML = '<div class="card">'+esc(t('loading'))+'</div>';
-  var isCompanyWide = ['admin','finance','accountant','operations_manager'].indexOf(state.user.role) >= 0;
+  var isCompanyWide = ['admin','finance','accountant','operations_manager','deputy_operations_manager'].indexOf(state.user.role) >= 0;
 
   var dashP = api('listDashboard', {});
   var reportP = isCompanyWide ? api('getSalesReport', {}) : Promise.resolve(null);
@@ -1194,12 +1242,14 @@ function renderHome(body){
     state.justLoggedIn = false;
     var lastLogin = lastLoginLabel_();
     var city = myCityLabel_();
+    var dates = todayDatesLines_();
     var metaLines = [];
-    metaLines.push(todayDatesLine_());
+    metaLines.push(esc(dates.gregorian));
+    if (dates.hijri) metaLines.push(esc(dates.hijri));
     metaLines.push((lastLogin ? esc(t('home_lastLogin'))+': '+esc(lastLogin) : esc(t('home_firstLogin'))));
     if (city) metaLines.push(esc(t('home_city'))+': '+esc(city));
 
-    var greeting = el('<div class="card welcome-card'+(splash?' splash':'')+'" style="color:#fff;">' +
+    var greeting = el('<div class="card welcome-card'+(splash?' splash':'')+'" style="color:#fff;text-align:center;">' +
       '<div style="font-size:13.5px;font-weight:700;opacity:.85;">'+esc(timeGreeting())+'</div>' +
       '<div style="font-size:19px;font-weight:800;margin-top:1px;">'+esc(state.user.name)+'</div>' +
       '<div style="opacity:.85;font-size:13px;margin-top:2px;">'+esc(roleLabel(state.user.role))+'</div>' +
@@ -1524,6 +1574,36 @@ function resolveProductByName_(name){
   return null;
 }
 
+// Cluster-scoped source resolution for the area-manager bulk upload —
+// unlike resolveSourceByName_ (single-admin/whole-company scope, name alone
+// is enough), two stores/cars in different locations of the same cluster
+// could share a name, so resolution here always goes through the location
+// first: (locationName, sourceType, sourceName) -> id, never name alone.
+function resolveLocationByNameInCluster_(name, clusterId){
+  var meta = state.meta || {};
+  var n = String(name||'').trim().toLowerCase();
+  if (!n) return null;
+  var list = (meta.locations||[]).filter(function(l){ return l.clusterId === clusterId; });
+  for (var i=0;i<list.length;i++){ if (String(list[i].name||'').trim().toLowerCase() === n) return list[i].id; }
+  return null;
+}
+function resolveSourceByNameInCluster_(type, name, locationId){
+  var meta = state.meta || {};
+  var n = String(name||'').trim().toLowerCase();
+  if (!n || !locationId) return null;
+  if (type === 'store'){
+    var s = (meta.stores||[]).filter(function(x){ return x.locationId===locationId; });
+    for (var i=0;i<s.length;i++){ if (String(s[i].name||'').trim().toLowerCase()===n) return s[i].id; }
+  } else if (type === 'car'){
+    var c = (meta.cars||[]).filter(function(x){ return x.locationId===locationId; });
+    for (var j=0;j<c.length;j++){ if (String(c[j].label||'').trim().toLowerCase()===n) return c[j].id; }
+  } else if (type === 'pos'){
+    var p = (meta.pos||[]).filter(function(x){ return posOwnerLocationId_(x)===locationId; });
+    for (var k=0;k<p.length;k++){ if (String(p[k].label||'').trim().toLowerCase()===n) return p[k].id; }
+  }
+  return null;
+}
+
 function downloadCsvTemplate_(){
   var meta = state.meta || {};
   var sampleStore = (meta.stores && meta.stores[0] && meta.stores[0].name) || 'Store name';
@@ -1534,6 +1614,25 @@ function downloadCsvTemplate_(){
   var url = URL.createObjectURL(blob);
   var a = document.createElement('a');
   a.href = url; a.download = 'entries_template.csv';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
+}
+
+// Same shape as downloadCsvTemplate_, plus a leading locationName column —
+// needed here (and not on the single-location admin import) because this
+// template spans every location in a whole cluster at once.
+function downloadAreaBulkCsvTemplate_(clusterId){
+  var meta = state.meta || {};
+  var myLoc = (meta.locations||[]).filter(function(l){ return l.clusterId===clusterId; })[0];
+  var sampleLocation = myLoc ? myLoc.name : 'Location name';
+  var sampleStore = (meta.stores||[]).filter(function(s){ return !myLoc || s.locationId===myLoc.id; })[0];
+  var header = 'date,locationName,sourceType,sourceName,product,cashSales,deliveryFee,posSales,creditSales,cylindersOut,cylindersIn,note';
+  var sample = new Date().toISOString().slice(0,10)+','+sampleLocation+',store,'+(sampleStore?sampleStore.name:'Store name')+',,1000,,0,0,,,';
+  var csv = header+'\n'+sample+'\n';
+  var blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url; a.download = 'area_bulk_template.csv';
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
   setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
 }
@@ -1977,6 +2076,197 @@ function renderEntries(body){
       wrap.innerHTML = '<table><thead><tr><th>'+esc(t('entry_date'))+'</th><th>'+esc(t('entry_sourceType'))+'</th><th>'+esc(t('handoff_amount'))+'</th><th></th></tr></thead><tbody>'+rows+'</tbody></table>';
     });
   }
+}
+
+// ---------------- area-manager bulk upload ----------------
+// A deliberate alternative to renderEntries: cluster-wide file, batch
+// review, submit-for-approval instead of submit-and-done — different enough
+// semantics that reusing the single-location entry screen would mean
+// forking most of its CSV-import card anyway. See CLAUDE.md.
+function renderAreaBulk(body){
+  var role = state.user.role;
+  var clusters = (state.meta && state.meta.clusters) || [];
+  var myCluster = role === 'admin' ? null : clusters.filter(function(c){ return c.clusterManagerUserId === state.user.id; })[0];
+
+  var card = el('<div class="card">' +
+    '<h2>'+esc(t('areaBulk_title'))+'</h2>' +
+    '<div class="muted" style="font-size:12.5px;margin-bottom:10px;">'+esc(t('areaBulk_hint'))+'</div>' +
+    (role==='admin' ? '<div class="field"><label>'+esc(t('deputy_cluster'))+'</label><select id="abCluster">'+
+      clusters.map(function(c){ return '<option value="'+c.id+'">'+esc(c.name)+'</option>'; }).join('')+'</select></div>' : '') +
+    '<div class="row" style="gap:10px;flex-wrap:wrap;margin-bottom:10px;align-items:center;">' +
+      '<button type="button" class="btn" id="abTemplateBtn" style="background:var(--muted-2);">'+esc(t('areaBulk_template'))+'</button>' +
+      '<input type="file" id="abFile" accept=".csv,text/csv">' +
+    '</div>' +
+    '<div id="abMsg"></div>' +
+    '<div id="abPreviewWrap"></div>' +
+  '</div>');
+  body.innerHTML = '';
+  body.appendChild(card);
+
+  if (role !== 'admin' && !myCluster) {
+    card.innerHTML = '<h2>'+esc(t('areaBulk_title'))+'</h2><div class="msg err">'+esc(t('err_forbidden'))+'</div>';
+    return;
+  }
+
+  function currentClusterId(){
+    return role === 'admin' ? qs('#abCluster', card).value : myCluster.id;
+  }
+
+  qs('#abTemplateBtn', card).addEventListener('click', function(){ downloadAreaBulkCsvTemplate_(currentClusterId()); });
+
+  var pendingRows = [];
+  qs('#abFile', card).addEventListener('change', function(e){
+    var file = e.target.files[0];
+    if (!file) return;
+    var clusterId = currentClusterId();
+    var reader = new FileReader();
+    reader.onload = function(){
+      var parsed;
+      try { parsed = parseCsv_(String(reader.result||'')); } catch(err){ parsed = null; }
+      if (!parsed || parsed.length < 2){ qs('#abMsg',card).innerHTML = '<div class="msg err">'+esc(t('entry_importParseError'))+'</div>'; return; }
+      qs('#abMsg',card).innerHTML = '';
+      var header = parsed[0].map(function(h){ return String(h||'').trim(); });
+      var dataRows = parsed.slice(1).filter(function(r){ return r.some(function(c){ return String(c||'').trim() !== ''; }); });
+      var idx = {};
+      header.forEach(function(h,i){ idx[h]=i; });
+      function cell(r,key){ var i = idx[key]; return (i!=null && r[i]!=null) ? String(r[i]) : ''; }
+
+      pendingRows = dataRows.map(function(r){
+        var date = cell(r,'date').trim();
+        var locationName = cell(r,'locationName').trim();
+        var sourceType = cell(r,'sourceType').trim().toLowerCase();
+        var sourceName = cell(r,'sourceName').trim();
+        var productName = cell(r,'product').trim();
+        var note = cell(r,'note');
+
+        var status = 'ok', locationId = null, sourceId = null, productId = null;
+        if (!date || !locationName || ['store','car','pos'].indexOf(sourceType) < 0 || !sourceName) status = 'missing';
+        if (status === 'ok') {
+          locationId = resolveLocationByNameInCluster_(locationName, clusterId);
+          if (!locationId) status = 'location_notfound';
+        }
+        if (status === 'ok') {
+          sourceId = resolveSourceByNameInCluster_(sourceType, sourceName, locationId);
+          if (!sourceId) status = 'source_notfound';
+        }
+        if (status === 'ok' && productName) productId = resolveProductByName_(productName);
+        return {
+          date: date, locationName: locationName, sourceType: sourceType, sourceId: sourceId, sourceName: sourceName,
+          productId: productId, cashSales: cell(r,'cashSales'), deliveryFeeBankAmount: cell(r,'deliveryFee'),
+          posSales: cell(r,'posSales'), creditSales: cell(r,'creditSales'),
+          cylindersOut: cell(r,'cylindersOut'), cylindersIn: cell(r,'cylindersIn'), note: note,
+          status: status
+        };
+      });
+      renderAreaBulkPreview();
+    };
+    reader.readAsText(file);
+  });
+
+  function renderAreaBulkPreview(){
+    var wrap = qs('#abPreviewWrap', card);
+    if (!pendingRows.length){ wrap.innerHTML=''; return; }
+    var allValid = pendingRows.every(function(r){ return r.status==='ok'; });
+    var rows = pendingRows.map(function(r, i){
+      var statusLabel = r.status==='ok' ? '<span class="badge confirmed">'+esc(t('areaBulk_valid'))+'</span>'
+        : r.status==='location_notfound' ? '<span class="badge disputed">'+esc(t('areaBulk_err_location_notfound'))+'</span>'
+        : r.status==='source_notfound' ? '<span class="badge disputed">'+esc(t('areaBulk_err_source_notfound'))+'</span>'
+        : '<span class="badge rejected">'+esc(t('areaBulk_err_missing'))+'</span>';
+      return '<tr><td>'+(i+1)+'</td><td>'+esc(r.date)+'</td><td>'+esc(r.locationName)+'</td><td>'+esc(r.sourceType)+'</td><td>'+esc(r.sourceName)+'</td><td>'+statusLabel+'</td></tr>';
+    }).join('');
+    wrap.innerHTML = '<h2 style="margin-top:14px;">'+esc(t('entry_importPreview'))+'</h2>' +
+      '<table><thead><tr><th>'+esc(t('areaBulk_col_row'))+'</th><th>'+esc(t('areaBulk_col_date'))+'</th>' +
+      '<th>'+esc(t('areaBulk_col_location'))+'</th><th>'+esc(t('areaBulk_col_type'))+'</th><th>'+esc(t('areaBulk_col_source'))+'</th><th>'+esc(t('areaBulk_col_status'))+'</th></tr></thead><tbody>'+rows+'</tbody></table>' +
+      (allValid ? '' : '<div class="msg err" style="margin-top:10px;">'+esc(t('areaBulk_needsAllValid'))+'</div>') +
+      '<button class="btn" id="abSubmit" style="margin-top:12px;"'+(allValid?'':' disabled')+'>'+esc(t('areaBulk_submit'))+'</button>';
+    if (allValid) {
+      qs('#abSubmit', wrap).addEventListener('click', function(){
+        api('bulkSubmitAreaBatch', { clusterId: currentClusterId(), rows: pendingRows }).then(function(res){
+          if (!res.ok){ qs('#abMsg',card).innerHTML = '<div class="msg err">'+esc(errMsg_(res))+'</div>'; return; }
+          qs('#abMsg',card).innerHTML = '<div class="msg ok">'+esc(t('ok_saved'))+'</div>';
+          pendingRows = [];
+          renderAreaBulkPreview();
+          qs('#abFile', card).value = '';
+          loadAreaBulkHistory();
+        });
+      });
+    }
+  }
+
+  var historyCard = el('<div class="card"><h2>'+esc(t('areaBulk_recentTitle'))+'</h2><div id="abHistory"></div></div>');
+  body.appendChild(historyCard);
+  function loadAreaBulkHistory(){
+    api('listAreaBulkBatches', {}).then(function(res){
+      var wrap = qs('#abHistory', historyCard);
+      if (!res.ok || !res.batches.length){ wrap.innerHTML = '<div class="muted">'+esc(t('areaBulk_noBatches'))+'</div>'; return; }
+      wrap.innerHTML = res.batches.map(function(b){
+        var badgeClass = b.status==='deputy_approved' ? 'confirmed' : b.status==='deputy_rejected' ? 'rejected' : 'pending';
+        return '<div class="row" style="justify-content:space-between;padding:8px 0;border-top:1px dashed var(--border-soft);">' +
+          '<span>'+esc((b.createdAt||'').slice(0,16).replace('T',' '))+' · <strong>'+money(b.breakdown.netCashOwed)+'</strong></span>' +
+          '<span class="badge '+badgeClass+'">'+esc(t('batch_'+b.status))+'</span>' +
+        '</div>' + (b.status==='deputy_rejected' && b.rejectionNote ? '<div class="msg err" style="margin-top:4px;">'+esc(t('areaBulk_rejectionNote'))+': '+esc(b.rejectionNote)+'</div>' : '');
+      }).join('');
+    });
+  }
+  loadAreaBulkHistory();
+}
+
+// ---------------- deputy operations manager: area batch approvals ----------------
+// New screen, not folded into Handoffs, for the same reason the backend
+// doesn't reuse confirm/dispute for this step: the Deputy is approving
+// *data*, not confirming a *cash amount received* — handoffItem is built
+// entirely around the latter shape. breakdownGrid/handoffDetailRows are
+// reused as-is below since they only need a plain breakdown/perLocation
+// object, with no handoff-specific assumptions. See CLAUDE.md.
+function renderDeputyReview(body){
+  body.innerHTML = '<div class="card">'+esc(t('loading'))+'</div>';
+  api('listAreaBulkBatches', { status: 'pending_deputy' }).then(function(res){
+    body.innerHTML = '';
+    if (!res.ok){ body.innerHTML = '<div class="msg err">'+esc(errMsg_(res))+'</div>'; return; }
+
+    var header = el('<div class="card"><h2>'+esc(t('deputy_title'))+'</h2><div class="muted" style="font-size:12.5px;">'+esc(t('deputy_hint'))+'</div></div>');
+    body.appendChild(header);
+
+    if (!res.batches.length){
+      body.appendChild(el('<div class="card"><div class="muted">'+esc(t('deputy_noPending'))+'</div></div>'));
+      return;
+    }
+
+    res.batches.forEach(function(b){
+      var card = el('<div class="card">' +
+        '<div class="row" style="justify-content:space-between;flex-wrap:wrap;">' +
+          '<div><strong>'+esc(clusterName(b.clusterId))+'</strong> · '+esc(t('deputy_uploadedBy'))+': '+esc(userName(b.uploadedBy))+'</div>' +
+          '<div class="muted">'+esc((b.createdAt||'').slice(0,16).replace('T',' '))+'</div>' +
+        '</div>' +
+        '<div style="font-size:22px;font-weight:800;margin-top:6px;">'+money(b.breakdown.netCashOwed)+'</div>' +
+        breakdownGrid(b.breakdown) +
+        handoffDetailRows(b) +
+        '<div class="row" style="gap:10px;margin-top:12px;">' +
+          '<button class="btn" id="dApprove-'+b.id+'">'+esc(t('deputy_approve'))+'</button>' +
+          '<button class="btn secondary" id="dReject-'+b.id+'">'+esc(t('deputy_reject'))+'</button>' +
+        '</div>' +
+        '<div id="dMsg-'+b.id+'"></div>' +
+      '</div>');
+      body.appendChild(card);
+
+      qs('#dApprove-'+b.id, card).addEventListener('click', function(){
+        api('deputyApproveBatch', { id: b.id }).then(function(res2){
+          if (!res2.ok){ qs('#dMsg-'+b.id, card).innerHTML = '<div class="msg err">'+esc(errMsg_(res2))+'</div>'; return; }
+          toast('deputy_approved_toast', 'ok');
+          renderDeputyReview(body);
+        });
+      });
+      qs('#dReject-'+b.id, card).addEventListener('click', function(){
+        var note = window.prompt(t('deputy_rejectPrompt'), '');
+        if (note === null) return;
+        api('deputyRejectBatch', { id: b.id, note: note }).then(function(res2){
+          if (!res2.ok){ qs('#dMsg-'+b.id, card).innerHTML = '<div class="msg err">'+esc(errMsg_(res2))+'</div>'; return; }
+          toast('deputy_rejected_toast', 'ok');
+          renderDeputyReview(body);
+        });
+      });
+    });
+  });
 }
 
 // ---------------- handoffs ----------------
@@ -2451,7 +2741,7 @@ function renderReport(body){
   // Mirrors requireCompanyWide_ on the server — a cluster (area) manager
   // can reach this screen too (their own area's report), but the
   // shortfall-accountability card is company-wide only.
-  var isCompanyWide = ['admin','finance','accountant','operations_manager'].indexOf(state.user.role) >= 0;
+  var isCompanyWide = ['admin','finance','accountant','operations_manager','deputy_operations_manager'].indexOf(state.user.role) >= 0;
 
   body.innerHTML = '<div class="card">' +
     '<div class="row" style="justify-content:space-between;align-items:center;">' +
@@ -2766,7 +3056,7 @@ function renderReconciliation(body){
 // ---------------- risk / complaints register ----------------
 function renderRisk(body){
   body.innerHTML = '';
-  var isCompanyWide = ['admin','finance','accountant','operations_manager'].indexOf(state.user.role)>=0;
+  var isCompanyWide = ['admin','finance','accountant','operations_manager','deputy_operations_manager'].indexOf(state.user.role)>=0;
 
   var form = el('<div class="card"><h2>'+esc(t('risk_reportNew'))+'</h2>' +
     '<div id="riskMsg"></div>' +
@@ -2892,20 +3182,22 @@ function refreshMetaThen(cb){
 // requireAdmin_/requireAdminOrFinance_ in Admin.gs and Collection.gs. If
 // those change, update this table in the same commit so it never drifts
 // into a stale separate document.
-var PERM_ROLES = ['admin','finance','accountant','operations_manager','cluster_manager','store_manager','collector','driver'];
+var PERM_ROLES = ['admin','finance','accountant','operations_manager','deputy_operations_manager','cluster_manager','store_manager','collector','driver'];
 var PERM_ROWS = [
-  { key:'perm_home', roles:['admin','finance','accountant','operations_manager','cluster_manager','store_manager','collector','driver'] },
-  { key:'perm_home_company', roles:['admin','finance','accountant','operations_manager'] },
+  { key:'perm_home', roles:['admin','finance','accountant','operations_manager','deputy_operations_manager','cluster_manager','store_manager','collector','driver'] },
+  { key:'perm_home_company', roles:['admin','finance','accountant','operations_manager','deputy_operations_manager'] },
   { key:'perm_entries', roles:['admin','store_manager','driver'] },
-  { key:'perm_handoffs_own', roles:['admin','finance','accountant','operations_manager','cluster_manager','store_manager','collector','driver'] },
-  { key:'perm_handoffs_all', roles:['admin','finance','accountant','operations_manager'] },
+  { key:'perm_area_bulk_upload', roles:['admin','cluster_manager'] },
+  { key:'perm_deputy_approve', roles:['admin','deputy_operations_manager'] },
+  { key:'perm_handoffs_own', roles:['admin','finance','accountant','operations_manager','deputy_operations_manager','cluster_manager','store_manager','collector','driver'] },
+  { key:'perm_handoffs_all', roles:['admin','finance','accountant','operations_manager','deputy_operations_manager'] },
   { key:'perm_report_own', roles:['cluster_manager'] },
-  { key:'perm_report_all', roles:['admin','finance','accountant','operations_manager'] },
-  { key:'perm_audit', roles:['admin','finance','accountant','operations_manager'] },
+  { key:'perm_report_all', roles:['admin','finance','accountant','operations_manager','deputy_operations_manager'] },
+  { key:'perm_audit', roles:['admin','finance','accountant','operations_manager','deputy_operations_manager'] },
   { key:'perm_resolve', roles:['admin','finance'] },
   { key:'perm_reconcile', roles:['admin','finance'] },
-  { key:'perm_risk_report', roles:['admin','finance','accountant','operations_manager','cluster_manager','store_manager','collector','driver'] },
-  { key:'perm_risk_view', roles:['admin','finance','accountant','operations_manager'] },
+  { key:'perm_risk_report', roles:['admin','finance','accountant','operations_manager','deputy_operations_manager','cluster_manager','store_manager','collector','driver'] },
+  { key:'perm_risk_view', roles:['admin','finance','accountant','operations_manager','deputy_operations_manager'] },
   { key:'perm_manage', roles:['admin'] }
 ];
 
@@ -2927,7 +3219,7 @@ function renderAdminPermissions(content){
 
 function renderAdminUsers(content){
   var meta = state.meta || {};
-  var roles = ['admin','finance','accountant','operations_manager','cluster_manager','store_manager','collector','driver'];
+  var roles = ['admin','finance','accountant','operations_manager','deputy_operations_manager','cluster_manager','store_manager','collector','driver'];
   var form = el('<div class="card"><h2>'+esc(t('admin_addUser'))+'</h2>' +
     '<div class="grid">' +
       '<div class="field"><label>'+esc(t('admin_name'))+'</label><input id="uName"></div>' +
@@ -3153,6 +3445,9 @@ function renderAdminConfig(content){
     '<div class="field"><label>'+esc(t('admin_staleThreshold'))+'</label><input id="cStale" type="number" step="1" value="'+(cfg.staleThresholdHours!=null?cfg.staleThresholdHours:24)+'"></div>' +
     '<div class="field"><label>'+esc(t('admin_heldThreshold'))+'</label><input id="cHeld" type="number" step="1" value="'+(cfg.heldThresholdHours!=null?cfg.heldThresholdHours:48)+'"></div>' +
     '<div class="field"><label>'+esc(t('admin_secondApprovalThreshold'))+'</label><input id="cSecondApproval" type="number" step="1" value="'+(cfg.secondApprovalThreshold!=null?cfg.secondApprovalThreshold:0)+'"></div>' +
+    '<div class="field"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;">' +
+      '<input id="cAreaBulk" type="checkbox"'+(cfg.areaManagerBulkUploadEnabled?' checked':'')+'> '+esc(t('admin_areaBulkUploadEnabled'))+
+    '</label><small class="hint">'+esc(t('admin_areaBulkUploadHint'))+'</small></div>' +
     '<button class="btn" id="cSave">'+esc(t('save'))+'</button><div id="cMsg"></div></div>');
   content.appendChild(form);
   qs('#cSave', form).addEventListener('click', function(){
@@ -3160,7 +3455,8 @@ function renderAdminConfig(content){
       vatRate: Number(qs('#cVat',form).value),
       staleThresholdHours: Number(qs('#cStale',form).value),
       heldThresholdHours: Number(qs('#cHeld',form).value),
-      secondApprovalThreshold: Number(qs('#cSecondApproval',form).value)
+      secondApprovalThreshold: Number(qs('#cSecondApproval',form).value),
+      areaManagerBulkUploadEnabled: qs('#cAreaBulk',form).checked
     } }).then(function(res){
       qs('#cMsg',form).innerHTML = res.ok ? '<div class="msg ok">'+esc(t('ok_saved'))+'</div>' : '<div class="msg err">'+esc(errMsg_(res))+'</div>';
     });

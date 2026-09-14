@@ -185,6 +185,99 @@ interest" sections. If you change any handoff-creation or confirm/dispute
 code, re-run the tests; a passing structural check does not prove the
 runtime one still holds and vice versa.
 
+## Area-manager bulk upload — a deliberate, toggleable exception to the chain
+
+Added 2026-09-14, for clusters where drivers/store managers genuinely can't
+use the app themselves: the cluster ("Area") Manager uploads the whole
+cluster's day at once from a CSV export (`renderAreaBulk`, index.html), and
+one Deputy Operations Manager sign-off (`renderDeputyReview`) replaces what
+would otherwise be a `location_to_cluster` handoff *and* a
+`cluster_to_collector` handoff. This is a genuinely different topology, not
+a parallel copy of the normal chain — one upload plus one approval collapses
+two hops into one, on purpose, so it's built as an explicit exception living
+next to the chain rather than a variant bolted into it.
+
+**Off by default, one global switch** — `areaManagerBulkUploadEnabled_()`
+(Code.gs), same `config_()`-backed getter shape as `secondApprovalThreshold_`
+etc., set via `actionAdminSetConfig_` and surfaced to the client through
+`actionMeta_`'s `config` object (Admin → Settings, a checkbox — the first one
+in this app; every other config field so far has been numeric).
+
+**`checkClusterBulkEntryScope_` (Collection.gs) is deliberately a parallel
+function to `checkEntryScope_`, never a branch added to it.** A
+`cluster_manager` branch inside `checkEntryScope_` itself would silently let
+cluster managers use the *ordinary* single-entry and single-location CSV
+import too — a real widening of authority that would stay live even with
+this feature's toggle off, since `checkEntryScope_` has no knowledge of the
+config flag at all. Do not "simplify" these into one function later without
+re-deriving this reasoning; a merge is the change most likely to accidentally
+reopen this.
+
+**`daily_entries` carries two new fields, `batchId` and `voided`, alongside
+the existing `consumedBy`.** All three matter for different reasons:
+`consumedBy` is set to the batch's own id the moment the bulk submit
+succeeds (`actionBulkSubmitAreaBatch_`) — this is what actually keeps the
+cash out of any *normal* manual handoff while the Deputy is still reviewing
+it, exactly the same mechanism every other step in the chain uses to mark
+cash as spoken for. `batchId` is a separate, permanent provenance marker,
+kept distinct from `consumedBy` because `consumedBy` conventionally holds a
+*handoff* id everywhere else in this codebase (`releaseConsumed_`,
+`unconsumedEntriesForLocation_`, the held-cash logic) — overloading it to
+sometimes mean "a batch id" would be a silent, undocumented exception to
+that convention. On a Deputy **reject**, entries are marked `voided: true`
+rather than simply released (`consumedBy = null`) — a bare release would
+make a rejected entry indistinguishable from any other unconsumed row,
+reachable by an unrelated manual handoff, and since the area manager's
+"correction" is always a fresh CSV upload (new entries, not edits to the old
+ones), a literal release would leave the old rejected rows floating in the
+unconsumed pool *while a corrected resubmit creates a brand new set* —
+double-counting the same real-world cash unless someone manually notices.
+`unconsumedEntriesForLocation_` and `actionSalesReport_` both exclude
+`voided` entries, so a rejected batch can never re-enter any handoff (manual
+or bulk) or inflate a sales total, while staying visible in the raw
+`listEntries` result as an audit trail ("submitted then rejected, see
+`area_bulk_batches.rejectionNote`"). `tests/run.js`'s reject-and-resubmit
+section asserts the corrected batch's total does *not* include the voided
+one — that's the exact regression this fix prevents.
+
+**`actionDeputyApproveBatch_` hand-builds a `kind:'cluster_to_collector'`
+handoff directly, rather than routing the Deputy's decision through
+`actionConfirmHandoff_`/dispute.** The semantic mismatch is real, not
+cosmetic: `actionConfirmHandoff_` exists specifically to capture a
+*received-cash* variance (`receivedAmount`, `shortfall`, the whole
+`escalateShortfall_` path) — the Deputy isn't receiving cash here, they're
+approving whether the uploaded *data* is accurate before any cash claim
+exists at all. Forcing this through confirm-handoff would mean either
+inventing a fake declared-vs-received pair with no real second number, or
+always passing `receivedAmount === amount` — permanently no-op-ing the
+shortfall/second-approval infrastructure for every bulk-originated handoff, a
+latent bug waiting to confuse whoever eventually wonders why bulk approvals
+never show shortfalls. Dispute/resolve-dispute require a handoff to already
+exist; here none does until the Deputy approves — there's nothing to
+dispute, only a batch to approve or reject. What *is* reused, deliberately:
+`computeNet_`/`sumBreakdowns_` (the formula must never diverge from the rest
+of the chain), the exact `perLocation` shape `createClusterHandoff_`
+produces, `notifyPending_` (the collector gets the same "pending handoff"
+email as always, unmodified), and the conflict-of-interest *pattern* — an
+explicit `batch.uploadedBy === user.id` / `cluster.collectorUserId ===
+user.id` self-check on approve, even though both are structurally
+near-impossible today (a user holds exactly one role) — because per Trap #3
+below, a self-check is never implied by the role requirement alone, and a
+future change that relaxes role exclusivity should not silently reopen this.
+
+**The Deputy's approval-queue nav item is *not* gated by the toggle** (only
+the Area Manager's upload screen is) — deliberately, so a Deputy can still
+finish reviewing any batches that were already `pending_deputy` if an admin
+disables the feature mid-flight, rather than orphaning them with no visible
+way to act.
+
+**New role `deputy_operations_manager`** joins `COMPANY_WIDE_ROLES` (full
+dashboard/report/audit visibility, same tier as Accountant/Operations
+Manager) — see Trap #2 below for why that visibility grant carries no
+authority beyond this feature's own narrow approve/reject actions, which are
+gated separately and explicitly, never implied by `COMPANY_WIDE_ROLES`
+membership.
+
 ## Amount breakdown, partial receipt, and notifications
 
 Every handoff carries a `breakdown` object (`storeCash`/`carCash`/
@@ -368,7 +461,11 @@ another cluster's location).
 
 **Rebuild the stubs, never test against a real sheet** — same rule as the
 sibling projects. If a new Apps Script call is added and the harness has no
-stub for it, add the stub; don't skip the test.
+stub for it, add the stub; don't skip the test. (The `area_bulk_batches`
+sheet the bulk-upload feature added needed no new stub at all — `sheet_()`'s
+lazy `insertSheet` already covers any unknown sheet name, in both the real
+backend and the harness's fake `SpreadsheetApp`, so `readSheet(SHEETS.AREA_BULK_BATCHES)`
+just works the first time it's called.)
 
 For UI changes, `tests/run.js` alone is not enough — see Traps #1.
 `tests/mock-backend-server.js` serves the real `index.html` and answers its
@@ -579,6 +676,17 @@ entity/user management (gated by `requireAdmin_()` /
 explicitly. If a future role needs to see something new, extend
 `COMPANY_WIDE_ROLES`; if it needs to *act* on something, that's a separate,
 narrower decision — don't fold it into the same check by reflex.
+
+Deputy Operations Manager (added with the area-manager bulk-upload feature)
+is a second worked example of the exact same split: full company-wide
+visibility via `COMPANY_WIDE_ROLES`, but its only *authority* is
+`actionDeputyApproveBatch_`/`actionDeputyRejectBatch_` (Collection.gs),
+which check `user.role === 'deputy_operations_manager'` explicitly — never
+derived from `isCompanyWide_()`, which three other roles share without
+getting that power. `tests/run.js`'s area-bulk-upload section asserts the
+same both-directions shape (full dashboard/report/audit access, but
+`resolveDispute`/`adminSaveEntity` still forbidden) as this trap's original
+example.
 
 ### 3. "Admin/finance only" doesn't mean "a different person" — conflict-of-interest checks must be added explicitly, per action
 
