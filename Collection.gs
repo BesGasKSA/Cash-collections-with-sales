@@ -106,12 +106,12 @@ function checkEntryScope_(user, sourceType, sourceId) {
 // across two separate product lines/entries in one batch); failing that,
 // there must already be an entry on file for this exact source+date that
 // sold something, or the delivery fee is rejected outright.
-function deliveryNeedsSale_(sourceType, sourceId, date, cashSales, posSales, siblingHasSale) {
-  if (Number(cashSales || 0) > 0 || Number(posSales || 0) > 0) return true;
+function deliveryNeedsSale_(sourceType, sourceId, date, cashSales, posSales, siblingHasSale, creditSales) {
+  if (Number(cashSales || 0) > 0 || Number(posSales || 0) > 0 || Number(creditSales || 0) > 0) return true;
   if (siblingHasSale) return true;
   return readSheet(SHEETS.ENTRIES).some(function (e) {
     return e.sourceType === sourceType && e.sourceId === sourceId && e.date === date &&
-      (Number(e.cashSales || 0) > 0 || Number(e.posSales || 0) > 0);
+      (Number(e.cashSales || 0) > 0 || Number(e.posSales || 0) > 0 || Number(e.creditSales || 0) > 0);
   });
 }
 
@@ -121,7 +121,7 @@ function actionCreateEntry_(req, user) {
   if (!scope.ok) return { ok: false, error: scope.error };
 
   if (Number(req.deliveryFeeBankAmount || 0) > 0 &&
-    !deliveryNeedsSale_(req.sourceType, req.sourceId, req.date, req.cashSales, req.posSales, false)) {
+    !deliveryNeedsSale_(req.sourceType, req.sourceId, req.date, req.cashSales, req.posSales, false, req.creditSales)) {
     return { ok: false, error: 'delivery_without_sale' };
   }
 
@@ -136,6 +136,11 @@ function actionCreateEntry_(req, user) {
     cashSales: Number(req.cashSales || 0),
     deliveryFeeBankAmount: Number(req.deliveryFeeBankAmount || 0),
     posSales: Number(req.posSales || 0),
+    // Sold on credit: counts toward total sales (byProduct, the daily trend,
+    // the report totals) exactly like posSales does, but — same as posSales —
+    // never enters computeNet_'s cash formula. No money has actually moved
+    // yet, so there is nothing to hand up the collection chain for it.
+    creditSales: Number(req.creditSales || 0),
     // Qty/unit price are optional, purely informational passthrough for the
     // client's "product-level" entry mode (qty x unitPrice = the amount
     // already folded into cashSales/posSales/deliveryFeeBankAmount above,
@@ -173,7 +178,7 @@ function actionImportEntries_(req, user) {
   function batchHasSale(sourceType, sourceId, date) {
     return rows.some(function (row) {
       return row.sourceType === sourceType && row.sourceId === sourceId && row.date === date &&
-        (Number(row.cashSales || 0) > 0 || Number(row.posSales || 0) > 0);
+        (Number(row.cashSales || 0) > 0 || Number(row.posSales || 0) > 0 || Number(row.creditSales || 0) > 0);
     });
   }
 
@@ -191,7 +196,7 @@ function actionImportEntries_(req, user) {
       continue;
     }
     if (Number(r.deliveryFeeBankAmount || 0) > 0 &&
-      !deliveryNeedsSale_(r.sourceType, r.sourceId, r.date, r.cashSales, r.posSales, batchHasSale(r.sourceType, r.sourceId, r.date))) {
+      !deliveryNeedsSale_(r.sourceType, r.sourceId, r.date, r.cashSales, r.posSales, batchHasSale(r.sourceType, r.sourceId, r.date), r.creditSales)) {
       results.push({ row: i, ok: false, error: 'delivery_without_sale' });
       continue;
     }
@@ -206,6 +211,7 @@ function actionImportEntries_(req, user) {
       cashSales: Number(r.cashSales || 0),
       deliveryFeeBankAmount: Number(r.deliveryFeeBankAmount || 0),
       posSales: Number(r.posSales || 0),
+      creditSales: Number(r.creditSales || 0),
       qty: r.qty != null && r.qty !== '' ? Number(r.qty) : null,
       unitPrice: r.unitPrice != null && r.unitPrice !== '' ? Number(r.unitPrice) : null,
       cylindersOut: Number(r.cylindersOut || 0),
@@ -251,6 +257,13 @@ function unconsumedEntriesForLocation_(locationId) {
   return readSheet(SHEETS.ENTRIES).filter(function (e) { return e.locationId === locationId && !e.consumedBy; });
 }
 
+// Gross "total sales" for one entry — cash + POS + credit, regardless of
+// cash-collection risk. Used for report filtering/aggregation only; never
+// for computeNet_'s cash-owed formula, which credit sales stay out of.
+function entrySalesTotal_(e) {
+  return Number(e.cashSales || 0) + Number(e.posSales || 0) + Number(e.creditSales || 0);
+}
+
 // mirrors the xlsx formula, extended to POS: a POS machine can also take cash
 // (not just card) and can also carry its own delivery fee paid to the bank —
 // both are real cash risk / real deductions exactly like a car's, so they
@@ -263,8 +276,12 @@ function unconsumedEntriesForLocation_(locationId) {
 // car/pos-only.
 // netCashOwed = branchCash + carCash + posCash - (carDeliveryFee + posDeliveryFee) + vatOnDelivery
 function computeNet_(entries) {
-  var storeCash = 0, carCash = 0, posCash = 0, deliveryFee = 0, posSales = 0;
+  var storeCash = 0, carCash = 0, posCash = 0, deliveryFee = 0, posSales = 0, creditSales = 0;
   entries.forEach(function (e) {
+    // creditSales is tallied the same way across all three source types as
+    // posSales — a sale on credit carries no cash risk either, since no
+    // money has moved yet, so it never touches netCashOwed below.
+    creditSales += Number(e.creditSales || 0);
     if (e.sourceType === 'store') {
       storeCash += Number(e.cashSales || 0);
       posSales += Number(e.posSales || 0);
@@ -283,7 +300,7 @@ function computeNet_(entries) {
   var netCashOwed = storeCash + carCash + posCash - deliveryFee + vatOnDelivery;
   return {
     storeCash: storeCash, carCash: carCash, posCash: posCash, deliveryFee: deliveryFee,
-    posSales: posSales, vatOnDelivery: vatOnDelivery, netCashOwed: netCashOwed
+    posSales: posSales, creditSales: creditSales, vatOnDelivery: vatOnDelivery, netCashOwed: netCashOwed
   };
 }
 
@@ -294,7 +311,7 @@ function computeNet_(entries) {
 // clawback). Without this, receivers only ever saw one flat total with no
 // way to see what it was made of.
 function sumBreakdowns_(breakdowns) {
-  var out = { storeCash: 0, carCash: 0, posCash: 0, deliveryFee: 0, posSales: 0, vatOnDelivery: 0, netCashOwed: 0 };
+  var out = { storeCash: 0, carCash: 0, posCash: 0, deliveryFee: 0, posSales: 0, creditSales: 0, vatOnDelivery: 0, netCashOwed: 0 };
   breakdowns.forEach(function (b) {
     if (!b) return;
     out.storeCash += Number(b.storeCash || 0);
@@ -302,6 +319,7 @@ function sumBreakdowns_(breakdowns) {
     out.posCash += Number(b.posCash || 0);
     out.deliveryFee += Number(b.deliveryFee || 0);
     out.posSales += Number(b.posSales || 0);
+    out.creditSales += Number(b.creditSales || 0);
     out.vatOnDelivery += Number(b.vatOnDelivery || 0);
     out.netCashOwed += Number(b.netCashOwed || 0);
   });
@@ -993,11 +1011,11 @@ function actionSalesReport_(req, user) {
   if (req.enteredBy) entries = entries.filter(function (e) { return e.enteredBy === req.enteredBy; });
   if (req.amountMin != null && req.amountMin !== '') {
     var amtMin = Number(req.amountMin);
-    entries = entries.filter(function (e) { return (Number(e.cashSales || 0) + Number(e.posSales || 0)) >= amtMin; });
+    entries = entries.filter(function (e) { return entrySalesTotal_(e) >= amtMin; });
   }
   if (req.amountMax != null && req.amountMax !== '') {
     var amtMax = Number(req.amountMax);
-    entries = entries.filter(function (e) { return (Number(e.cashSales || 0) + Number(e.posSales || 0)) <= amtMax; });
+    entries = entries.filter(function (e) { return entrySalesTotal_(e) <= amtMax; });
   }
 
   var totals = computeNet_(entries);
@@ -1023,13 +1041,14 @@ function actionSalesReport_(req, user) {
   var byProductMap = {};
   entries.forEach(function (e) {
     var key = e.productId || '__unspecified__';
-    if (!byProductMap[key]) byProductMap[key] = { productId: e.productId || null, cashAmount: 0, posAmount: 0, qty: 0, cylindersOut: 0, cylindersIn: 0 };
+    if (!byProductMap[key]) byProductMap[key] = { productId: e.productId || null, cashAmount: 0, posAmount: 0, creditAmount: 0, qty: 0, cylindersOut: 0, cylindersIn: 0 };
     var bucket = byProductMap[key];
-    // Any entry can carry both a cash portion and a card/bank portion now
-    // (store/car/pos all support posSales), so both are counted — not
-    // either/or like it used to be.
+    // Any entry can carry a cash portion, a card/bank portion, and a credit
+    // portion at once now (store/car/pos all support posSales/creditSales),
+    // so all three are counted — not either/or like it used to be.
     bucket.posAmount += Number(e.posSales || 0);
     bucket.cashAmount += Number(e.cashSales || 0);
+    bucket.creditAmount += Number(e.creditSales || 0);
     bucket.cylindersOut += Number(e.cylindersOut || 0);
     bucket.cylindersIn += Number(e.cylindersIn || 0);
     bucket.qty += 1;
@@ -1039,8 +1058,8 @@ function actionSalesReport_(req, user) {
     var p = bucket.productId ? productById[bucket.productId] : null;
     return {
       productId: bucket.productId, name: p ? p.name : null,
-      cashAmount: bucket.cashAmount, posAmount: bucket.posAmount,
-      total: bucket.cashAmount + bucket.posAmount, entryCount: bucket.qty,
+      cashAmount: bucket.cashAmount, posAmount: bucket.posAmount, creditAmount: bucket.creditAmount,
+      total: bucket.cashAmount + bucket.posAmount + bucket.creditAmount, entryCount: bucket.qty,
       cylindersOut: bucket.cylindersOut, cylindersIn: bucket.cylindersIn,
       cylinderBalance: bucket.cylindersOut - bucket.cylindersIn
     };
@@ -1070,11 +1089,11 @@ function actionSalesReport_(req, user) {
     };
   }).sort(function (a, b) { return b.cylinderBalance - a.cylinderBalance; });
 
-  // Daily trend (gross sales, both channels) — feeds the dashboard chart.
+  // Daily trend (gross sales, all three channels) — feeds the dashboard chart.
   var byDateMap = {};
   entries.forEach(function (e) {
     if (!byDateMap[e.date]) byDateMap[e.date] = 0;
-    byDateMap[e.date] += Number(e.cashSales || 0) + Number(e.posSales || 0);
+    byDateMap[e.date] += entrySalesTotal_(e);
   });
   var dateRows = Object.keys(byDateMap).sort().map(function (d) { return { date: d, total: byDateMap[d] }; });
 
@@ -1170,7 +1189,7 @@ function actionDashboardComparison_(req, user) {
   function rangeTotals_(fromStr, toStr) {
     var inRange = entries.filter(function (e) { return e.date >= fromStr && e.date <= toStr; });
     var net = computeNet_(inRange);
-    var gross = inRange.reduce(function (s, e) { return s + Number(e.cashSales || 0) + Number(e.posSales || 0); }, 0);
+    var gross = inRange.reduce(function (s, e) { return s + entrySalesTotal_(e); }, 0);
     return { gross: gross, netCashOwed: net.netCashOwed, entryCount: inRange.length };
   }
 

@@ -832,5 +832,43 @@ var bulkDeliveryOnly = call({ action: 'importDailyEntries', token: adminTok, row
 check(bulkDeliveryOnly.ok && bulkDeliveryOnly.created === 0 && bulkDeliveryOnly.results[0].error === 'delivery_without_sale',
   'a lone delivery-only row with no sibling sale in the batch, and no prior sale that day, is rejected');
 
+console.log('--- credit sales: counted in total sales, zero cash impact, and satisfies the delivery-needs-a-sale rule ---');
+var creditNetBefore = call({ action: 'getSalesReport', token: adminTok, dateFrom: '2026-09-24', dateTo: '2026-09-24' }).totals.netCashOwed;
+var creditOnlyEntry = call({ action: 'createDailyEntry', token: aliTok, date: '2026-09-24', sourceType: 'store', sourceId: store.entity.id, creditSales: 900 });
+check(creditOnlyEntry.ok, 'a store entry with only creditSales (no cash/POS) saves fine — credit alone is a valid entry');
+check(creditOnlyEntry.entry.creditSales === 900, 'creditSales is stored on the entry exactly as sent');
+
+var creditReport = call({ action: 'getSalesReport', token: adminTok, dateFrom: '2026-09-24', dateTo: '2026-09-24' });
+close(creditReport.totals.netCashOwed, creditNetBefore, 'a pure credit sale has zero effect on netCashOwed — same as before it was entered');
+close(creditReport.totals.creditSales, 900, 'the report totals track creditSales separately, alongside cashSales/posSales');
+
+var creditMixedEntry = call({ action: 'createDailyEntry', token: aliTok, date: '2026-09-24', sourceType: 'store', sourceId: store.entity.id, cashSales: 200, creditSales: 300 });
+check(creditMixedEntry.ok, 'an entry can carry both cashSales and creditSales together');
+var creditMixedReport = call({ action: 'getSalesReport', token: adminTok, dateFrom: '2026-09-24', dateTo: '2026-09-24' });
+close(creditMixedReport.totals.netCashOwed, creditNetBefore + 200, 'only the cash portion of a mixed cash+credit entry enters netCashOwed');
+close(creditMixedReport.totals.creditSales, 900 + 300, 'creditSales accumulates across entries independently of the cash formula');
+
+var creditProductRow = creditMixedReport.byProduct.filter(function (r) { return r.productId === null; })[0];
+check(creditProductRow && creditProductRow.creditAmount >= 1200, 'the by-product breakdown carries a creditAmount bucket, summed like cashAmount/posAmount');
+
+// Delivery-without-sale, revisited: a credit sale is a real sale (goods or
+// services genuinely changed hands, payment just hasn't landed yet), so it
+// must satisfy the same "delivery needs an accompanying sale" rule that
+// cash/POS already do — see deliveryNeedsSale_ in Collection.gs.
+var creditDeliveryAlone = call({ action: 'createDailyEntry', token: hassanTok, date: '2026-09-25', sourceType: 'car', sourceId: car.entity.id, deliveryFeeBankAmount: 500 });
+check(!creditDeliveryAlone.ok && creditDeliveryAlone.error === 'delivery_without_sale', 'still rejected with no sale of any kind on file that day');
+
+var creditSaleFirst = call({ action: 'createDailyEntry', token: hassanTok, date: '2026-09-25', sourceType: 'car', sourceId: car.entity.id, creditSales: 250 });
+check(creditSaleFirst.ok, 'a credit-only sale saves fine on its own');
+
+var creditDeliveryAfter = call({ action: 'createDailyEntry', token: hassanTok, date: '2026-09-25', sourceType: 'car', sourceId: car.entity.id, deliveryFeeBankAmount: 500 });
+check(creditDeliveryAfter.ok, 'a delivery fee is now accepted — a same-day credit sale on file counts as "a sale" just like cash/POS would');
+
+var bulkCreditAndDelivery = call({ action: 'importDailyEntries', token: adminTok, rows: [
+  { date: '2026-09-26', sourceType: 'car', sourceId: car.entity.id, deliveryFeeBankAmount: 200 },
+  { date: '2026-09-26', sourceType: 'car', sourceId: car.entity.id, creditSales: 150 }
+] });
+check(bulkCreditAndDelivery.ok && bulkCreditAndDelivery.created === 2, 'product-mode\'s split rows (a delivery line plus a credit-tagged line in the same batch) both succeed, regardless of order');
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);
