@@ -933,6 +933,60 @@ var realAfterDryRun = call({
 check(realAfterDryRun.ok && !realAfterDryRun.dryRun, 'submitting for real right after (identical payload, no dryRun flag) succeeds normally');
 close(realAfterDryRun.batch.breakdown.netCashOwed, dryRun.batch.breakdown.netCashOwed, 'the real submission computes the identical figure the dry run already showed — no drift between preview and reality');
 
+// The client now sends one row per product/service line (qty x unitPrice,
+// one payment method) instead of one row per source/day totalling every
+// payment method at once — actionBulkSubmitAreaBatch_ already accepted
+// productId/qty/unitPrice per row (same shape actionImportEntries_ uses for
+// renderEntries' product mode), so no backend change was needed for this;
+// these tests just prove the existing action really does carry that shape
+// through end to end for the area-bulk path too.
+console.log('--- product-level bulk rows: qty x unitPrice per line, multiple lines per source/date ---');
+var productDryRun = call({
+  action: 'bulkSubmitAreaBatch', token: saraTok, clusterId: cluster.entity.id, dryRun: true,
+  rows: [
+    { date: '2026-09-28', sourceType: 'store', sourceId: store.entity.id, productId: cylProduct.id, qty: 10, unitPrice: 100, cashSales: 1000 },
+    { date: '2026-09-28', sourceType: 'car', sourceId: car.entity.id, productId: cylProduct.id, qty: 5, unitPrice: 100, cashSales: 500 },
+    { date: '2026-09-28', sourceType: 'car', sourceId: car.entity.id, productId: servicesProduct.entity.id, qty: 1, unitPrice: 115, deliveryFeeBankAmount: 115 }
+  ]
+});
+check(productDryRun.ok && productDryRun.dryRun === true, 'a batch of product-level lines (one line per product x payment method) dry-runs successfully');
+var expectedProductNet = 1000 + 500 - 115 + (115 / 1.15 * 0.15);
+close(productDryRun.batch.breakdown.netCashOwed, expectedProductNet, 'multiple product lines for the same and different sources sum into the same computeNet_ formula flat-amount rows already used — the VAT-on-delivery reclaim is untouched by the product split');
+
+var productSubmit = call({
+  action: 'bulkSubmitAreaBatch', token: saraTok, clusterId: cluster.entity.id,
+  rows: [
+    { date: '2026-09-28', sourceType: 'store', sourceId: store.entity.id, productId: cylProduct.id, qty: 10, unitPrice: 100, cashSales: 1000 },
+    { date: '2026-09-28', sourceType: 'car', sourceId: car.entity.id, productId: cylProduct.id, qty: 5, unitPrice: 100, cashSales: 500 },
+    { date: '2026-09-28', sourceType: 'car', sourceId: car.entity.id, productId: servicesProduct.entity.id, qty: 1, unitPrice: 115, deliveryFeeBankAmount: 115 }
+  ]
+});
+check(productSubmit.ok, 'the same product-level batch submits for real');
+var productEntries = call({ action: 'listEntries', token: adminTok, locationId: location.entity.id, date: '2026-09-28' }).entries;
+var storeProductLine = productEntries.filter(function (e) { return e.sourceType === 'store'; })[0];
+check(storeProductLine && storeProductLine.productId === cylProduct.id && storeProductLine.qty === 10 && storeProductLine.unitPrice === 100,
+  'the store product line carries productId/qty/unitPrice through to the stored entry, same as a single-location product-mode entry would');
+var carDeliveryLine = productEntries.filter(function (e) { return e.sourceType === 'car' && e.deliveryFeeBankAmount > 0; })[0];
+check(carDeliveryLine && carDeliveryLine.productId === servicesProduct.entity.id, 'the delivery product line is stored against the services-type product, not the goods product');
+
+console.log('--- product-level rows still need a sibling sale for a delivery line (batch-wide, not just same source+date already on file) ---');
+var deliveryOnlyProductBatch = call({
+  action: 'bulkSubmitAreaBatch', token: saraTok, clusterId: cluster.entity.id, dryRun: true,
+  rows: [
+    { date: '2026-09-29', sourceType: 'car', sourceId: car.entity.id, productId: servicesProduct.entity.id, qty: 1, unitPrice: 115, deliveryFeeBankAmount: 115 }
+  ]
+});
+check(!deliveryOnlyProductBatch.ok && deliveryOnlyProductBatch.error === 'invalid_rows' && deliveryOnlyProductBatch.results[0].error === 'delivery_without_sale',
+  'a lone delivery product-line with no sibling cash/pos/credit line in the batch, and no prior sale that day, is rejected — same rule flat-amount rows already follow');
+var deliveryWithSiblingProductBatch = call({
+  action: 'bulkSubmitAreaBatch', token: saraTok, clusterId: cluster.entity.id, dryRun: true,
+  rows: [
+    { date: '2026-09-29', sourceType: 'car', sourceId: car.entity.id, productId: cylProduct.id, qty: 2, unitPrice: 100, cashSales: 200 },
+    { date: '2026-09-29', sourceType: 'car', sourceId: car.entity.id, productId: servicesProduct.entity.id, qty: 1, unitPrice: 115, deliveryFeeBankAmount: 115 }
+  ]
+});
+check(deliveryWithSiblingProductBatch.ok, 'adding a sibling cash product-line in the same batch, same source+date, satisfies the delivery-needs-a-sale rule');
+
 console.log('--- full happy path: multi-location upload -> pending_deputy -> deputy approves -> cluster_to_collector handoff ---');
 var happyBatch = call({
   action: 'bulkSubmitAreaBatch', token: saraTok, clusterId: cluster.entity.id,
