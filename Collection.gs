@@ -522,6 +522,14 @@ function checkClusterBulkEntryScope_(user, clusterId, sourceType, sourceId) {
 // this batch has no per-row visibility into what might have been silently
 // skipped, so a batch with any bad row is rejected whole, nothing written,
 // and the area manager fixes the file and resubmits clean.
+//
+// req.dryRun: true runs every validation and computes the exact same
+// breakdown/perLocation the Deputy will eventually see, WITHOUT writing
+// anything — no entries, no batch row, no email. This lets the area
+// manager review the real, server-computed numbers (the same computeNet_
+// formula, not a client-side reimplementation that could drift from it)
+// before committing. The client calls this first for the preview, then
+// calls again without dryRun (identical payload) to actually submit.
 function actionBulkSubmitAreaBatch_(req, user) {
   if (!areaManagerBulkUploadEnabled_()) return { ok: false, error: 'feature_disabled' };
   var cluster = getById_(SHEETS.CLUSTERS, req.clusterId);
@@ -564,9 +572,10 @@ function actionBulkSubmitAreaBatch_(req, user) {
   if (errors.length) return { ok: false, error: 'invalid_rows', results: errors };
 
   var batchId = Utilities.getUuid();
+  var isDryRun = !!req.dryRun;
   var entries = prepared.map(function (p) {
     var r = p.row;
-    var entry = {
+    return {
       id: Utilities.getUuid(),
       date: r.date,
       sourceType: r.sourceType,
@@ -587,8 +596,6 @@ function actionBulkSubmitAreaBatch_(req, user) {
       consumedBy: batchId,
       voided: false
     };
-    writeRow(SHEETS.ENTRIES, entry);
-    return entry;
   });
 
   var byLocation = {};
@@ -616,6 +623,12 @@ function actionBulkSubmitAreaBatch_(req, user) {
     deputyActedAt: null,
     resultHandoffId: null
   };
+
+  if (isDryRun) {
+    return { ok: true, dryRun: true, batch: batch };
+  }
+
+  entries.forEach(function (e) { writeRow(SHEETS.ENTRIES, e); });
   writeRow(SHEETS.AREA_BULK_BATCHES, batch);
   logAudit_('bulk_submit_area_batch', user.id, batch.id);
   notifyDeputyPendingBatch_(batch);

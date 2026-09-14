@@ -817,6 +817,51 @@ already used. apple-touch-icon and the manifest stay JS-attached, since
 those only matter once, at "Add to Home Screen" time, not on every normal
 load.
 
+### 9. `.replace(str, val)` only swaps the *first* occurrence of a repeated placeholder
+
+Found 2026-09-14 building the area-bulk-upload VAT-explanation card
+(`vatExplainBlock_`, index.html): one of the four i18n step strings uses
+`{rate}` twice in the same sentence ("divide by (1 + VAT rate {rate}%)...
+{fee} ÷ (1 + {rate}%)"). Chaining `.replace('{fee}', ...).replace('{rate}',
+...)` only fills the *first* `{rate}`, silently leaving the second one as
+the literal string `{rate}` in what shipped to the screen — exactly the
+kind of bug that's invisible unless someone actually reads the rendered
+sentence closely (both `node tests/run.js` and a syntax check pass either
+way, since this is a plain string bug, not a formula bug). Fixed with
+`fillTemplate_(str, vars)`, which uses `str.split(key).join(value)` per key
+— every occurrence, not just the first. **Any i18n template string that
+might repeat the same `{placeholder}` twice must go through
+`fillTemplate_`, never a bare chained `.replace()`.**
+
+### 10. Area-manager bulk upload: preview the real calculation before sending, not just row validity
+
+Added 2026-09-14, in response to the area manager needing to see the exact
+computed breakdown (and specifically the VAT-on-delivery-fee reclaim, the
+one formula in this system people ask about most) *before* committing to
+send a batch to the Deputy — the CSV upload flow originally only showed
+per-row validity status (valid/missing/not-found), never the resulting
+`netCashOwed`/breakdown, so the area manager was approving numbers blind.
+
+`actionBulkSubmitAreaBatch_` now takes `req.dryRun: true` — runs every
+validation and computes the real `breakdown`/`perLocation` exactly as a
+real submission would (same `computeNet_`/`sumBreakdowns_` calls, same
+per-location grouping), but returns `{ok:true, dryRun:true, batch:{...}}`
+without a single `writeRow` call — no entries, no `area_bulk_batches` row,
+no email to the Deputy. The client (`renderAreaBulkPreview`, index.html)
+calls this automatically the moment every row parses as valid, renders the
+result with the same `breakdownGrid`/`handoffDetailRows` the Deputy screen
+uses (so the area manager reviews literally the same view the Deputy will
+see, not a reconstruction of it), then shows the real Submit button only
+after that preview renders. **Deliberately not computed client-side**: a
+JS reimplementation of `computeNet_` could drift from the server's version
+over time (e.g. if the VAT formula or a payment-method rule changes on the
+server and someone forgets the client copy) — the dry run guarantees the
+preview and the eventual real submission always come from the exact same
+code path. `tests/run.js`'s dry-run section asserts both halves of that
+guarantee: a dry run writes nothing (no entries, no batch), and a real
+submission with the identical payload right after computes the identical
+figure the dry run already showed.
+
 ## Deliberately out of scope for this build
 
 - No PWA/offline install or custom subdomain

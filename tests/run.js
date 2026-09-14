@@ -908,6 +908,31 @@ var storeManagerBulkAttempt = call({
 });
 check(!storeManagerBulkAttempt.ok && storeManagerBulkAttempt.error === 'forbidden', 'a store manager (not a cluster manager) cannot call the bulk action at all');
 
+console.log('--- dry-run preview: area manager sees the real computed breakdown before anything is written ---');
+var beforeDryRunEntries = call({ action: 'listEntries', token: adminTok, locationId: location.entity.id, date: '2026-09-27' }).entries.length;
+var dryRun = call({
+  action: 'bulkSubmitAreaBatch', token: saraTok, clusterId: cluster.entity.id, dryRun: true,
+  rows: [
+    { date: '2026-09-27', sourceType: 'store', sourceId: store.entity.id, cashSales: 7000, posSales: 4000 },
+    { date: '2026-09-27', sourceType: 'car', sourceId: car.entity.id, cashSales: 5000, deliveryFeeBankAmount: 5000, posSales: 6000 }
+  ]
+});
+check(dryRun.ok && dryRun.dryRun === true, 'a dryRun request succeeds and is flagged as a dry run');
+close(dryRun.batch.breakdown.netCashOwed, 7652.17, 'the dry-run breakdown matches the real xlsx-example formula exactly');
+var afterDryRunEntries = call({ action: 'listEntries', token: adminTok, locationId: location.entity.id, date: '2026-09-27' }).entries.length;
+check(afterDryRunEntries === beforeDryRunEntries, 'a dry run writes no entries at all');
+var afterDryRunBatches = call({ action: 'listAreaBulkBatches', token: deputyTok }).batches.filter(function (b) { return b.id === dryRun.batch.id; });
+check(afterDryRunBatches.length === 0, 'a dry run writes no area_bulk_batches row either — the Deputy never sees it');
+var realAfterDryRun = call({
+  action: 'bulkSubmitAreaBatch', token: saraTok, clusterId: cluster.entity.id,
+  rows: [
+    { date: '2026-09-27', sourceType: 'store', sourceId: store.entity.id, cashSales: 7000, posSales: 4000 },
+    { date: '2026-09-27', sourceType: 'car', sourceId: car.entity.id, cashSales: 5000, deliveryFeeBankAmount: 5000, posSales: 6000 }
+  ]
+});
+check(realAfterDryRun.ok && !realAfterDryRun.dryRun, 'submitting for real right after (identical payload, no dryRun flag) succeeds normally');
+close(realAfterDryRun.batch.breakdown.netCashOwed, dryRun.batch.breakdown.netCashOwed, 'the real submission computes the identical figure the dry run already showed — no drift between preview and reality');
+
 console.log('--- full happy path: multi-location upload -> pending_deputy -> deputy approves -> cluster_to_collector handoff ---');
 var happyBatch = call({
   action: 'bulkSubmitAreaBatch', token: saraTok, clusterId: cluster.entity.id,

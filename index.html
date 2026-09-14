@@ -296,6 +296,12 @@ var L = {
     areaBulk_valid:'صحيح', areaBulk_err_missing:'بيانات ناقصة', areaBulk_err_location_notfound:'الموقع غير موجود في منطقتك', areaBulk_err_source_notfound:'المصدر غير موجود في هذا الموقع',
     areaBulk_submit:'اعتماد الدفعة وإرسالها لنائب مدير العمليات', areaBulk_needsAllValid:'يجب تصحيح كل الصفوف قبل الإرسال — لا يمكن اعتماد دفعة بها أخطاء',
     areaBulk_recentTitle:'دفعاتك السابقة', areaBulk_noBatches:'لا توجد دفعات بعد', areaBulk_rejectionNote:'سبب الرفض',
+    areaBulk_calcTitle:'التفاصيل الكاملة قبل الإرسال للاعتماد', areaBulk_calcHint:'هذا هو الحساب الفعلي الذي سيراه نائب مدير العمليات بالضبط — راجعه جيداً قبل الاعتماد والإرسال.',
+    areaBulk_vatTitle:'🧮 كيف تُحتسب ضريبة القيمة المضافة على رسوم التوصيل؟',
+    areaBulk_vatStep1:'الخطوة ١: إجمالي رسوم التوصيل المدفوعة للبنك مباشرة = {fee} ريال. هذا مبلغ يحتفظ به السائق كحافز له ولا يُسلَّم نقداً — لكنه يشمل الضريبة ضمنه.',
+    areaBulk_vatStep2:'الخطوة ٢: لاستخراج المبلغ الأساسي (قبل الضريبة)، نقسم على (١ + نسبة الضريبة {rate}%): {fee} ÷ (1 + {rate}%) = {base} ريال.',
+    areaBulk_vatStep3:'الخطوة ٣: قيمة الضريبة نفسها = المبلغ الأساسي × نسبة الضريبة = {base} × {rate}% = {vat} ريال. هذه الضريبة حق للشركة (تُورَّد للهيئة)، وليست من حق السائق.',
+    areaBulk_vatStep4:'الخطوة ٤: لذلك تُضاف {vat} ريال مرة أخرى إلى صافي المبلغ المطلوب تسليمه — رسوم التوصيل بالكامل تُخصم من المستحق (لأن السائق قبضها فعلياً عبر البنك)، لكن ضريبتها فقط تُسترد وتضاف مجدداً لصافي المستحق.',
     batch_pending_deputy:'بانتظار اعتماد نائب مدير العمليات', batch_deputy_approved:'مُعتمدة — أُرسلت للمُحصِّل', batch_deputy_rejected:'مرفوضة',
     deputy_title:'اعتماد دفعات المناطق', deputy_hint:'دفعات رفعها مديرو المناطق وبانتظار اعتمادك قبل تكليف المُحصِّل بالتحصيل.',
     deputy_noPending:'لا توجد دفعات بانتظار الاعتماد', deputy_uploadedBy:'رفعها', deputy_cluster:'المنطقة', deputy_approve:'اعتماد', deputy_reject:'رفض',
@@ -446,6 +452,12 @@ var L = {
     areaBulk_valid:'Valid', areaBulk_err_missing:'Missing data', areaBulk_err_location_notfound:'Location not found in your area', areaBulk_err_source_notfound:'Source not found at that location',
     areaBulk_submit:'Approve batch and send to Deputy Operations Manager', areaBulk_needsAllValid:'Every row must be fixed before submitting — a batch with errors can\'t be approved',
     areaBulk_recentTitle:'Your recent batches', areaBulk_noBatches:'No batches yet', areaBulk_rejectionNote:'Rejection reason',
+    areaBulk_calcTitle:'Full details before sending for approval', areaBulk_calcHint:'This is the exact calculation the Deputy Operations Manager will see — review it carefully before approving and sending.',
+    areaBulk_vatTitle:'🧮 How is VAT on the delivery fee calculated?',
+    areaBulk_vatStep1:'Step 1: Total delivery fee paid directly to the bank = {fee}. The driver keeps this as their own incentive, it is never handed over as cash — but it already has VAT built into it.',
+    areaBulk_vatStep2:'Step 2: To pull out the base amount (before VAT), divide by (1 + VAT rate {rate}%): {fee} ÷ (1 + {rate}%) = {base}.',
+    areaBulk_vatStep3:'Step 3: The VAT amount itself = base amount x VAT rate = {base} x {rate}% = {vat}. This VAT belongs to the company (remitted to the tax authority), not to the driver.',
+    areaBulk_vatStep4:'Step 4: So {vat} is added back to the net amount owed — the full delivery fee is deducted from what is owed (since the driver already collected it via the bank), but only its VAT portion is clawed back and added to the net owed.',
     batch_pending_deputy:'Awaiting Deputy Operations Manager approval', batch_deputy_approved:'Approved — sent to collector', batch_deputy_rejected:'Rejected',
     deputy_title:'Area Batch Approvals', deputy_hint:'Batches area managers uploaded, awaiting your approval before the collector is assigned.',
     deputy_noPending:'No batches awaiting approval', deputy_uploadedBy:'Uploaded by', deputy_cluster:'Area', deputy_approve:'Approve', deputy_reject:'Reject',
@@ -596,6 +608,12 @@ var L = {
     areaBulk_valid:'درست', areaBulk_err_missing:'ڈیٹا نامکمل', areaBulk_err_location_notfound:'مقام آپ کے ایریا میں نہیں ملا', areaBulk_err_source_notfound:'ذریعہ اس مقام پر نہیں ملا',
     areaBulk_submit:'بیچ کی منظوری دیں اور ڈپٹی آپریشنز منیجر کو بھیجیں', areaBulk_needsAllValid:'جمع کروانے سے پہلے ہر قطار درست کریں — غلطیوں والا بیچ منظور نہیں ہو سکتا',
     areaBulk_recentTitle:'آپ کے حالیہ بیچز', areaBulk_noBatches:'ابھی تک کوئی بیچ نہیں', areaBulk_rejectionNote:'مسترد کرنے کی وجہ',
+    areaBulk_calcTitle:'منظوری کے لیے بھیجنے سے پہلے مکمل تفصیلات', areaBulk_calcHint:'یہ بالکل وہی حساب ہے جو ڈپٹی آپریشنز منیجر دیکھے گا — منظوری اور بھیجنے سے پہلے اچھی طرح جائزہ لیں۔',
+    areaBulk_vatTitle:'🧮 ڈلیوری فیس پر ویٹ کیسے شمار ہوتا ہے؟',
+    areaBulk_vatStep1:'قدم ١: بینک کو براہ راست ادا کی گئی کل ڈلیوری فیس = {fee}۔ ڈرائیور اسے اپنے مراعات کے طور پر رکھتا ہے، یہ کبھی نقد حوالے نہیں کی جاتی — لیکن اس میں پہلے سے ویٹ شامل ہے۔',
+    areaBulk_vatStep2:'قدم ٢: بنیادی رقم (ویٹ سے پہلے) نکالنے کے لیے، (١ + ویٹ کی شرح {rate}%) پر تقسیم کریں: {fee} ÷ (1 + {rate}%) = {base}۔',
+    areaBulk_vatStep3:'قدم ٣: ویٹ کی رقم خود = بنیادی رقم × ویٹ کی شرح = {base} × {rate}% = {vat}۔ یہ ویٹ کمپنی کا حق ہے (ٹیکس اتھارٹی کو جمع کرایا جاتا ہے)، ڈرائیور کا نہیں۔',
+    areaBulk_vatStep4:'قدم ٤: اسی لیے {vat} دوبارہ خالص واجب الادا رقم میں شامل کی جاتی ہے — پوری ڈلیوری فیس واجب الادا سے منہا ہوتی ہے (چونکہ ڈرائیور اسے بینک کے ذریعے پہلے ہی وصول کر چکا ہے)، لیکن صرف اس کا ویٹ حصہ واپس لے کر خالص واجب الادا میں شامل کیا جاتا ہے۔',
     batch_pending_deputy:'ڈپٹی آپریشنز منیجر کی منظوری کا منتظر', batch_deputy_approved:'منظور — کلکٹر کو بھیج دیا گیا', batch_deputy_rejected:'مسترد شدہ',
     deputy_title:'ایریا بیچ منظوری', deputy_hint:'ایریا منیجرز کے اپ لوڈ کردہ بیچز جو کلکٹر کی تفویض سے پہلے آپ کی منظوری کے منتظر ہیں۔',
     deputy_noPending:'منظوری کے منتظر کوئی بیچ نہیں', deputy_uploadedBy:'اپ لوڈ کنندہ', deputy_cluster:'ایریا', deputy_approve:'منظور کریں', deputy_reject:'مسترد کریں',
@@ -2177,12 +2195,29 @@ function renderAreaBulk(body){
     wrap.innerHTML = '<h2 style="margin-top:14px;">'+esc(t('entry_importPreview'))+'</h2>' +
       '<table><thead><tr><th>'+esc(t('areaBulk_col_row'))+'</th><th>'+esc(t('areaBulk_col_date'))+'</th>' +
       '<th>'+esc(t('areaBulk_col_location'))+'</th><th>'+esc(t('areaBulk_col_type'))+'</th><th>'+esc(t('areaBulk_col_source'))+'</th><th>'+esc(t('areaBulk_col_status'))+'</th></tr></thead><tbody>'+rows+'</tbody></table>' +
-      (allValid ? '' : '<div class="msg err" style="margin-top:10px;">'+esc(t('areaBulk_needsAllValid'))+'</div>') +
-      '<button class="btn" id="abSubmit" style="margin-top:12px;"'+(allValid?'':' disabled')+'>'+esc(t('areaBulk_submit'))+'</button>';
-    if (allValid) {
-      qs('#abSubmit', wrap).addEventListener('click', function(){
-        api('bulkSubmitAreaBatch', { clusterId: currentClusterId(), rows: pendingRows }).then(function(res){
-          if (!res.ok){ qs('#abMsg',card).innerHTML = '<div class="msg err">'+esc(errMsg_(res))+'</div>'; return; }
+      (allValid ? '<div id="abCalcWrap">'+esc(t('loading'))+'</div>' : '<div class="msg err" style="margin-top:10px;">'+esc(t('areaBulk_needsAllValid'))+'</div>');
+
+    if (!allValid) return;
+
+    // Server-computed preview (dryRun:true) — the exact same computeNet_
+    // formula the Deputy will see, nothing written yet, so the area
+    // manager reviews real numbers instead of a client-side guess before
+    // deciding to send this to the Deputy at all.
+    api('bulkSubmitAreaBatch', { clusterId: currentClusterId(), rows: pendingRows, dryRun: true }).then(function(res){
+      var calcWrap = qs('#abCalcWrap', wrap);
+      if (!calcWrap) return;
+      if (!res.ok){ calcWrap.innerHTML = '<div class="msg err">'+esc(errMsg_(res))+'</div>'; return; }
+      var b = res.batch.breakdown;
+      calcWrap.innerHTML = '<h2 style="margin-top:14px;">'+esc(t('areaBulk_calcTitle'))+'</h2>' +
+        '<div class="muted" style="font-size:12.5px;margin-bottom:8px;">'+esc(t('areaBulk_calcHint'))+'</div>' +
+        '<div style="font-size:24px;font-weight:800;text-align:center;margin-bottom:6px;">'+money(b.netCashOwed)+'</div>' +
+        breakdownGrid(b) +
+        handoffDetailRows(res.batch) +
+        (b.deliveryFee > 0 ? vatExplainBlock_(b) : '') +
+        '<button class="btn" id="abSubmit" style="margin-top:14px;">'+esc(t('areaBulk_submit'))+'</button>';
+      qs('#abSubmit', calcWrap).addEventListener('click', function(){
+        api('bulkSubmitAreaBatch', { clusterId: currentClusterId(), rows: pendingRows }).then(function(res2){
+          if (!res2.ok){ qs('#abMsg',card).innerHTML = '<div class="msg err">'+esc(errMsg_(res2))+'</div>'; return; }
           qs('#abMsg',card).innerHTML = '<div class="msg ok">'+esc(t('ok_saved'))+'</div>';
           pendingRows = [];
           renderAreaBulkPreview();
@@ -2190,7 +2225,36 @@ function renderAreaBulk(body){
           loadAreaBulkHistory();
         });
       });
-    }
+    });
+  }
+
+  // Spells out the VAT-on-delivery-fee reclaim step-by-step with the
+  // batch's own real numbers plugged in — the one formula in the whole
+  // system people ask about most, per CLAUDE.md's "the formula" section:
+  // vatOnDelivery = (deliveryFee / (1+vatRate)) * vatRate.
+  // .replace(str, val) only swaps the FIRST occurrence — several of these
+  // step strings use the same placeholder (e.g. {rate}) more than once, so
+  // a plain chained .replace() silently leaves the second instance literal.
+  // This fills every occurrence of every key.
+  function fillTemplate_(str, vars){
+    Object.keys(vars).forEach(function(k){
+      str = str.split('{'+k+'}').join(vars[k]);
+    });
+    return str;
+  }
+  function vatExplainBlock_(b){
+    var vatRate = state.meta.config.vatRate;
+    var deliveryFee = b.deliveryFee;
+    var beforeVat = deliveryFee / (1 + vatRate);
+    var vatAmount = beforeVat * vatRate;
+    var ratePct = (vatRate*100).toFixed(0);
+    return '<div class="msg" style="margin-top:10px;background:var(--green-pale);border:1px solid var(--green);font-size:12.5px;line-height:1.9;">' +
+      '<strong>'+esc(t('areaBulk_vatTitle'))+'</strong><br>' +
+      esc(fillTemplate_(t('areaBulk_vatStep1'), {fee: money(deliveryFee)})) + '<br>' +
+      esc(fillTemplate_(t('areaBulk_vatStep2'), {fee: money(deliveryFee), rate: ratePct, base: money(beforeVat)})) + '<br>' +
+      esc(fillTemplate_(t('areaBulk_vatStep3'), {base: money(beforeVat), rate: ratePct, vat: money(vatAmount)})) + '<br>' +
+      esc(fillTemplate_(t('areaBulk_vatStep4'), {vat: money(vatAmount)})) +
+    '</div>';
   }
 
   var historyCard = el('<div class="card"><h2>'+esc(t('areaBulk_recentTitle'))+'</h2><div id="abHistory"></div></div>');
