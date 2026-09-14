@@ -75,6 +75,7 @@ function actionAdminCreateUser_(req, user) {
     language: d.language || 'ar',
     locationId: d.locationId || null,
     clusterId: d.clusterId || null,
+    iqamaId: d.iqamaId || null,
     salt: salt,
     pass: hashPw_(temp, salt),
     mustChangePw: true
@@ -109,6 +110,7 @@ function actionAdminUpdateUser_(req, user) {
   if (d.active != null) target.active = !!d.active;
   if (d.locationId !== undefined) target.locationId = d.locationId;
   if (d.clusterId !== undefined) target.clusterId = d.clusterId;
+  if (d.iqamaId !== undefined) target.iqamaId = d.iqamaId;
   writeRow(SHEETS.USERS, target);
   logAudit_('admin_update_user', user.id, target.id);
   return { ok: true, user: publicUser_(target) };

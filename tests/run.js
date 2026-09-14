@@ -790,6 +790,23 @@ check(!blankNameRejected.ok && blankNameRejected.error === 'invalid_input', 'a b
 var storeManagerEditUser = call({ action: 'adminUpdateUser', token: aliTok, id: editTarget.id, data: { name: 'Hijack' } });
 check(!storeManagerEditUser.ok && storeManagerEditUser.error === 'forbidden', 'only admin can edit another user\'s profile');
 
+console.log('--- iqamaId (employee) and posId/posConfig (POS machine) round-trip as plain profile fields ---');
+var iqamaCreate = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Iqama Test', email: 'iqamatest@bestgas.sa', role: 'driver', iqamaId: '2345678901' } });
+check(iqamaCreate.ok && iqamaCreate.user.iqamaId === '2345678901', 'iqamaId is accepted and returned on user creation');
+var iqamaMeta = call({ action: 'listMeta', token: adminTok }).users.filter(function (u) { return u.id === iqamaCreate.user.id; })[0];
+check(iqamaMeta && iqamaMeta.iqamaId === '2345678901', 'listMeta carries iqamaId through publicUser_, same as every other profile field');
+var iqamaUpdate = call({ action: 'adminUpdateUser', token: adminTok, id: iqamaCreate.user.id, data: { iqamaId: '1122334455' } });
+check(iqamaUpdate.ok && iqamaUpdate.user.iqamaId === '1122334455', 'iqamaId can be edited afterward, same as name/email/role');
+var iqamaUntouched = call({ action: 'adminUpdateUser', token: adminTok, id: iqamaCreate.user.id, data: { name: 'Iqama Test Renamed' } });
+check(iqamaUntouched.ok && iqamaUntouched.user.iqamaId === '1122334455', 'editing an unrelated field leaves iqamaId alone');
+
+var posWithId = call({
+  action: 'adminSaveEntity', token: adminTok, kind: 'pos',
+  data: { ownerType: 'car', ownerId: car.entity.id, label: 'POS-iqama-test', posId: 'DEV-7788', posConfig: 'merchantId=99120044;terminal=T1' }
+});
+check(posWithId.ok && posWithId.entity.posId === 'DEV-7788' && posWithId.entity.posConfig === 'merchantId=99120044;terminal=T1',
+  'posId/posConfig are plain pass-through fields on the pos entity, no backend whitelist blocks them (actionAdminSaveEntity_ merges any field in req.data)');
+
 console.log('--- product-level entry: qty x unit price is stored as informational passthrough, never touches the cash formula ---');
 var qtyEntry = call({ action: 'createDailyEntry', token: aliTok, date: '2026-09-20', sourceType: 'store', sourceId: store.entity.id, cashSales: 300, qty: 3, unitPrice: 100 });
 check(qtyEntry.ok, 'entry with qty/unitPrice saves successfully');

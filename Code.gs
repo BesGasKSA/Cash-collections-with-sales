@@ -363,7 +363,7 @@ function publicUser_(u) {
     id: u.id, name: u.name, email: u.email, role: u.role,
     active: u.active !== false, language: u.language || 'ar',
     locationId: u.locationId || null, clusterId: u.clusterId || null,
-    mustChangePw: !!u.mustChangePw
+    mustChangePw: !!u.mustChangePw, iqamaId: u.iqamaId || null
   };
 }
 

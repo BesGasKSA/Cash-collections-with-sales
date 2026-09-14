@@ -124,10 +124,17 @@
      replays on every tab switch (a plain CSS transition wouldn't: there's no
      "before" state on a brand-new element for it to animate from). */
   nav button.active{background:#fff;color:var(--green-dark);border-color:#fff;box-shadow:0 0 0 3px rgba(255,255,255,.25), var(--shadow-sm);animation:navTabPop .28s cubic-bezier(.34,1.56,.64,1);}
-  nav button.active .nav-icon{stroke:var(--green-dark);}
+  nav button.active .nav-icon{stroke:var(--green-dark);animation:navIconHeartbeat 1.8s ease-in-out .3s infinite;transform-origin:center;}
   nav button:active{transform:scale(.96);}
   @keyframes navTabPop{0%{transform:scale(.9);box-shadow:0 0 0 0 rgba(255,255,255,0), var(--shadow-sm);}55%{transform:scale(1.06);}100%{transform:scale(1);box-shadow:0 0 0 3px rgba(255,255,255,.25), var(--shadow-sm);}}
-  @media (prefers-reduced-motion: reduce){ nav button.active{animation:none;} }
+  /* A slow, continuous double-beat ("lub-dub") on the active tab's icon
+     only — the pop/dot/lift effects already mark the moment you switch
+     tabs, this instead keeps a subtle sign of life on whichever one stays
+     selected, the way a heart-pulse indicator does. Icon only, not the
+     whole button, so the label/background stay perfectly still under it.
+     A short delay lets the one-shot navTabPop entrance finish first. */
+  @keyframes navIconHeartbeat{0%,100%{transform:scale(1);}14%{transform:scale(1.24);}28%{transform:scale(1);}42%{transform:scale(1.24);}70%{transform:scale(1);}}
+  @media (prefers-reduced-motion: reduce){ nav button.active{animation:none;} nav button.active .nav-icon{animation:none;} }
   .nav-icon{width:15px;height:15px;stroke:rgba(255,255,255,.92);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0;}
   /* Mobile: a real app-style bottom tab bar (the "Facebook/Snapchat" ask)
      instead of the desktop top pill row — icon-over-label tabs, docked to
@@ -471,6 +478,7 @@ var L = {
     admin_addStore:'إضافة فرع', admin_storeName:'اسم الفرع', admin_manager:'المشرف', admin_location:'الموقع',
     admin_addCar:'إضافة سيارة', admin_carLabel:'رقم اللوحة/السائق', admin_driver:'السائق',
     admin_addPos:'إضافة جهاز', admin_posLabel:'رقم الجهاز', admin_ownerType:'مرتبط بـ', admin_owner:'الجهة', admin_assignedDriver:'الموظف المسؤول',
+    admin_posId:'رقم تعريف الجهاز (POS ID)', admin_posConfig:'إعدادات الجهاز (POS Config)', admin_iqamaId:'رقم الإقامة',
     admin_addCluster:'إضافة قطاع', admin_clusterName:'اسم القطاع', admin_clusterManager:'مدير القطاع', admin_collector:'المُحصّل',
     admin_vatRate:'نسبة الضريبة', admin_delete:'حذف', admin_edit:'تعديل', admin_hasChildren:'لا يمكن الحذف — توجد عناصر تابعة',
     admin_staleThreshold:'ساعات التنبيه للتسليمات المتأخرة (لم تُؤكَّد بعد)', admin_secondApprovalThreshold:'حد المبلغ للموافقة الثانية (0 = تعطيل)',
@@ -633,6 +641,7 @@ var L = {
     admin_addStore:'Add branch', admin_storeName:'Branch name', admin_manager:'Store manager', admin_location:'Location',
     admin_addCar:'Add car', admin_carLabel:'Plate / driver label', admin_driver:'Driver',
     admin_addPos:'Add POS machine', admin_posLabel:'Terminal id', admin_ownerType:'Belongs to', admin_owner:'Owner', admin_assignedDriver:'Assigned employee',
+    admin_posId:'POS ID', admin_posConfig:'POS Config', admin_iqamaId:'Iqama ID',
     admin_addCluster:'Add area', admin_clusterName:'Area name', admin_clusterManager:'Area manager', admin_collector:'Collector',
     admin_vatRate:'VAT rate', admin_delete:'Delete', admin_edit:'Edit', admin_hasChildren:'Cannot delete — has child records',
     admin_staleThreshold:'Stale-handoff alert hours (not yet confirmed)', admin_secondApprovalThreshold:'Second-approval amount threshold (0 = off)',
@@ -795,6 +804,7 @@ var L = {
     admin_addStore:'برانچ شامل کریں', admin_storeName:'برانچ کا نام', admin_manager:'اسٹور منیجر', admin_location:'مقام',
     admin_addCar:'گاڑی شامل کریں', admin_carLabel:'پلیٹ / ڈرائیور کا نام', admin_driver:'ڈرائیور',
     admin_addPos:'POS مشین شامل کریں', admin_posLabel:'ٹرمینل نمبر', admin_ownerType:'سے منسلک', admin_owner:'مالک', admin_assignedDriver:'ذمہ دار ملازم',
+    admin_posId:'POS ID', admin_posConfig:'POS ترتیبات (Config)', admin_iqamaId:'اقامہ نمبر',
     admin_addCluster:'علاقہ شامل کریں', admin_clusterName:'علاقے کا نام', admin_clusterManager:'علاقہ منیجر', admin_collector:'کلکٹر',
     admin_vatRate:'ویٹ کی شرح', admin_delete:'حذف کریں', admin_edit:'ترمیم کریں', admin_hasChildren:'حذف نہیں ہو سکتا — ذیلی ریکارڈز موجود ہیں',
     admin_staleThreshold:'تاخیر شدہ ترسیل کی اطلاع (گھنٹے، ابھی تک غیر تصدیق شدہ)', admin_secondApprovalThreshold:'دوسری منظوری کی رقم کی حد (0 = بند)',
@@ -1249,6 +1259,8 @@ function renderShell(){
     dashboard: '<rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/>',
     reconciliation: '<rect x="3" y="6" width="18" height="14" rx="2"/><path d="M3 10h18"/><path d="M8 15l2.5 2.5L16 12"/>',
     risk: '<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/>',
+    areaBulk: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/>',
+    deputyReview: '<rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/>',
     admin: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>'
   };
   var nav = el('<nav></nav>');
@@ -3485,11 +3497,12 @@ function renderAdminUsers(content){
       '<div class="field"><label>'+esc(t('admin_name'))+'</label><input id="uName"></div>' +
       '<div class="field"><label>'+esc(t('email'))+'</label><input id="uEmail" type="email"></div>' +
       '<div class="field"><label>'+esc(t('admin_role'))+'</label><select id="uRole">'+roles.map(function(r){return '<option value="'+r+'">'+esc(roleLabel(r))+'</option>';}).join('')+'</select></div>' +
+      '<div class="field"><label>'+esc(t('admin_iqamaId'))+'</label><input id="uIqamaId"></div>' +
     '</div>' +
     '<button class="btn" id="uAdd">'+esc(t('admin_addUser'))+'</button><div id="uMsg"></div></div>');
   content.appendChild(form);
   qs('#uAdd', form).addEventListener('click', function(){
-    api('adminCreateUser', { data: { name: qs('#uName',form).value, email: qs('#uEmail',form).value, role: qs('#uRole',form).value } })
+    api('adminCreateUser', { data: { name: qs('#uName',form).value, email: qs('#uEmail',form).value, role: qs('#uRole',form).value, iqamaId: qs('#uIqamaId',form).value } })
       .then(function(res){
         qs('#uMsg',form).innerHTML = res.ok ? '<div class="msg ok">'+esc(t('ok_saved'))+'</div>' : '<div class="msg err">'+esc(errMsg_(res))+'</div>';
         if (res.ok) refreshMetaThen(function(){ renderAdmin(qs('#screenBody')); });
@@ -3497,13 +3510,13 @@ function renderAdminUsers(content){
   });
 
   var listCard = el('<div class="card"><h2>'+esc(t('admin_users'))+'</h2><table><thead><tr>' +
-    '<th>'+esc(t('admin_name'))+'</th><th>'+esc(t('email'))+'</th><th>'+esc(t('admin_role'))+'</th><th>'+esc(t('admin_active'))+'</th><th class="col-actions"></th>' +
+    '<th>'+esc(t('admin_name'))+'</th><th>'+esc(t('email'))+'</th><th>'+esc(t('admin_role'))+'</th><th>'+esc(t('admin_iqamaId'))+'</th><th>'+esc(t('admin_active'))+'</th><th class="col-actions"></th>' +
     '</tr></thead><tbody id="uBody"></tbody></table></div>');
   content.appendChild(listCard);
   var tbody = qs('#uBody', listCard);
   var langOpts = [['ar','العربية'],['en','English'],['ur','اردو']];
   (meta.users||[]).forEach(function(u){
-    var tr = el('<tr><td>'+esc(u.name)+'</td><td>'+esc(u.email||'')+'</td><td>'+esc(roleLabel(u.role))+'</td><td>'+(u.active?'✓':'—')+'</td><td class="col-actions"></td></tr>');
+    var tr = el('<tr><td>'+esc(u.name)+'</td><td>'+esc(u.email||'')+'</td><td>'+esc(roleLabel(u.role))+'</td><td>'+esc(u.iqamaId||'—')+'</td><td>'+(u.active?'✓':'—')+'</td><td class="col-actions"></td></tr>');
     var td = tr.lastChild;
     td.style.display = 'flex'; td.style.gap = '6px'; td.style.justifyContent = 'flex-end';
     var resetBtn = el('<button class="btn secondary">'+esc(t('admin_resetPw'))+'</button>');
@@ -3516,7 +3529,7 @@ function renderAdminUsers(content){
     td.appendChild(resetBtn); td.appendChild(toggleBtn); td.appendChild(editBtn);
     tbody.appendChild(tr);
 
-    var editRow = el('<tr hidden><td colspan="5"></td></tr>');
+    var editRow = el('<tr hidden><td colspan="6"></td></tr>');
     var editCell = editRow.firstChild;
     editCell.appendChild(el(
       '<div class="card" style="margin:0;background:var(--bg-soft,#f7f5ef);">' +
@@ -3527,6 +3540,7 @@ function renderAdminUsers(content){
           '<div class="field"><label>'+esc(t('admin_role'))+'</label><select class="ueRole">'+roles.map(function(r){return '<option value="'+r+'"'+(r===u.role?' selected':'')+'>'+esc(roleLabel(r))+'</option>';}).join('')+'</select></div>' +
           '<div class="field"><label>'+esc(t('language'))+'</label><select class="ueLang">'+langOpts.map(function(l){return '<option value="'+l[0]+'"'+(l[0]===(u.language||'ar')?' selected':'')+'>'+l[1]+'</option>';}).join('')+'</select></div>' +
           '<div class="field"><label>'+esc(t('admin_active'))+'</label><select class="ueActive"><option value="1"'+(u.active?' selected':'')+'>'+esc(t('admin_active'))+'</option><option value="0"'+(!u.active?' selected':'')+'>—</option></select></div>' +
+          '<div class="field"><label>'+esc(t('admin_iqamaId'))+'</label><input class="ueIqamaId" value="'+esc(u.iqamaId||'')+'"></div>' +
         '</div>' +
         '<div class="row" style="gap:10px;">' +
           '<button type="button" class="btn ueSave">'+esc(t('save'))+'</button>' +
@@ -3544,7 +3558,8 @@ function renderAdminUsers(content){
         email: qs('.ueEmail', editCell).value,
         role: qs('.ueRole', editCell).value,
         language: qs('.ueLang', editCell).value,
-        active: qs('.ueActive', editCell).value === '1'
+        active: qs('.ueActive', editCell).value === '1',
+        iqamaId: qs('.ueIqamaId', editCell).value
       } }).then(function(res){
         if (!res.ok){ qs('.ueMsg', editCell).innerHTML = '<div class="msg err">'+esc(errMsg_(res))+'</div>'; return; }
         refreshMetaThen(function(){ renderAdmin(qs('#screenBody')); });
@@ -3573,6 +3588,8 @@ var ENTITY_FIELDS = {
     {k:'ownerType', l:'admin_ownerType', options:[['store','admin_stores'],['car','admin_cars']]},
     {k:'ownerId', l:'admin_owner'},
     {k:'label', l:'admin_posLabel'},
+    {k:'posId', l:'admin_posId'},
+    {k:'posConfig', l:'admin_posConfig'},
     {k:'assignedUserId', l:'admin_assignedDriver', pick:'users', pickLabel:function(x){return x.name;}, pickFilter:function(x){return x.role==='driver';}}
   ],
   // 'owner' is a virtual column (not a real stored field) — a bare
@@ -3581,7 +3598,7 @@ var ENTITY_FIELDS = {
   // from the location its own car/store already shows in their own admin
   // lists. Shows the actual store/car name plus its location instead, same
   // information store/car rows already carry via locationId.
-  cols:['label','owner'] },
+  cols:['label','posId','owner'] },
   cluster: { addKey:'admin_addCluster', fields:[
     {k:'name', l:'admin_clusterName'},
     {k:'clusterManagerUserId', l:'admin_clusterManager', pick:'users', pickLabel:function(x){return x.name;}, pickFilter:function(x){return x.role==='cluster_manager';}},
