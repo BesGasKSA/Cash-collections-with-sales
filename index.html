@@ -402,6 +402,7 @@ var L = {
     areaBulk_productBreakdownTitle:'تفاصيل المنتجات على مستوى البند (شامل ضريبة القيمة المضافة ١٥٪)',
     areaBulk_productBreakdownHint:'هذا التفصيل للتوضيح فقط — احتساب ضريبة رسوم التوصيل هو الوحيد الذي يُسترد فعلياً ضمن صافي المبلغ المستحق (انظر أدناه)، أما أسعار السلع فهي شاملة للضريبة كأي سعر بيع عادي.',
     areaBulk_vatBase:'المبلغ الأساسي (قبل الضريبة)',
+    areaBulk_showProductDetail:'عرض تفاصيل المنتجات (شامل الضريبة)', areaBulk_hideProductDetail:'إخفاء تفاصيل المنتجات',
     areaBulk_submit:'اعتماد الدفعة وإرسالها لنائب مدير العمليات', areaBulk_needsAllValid:'يجب تصحيح كل الصفوف قبل الإرسال — لا يمكن اعتماد دفعة بها أخطاء',
     areaBulk_recentTitle:'دفعاتك السابقة', areaBulk_noBatches:'لا توجد دفعات بعد', areaBulk_rejectionNote:'سبب الرفض',
     areaBulk_calcTitle:'التفاصيل الكاملة قبل الإرسال للاعتماد', areaBulk_calcHint:'هذا هو الحساب الفعلي الذي سيراه نائب مدير العمليات بالضبط — راجعه جيداً قبل الاعتماد والإرسال.',
@@ -565,6 +566,7 @@ var L = {
     areaBulk_productBreakdownTitle:'Product-level detail (VAT 15% included)',
     areaBulk_productBreakdownHint:'This breakdown is for transparency only — only the delivery-fee VAT is actually reclaimed into the net cash owed (see below); goods prices are simply VAT-inclusive like any normal selling price.',
     areaBulk_vatBase:'Base amount (excl. VAT)',
+    areaBulk_showProductDetail:'Show product details (incl. VAT)', areaBulk_hideProductDetail:'Hide product details',
     areaBulk_submit:'Approve batch and send to Deputy Operations Manager', areaBulk_needsAllValid:'Every row must be fixed before submitting — a batch with errors can\'t be approved',
     areaBulk_recentTitle:'Your recent batches', areaBulk_noBatches:'No batches yet', areaBulk_rejectionNote:'Rejection reason',
     areaBulk_calcTitle:'Full details before sending for approval', areaBulk_calcHint:'This is the exact calculation the Deputy Operations Manager will see — review it carefully before approving and sending.',
@@ -728,6 +730,7 @@ var L = {
     areaBulk_productBreakdownTitle:'پروڈکٹ کی سطح پر تفصیلات (ویٹ ١٥٪ شامل)',
     areaBulk_productBreakdownHint:'یہ تفصیل صرف وضاحت کے لیے ہے — صرف ڈلیوری فیس کا ویٹ ہی خالص واجب الادا رقم میں واپس شامل کیا جاتا ہے (نیچے دیکھیں)؛ سامان کی قیمتیں کسی بھی عام فروخت قیمت کی طرح ویٹ سمیت ہوتی ہیں۔',
     areaBulk_vatBase:'بنیادی رقم (ویٹ کے بغیر)',
+    areaBulk_showProductDetail:'پروڈکٹ کی تفصیلات دکھائیں (ویٹ سمیت)', areaBulk_hideProductDetail:'پروڈکٹ کی تفصیلات چھپائیں',
     areaBulk_submit:'بیچ کی منظوری دیں اور ڈپٹی آپریشنز منیجر کو بھیجیں', areaBulk_needsAllValid:'جمع کروانے سے پہلے ہر قطار درست کریں — غلطیوں والا بیچ منظور نہیں ہو سکتا',
     areaBulk_recentTitle:'آپ کے حالیہ بیچز', areaBulk_noBatches:'ابھی تک کوئی بیچ نہیں', areaBulk_rejectionNote:'مسترد کرنے کی وجہ',
     areaBulk_calcTitle:'منظوری کے لیے بھیجنے سے پہلے مکمل تفصیلات', areaBulk_calcHint:'یہ بالکل وہی حساب ہے جو ڈپٹی آپریشنز منیجر دیکھے گا — منظوری اور بھیجنے سے پہلے اچھی طرح جائزہ لیں۔',
@@ -2476,17 +2479,64 @@ function renderAreaBulk(body){
   function loadAreaBulkHistory(){
     api('listAreaBulkBatches', {}).then(function(res){
       var wrap = qs('#abHistory', historyCard);
+      wrap.innerHTML = '';
       if (!res.ok || !res.batches.length){ wrap.innerHTML = '<div class="muted">'+esc(t('areaBulk_noBatches'))+'</div>'; return; }
-      wrap.innerHTML = res.batches.map(function(b){
+      res.batches.forEach(function(b){
         var badgeClass = b.status==='deputy_approved' ? 'confirmed' : b.status==='deputy_rejected' ? 'rejected' : 'pending';
-        return '<div class="row" style="justify-content:space-between;padding:8px 0;border-top:1px dashed var(--border-soft);">' +
-          '<span>'+esc((b.createdAt||'').slice(0,16).replace('T',' '))+' · <strong>'+money(b.breakdown.netCashOwed)+'</strong></span>' +
-          '<span class="badge '+badgeClass+'">'+esc(t('batch_'+b.status))+'</span>' +
-        '</div>' + (b.status==='deputy_rejected' && b.rejectionNote ? '<div class="msg err" style="margin-top:4px;">'+esc(t('areaBulk_rejectionNote'))+': '+esc(b.rejectionNote)+'</div>' : '');
-      }).join('');
+        var row = el(
+          '<div style="padding:8px 0;border-top:1px dashed var(--border-soft);">' +
+            '<div class="row" style="justify-content:space-between;">' +
+              '<span>'+esc((b.createdAt||'').slice(0,16).replace('T',' '))+' · <strong>'+money(b.breakdown.netCashOwed)+'</strong></span>' +
+              '<span class="badge '+badgeClass+'">'+esc(t('batch_'+b.status))+'</span>' +
+            '</div>' +
+            (b.status==='deputy_rejected' && b.rejectionNote ? '<div class="msg err" style="margin-top:4px;">'+esc(t('areaBulk_rejectionNote'))+': '+esc(b.rejectionNote)+'</div>' : '') +
+            '<button type="button" class="btn secondary pdToggle" style="margin-top:8px;font-size:12px;padding:6px 12px;">'+esc(t('areaBulk_showProductDetail'))+'</button>' +
+            '<div class="pdWrap" hidden style="margin-top:8px;"></div>' +
+          '</div>'
+        );
+        wrap.appendChild(row);
+        wireProductDetailToggle_(row, b.id);
+      });
     });
   }
   loadAreaBulkHistory();
+}
+
+// Renders the persistent, post-submission product-level VAT breakdown —
+// same columns as the dry-run preview's productBreakdownBlock_, but fed
+// from actionAreaBulkBatchDetail_'s server-computed byProduct array
+// instead of recomputing base/vat client-side from in-memory CSV rows,
+// which no longer exist once a batch is actually submitted. Lets both the
+// uploading area manager and the Deputy check product/qty/subtotal/VAT for
+// an already-submitted batch, not only during the upload moment itself.
+function productDetailTable_(byProduct){
+  if (!byProduct || !byProduct.length) return '<div class="muted">'+esc(t('noData'))+'</div>';
+  var rows = byProduct.map(function(p){
+    return '<tr><td>'+esc(p.name||'—')+'</td><td>'+esc(t(p.type==='services' ? 'admin_typeServices' : 'admin_typeGoods'))+'</td>' +
+      '<td>'+p.qty+'</td><td>'+money(p.subtotal)+'</td><td>'+money(p.base)+'</td><td>'+money(p.vat)+'</td></tr>';
+  }).join('');
+  return '<div class="tbl-scroll"><table><thead><tr><th>'+esc(t('entry_lineProduct'))+'</th><th>'+esc(t('admin_productType'))+'</th>' +
+    '<th>'+esc(t('entry_qty'))+'</th><th>'+esc(t('entry_lineSubtotal'))+'</th><th>'+esc(t('areaBulk_vatBase'))+'</th><th>'+esc(t('report_vat'))+'</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+}
+// Shared by both the area manager's own batch history and the Deputy's
+// review list — lazily fetches on first expand, toggles visibility after.
+function wireProductDetailToggle_(container, batchId){
+  var btn = qs('.pdToggle', container);
+  var wrap = qs('.pdWrap', container);
+  var loaded = false;
+  btn.addEventListener('click', function(){
+    var showing = !wrap.hidden;
+    if (showing) { wrap.hidden = true; btn.textContent = t('areaBulk_showProductDetail'); return; }
+    wrap.hidden = false;
+    btn.textContent = t('areaBulk_hideProductDetail');
+    if (loaded) return;
+    wrap.innerHTML = '<div class="muted">'+esc(t('loading'))+'</div>';
+    api('areaBulkBatchDetail', { id: batchId }).then(function(res){
+      if (!res.ok) { wrap.innerHTML = '<div class="msg err">'+esc(errMsg_(res))+'</div>'; return; }
+      loaded = true;
+      wrap.innerHTML = productDetailTable_(res.byProduct);
+    });
+  });
 }
 
 // ---------------- deputy operations manager: area batch approvals ----------------
@@ -2519,6 +2569,8 @@ function renderDeputyReview(body){
         '<div style="font-size:22px;font-weight:800;margin-top:6px;">'+money(b.breakdown.netCashOwed)+'</div>' +
         breakdownGrid(b.breakdown) +
         handoffDetailRows(b) +
+        '<button type="button" class="btn secondary pdToggle" style="margin-top:10px;font-size:12px;padding:6px 12px;">'+esc(t('areaBulk_showProductDetail'))+'</button>' +
+        '<div class="pdWrap" hidden style="margin-top:8px;"></div>' +
         '<div class="row" style="gap:10px;margin-top:12px;">' +
           '<button class="btn" id="dApprove-'+b.id+'">'+esc(t('deputy_approve'))+'</button>' +
           '<button class="btn secondary" id="dReject-'+b.id+'">'+esc(t('deputy_reject'))+'</button>' +
@@ -2526,6 +2578,7 @@ function renderDeputyReview(body){
         '<div id="dMsg-'+b.id+'"></div>' +
       '</div>');
       body.appendChild(card);
+      wireProductDetailToggle_(card, b.id);
 
       qs('#dApprove-'+b.id, card).addEventListener('click', function(){
         api('deputyApproveBatch', { id: b.id }).then(function(res2){

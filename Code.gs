@@ -465,6 +465,7 @@ function route_(req) {
     // CLAUDE.md and checkClusterBulkEntryScope_ (Collection.gs).
     bulkSubmitAreaBatch: function () { return actionBulkSubmitAreaBatch_(req, user); },
     listAreaBulkBatches: function () { return actionListAreaBulkBatches_(req, user); },
+    areaBulkBatchDetail: function () { return actionAreaBulkBatchDetail_(req, user); },
     deputyApproveBatch: function () { return actionDeputyApproveBatch_(req, user); },
     deputyRejectBatch: function () { return actionDeputyRejectBatch_(req, user); },
 
