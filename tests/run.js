@@ -1029,6 +1029,34 @@ check(collectorConfirm.ok, 'the collector can confirm a bulk-originated handoff 
 var deposit = call({ action: 'recordDeposit', token: musaTok, bankReference: 'BULK-DEP-1' });
 check(deposit.ok, 'and deposit it — the rest of the chain is completely unmodified for a bulk-originated handoff');
 
+console.log('--- areaBulkBatchDetail: the product-level VAT breakdown survives after submission, not just during the dry-run preview ---');
+var productBatch = call({
+  action: 'bulkSubmitAreaBatch', token: saraTok, clusterId: cluster.entity.id,
+  rows: [
+    { date: '2026-09-30', sourceType: 'store', sourceId: store.entity.id, productId: cylProduct.id, qty: 10, unitPrice: 100, cashSales: 1000 },
+    { date: '2026-09-30', sourceType: 'car', sourceId: car.entity.id, productId: cylProduct.id, qty: 5, unitPrice: 100, cashSales: 500 },
+    { date: '2026-09-30', sourceType: 'car', sourceId: car.entity.id, productId: servicesProduct.entity.id, qty: 1, unitPrice: 115, deliveryFeeBankAmount: 115 }
+  ]
+});
+check(productBatch.ok, 'a product-level batch (qty/unitPrice per row) submits fine, same as any other');
+var ownerDetail = call({ action: 'areaBulkBatchDetail', token: saraTok, id: productBatch.batch.id });
+check(ownerDetail.ok, 'the uploading cluster manager can check their own batch\'s product-level detail after submission');
+var cylRow = ownerDetail.byProduct.filter(function (r) { return r.productId === cylProduct.id; })[0];
+check(!!cylRow && cylRow.qty === 15, 'goods product line aggregates qty (10+5) across both store and car rows');
+close(cylRow.subtotal, 1500, 'and subtotal (1000+500) across both rows');
+close(cylRow.base, 1500 / 1.15, 'base excl. VAT is derived the same way as the dry-run preview (subtotal / (1+vatRate))');
+close(cylRow.vat, (1500 / 1.15) * 0.15, 'VAT amount matches subtotal - base, same formula as the pre-submit preview');
+var deliveryRow = ownerDetail.byProduct.filter(function (r) { return r.productId === servicesProduct.entity.id; })[0];
+check(!!deliveryRow && deliveryRow.type === 'services', 'the delivery-fee line is correctly typed as services, separate from the goods line');
+close(deliveryRow.subtotal, 115, 'and keeps its own subtotal');
+
+var strangerDetail = call({ action: 'areaBulkBatchDetail', token: aliTok, id: productBatch.batch.id });
+check(!strangerDetail.ok && strangerDetail.error === 'forbidden', 'a store manager (not the uploader, not deputy/company-wide) cannot check another cluster manager\'s batch detail');
+var deputyDetail = call({ action: 'areaBulkBatchDetail', token: deputyTok, id: productBatch.batch.id });
+check(deputyDetail.ok, 'the deputy can check product-level detail for any batch, same visibility as listAreaBulkBatches');
+var missingDetail = call({ action: 'areaBulkBatchDetail', token: adminTok, id: 'not-a-real-batch-id' });
+check(!missingDetail.ok && missingDetail.error === 'not_found', 'a bogus batch id is rejected cleanly');
+
 console.log('--- reject-and-resubmit ---');
 var rejectBatch = call({
   action: 'bulkSubmitAreaBatch', token: saraTok, clusterId: cluster.entity.id,

@@ -647,6 +647,58 @@ function actionListAreaBulkBatches_(req, user) {
   return { ok: true, batches: rows };
 }
 
+// The area-bulk dry-run preview (actionBulkSubmitAreaBatch_ with
+// req.dryRun) computes a per-product VAT breakdown client-side from the
+// CSV rows still sitting in memory — but that detail is gone the moment
+// the batch is actually submitted, since area_bulk_batches only stores the
+// aggregate breakdown/perLocation, not a per-product one. This re-derives
+// the same product-level detail after the fact, straight from the batch's
+// own entries (batchId ties every daily_entries row back to it), so the
+// area manager and the Deputy can both check product/qty/subtotal/VAT for
+// an already-submitted batch, not just during the upload moment. Same
+// access rule as actionListAreaBulkBatches_: the uploading cluster manager,
+// or Deputy/company-wide roles — never a stranger's batch.
+function actionAreaBulkBatchDetail_(req, user) {
+  var batch = getById_(SHEETS.AREA_BULK_BATCHES, req.id);
+  if (!batch) return { ok: false, error: 'not_found' };
+  if (user.role === 'cluster_manager') {
+    if (batch.uploadedBy !== user.id) return { ok: false, error: 'forbidden' };
+  } else if (user.role !== 'deputy_operations_manager' && !isCompanyWide_(user.role)) {
+    return { ok: false, error: 'forbidden' };
+  }
+
+  var entries = readSheet(SHEETS.ENTRIES).filter(function (e) { return e.batchId === batch.id; });
+  var products = readSheet(SHEETS.PRODUCTS);
+  var productById = {};
+  products.forEach(function (p) { productById[p.id] = p; });
+
+  var vatRate = vatRate_();
+  var byProductMap = {};
+  entries.forEach(function (e) {
+    var key = e.productId || '__unspecified__';
+    if (!byProductMap[key]) byProductMap[key] = { productId: e.productId || null, qty: 0, subtotal: 0 };
+    // Every bulk-upload row routes its qty*unitPrice subtotal into exactly
+    // one of these four fields depending on paymentMethod (see
+    // actionBulkSubmitAreaBatch_/renderAreaBulk) — summing all four per
+    // entry recovers that same subtotal without re-deriving it from
+    // qty*unitPrice, so it still works even if either was left blank.
+    byProductMap[key].subtotal += Number(e.cashSales || 0) + Number(e.posSales || 0) + Number(e.creditSales || 0) + Number(e.deliveryFeeBankAmount || 0);
+    byProductMap[key].qty += Number(e.qty || 0);
+  });
+  var byProduct = Object.keys(byProductMap).map(function (key) {
+    var bucket = byProductMap[key];
+    var p = bucket.productId ? productById[bucket.productId] : null;
+    var base = bucket.subtotal / (1 + vatRate);
+    var vat = base * vatRate;
+    return {
+      productId: bucket.productId, name: p ? p.name : null, type: p ? p.type : null,
+      qty: bucket.qty, subtotal: bucket.subtotal, base: base, vat: vat
+    };
+  }).sort(function (a, b) { return b.subtotal - a.subtotal; });
+
+  return { ok: true, batch: batch, byProduct: byProduct };
+}
+
 // Hand-builds a cluster_to_collector-shaped handoff directly rather than
 // routing the Deputy's decision through actionConfirmHandoff_/dispute — see
 // CLAUDE.md for the full reasoning. Short version: confirmHandoff_ exists to
