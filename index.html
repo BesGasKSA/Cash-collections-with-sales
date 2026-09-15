@@ -179,10 +179,16 @@
   }
   main{max-width:1080px;margin:0 auto;padding:22px 18px 60px;}
   .card{background:var(--card);border:1px solid var(--border-soft);border-radius:var(--radius);padding:20px;margin-bottom:18px;overflow-x:auto;box-shadow:var(--shadow-sm);transition:box-shadow .2s ease;}
-  .card h2{margin:0 0 14px;font-size:15px;font-weight:700;color:var(--text);letter-spacing:-.01em;display:flex;align-items:center;justify-content:center;text-align:center;gap:8px;}
+  .card h2{margin:0 0 14px;font-size:15px;font-weight:700;color:var(--text);letter-spacing:-.01em;display:flex;align-items:center;justify-content:flex-start;text-align:start;gap:8px;}
   .card h2::before{content:'';width:4px;height:15px;border-radius:3px;background:var(--green);display:inline-block;flex-shrink:0;}
   .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;}
-  label{display:block;font-size:12px;color:var(--muted);margin-bottom:5px;font-weight:600;text-transform:uppercase;letter-spacing:.03em;text-align:center;}
+  /* Body text/labels align to the reading direction's start (right for
+     Arabic/Urdu, left for English) — the standard mobile-app convention —
+     instead of sitting centered, which read as unusual/unbalanced above a
+     left- or right-anchored input box. Purely decorative "hero" elements
+     (the login/splash screen, big KPI numbers) are deliberately left
+     centered elsewhere — that's a different, still-standard pattern. */
+  label{display:block;font-size:12px;color:var(--muted);margin-bottom:5px;font-weight:600;text-transform:uppercase;letter-spacing:.03em;text-align:start;}
   html[dir="rtl"] label{text-transform:none;letter-spacing:0;}
   input,select,textarea{width:100%;padding:10px 13px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:14px;background:var(--bg);color:var(--text);font-family:inherit;transition:border-color .15s ease, background .15s ease, box-shadow .15s ease;}
   input:hover,select:hover,textarea:hover{border-color:var(--muted-2);}
@@ -270,12 +276,12 @@
   .login-forgot{display:block;width:100%;text-align:center;margin-top:16px;font-size:12.5px;color:var(--green-dark);font-weight:700;cursor:pointer;background:none;border:none;font-family:inherit;padding:4px;}
   .login-forgot:hover{text-decoration:underline;color:var(--green);}
   .login-footer{color:rgba(255,255,255,.65);font-size:11px;text-align:center;margin-top:-6px;}
-  small.hint{color:var(--muted);font-size:12px;text-align:center;display:block;}
+  small.hint{color:var(--muted);font-size:12px;text-align:start;display:block;}
   .list-item{padding:14px;border:1px solid var(--border-soft);border-radius:var(--radius-sm);margin-bottom:10px;background:#fff;transition:box-shadow .15s ease, border-color .15s ease;}
   .list-item:hover{box-shadow:var(--shadow-sm);border-color:var(--border);}
   .list-item .top{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;}
   .amount{font-weight:800;color:var(--text);font-size:15px;letter-spacing:-.01em;}
-  .muted{color:var(--muted);font-size:12px;text-align:center;}
+  .muted{color:var(--muted);font-size:12px;text-align:start;}
   .actions{display:flex;gap:8px;margin-top:10px;}
   .breakdown{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-top:10px;padding-top:10px;border-top:1px dashed var(--border);}
   .breakdown .bi{font-size:11.5px;color:var(--muted);}
@@ -2906,11 +2912,17 @@ function trendChart(rows){
   if (!rows.length) return el('<div class="muted">'+esc(t('noData'))+'</div>');
   var max = Math.max.apply(null, rows.map(function(r){ return r.total; }).concat([1]));
   var barW = (w - pad*2) / rows.length;
+  // Value-on-bar data labels — skipped past ~10 bars, where the labels
+  // would collide with each other and the chart would read worse, not
+  // better (each bar still keeps its <title> hover value either way).
+  var showLabels = rows.length <= 10;
   var bars = rows.map(function(r, i){
     var bh = max>0 ? (r.total/max) * (h - pad*2) : 0;
     var x = pad + i*barW;
     var y = h - pad - bh;
-    return '<rect x="'+(x+barW*0.15)+'" y="'+y+'" width="'+(barW*0.7)+'" height="'+bh+'" rx="3" fill="var(--green)"><title>'+esc(r.date)+': '+money(r.total)+'</title></rect>';
+    var rect = '<rect x="'+(x+barW*0.15)+'" y="'+y+'" width="'+(barW*0.7)+'" height="'+bh+'" rx="3" fill="var(--green)"><title>'+esc(r.date)+': '+money(r.total)+'</title></rect>';
+    var label = showLabels ? '<text x="'+(x+barW*0.5)+'" y="'+Math.max(pad-6, y-6)+'" font-size="10" font-weight="700" fill="var(--text)" text-anchor="middle">'+money(r.total)+'</text>' : '';
+    return rect + label;
   }).join('');
   var baseline = '<line x1="'+pad+'" y1="'+(h-pad)+'" x2="'+(w-pad)+'" y2="'+(h-pad)+'" stroke="var(--border)" stroke-width="1"/>';
   var firstLabel = rows[0] ? '<text x="'+pad+'" y="'+(h-4)+'" font-size="10" fill="var(--muted)">'+esc(rows[0].date)+'</text>' : '';
@@ -2930,8 +2942,21 @@ function donutChart(segments){
     var len = frac*circumference;
     var circle = '<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="none" stroke="'+seg.color+'" stroke-width="20" ' +
       'stroke-dasharray="'+len+' '+(circumference-len)+'" stroke-dashoffset="'+(-offset)+'"><title>'+esc(seg.label)+': '+money(seg.value)+'</title></circle>';
+    // Percentage data label at the arc's own midpoint — computed in the
+    // same (pre-rotation) coordinate space as the circle itself, so the
+    // whole svg's CSS rotate(-90deg) carries the label along with its arc
+    // automatically. Skipped under 8% share: too thin a slice for the
+    // text to sit on without spilling into its neighbors.
+    var pct = Math.round(frac*100);
+    var label = '';
+    if (frac >= 0.08) {
+      var midAngle = ((offset + len/2) / circumference) * 2*Math.PI;
+      var lx = cx + r*Math.cos(midAngle), ly = cy + r*Math.sin(midAngle);
+      label = '<text x="'+lx+'" y="'+ly+'" font-size="11" font-weight="800" fill="#fff" text-anchor="middle" ' +
+        'dominant-baseline="middle" transform="rotate(90 '+lx+' '+ly+')">'+pct+'%</text>';
+    }
     offset += len;
-    return circle;
+    return circle + label;
   }).join('');
   var svg = '<svg viewBox="0 0 140 140" width="140" height="140" style="transform:rotate(-90deg)">'+arcs+'</svg>';
   var legend = '<div class="donut-legend">'+segments.map(function(seg){
