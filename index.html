@@ -1508,6 +1508,38 @@ function renderDashboard(body){
         '<div class="formula-item final"><div class="n">'+esc(money(grossSales))+'</div><div class="l">'+esc(t('dash_grossSales'))+'</div></div>' +
       '</div></div>'
     ));
+
+    // ---------- Collections ----------
+    // Moved directly under the Sales panel, right next to it, so both
+    // headline formula cards read together before any of the supporting
+    // charts/tables below.
+    body.appendChild(el('<div class="dash-section-title">'+esc(t('dash_collectionsTitle'))+'</div>'));
+
+    // Cash needed to deposit = cash sales (cashSalesTotal, shared with the
+    // Sales formula above -- the physical cash collected, never the card/
+    // POS-machine or credit portions) + VAT on delivery fees only (the
+    // delivery fee itself is bank-settled directly by the customer, never
+    // physical cash, but the VAT the company owes on it is a cash liability
+    // that still has to be covered) -- minus what's already been deposited.
+    var vatOnDeliveryTotal = report.totals.vatOnDelivery;
+    var totalToCollect = cashSalesTotal + vatOnDeliveryTotal;
+    var depositedAmount = (ho.handoffs||[]).filter(function(h){ return h.kind==='deposit'; })
+      .reduce(function(s,h){ return s+Number(h.amount||0); },0);
+    var remainingToDeposit = totalToCollect - depositedAmount;
+    body.appendChild(el(
+      '<div class="card"><div class="formula-card">' +
+        '<div class="formula-item"><div class="n">'+esc(money(cashSalesTotal))+'</div><div class="l">'+esc(t('dash_cashSales'))+'</div></div>' +
+        '<div class="formula-op">+</div>' +
+        '<div class="formula-item"><div class="n">'+esc(money(vatOnDeliveryTotal))+'</div><div class="l">'+esc(t('dash_vatOnDeliveryOnly'))+'</div></div>' +
+        '<div class="formula-op">=</div>' +
+        '<div class="formula-item result"><div class="n">'+esc(money(totalToCollect))+'</div><div class="l">'+esc(t('dash_totalToCollect'))+'</div></div>' +
+        '<div class="formula-op">&minus;</div>' +
+        '<div class="formula-item"><div class="n">'+esc(money(depositedAmount))+'</div><div class="l">'+esc(t('dash_deposited'))+'</div></div>' +
+        '<div class="formula-op">=</div>' +
+        '<div class="formula-item final"><div class="n">'+esc(money(remainingToDeposit))+'</div><div class="l">'+esc(t('dash_remainingToDeposit'))+'</div></div>' +
+      '</div></div>'
+    ));
+
     var locsReporting = {};
     entries.forEach(function(e){ if (e.locationId) locsReporting[e.locationId] = 1; });
     var locCount = Object.keys(locsReporting).length;
@@ -1605,34 +1637,6 @@ function renderDashboard(body){
       ], { sortKey:'cylinderBalance' }));
       body.appendChild(cylCard);
     }
-
-    // ---------- Collections ----------
-    body.appendChild(el('<div class="dash-section-title">'+esc(t('dash_collectionsTitle'))+'</div>'));
-
-    // Cash needed to deposit = cash sales (cashSalesTotal, from the Sales
-    // section above -- the physical cash collected, never the card/POS-
-    // machine or credit portions) + VAT on delivery fees only (the delivery
-    // fee itself is bank-settled directly by the customer, never physical
-    // cash, but the VAT the company owes on it is a cash liability that
-    // still has to be covered) -- minus what's already been deposited.
-    var vatOnDeliveryTotal = report.totals.vatOnDelivery;
-    var totalToCollect = cashSalesTotal + vatOnDeliveryTotal;
-    var depositedAmount = (ho.handoffs||[]).filter(function(h){ return h.kind==='deposit'; })
-      .reduce(function(s,h){ return s+Number(h.amount||0); },0);
-    var remainingToDeposit = totalToCollect - depositedAmount;
-    body.appendChild(el(
-      '<div class="card"><div class="formula-card">' +
-        '<div class="formula-item"><div class="n">'+esc(money(cashSalesTotal))+'</div><div class="l">'+esc(t('dash_cashSales'))+'</div></div>' +
-        '<div class="formula-op">+</div>' +
-        '<div class="formula-item"><div class="n">'+esc(money(vatOnDeliveryTotal))+'</div><div class="l">'+esc(t('dash_vatOnDeliveryOnly'))+'</div></div>' +
-        '<div class="formula-op">=</div>' +
-        '<div class="formula-item result"><div class="n">'+esc(money(totalToCollect))+'</div><div class="l">'+esc(t('dash_totalToCollect'))+'</div></div>' +
-        '<div class="formula-op">&minus;</div>' +
-        '<div class="formula-item"><div class="n">'+esc(money(depositedAmount))+'</div><div class="l">'+esc(t('dash_deposited'))+'</div></div>' +
-        '<div class="formula-op">=</div>' +
-        '<div class="formula-item final"><div class="n">'+esc(money(remainingToDeposit))+'</div><div class="l">'+esc(t('dash_remainingToDeposit'))+'</div></div>' +
-      '</div></div>'
-    ));
 
     var handoffs = ho.handoffs || [];
     var total = handoffs.length;
