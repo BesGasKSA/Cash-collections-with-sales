@@ -1596,8 +1596,15 @@ function renderDashboard(body){
 
     // Cash sales + claim (credit) sales = total owed to the company; what's
     // already reached the bank comes off that to show what's still exposed
-    // as cash or receivables out in the field.
-    var cashSalesTotal = report.totals.netCashOwed;
+    // as cash or receivables out in the field. Cash sales here is the raw
+    // physical cash collected (store + car + POS-location) -- deliberately
+    // NOT netCashOwed, which nets out the delivery fee (never physical cash;
+    // it's bank-settled) and adds its VAT back. That netted figure belongs
+    // to the collector-handoff chain, not this reconciliation: it made the
+    // Collections section disagree with the Sales section above it, since
+    // gross sales = cashSales + posSales(card) + creditSales always, and
+    // this card's own posSales(card) is never physical cash to deposit.
+    var cashSalesTotal = report.totals.storeCash + report.totals.carCash + report.totals.posCash;
     var claimSalesTotal = report.totals.creditSales;
     var totalToCollect = cashSalesTotal + claimSalesTotal;
     var depositedAmount = (ho.handoffs||[]).filter(function(h){ return h.kind==='deposit'; })
