@@ -259,6 +259,22 @@
     .formula-card{flex-direction:column;}
     .formula-op{transform:rotate(90deg);padding:4px 0;}
   }
+  .formula-item.clickable, .kpi.clickable{cursor:pointer;transition:background .15s ease,box-shadow .15s ease;border-radius:var(--radius);}
+  .formula-item.clickable:hover{background:rgba(77,109,81,.10);}
+  .kpi.clickable:hover{box-shadow:0 0 0 2px var(--green) inset;}
+  .formula-item.clickable .l, .kpi.clickable .l{text-decoration:underline;text-decoration-style:dotted;text-underline-offset:2px;}
+  .txn-filters{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;}
+  .txn-filters button{border:1px solid var(--border);background:var(--card);color:var(--text);border-radius:999px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;}
+  .txn-filters button.active{background:var(--green);color:#fff;border-color:var(--green);}
+  .txn-row{border-top:1px dashed var(--border-soft);padding:10px 0;}
+  .txn-row-head{display:flex;justify-content:space-between;align-items:center;gap:10px;cursor:pointer;flex-wrap:wrap;}
+  .txn-row-head .txn-main{font-size:13px;font-weight:700;}
+  .txn-row-head .txn-sub{font-size:11.5px;color:var(--muted);margin-top:2px;}
+  .txn-row-head .txn-amt{font-size:14px;font-weight:800;color:var(--green-dark);white-space:nowrap;}
+  .txn-detail{margin-top:10px;padding:12px;background:var(--muted-2);border-radius:var(--radius);font-size:12.5px;}
+  .txn-detail dl{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;margin:0;}
+  .txn-detail dt{color:var(--muted);}
+  .txn-detail dd{margin:0;font-weight:700;}
   .donut-wrap{display:flex;align-items:center;gap:20px;flex-wrap:wrap;}
   .donut-wrap svg{flex-shrink:0;}
   .donut-legend{display:flex;flex-direction:column;gap:8px;flex:1;min-width:150px;}
@@ -473,8 +489,14 @@ var L = {
     report_allCities:'كل المدن', report_allProducts:'كل المنتجات', report_enteredBy:'مُدخِل البيانات', report_allEnterers:'الجميع',
     report_amountMin:'أقل مبلغ', report_amountMax:'أعلى مبلغ', report_editFilters:'تعديل الفلاتر', report_hideFilters:'إخفاء الفلاتر',
     report_activeFilters:'فلتر نشط', report_noActiveFilters:'بدون فلاتر — عرض كل البيانات',
+    report_transactions:'المعاملات (التفصيل الكامل)', report_txnFilterAll:'الكل', report_txnFilterCash:'نقدي', report_txnFilterPos:'نقاط البيع',
+    report_txnFilterCredit:'آجل', report_txnFilterDelivery:'رسوم التوصيل', report_viewDetails:'عرض التفاصيل', report_hideDetails:'إخفاء التفاصيل',
+    report_noTransactions:'لا توجد معاملات مطابقة', report_viewBatch:'عرض دفعة الرفع', report_batchUploader:'رفعها', report_batchStatus:'حالة الدفعة',
+    report_batchCreatedAt:'تاريخ الرفع', report_notFromBatch:'أُدخلت مباشرة (ليست جزءاً من دفعة مرفوعة)',
     nav_dashboard:'لوحة التحكم', dash_salesTitle:'لوحة المبيعات', dash_collectionsTitle:'لوحة التحصيل', dash_grossSales:'إجمالي المبيعات',
     dash_vatInclusiveNote:'شامل ضريبة القيمة المضافة', dash_cashSales:'المبيعات النقدية', dash_deliveryFeeBeforeVat:'رسوم التوصيل قبل الضريبة',
+    dash_whereIsCash:'أين تقع النقدية المتبقية الآن؟', dash_cashLocationNote:'"المتبقي للإيداع" رقم إجمالي فقط — هذا التفصيل يوضح مع من توجد النقدية فعلياً حالياً، شخصاً بشخص.',
+    dash_notYetHandedOff:'لم تُسلَّم بعد (لا تزال مع من أدخلها)', dash_heldConfirmedNotDeposited:'مؤكَّدة ومعه حالياً، بانتظار التسليم للمرحلة التالية أو الإيداع',
     dash_totalToCollect:'إجمالي المستحق تحصيله', dash_deposited:'تم إيداعه بالبنك', dash_remainingToDeposit:'المتبقي للإيداع',
     dash_comparisonTitle:'آخر 7 أيام مقابل الأسبوع السابق', dash_comparisonPrevious:'الأسبوع السابق', dash_comparisonGross:'إجمالي المبيعات',
     dash_heldTrendTitle:'اتجاه النقدية المحتفظ بها لكل شخص (14 يوماً)', dash_heldTrendHint:'من كان يحتفظ بنقدية مؤكَّدة ولم تُسلَّم للمرحلة التالية بعد، في نهاية كل يوم خلال آخر 14 يوماً.',
@@ -641,6 +663,8 @@ var L = {
     report_activeFilters:'active filter(s)', report_noActiveFilters:'No filters — showing all data',
     nav_dashboard:'Dashboard', dash_salesTitle:'Sales dashboard', dash_collectionsTitle:'Collections dashboard', dash_grossSales:'Gross sales',
     dash_vatInclusiveNote:'VAT inclusive', dash_cashSales:'Cash sales', dash_deliveryFeeBeforeVat:'Delivery fees (before VAT)',
+    dash_whereIsCash:'Where is the remaining cash right now?', dash_cashLocationNote:'"Remaining to deposit" is only a total -- this breakdown shows who actually holds the cash right now, person by person.',
+    dash_notYetHandedOff:'Not yet handed off (still with whoever entered it)', dash_heldConfirmedNotDeposited:'Confirmed and currently held, awaiting the next handoff or deposit',
     dash_totalToCollect:'Total to collect', dash_deposited:'Deposited to bank', dash_remainingToDeposit:'Remaining to deposit',
     dash_comparisonTitle:'Last 7 days vs. the week before', dash_comparisonPrevious:'Previous week', dash_comparisonGross:'Gross sales',
     dash_heldTrendTitle:'Held cash by person — 14-day trend', dash_heldTrendHint:'Who was holding confirmed cash not yet handed to the next stage, at the end of each of the last 14 days.',
@@ -807,6 +831,8 @@ var L = {
     report_activeFilters:'فعال فلٹر', report_noActiveFilters:'کوئی فلٹر نہیں — تمام ڈیٹا دکھایا جا رہا ہے',
     nav_dashboard:'ڈیش بورڈ', dash_salesTitle:'سیلز ڈیش بورڈ', dash_collectionsTitle:'کلیکشن ڈیش بورڈ', dash_grossSales:'کل فروخت',
     dash_vatInclusiveNote:'ویٹ شامل', dash_cashSales:'نقدی فروخت', dash_deliveryFeeBeforeVat:'ترسیل چارجز (ویٹ سے پہلے)',
+    dash_whereIsCash:'باقی نقدی اس وقت کہاں ہے؟', dash_cashLocationNote:'"باقی جمع کرنا" صرف ایک مجموعی عدد ہے — یہ تفصیل بتاتی ہے کہ نقدی اصل میں کس کے پاس ہے، فرد بہ فرد۔',
+    dash_notYetHandedOff:'ابھی تک منتقل نہیں ہوئی (اب بھی درج کرنے والے کے پاس)', dash_heldConfirmedNotDeposited:'تصدیق شدہ اور فی الحال موجود، اگلی منتقلی یا جمع کرانے کے منتظر',
     dash_totalToCollect:'کل وصولی', dash_deposited:'بینک میں جمع', dash_remainingToDeposit:'باقی جمع کرنا',
     dash_comparisonTitle:'پچھلے 7 دن بمقابلہ اس سے پچھلا ہفتہ', dash_comparisonPrevious:'پچھلا ہفتہ', dash_comparisonGross:'کل فروخت',
     dash_heldTrendTitle:'فی شخص محفوظ نقدی — 14 دن کا رجحان', dash_heldTrendHint:'پچھلے 14 دنوں میں سے ہر دن کے اختتام پر کس کے پاس تصدیق شدہ نقدی موجود تھی جو ابھی اگلے مرحلے کو حوالے نہیں ہوئی۔',
@@ -1483,9 +1509,13 @@ function renderHome(body){
 // ---------------- dashboard (company-wide: sales + collections) ----------------
 function renderDashboard(body){
   body.innerHTML = '<div class="card">'+esc(t('loading'))+'</div>';
-  Promise.all([api('getSalesReport', {}), api('listHandoffs', {}), api('listDashboard', {})]).then(function(results){
-    var report = results[0], ho = results[1], dash = results[2];
-    if (!report.ok || !ho.ok || !dash.ok){ body.innerHTML = '<div class="msg err">'+esc(errMsg_(!report.ok?report:!ho.ok?ho:dash))+'</div>'; return; }
+  // One combined request instead of three parallel ones -- each Apps
+  // Script web-app call carries its own fixed execution overhead on top
+  // of the actual work, so bundling into a single getDashboardAll call is
+  // what actually cuts load time, not just running the three in parallel.
+  api('getDashboardAll', {}).then(function(all){
+    if (!all.ok){ body.innerHTML = '<div class="msg err">'+esc(errMsg_(all))+'</div>'; return; }
+    var report = all.report, ho = all.handoffs, dash = all.dashboard;
     body.innerHTML = '';
 
     // ---------- Sales ----------
@@ -1543,6 +1573,40 @@ function renderDashboard(body){
         '<div class="formula-item final"><div class="n">'+esc(money(remainingToDeposit))+'</div><div class="l">'+esc(t('dash_remainingToDeposit'))+'</div></div>' +
       '</div></div>'
     ));
+
+    // "Remaining to deposit" is a total accounting gap (cash sales recorded
+    // minus what's actually reached the bank) -- it does NOT by itself say
+    // whether that cash has even started moving through the handoff chain
+    // yet. A collector can correctly show "nothing pending" while this
+    // figure is still large, because the cash is still sitting further
+    // down the chain (with a driver or store manager who hasn't handed it
+    // off yet). This breaks that total into WHERE it actually is right now,
+    // person by person, so the two views never look contradictory again.
+    var notYetHandedOff = {};
+    entries.forEach(function(e){
+      if (e.consumedBy) return; // already moved into a handoff -- covered by heldByHolder below instead
+      var cashPortion = Number(e.cashSales||0);
+      if (cashPortion <= 0) return;
+      var uid = e.enteredBy || '__unknown__';
+      notYetHandedOff[uid] = (notYetHandedOff[uid]||0) + cashPortion;
+    });
+    var notYetRows = Object.keys(notYetHandedOff).map(function(uid){ return { uid:uid, amount:notYetHandedOff[uid] }; })
+      .sort(function(a,b){ return b.amount-a.amount; });
+    var heldRows = dash.companyHeldByHolder ? Object.keys(dash.companyHeldByHolder).map(function(uid){ return { uid:uid, amount:dash.companyHeldByHolder[uid] }; })
+      .sort(function(a,b){ return b.amount-a.amount; }) : [];
+    if (notYetRows.length || heldRows.length){
+      var whoHasCashCard = el('<div class="card"><h2>'+esc(t('dash_whereIsCash'))+'</h2>' +
+        '<div class="muted" style="font-size:12px;margin-bottom:10px;">'+esc(t('dash_cashLocationNote'))+'</div></div>');
+      if (notYetRows.length){
+        whoHasCashCard.appendChild(el('<div style="font-size:12.5px;font-weight:700;margin-top:6px;">'+esc(t('dash_notYetHandedOff'))+'</div>'));
+        whoHasCashCard.appendChild(barList(notYetRows, function(r){ return userName(r.uid); }, function(r){ return r.amount; }, function(){ return 0; }));
+      }
+      if (heldRows.length){
+        whoHasCashCard.appendChild(el('<div style="font-size:12.5px;font-weight:700;margin-top:14px;">'+esc(t('dash_heldConfirmedNotDeposited'))+'</div>'));
+        whoHasCashCard.appendChild(barList(heldRows, function(r){ return userName(r.uid); }, function(r){ return r.amount; }, function(){ return 0; }));
+      }
+      body.appendChild(whoHasCashCard);
+    }
 
     var locsReporting = {};
     entries.forEach(function(e){ if (e.locationId) locsReporting[e.locationId] = 1; });
@@ -1679,13 +1743,10 @@ function renderDashboard(body){
     ));
     body.appendChild(kindCard);
 
-    if (dash.companyHeldByHolder && Object.keys(dash.companyHeldByHolder).length){
-      var holderRows = Object.keys(dash.companyHeldByHolder).map(function(uid){ return { uid:uid, amount:dash.companyHeldByHolder[uid] }; })
-        .sort(function(a,b){ return b.amount-a.amount; });
-      var holderCard = el('<div class="card"><h2>'+esc(t('home_companyOutstanding'))+'</h2></div>');
-      holderCard.appendChild(barList(holderRows, function(r){ return userName(r.uid); }, function(r){ return r.amount; }, function(){ return 0; }));
-      body.appendChild(holderCard);
-    }
+    // (Who currently holds confirmed-but-undeposited cash is now shown once,
+    // right under the Collections formula card above, alongside cash that
+    // hasn't even been handed off yet -- together they explain exactly
+    // where "remaining to deposit" actually sits, so it isn't repeated here.)
 
     var heldTrendCard = el('<div class="card"><h2>'+esc(t('dash_heldTrendTitle'))+'</h2>' +
       '<div class="muted" style="font-size:12px;margin-bottom:10px;">'+esc(t('dash_heldTrendHint'))+'</div>' +
