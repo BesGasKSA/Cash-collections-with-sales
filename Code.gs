@@ -214,14 +214,12 @@ function vatRate_() {
   return typeof c.vatRate === 'number' ? c.vatRate : 0.15;
 }
 
-// All system emails go through here so they carry one consistent sender —
-// notifications@bestgas.sa, a verified "Send As" alias on the account that
-// owns this Apps Script project — instead of MailApp's default of sending
-// as whoever's personal Google account the project happens to run under.
-var NOTIFICATION_SENDER_EMAIL = 'notifications@bestgas.sa';
-var NOTIFICATION_SENDER_NAME = 'Best Gas Cash Collection';
+// All system emails go through this one choke point. For now this just
+// sends as the script owner's personal Google account (MailApp's default) —
+// switching to a dedicated sender later (e.g. notifications@bestgas.sa via
+// a verified GmailApp "Send As" alias) only needs a change here.
 function sendMail_(to, subject, body) {
-  GmailApp.sendEmail(to, subject, body, { from: NOTIFICATION_SENDER_EMAIL, name: NOTIFICATION_SENDER_NAME });
+  MailApp.sendEmail(to, subject, body);
 }
 
 // Hours a handoff can sit 'pending' before checkStaleHandoffs_ escalates it.
