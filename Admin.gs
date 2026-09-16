@@ -144,7 +144,7 @@ function sendInvite_(u, tempPassword) {
     'You will be asked to change it on first login.'
   ].join('\n');
   try {
-    MailApp.sendEmail(u.email, subject, body);
+    sendMail_(u.email, subject, body);
   } catch (e) {
     // email quota/misconfiguration must not block account creation
     logAudit_('invite_email_failed', u.id, String(e));

@@ -788,7 +788,7 @@ function notifyDeputyPendingBatch_(batch) {
   });
   recipients.forEach(function (u) {
     try {
-      MailApp.sendEmail(u.email,
+      sendMail_(u.email,
         'دفعة بيانات جديدة بانتظار الاعتماد / New bulk batch pending approval',
         'رفع مدير المنطقة دفعة بيانات جديدة بمبلغ ' + batch.breakdown.netCashOwed.toFixed(2) + ' بانتظار اعتمادك.\n' +
         'An area manager uploaded a new bulk batch of ' + batch.breakdown.netCashOwed.toFixed(2) + ' awaiting your approval.');
@@ -800,7 +800,7 @@ function notifyAreaBatchRejected_(batch) {
   var uploader = getById_(SHEETS.USERS, batch.uploadedBy);
   if (!uploader || !uploader.email) return;
   try {
-    MailApp.sendEmail(uploader.email,
+    sendMail_(uploader.email,
       'تم رفض دفعة البيانات المرفوعة / Your bulk batch was rejected',
       'تم رفض الدفعة بواسطة نائب مدير العمليات. السبب: ' + (batch.rejectionNote || '—') + '\n' +
       'Your bulk batch was rejected by the Deputy Operations Manager. Reason: ' + (batch.rejectionNote || '—'));
@@ -896,7 +896,7 @@ function escalateLargeAmount_(handoff) {
     ' تجاوز الحد المحدد ويحتاج موافقة إدارية/مالية إضافية.\n\n' +
     'Handoff ' + handoff.id + ' (' + Number(handoff.amount).toFixed(2) + ') exceeded the configured threshold and needs a second admin/finance sign-off.';
   Object.keys(recipients).forEach(function (id) {
-    try { MailApp.sendEmail(recipients[id].email, subject, body); } catch (e) { /* best-effort */ }
+    try { sendMail_(recipients[id].email, subject, body); } catch (e) { /* best-effort */ }
   });
 }
 
@@ -1073,7 +1073,7 @@ function notifyPending_(handoff) {
   var toUser = getById_(SHEETS.USERS, handoff.toUserId);
   if (!toUser || !toUser.email) return;
   try {
-    MailApp.sendEmail(toUser.email,
+    sendMail_(toUser.email,
       'طلب استلام نقدية جديد / New cash handoff pending',
       'يوجد طلب استلام مبلغ ' + handoff.amount.toFixed(2) + ' بانتظار تأكيدك.\n' +
       'A handoff of ' + handoff.amount.toFixed(2) + ' is awaiting your confirmation.');
@@ -1084,7 +1084,7 @@ function notifyDispute_(handoff) {
   var admins = readSheet(SHEETS.USERS).filter(function (u) { return u.role === 'admin' && u.email; });
   admins.forEach(function (a) {
     try {
-      MailApp.sendEmail(a.email,
+      sendMail_(a.email,
         'اعتراض على مناولة نقدية / Cash handoff disputed',
         'تم الاعتراض على طلب رقم ' + handoff.id + ' بمبلغ ' + handoff.amount.toFixed(2) + '.\n' +
         'Handoff ' + handoff.id + ' (' + handoff.amount.toFixed(2) + ') was disputed.');
@@ -1126,7 +1126,7 @@ function escalateShortfall_(handoff) {
     'Shortfall: ' + Number(handoff.shortfall).toFixed(2);
 
   Object.keys(recipients).forEach(function (id) {
-    try { MailApp.sendEmail(recipients[id].email, subject, body); } catch (e) { /* best-effort */ }
+    try { sendMail_(recipients[id].email, subject, body); } catch (e) { /* best-effort */ }
   });
 }
 
@@ -1157,7 +1157,7 @@ function escalateStaleHandoff_(handoff, hoursOld) {
     'Handoff ' + handoff.id + ' (' + Number(handoff.amount).toFixed(2) + ') has been pending confirmation for ' + Math.round(hoursOld) + ' hours.';
 
   Object.keys(recipients).forEach(function (id) {
-    try { MailApp.sendEmail(recipients[id].email, subject, body); } catch (e) { /* best-effort */ }
+    try { sendMail_(recipients[id].email, subject, body); } catch (e) { /* best-effort */ }
   });
 }
 
@@ -1193,7 +1193,7 @@ function escalateHeldTooLong_(handoff, hoursHeld) {
     ' for ' + Math.round(hoursHeld) + ' hours without passing it on to the next stage (handoff ' + handoff.id + ').';
 
   Object.keys(recipients).forEach(function (id) {
-    try { MailApp.sendEmail(recipients[id].email, subject, body); } catch (e) { /* best-effort */ }
+    try { sendMail_(recipients[id].email, subject, body); } catch (e) { /* best-effort */ }
   });
 }
 

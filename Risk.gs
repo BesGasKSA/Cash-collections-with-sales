@@ -73,6 +73,6 @@ function notifyRiskItem_(item, reporter) {
   var body = 'العنوان: ' + item.title + '\nالوصف: ' + item.description + '\nمُبلَّغ من: ' + (reporter.name || reporter.id) + '\n\n' +
     'Title: ' + item.title + '\nDescription: ' + item.description + '\nReported by: ' + (reporter.name || reporter.id);
   recipients.forEach(function (u) {
-    try { MailApp.sendEmail(u.email, subject, body); } catch (e) { /* best-effort */ }
+    try { sendMail_(u.email, subject, body); } catch (e) { /* best-effort */ }
   });
 }
