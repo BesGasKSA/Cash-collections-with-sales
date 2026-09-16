@@ -1298,6 +1298,26 @@ function actionDashboard_(req, user) {
   return result;
 }
 
+// The dashboard screen used to fire three separate web-app requests
+// (getSalesReport + listHandoffs + listDashboard) in parallel from the
+// client. Each Apps Script web-app invocation carries its own fixed
+// execution overhead on top of whatever it actually does, so three
+// requests cost roughly three times that overhead even though readSheet's
+// own cache makes the underlying Sheet reads cheap. Bundling all three
+// into one action and one round trip is what actually cuts perceived
+// dashboard load time -- readSheet's cache means calling all three
+// original functions here costs no extra Sheet reads over calling them
+// separately.
+function actionDashboardAll_(req, user) {
+  var report = actionSalesReport_(req, user);
+  if (!report.ok) return report;
+  var handoffs = actionListHandoffs_(req, user);
+  if (!handoffs.ok) return handoffs;
+  var dashboard = actionDashboard_(req, user);
+  if (!dashboard.ok) return dashboard;
+  return { ok: true, report: report, handoffs: handoffs, dashboard: dashboard };
+}
+
 // ---------- Sales report ----------
 
 function actionSalesReport_(req, user) {

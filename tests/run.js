@@ -621,6 +621,18 @@ check(!protoKind.ok && protoKind.error === 'invalid_kind', 'entity kind:"__proto
 var protoDeleteKind = call({ action: 'adminDeleteEntity', token: adminTok, kind: 'constructor', id: 'x' });
 check(!protoDeleteKind.ok && protoDeleteKind.error === 'invalid_kind', 'same for adminDeleteEntity with kind:"constructor"');
 
+console.log('--- getDashboardAll: one combined call returns the same data as the three separate calls it replaces ---');
+var separateReport = call({ action: 'getSalesReport', token: adminTok });
+var separateHandoffs = call({ action: 'listHandoffs', token: adminTok });
+var separateDash = call({ action: 'listDashboard', token: adminTok });
+var combined = call({ action: 'getDashboardAll', token: adminTok });
+check(combined.ok, 'getDashboardAll succeeds for a company-wide role');
+close(combined.report.totals.netCashOwed, separateReport.totals.netCashOwed, 'bundled report.totals matches the separate getSalesReport call');
+check(combined.handoffs.handoffs.length === separateHandoffs.handoffs.length, 'bundled handoffs list matches the separate listHandoffs call');
+close(combined.dashboard.companyOutstanding, separateDash.companyOutstanding, 'bundled dashboard.companyOutstanding matches the separate listDashboard call');
+var combinedStore = call({ action: 'getDashboardAll', token: aliTok });
+check(!combinedStore.ok && combinedStore.error === 'forbidden', 'a plain store manager gets the same forbidden from getDashboardAll as from getSalesReport directly -- the bundle does not loosen any individual permission check');
+
 console.log('--- dashboard period comparison: last 7 days vs. the 7 days before ---');
 function isoOffset(daysAgo) { var d = new Date(); d.setDate(d.getDate() - daysAgo); return d.toISOString().slice(0, 10); }
 var cmpLocation = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: 'Riyadh', name: 'Comparison Test', clusterId: cluster.entity.id } }).entity;
