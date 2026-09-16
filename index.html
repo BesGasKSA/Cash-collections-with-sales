@@ -474,7 +474,7 @@ var L = {
     report_amountMin:'أقل مبلغ', report_amountMax:'أعلى مبلغ', report_editFilters:'تعديل الفلاتر', report_hideFilters:'إخفاء الفلاتر',
     report_activeFilters:'فلتر نشط', report_noActiveFilters:'بدون فلاتر — عرض كل البيانات',
     nav_dashboard:'لوحة التحكم', dash_salesTitle:'لوحة المبيعات', dash_collectionsTitle:'لوحة التحصيل', dash_grossSales:'إجمالي المبيعات',
-    dash_vatInclusiveNote:'شامل ضريبة القيمة المضافة', dash_cashSales:'المبيعات النقدية', dash_claimSales:'المبيعات الآجلة (مطالبات)',
+    dash_vatInclusiveNote:'شامل ضريبة القيمة المضافة', dash_cashSales:'المبيعات النقدية', dash_vatOnDeliveryOnly:'ضريبة القيمة المضافة على رسوم التوصيل فقط',
     dash_totalToCollect:'إجمالي المستحق تحصيله', dash_deposited:'تم إيداعه بالبنك', dash_remainingToDeposit:'المتبقي للإيداع',
     dash_comparisonTitle:'آخر 7 أيام مقابل الأسبوع السابق', dash_comparisonPrevious:'الأسبوع السابق', dash_comparisonGross:'إجمالي المبيعات',
     dash_heldTrendTitle:'اتجاه النقدية المحتفظ بها لكل شخص (14 يوماً)', dash_heldTrendHint:'من كان يحتفظ بنقدية مؤكَّدة ولم تُسلَّم للمرحلة التالية بعد، في نهاية كل يوم خلال آخر 14 يوماً.',
@@ -640,7 +640,7 @@ var L = {
     report_amountMin:'Min amount', report_amountMax:'Max amount', report_editFilters:'Edit filters', report_hideFilters:'Hide filters',
     report_activeFilters:'active filter(s)', report_noActiveFilters:'No filters — showing all data',
     nav_dashboard:'Dashboard', dash_salesTitle:'Sales dashboard', dash_collectionsTitle:'Collections dashboard', dash_grossSales:'Gross sales',
-    dash_vatInclusiveNote:'VAT inclusive', dash_cashSales:'Cash sales', dash_claimSales:'Credit sales (claims)',
+    dash_vatInclusiveNote:'VAT inclusive', dash_cashSales:'Cash sales', dash_vatOnDeliveryOnly:'VAT on delivery fees only',
     dash_totalToCollect:'Total to collect', dash_deposited:'Deposited to bank', dash_remainingToDeposit:'Remaining to deposit',
     dash_comparisonTitle:'Last 7 days vs. the week before', dash_comparisonPrevious:'Previous week', dash_comparisonGross:'Gross sales',
     dash_heldTrendTitle:'Held cash by person — 14-day trend', dash_heldTrendHint:'Who was holding confirmed cash not yet handed to the next stage, at the end of each of the last 14 days.',
@@ -1493,6 +1493,21 @@ function renderDashboard(body){
 
     var entries = report.entries || [];
     var grossSales = entries.reduce(function(s,e){ return s + Number(e.cashSales||0) + Number(e.posSales||0) + Number(e.creditSales||0); }, 0);
+    // Cash sales here is the raw physical cash collected (store + car +
+    // POS-location) -- reused below in the Collections formula too, so both
+    // sections are built from the same one number and can never disagree.
+    var cashSalesTotal = report.totals.storeCash + report.totals.carCash + report.totals.posCash;
+    body.appendChild(el(
+      '<div class="card"><div class="formula-card">' +
+        '<div class="formula-item"><div class="n">'+esc(money(cashSalesTotal))+'</div><div class="l">'+esc(t('dash_cashSales'))+'</div></div>' +
+        '<div class="formula-op">+</div>' +
+        '<div class="formula-item"><div class="n">'+esc(money(report.totals.posSales))+'</div><div class="l">'+esc(t('report_pos'))+'</div></div>' +
+        '<div class="formula-op">+</div>' +
+        '<div class="formula-item"><div class="n">'+esc(money(report.totals.creditSales))+'</div><div class="l">'+esc(t('report_credit'))+'</div></div>' +
+        '<div class="formula-op">=</div>' +
+        '<div class="formula-item final"><div class="n">'+esc(money(grossSales))+'</div><div class="l">'+esc(t('dash_grossSales'))+'</div></div>' +
+      '</div></div>'
+    ));
     var locsReporting = {};
     entries.forEach(function(e){ if (e.locationId) locsReporting[e.locationId] = 1; });
     var locCount = Object.keys(locsReporting).length;
@@ -1594,19 +1609,14 @@ function renderDashboard(body){
     // ---------- Collections ----------
     body.appendChild(el('<div class="dash-section-title">'+esc(t('dash_collectionsTitle'))+'</div>'));
 
-    // Cash sales + claim (credit) sales = total owed to the company; what's
-    // already reached the bank comes off that to show what's still exposed
-    // as cash or receivables out in the field. Cash sales here is the raw
-    // physical cash collected (store + car + POS-location) -- deliberately
-    // NOT netCashOwed, which nets out the delivery fee (never physical cash;
-    // it's bank-settled) and adds its VAT back. That netted figure belongs
-    // to the collector-handoff chain, not this reconciliation: it made the
-    // Collections section disagree with the Sales section above it, since
-    // gross sales = cashSales + posSales(card) + creditSales always, and
-    // this card's own posSales(card) is never physical cash to deposit.
-    var cashSalesTotal = report.totals.storeCash + report.totals.carCash + report.totals.posCash;
-    var claimSalesTotal = report.totals.creditSales;
-    var totalToCollect = cashSalesTotal + claimSalesTotal;
+    // Cash needed to deposit = cash sales (cashSalesTotal, from the Sales
+    // section above -- the physical cash collected, never the card/POS-
+    // machine or credit portions) + VAT on delivery fees only (the delivery
+    // fee itself is bank-settled directly by the customer, never physical
+    // cash, but the VAT the company owes on it is a cash liability that
+    // still has to be covered) -- minus what's already been deposited.
+    var vatOnDeliveryTotal = report.totals.vatOnDelivery;
+    var totalToCollect = cashSalesTotal + vatOnDeliveryTotal;
     var depositedAmount = (ho.handoffs||[]).filter(function(h){ return h.kind==='deposit'; })
       .reduce(function(s,h){ return s+Number(h.amount||0); },0);
     var remainingToDeposit = totalToCollect - depositedAmount;
@@ -1614,7 +1624,7 @@ function renderDashboard(body){
       '<div class="card"><div class="formula-card">' +
         '<div class="formula-item"><div class="n">'+esc(money(cashSalesTotal))+'</div><div class="l">'+esc(t('dash_cashSales'))+'</div></div>' +
         '<div class="formula-op">+</div>' +
-        '<div class="formula-item"><div class="n">'+esc(money(claimSalesTotal))+'</div><div class="l">'+esc(t('dash_claimSales'))+'</div></div>' +
+        '<div class="formula-item"><div class="n">'+esc(money(vatOnDeliveryTotal))+'</div><div class="l">'+esc(t('dash_vatOnDeliveryOnly'))+'</div></div>' +
         '<div class="formula-op">=</div>' +
         '<div class="formula-item result"><div class="n">'+esc(money(totalToCollect))+'</div><div class="l">'+esc(t('dash_totalToCollect'))+'</div></div>' +
         '<div class="formula-op">&minus;</div>' +
