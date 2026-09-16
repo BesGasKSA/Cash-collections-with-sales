@@ -117,6 +117,11 @@ function buildContext() {
   };
 
   var MailApp = { sendEmail: function (to, subject, body) { mailLog.push({ to: to, subject: subject, body: body }); } };
+  var GmailApp = {
+    sendEmail: function (to, subject, body, options) {
+      mailLog.push({ to: to, subject: subject, body: body, from: options && options.from, fromName: options && options.name });
+    }
+  };
 
   function makeFile(id, blob) {
     var name = blob.getName ? blob.getName() : 'file';
@@ -180,7 +185,7 @@ function buildContext() {
 
   var sandbox = {
     SpreadsheetApp: SpreadsheetApp, PropertiesService: PropertiesService, CacheService: CacheService,
-    LockService: LockService, Utilities: Utilities, MailApp: MailApp, DriveApp: DriveApp,
+    LockService: LockService, Utilities: Utilities, MailApp: MailApp, GmailApp: GmailApp, DriveApp: DriveApp,
     ContentService: ContentService, ScriptApp: ScriptApp, Logger: { log: function () {} },
     console: console
   };
