@@ -474,7 +474,7 @@ var L = {
     report_amountMin:'أقل مبلغ', report_amountMax:'أعلى مبلغ', report_editFilters:'تعديل الفلاتر', report_hideFilters:'إخفاء الفلاتر',
     report_activeFilters:'فلتر نشط', report_noActiveFilters:'بدون فلاتر — عرض كل البيانات',
     nav_dashboard:'لوحة التحكم', dash_salesTitle:'لوحة المبيعات', dash_collectionsTitle:'لوحة التحصيل', dash_grossSales:'إجمالي المبيعات',
-    dash_vatInclusiveNote:'شامل ضريبة القيمة المضافة', dash_cashSales:'المبيعات النقدية', dash_vatOnDeliveryOnly:'ضريبة القيمة المضافة على رسوم التوصيل فقط',
+    dash_vatInclusiveNote:'شامل ضريبة القيمة المضافة', dash_cashSales:'المبيعات النقدية', dash_deliveryFeeBeforeVat:'رسوم التوصيل قبل الضريبة',
     dash_totalToCollect:'إجمالي المستحق تحصيله', dash_deposited:'تم إيداعه بالبنك', dash_remainingToDeposit:'المتبقي للإيداع',
     dash_comparisonTitle:'آخر 7 أيام مقابل الأسبوع السابق', dash_comparisonPrevious:'الأسبوع السابق', dash_comparisonGross:'إجمالي المبيعات',
     dash_heldTrendTitle:'اتجاه النقدية المحتفظ بها لكل شخص (14 يوماً)', dash_heldTrendHint:'من كان يحتفظ بنقدية مؤكَّدة ولم تُسلَّم للمرحلة التالية بعد، في نهاية كل يوم خلال آخر 14 يوماً.',
@@ -640,7 +640,7 @@ var L = {
     report_amountMin:'Min amount', report_amountMax:'Max amount', report_editFilters:'Edit filters', report_hideFilters:'Hide filters',
     report_activeFilters:'active filter(s)', report_noActiveFilters:'No filters — showing all data',
     nav_dashboard:'Dashboard', dash_salesTitle:'Sales dashboard', dash_collectionsTitle:'Collections dashboard', dash_grossSales:'Gross sales',
-    dash_vatInclusiveNote:'VAT inclusive', dash_cashSales:'Cash sales', dash_vatOnDeliveryOnly:'VAT on delivery fees only',
+    dash_vatInclusiveNote:'VAT inclusive', dash_cashSales:'Cash sales', dash_deliveryFeeBeforeVat:'Delivery fees (before VAT)',
     dash_totalToCollect:'Total to collect', dash_deposited:'Deposited to bank', dash_remainingToDeposit:'Remaining to deposit',
     dash_comparisonTitle:'Last 7 days vs. the week before', dash_comparisonPrevious:'Previous week', dash_comparisonGross:'Gross sales',
     dash_heldTrendTitle:'Held cash by person — 14-day trend', dash_heldTrendHint:'Who was holding confirmed cash not yet handed to the next stage, at the end of each of the last 14 days.',
@@ -806,7 +806,7 @@ var L = {
     report_amountMin:'کم از کم رقم', report_amountMax:'زیادہ سے زیادہ رقم', report_editFilters:'فلٹرز میں تبدیلی', report_hideFilters:'فلٹرز چھپائیں',
     report_activeFilters:'فعال فلٹر', report_noActiveFilters:'کوئی فلٹر نہیں — تمام ڈیٹا دکھایا جا رہا ہے',
     nav_dashboard:'ڈیش بورڈ', dash_salesTitle:'سیلز ڈیش بورڈ', dash_collectionsTitle:'کلیکشن ڈیش بورڈ', dash_grossSales:'کل فروخت',
-    dash_vatInclusiveNote:'ویٹ شامل', dash_cashSales:'نقدی فروخت', dash_claimSales:'ادھار فروخت (مطالبات)',
+    dash_vatInclusiveNote:'ویٹ شامل', dash_cashSales:'نقدی فروخت', dash_deliveryFeeBeforeVat:'ترسیل چارجز (ویٹ سے پہلے)',
     dash_totalToCollect:'کل وصولی', dash_deposited:'بینک میں جمع', dash_remainingToDeposit:'باقی جمع کرنا',
     dash_comparisonTitle:'پچھلے 7 دن بمقابلہ اس سے پچھلا ہفتہ', dash_comparisonPrevious:'پچھلا ہفتہ', dash_comparisonGross:'کل فروخت',
     dash_heldTrendTitle:'فی شخص محفوظ نقدی — 14 دن کا رجحان', dash_heldTrendHint:'پچھلے 14 دنوں میں سے ہر دن کے اختتام پر کس کے پاس تصدیق شدہ نقدی موجود تھی جو ابھی اگلے مرحلے کو حوالے نہیں ہوئی۔',
@@ -1517,20 +1517,24 @@ function renderDashboard(body){
 
     // Cash needed to deposit = cash sales (cashSalesTotal, shared with the
     // Sales formula above -- the physical cash collected, never the card/
-    // POS-machine or credit portions) + VAT on delivery fees only (the
-    // delivery fee itself is bank-settled directly by the customer, never
-    // physical cash, but the VAT the company owes on it is a cash liability
-    // that still has to be covered) -- minus what's already been deposited.
-    var vatOnDeliveryTotal = report.totals.vatOnDelivery;
-    var totalToCollect = cashSalesTotal + vatOnDeliveryTotal;
+    // POS-machine or credit portions) MINUS the delivery fee's pre-VAT base
+    // (the delivery fee itself is bank-settled directly by the customer,
+    // never cash the driver actually holds, so it's backed out of what's
+    // owed as cash -- deliberately the pre-VAT base, not the VAT-inclusive
+    // fee, per the business's own definition) -- minus what's already been
+    // deposited. This is algebraically the same figure as netCashOwed
+    // elsewhere in the app (storeCash+carCash+posCash-deliveryFee+vatOnDelivery),
+    // just built here from the two pieces the business formula names.
+    var deliveryFeeBeforeVat = report.totals.deliveryFee - report.totals.vatOnDelivery;
+    var totalToCollect = cashSalesTotal - deliveryFeeBeforeVat;
     var depositedAmount = (ho.handoffs||[]).filter(function(h){ return h.kind==='deposit'; })
       .reduce(function(s,h){ return s+Number(h.amount||0); },0);
     var remainingToDeposit = totalToCollect - depositedAmount;
     body.appendChild(el(
       '<div class="card"><div class="formula-card">' +
         '<div class="formula-item"><div class="n">'+esc(money(cashSalesTotal))+'</div><div class="l">'+esc(t('dash_cashSales'))+'</div></div>' +
-        '<div class="formula-op">+</div>' +
-        '<div class="formula-item"><div class="n">'+esc(money(vatOnDeliveryTotal))+'</div><div class="l">'+esc(t('dash_vatOnDeliveryOnly'))+'</div></div>' +
+        '<div class="formula-op">&minus;</div>' +
+        '<div class="formula-item"><div class="n">'+esc(money(deliveryFeeBeforeVat))+'</div><div class="l">'+esc(t('dash_deliveryFeeBeforeVat'))+'</div></div>' +
         '<div class="formula-op">=</div>' +
         '<div class="formula-item result"><div class="n">'+esc(money(totalToCollect))+'</div><div class="l">'+esc(t('dash_totalToCollect'))+'</div></div>' +
         '<div class="formula-op">&minus;</div>' +
