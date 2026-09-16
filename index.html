@@ -177,7 +177,7 @@
     @keyframes navDotIn{0%{opacity:0;transform:translateX(-50%) scale(0);}100%{opacity:1;transform:translateX(-50%) scale(1);}}
     @media (prefers-reduced-motion: reduce){ nav button.active{animation:none;} nav button.active::after{animation:none;} }
   }
-  main{max-width:1080px;margin:0 auto;padding:22px 18px 60px;}
+  main{max-width:min(1500px, 94vw);margin:0 auto;padding:22px 18px 60px;}
   .card{background:var(--card);border:1px solid var(--border-soft);border-radius:var(--radius);padding:20px;margin-bottom:18px;overflow-x:auto;box-shadow:var(--shadow-sm);transition:box-shadow .2s ease;}
   .card h2{margin:0 0 14px;font-size:15px;font-weight:700;color:var(--text);letter-spacing:-.01em;display:flex;align-items:center;justify-content:flex-start;text-align:start;gap:8px;}
   .card h2::before{content:'';width:4px;height:15px;border-radius:3px;background:var(--green);display:inline-block;flex-shrink:0;}
@@ -243,9 +243,22 @@
   .barlist .fill{height:100%;border-radius:6px;background:var(--green);}
   .barlist .fill.pos{background:#8fae7a;}
   .barlist .fill.credit{background:#c9a227;}
-  .dash-section-title{font-size:14px;font-weight:800;color:var(--green-dark);text-transform:uppercase;letter-spacing:.04em;margin:22px 0 10px;display:flex;align-items:center;gap:8px;}
+  .dash-section-title{font-size:14px;font-weight:800;color:var(--green-dark);text-transform:uppercase;letter-spacing:.04em;margin:28px 0 12px;padding:10px 14px;display:flex;align-items:center;gap:8px;background:var(--green-pale, rgba(77,109,81,.08));border-radius:var(--radius);}
   .dash-section-title:first-child{margin-top:0;}
-  .dash-section-title::before{content:'';width:4px;height:15px;border-radius:3px;background:var(--green);display:inline-block;}
+  .dash-section-title::before{content:'';width:4px;height:15px;border-radius:3px;background:var(--green);display:inline-block;flex-shrink:0;}
+  .dash-section-note{font-size:11px;font-weight:600;text-transform:none;letter-spacing:0;color:var(--muted);margin-inline-start:auto;}
+  .formula-card{display:flex;align-items:stretch;flex-wrap:wrap;gap:0;}
+  .formula-item{flex:1 1 140px;padding:14px 16px;text-align:center;}
+  .formula-item .n{font-size:20px;font-weight:800;color:var(--text);white-space:nowrap;}
+  .formula-item .l{font-size:11.5px;color:var(--muted);margin-top:4px;}
+  .formula-item.result .n{color:var(--green-dark);}
+  .formula-item.final{background:var(--green-pale, rgba(77,109,81,.08));border-radius:var(--radius);}
+  .formula-item.final .n{color:var(--green-dark);font-size:22px;}
+  .formula-op{flex:0 0 auto;align-self:center;font-size:18px;font-weight:800;color:var(--muted);padding:0 6px;}
+  @media (max-width:700px){
+    .formula-card{flex-direction:column;}
+    .formula-op{transform:rotate(90deg);padding:4px 0;}
+  }
   .donut-wrap{display:flex;align-items:center;gap:20px;flex-wrap:wrap;}
   .donut-wrap svg{flex-shrink:0;}
   .donut-legend{display:flex;flex-direction:column;gap:8px;flex:1;min-width:150px;}
@@ -461,6 +474,8 @@ var L = {
     report_amountMin:'أقل مبلغ', report_amountMax:'أعلى مبلغ', report_editFilters:'تعديل الفلاتر', report_hideFilters:'إخفاء الفلاتر',
     report_activeFilters:'فلتر نشط', report_noActiveFilters:'بدون فلاتر — عرض كل البيانات',
     nav_dashboard:'لوحة التحكم', dash_salesTitle:'لوحة المبيعات', dash_collectionsTitle:'لوحة التحصيل', dash_grossSales:'إجمالي المبيعات',
+    dash_vatInclusiveNote:'شامل ضريبة القيمة المضافة', dash_cashSales:'المبيعات النقدية', dash_claimSales:'المبيعات الآجلة (مطالبات)',
+    dash_totalToCollect:'إجمالي المستحق تحصيله', dash_deposited:'تم إيداعه بالبنك', dash_remainingToDeposit:'المتبقي للإيداع',
     dash_comparisonTitle:'آخر 7 أيام مقابل الأسبوع السابق', dash_comparisonPrevious:'الأسبوع السابق', dash_comparisonGross:'إجمالي المبيعات',
     dash_heldTrendTitle:'اتجاه النقدية المحتفظ بها لكل شخص (14 يوماً)', dash_heldTrendHint:'من كان يحتفظ بنقدية مؤكَّدة ولم تُسلَّم للمرحلة التالية بعد، في نهاية كل يوم خلال آخر 14 يوماً.',
     dash_locationsReporting:'المواقع المُبلِّغة', dash_avgPerLocation:'متوسط لكل موقع', dash_topLocation:'أعلى موقع', dash_topProduct:'أعلى منتج',
@@ -625,6 +640,8 @@ var L = {
     report_amountMin:'Min amount', report_amountMax:'Max amount', report_editFilters:'Edit filters', report_hideFilters:'Hide filters',
     report_activeFilters:'active filter(s)', report_noActiveFilters:'No filters — showing all data',
     nav_dashboard:'Dashboard', dash_salesTitle:'Sales dashboard', dash_collectionsTitle:'Collections dashboard', dash_grossSales:'Gross sales',
+    dash_vatInclusiveNote:'VAT inclusive', dash_cashSales:'Cash sales', dash_claimSales:'Credit sales (claims)',
+    dash_totalToCollect:'Total to collect', dash_deposited:'Deposited to bank', dash_remainingToDeposit:'Remaining to deposit',
     dash_comparisonTitle:'Last 7 days vs. the week before', dash_comparisonPrevious:'Previous week', dash_comparisonGross:'Gross sales',
     dash_heldTrendTitle:'Held cash by person — 14-day trend', dash_heldTrendHint:'Who was holding confirmed cash not yet handed to the next stage, at the end of each of the last 14 days.',
     dash_locationsReporting:'Locations reporting', dash_avgPerLocation:'Avg. per location', dash_topLocation:'Top location', dash_topProduct:'Top product',
@@ -789,6 +806,8 @@ var L = {
     report_amountMin:'کم از کم رقم', report_amountMax:'زیادہ سے زیادہ رقم', report_editFilters:'فلٹرز میں تبدیلی', report_hideFilters:'فلٹرز چھپائیں',
     report_activeFilters:'فعال فلٹر', report_noActiveFilters:'کوئی فلٹر نہیں — تمام ڈیٹا دکھایا جا رہا ہے',
     nav_dashboard:'ڈیش بورڈ', dash_salesTitle:'سیلز ڈیش بورڈ', dash_collectionsTitle:'کلیکشن ڈیش بورڈ', dash_grossSales:'کل فروخت',
+    dash_vatInclusiveNote:'ویٹ شامل', dash_cashSales:'نقدی فروخت', dash_claimSales:'ادھار فروخت (مطالبات)',
+    dash_totalToCollect:'کل وصولی', dash_deposited:'بینک میں جمع', dash_remainingToDeposit:'باقی جمع کرنا',
     dash_comparisonTitle:'پچھلے 7 دن بمقابلہ اس سے پچھلا ہفتہ', dash_comparisonPrevious:'پچھلا ہفتہ', dash_comparisonGross:'کل فروخت',
     dash_heldTrendTitle:'فی شخص محفوظ نقدی — 14 دن کا رجحان', dash_heldTrendHint:'پچھلے 14 دنوں میں سے ہر دن کے اختتام پر کس کے پاس تصدیق شدہ نقدی موجود تھی جو ابھی اگلے مرحلے کو حوالے نہیں ہوئی۔',
     dash_locationsReporting:'رپورٹ کرنے والے مقامات', dash_avgPerLocation:'اوسط فی مقام', dash_topLocation:'سرفہرست مقام', dash_topProduct:'سرفہرست پروڈکٹ',
@@ -1470,7 +1489,7 @@ function renderDashboard(body){
     body.innerHTML = '';
 
     // ---------- Sales ----------
-    body.appendChild(el('<div class="dash-section-title">'+esc(t('dash_salesTitle'))+'</div>'));
+    body.appendChild(el('<div class="dash-section-title">'+esc(t('dash_salesTitle'))+'<span class="dash-section-note">('+esc(t('dash_vatInclusiveNote'))+')</span></div>'));
 
     var entries = report.entries || [];
     var grossSales = entries.reduce(function(s,e){ return s + Number(e.cashSales||0) + Number(e.posSales||0) + Number(e.creditSales||0); }, 0);
@@ -1574,6 +1593,29 @@ function renderDashboard(body){
 
     // ---------- Collections ----------
     body.appendChild(el('<div class="dash-section-title">'+esc(t('dash_collectionsTitle'))+'</div>'));
+
+    // Cash sales + claim (credit) sales = total owed to the company; what's
+    // already reached the bank comes off that to show what's still exposed
+    // as cash or receivables out in the field.
+    var cashSalesTotal = report.totals.netCashOwed;
+    var claimSalesTotal = report.totals.creditSales;
+    var totalToCollect = cashSalesTotal + claimSalesTotal;
+    var depositedAmount = (ho.handoffs||[]).filter(function(h){ return h.kind==='deposit'; })
+      .reduce(function(s,h){ return s+Number(h.amount||0); },0);
+    var remainingToDeposit = totalToCollect - depositedAmount;
+    body.appendChild(el(
+      '<div class="card"><div class="formula-card">' +
+        '<div class="formula-item"><div class="n">'+esc(money(cashSalesTotal))+'</div><div class="l">'+esc(t('dash_cashSales'))+'</div></div>' +
+        '<div class="formula-op">+</div>' +
+        '<div class="formula-item"><div class="n">'+esc(money(claimSalesTotal))+'</div><div class="l">'+esc(t('dash_claimSales'))+'</div></div>' +
+        '<div class="formula-op">=</div>' +
+        '<div class="formula-item result"><div class="n">'+esc(money(totalToCollect))+'</div><div class="l">'+esc(t('dash_totalToCollect'))+'</div></div>' +
+        '<div class="formula-op">&minus;</div>' +
+        '<div class="formula-item"><div class="n">'+esc(money(depositedAmount))+'</div><div class="l">'+esc(t('dash_deposited'))+'</div></div>' +
+        '<div class="formula-op">=</div>' +
+        '<div class="formula-item final"><div class="n">'+esc(money(remainingToDeposit))+'</div><div class="l">'+esc(t('dash_remainingToDeposit'))+'</div></div>' +
+      '</div></div>'
+    ));
 
     var handoffs = ho.handoffs || [];
     var total = handoffs.length;
