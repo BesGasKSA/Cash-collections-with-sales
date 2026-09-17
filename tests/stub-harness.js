@@ -9,7 +9,7 @@ var fs = require('fs');
 var path = require('path');
 var crypto = require('crypto');
 
-function makeSheet(name) {
+function makeSheet(name, svcCalls) {
   var rows = []; // array of [id, jsonString, updatedAtIso]
   return {
     name: name,
@@ -23,6 +23,7 @@ function makeSheet(name) {
     getRange: function (r1, c1, numRows, numCols) {
       return {
         getValues: function () {
+          if (svcCalls) svcCalls.sheetRead++;
           var out = [];
           for (var i = 0; i < numRows; i++) {
             var rowIndex = r1 - 1 + i;
@@ -54,12 +55,14 @@ function buildContext() {
   var driveFolders = {};
   var mailLog = [];
   var idCounter = 0;
+  // Counts round trips to Google services, so tests can pin down how many a request makes.
+  var svcCalls = { getProperty: 0, getProperties: 0, cacheGet: 0, sheetRead: 0 };
 
   var SpreadsheetApp = {
     getActiveSpreadsheet: function () {
       return {
         getSheetByName: function (name) { return sheets[name] || null; },
-        insertSheet: function (name) { var s = makeSheet(name); sheets[name] = s; return s; }
+        insertSheet: function (name) { var s = makeSheet(name, svcCalls); sheets[name] = s; return s; }
       };
     }
   };
@@ -67,7 +70,8 @@ function buildContext() {
   var PropertiesService = {
     getScriptProperties: function () {
       return {
-        getProperty: function (k) { return scriptProps.hasOwnProperty(k) ? scriptProps[k] : null; },
+        getProperty: function (k) { svcCalls.getProperty++; return scriptProps.hasOwnProperty(k) ? scriptProps[k] : null; },
+        getProperties: function () { svcCalls.getProperties++; var out = {}; for (var k in scriptProps) if (scriptProps.hasOwnProperty(k)) out[k] = scriptProps[k]; return out; },
         setProperty: function (k, v) { scriptProps[k] = v; }
       };
     }
@@ -76,8 +80,19 @@ function buildContext() {
   var CacheService = {
     getScriptCache: function () {
       return {
-        get: function (k) { return cache.hasOwnProperty(k) ? cache[k] : null; },
-        put: function (k, v) { cache[k] = v; },
+        get: function (k) { svcCalls.cacheGet++; return cache.hasOwnProperty(k) ? cache[k] : null; },
+        put: function (k, v) {
+          // Mirror the real 100KB-per-value limit so oversized writes fail here too.
+          if (Buffer.byteLength(String(v), 'utf8') > 100 * 1024) throw new Error('Argument too large');
+          cache[k] = v;
+        },
+        getAll: function (keys) { var out = {}; keys.forEach(function (k) { if (cache.hasOwnProperty(k)) out[k] = cache[k]; }); return out; },
+        putAll: function (obj) {
+          for (var k in obj) {
+            if (Buffer.byteLength(String(obj[k]), 'utf8') > 100 * 1024) throw new Error('Argument too large');
+            cache[k] = obj[k];
+          }
+        },
         remove: function (k) { delete cache[k]; }
       };
     }
@@ -200,12 +215,12 @@ function buildContext() {
     console: console
   };
 
-  var files = ['Code.gs', 'Admin.gs', 'Collection.gs', 'Reconciliation.gs', 'Risk.gs'];
+  var files = ['Code.gs', 'Admin.gs', 'Collection.gs', 'Reconciliation.gs', 'Risk.gs', 'MicrosoftMail.gs'];
   var src = files.map(function (f) { return fs.readFileSync(path.join(__dirname, '..', f), 'utf8'); }).join('\n');
   var context = vm.createContext(sandbox);
   vm.runInContext(src, context, { filename: 'apps-script-bundle.js' });
 
-  context._debug = { sheets: sheets, scriptProps: scriptProps, cache: cache, mailLog: mailLog, urlFetch: urlFetch };
+  context._debug = { sheets: sheets, scriptProps: scriptProps, cache: cache, mailLog: mailLog, urlFetch: urlFetch, svcCalls: svcCalls };
   return context;
 }
 

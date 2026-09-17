@@ -1155,5 +1155,55 @@ check(fallbackResult === 'mailapp' && mailLog.length === mailBefore + 1, 'if Mic
 
 delete props.GRAPH_TENANT_ID; delete props.GRAPH_CLIENT_ID; delete props.GRAPH_CLIENT_SECRET; delete props.GRAPH_SENDER;
 
+console.log('--- speed: fewer round trips to Google services per request ---');
+var svc = ctx._debug.svcCalls;
+function resetSvc() { svc.getProperty = 0; svc.getProperties = 0; svc.cacheGet = 0; svc.sheetRead = 0; }
+
+resetSvc();
+var fastLogin = login('admin@bestgas.sa', 'Bootstrap#1');
+check(fastLogin.ok, 'login still works');
+check(svc.getProperty === 0 && svc.getProperties <= 1, 'login reads script properties at most once (was 120+ times: once per password-hashing round), got getProperty=' + svc.getProperty + ' getProperties=' + svc.getProperties);
+check(fastLogin.meta && fastLogin.meta.ok && Array.isArray(fastLogin.meta.locations), 'login reply carries the reference data, so the client needs no separate listMeta round trip');
+
+var boot = call({ action: 'bootstrap', token: fastLogin.token });
+check(boot.ok && boot.user && boot.user.id === admin.id && boot.meta && Array.isArray(boot.meta.users), 'bootstrap returns the user and reference data in one call (replaces whoami + listMeta)');
+
+call({ action: 'listMeta', token: fastLogin.token });
+resetSvc();
+call({ action: 'listMeta', token: fastLogin.token });
+check(svc.sheetRead === 0, 'a repeat listMeta with no writes in between is served entirely from cache: zero sheet reads, got ' + svc.sheetRead);
+
+var bigText = new Array(260001).join('ب'); // 260,000 two-byte chars: far past the 100KB single-value cache limit
+var chunkCache = ctx.CacheService.getScriptCache();
+ctx.cachePutBig_(chunkCache, 'perf_test_key', bigText, 600);
+check(ctx.cacheGetBig_(chunkCache, 'perf_test_key') === bigText, 'a value far larger than the 100KB cache limit is split into chunks and read back exactly');
+
+for (var bi = 0; bi < 120; bi++) {
+  ctx.writeRow('perf_big_sheet', { note: new Array(1501).join('x') + bi });
+}
+ctx.resetExecMemo_();
+ctx.readSheet('perf_big_sheet');
+ctx.resetExecMemo_();
+resetSvc();
+var bigRows = ctx.readSheet('perf_big_sheet');
+check(bigRows.length === 120 && svc.sheetRead === 0, 'a sheet over 100KB is still served from cache on the next request (old code silently skipped caching it and re-read the sheet every time), sheet reads=' + svc.sheetRead);
+
+ctx.resetExecMemo_();
+var memoA = ctx.readSheet('perf_big_sheet');
+memoA[0].note = 'mutated by a caller';
+var memoB = ctx.readSheet('perf_big_sheet');
+check(memoB[0].note !== 'mutated by a caller', 'each readSheet call still returns fresh objects, so one caller mutating its rows cannot leak into another');
+
+ctx.resetExecMemo_();
+ctx.readSheet('perf_big_sheet');
+ctx.writeRow('perf_big_sheet', { note: 'written after a read in the same request' });
+var afterWrite = ctx.readSheet('perf_big_sheet');
+check(afterWrite.length === 121, 'a read after a write in the same request sees the new row, not the memoized pre-write copy');
+
+var v1 = ctx.version_('perf_big_sheet');
+ctx.bumpVersion_('perf_big_sheet');
+var v2 = ctx.version_('perf_big_sheet');
+check(v1 !== v2, 'every write changes the sheet version, so no two writers can land on the same cache key');
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);

@@ -1008,23 +1008,79 @@ function stopLoading(){
   }, 250);
 }
 
-function api(action, payload){
+// Read-only actions. Anything NOT listed here changes data, so a successful
+// call to it wipes the screen cache below -- otherwise a screen re-rendered
+// right after "confirm" could briefly show the pre-confirm copy.
+var READ_ACTIONS = { whoami:1, bootstrap:1, listMeta:1, listDashboard:1, getDashboardAll:1, listEntries:1, listHandoffs:1,
+  getSalesReport:1, getShortfallByEntrant:1, getDashboardComparison:1, getHeldCashTrend:1, listAudit:1, getFile:1,
+  getReconciliation:1, listRiskItems:1, listAreaBulkBatches:1, areaBulkBatchDetail:1, login:1, forgotPassword:1, setLanguage:1 };
+
+function api(action, payload, opts){
   payload = payload || {};
+  opts = opts || {};
   payload.action = action;
   payload.token = state.token;
-  startLoading();
+  if (!opts.silent) startLoading();
   return fetch(state.apiUrl, {
     method:'POST',
     headers:{'Content-Type':'text/plain;charset=utf-8'},
     body: JSON.stringify(payload)
   }).then(function(r){ return r.json(); }).then(function(res){
-    stopLoading();
+    if (!opts.silent) stopLoading();
     if (res.token) { state.token = res.token; localStorage.setItem('bgc_token', res.token); }
+    if (res.ok && !READ_ACTIONS[action]) clearScreenCache_();
     return res;
   }).catch(function(err){
-    stopLoading();
+    if (!opts.silent) stopLoading();
     return { ok:false, error:'network' };
   });
+}
+
+// ---------------- instant screens (show last copy, refresh quietly) ----------------
+// Every Apps Script round trip costs a second or more no matter how fast
+// the server code is, so screens no longer wait on it: the last response
+// for the same request is drawn immediately, the real request runs in the
+// background without the blocking overlay, and the screen is redrawn only
+// if the data actually changed. Kept per user and wiped on logout and after
+// any successful write.
+var CACHE_PREFIX = 'bgc_c_';
+function screenCacheKey_(action, payload){
+  return CACHE_PREFIX + (state.user ? state.user.id : 'anon') + '_' + action + '_' + JSON.stringify(payload || {});
+}
+function clearScreenCache_(){
+  try {
+    Object.keys(localStorage).forEach(function(k){ if (k.indexOf(CACHE_PREFIX) === 0) localStorage.removeItem(k); });
+  } catch (e) {}
+}
+function stripToken_(res){
+  var copy = {};
+  Object.keys(res).forEach(function(k){ if (k !== 'token') copy[k] = res[k]; });
+  return copy;
+}
+// cb(res, fromCache). `body` is the screen container: if the user has left
+// the screen by the time fresh data arrives, nothing is redrawn. If they've
+// started typing into a form on it, the fresh copy is held back rather
+// than wiping what they typed.
+function apiCached(action, payload, body, cb){
+  var key = screenCacheKey_(action, payload);
+  var cachedStr = null;
+  try { cachedStr = localStorage.getItem(key); } catch (e) {}
+  var cached = null;
+  if (cachedStr) { try { cached = JSON.parse(cachedStr); } catch (e) { cached = null; } }
+  if (cached) cb(cached, true);
+  api(action, JSON.parse(JSON.stringify(payload || {})), { silent: !!cached }).then(function(res){
+    if (body && !body.isConnected) return;
+    if (!res.ok) { if (!cached) cb(res, false); return; }
+    var fresh = stripToken_(res);
+    var freshStr = JSON.stringify(fresh);
+    if (freshStr === cachedStr) return;
+    try { localStorage.setItem(key, freshStr); } catch (e) { /* too big for storage: just don't cache this one */ }
+    if (cached && body && body.dataset.dirty === '1') return;
+    cb(fresh, false);
+  });
+}
+function markDirtyOnInput_(body){
+  body.addEventListener('input', function(){ body.dataset.dirty = '1'; });
 }
 
 function toast(msgKey, type){
@@ -1143,7 +1199,47 @@ function doLogin(){
     else localStorage.removeItem('bgc_lastLogin');
     state.justLoggedIn = true;
     setLang(res.user.language || state.lang);
-    loadMetaAndRender();
+    saveSession_();
+    // The login reply now carries the reference data too, so there's no
+    // second round trip before the first screen (an older backend without
+    // it still works through loadMetaAndRender).
+    if (res.meta && res.meta.ok) { state.meta = res.meta; saveSession_(); render(); }
+    else loadMetaAndRender();
+  });
+}
+
+// User + reference data kept locally so reopening the app draws the shell
+// instantly instead of waiting on whoami + listMeta before showing anything.
+function saveSession_(){
+  try {
+    if (state.user) localStorage.setItem('bgc_user', JSON.stringify(state.user));
+    if (state.meta) localStorage.setItem('bgc_meta', JSON.stringify(state.meta));
+  } catch (e) {}
+}
+function restoreSession_(){
+  try {
+    var u = localStorage.getItem('bgc_user'), m = localStorage.getItem('bgc_meta');
+    if (!u || !m) return false;
+    state.user = JSON.parse(u);
+    state.meta = JSON.parse(m);
+    return true;
+  } catch (e) { return false; }
+}
+// Quietly re-check the session and reference data after an instant restore.
+function refreshSessionInBackground_(){
+  api('bootstrap', {}, { silent: true }).then(function(res){
+    if (res.error === 'auth_required') { logout(); return; }
+    if (!res.ok) return;
+    var metaChanged = JSON.stringify(stripToken_(res.meta || {})) !== JSON.stringify(stripToken_(state.meta || {}));
+    var userChanged = JSON.stringify(res.user) !== JSON.stringify(state.user);
+    state.user = res.user;
+    if (res.meta && res.meta.ok) state.meta = res.meta;
+    saveSession_();
+    if (res.user.mustChangePw || res.user.active === false || userChanged) { render(); return; }
+    // Reference data (names, locations, products) changed: redraw only if
+    // the user isn't mid-form, same rule as apiCached.
+    var body = qs('#screenBody');
+    if (metaChanged && !(body && body.dataset.dirty === '1')) render();
   });
 }
 
@@ -1188,6 +1284,9 @@ function logout(){
   state.token=''; state.user=null; state.meta=null;
   localStorage.removeItem('bgc_token');
   localStorage.removeItem('bgc_lastLogin');
+  localStorage.removeItem('bgc_user');
+  localStorage.removeItem('bgc_meta');
+  clearScreenCache_();
   render();
 }
 
@@ -1268,6 +1367,7 @@ function myCityLabel_(){
 }
 
 function renderShell(){
+  saveSession_();
   var root = qs('#app'); root.innerHTML='';
   var navItems = [['home','nav_home']];
   var isCompanyWideRole = ['admin','finance','accountant','operations_manager','deputy_operations_manager'].indexOf(state.user.role)>=0;
@@ -1415,11 +1515,19 @@ function renderHome(body){
   body.innerHTML = '<div class="card">'+esc(t('loading'))+'</div>';
   var isCompanyWide = ['admin','finance','accountant','operations_manager','deputy_operations_manager'].indexOf(state.user.role) >= 0;
 
-  var dashP = api('listDashboard', {});
-  var reportP = isCompanyWide ? api('getSalesReport', {}) : Promise.resolve(null);
+  // Company-wide roles need both dashboard and sales-report data: one
+  // getDashboardAll call instead of two. Everyone else only needs their own
+  // dashboard. Either way the last copy draws instantly (apiCached).
+  if (isCompanyWide) {
+    apiCached('getDashboardAll', {}, body, function(all){
+      if (!all.ok) { drawHome(all, null); return; }
+      drawHome(all.dashboard, all.report);
+    });
+  } else {
+    apiCached('listDashboard', {}, body, function(res){ drawHome(res, null); });
+  }
 
-  Promise.all([dashP, reportP]).then(function(results){
-    var res = results[0], report = results[1];
+  function drawHome(res, report){
     if(!res.ok){ body.innerHTML = '<div class="msg err">'+esc(errMsg_(res))+'</div>'; return; }
     setNotifCount((res.pendingForMe||[]).length + (res.openDisputes||[]).length);
     body.innerHTML = '';
@@ -1503,7 +1611,7 @@ function renderHome(body){
         body.appendChild(topProductsCard);
       }
     }
-  });
+  }
 }
 
 // ---------------- dashboard (company-wide: sales + collections) ----------------
@@ -1513,7 +1621,7 @@ function renderDashboard(body){
   // Script web-app call carries its own fixed execution overhead on top
   // of the actual work, so bundling into a single getDashboardAll call is
   // what actually cuts load time, not just running the three in parallel.
-  api('getDashboardAll', {}).then(function(all){
+  apiCached('getDashboardAll', {}, body, function(all){
     if (!all.ok){ body.innerHTML = '<div class="msg err">'+esc(errMsg_(all))+'</div>'; return; }
     var report = all.report, ho = all.handoffs, dash = all.dashboard;
     body.innerHTML = '';
@@ -2883,7 +2991,8 @@ function renderHandoffs(body){
   body.innerHTML = '<div class="card">'+esc(t('loading'))+'</div>';
   var role = state.user.role;
 
-  api('listHandoffs', {}).then(function(res){
+  markDirtyOnInput_(body);
+  apiCached('listHandoffs', {}, body, function(res){
     if(!res.ok){ body.innerHTML='<div class="msg err">'+esc(errMsg_(res))+'</div>'; return; }
     body.innerHTML = '';
 
@@ -3341,7 +3450,7 @@ function renderReport(body){
     qs('#rFilterSummary').textContent = n ? (n + ' ' + t('report_activeFilters')) : t('report_noActiveFilters');
     filterBody.hidden = true;
     filterToggle.textContent = t('report_editFilters');
-    api('getSalesReport', payload).then(function(res){
+    apiCached('getSalesReport', payload, qs('#rResult'), function(res){
       var out = qs('#rResult');
       if(!res.ok){ out.innerHTML = '<div class="msg err">'+esc(errMsg_(res))+'</div>'; return; }
       var t1 = res.totals, t2 = res.outstanding;
@@ -3981,16 +4090,33 @@ function render(){
   document.documentElement.dir = dirFor(state.lang);
   if (!state.apiUrl) { renderUrlSetup(); return; }
   if (!state.token) { renderLogin(); return; }
-  if (!state.user) { loadWhoAmI(); return; }
+  if (!state.user) {
+    if (restoreSession_()) { refreshSessionInBackground_(); render(); return; }
+    loadWhoAmI();
+    return;
+  }
   if (state.user.mustChangePw) { renderChangePw(); return; }
   if (!state.meta) { loadMetaAndRender(); return; }
   renderShell();
 }
 
 function loadWhoAmI(){
-  api('whoami', {}).then(function(res){
+  // bootstrap = whoami + listMeta in one round trip; falls back to whoami
+  // alone if the backend predates it.
+  api('bootstrap', {}).then(function(res){
+    if (res.error === 'unknown_action') {
+      api('whoami', {}).then(function(res2){
+        if (!res2.ok){ state.token=''; localStorage.removeItem('bgc_token'); render(); return; }
+        state.user = res2.user;
+        setLang(res2.user.language || state.lang);
+        render();
+      });
+      return;
+    }
     if (!res.ok){ state.token=''; localStorage.removeItem('bgc_token'); render(); return; }
     state.user = res.user;
+    if (res.meta && res.meta.ok) state.meta = res.meta;
+    saveSession_();
     setLang(res.user.language || state.lang);
     render();
   });
