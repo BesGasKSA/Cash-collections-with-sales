@@ -117,6 +117,16 @@ function buildContext() {
   };
 
   var MailApp = { sendEmail: function (to, subject, body) { mailLog.push({ to: to, subject: subject, body: body }); } };
+  // Tests swap urlFetch.responder to simulate Microsoft's token/sendMail
+  // endpoints; every request is recorded in urlFetch.log.
+  var urlFetch = { log: [], responder: function () { return { code: 404, body: '{}' }; } };
+  var UrlFetchApp = {
+    fetch: function (url, options) {
+      urlFetch.log.push({ url: url, options: options || {} });
+      var r = urlFetch.responder(url, options || {});
+      return { getResponseCode: function () { return r.code; }, getContentText: function () { return r.body; } };
+    }
+  };
   var GmailApp = {
     sendEmail: function (to, subject, body, options) {
       mailLog.push({ to: to, subject: subject, body: body, from: options && options.from, fromName: options && options.name });
@@ -185,7 +195,7 @@ function buildContext() {
 
   var sandbox = {
     SpreadsheetApp: SpreadsheetApp, PropertiesService: PropertiesService, CacheService: CacheService,
-    LockService: LockService, Utilities: Utilities, MailApp: MailApp, GmailApp: GmailApp, DriveApp: DriveApp,
+    LockService: LockService, Utilities: Utilities, MailApp: MailApp, GmailApp: GmailApp, UrlFetchApp: UrlFetchApp, DriveApp: DriveApp,
     ContentService: ContentService, ScriptApp: ScriptApp, Logger: { log: function () {} },
     console: console
   };
@@ -195,7 +205,7 @@ function buildContext() {
   var context = vm.createContext(sandbox);
   vm.runInContext(src, context, { filename: 'apps-script-bundle.js' });
 
-  context._debug = { sheets: sheets, scriptProps: scriptProps, cache: cache, mailLog: mailLog };
+  context._debug = { sheets: sheets, scriptProps: scriptProps, cache: cache, mailLog: mailLog, urlFetch: urlFetch };
   return context;
 }
 

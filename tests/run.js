@@ -430,8 +430,11 @@ check(beforeImport.unmatchedDeposits.some(function (d) { return d.id === reconDe
 var importRes = call({
   action: 'importBankStatement', token: financeTok,
   rows: [
-    { date: '2026-09-14', amount: 555, reference: 'BANKREF-555' },
-    { date: '2026-09-14', amount: 999999, reference: 'unrelated-noise' }
+    // Statement date must be "today": auto-match only pairs a deposit with a
+    // statement line within RECON_DATE_WINDOW_DAYS of when it was confirmed,
+    // and the deposit above is confirmed at test run time, not on a fixed date.
+    { date: isoOffset(0), amount: 555, reference: 'BANKREF-555' },
+    { date: isoOffset(0), amount: 999999, reference: 'unrelated-noise' }
   ]
 });
 check(importRes.ok && importRes.imported === 2, 'both statement rows imported');
@@ -1107,6 +1110,50 @@ var deputyResolveAttempt = call({ action: 'resolveDispute', token: deputyTok, id
 check(!deputyResolveAttempt.ok, 'but the deputy still cannot resolve a dispute — that authority stays admin/finance-only, exactly like accountant/operations manager');
 var deputyManageAttempt = call({ action: 'adminSaveEntity', token: deputyTok, kind: 'location', data: { city: 'X', name: 'Y', clusterId: cluster.entity.id } });
 check(!deputyManageAttempt.ok && deputyManageAttempt.error === 'forbidden', 'and cannot manage entities either — visibility is not authority');
+
+console.log('--- sendMail_: Microsoft 365 (Graph) when configured, MailApp fallback otherwise ---');
+var mailLog = ctx._debug.mailLog;
+var urlFetch = ctx._debug.urlFetch;
+var props = ctx._debug.scriptProps;
+
+var mailBefore = mailLog.length;
+check(ctx.sendMail_('a@bestgas.sa', 'subj', 'body') === 'mailapp', 'with no GRAPH_* properties set, mail still goes through MailApp exactly as before');
+check(mailLog.length === mailBefore + 1 && urlFetch.log.length === 0, 'and Microsoft is never contacted');
+
+props.GRAPH_TENANT_ID = 'tenant-123';
+props.GRAPH_CLIENT_ID = 'client-abc';
+props.GRAPH_CLIENT_SECRET = 'secret-xyz';
+props.GRAPH_SENDER = 'notifications@bestgas.sa';
+urlFetch.responder = function (url) {
+  if (url.indexOf('login.microsoftonline.com') >= 0) return { code: 200, body: JSON.stringify({ access_token: 'tok-1', expires_in: 3600 }) };
+  if (url.indexOf('graph.microsoft.com') >= 0) return { code: 202, body: '' };
+  return { code: 404, body: '{}' };
+};
+mailBefore = mailLog.length;
+check(ctx.sendMail_('b@bestgas.sa', 'Shortfall', 'Declared 100 / received 90') === 'graph', 'with all GRAPH_* properties set, mail goes through Microsoft Graph');
+check(mailLog.length === mailBefore, 'and does not also go out through MailApp (no duplicate email)');
+var sendCall = urlFetch.log.filter(function (r) { return r.url.indexOf('/sendMail') >= 0; }).pop();
+check(sendCall.url.indexOf('/users/notifications%40bestgas.sa/sendMail') >= 0, 'sends from the configured bestgas.sa mailbox');
+check(sendCall.options.headers.Authorization === 'Bearer tok-1', 'using the access token Microsoft issued');
+var sentPayload = JSON.parse(sendCall.options.payload);
+check(sentPayload.message.toRecipients[0].emailAddress.address === 'b@bestgas.sa' && sentPayload.message.subject === 'Shortfall', 'to the right recipient with the right subject');
+var tokenCallsBefore = urlFetch.log.filter(function (r) { return r.url.indexOf('login.microsoftonline.com') >= 0; }).length;
+ctx.sendMail_('c@bestgas.sa', 's2', 'b2');
+var tokenCallsAfter = urlFetch.log.filter(function (r) { return r.url.indexOf('login.microsoftonline.com') >= 0; }).length;
+check(tokenCallsAfter === tokenCallsBefore, 'a second email reuses the cached token instead of asking Microsoft for a new one each time');
+
+urlFetch.responder = function (url) {
+  if (url.indexOf('graph.microsoft.com') >= 0) return { code: 403, body: '{"error":{"code":"ErrorAccessDenied"}}' };
+  return { code: 200, body: JSON.stringify({ access_token: 'tok-1', expires_in: 3600 }) };
+};
+mailBefore = mailLog.length;
+var origConsoleError = console.error;
+console.error = function () {};
+var fallbackResult = ctx.sendMail_('d@bestgas.sa', 'Shortfall', 'x');
+console.error = origConsoleError;
+check(fallbackResult === 'mailapp' && mailLog.length === mailBefore + 1, 'if Microsoft rejects the send (e.g. expired secret), the email still goes out through MailApp -- a shortfall alert is never lost');
+
+delete props.GRAPH_TENANT_ID; delete props.GRAPH_CLIENT_ID; delete props.GRAPH_CLIENT_SECRET; delete props.GRAPH_SENDER;
 
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);
