@@ -74,3 +74,13 @@ function testMicrosoftMail() {
   Logger.log('Test email sent via Microsoft Graph to ' + cfg.sender);
 }
 
+
+// Run once from the Apps Script editor right after this file is deployed
+// (select approveMicrosoftMailPermission > Run > approve the prompt). It only
+// asks Google to approve connecting to external services; no Microsoft
+// account or settings are needed yet. Until GRAPH_* script properties are
+// added, every email keeps going out through MailApp as before.
+function approveMicrosoftMailPermission() {
+  var code = UrlFetchApp.fetch('https://login.microsoftonline.com/common/v2.0/.well-known/openid-configuration', { muteHttpExceptions: true }).getResponseCode();
+  Logger.log('Permission approved. Microsoft reachable: HTTP ' + code + '. Emails still send via Gmail until the GRAPH_* script properties are set.');
+}
