@@ -44,19 +44,48 @@ var PW_ROUNDS = 120;
 
 // ---------- Sheet-as-DB ----------
 
+// ---------- Per-request memo ----------
+// Every PropertiesService / CacheService / SpreadsheetApp call is a network
+// round trip inside Google (tens of ms each). One request used to repeat
+// the same ones many times -- e.g. login read the SECRET property 120 times
+// while hashing, and every readSheet re-read its version property. This
+// memo makes each of those happen at most once per request. It is reset at
+// the start of every route_ call (and Apps Script starts every execution
+// with fresh globals anyway).
+var EXEC_ = null;
+function exec_() {
+  if (!EXEC_) EXEC_ = { props: null, ss: null, sheets: {}, rows: {} };
+  return EXEC_;
+}
+function resetExecMemo_() { EXEC_ = null; }
+
+function scriptProps_() {
+  var ex = exec_();
+  if (!ex.props) ex.props = PropertiesService.getScriptProperties().getProperties() || {};
+  return ex.props;
+}
+function setScriptProp_(key, value) {
+  PropertiesService.getScriptProperties().setProperty(key, value);
+  scriptProps_()[key] = value;
+}
+
 // Works whether this script is bound to the Sheet (Extensions > Apps Script,
 // getActiveSpreadsheet works directly) or standalone (script.google.com on
 // its own — needs the Sheet's id in Script Properties as SHEET_ID). Try
 // bound first since it needs no configuration.
 function spreadsheet_() {
+  var ex = exec_();
+  if (ex.ss) return ex.ss;
   var active = SpreadsheetApp.getActiveSpreadsheet();
-  if (active) return active;
-  var id = PropertiesService.getScriptProperties().getProperty('SHEET_ID');
+  if (active) return (ex.ss = active);
+  var id = scriptProps_().SHEET_ID;
   if (!id) throw new Error('Set a Script Property named SHEET_ID to this project\'s Google Sheet id (Project Settings > Script Properties) — this script is not bound to a Sheet.');
-  return SpreadsheetApp.openById(id);
+  return (ex.ss = SpreadsheetApp.openById(id));
 }
 
 function sheet_(name) {
+  var ex = exec_();
+  if (ex.sheets[name]) return ex.sheets[name];
   var ss = spreadsheet_();
   var sh = ss.getSheetByName(name);
   if (!sh) {
@@ -64,27 +93,66 @@ function sheet_(name) {
     sh.appendRow(['id', 'data', 'updatedAt']);
     sh.setFrozenRows(1);
   }
-  return sh;
+  return (ex.sheets[name] = sh);
 }
 
 function verKey_(name) { return 'ver_' + name; }
 
 function version_(name) {
-  return PropertiesService.getScriptProperties().getProperty(verKey_(name)) || '0';
+  return scriptProps_()[verKey_(name)] || '0';
 }
 
+// A random value, not a counter: a counter read from a stale memo by two
+// concurrent writers could land on the same number twice, leaving a cache
+// entry that silently hides the second write. A fresh UUID always changes.
 function bumpVersion_(name) {
-  var p = PropertiesService.getScriptProperties();
-  var v = Number(p.getProperty(verKey_(name)) || '0') + 1;
-  p.setProperty(verKey_(name), String(v));
+  var v = Utilities.getUuid();
+  setScriptProp_(verKey_(name), v);
+  delete exec_().rows[name];
   return v;
 }
 
+// CacheService rejects any single value over 100KB, and the old code just
+// skipped caching in that case -- so once a sheet like daily_entries grew
+// past that size, every request re-read the whole sheet. Large values are
+// now split across several keys and fetched back in one getAll call.
+var CACHE_TTL_SEC = 1800;
+var CACHE_CHUNK_CHARS = 30000; // <= 100KB even if every char is 3 UTF-8 bytes
+function cacheGetBig_(cache, key) {
+  var head = cache.get(key);
+  if (head === null || head === undefined) return null;
+  if (head.indexOf('__chunks__:') !== 0) return head;
+  var n = Number(head.slice(11));
+  var keys = [];
+  for (var i = 0; i < n; i++) keys.push(key + '#' + i);
+  var parts = cache.getAll(keys);
+  var out = '';
+  for (var j = 0; j < keys.length; j++) {
+    if (parts[keys[j]] === null || parts[keys[j]] === undefined) return null;
+    out += parts[keys[j]];
+  }
+  return out;
+}
+function cachePutBig_(cache, key, str, ttl) {
+  if (str.length <= CACHE_CHUNK_CHARS) { cache.put(key, str, ttl); return; }
+  var n = Math.ceil(str.length / CACHE_CHUNK_CHARS);
+  var chunks = {};
+  for (var i = 0; i < n; i++) chunks[key + '#' + i] = str.substr(i * CACHE_CHUNK_CHARS, CACHE_CHUNK_CHARS);
+  cache.putAll(chunks, ttl);
+  cache.put(key, '__chunks__:' + n, ttl);
+}
+
 function readSheet(name) {
+  var ex = exec_();
+  // Memoized as a string and re-parsed per call, so callers still get their
+  // own fresh objects exactly as before (several mutate what they read).
+  if (ex.rows[name] !== undefined) return JSON.parse(ex.rows[name]);
+
   var cacheKey = name + '@' + version_(name);
   var cache = CacheService.getScriptCache();
-  var cached = cache.get(cacheKey);
-  if (cached) return JSON.parse(cached);
+  var cached = null;
+  try { cached = cacheGetBig_(cache, cacheKey); } catch (e) { cached = null; }
+  if (cached) { ex.rows[name] = cached; return JSON.parse(cached); }
 
   var sh = sheet_(name);
   var lastRow = sh.getLastRow();
@@ -101,7 +169,9 @@ function readSheet(name) {
       rows.push(obj);
     }
   }
-  try { cache.put(cacheKey, JSON.stringify(rows), 120); } catch (e) { /* row set too large for cache; skip */ }
+  var str = JSON.stringify(rows);
+  ex.rows[name] = str;
+  try { cachePutBig_(cache, cacheKey, str, CACHE_TTL_SEC); } catch (e) { /* cache full or unavailable; the sheet read still stands */ }
   return rows;
 }
 
@@ -120,13 +190,17 @@ function writeRow(name, obj) {
   lock.waitLock(30000);
   try {
     var sh = sheet_(name);
-    if (!obj.id) obj.id = Utilities.getUuid();
+    // An id we just generated can't already exist, so skip scanning the whole
+    // id column for it -- that scan grew with every audit-log entry ever
+    // written, since logAudit_ always creates a new row.
+    var isNew = !obj.id;
+    if (isNew) obj.id = Utilities.getUuid();
     var now = new Date().toISOString();
     var toStore = {};
     for (var k in obj) { if (obj.hasOwnProperty(k)) toStore[k] = obj[k]; }
     toStore.updatedAt = now;
     var json = JSON.stringify(toStore);
-    var rowIndex = findRow_(sh, obj.id);
+    var rowIndex = isNew ? -1 : findRow_(sh, obj.id);
     if (rowIndex > 0) {
       sh.getRange(rowIndex, 1, 1, 3).setValues([[obj.id, json, now]]);
     } else {
@@ -214,91 +288,24 @@ function vatRate_() {
   return typeof c.vatRate === 'number' ? c.vatRate : 0.15;
 }
 
-// All system emails go through this one choke point. When the GRAPH_*
-// script properties are set, mail goes out through Microsoft Graph from the
+// All system emails go through this one choke point. If MicrosoftMail.gs is
+// deployed and its GRAPH_* script properties are set, mail goes out from the
 // bestgas.sa Microsoft 365 mailbox; otherwise (or if Microsoft rejects the
-// send) it falls back to MailApp, so a shortfall alert is never lost just
-// because a client secret expired. The secret lives only in Script
-// Properties -- never in this file or in git.
-function graphMailConfig_() {
-  var p = PropertiesService.getScriptProperties();
-  var cfg = {
-    tenant: p.getProperty('GRAPH_TENANT_ID'),
-    clientId: p.getProperty('GRAPH_CLIENT_ID'),
-    secret: p.getProperty('GRAPH_CLIENT_SECRET'),
-    sender: p.getProperty('GRAPH_SENDER')
-  };
-  return (cfg.tenant && cfg.clientId && cfg.secret && cfg.sender) ? cfg : null;
-}
-
-function graphToken_(cfg) {
-  var cache = CacheService.getScriptCache();
-  var key = 'graphToken_' + cfg.clientId;
-  var cached = cache.get(key);
-  if (cached) return cached;
-  var res = UrlFetchApp.fetch('https://login.microsoftonline.com/' + encodeURIComponent(cfg.tenant) + '/oauth2/v2.0/token', {
-    method: 'post',
-    payload: {
-      client_id: cfg.clientId,
-      client_secret: cfg.secret,
-      scope: 'https://graph.microsoft.com/.default',
-      grant_type: 'client_credentials'
-    },
-    muteHttpExceptions: true
-  });
-  var parsed = {};
-  try { parsed = JSON.parse(res.getContentText()); } catch (e) { /* non-JSON error page */ }
-  if (res.getResponseCode() !== 200 || !parsed.access_token) {
-    throw new Error('graph_token_failed: ' + (parsed.error_description || res.getResponseCode()));
-  }
-  // Refresh five minutes before Microsoft's expiry; CacheService caps at 6h.
-  var ttl = Math.max(60, Math.min(21600, Number(parsed.expires_in || 3600) - 300));
-  cache.put(key, parsed.access_token, ttl);
-  return parsed.access_token;
-}
-
-function sendViaGraph_(cfg, to, subject, body) {
-  var res = UrlFetchApp.fetch('https://graph.microsoft.com/v1.0/users/' + encodeURIComponent(cfg.sender) + '/sendMail', {
-    method: 'post',
-    contentType: 'application/json',
-    headers: { Authorization: 'Bearer ' + graphToken_(cfg) },
-    payload: JSON.stringify({
-      message: {
-        subject: subject,
-        body: { contentType: 'Text', content: body },
-        toRecipients: [{ emailAddress: { address: to } }]
-      },
-      saveToSentItems: true
-    }),
-    muteHttpExceptions: true
-  });
-  if (res.getResponseCode() !== 202) {
-    throw new Error('graph_send_failed: ' + res.getResponseCode() + ' ' + String(res.getContentText()).slice(0, 300));
-  }
-}
-
+// send) it falls back to MailApp, so an alert is never lost.
 function sendMail_(to, subject, body) {
-  var cfg = graphMailConfig_();
-  if (cfg) {
-    try {
-      sendViaGraph_(cfg, to, subject, body);
-      return 'graph';
-    } catch (e) {
-      console.error('Microsoft Graph send failed, falling back to MailApp: ' + e);
+  if (typeof sendViaGraph_ === 'function') {
+    var cfg = graphMailConfig_();
+    if (cfg) {
+      try {
+        sendViaGraph_(cfg, to, subject, body);
+        return 'graph';
+      } catch (e) {
+        console.error('Microsoft Graph send failed, falling back to MailApp: ' + e);
+      }
     }
   }
   MailApp.sendEmail(to, subject, body);
   return 'mailapp';
-}
-
-// Run once from the Apps Script editor after deploying the Microsoft mail
-// change: approves the new "connect to external service" permission and
-// sends one test message, reporting which path actually delivered it.
-function testMicrosoftMail() {
-  var cfg = graphMailConfig_();
-  if (!cfg) throw new Error('Set GRAPH_TENANT_ID, GRAPH_CLIENT_ID, GRAPH_CLIENT_SECRET and GRAPH_SENDER in Project Settings > Script properties first.');
-  sendViaGraph_(cfg, cfg.sender, 'Best Gas Cash Collection — Microsoft mail test', 'If you can read this, notifications now send from ' + cfg.sender + '.');
-  Logger.log('Test email sent via Microsoft Graph to ' + cfg.sender);
 }
 
 // Hours a handoff can sit 'pending' before checkStaleHandoffs_ escalates it.
@@ -341,11 +348,10 @@ function areaManagerBulkUploadEnabled_() {
 // ---------- Crypto / auth ----------
 
 function secret_() {
-  var p = PropertiesService.getScriptProperties();
-  var s = p.getProperty('SECRET');
+  var s = scriptProps_().SECRET;
   if (!s) {
     s = Utilities.getUuid() + Utilities.getUuid();
-    p.setProperty('SECRET', s);
+    setScriptProp_('SECRET', s);
   }
   return s;
 }
@@ -365,8 +371,9 @@ function randomSalt_() {
 
 function hashPw_(pw, salt) {
   var h = pw + '|' + salt;
+  var key = secret_() + salt; // same key every round -- fetched once, not 120 times
   for (var i = 0; i < PW_ROUNDS; i++) {
-    h = hmac_(h, secret_() + salt);
+    h = hmac_(h, key);
   }
   return 'v1:' + h;
 }
@@ -487,6 +494,7 @@ function requireAuth_(req) {
 }
 
 function route_(req) {
+  resetExecMemo_();
   var action = req.action;
   if (!action) throw new Error('missing_action');
 
@@ -501,6 +509,9 @@ function route_(req) {
   var handlers = {
     // self-service
     whoami: function () { return { user: publicUser_(user) }; },
+    // Reopening the app used to be whoami then listMeta: two round trips
+    // before anything could render. One call returns both.
+    bootstrap: function () { var meta = actionMeta_(req, user); return { ok: true, user: publicUser_(user), meta: meta }; },
     setLanguage: function () { return actionSetLanguage_(req, user); },
     changePassword: function () { return actionChangePassword_(req, user); },
 
@@ -598,7 +609,9 @@ function actionLogin_(req) {
   writeRow(SHEETS.USERS, user);
   var token = issueToken_(user.id);
   logAudit_('login', user.id, null);
-  return { ok: true, token: token, user: publicUser_(user), previousLoginAt: previousLoginAt };
+  // Reference data rides along with the login reply, so the client can
+  // render straight away instead of making a second round trip for listMeta.
+  return { ok: true, token: token, user: publicUser_(user), previousLoginAt: previousLoginAt, meta: actionMeta_(req, user) };
 }
 
 // Self-service password reset — no session required, since a locked-out user

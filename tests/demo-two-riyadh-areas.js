@@ -12,6 +12,7 @@ var path = require('path');
 var harness = require('./stub-harness');
 
 var PORT = Number(process.argv[2] || 8998);
+var LATENCY_MS = Number(process.argv[3] || 0);
 var ctx = harness.buildContext();
 var SHEETS = ctx.SHEETS;
 
@@ -105,8 +106,12 @@ http.createServer(function (req, res) {
     req.on('end', function () {
       var parsed; try { parsed = JSON.parse(body); } catch (e) { parsed = null; }
       var result = parsed ? (function () { try { return ctx.route_(parsed); } catch (e) { return { ok: false, error: String(e && e.message || e) }; } })() : { ok: false, error: 'bad_request' };
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify(result));
+      // Optional 2nd CLI arg: artificial per-request delay (ms), to feel the
+      // same round-trip cost as the real Apps Script backend.
+      setTimeout(function () {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(result));
+      }, LATENCY_MS);
     });
     return;
   }
