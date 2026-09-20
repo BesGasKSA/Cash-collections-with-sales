@@ -1394,7 +1394,9 @@ setLang(state.lang);
 
 // ---------------- helpers ----------------
 function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
-function money(n){ n=Number(n||0); return n.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}); }
+// 'en-US' (not the device locale) so every amount uses the same Latin
+// digits and 1,234.56 grouping on every device, including Arabic ones.
+function money(n){ n=Number(n||0); return n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}); }
 // A plain type="number" input can never show thousand separators while
 // being typed (browsers reject the comma outright), so every amount/count
 // field the user types into is a plain type="text" input instead, reusing
@@ -1405,7 +1407,7 @@ function wireCommaInput_(input, decimals){
   input.addEventListener('blur', function(){
     var raw = String(input.value||'').replace(/,/g,'').trim();
     if (raw === '' || isNaN(Number(raw))) return;
-    input.value = decimals ? money(Number(raw)) : Math.round(Number(raw)).toLocaleString();
+    input.value = decimals ? money(Number(raw)) : Math.round(Number(raw)).toLocaleString('en-US');
   });
 }
 function el(html){
@@ -1821,11 +1823,17 @@ function todayDatesLines_(){
   var now = new Date();
   var loc = langLocale_();
   var greg;
-  try { greg = new Intl.DateTimeFormat(loc, { weekday:'long', day:'numeric', month:'long', year:'numeric' }).format(now); }
-  catch(e) { greg = now.toDateString(); }
+  // -u-ca-gregory: ar-SA otherwise defaults to the Islamic (Umm al-Qura)
+  // calendar on many devices, which would make this "Gregorian" line Hijri.
+  // -nu-latn keeps the digits Latin, matching every amount in the app.
+  try { greg = new Intl.DateTimeFormat(loc + '-u-ca-gregory-nu-latn', { weekday:'long', day:'numeric', month:'long', year:'numeric' }).format(now); }
+  catch(e) {
+    try { greg = new Intl.DateTimeFormat(loc, { weekday:'long', day:'numeric', month:'long', year:'numeric', calendar:'gregory', numberingSystem:'latn' }).format(now); }
+    catch(e2) { greg = now.toDateString(); }
+  }
   var hijri = '';
   try {
-    var parts = new Intl.DateTimeFormat(loc + '-u-ca-islamic-umalqura', { day:'numeric', month:'long', year:'numeric' }).formatToParts(now);
+    var parts = new Intl.DateTimeFormat(loc + '-u-ca-islamic-umalqura-nu-latn', { day:'numeric', month:'long', year:'numeric' }).formatToParts(now);
     var d = {}; parts.forEach(function(p){ d[p.type] = p.value; });
     if (d.day && d.month && d.year) hijri = d.day + ' ' + d.month + ' ' + d.year + ' ' + t('home_hijriSuffix');
   } catch(e) { /* Hijri calendar not supported in this environment — Gregorian alone is still useful */ }
@@ -2785,7 +2793,7 @@ function countUp_(root){
       var p = Math.min(1, (ts - start) / dur);
       var eased = 1 - Math.pow(1 - p, 3);
       var v = target * eased;
-      tn.nodeValue = decimals ? money(v) : Math.round(v).toLocaleString();
+      tn.nodeValue = decimals ? money(v) : Math.round(v).toLocaleString('en-US');
       if (p < 1) requestAnimationFrame(frame); else tn.nodeValue = raw;
     }
     requestAnimationFrame(frame);
