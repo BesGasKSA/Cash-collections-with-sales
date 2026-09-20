@@ -822,24 +822,28 @@ var posWithId = call({
 check(posWithId.ok && posWithId.entity.posId === 'DEV-7788' && posWithId.entity.posConfig === 'merchantId=99120044;terminal=T1',
   'posId/posConfig are plain pass-through fields on the pos entity, no backend whitelist blocks them (actionAdminSaveEntity_ merges any field in req.data)');
 
+// Uses a fixed date in the past on purpose: this block filters a report by
+// date, and a hardcoded date that eventually equals today picks up entries
+// other tests create 'today' at the same store (it did, once the clock
+// reached 2026-09-20).
 console.log('--- product-level entry: qty x unit price is stored as informational passthrough, never touches the cash formula ---');
-var qtyEntry = call({ action: 'createDailyEntry', token: aliTok, date: '2026-09-20', sourceType: 'store', sourceId: store.entity.id, cashSales: 300, qty: 3, unitPrice: 100 });
+var qtyEntry = call({ action: 'createDailyEntry', token: aliTok, date: '2020-02-29', sourceType: 'store', sourceId: store.entity.id, cashSales: 300, qty: 3, unitPrice: 100 });
 check(qtyEntry.ok, 'entry with qty/unitPrice saves successfully');
 check(qtyEntry.entry.qty === 3 && qtyEntry.entry.unitPrice === 100, 'qty and unitPrice are stored on the entry exactly as sent');
 
-var noQtyEntry = call({ action: 'createDailyEntry', token: aliTok, date: '2026-09-20', sourceType: 'store', sourceId: store.entity.id, cashSales: 50 });
+var noQtyEntry = call({ action: 'createDailyEntry', token: aliTok, date: '2020-02-29', sourceType: 'store', sourceId: store.entity.id, cashSales: 50 });
 check(noQtyEntry.ok && noQtyEntry.entry.qty === null && noQtyEntry.entry.unitPrice === null, 'qty/unitPrice default to null when omitted — direct-amount entries are unaffected');
 
 var bulkQtyImport = call({ action: 'importDailyEntries', token: adminTok, rows: [
-  { date: '2026-09-20', sourceType: 'store', sourceId: store.entity.id, cashSales: 200, qty: 2, unitPrice: 100 },
-  { date: '2026-09-20', sourceType: 'store', sourceId: store.entity.id, cashSales: 75 }
+  { date: '2020-02-29', sourceType: 'store', sourceId: store.entity.id, cashSales: 200, qty: 2, unitPrice: 100 },
+  { date: '2020-02-29', sourceType: 'store', sourceId: store.entity.id, cashSales: 75 }
 ] });
 check(bulkQtyImport.ok && bulkQtyImport.created === 2, 'bulk import accepts rows with and without qty/unitPrice in the same batch');
-var bulkQtyEntries = call({ action: 'listEntries', token: adminTok, locationId: location.entity.id, date: '2026-09-20' }).entries;
+var bulkQtyEntries = call({ action: 'listEntries', token: adminTok, locationId: location.entity.id, date: '2020-02-29' }).entries;
 var withQty = bulkQtyEntries.filter(function (e) { return e.cashSales === 200; })[0];
 check(withQty && withQty.qty === 2 && withQty.unitPrice === 100, 'the bulk-imported row with qty/unitPrice carries them through to the stored entry');
 
-var qtyReport = call({ action: 'getSalesReport', token: adminTok, dateFrom: '2026-09-20', dateTo: '2026-09-20' });
+var qtyReport = call({ action: 'getSalesReport', token: adminTok, dateFrom: '2020-02-29', dateTo: '2020-02-29' });
 close(qtyReport.totals.storeCash, 300 + 50 + 200 + 75, 'qty/unitPrice never leak into the cash formula — totals still come from cashSales alone');
 
 console.log('--- a delivery fee can never stand alone: it must accompany a cash/POS sale (same source and date) ---');
@@ -1123,7 +1127,7 @@ check(mailLog.length === mailBefore + 1 && urlFetch.log.length === 0, 'and Micro
 props.GRAPH_TENANT_ID = 'tenant-123';
 props.GRAPH_CLIENT_ID = 'client-abc';
 props.GRAPH_CLIENT_SECRET = 'secret-xyz';
-props.GRAPH_SENDER = 'notifications@bestgas.sa';
+props.GRAPH_SENDER = 'm.mahdi@bestgas.sa';
 urlFetch.responder = function (url) {
   if (url.indexOf('login.microsoftonline.com') >= 0) return { code: 200, body: JSON.stringify({ access_token: 'tok-1', expires_in: 3600 }) };
   if (url.indexOf('graph.microsoft.com') >= 0) return { code: 202, body: '' };
@@ -1133,7 +1137,7 @@ mailBefore = mailLog.length;
 check(ctx.sendMail_('b@bestgas.sa', 'Shortfall', 'Declared 100 / received 90') === 'graph', 'with all GRAPH_* properties set, mail goes through Microsoft Graph');
 check(mailLog.length === mailBefore, 'and does not also go out through MailApp (no duplicate email)');
 var sendCall = urlFetch.log.filter(function (r) { return r.url.indexOf('/sendMail') >= 0; }).pop();
-check(sendCall.url.indexOf('/users/notifications%40bestgas.sa/sendMail') >= 0, 'sends from the configured bestgas.sa mailbox');
+check(sendCall.url.indexOf('/users/m.mahdi%40bestgas.sa/sendMail') >= 0, 'sends from the configured bestgas.sa mailbox');
 check(sendCall.options.headers.Authorization === 'Bearer tok-1', 'using the access token Microsoft issued');
 var sentPayload = JSON.parse(sendCall.options.payload);
 check(sentPayload.message.toRecipients[0].emailAddress.address === 'b@bestgas.sa' && sentPayload.message.subject === 'Shortfall', 'to the right recipient with the right subject');
