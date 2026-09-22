@@ -693,6 +693,30 @@
   .chart-tip{position:absolute;pointer-events:none;background:var(--green-deep);color:#fff;border-radius:10px;padding:6px 10px;font-size:11.5px;font-weight:700;white-space:nowrap;opacity:0;transform:translate(-50%,-140%);transition:opacity .15s ease;box-shadow:var(--shadow-md);z-index:2;}
   .chart-tip.on{opacity:1;}
   .chart-tip .v{font-variant-numeric:tabular-nums;}
+  /* ---- touch feedback: press-in + ripple from the finger ---- */
+  .st-row.click,.rrow.click,.tx,.bt-scroll button,.sb-item,.cx-more{position:relative;overflow:hidden;}
+  .tile.click:active,.st-row.click:active,.rrow.click:active,.tx:active,button.btn:active,.cx-more:active{transform:scale(.975);transition:transform .08s ease;}
+  .rpl{position:absolute;border-radius:50%;pointer-events:none;background:currentColor;opacity:.16;transform:scale(0);animation:bgcTap .55s cubic-bezier(.2,.7,.3,1) forwards;}
+  @keyframes bgcTap{to{transform:scale(1);opacity:0;}}
+  /* ---- screen transitions: slide in from the side you're heading to ---- */
+  #screenBody.nav-fwd{--sx:28px;animation:bgcSlideIn .38s cubic-bezier(.2,.8,.2,1) both;}
+  #screenBody.nav-back{--sx:-28px;animation:bgcSlideIn .38s cubic-bezier(.2,.8,.2,1) both;}
+  html[dir="rtl"] #screenBody.nav-fwd{--sx:-28px;}
+  html[dir="rtl"] #screenBody.nav-back{--sx:28px;}
+  @keyframes bgcSlideIn{0%{opacity:0;transform:translateX(var(--sx));}100%{opacity:1;transform:none;}}
+  /* ---- bottom bar: sliding indicator + icon bounce ---- */
+  @media (max-width:700px){
+    .bt-scroll{position:relative;}
+    .bt-scroll button{z-index:1;}
+    .bt-scroll button.active{background:transparent !important;}
+    .bt-ind{position:absolute;top:6px;left:0;height:calc(100% - 12px - env(safe-area-inset-bottom));border-radius:14px;background:var(--green-pale);z-index:0;
+      box-shadow:inset 0 0 0 1px rgba(77,109,81,.12);transition:transform .5s cubic-bezier(.34,1.35,.64,1),width .5s cubic-bezier(.34,1.35,.64,1);}
+    .bt-scroll button.bounce svg{animation:bgcTabBounce .55s cubic-bezier(.34,1.56,.64,1);}
+    /* bottom sheet follows the finger while being dragged down */
+    .dr.dragging{transition:none !important;}
+    .dr-h{touch-action:none;cursor:grab;}
+  }
+  @keyframes bgcTabBounce{0%{transform:scale(1);}35%{transform:scale(1.28) translateY(-3px);}65%{transform:scale(.94);}100%{transform:scale(1.08) translateY(-1px);}}
   /* ---- show/hide password eye ---- */
   .pw-wrap{position:relative;display:block;}
   .pw-wrap input{padding-inline-end:50px !important;}
@@ -747,7 +771,8 @@
 
   @media (prefers-reduced-motion: reduce){
     .bt-arrow::after{animation:none !important;}
-    #loadOverlay .ring-inner,#loadOverlay .ripple,#topProgress::before,.fade-up,.hero.splash,.fx-in *{animation:none !important;}
+    #loadOverlay .ring-inner,#loadOverlay .ripple,#topProgress::before,.fade-up,.hero.splash,.fx-in *,#screenBody,.rpl,.bt-scroll button svg{animation:none !important;}
+    .bt-ind,.tile,.st-row,.rrow,.tx{transition:none !important;}
     .dr,.dr-scrim,.tile,.cx-body{transition:none !important;}
   }
 </style>
@@ -1968,6 +1993,27 @@ function wirePasswordEye_(root){
   });
 }
 
+// Ripple from the touch point on anything tappable. One delegated listener,
+// so screens don't each have to opt in.
+var RIPPLE_TARGETS = '.tile.click, .st-row.click, .rrow.click, .tx, button.btn, .bt-scroll button, .sb-item, .cx-more, .hero .cta button, .tl-step.click';
+document.addEventListener('pointerdown', function(e){
+  if (e.button > 0) return;
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  var host = e.target.closest && e.target.closest(RIPPLE_TARGETS);
+  if (!host) return;
+  var r = host.getBoundingClientRect();
+  var size = Math.max(r.width, r.height) * 2.2;
+  var dot = document.createElement('span');
+  dot.className = 'rpl';
+  dot.style.width = dot.style.height = size + 'px';
+  dot.style.left = (e.clientX - r.left - size / 2) + 'px';
+  dot.style.top = (e.clientY - r.top - size / 2) + 'px';
+  if (getComputedStyle(host).position === 'static') host.style.position = 'relative';
+  if (getComputedStyle(host).overflow !== 'hidden') host.style.overflow = 'hidden';
+  host.appendChild(dot);
+  setTimeout(function(){ if (dot.parentNode) dot.parentNode.removeChild(dot); }, 650);
+}, { passive: true });
+
 function initials_(name){
   var parts = String(name||'').replace(/\(.*?\)/g,'').trim().split(/\s+/).filter(Boolean);
   if (!parts.length) return '•';
@@ -1977,6 +2023,11 @@ function initials_(name){
 function goScreen_(screen){
   if (state.screen === screen) { var sb = qs('#screenBody'); if (sb) window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
   drawerClose_();
+  // Direction of travel through the tab order, so the new screen slides in
+  // from the side the user is heading towards.
+  var order = navItemsForRole_().map(function(it){ return it[0]; });
+  state.navDir = order.indexOf(screen) >= order.indexOf(state.screen) ? 1 : -1;
+  try { if (navigator.vibrate && window.matchMedia('(max-width:700px)').matches) navigator.vibrate(8); } catch (e) {}
   state.screen = screen;
   render();
   window.scrollTo(0, 0);
@@ -2039,7 +2090,9 @@ function renderShell(){
 
   var main = el('<main></main>');
   if (state.msg) main.appendChild(el('<div id="msgBox" class="msg '+(state.msg.type==='ok'?'ok':'err')+'">'+esc(state.msg.text)+'</div>'));
-  var body = el('<div id="screenBody" class="fade-up"></div>');
+  var body = el('<div id="screenBody" class="'+(state.navDir ? (state.navDir > 0 ? 'nav-fwd' : 'nav-back') : 'fade-up')+'"></div>');
+  var justNavigated = !!state.navDir;
+  state.navDir = 0;
   main.appendChild(body);
   col.appendChild(main);
   root.appendChild(col);
@@ -2052,7 +2105,7 @@ function renderShell(){
   });
 
   // ---- phone bottom switcher: every screen for this role ----
-  root.appendChild(buildBottomSwitcher_(navItems, badge));
+  root.appendChild(buildBottomSwitcher_(navItems, badge, justNavigated));
 
   watchCollapsibles_(body);
   if (state.lastAnimatedScreen !== state.screen) { state.lastAnimatedScreen = state.screen; watchEntrance_(body); }
@@ -2063,7 +2116,7 @@ function renderShell(){
 // Bottom tab bar for phones. Holds every screen the role can reach; if they
 // don't all fit it scrolls sideways, and round arrow buttons pop in while the
 // bar is being touched/scrolled, then fade away after a short idle period.
-function buildBottomSwitcher_(navItems, badge){
+function buildBottomSwitcher_(navItems, badge, justNavigated){
   var bar = el('<div class="bt" role="navigation">' +
     '<span class="bt-edge s"></span><span class="bt-edge e"></span>' +
     '<button type="button" class="bt-arrow s" aria-label="'+esc(t('ui_back'))+'">'+icon_('back')+'</button>' +
@@ -2071,6 +2124,8 @@ function buildBottomSwitcher_(navItems, badge){
     '<div class="bt-scroll"></div>' +
   '</div>');
   var scroller = qs('.bt-scroll', bar);
+  var ind = el('<span class="bt-ind" aria-hidden="true"></span>');
+  scroller.appendChild(ind);
   navItems.forEach(function(it){
     var b = el('<button type="button"'+(state.screen===it[0]?' class="active" aria-current="page"':'')+'>' +
       icon_(it[0]) + '<span>'+esc(t(it[1]))+'</span>' + (it[0]==='handoffs' ? badge : '') + '</button>');
@@ -2112,6 +2167,21 @@ function buildBottomSwitcher_(navItems, badge){
   requestAnimationFrame(function(){
     var active = qs('button.active', scroller);
     if (active && active.scrollIntoView) active.scrollIntoView({ inline: 'center', block: 'nearest' });
+    // The whole bar is rebuilt on every screen change, so start the pill
+    // where it was last time and let it slide to the new tab.
+    if (active) {
+      var target = { x: active.offsetLeft, w: active.offsetWidth };
+      var from = (justNavigated && state.btInd) ? state.btInd : target;
+      ind.style.transition = 'none';
+      ind.style.width = from.w + 'px';
+      ind.style.transform = 'translateX(' + from.x + 'px)';
+      void ind.offsetWidth;
+      ind.style.transition = '';
+      ind.style.width = target.w + 'px';
+      ind.style.transform = 'translateX(' + target.x + 'px)';
+      state.btInd = target;
+      if (justNavigated) active.classList.add('bounce');
+    }
     update();
     if (!bar.classList.contains('fits') && window.matchMedia('(max-width:700px)').matches) wake();
   });
@@ -2335,6 +2405,32 @@ function drawerEls_(){
   document.body.appendChild(dr);
   scrim.addEventListener('click', drawerClose_);
   qs('.close', dr).addEventListener('click', drawerClose_);
+  // Phones: drag the sheet's header down to dismiss it. Past ~110px or a
+  // quick flick closes; anything less springs back.
+  (function(){
+    var head = qs('.dr-h', dr), startY = 0, dy = 0, t0 = 0, dragging = false;
+    head.addEventListener('pointerdown', function(e){
+      if (!window.matchMedia('(max-width:700px)').matches || e.target.closest('button')) return;
+      dragging = true; startY = e.clientY; dy = 0; t0 = Date.now();
+      dr.classList.add('dragging');
+      try { head.setPointerCapture(e.pointerId); } catch (err) {}
+    });
+    head.addEventListener('pointermove', function(e){
+      if (!dragging) return;
+      dy = Math.max(0, e.clientY - startY);
+      dr.style.transform = 'translateY(' + dy + 'px)';
+    });
+    function end(){
+      if (!dragging) return;
+      dragging = false;
+      dr.classList.remove('dragging');
+      var velocity = dy / Math.max(1, Date.now() - t0);
+      dr.style.transform = '';
+      if (dy > 110 || (dy > 30 && velocity > 0.6)) drawerClose_();
+    }
+    head.addEventListener('pointerup', end);
+    head.addEventListener('pointercancel', end);
+  })();
   qs('.back', dr).addEventListener('click', drawerBack_);
   document.addEventListener('keydown', function(e){ if (e.key === 'Escape' && DRAWER.stack.length) drawerClose_(); });
   DRAWER.root = { scrim: scrim, dr: dr };
