@@ -158,7 +158,8 @@ function checkNonSalesFields_(r, siblingCash) {
     // `siblingCash` is the cash on the OTHER rows of the same submission for
     // the same source and date: one real day gets split across several rows
     // in product mode, and the deposit rides on the first of them.
-    var inHand = Number(r.cashSales || 0) + Number(siblingCash || 0) + other - delivery + (delivery > 0 ? (delivery / (1 + vat)) * vat : 0) - exp;
+    var inHand = Number(r.cashSales || 0) - Number(r.creditSales || 0) + Number(siblingCash || 0) + other
+      - delivery + (delivery > 0 ? (delivery / (1 + vat)) * vat : 0) - exp;
     if (dep > inHand + 0.005) return 'deposit_exceeds_cash';
   }
   return null;
@@ -171,7 +172,9 @@ function siblingCash_(rows, index) {
   for (var i = 0; i < rows.length; i++) {
     if (i === index) continue;
     var o = rows[i] || {};
-    if (o.sourceType === me.sourceType && o.sourceId === me.sourceId && o.date === me.date) sum += Number(o.cashSales || 0);
+    if (o.sourceType === me.sourceType && o.sourceId === me.sourceId && o.date === me.date) {
+      sum += Number(o.cashSales || 0) - Number(o.creditSales || 0);
+    }
   }
   return sum;
 }
@@ -411,14 +414,16 @@ function entrySalesTotal_(e) {
 //                the handoff chain.
 //
 // netCashOwed = cash(branch+car+pos) + otherCash - deliveryFee + vatOnDelivery
-//               - expenses - directDeposit
+//               - expenses - directDeposit - creditSales
 function computeNet_(entries) {
   var storeCash = 0, carCash = 0, posCash = 0, deliveryFee = 0, posSales = 0, creditSales = 0;
   var otherCash = 0, expenses = 0, directDeposit = 0;
   entries.forEach(function (e) {
-    // creditSales is tallied the same way across all three source types as
-    // posSales — a sale on credit carries no cash risk either, since no
-    // money has moved yet, so it never touches netCashOwed below.
+    // A sale on credit is part of the day's takings figure the branch
+    // enters, but no money came in for it — so it is DEDUCTED below,
+    // exactly like an expense or a موازنة. (Until 2026-09-23 it was simply
+    // excluded; that only works if the cash figure was typed net of
+    // credit, which is not how the branches actually report.)
     creditSales += Number(e.creditSales || 0);
     deliveryFee += Number(e.deliveryFeeBankAmount || 0);
     posSales += Number(e.posSales || 0);
@@ -431,7 +436,7 @@ function computeNet_(entries) {
   });
   var vat = vatRate_();
   var vatOnDelivery = deliveryFee > 0 ? (deliveryFee / (1 + vat)) * vat : 0;
-  var netCashOwed = storeCash + carCash + posCash + otherCash - deliveryFee + vatOnDelivery - expenses - directDeposit;
+  var netCashOwed = storeCash + carCash + posCash + otherCash - deliveryFee + vatOnDelivery - expenses - directDeposit - creditSales;
   return {
     storeCash: storeCash, carCash: carCash, posCash: posCash, deliveryFee: deliveryFee,
     posSales: posSales, creditSales: creditSales, vatOnDelivery: vatOnDelivery,

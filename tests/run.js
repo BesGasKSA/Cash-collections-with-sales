@@ -877,21 +877,21 @@ var bulkDeliveryOnly = call({ action: 'importDailyEntries', token: adminTok, row
 check(bulkDeliveryOnly.ok && bulkDeliveryOnly.created === 0 && bulkDeliveryOnly.results[0].error === 'delivery_without_sale',
   'a lone delivery-only row with no sibling sale in the batch, and no prior sale that day, is rejected');
 
-console.log('--- credit sales: counted in total sales, zero cash impact, and satisfies the delivery-needs-a-sale rule ---');
+console.log('--- credit sales: counted in total sales, DEDUCTED from the cash owed, and satisfies the delivery-needs-a-sale rule ---');
 var creditNetBefore = call({ action: 'getSalesReport', token: adminTok, dateFrom: '2026-09-24', dateTo: '2026-09-24' }).totals.netCashOwed;
 var creditOnlyEntry = call({ action: 'createDailyEntry', token: aliTok, date: '2026-09-24', sourceType: 'store', sourceId: store.entity.id, creditSales: 900 });
 check(creditOnlyEntry.ok, 'a store entry with only creditSales (no cash/POS) saves fine — credit alone is a valid entry');
 check(creditOnlyEntry.entry.creditSales === 900, 'creditSales is stored on the entry exactly as sent');
 
 var creditReport = call({ action: 'getSalesReport', token: adminTok, dateFrom: '2026-09-24', dateTo: '2026-09-24' });
-close(creditReport.totals.netCashOwed, creditNetBefore, 'a pure credit sale has zero effect on netCashOwed — same as before it was entered');
+close(creditReport.totals.netCashOwed, creditNetBefore - 900, 'a credit sale comes back out of the cash owed: the sales figure includes it, but no cash arrived');
 close(creditReport.totals.creditSales, 900, 'the report totals track creditSales separately, alongside cashSales/posSales');
 
 var creditMixedEntry = call({ action: 'createDailyEntry', token: aliTok, date: '2026-09-24', sourceType: 'store', sourceId: store.entity.id, cashSales: 200, creditSales: 300 });
 check(creditMixedEntry.ok, 'an entry can carry both cashSales and creditSales together');
 var creditMixedReport = call({ action: 'getSalesReport', token: adminTok, dateFrom: '2026-09-24', dateTo: '2026-09-24' });
-close(creditMixedReport.totals.netCashOwed, creditNetBefore + 200, 'only the cash portion of a mixed cash+credit entry enters netCashOwed');
-close(creditMixedReport.totals.creditSales, 900 + 300, 'creditSales accumulates across entries independently of the cash formula');
+close(creditMixedReport.totals.netCashOwed, creditNetBefore - 900 + 200 - 300, 'a mixed cash+credit entry adds its cash and deducts its credit');
+close(creditMixedReport.totals.creditSales, 900 + 300, 'and creditSales is still tracked on its own, so the deduction can always be explained');
 
 var creditProductRow = creditMixedReport.byProduct.filter(function (r) { return r.productId === null; })[0];
 check(creditProductRow && creditProductRow.creditAmount >= 1200, 'the by-product breakdown carries a creditAmount bucket, summed like cashAmount/posAmount');
@@ -1422,6 +1422,21 @@ close(afterWrite.totals.storeCash, cachedBefore.totals.storeCash + 777, 'and see
 
 var asManager = call({ action: 'getSalesReport', token: aliTok, sourceType: 'store' });
 check(asManager.ok && asManager.entries.length <= afterWrite.entries.length, 'the cache is per user — a branch manager never receives the admin\'s cached copy');
+
+console.log('--- credit sales deduct like an expense or a موازنة ---');
+var creditDay = call({ action: 'createDailyEntry', token: aliTok, date: '2026-08-25', sourceType: 'store', sourceId: store.entity.id,
+  cashSales: 5000, creditSales: 1200,
+  expenseAmount: 300, expenseItemId: expenseId, expenseReason: 'وقود',
+  directDepositAmount: 1000, directDepositRef: 'MZN-CR-1', directDepositNote: 'موازنة' });
+check(creditDay.ok, 'a day with cash, credit, an expense and a موازنة saves');
+var creditNet = ctx.computeNet_([creditDay.entry]);
+// 5,000 takings − 1,200 sold on credit − 300 spent − 1,000 already banked
+close(creditNet.netCashOwed, 2500, 'the credit part comes out of the cash owed, alongside the expense and the موازنة');
+close(creditNet.creditSales, 1200, 'and stays visible on its own line so the deduction can be explained');
+
+check(call({ action: 'createDailyEntry', token: aliTok, date: '2026-08-26', sourceType: 'store', sourceId: store.entity.id,
+  cashSales: 1000, creditSales: 900, directDepositAmount: 500, directDepositRef: 'X' }).error === 'deposit_exceeds_cash',
+  'and a موازنة can no longer exceed the cash once the credit part is taken out');
 
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);

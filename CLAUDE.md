@@ -87,6 +87,7 @@ netCashOwed   = storeCash + Σ carCash + Σ posCash
               - Σ deliveryFeeBankAmount + vatOnDelivery
               - Σ expenseAmount             (paid out of the takings)
               - Σ directDepositAmount       (already banked at the source)
+              - Σ creditSales               (in the sales figure, but no cash came in)
 ```
 
 **Delivery fees apply to every source type, a branch store included
@@ -145,8 +146,19 @@ only. The entry form (`index.html`) also shows a read-only Location field
 that auto-resolves from whichever store/car/pos is picked (`resolveLocationIdForSource_`)
 so the person entering data can confirm where it will actually count.
 
-**Credit sales (added 2026-09-14) follow the exact same no-cash-risk pattern
-as `posSales`** — a fourth payment method (`creditSales`, alongside cash/POS/
+**Credit sales are DEDUCTED from the cash owed (changed 2026-09-23).** The
+branch enters the day's takings as one sales figure that *includes* what was
+sold on credit, so the credit part has to come back out before anyone is
+asked to hand cash over — the same treatment as an expense or a موازنة. It
+was originally merely *excluded* from the formula, which is only correct if
+the cash figure was typed net of credit, and that is not how the branches
+report. `posSales` still behaves the old way: a card payment settles to the
+bank on its own and was never part of the cash figure.
+
+Historical note on the original design:
+
+~~**Credit sales (added 2026-09-14) follow the exact same no-cash-risk pattern
+as `posSales`**~~ — a fourth payment method (`creditSales`, alongside cash/POS/
 delivery) available on every source type and in the product-level entry
 mode's payment-method picker. `computeNet_`/`sumBreakdowns_` tally it in the
 returned breakdown for visibility, but it never enters `netCashOwed`: no
