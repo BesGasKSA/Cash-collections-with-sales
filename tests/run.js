@@ -1367,5 +1367,24 @@ var amImport = call({ action: 'importDailyEntries', token: saraTok, rows: [
 check(amImport.ok && amImport.created === 1 && amImport.results[1].error === 'forbidden',
   'a CSV import by the area manager takes their own branches and refuses the rest');
 
+console.log('--- a deposit is checked against the whole submission, not one row of it ---');
+// The same real day split across two product lines, with the deposit riding
+// on the first one -- exactly what the Entries screen's product mode sends.
+var splitRows = call({ action: 'importDailyEntries', token: aliTok, rows: [
+  { date: '2026-08-05', sourceType: 'store', sourceId: store.entity.id, cashSales: 200, directDepositAmount: 500, directDepositRef: 'SPLIT-1' },
+  { date: '2026-08-05', sourceType: 'store', sourceId: store.entity.id, cashSales: 400 }
+] });
+check(splitRows.ok && splitRows.created === 2, 'a deposit larger than its own row but covered by the day is accepted');
+var tooBig = call({ action: 'importDailyEntries', token: aliTok, rows: [
+  { date: '2026-08-06', sourceType: 'store', sourceId: store.entity.id, cashSales: 100, directDepositAmount: 900, directDepositRef: 'SPLIT-2' },
+  { date: '2026-08-06', sourceType: 'store', sourceId: store.entity.id, cashSales: 200 }
+] });
+check(tooBig.results[0].error === 'deposit_exceeds_cash', 'a deposit larger than the whole day is still refused');
+var otherDay = call({ action: 'importDailyEntries', token: aliTok, rows: [
+  { date: '2026-08-07', sourceType: 'store', sourceId: store.entity.id, cashSales: 100, directDepositAmount: 500, directDepositRef: 'SPLIT-3' },
+  { date: '2026-08-08', sourceType: 'store', sourceId: store.entity.id, cashSales: 900 }
+] });
+check(otherDay.results[0].error === 'deposit_exceeds_cash', 'and cash from a different day never counts towards it');
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);
