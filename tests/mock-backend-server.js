@@ -28,12 +28,15 @@ function bootstrapAdmin(email, plainPw) {
   return admin;
 }
 
+// Invitations carry a single-use link, not a password: accept it once with
+// a fixed demo password and print that.
+var DEMO_PW = 'Welcome#1';
 function lastInviteFor(email) {
   var log = ctx._debug.mailLog;
   for (var i = log.length - 1; i >= 0; i--) {
     if (log[i].to === email) {
-      var m = /Temporary password: (\S+)/.exec(log[i].body);
-      if (m) return m[1];
+      var m = /[?&]invite=([A-Za-z0-9]+)/.exec(log[i].body);
+      if (m) { ctx.route_({ action: 'acceptInvite', inviteToken: m[1], password: DEMO_PW }); return DEMO_PW; }
     }
   }
   return null;
@@ -111,7 +114,7 @@ console.log('mazen@bestgas.sa (collector, both)    / temp: ' + lastInviteFor('ma
 console.log('');
 
 var ROOT = path.join(__dirname, '..');
-var MIME = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css' };
+var MIME = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.png': 'image/png' };
 
 http.createServer(function (req, res) {
   if (req.method === 'POST' && req.url === '/api') {
@@ -124,6 +127,16 @@ http.createServer(function (req, res) {
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify(result));
     });
+    return;
+  }
+  // /__mail?to=someone@x — the last email "sent" to that address, rendered,
+  // so an invitation can be opened and its button clicked like a real inbox.
+  if (req.url.indexOf('/__mail') === 0) {
+    var to = decodeURIComponent((/[?&]to=([^&]+)/.exec(req.url) || [])[1] || '');
+    var mails = ctx._debug.mailLog.filter(function (m) { return !to || m.to === to; });
+    var last = mails[mails.length - 1];
+    res.writeHead(last ? 200 : 404, { 'Content-Type': 'text/html; charset=utf-8' });
+    res.end(last ? (last.html || '<pre>' + String(last.body).replace(/</g, '&lt;') + '</pre>') : 'no mail');
     return;
   }
   var reqPath = req.url.split('?')[0];

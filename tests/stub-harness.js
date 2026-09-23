@@ -131,7 +131,7 @@ function buildContext() {
     }
   };
 
-  var MailApp = { sendEmail: function (to, subject, body) { mailLog.push({ to: to, subject: subject, body: body }); } };
+  var MailApp = { sendEmail: function (to, subject, body, opts) { mailLog.push({ to: to, subject: subject, body: body, html: opts && opts.htmlBody || null }); } };
   // Tests swap urlFetch.responder to simulate Microsoft's token/sendMail
   // endpoints; every request is recorded in urlFetch.log.
   var urlFetch = { log: [], responder: function () { return { code: 404, body: '{}' }; } };
