@@ -31,6 +31,16 @@ BestGas-Cash-Collection/
 
 ## Entity hierarchy
 
+**Naming note (2026-09-23):** the company's own hierarchy is
+**KSA → City → Area → Branch → (the branch's Store **and** its Cars) →
+Drivers**, and the branch manager is one person responsible for both the
+store and the cars. Mapped onto this data model: a **branch is a `location`
+row**, an **area is a `cluster` row**, and the branch manager is still
+`store_manager` internally. The Arabic labels follow the company: فرع /
+منطقة / مدير فرع / مدير منطقة, and the company reads الناقل الأفضل للغاز.
+Zones are now labelled نطاق (optional grouping) so they stop colliding with
+"area".
+
 **Naming note (2026-09-13):** the UI now labels this "Area"/"Area Manager"
 in all three languages (`role_cluster_manager`, `admin_clusters`,
 `admin_clusterManager`, `handoff_perCluster`, etc. — every *translated
@@ -71,9 +81,59 @@ after an initial wrong assumption that Zone should just replace Cluster.
 Example sheet's own numbers)
 
 ```
-vatOnDelivery = (Σ carDeliveryFeeBankAmount / (1 + vatRate)) * vatRate
-netCashOwed   = storeCash + Σ carCash - Σ carDeliveryFeeBankAmount + vatOnDelivery
+vatOnDelivery = (Σ deliveryFeeBankAmount / (1 + vatRate)) * vatRate
+netCashOwed   = storeCash + Σ carCash + Σ posCash
+              + Σ otherCash                 (collected, not sold)
+              - Σ deliveryFeeBankAmount + vatOnDelivery
+              - Σ expenseAmount             (paid out of the takings)
+              - Σ directDepositAmount       (already banked at the source)
 ```
+
+**Delivery fees apply to every source type, a branch store included
+(2026-09-23).** They used to be car/pos-only on the grounds that "a branch
+has nothing to deliver", which is simply not how the branches operate: the
+branch sells with delivery too, and that fee is paid to the bank, not held
+as cash. While the restriction stood, a branch's delivery line — typed on
+the Entries screen or uploaded by an area manager — was accepted, stored,
+and then silently dropped by `computeNet_`, so the branch was asked to hand
+over cash it never held. If you are tempted to re-scope a money field by
+source type, make sure the entry form, the CSV templates/parsers, and
+`computeNet_` all agree, or the formula quietly disagrees with the form.
+
+### Money that moves at the source without being a sale (2026-09-23)
+
+Three fields, all on `daily_entries`, all validated by one shared
+`checkNonSalesFields_` (Collection.gs) used by the single-entry, CSV-import
+and area-bulk paths alike:
+
+| Field | Effect | Rules |
+|---|---|---|
+| `otherCash` + `otherCashItemId` + `otherCashReason` | **added** to `netCashOwed` | item must be an active row in `income_items`; the reason is mandatory |
+| `expenseAmount` + `expenseItemId` + `expenseReason` | **deducted** | item must be an active row in `expense_items`; the reason is mandatory |
+| `directDepositAmount` + `directDepositRef` | **deducted** | needs a bank reference, and can never exceed the cash that entry itself produced |
+
+The items come from admin-kept master data (`SHEETS.INCOME_ITEMS` /
+`SHEETS.EXPENSE_ITEMS`, the `income_item`/`expense_item` entity kinds) rather
+than free text, so the report can group them; the *reason* is the free-text
+part, and it is required because an unexplained amount on either side is
+exactly what the approval chain exists to catch.
+
+**A direct deposit is written as an ordinary `kind:'deposit'` handoff row**
+(`recordDirectDeposit_`), marked `direct:true` with `sourceEntryIds` instead
+of `sourceHandoffIds`. That was deliberate: bank reconciliation, the
+"deposited" dashboard totals and the deposit document all already filter on
+`kind === 'deposit'` in a dozen places, and inventing a `kind:'direct_deposit'`
+would have meant finding and widening every one of them. The cash never
+enters the handoff chain at all — `computeNet_` has already deducted it, so
+only the remainder travels up. For an **area-manager bulk upload the deposit
+row is created at Deputy approval, not at upload**, so a rejected batch
+leaves no deposit behind.
+
+**Products carry a price, optionally fixed** (`unitPrice`, `priceLocked`):
+the entry form fills the line price from the product and makes it read-only
+when locked, so a branch cannot sell at its own price. `priceLocked` without
+a `unitPrice` is rejected — it would leave a read-only empty box nobody can
+fill.
 
 POS sales never enter this formula — card/bank payments carry no cash risk;
 they're tracked (per machine, or per store/car if either carries its own
@@ -99,6 +159,26 @@ adding another gross-sales aggregation rather than re-deriving the same sum
 inline. A credit sale also counts as "a sale" for `deliveryNeedsSale_` (see
 below) — a delivery fee with a same-day credit sale and nothing else is
 accepted, same as it would be with cash or POS.
+
+## Who may enter, and who may report (changed 2026-09-23)
+
+`checkEntryScope_` now has a `cluster_manager` branch: **an area manager
+enters data for every branch in their own area** — its store, its cars and
+its POS machines — because branches that cannot use the app themselves
+report their day to them. This is a deliberate widening of what used to be
+bulk-upload-only (behind the `areaManagerBulkUploadEnabled` toggle); the
+bulk path and its Deputy approval still exist unchanged for uploading a
+whole area at once. The client mirrors the same boundary in
+`branchIdsForEntry_()` — if you change one, change both, or the pickers
+offer sources the server then refuses.
+
+`actionSalesReport_` also accepts `store_manager` now, scoped to their own
+branch, and gained `clusterId`, `paymentMethod` and `driverUserId` filters.
+Every filter narrows an already-scoped set, so a client that sends someone
+else's branch id still gets only its own rows back. Note the knock-on:
+`getDashboardAll` bundles the report, so a branch manager's bundle now
+succeeds where it used to return `forbidden` — the test asserts it returns
+exactly what the separate call returns, not that it fails.
 
 ## The missed cycle: a car's cash clears its own driver → store-manager hop
 
@@ -626,6 +706,31 @@ access to the invite emails, there's no in-app recovery — you'd need to add
 a one-off maintenance function in the Apps Script editor (Run menu, not
 exposed via `doPost`) that calls the same reset+`sendInvite_` logic for a
 specific email, exactly as done once during initial setup.
+
+## Invitations, and the user lifecycle (2026-09-22)
+
+Creating a user no longer emails a temporary password. `actionAdminCreateUser_`
+writes the account with **no password at all** and sends a branded bilingual
+invitation carrying a single-use link (`?invite=TOKEN`, 7 days). Only
+`inviteHash_(token)` is stored, so a copy of the Users sheet cannot be turned
+back into working links. The person sets their own password on the client's
+accept page (`renderAcceptInvite`, reached through the public `inviteInfo` /
+`acceptInvite` actions — no session exists yet).
+
+`userStatus_` (Code.gs) derives what the admin list shows:
+`invited` → `accepted` (link used, password set) → `active` (first real
+sign-in), plus `invite_expired` and `disabled`. Accounts created before this
+existed have no `inviteStatus` and count as active once they have a
+`lastLoginAt`. Two consequences worth remembering: signing in before
+accepting returns `invite_pending` (not `invalid_credentials`), and
+"reset password" on someone who never accepted re-sends the invitation
+instead of minting a temporary password — as does forgot-password.
+
+The invitation email is HTML. `sendMail_` takes an optional fourth `html`
+argument and passes it to Graph as `contentType:'HTML'` or to MailApp as
+`htmlBody`; the plain-text body stays the fallback. Its logo is a hosted PNG
+(`assets/mail-logo.png`, generated by `tools/make-app-icons.js`) because
+Gmail strips `data:` images.
 
 ## Language
 
