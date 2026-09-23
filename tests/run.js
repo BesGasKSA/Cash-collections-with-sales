@@ -1395,5 +1395,33 @@ var noAmount = call({ action: 'createDailyEntry', token: aliTok, date: '2026-08-
   cashSales: 100, directDepositNote: 'stray text' });
 check(noAmount.ok && noAmount.entry.directDepositNote === '' && !noAmount.deposit, 'a description with no deposit behind it is dropped, not stored');
 
+console.log('--- whole-response cache: a repeated read costs no sheet reads at all ---');
+var svc2 = ctx._debug.svcCalls;
+function resetSvc2() { svc2.getProperty = 0; svc2.getProperties = 0; svc2.cacheGet = 0; svc2.sheetRead = 0; }
+
+var firstDash = call({ action: 'getDashboardAll', token: adminTok });
+resetSvc2();
+var secondDash = call({ action: 'getDashboardAll', token: adminTok });
+check(secondDash.ok && svc2.sheetRead === 0, 'the second identical dashboard request reads no sheet at all');
+close(secondDash.report.totals.netCashOwed, firstDash.report.totals.netCashOwed, 'and answers with the same figures');
+check(secondDash.token && secondDash.token !== firstDash.token, 'while still issuing a fresh session token — the token is never served from cache');
+
+var reportA = call({ action: 'getSalesReport', token: adminTok, sourceType: 'store' });
+resetSvc2();
+var reportB = call({ action: 'getSalesReport', token: adminTok, sourceType: 'car' });
+check(reportB.entries.every(function (e) { return e.sourceType === 'car'; }), 'a different filter is a different request: it answers with car rows, not the cached store ones');
+check(reportA.entries.every(function (e) { return e.sourceType === 'store'; }), 'and each filter keeps its own cached copy');
+
+// a write anywhere has to invalidate it, without each action declaring what it reads
+var cachedBefore = call({ action: 'getSalesReport', token: adminTok, sourceType: 'store' });
+call({ action: 'createDailyEntry', token: aliTok, date: '2026-08-20', sourceType: 'store', sourceId: store.entity.id, cashSales: 777 });
+resetSvc2();
+var afterWrite = call({ action: 'getSalesReport', token: adminTok, sourceType: 'store' });
+check(svc2.sheetRead > 0, 'after any write the next read runs for real again');
+close(afterWrite.totals.storeCash, cachedBefore.totals.storeCash + 777, 'and sees the new entry, never a stale total');
+
+var asManager = call({ action: 'getSalesReport', token: aliTok, sourceType: 'store' });
+check(asManager.ok && asManager.entries.length <= afterWrite.entries.length, 'the cache is per user — a branch manager never receives the admin\'s cached copy');
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);

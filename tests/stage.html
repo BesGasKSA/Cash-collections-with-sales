@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>Best Gas — recording stage</title>
+<!--
+  A recording stage for walkthrough videos: the real app runs inside a phone
+  frame on the right, narration sits in its own column on the left, and a
+  highlight ring can be drawn over the phone without ever covering it.
+  Driven by tests/record-walkthrough.js. Not part of the shipped system.
+-->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap">
+<style>
+  :root{
+    --green:#4D6D51; --green-dark:#34503a; --green-deep:#1d2f23; --cream:#F2EEE4;
+    --ink:#16201a; --muted:#8a9a8d; --line:rgba(242,238,228,.16);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;height:100%;}
+  body{
+    background:radial-gradient(1200px 700px at 78% 18%, #2c4433 0%, var(--green-deep) 55%, #131d17 100%);
+    color:var(--cream); font-family:'Cairo',system-ui,sans-serif; overflow:hidden;
+  }
+  #stage{display:grid;grid-template-columns:1fr 430px;height:100%;align-items:center;gap:0;}
+
+  /* ---------- narration ---------- */
+  #narr{padding:44px 54px 44px 60px;display:flex;flex-direction:column;justify-content:center;gap:0;height:100%;}
+  #chapter{display:flex;align-items:center;gap:12px;margin-bottom:18px;}
+  #chapNum{width:46px;height:46px;border-radius:14px;background:var(--cream);color:var(--green-dark);
+    display:flex;align-items:center;justify-content:center;font-weight:800;font-size:19px;flex:none;}
+  #chapName{font-size:14px;letter-spacing:.14em;color:#b9cdb9;font-weight:600;}
+  #title{font-size:40px;line-height:1.25;font-weight:800;margin:0 0 14px;text-wrap:balance;min-height:52px;}
+  #body{font-size:21px;line-height:1.85;color:#e8eadf;margin:0;max-width:44ch;min-height:66px;}
+  #points{list-style:none;margin:22px 0 0;padding:0;display:flex;flex-direction:column;gap:11px;}
+  #points li{display:flex;gap:11px;align-items:flex-start;font-size:18px;line-height:1.6;color:#d6e0d2;
+    opacity:0;transform:translateX(14px);transition:opacity .45s ease,transform .45s ease;}
+  #points li.on{opacity:1;transform:none;}
+  #points i{flex:none;width:9px;height:9px;border-radius:50%;background:#9fc39c;margin-top:9px;}
+  #points li b{color:#fff;font-weight:700;}
+  .fig{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.1);border-radius:8px;
+    padding:1px 9px;font-weight:700;color:#fff;font-variant-numeric:tabular-nums;direction:ltr;}
+  #title.swap,#body.swap{animation:swapIn .5s cubic-bezier(.2,.8,.2,1);}
+  @keyframes swapIn{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:none;}}
+
+  /* progress */
+  #prog{margin-top:auto;padding-top:26px;}
+  #bar{height:5px;border-radius:99px;background:rgba(255,255,255,.14);overflow:hidden;}
+  #barIn{height:100%;width:0;background:linear-gradient(90deg,#9fc39c,var(--cream));transition:width .6s ease;}
+  #legend{display:flex;justify-content:space-between;margin-top:10px;font-size:13px;color:#9fb3a0;}
+  #brand{display:flex;align-items:center;gap:12px;margin-bottom:26px;}
+  #brand img{width:42px;height:42px;border-radius:12px;}
+  #brand div b{display:block;font-size:16px;}
+  #brand div span{font-size:12px;color:#a9bfab;letter-spacing:.08em;}
+
+  /* ---------- phone ---------- */
+  #phoneCol{display:flex;align-items:center;justify-content:center;height:100%;position:relative;}
+  #phoneWrap{display:flex;flex-direction:column;align-items:center;gap:14px;}
+  #phone{position:relative;width:390px;height:660px;border-radius:40px;background:#0d140f;
+    padding:10px;box-shadow:0 30px 70px rgba(0,0,0,.55), 0 0 0 1px rgba(255,255,255,.08);}
+  #phone::after{content:'';position:absolute;top:20px;left:50%;transform:translateX(-50%);
+    width:104px;height:24px;border-radius:99px;background:#0d140f;z-index:3;}
+  #screen{width:100%;height:100%;border-radius:32px;overflow:hidden;background:#fff;position:relative;}
+  #app{width:100%;height:100%;border:0;display:block;}
+  #ring{position:absolute;border-radius:14px;pointer-events:none;opacity:0;z-index:5;
+    box-shadow:0 0 0 3px #F2EEE4, 0 0 0 9px rgba(242,238,228,.28);transition:all .4s cubic-bezier(.2,.8,.2,1);}
+  #ring.on{opacity:1;}
+  #tap{position:absolute;width:44px;height:44px;border-radius:50%;background:rgba(242,238,228,.55);
+    pointer-events:none;opacity:0;z-index:6;transform:translate(-50%,-50%) scale(.3);}
+  #tap.go{animation:tapGo .6s ease-out;}
+  @keyframes tapGo{0%{opacity:.9;transform:translate(-50%,-50%) scale(.3);}100%{opacity:0;transform:translate(-50%,-50%) scale(1.6);}}
+  #caption{width:390px;min-height:34px;text-align:center;}
+  #caption span{display:inline-block;background:rgba(242,238,228,.95);color:#1d2f23;font-size:15px;font-weight:700;
+    padding:8px 16px;border-radius:12px;opacity:0;transform:translateY(-6px);transition:all .35s ease;max-width:100%;}
+  #caption span.on{opacity:1;transform:none;}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="narr">
+    <div id="brand"><img id="brandLogo" alt=""><div><b>الناقل الأفضل للغاز</b><span>باقات — إدارة تحصيل النقدية</span></div></div>
+    <div id="chapter"><span id="chapNum">1</span><span id="chapName">مقدمة</span></div>
+    <h1 id="title"></h1>
+    <p id="body"></p>
+    <ul id="points"></ul>
+    <div id="prog"><div id="bar"><div id="barIn"></div></div>
+      <div id="legend"><span id="legLeft"></span><span id="legRight"></span></div></div>
+  </div>
+  <div id="phoneCol">
+    <div id="phoneWrap">
+      <div id="phone"><div id="screen">
+        <iframe id="app" src="/" title="app"></iframe>
+        <div id="ring"></div><div id="tap"></div>
+      </div></div>
+      <div id="caption"><span id="capText"></span></div>
+    </div>
+  </div>
+</div>
+<script>
+  var els = {
+    chapNum: document.getElementById('chapNum'), chapName: document.getElementById('chapName'),
+    title: document.getElementById('title'), body: document.getElementById('body'),
+    points: document.getElementById('points'), barIn: document.getElementById('barIn'),
+    legLeft: document.getElementById('legLeft'), legRight: document.getElementById('legRight'),
+    ring: document.getElementById('ring'), tap: document.getElementById('tap'),
+    cap: document.getElementById('capText'), screen: document.getElementById('screen')
+  };
+  window.stage = {
+    chapter: function (n, name) { els.chapNum.textContent = n; els.chapName.textContent = name; },
+    say: function (title, body) {
+      els.title.textContent = title; els.body.textContent = body || '';
+      [els.title, els.body].forEach(function (e) { e.classList.remove('swap'); void e.offsetWidth; e.classList.add('swap'); });
+      els.points.innerHTML = '';
+    },
+    point: function (html) {
+      var li = document.createElement('li');
+      li.innerHTML = '<i></i><span>' + html + '</span>';
+      els.points.appendChild(li);
+      requestAnimationFrame(function () { li.classList.add('on'); });
+    },
+    caption: function (text) {
+      if (!text) { els.cap.classList.remove('on'); return; }
+      els.cap.textContent = text; els.cap.classList.add('on');
+    },
+    progress: function (pct, left, right) {
+      els.barIn.style.width = Math.max(0, Math.min(100, pct)) + '%';
+      els.legLeft.textContent = left || ''; els.legRight.textContent = right || '';
+    },
+    // rect is in iframe coordinates; the ring is drawn on top of the phone,
+    // never over the narration column.
+    ring: function (rect) {
+      if (!rect) { els.ring.classList.remove('on'); return; }
+      els.ring.style.left = (rect.x - 6) + 'px'; els.ring.style.top = (rect.y - 6) + 'px';
+      els.ring.style.width = (rect.width + 12) + 'px'; els.ring.style.height = (rect.height + 12) + 'px';
+      els.ring.classList.add('on');
+    },
+    tapAt: function (x, y) {
+      els.tap.style.left = x + 'px'; els.tap.style.top = y + 'px';
+      els.tap.classList.remove('go'); void els.tap.offsetWidth; els.tap.classList.add('go');
+    },
+    setLogo: function (src) { document.getElementById('brandLogo').src = src; }
+  };
+</script>
+</body>
+</html>

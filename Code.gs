@@ -519,6 +519,38 @@ function requireAuth_(req) {
   return { user: user, hardExp: claim.hardExp };
 }
 
+// ---------- Whole-response cache ----------
+// The sheet cache already saves re-reading a sheet; this saves running the
+// request at all. A read action's full JSON is kept under a key that carries
+// every sheet's version, so ANY write anywhere invalidates every cached
+// response without each action having to declare what it depends on. Short
+// TTL as well, because a few of these responses embed "hours since" figures.
+var CACHEABLE_READ_ACTIONS_ = {
+  getDashboardAll: 1, getSalesReport: 1, listHandoffs: 1, listEntries: 1, listMeta: 1,
+  listDashboard: 1, getDashboardComparison: 1, getHeldCashTrend: 1, getShortfallByEntrant: 1,
+  listAudit: 1, getReconciliation: 1, listAreaBulkBatches: 1, listRiskItems: 1
+};
+var RESP_CACHE_TTL_SEC = 120;
+
+function dataVersion_() {
+  var parts = [];
+  for (var k in SHEETS) {
+    if (SHEETS.hasOwnProperty(k)) parts.push(version_(SHEETS[k]));
+  }
+  return parts.join('.');
+}
+
+// CacheService keys cap at 250 characters, and a report request carries a
+// whole filter object — so the key is a hash of it, not the thing itself.
+function responseCacheKey_(action, req, user) {
+  var payload = {};
+  safeOwnKeys_(req).forEach(function (k) {
+    if (k !== 'token' && k !== 'action') payload[k] = req[k];
+  });
+  var raw = user.id + '|' + action + '|' + JSON.stringify(payload) + '|' + dataVersion_();
+  return 'resp_' + hmac_(raw, secret_() + '|resp').slice(0, 96);
+}
+
 function route_(req) {
   resetExecMemo_();
   var action = req.action;
@@ -613,7 +645,30 @@ function route_(req) {
   };
 
   if (!hasOwn_(handlers, action)) throw new Error('unknown_action');
+
+  var cacheable = hasOwn_(CACHEABLE_READ_ACTIONS_, action);
+  var respKey = null, cache = null;
+  if (cacheable) {
+    try {
+      cache = CacheService.getScriptCache();
+      respKey = responseCacheKey_(action, req, user);
+      var hit = cacheGetBig_(cache, respKey);
+      if (hit) {
+        var cached = JSON.parse(hit);
+        cached.token = newToken;   // the session token is never cached
+        return cached;
+      }
+    } catch (e) { respKey = null; }
+  }
+
   var result = handlers[action]();
+  if (respKey && result && result.ok) {
+    try {
+      var toCache = {};
+      safeOwnKeys_(result).forEach(function (k) { if (k !== 'token') toCache[k] = result[k]; });
+      cachePutBig_(cache, respKey, JSON.stringify(toCache), RESP_CACHE_TTL_SEC);
+    } catch (e) { /* oversized or unavailable cache must never fail a request */ }
+  }
   result.token = newToken;
   return result;
 }
