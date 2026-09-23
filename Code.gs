@@ -490,7 +490,62 @@ function userStatus_(u) {
 // ---------- Web app entry points ----------
 
 function doGet(e) {
+  // Temporary timing probe: ?diag=<key> reports where a request's time
+  // actually goes (spreadsheet open, each sheet read, cache and lock), so a
+  // "the system is slow" report can be measured instead of guessed. Read
+  // only, apart from taking and releasing the script lock. Remove when done.
+  if (e && e.parameter && e.parameter.diag === DIAG_KEY_) return json_(diagTiming_());
   return json_({ ok: true, service: 'bestgas-cash-collection' });
+}
+
+var DIAG_KEY_ = 'bgc-diag-7f3a91c4';
+function diagTiming_() {
+  var t0 = Date.now(), marks = [], last = t0;
+  function mark(name, extra) {
+    var now = Date.now();
+    marks.push({ step: name, ms: now - last, extra: extra || null });
+    last = now;
+  }
+  resetExecMemo_();
+  scriptProps_(); mark('read script properties');
+  spreadsheet_(); mark('open spreadsheet');
+
+  var cache = CacheService.getScriptCache();
+  cache.get('diag_probe'); mark('cache get');
+  cache.put('diag_probe', '1', 60); mark('cache put');
+
+  var sheets = [];
+  for (var k in SHEETS) {
+    if (!SHEETS.hasOwnProperty(k)) continue;
+    var name = SHEETS[k];
+    var before = Date.now();
+    var rows = readSheet(name);
+    var bytes = JSON.stringify(rows).length;
+    sheets.push({ sheet: name, rows: rows.length, kb: Math.round(bytes / 1024), ms: Date.now() - before });
+  }
+  mark('read every sheet (cold or cached, see per-sheet ms)');
+
+  var lockStart = Date.now();
+  var lock = LockService.getScriptLock();
+  var gotLock = lock.tryLock(20000);
+  var lockMs = Date.now() - lockStart;
+  if (gotLock) lock.releaseLock();
+  mark('acquire script lock', gotLock ? 'acquired' : 'BUSY — another execution is holding it');
+
+  return {
+    ok: true, diag: true,
+    totalMs: Date.now() - t0,
+    lockMs: lockMs, lockAcquired: gotLock,
+    steps: marks,
+    sheets: sheets.sort(function (a, b) { return b.ms - a.ms; }),
+    triggers: (function () {
+      try {
+        return ScriptApp.getProjectTriggers().map(function (tr) {
+          return { fn: tr.getHandlerFunction(), type: String(tr.getEventType()) };
+        });
+      } catch (err) { return String(err); }
+    })()
+  };
 }
 
 function doPost(e) {
@@ -549,6 +604,16 @@ function responseCacheKey_(action, req, user) {
   });
   var raw = user.id + '|' + action + '|' + JSON.stringify(payload) + '|' + dataVersion_();
   return 'resp_' + hmac_(raw, secret_() + '|resp').slice(0, 96);
+}
+
+// Reference data rides back on a successful admin write. The sheets it
+// reads are already in this execution's memo, so it costs almost nothing
+// here and saves a whole round trip on the client.
+function withMeta_(result, req, user) {
+  if (result && result.ok) {
+    try { result.meta = actionMeta_(req, user); } catch (e) { /* the write still succeeded */ }
+  }
+  return result;
 }
 
 function route_(req) {
@@ -630,18 +695,21 @@ function route_(req) {
     deputyRejectBatch: function () { return actionDeputyRejectBatch_(req, user); },
 
     // admin — users (special: password/invite logic)
-    adminCreateUser: function () { return actionAdminCreateUser_(req, user); },
-    adminUpdateUser: function () { return actionAdminUpdateUser_(req, user); },
-    adminResetPassword: function () { return actionAdminResetPassword_(req, user); },
-    adminResendInvite: function () { return actionAdminResendInvite_(req, user); },
+    // withMeta_ appends the refreshed reference data to a successful write,
+    // so the client never has to follow it with a listMeta round trip —
+    // on Apps Script that second call costs as much as the write itself.
+    adminCreateUser: function () { return withMeta_(actionAdminCreateUser_(req, user), req, user); },
+    adminUpdateUser: function () { return withMeta_(actionAdminUpdateUser_(req, user), req, user); },
+    adminResetPassword: function () { return withMeta_(actionAdminResetPassword_(req, user), req, user); },
+    adminResendInvite: function () { return withMeta_(actionAdminResendInvite_(req, user), req, user); },
 
     // admin — full control over the hierarchy: location -> store/car -> pos,
     // plus clusters. One generic save/delete pair per entity kind so every
     // level (including reassigning a POS device to a different driver) goes
     // through the same reviewed path.
-    adminSaveEntity: function () { return actionAdminSaveEntity_(req, user); },
-    adminDeleteEntity: function () { return actionAdminDeleteEntity_(req, user); },
-    adminSetConfig: function () { return actionAdminSetConfig_(req, user); }
+    adminSaveEntity: function () { return withMeta_(actionAdminSaveEntity_(req, user), req, user); },
+    adminDeleteEntity: function () { return withMeta_(actionAdminDeleteEntity_(req, user), req, user); },
+    adminSetConfig: function () { return withMeta_(actionAdminSetConfig_(req, user), req, user); }
   };
 
   if (!hasOwn_(handlers, action)) throw new Error('unknown_action');

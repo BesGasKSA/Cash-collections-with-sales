@@ -5908,8 +5908,31 @@ function renderAdmin(body){
   (renderers[adminTab]||renderAdminUsers)(content);
 }
 
-function refreshMetaThen(cb){
-  api('listMeta', {}).then(function(res){ if(res.ok) state.meta = res; cb && cb(); });
+function refreshMetaThen(cb, fromWrite){
+  // An admin write already answered with the fresh reference data, so use it
+  // instead of paying for a second round trip to Apps Script.
+  if (fromWrite && fromWrite.meta && fromWrite.meta.ok) {
+    state.meta = fromWrite.meta;
+    saveSession_();
+    cb && cb();
+    return;
+  }
+  api('listMeta', {}).then(function(res){ if(res.ok){ state.meta = res; saveSession_(); } cb && cb(); });
+}
+
+// A request to /exec answers in about two seconds once the script is warm,
+// but the first one after it has been idle pays a cold start — measured at
+// over a minute on the live deployment. A cheap GET while someone is looking
+// at the app keeps it warm, so their next real action is the fast kind.
+var WARMUP_MS = 4 * 60 * 1000;
+function warmUp_(){
+  if (!state.apiUrl || document.visibilityState === 'hidden') return;
+  try { fetch(state.apiUrl, { method: 'GET', mode: 'no-cors', cache: 'no-store' }); } catch (e) {}
+}
+function startWarmUp_(){
+  warmUp_();
+  setInterval(warmUp_, WARMUP_MS);
+  document.addEventListener('visibilitychange', function(){ if (document.visibilityState === 'visible') warmUp_(); });
 }
 
 // Mirrors the server's actual checks — COMPANY_WIDE_ROLES and
@@ -5973,7 +5996,7 @@ function renderAdminUsers(content){
         if (!res.ok) { qs('#uMsg',form).innerHTML = '<div class="msg err">'+esc(errMsg_(res))+'</div>'; return; }
         state.usNewId = res.user && res.user.id;
         state.usFlash = res.inviteSent === false ? { type:'err', text: t('us_notSent') } : { type:'ok', text: t('us_sentTo').replace('{email}', email) };
-        refreshMetaThen(function(){ renderAdmin(qs('#screenBody')); });
+        refreshMetaThen(function(){ renderAdmin(qs('#screenBody')); }, res);
       });
   });
   if (state.usFlash) {
@@ -6040,13 +6063,13 @@ function renderAdminUsers(content){
         if (!res.ok) { toastRaw_(errMsg_(res), 'err'); return; }
         if (pendingInvite) {
           state.usFlash = res.inviteSent === false ? { type:'err', text: t('us_notSent') } : { type:'ok', text: t('us_sentTo').replace('{email}', u.email) };
-          refreshMetaThen(function(){ renderAdmin(qs('#screenBody')); });
+          refreshMetaThen(function(){ renderAdmin(qs('#screenBody')); }, res);
         } else toast('ok_saved','ok');
       });
     });
     var toggleBtn = iconBtn_(u.active ? 'ban' : 'power', u.active ? t('admin_delete') : t('admin_active'), u.active ? 'danger' : '');
     toggleBtn.addEventListener('click', function(){
-      api('adminUpdateUser',{id:u.id, data:{active: !u.active}}).then(function(){ refreshMetaThen(function(){ renderAdmin(qs('#screenBody')); }); });
+      api('adminUpdateUser',{id:u.id, data:{active: !u.active}}).then(function(res){ refreshMetaThen(function(){ renderAdmin(qs('#screenBody')); }, res); });
     });
     var editBtn = iconBtn_('pencilEdit', t('admin_edit'));
     actions.appendChild(resetBtn); actions.appendChild(toggleBtn); actions.appendChild(editBtn);
@@ -6085,7 +6108,7 @@ function renderAdminUsers(content){
         iqamaId: qs('.ueIqamaId', editCell).value
       } }).then(function(res){
         if (!res.ok){ qs('.ueMsg', editCell).innerHTML = '<div class="msg err">'+esc(errMsg_(res))+'</div>'; return; }
-        refreshMetaThen(function(){ renderAdmin(qs('#screenBody')); });
+        refreshMetaThen(function(){ renderAdmin(qs('#screenBody')); }, res);
       });
     });
   });
@@ -6201,7 +6224,7 @@ function renderAdminEntity(content, kind){
     });
     api('adminSaveEntity', { kind: kind, data: data }).then(function(res){
       qs('#eMsg', form).innerHTML = res.ok ? '<div class="msg ok">'+esc(t('ok_saved'))+'</div>' : '<div class="msg err">'+esc(errMsg_(res))+'</div>';
-      if (res.ok) refreshMetaThen(function(){ renderAdmin(qs('#screenBody')); });
+      if (res.ok) refreshMetaThen(function(){ renderAdmin(qs('#screenBody')); }, res);
     });
   });
 
@@ -6242,7 +6265,7 @@ function renderAdminEntity(content, kind){
       if (!confirm(t('confirm_delete'))) return;
       api('adminDeleteEntity', { kind: kind, id: item.id }).then(function(res){
         if (!res.ok){ toastRaw_(errMsg_(res), 'err'); return; }
-        refreshMetaThen(function(){ renderAdmin(qs('#screenBody')); });
+        refreshMetaThen(function(){ renderAdmin(qs('#screenBody')); }, res);
       });
     });
     tr.lastChild.appendChild(delBtn);
@@ -6351,6 +6374,7 @@ function loadWhoAmI(){
 }
 
 state.inviteToken = inviteTokenFromUrl_();
+startWarmUp_();
 render();
 })();
 </script>
