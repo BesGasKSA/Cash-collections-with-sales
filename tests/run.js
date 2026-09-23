@@ -38,11 +38,12 @@ function login(email, password) {
   return call({ action: 'login', email: email, password: password });
 }
 
+// Invitations carry a single-use link (?invite=TOKEN), not a password.
 function lastInviteFor(email) {
   var log = ctx._debug.mailLog;
   for (var i = log.length - 1; i >= 0; i--) {
     if (log[i].to === email) {
-      var m = /Temporary password: (\S+)/.exec(log[i].body);
+      var m = /[?&]invite=([A-Za-z0-9]+)/.exec(log[i].body);
       if (m) return m[1];
     }
   }
@@ -50,13 +51,13 @@ function lastInviteFor(email) {
 }
 
 function acceptInvite(email) {
-  var temp = lastInviteFor(email);
-  check(!!temp, 'invite email captured for ' + email);
-  var loginRes = login(email, temp);
-  check(loginRes.ok, 'login with temp password: ' + email);
-  var pwRes = call({ action: 'changePassword', token: loginRes.token, newPassword: 'RealPass#1' });
-  check(pwRes.ok, 'change forced password: ' + email);
-  return pwRes.token;
+  var token = lastInviteFor(email);
+  check(!!token, 'invitation email captured for ' + email);
+  var acc = call({ action: 'acceptInvite', inviteToken: token, password: 'RealPass#1' });
+  check(acc.ok, 'accept invitation: ' + email);
+  var loginRes = login(email, 'RealPass#1');
+  check(loginRes.ok, 'login after accepting: ' + email);
+  return loginRes.token;
 }
 
 console.log('--- bootstrap ---');
@@ -1208,6 +1209,69 @@ var v1 = ctx.version_('perf_big_sheet');
 ctx.bumpVersion_('perf_big_sheet');
 var v2 = ctx.version_('perf_big_sheet');
 check(v1 !== v2, 'every write changes the sheet version, so no two writers can land on the same cache key');
+
+console.log('--- invitations: invited -> accepted -> active, with last login ---');
+var invMailBefore = ctx._debug.mailLog.length;
+var inv = call({ action: 'adminCreateUser', token: adminTok, appUrl: 'https://besgasksa.github.io/Cash-collections-with-sales/', data: { name: 'Invitee', email: 'invitee@bestgas.sa', role: 'store_manager' } });
+check(inv.ok && inv.inviteSent === true, 'creating a user sends an invitation');
+check(inv.user.status === 'invited' && !!inv.user.invitedAt && !!inv.user.inviteExpiresAt, 'a new user starts as "invited", with the send time and expiry recorded');
+check(inv.user.lastLoginAt === null, 'and has no last login yet');
+var invMail = ctx._debug.mailLog.slice(invMailBefore).filter(function (m) { return m.to === 'invitee@bestgas.sa'; }).pop();
+check(!!invMail && !!invMail.html, 'the invitation is a formatted (HTML) email');
+check(invMail.html.indexOf('قبول الدعوة') >= 0 && invMail.html.indexOf('Accept invitation') >= 0, 'with Accept invitation buttons in Arabic and English');
+check(invMail.html.indexOf('href="https://besgasksa.github.io/Cash-collections-with-sales/?invite=') >= 0, 'and the button links back to the app the admin is using');
+check(!/Temporary password/.test(invMail.body), 'no temporary password is emailed any more');
+var invToken = lastInviteFor('invitee@bestgas.sa');
+var storedInvitee = ctx.userByEmail_('invitee@bestgas.sa');
+check(storedInvitee.inviteTokenHash && storedInvitee.inviteTokenHash.indexOf(invToken) < 0, 'only a keyed hash of the invitation token is stored, never the token itself');
+
+check(login('invitee@bestgas.sa', 'anything').error === 'invite_pending', 'signing in before accepting says the invitation is still pending');
+var info = call({ action: 'inviteInfo', inviteToken: invToken });
+check(info.ok && info.status === 'valid' && info.name === 'Invitee' && info.role === 'store_manager', 'the accept page can greet the invitee without a session');
+check(call({ action: 'inviteInfo', inviteToken: 'x'.repeat(40) }).status === 'invalid', 'a made-up token is reported as invalid');
+check(call({ action: 'acceptInvite', inviteToken: invToken, password: 'short' }).error === 'weak_password', 'accepting needs a password of at least 8 characters');
+
+var listAs = function () { return call({ action: 'listMeta', token: adminTok }).users.filter(function (u) { return u.email === 'invitee@bestgas.sa'; })[0]; };
+var acc = call({ action: 'acceptInvite', inviteToken: invToken, password: 'Invitee#123' });
+check(acc.ok && acc.email === 'invitee@bestgas.sa', 'the invitee accepts and sets their own password');
+check(listAs().status === 'accepted' && !!listAs().acceptedAt, 'admin now sees "accepted"');
+check(call({ action: 'acceptInvite', inviteToken: invToken, password: 'Another#123' }).error === 'invite_used', 'the link works once only');
+check(call({ action: 'inviteInfo', inviteToken: invToken }).status === 'used', 'reopening the link says it was already used');
+check(call({ action: 'adminResendInvite', token: adminTok, id: inv.user.id }).error === 'already_accepted', 'cannot resend to someone who already accepted');
+
+var invLogin = login('invitee@bestgas.sa', 'Invitee#123');
+check(invLogin.ok && !invLogin.user.mustChangePw, 'signs in with the password they chose, no forced change');
+var afterLogin = listAs();
+check(afterLogin.status === 'active' && !!afterLogin.activatedAt, 'first sign-in makes them "active"');
+check(!!afterLogin.lastLoginAt, 'and admin can see their last login');
+
+console.log('--- invitations: resend, expiry, disabled, forgot-password ---');
+var inv2 = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Late', email: 'late@bestgas.sa', role: 'driver' } }).user;
+var firstToken = lastInviteFor('late@bestgas.sa');
+var resend = call({ action: 'adminResendInvite', token: adminTok, id: inv2.id });
+check(resend.ok && resend.inviteSent, 'admin can resend an invitation');
+var secondToken = lastInviteFor('late@bestgas.sa');
+check(secondToken && secondToken !== firstToken, 'the resend carries a new link');
+check(call({ action: 'inviteInfo', inviteToken: firstToken }).status === 'invalid', 'and the old link stops working');
+var lateRow = ctx.userByEmail_('late@bestgas.sa');
+lateRow.inviteExpiresAt = new Date(Date.now() - 1000).toISOString();
+ctx.writeRow(SHEETS.USERS, lateRow);
+check(call({ action: 'listMeta', token: adminTok }).users.filter(function (u) { return u.id === inv2.id; })[0].status === 'invite_expired', 'an invitation past 7 days shows as expired');
+check(call({ action: 'acceptInvite', inviteToken: secondToken, password: 'LatePass#1' }).error === 'invite_expired', 'an expired link cannot be accepted');
+var resetOnInvited = call({ action: 'adminResetPassword', token: adminTok, id: inv2.id });
+check(resetOnInvited.ok && resetOnInvited.user && resetOnInvited.user.status === 'invited', '"reset password" on someone who never accepted re-sends the invitation instead');
+var fpMailBefore = ctx._debug.mailLog.length;
+call({ action: 'forgotPassword', email: 'late@bestgas.sa' });
+var fpMail = ctx._debug.mailLog.slice(fpMailBefore).pop();
+check(fpMail && /[?&]invite=/.test(fpMail.body) && !/Temporary password/.test(fpMail.body), 'forgot-password for an un-accepted invitation re-sends the invitation link');
+call({ action: 'adminUpdateUser', token: adminTok, id: inv2.id, data: { active: false } });
+check(call({ action: 'listMeta', token: adminTok }).users.filter(function (u) { return u.id === inv2.id; })[0].status === 'disabled', 'a deactivated user shows as disabled');
+check(call({ action: 'inviteInfo', inviteToken: lastInviteFor('late@bestgas.sa') }).status === 'invalid', 'and their pending link no longer works');
+check(call({ action: 'adminResendInvite', token: adminTok, id: inv2.id }).error === 'user_inactive', 'no resending to a disabled user');
+check(call({ action: 'adminResendInvite', token: aliTok, id: inv2.id }).error === 'forbidden', 'only admin can resend invitations');
+var visibleToManager = call({ action: 'listMeta', token: aliTok }).users.filter(function (u) { return u.id === inv.user.id; })[0];
+check(visibleToManager && visibleToManager.lastLoginAt === undefined && visibleToManager.status === undefined, 'non-company-wide users do not see anyone\'s status or last login');
+check(ctx.inviteAppUrl_({ appUrl: 'javascript:alert(1)' }) === ctx.DEFAULT_APP_URL && ctx.inviteAppUrl_({ appUrl: 'https://x.example/app/index.html?y=1' }) === 'https://x.example/app/', 'the link base only accepts a clean https app address');
 
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);

@@ -292,19 +292,22 @@ function vatRate_() {
 // deployed and its GRAPH_* script properties are set, mail goes out from the
 // bestgas.sa Microsoft 365 mailbox; otherwise (or if Microsoft rejects the
 // send) it falls back to MailApp, so an alert is never lost.
-function sendMail_(to, subject, body) {
+// `html` is optional; when given, clients that render HTML show it and the
+// plain `body` is the fallback.
+function sendMail_(to, subject, body, html) {
   if (typeof sendViaGraph_ === 'function') {
     var cfg = graphMailConfig_();
     if (cfg) {
       try {
-        sendViaGraph_(cfg, to, subject, body);
+        sendViaGraph_(cfg, to, subject, body, html);
         return 'graph';
       } catch (e) {
         console.error('Microsoft Graph send failed, falling back to MailApp: ' + e);
       }
     }
   }
-  MailApp.sendEmail(to, subject, body);
+  if (html) MailApp.sendEmail(to, subject, body, { htmlBody: html, name: config_().senderName || 'Best Gas Cash Collection' });
+  else MailApp.sendEmail(to, subject, body);
   return 'mailapp';
 }
 
@@ -457,8 +460,24 @@ function publicUser_(u) {
     id: u.id, name: u.name, email: u.email, role: u.role,
     active: u.active !== false, language: u.language || 'ar',
     locationId: u.locationId || null, clusterId: u.clusterId || null,
-    mustChangePw: !!u.mustChangePw, iqamaId: u.iqamaId || null
+    mustChangePw: !!u.mustChangePw, iqamaId: u.iqamaId || null,
+    status: userStatus_(u), lastLoginAt: u.lastLoginAt || null,
+    invitedAt: u.invitedAt || null, acceptedAt: u.acceptedAt || null,
+    activatedAt: u.activatedAt || null, inviteExpiresAt: u.inviteExpiresAt || null
   };
+}
+
+// invited -> accepted (set a password through the link) -> active (signed
+// in). Accounts from before invitations existed have no inviteStatus: they
+// count as active once they've signed in, otherwise still 'invited'.
+function userStatus_(u) {
+  if (u.active === false) return 'disabled';
+  if (u.inviteStatus === 'invited') {
+    return (u.inviteExpiresAt && new Date(u.inviteExpiresAt).getTime() < Date.now()) ? 'invite_expired' : 'invited';
+  }
+  if (u.inviteStatus === 'accepted') return 'accepted';
+  if (u.inviteStatus === 'active' || u.lastLoginAt) return 'active';
+  return 'invited';
 }
 
 // ---------- Web app entry points ----------
@@ -500,6 +519,9 @@ function route_(req) {
 
   if (action === 'login') return actionLogin_(req);
   if (action === 'forgotPassword') return actionForgotPassword_(req);
+  // invitation accept page -- the person has no account password yet
+  if (action === 'inviteInfo') return actionInviteInfo_(req);
+  if (action === 'acceptInvite') return actionAcceptInvite_(req);
 
   // every other action requires a session
   var session = requireAuth_(req);
@@ -572,6 +594,7 @@ function route_(req) {
     adminCreateUser: function () { return actionAdminCreateUser_(req, user); },
     adminUpdateUser: function () { return actionAdminUpdateUser_(req, user); },
     adminResetPassword: function () { return actionAdminResetPassword_(req, user); },
+    adminResendInvite: function () { return actionAdminResendInvite_(req, user); },
 
     // admin — full control over the hierarchy: location -> store/car -> pos,
     // plus clusters. One generic save/delete pair per entity kind so every
@@ -596,11 +619,20 @@ function actionLogin_(req) {
   }
   var pw = String(req.password || '').trim();
   var user = userByEmail_(login);
+  if (user && user.active !== false && user.inviteStatus === 'invited' && !user.pass) {
+    // no password exists until the invitation is accepted
+    noteFail_(login.toLowerCase());
+    return { ok: false, error: 'invite_pending' };
+  }
   if (!user || user.active === false || !verifyPw_(pw, user.salt, user.pass)) {
     noteFail_(login.toLowerCase());
     return { ok: false, error: 'invalid_credentials' };
   }
   clearFail_(login.toLowerCase());
+  if (user.inviteStatus !== 'active') {
+    user.inviteStatus = 'active';
+    if (!user.activatedAt) user.activatedAt = new Date().toISOString();
+  }
   // The value on file is *before* this login overwrites it, i.e. the
   // previous session's login time — that's the one worth showing back to
   // the user ("last login: ..."), not the one that's happening right now.
@@ -633,7 +665,13 @@ function actionForgotPassword_(req) {
   if (cache.get(throttleKey)) return { ok: true, throttled: true };
   cache.put(throttleKey, '1', 30);
   var user = userByEmail_(login);
-  if (user && user.active !== false) {
+  if (user && user.active !== false && user.inviteStatus === 'invited') {
+    // never accepted: send the invitation again rather than a temp password
+    var inviteToken = issueInvite_(user, null);
+    writeRow(SHEETS.USERS, user);
+    sendInvitation_(user, inviteToken, null, inviteAppUrl_(req));
+    logAudit_('forgot_password_reinvite', user.id, user.id);
+  } else if (user && user.active !== false) {
     var temp = randomPassword_();
     var salt = randomSalt_();
     user.salt = salt;

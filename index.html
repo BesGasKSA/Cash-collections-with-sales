@@ -717,6 +717,74 @@
     .dr-h{touch-action:none;cursor:grab;}
   }
   @keyframes bgcTabBounce{0%{transform:scale(1);}35%{transform:scale(1.28) translateY(-3px);}65%{transform:scale(.94);}100%{transform:scale(1.08) translateY(-1px);}}
+  /* ---- invitations: accept page ---- */
+  .inv-card{text-align:center;}
+  .inv-card h2{justify-content:center;text-align:center;}
+  .inv-card h2::before{display:none;}
+  .inv-card .field{text-align:start;}
+  .inv-chip{display:inline-flex;align-items:center;gap:6px;padding:5px 13px;border-radius:999px;background:var(--green-pale);color:var(--green-dark);font-size:12px;font-weight:700;margin:4px 0 14px;}
+  .inv-chip svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+  .inv-hi{font-size:21px;font-weight:800;margin:0 0 8px;letter-spacing:-.01em;}
+  .inv-lead{color:var(--muted);font-size:14px;line-height:1.75;margin:0 0 18px;}
+  .inv-lead b{color:var(--green-dark);}
+  .inv-note{font-size:12px;color:var(--muted);margin-top:14px;}
+  .inv-ico{width:74px;height:74px;border-radius:50%;margin:6px auto 16px;display:flex;align-items:center;justify-content:center;background:var(--green-pale);color:var(--green);animation:bgcInvPop .55s cubic-bezier(.34,1.56,.64,1) both;}
+  .inv-ico.warn{background:var(--warn-bg);color:var(--warn);}
+  .inv-ico.bad{background:var(--danger-bg);color:var(--danger);}
+  .inv-ico svg{width:34px;height:34px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;}
+  .inv-ico.done{background:var(--green);color:#fff;box-shadow:0 0 0 0 rgba(77,109,81,.45);animation:bgcInvPop .55s cubic-bezier(.34,1.56,.64,1) both,bgcInvRing 1.6s ease-out .4s 2;}
+  .inv-ico.done path{stroke-dasharray:30;stroke-dashoffset:30;animation:bgcInvDraw .5s ease-out .35s forwards;}
+  @keyframes bgcInvPop{0%{transform:scale(.4);opacity:0;}100%{transform:none;opacity:1;}}
+  @keyframes bgcInvDraw{to{stroke-dashoffset:0;}}
+  @keyframes bgcInvRing{0%{box-shadow:0 0 0 0 rgba(77,109,81,.45);}100%{box-shadow:0 0 0 22px rgba(77,109,81,0);}}
+  .pw-meter{display:flex;gap:5px;margin:-4px 0 6px;}
+  .pw-meter i{flex:1;height:5px;border-radius:9px;background:var(--border-soft);transition:background .25s ease;}
+  .pw-meter[data-s="1"] i:nth-child(-n+1){background:var(--danger);}
+  .pw-meter[data-s="2"] i:nth-child(-n+2){background:var(--warn);}
+  .pw-meter[data-s="3"] i:nth-child(-n+3){background:#7da25f;}
+  .pw-meter[data-s="4"] i{background:var(--green);}
+  .pw-rules{font-size:12px;color:var(--muted);text-align:start;margin:0 0 10px;}
+  .pw-rules.bad{color:var(--danger);}
+  .inv-skel{height:14px;border-radius:8px;margin:10px auto;background:linear-gradient(90deg,var(--border-soft),var(--bg),var(--border-soft));background-size:200% 100%;animation:bgcShim 1.2s linear infinite;}
+  @keyframes bgcShim{to{background-position:-200% 0;}}
+  /* ---- Admin > Users: status + last login ---- */
+  .us-badge{display:inline-flex;align-items:center;gap:6px;padding:4px 11px;border-radius:999px;font-size:11.5px;font-weight:700;white-space:nowrap;}
+  .us-badge::before{content:'';width:7px;height:7px;border-radius:50%;background:currentColor;}
+  .us-badge.invited{background:#FFF4DB;color:#A36A00;}
+  .us-badge.invited::before{animation:bgcUsPulse 1.6s ease-in-out infinite;}
+  .us-badge.invite_expired{background:var(--danger-bg);color:var(--danger);}
+  .us-badge.accepted{background:#E6F0FB;color:#2D67A8;}
+  .us-badge.active{background:var(--ok-bg);color:var(--ok);}
+  .us-badge.disabled{background:#efeee8;color:var(--muted);}
+  @keyframes bgcUsPulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.35;transform:scale(.7);}}
+  .us-sub{display:block;font-size:11px;color:var(--muted);margin-top:4px;white-space:nowrap;}
+  .us-when{white-space:nowrap;font-variant-numeric:tabular-nums;}
+  .us-when .rel{display:block;font-size:11px;color:var(--muted);margin-top:2px;}
+  .us-name b{display:block;}
+  .us-name span{display:block;font-size:11.5px;color:var(--muted);direction:ltr;unicode-bidi:plaintext;}
+  html[dir="rtl"] .us-name span{text-align:right;}
+  .us-chips{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 14px;}
+  .us-chips button{all:unset;box-sizing:border-box;cursor:pointer;display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:12px;border:1px solid var(--border-soft);background:var(--card);font-size:12.5px;font-weight:700;color:var(--ink,#1f2a22);transition:transform .15s ease,box-shadow .15s ease,background .15s ease;}
+  .us-chips button:hover{transform:translateY(-1px);box-shadow:var(--shadow-sm);}
+  .us-chips button b{font-size:15px;font-variant-numeric:tabular-nums;}
+  .us-chips button.on{background:var(--green);color:#fff;border-color:var(--green);}
+  .inv-hint{display:flex;gap:10px;align-items:flex-start;background:var(--green-pale);color:var(--green-dark);border-radius:12px;padding:11px 14px;font-size:13px;line-height:1.6;margin:0 0 14px;}
+  .inv-hint svg{flex:none;width:18px;height:18px;margin-top:2px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+  .btn .bi{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-3px;margin-inline-end:6px;}
+  .us-acts{display:flex;gap:6px;justify-content:flex-end;flex-wrap:nowrap;width:max-content;margin-inline-start:auto;}
+  .us-acts .btn{padding:7px 11px;font-size:12px;border-radius:9px;}
+  .us-acts .bi{width:14px;height:14px;margin-inline-end:4px;}
+  .ico-btn{all:unset;box-sizing:border-box;cursor:pointer;width:34px;height:34px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;
+    border:1px solid var(--border-soft);background:var(--card);color:var(--muted);transition:background .15s ease,color .15s ease,transform .15s ease,border-color .15s ease;}
+  .ico-btn svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;}
+  .ico-btn:hover{background:var(--green-pale);color:var(--green-dark);border-color:var(--green-pale);transform:translateY(-1px);}
+  .ico-btn:focus-visible{outline:2px solid var(--green);outline-offset:1px;}
+  .ico-btn.primary{background:var(--green);border-color:var(--green);color:#fff;}
+  .ico-btn.primary:hover{background:var(--green-dark);color:#fff;}
+  .ico-btn.danger:hover{background:var(--danger-bg);color:var(--danger);border-color:var(--danger-bg);}
+  .ico-btn[disabled]{opacity:.5;cursor:default;transform:none;}
+  tr.us-new{animation:bgcUsNew 2.2s ease-out;}
+  @keyframes bgcUsNew{0%{background:var(--green-pale);}100%{background:transparent;}}
   /* ---- show/hide password eye ---- */
   .pw-wrap{position:relative;display:block;}
   .pw-wrap input{padding-inline-end:50px !important;}
@@ -771,7 +839,8 @@
 
   @media (prefers-reduced-motion: reduce){
     .bt-arrow::after{animation:none !important;}
-    #loadOverlay .ring-inner,#loadOverlay .ripple,#topProgress::before,.fade-up,.hero.splash,.fx-in *,#screenBody,.rpl,.bt-scroll button svg{animation:none !important;}
+    #loadOverlay .ring-inner,#loadOverlay .ripple,#topProgress::before,.fade-up,.hero.splash,.fx-in *,#screenBody,.rpl,.bt-scroll button svg,.inv-ico,.inv-ico path,.us-badge::before,tr.us-new{animation:none !important;}
+    .inv-ico.done path{stroke-dashoffset:0;}
     .bt-ind,.tile,.st-row,.rrow,.tx{transition:none !important;}
     .dr,.dr-scrim,.tile,.cx-body{transition:none !important;}
   }
@@ -852,18 +921,18 @@ var L = {
     home_companyOutstanding:'إجمالي النقدية غير المودعة', home_openDisputes:'اعتراضات مفتوحة (الإدارة)',
     home_actionPending:'{n} تسليم بانتظار تأكيدك', home_actionDisputes:'{n} اعتراض يحتاج إلى حل',
     home_actionNone:'لا يوجد إجراء مطلوب الآن — كل شيء محدّث', home_actionCta:'عرض التسليمات ←',
-    home_lastLogin:'آخر تسجيل دخول ناجح', home_firstLogin:'هذا أول تسجيل دخول لك', home_city:'الموقع',
+    home_lastLogin:'آخر تسجيل دخول ناجح', home_firstLogin:'هذا أول تسجيل دخول لك', home_city:'الفرع',
     home_hijriSuffix:'هـ',
     entry_new:'إدخال يومي جديد', entry_date:'التاريخ', entry_sourceType:'المصدر', entry_source_store:'الفرع',
     entry_source_car:'سيارة', entry_source_pos:'جهاز نقاط بيع', entry_cash:'المبيعات النقدية', entry_delivery:'رسوم التوصيل (بنك)',
     entry_pos:'مبيعات نقاط البيع', entry_note:'ملاحظة', entry_submit:'حفظ الإدخال', entry_list:'الإدخالات الأخيرة',
     entry_credit:'المبيعات الآجلة (كريدت)', entry_creditHint:'مبيعات آجلة — تُضاف إلى إجمالي المبيعات لكن بلا أي أثر نقدي (لا تدخل في صافي المستحق تسليمه)',
-    entry_location:'الموقع',
+    entry_location:'الفرع',
     entry_importTitle:'استيراد من CSV / إكسل', entry_importHint:'حمّل قالب CSV واملأه، ثم ارفعه هنا. الأعمدة: date, sourceType, sourceName, product, cashSales, deliveryFee, posSales, creditSales, cylindersOut, cylindersIn, note',
     err_featureDisabled:'هذه الميزة معطّلة حالياً من الإدارة', err_invalidRows:'هناك صفوف غير صحيحة في الملف — صحّح الأخطاء ثم أعد الرفع',
-    areaBulk_title:'رفع دفعة بيانات المنطقة', areaBulk_hint:'حمّل قالب CSV واملأه ببيانات كل المواقع في منطقتك — كل سطر يمثل بند منتج أو خدمة واحد (كمية × سعر الوحدة). الأعمدة: date, locationName, sourceType, sourceName, product, qty, unitPrice, paymentMethod, cylindersOut, cylindersIn, note',
-    areaBulk_template:'تحميل القالب', areaBulk_col_row:'#', areaBulk_col_date:'التاريخ', areaBulk_col_location:'الموقع', areaBulk_col_type:'النوع', areaBulk_col_source:'المصدر', areaBulk_col_status:'الحالة',
-    areaBulk_valid:'صحيح', areaBulk_err_missing:'بيانات ناقصة', areaBulk_err_location_notfound:'الموقع غير موجود في منطقتك', areaBulk_err_source_notfound:'المصدر غير موجود في هذا الموقع',
+    areaBulk_title:'رفع دفعة بيانات المنطقة', areaBulk_hint:'حمّل قالب CSV واملأه ببيانات كل الفروع في منطقتك — كل سطر يمثل بند منتج أو خدمة واحد (كمية × سعر الوحدة). الأعمدة: date, locationName, sourceType, sourceName, product, qty, unitPrice, paymentMethod, cylindersOut, cylindersIn, note',
+    areaBulk_template:'تحميل القالب', areaBulk_col_row:'#', areaBulk_col_date:'التاريخ', areaBulk_col_location:'الفرع', areaBulk_col_type:'النوع', areaBulk_col_source:'المصدر', areaBulk_col_status:'الحالة',
+    areaBulk_valid:'صحيح', areaBulk_err_missing:'بيانات ناقصة', areaBulk_err_location_notfound:'الفرع غير موجود في منطقتك', areaBulk_err_source_notfound:'المصدر غير موجود في هذا الفرع',
     areaBulk_err_product_notfound:'المنتج غير موجود', areaBulk_err_invalid_qty:'الكمية يجب أن تكون أكبر من صفر', areaBulk_err_invalid_price:'سعر الوحدة يجب أن يكون أكبر من صفر',
     areaBulk_err_invalid_payment:'طريقة الدفع غير صحيحة', areaBulk_err_delivery_not_allowed_store:'رسوم التوصيل غير مسموحة لمصدر من نوع متجر',
     areaBulk_err_delivery_needs_services:'رسوم التوصيل تتطلب منتجاً من نوع خدمة',
@@ -899,8 +968,8 @@ var L = {
     entry_lineProduct:'المنتج', err_noProductLines:'الرجاء إضافة بند منتج واحد على الأقل', err_lineIncomplete:'أكمل بيانات كل بند (المنتج، الكمية، السعر، طريقة الدفع)',
     err_deliveryWithoutSale:'رسوم التوصيل لا يمكن أن تكون بدون مبيعات نقدية أو نقاط بيع أو آجلة مرتبطة بها (لنفس المصدر والتاريخ)',
     dash_cylinderTitle:'رصيد الأسطوانات (تبادل الفارغ بالممتلئ)', dash_cylinderHint:'الفرق بين الأسطوانات الممتلئة المُسلَّمة والفارغة المُستلَمة — رصيد موجب يعني أسطوانات لا تزال في الميدان.',
-    dash_cylinderLocation:'الموقع', dash_cylinderProduct:'المنتج', dash_cylinderOut:'ممتلئة', dash_cylinderIn:'فارغة', dash_cylinderBalance:'الرصيد المتبقي',
-    handoff_createLocation:'تسليم نقدية الفرع للمشرف', handoff_createCluster:'تسليم القطاع للمُحصّل',
+    dash_cylinderLocation:'الفرع', dash_cylinderProduct:'المنتج', dash_cylinderOut:'ممتلئة', dash_cylinderIn:'فارغة', dash_cylinderBalance:'الرصيد المتبقي',
+    handoff_createLocation:'تسليم نقدية الفرع لمدير الفرع', handoff_createCluster:'تسليم المنطقة للمُحصّل',
     handoff_pending:'قيد الانتظار', handoff_confirmed:'مؤكد', handoff_disputed:'معترض عليه', handoff_rejected:'مرفوض', handoff_completed:'مكتمل',
     handoff_confirm:'تأكيد الاستلام', handoff_dispute:'اعتراض', handoff_disputeNote:'سبب الاعتراض',
     handoff_from:'من', handoff_to:'إلى', handoff_amount:'المبلغ', handoff_created:'التاريخ',
@@ -911,18 +980,18 @@ var L = {
     audit_showTrail:'عرض سجل العملية', audit_hideTrail:'إخفاء سجل العملية', audit_created:'تم الإنشاء',
     audit_confirmed:'تم التأكيد', audit_disputed:'تم الاعتراض', audit_resolved:'تم حل الاعتراض',
     audit_staleEscalated:'تم التصعيد (تأخر طويل)', audit_secondApproved:'تم إقرار الموافقة الثانية',
-    handoff_perLocation:'حسب الموقع', handoff_perCluster:'حسب القطاع', handoff_posNote:'مبيعات نقاط البيع للعلم فقط — لا تدخل ضمن النقدية المطلوبة',
+    handoff_perLocation:'حسب الفرع', handoff_perCluster:'حسب المنطقة', handoff_posNote:'مبيعات نقاط البيع للعلم فقط — لا تدخل ضمن النقدية المطلوبة',
     handoff_creditNote:'مبيعات آجلة (كريدت) للعلم فقط — لا تدخل ضمن النقدية المطلوبة',
     handoff_receivedAmount:'المبلغ المستلم فعلياً', handoff_shortfall:'الفرق (عجز)',
     handoff_originalAmount:'المبلغ المُعلن أصلاً', handoff_shortfallAccepted:'تم تأكيد الاستلام مع وجود فرق — تم إبلاغ جميع المستويات الأعلى (المدير، المُحصّل، الإدارة) فوراً بالبريد الإلكتروني',
     report_title:'تقرير المبيعات', report_from:'من تاريخ', report_to:'إلى تاريخ', report_city:'المدينة', report_run:'عرض التقرير',
-    report_location:'الموقع', report_allLocations:'كل المواقع', report_allTypes:'كل الأنواع', report_allSources:'الكل',
+    report_location:'الفرع', report_allLocations:'كل الفروع', report_allTypes:'كل الأنواع', report_allSources:'الكل',
     report_zone:'المنطقة', report_allZones:'كل المناطق',
     report_storeCash:'نقدية الفرع', report_carCash:'نقدية السيارات', report_posCash:'نقدية أجهزة نقاط البيع', report_delivery:'رسوم التوصيل', report_vat:'ضريبة القيمة المضافة',
-    report_net:'صافي المستحق', report_outstanding:'غير محصّل بعد', report_pos:'مبيعات نقاط البيع', report_credit:'المبيعات الآجلة (كريدت)', report_byLocation:'حسب الموقع',
+    report_net:'صافي المستحق', report_outstanding:'غير محصّل بعد', report_pos:'مبيعات نقاط البيع', report_credit:'المبيعات الآجلة (كريدت)', report_byLocation:'حسب الفرع',
     report_byProduct:'حسب المنتج', report_product:'المنتج', report_cashChannel:'نقدي', report_posChannel:'نقاط بيع', report_creditChannel:'آجل',
     report_total:'الإجمالي', report_trend:'اتجاه المبيعات اليومي', report_unspecified:'غير محدد', report_sortHint:'اضغط على العنوان للترتيب',
-    report_shortfallTitle:'العجز حسب مُدخِل البيانات', report_shortfallHint:'عند وجود فرق بين المبلغ المُعلن والمُستلم فعلياً، يُنسب هنا بشكل تقديري (متناسب مع حصة كل إدخال) إلى من أدخل البيانات أصلاً — سائق أو مشرف فرع — لتتبّع الأنماط المتكررة. هذا تقدير وليس إثبات مسؤولية قاطع.',
+    report_shortfallTitle:'العجز حسب مُدخِل البيانات', report_shortfallHint:'عند وجود فرق بين المبلغ المُعلن والمُستلم فعلياً، يُنسب هنا بشكل تقديري (متناسب مع حصة كل إدخال) إلى من أدخل البيانات أصلاً — سائق أو مدير فرع — لتتبّع الأنماط المتكررة. هذا تقدير وليس إثبات مسؤولية قاطع.',
     report_shortfallPerson:'الشخص', report_shortfallAmount:'إجمالي العجز المنسوب', report_shortfallCount:'عدد التسليمات',
     report_shortfallNone:'لا يوجد عجز مسجَّل حالياً',
     report_allCities:'كل المدن', report_allProducts:'كل المنتجات', report_enteredBy:'مُدخِل البيانات', report_allEnterers:'الجميع',
@@ -939,38 +1008,38 @@ var L = {
     dash_totalToCollect:'إجمالي المستحق تحصيله', dash_deposited:'تم إيداعه بالبنك', dash_remainingToDeposit:'المتبقي للإيداع',
     dash_comparisonTitle:'آخر 7 أيام مقابل الأسبوع السابق', dash_comparisonPrevious:'الأسبوع السابق', dash_comparisonGross:'إجمالي المبيعات',
     dash_heldTrendTitle:'اتجاه النقدية المحتفظ بها لكل شخص (14 يوماً)', dash_heldTrendHint:'من كان يحتفظ بنقدية مؤكَّدة ولم تُسلَّم للمرحلة التالية بعد، في نهاية كل يوم خلال آخر 14 يوماً.',
-    dash_locationsReporting:'المواقع المُبلِّغة', dash_avgPerLocation:'متوسط لكل موقع', dash_topLocation:'أعلى موقع', dash_topProduct:'أعلى منتج',
+    dash_locationsReporting:'الفروع المُبلِّغة', dash_avgPerLocation:'متوسط لكل فرع', dash_topLocation:'أعلى فرع', dash_topProduct:'أعلى منتج',
     dash_bySourceType:'حسب نوع المصدر', dash_byCity:'حسب المدينة', dash_totalHandoffs:'إجمالي التسليمات', dash_disputeRate:'نسبة الاعتراضات',
     dash_avgHandoffAmount:'متوسط مبلغ التسليم', dash_statusBreakdown:'حسب الحالة', dash_kindBreakdown:'حسب مرحلة السلسلة',
     dash_agingTitle:'مدة بقاء النقدية دون إيداع', dash_age0_1:'٠–١ يوم', dash_age1_3:'١–٣ أيام', dash_age3_7:'٣–٧ أيام', dash_age7plus:'أكثر من ٧ أيام',
     dash_recentHandoffs:'أحدث التسليمات', dash_deposits:'الإيداعات المسجّلة', dash_noData:'لا توجد بيانات لعرضها بعد',
-    admin_users:'المستخدمون', admin_locations:'المواقع', admin_stores:'الفروع', admin_cars:'السيارات', admin_pos:'أجهزة نقاط البيع',
-    admin_clusters:'القطاعات', admin_products:'المنتجات', admin_config:'الإعدادات', admin_audit:'سجل التدقيق',
+    admin_users:'المستخدمون', admin_locations:'الفروع', admin_stores:'المتاجر', admin_cars:'السيارات', admin_pos:'أجهزة نقاط البيع',
+    admin_clusters:'المناطق', admin_products:'المنتجات', admin_config:'الإعدادات', admin_audit:'سجل التدقيق',
     admin_addProduct:'إضافة منتج', admin_productName:'اسم المنتج',
     admin_groupSystem:'النظام والمستخدمون', admin_groupMaster:'البيانات الأساسية', admin_groupOther:'أخرى',
     admin_permissions:'مصفوفة الصلاحيات', perm_screen:'الشاشة/الصلاحية', perm_note:'تُبنى هذه المصفوفة من قواعد النظام الفعلية، وليست وثيقة منفصلة قد تصبح قديمة.',
     perm_home:'الرئيسية (نطاقه الخاص)', perm_home_company:'الرئيسية (بيانات الشركة كاملة)', perm_entries:'إدخال البيانات اليومية',
     perm_area_bulk_upload:'رفع دفعة بيانات المنطقة (ملف)', perm_deputy_approve:'اعتماد/رفض دفعات المنطقة',
-    perm_handoffs_own:'التسليمات (الخاصة به)', perm_handoffs_all:'التسليمات (كل الشركة)', perm_report_own:'تقرير المبيعات (قطاعه فقط)',
+    perm_handoffs_own:'التسليمات (الخاصة به)', perm_handoffs_all:'التسليمات (كل الشركة)', perm_report_own:'تقرير المبيعات (منطقته فقط)',
     perm_report_all:'تقرير المبيعات (كل الشركة)', perm_audit:'سجل التدقيق', perm_resolve:'حل الاعتراضات', perm_reconcile:'التسوية البنكية',
     perm_risk_report:'إبلاغ عن خطر/شكوى', perm_risk_view:'عرض سجل المخاطر والشكاوى', perm_manage:'إدارة المستخدمين والبيانات الأساسية',
     admin_addUser:'إضافة مستخدم', admin_name:'الاسم', admin_role:'الدور', admin_active:'نشط', admin_resetPw:'إعادة تعيين كلمة المرور',
-    admin_addLocation:'إضافة موقع', admin_city:'المدينة', admin_locName:'اسم الموقع', admin_cluster:'القطاع',
-    admin_zones:'المناطق', admin_addZone:'إضافة منطقة', admin_zoneName:'اسم المنطقة', admin_zone:'المنطقة',
+    admin_addLocation:'إضافة فرع', admin_city:'المدينة', admin_locName:'اسم الفرع', admin_cluster:'المنطقة',
+    admin_zones:'النطاقات', admin_addZone:'إضافة نطاق', admin_zoneName:'اسم النطاق', admin_zone:'النطاق',
     admin_productType:'نوع المنتج', admin_typeGoods:'سلع', admin_typeServices:'خدمات',
-    admin_addStore:'إضافة فرع', admin_storeName:'اسم الفرع', admin_manager:'المشرف', admin_location:'الموقع',
+    admin_addStore:'إضافة متجر', admin_storeName:'اسم المتجر', admin_manager:'مدير الفرع', admin_location:'الفرع',
     admin_addCar:'إضافة سيارة', admin_carLabel:'رقم اللوحة/السائق', admin_driver:'السائق',
     admin_addPos:'إضافة جهاز', admin_posLabel:'رقم الجهاز', admin_ownerType:'مرتبط بـ', admin_owner:'الجهة', admin_assignedDriver:'الموظف المسؤول',
     admin_posId:'رقم تعريف الجهاز (POS ID)', admin_posConfig:'إعدادات الجهاز (POS Config)', admin_iqamaId:'رقم الإقامة',
-    admin_addCluster:'إضافة قطاع', admin_clusterName:'اسم القطاع', admin_clusterManager:'مدير القطاع', admin_collector:'المُحصّل',
+    admin_addCluster:'إضافة منطقة', admin_clusterName:'اسم المنطقة', admin_clusterManager:'مدير المنطقة', admin_collector:'المُحصّل',
     admin_vatRate:'نسبة الضريبة', admin_delete:'حذف', admin_edit:'تعديل', admin_hasChildren:'لا يمكن الحذف — توجد عناصر تابعة',
     admin_staleThreshold:'ساعات التنبيه للتسليمات المتأخرة (لم تُؤكَّد بعد)', admin_secondApprovalThreshold:'حد المبلغ للموافقة الثانية (0 = تعطيل)',
     admin_areaBulkUploadEnabled:'تفعيل رفع دفعة بيانات المنطقة (مدير المنطقة)', admin_areaBulkUploadHint:'يتيح لمدير المنطقة رفع ملف بيانات كامل للمنطقة يبدأ السلسلة من عنده مباشرة، بعد اعتماد نائب مدير العمليات، ويُخصَّص مباشرة للمُحصِّل — بدلاً من مسار السائق ومدير الفرع المعتاد',
     admin_heldThreshold:'ساعات التنبيه للنقدية المحتفظ بها (مؤكَّدة ولم تُسلَّم للمرحلة التالية)',
     admin_runStaleCheck:'فحص التأخيرات الآن', admin_installStaleTrigger:'تفعيل الفحص اليومي التلقائي',
     admin_staleCheckResult:'تم تصعيد {stale} تسليم متأخر و{held} نقدية محتفظ بها لفترة طويلة', admin_triggerInstalled:'تم التفعيل', admin_triggerAlready:'مُفعّل مسبقاً',
-    admin_editProfile:'الملف الكامل للمستخدم', err_noStoreManager:'لا يوجد مشرف فرع معيّن لهذا الموقع',
-    handoff_createCar:'تسليم نقدية السيارة لمشرف الفرع', kind_car_to_location:'سيارة ← مدير الفرع',
+    admin_editProfile:'الملف الكامل للمستخدم', err_noStoreManager:'لا يوجد مدير فرع معيّن لهذا الفرع',
+    handoff_createCar:'تسليم نقدية السيارة لمدير الفرع', kind_car_to_location:'سيارة ← مدير الفرع',
     handoff_needsSecondApproval:'يحتاج موافقة ثانية', handoff_acknowledgeSecond:'إقرار الموافقة الثانية', handoff_secondApproved:'تمت الموافقة الثانية',
     nav_risk:'المخاطر والشكاوى', risk_title:'المخاطر والشكاوى', risk_reportNew:'إبلاغ جديد', risk_type:'النوع',
     risk_type_risk:'خطر تشغيلي', risk_type_complaint:'شكوى', risk_titleLabel:'العنوان', risk_description:'الوصف',
@@ -980,7 +1049,7 @@ var L = {
     risk_updateStatus:'تحديث الحالة', risk_reportedBy:'المُبلِّغ', risk_noItems:'لا توجد بلاغات', risk_submitted:'تم إرسال البلاغ بنجاح',
     role_admin:'مدير النظام', role_finance:'مدير مالي', role_accountant:'محاسب', role_operations_manager:'مدير العمليات',
     role_deputy_operations_manager:'نائب مدير العمليات',
-    role_cluster_manager:'مدير قطاع', role_store_manager:'مشرف فرع',
+    role_cluster_manager:'مدير منطقة', role_store_manager:'مدير فرع',
     role_collector:'مُحصّل', role_driver:'سائق', settings_url:'رابط النظام (Apps Script)', settings_save:'حفظ الرابط',
     err_generic:'حدث خطأ، حاول مرة أخرى', ok_saved:'تم الحفظ بنجاح', confirm_delete:'هل أنت متأكد من الحذف؟',
     err_alreadyAcknowledged:'تم إقرار هذا مسبقاً', err_authRequired:'انتهت الجلسة، الرجاء تسجيل الدخول مجدداً',
@@ -990,8 +1059,8 @@ var L = {
     err_invalidKind:'نوع العنصر غير صالح', err_invalidResolution:'نوع الحل غير صالح', err_invalidStatus:'الحالة المطلوبة غير صالحة',
     err_invalidType:'النوع غير صالح', err_lineAlreadyMatched:'هذا السطر البنكي مطابَق مسبقاً',
     err_missingAction:'لم يتم تحديد الإجراء', err_missingEmail:'الرجاء إدخال البريد الإلكتروني',
-    err_noClusterManager:'لا يوجد مدير قطاع معيّن لهذا الموقع', err_noCollector:'لا يوجد مُحصّل معيّن لهذا القطاع',
-    err_noEntries:'لا توجد إدخالات غير مُسلَّمة لهذا الموقع', err_noHeldCash:'لا توجد نقدية محتجزة حالياً لتسليمها',
+    err_noClusterManager:'لا يوجد مدير منطقة معيّن لهذا الفرع', err_noCollector:'لا يوجد مُحصّل معيّن لهذه المنطقة',
+    err_noEntries:'لا توجد إدخالات غير مُسلَّمة لهذا الفرع', err_noHeldCash:'لا توجد نقدية محتجزة حالياً لتسليمها',
     err_notDisputed:'هذه المعاملة ليست محل اعتراض', err_notFlagged:'هذه المعاملة غير مُعلَّمة كمحتاجة لموافقة ثانية',
     err_notFound:'لم يتم العثور على العنصر', err_notPending:'هذه المعاملة لم تعد قيد الانتظار',
     err_nothingOwed:'لا يوجد مبلغ مستحق حالياً', err_tooManyRows:'عدد الصفوف كبير جداً',
@@ -1112,7 +1181,7 @@ var L = {
     dash_avgHandoffAmount:'Avg. handoff amount', dash_statusBreakdown:'By status', dash_kindBreakdown:'By chain step',
     dash_agingTitle:'How long cash has sat uncollected', dash_age0_1:'0–1 day', dash_age1_3:'1–3 days', dash_age3_7:'3–7 days', dash_age7plus:'7+ days',
     dash_recentHandoffs:'Recent handoffs', dash_deposits:'Deposits recorded', dash_noData:'Nothing to show yet',
-    admin_users:'Users', admin_locations:'Locations', admin_stores:'Store branches', admin_cars:'Cars', admin_pos:'POS machines',
+    admin_users:'Users', admin_locations:'Branches', admin_stores:'Stores', admin_cars:'Cars', admin_pos:'POS machines',
     admin_clusters:'Areas', admin_products:'Products', admin_config:'Settings', admin_audit:'Audit log',
     admin_addProduct:'Add product', admin_productName:'Product name',
     admin_groupSystem:'System & users', admin_groupMaster:'Master data', admin_groupOther:'Other',
@@ -1123,10 +1192,10 @@ var L = {
     perm_report_all:'Sales report (company-wide)', perm_audit:'Audit log', perm_resolve:'Resolve disputes', perm_reconcile:'Bank reconciliation',
     perm_risk_report:'Report a risk/complaint', perm_risk_view:'View the risk/complaint register', perm_manage:'Manage users & master data',
     admin_addUser:'Add user', admin_name:'Name', admin_role:'Role', admin_active:'Active', admin_resetPw:'Reset password',
-    admin_addLocation:'Add location', admin_city:'City', admin_locName:'Location name', admin_cluster:'Area',
+    admin_addLocation:'Add branch', admin_city:'City', admin_locName:'Branch name', admin_cluster:'Area',
     admin_zones:'Zones', admin_addZone:'Add zone', admin_zoneName:'Zone name', admin_zone:'Zone',
     admin_productType:'Product type', admin_typeGoods:'Goods', admin_typeServices:'Services',
-    admin_addStore:'Add branch', admin_storeName:'Branch name', admin_manager:'Store manager', admin_location:'Location',
+    admin_addStore:'Add store', admin_storeName:'Store name', admin_manager:'Branch manager', admin_location:'Branch',
     admin_addCar:'Add car', admin_carLabel:'Plate / driver label', admin_driver:'Driver',
     admin_addPos:'Add POS machine', admin_posLabel:'Terminal id', admin_ownerType:'Belongs to', admin_owner:'Owner', admin_assignedDriver:'Assigned employee',
     admin_posId:'POS ID', admin_posConfig:'POS Config', admin_iqamaId:'Iqama ID',
@@ -1148,7 +1217,7 @@ var L = {
     risk_updateStatus:'Update status', risk_reportedBy:'Reported by', risk_noItems:'No reports', risk_submitted:'Report submitted successfully',
     role_admin:'Admin', role_finance:'Finance Manager', role_accountant:'Accountant', role_operations_manager:'Operations Manager',
     role_deputy_operations_manager:'Deputy Operations Manager',
-    role_cluster_manager:'Area Manager', role_store_manager:'Store Manager',
+    role_cluster_manager:'Area Manager', role_store_manager:'Branch Manager',
     role_collector:'Collector', role_driver:'Driver', settings_url:'System URL (Apps Script)', settings_save:'Save URL',
     err_generic:'Something went wrong, please try again', ok_saved:'Saved successfully', confirm_delete:'Are you sure you want to delete this?',
     err_alreadyAcknowledged:'Already acknowledged', err_authRequired:'Your session expired — please log in again',
@@ -1280,7 +1349,7 @@ var L = {
     dash_avgHandoffAmount:'اوسط ترسیل رقم', dash_statusBreakdown:'حالت کے مطابق', dash_kindBreakdown:'سلسلے کے مرحلے کے مطابق',
     dash_agingTitle:'نقدی کتنے عرصے سے جمع نہیں ہوئی', dash_age0_1:'٠–١ دن', dash_age1_3:'١–٣ دن', dash_age3_7:'٣–٧ دن', dash_age7plus:'٧ دن سے زیادہ',
     dash_recentHandoffs:'حالیہ ترسیل', dash_deposits:'درج شدہ جمع رقوم', dash_noData:'دکھانے کے لیے ابھی کوئی ڈیٹا نہیں',
-    admin_users:'صارفین', admin_locations:'مقامات', admin_stores:'برانچز', admin_cars:'گاڑیاں', admin_pos:'POS مشینیں',
+    admin_users:'صارفین', admin_locations:'برانچز', admin_stores:'اسٹورز', admin_cars:'گاڑیاں', admin_pos:'POS مشینیں',
     admin_clusters:'علاقے', admin_products:'پروڈکٹس', admin_config:'ترتیبات', admin_audit:'آڈٹ لاگ',
     admin_addProduct:'پروڈکٹ شامل کریں', admin_productName:'پروڈکٹ کا نام',
     admin_groupSystem:'نظام اور صارفین', admin_groupMaster:'بنیادی ڈیٹا', admin_groupOther:'دیگر',
@@ -1291,10 +1360,10 @@ var L = {
     perm_report_all:'سیلز رپورٹ (پوری کمپنی)', perm_audit:'آڈٹ لاگ', perm_resolve:'اعتراضات حل کریں', perm_reconcile:'بینک مطابقت',
     perm_risk_report:'خطرہ/شکایت رپورٹ کریں', perm_risk_view:'خطرات/شکایات کا رجسٹر دیکھیں', perm_manage:'صارفین اور بنیادی ڈیٹا کا انتظام',
     admin_addUser:'صارف شامل کریں', admin_name:'نام', admin_role:'کردار', admin_active:'فعال', admin_resetPw:'پاس ورڈ ری سیٹ کریں',
-    admin_addLocation:'مقام شامل کریں', admin_city:'شہر', admin_locName:'مقام کا نام', admin_cluster:'علاقہ',
+    admin_addLocation:'برانچ شامل کریں', admin_city:'شہر', admin_locName:'برانچ کا نام', admin_cluster:'علاقہ',
     admin_zones:'زونز', admin_addZone:'زون شامل کریں', admin_zoneName:'زون کا نام', admin_zone:'زون',
     admin_productType:'پروڈکٹ کی قسم', admin_typeGoods:'اشیاء', admin_typeServices:'خدمات',
-    admin_addStore:'برانچ شامل کریں', admin_storeName:'برانچ کا نام', admin_manager:'اسٹور منیجر', admin_location:'مقام',
+    admin_addStore:'اسٹور شامل کریں', admin_storeName:'اسٹور کا نام', admin_manager:'برانچ منیجر', admin_location:'برانچ',
     admin_addCar:'گاڑی شامل کریں', admin_carLabel:'پلیٹ / ڈرائیور کا نام', admin_driver:'ڈرائیور',
     admin_addPos:'POS مشین شامل کریں', admin_posLabel:'ٹرمینل نمبر', admin_ownerType:'سے منسلک', admin_owner:'مالک', admin_assignedDriver:'ذمہ دار ملازم',
     admin_posId:'POS ID', admin_posConfig:'POS ترتیبات (Config)', admin_iqamaId:'اقامہ نمبر',
@@ -1316,7 +1385,7 @@ var L = {
     risk_updateStatus:'حالت اپ ڈیٹ کریں', risk_reportedBy:'رپورٹ کنندہ', risk_noItems:'کوئی رپورٹ نہیں', risk_submitted:'رپورٹ کامیابی سے بھیج دی گئی',
     role_admin:'ایڈمن', role_finance:'فنانس منیجر', role_accountant:'اکاؤنٹنٹ', role_operations_manager:'آپریشنز منیجر',
     role_deputy_operations_manager:'ڈپٹی آپریشنز منیجر',
-    role_cluster_manager:'علاقہ منیجر', role_store_manager:'اسٹور منیجر',
+    role_cluster_manager:'علاقہ منیجر', role_store_manager:'برانچ منیجر',
     role_collector:'کلکٹر', role_driver:'ڈرائیور', settings_url:'سسٹم لنک (Apps Script)', settings_save:'لنک محفوظ کریں',
     err_generic:'کچھ غلط ہوگیا، دوبارہ کوشش کریں', ok_saved:'کامیابی سے محفوظ ہوگیا', confirm_delete:'کیا آپ واقعی حذف کرنا چاہتے ہیں؟',
     err_alreadyAcknowledged:'پہلے سے تصدیق شدہ', err_authRequired:'سیشن ختم ہوگیا — دوبارہ لاگ ان کریں',
@@ -1345,7 +1414,7 @@ function dirFor(lang){ return lang==='en' ? 'ltr' : 'rtl'; }
   var add = {
     ar: {
       ui_menu:'القائمة', ui_more:'المزيد', ui_back:'رجوع', ui_close:'إغلاق', ui_language:'اللغة',
-      ui_search:'ابحث بالموقع أو الشخص أو المبلغ…', ui_txCount:'{n} معاملة', ui_totalListed:'إجمالي المعاملات المعروضة',
+      ui_search:'ابحث بالفرع أو الشخص أو المبلغ…', ui_txCount:'{n} معاملة', ui_totalListed:'إجمالي المعاملات المعروضة',
       ui_noTx:'لا توجد معاملات', ui_showMore:'عرض المزيد', ui_tapForDetails:'اضغط على أي رقم لعرض تفاصيله', ui_sar:'ر.س',
       ui_expand:'عرض الكل', ui_collapse:'طي',
       st_notHandedOff:'لم يُسلَّم بعد', st_inHandoff:'ضمن سلسلة التسليم', st_deposited:'مودَع بالبنك', st_awaitingDeposit:'بانتظار الإيداع البنكي',
@@ -1354,7 +1423,7 @@ function dirFor(lang){ return lang==='en' ? 'ltr' : 'rtl'; }
       doc_details:'البيانات', doc_amounts:'المبالغ', doc_journey:'رحلة النقدية', doc_included:'المعاملات المشمولة', doc_nextStep:'الخطوة التالية',
       doc_attachment:'إيصال الإيداع', doc_noAttachment:'لا يوجد إيصال مرفق', doc_attachmentForbidden:'لا تملك صلاحية عرض الإيصال',
       doc_sourceBatch:'دفعة الرفع المصدر', doc_openBatch:'فتح الدفعة', doc_notAvailable:'غير متاح لصلاحيتك',
-      doc_date:'التاريخ', doc_location:'الموقع', doc_source:'المصدر', doc_product:'المنتج', doc_qty:'الكمية × سعر الوحدة',
+      doc_date:'التاريخ', doc_location:'الفرع', doc_source:'المصدر', doc_product:'المنتج', doc_qty:'الكمية × سعر الوحدة',
       doc_cylOut:'أسطوانات خارجة', doc_cylIn:'أسطوانات راجعة', doc_enteredBy:'أدخلها', doc_createdAt:'وقت الإدخال', doc_note:'ملاحظة',
       doc_from:'من', doc_to:'إلى', doc_status:'الحالة', doc_confirmedAt:'وقت التأكيد', doc_bankRef:'المرجع البنكي', doc_resolutionNote:'ملاحظة الحل',
       journey_entered:'أُدخلت بواسطة',
@@ -1362,8 +1431,8 @@ function dirFor(lang){ return lang==='en' ? 'ltr' : 'rtl'; }
       dash_statementSales:'ملخص المبيعات', dash_statementCollect:'ملخص التحصيل والإيداع',
       dash_posHint:'تُسوّى مباشرة في البنك — ليست نقدية للتحصيل', dash_creditHint:'مطالبات على العملاء — ليست نقدية حالياً',
       dash_deliveryDeductHint:'تُدفع مباشرة للبنك — لا تستلمها يد السائق', dash_vatOnDeliveryFoot:'على رسوم التوصيل فقط',
-      dash_byLocation:'حسب الموقع', dash_shortfallsNote:'الفرق {x} ر.س يمثل عجزاً مسجلاً عند استلام بعض التسليمات.',
-      home_actionsWaiting:'إجراءات بانتظارك', home_mySummary:'ملخصي', ui_openDoc:'عرض المستند', ui_showPassword:'إظهار كلمة المرور', ui_hidePassword:'إخفاء كلمة المرور', report_transactions2:'المعاملات بالتفصيل'
+      dash_byLocation:'حسب الفرع', dash_shortfallsNote:'الفرق {x} ر.س يمثل عجزاً مسجلاً عند استلام بعض التسليمات.',
+      home_actionsWaiting:'إجراءات بانتظارك', home_mySummary:'ملخصي', ui_openDoc:'عرض المستند', inv_chip:'دعوة للانضمام', inv_hi:'مرحباً {name}', inv_lead:'تمت دعوتك للانضمام إلى نظام تحصيل النقدية والموافقات بصلاحية <b>{role}</b>. اختر كلمة مرور لتفعيل حسابك.', inv_pw:'كلمة المرور الجديدة', inv_pw2:'تأكيد كلمة المرور', inv_rules:'8 أحرف على الأقل — يُفضَّل مزج الأحرف والأرقام والرموز', inv_mismatch:'كلمتا المرور غير متطابقتين', inv_accept:'قبول الدعوة وتفعيل الحساب', inv_validUntil:'الدعوة صالحة حتى {date}', inv_checking:'جارٍ التحقق من الدعوة…', inv_doneTitle:'تم قبول الدعوة 🎉', inv_doneBody:'تم تعيين كلمة المرور بنجاح. سجّل الدخول الآن لبدء استخدام النظام.', inv_signIn:'تسجيل الدخول الآن', inv_expiredTitle:'انتهت صلاحية الدعوة', inv_expiredBody:'مرّ أكثر من 7 أيام على إرسال هذه الدعوة. اطلب من مدير النظام إعادة إرسالها.', inv_usedTitle:'تم قبول هذه الدعوة مسبقاً', inv_usedBody:'حسابك مفعّل بالفعل — سجّل الدخول بكلمة المرور التي اخترتها.', inv_invalidTitle:'رابط الدعوة غير صالح', inv_invalidBody:'ربما أُعيد إرسال الدعوة برابط أحدث. افتح آخر رسالة دعوة وصلتك أو تواصل مع مدير النظام.', inv_goLogin:'الذهاب لتسجيل الدخول', inv_retry:'إعادة المحاولة', err_invitePending:'لم تقبل دعوتك بعد — افتح رسالة الدعوة في بريدك واضغط «قبول الدعوة».', err_inviteInvalid:'رابط الدعوة غير صالح', err_inviteUsed:'تم استخدام هذه الدعوة مسبقاً', err_inviteExpired:'انتهت صلاحية الدعوة', err_alreadyAccepted:'هذا المستخدم قبل الدعوة بالفعل', err_userInactive:'المستخدم معطّل', us_status:'الحالة', us_lastLogin:'آخر دخول', us_never:'لم يسجّل الدخول بعد', us_invited:'تم إرسال الدعوة', us_invite_expired:'انتهت الدعوة', us_accepted:'تم قبول الدعوة', us_active:'نشط', us_disabled:'معطّل', us_all:'الكل', us_inviteTitle:'دعوة مستخدم جديد', us_inviteHint:'سيصله بريد احترافي يحتوي على زر «قبول الدعوة» ليختار كلمة المرور بنفسه. تتغير الحالة تلقائياً: تم إرسال الدعوة ← قبل الدعوة ← نشط.', us_send:'إرسال الدعوة', us_resend:'إعادة إرسال الدعوة', us_sentTo:'تم إرسال الدعوة إلى {email}', us_notSent:'تم إنشاء المستخدم لكن تعذّر إرسال البريد — اضغط «إعادة إرسال الدعوة».', us_resent:'تمت إعادة إرسال الدعوة', us_subInvited:'أُرسلت {when}', us_subExpired:'انتهت {when}', us_subAccepted:'قُبلت {when}', us_subActive:'منذ {when}', us_user:'المستخدم', rel_now:'الآن', rel_min:'قبل {n} دقيقة', rel_hour:'قبل {n} ساعة', rel_day:'قبل {n} يوم', rel_in:'بعد {n} يوم', ui_showPassword:'إظهار كلمة المرور', ui_hidePassword:'إخفاء كلمة المرور', report_transactions2:'المعاملات بالتفصيل'
     },
     en: {
       ui_menu:'Menu', ui_more:'More', ui_back:'Back', ui_close:'Close', ui_language:'Language',
@@ -1385,7 +1454,7 @@ function dirFor(lang){ return lang==='en' ? 'ltr' : 'rtl'; }
       dash_posHint:'Settles straight to the bank — not cash to collect', dash_creditHint:'Owed by customers — not cash yet',
       dash_deliveryDeductHint:'Paid straight to the bank — never in the driver\'s hand', dash_vatOnDeliveryFoot:'On delivery fees only',
       dash_byLocation:'By location', dash_shortfallsNote:'The {x} SAR difference is shortfalls recorded when some handoffs were received.',
-      home_actionsWaiting:'actions waiting for you', home_mySummary:'My summary', ui_openDoc:'Open document', ui_showPassword:'Show password', ui_hidePassword:'Hide password', report_transactions2:'Transactions in detail'
+      home_actionsWaiting:'actions waiting for you', home_mySummary:'My summary', ui_openDoc:'Open document', inv_chip:'Invitation', inv_hi:'Welcome, {name}', inv_lead:'You have been invited to join the Cash Collection & Approval System as <b>{role}</b>. Choose a password to activate your account.', inv_pw:'New password', inv_pw2:'Confirm password', inv_rules:'At least 8 characters — mixing letters, numbers and symbols is best', inv_mismatch:'The passwords do not match', inv_accept:'Accept invitation & activate', inv_validUntil:'Invitation valid until {date}', inv_checking:'Checking your invitation…', inv_doneTitle:'Invitation accepted 🎉', inv_doneBody:'Your password is set. Sign in now to start using the system.', inv_signIn:'Sign in now', inv_expiredTitle:'This invitation has expired', inv_expiredBody:'It was sent more than 7 days ago. Ask your system administrator to resend it.', inv_usedTitle:'Invitation already accepted', inv_usedBody:'Your account is already active — sign in with the password you chose.', inv_invalidTitle:'Invitation link not valid', inv_invalidBody:'A newer invitation may have been sent. Open the latest invitation email, or contact your administrator.', inv_goLogin:'Go to sign in', inv_retry:'Try again', err_invitePending:'Your invitation has not been accepted yet — open the invitation email and press "Accept invitation".', err_inviteInvalid:'Invitation link not valid', err_inviteUsed:'This invitation was already used', err_inviteExpired:'This invitation has expired', err_alreadyAccepted:'This user already accepted the invitation', err_userInactive:'This user is disabled', us_status:'Status', us_lastLogin:'Last login', us_never:'Never signed in', us_invited:'Invitation sent', us_invite_expired:'Invitation expired', us_accepted:'Accepted invitation', us_active:'Active', us_disabled:'Disabled', us_all:'All', us_inviteTitle:'Invite a new user', us_inviteHint:'They receive a professional email with an "Accept invitation" button and choose their own password. Status updates by itself: Invitation sent → Accepted → Active.', us_send:'Send invitation', us_resend:'Resend invitation', us_sentTo:'Invitation sent to {email}', us_notSent:'User created, but the email could not be sent — press "Resend invitation".', us_resent:'Invitation sent again', us_subInvited:'Sent {when}', us_subExpired:'Expired {when}', us_subAccepted:'Accepted {when}', us_subActive:'Since {when}', us_user:'User', rel_now:'just now', rel_min:'{n} min ago', rel_hour:'{n} h ago', rel_day:'{n} days ago', rel_in:'in {n} days', ui_showPassword:'Show password', ui_hidePassword:'Hide password', report_transactions2:'Transactions in detail'
     },
     ur: {
       ui_menu:'مینو', ui_more:'مزید', ui_back:'واپس', ui_close:'بند کریں', ui_language:'زبان',
@@ -1407,7 +1476,7 @@ function dirFor(lang){ return lang==='en' ? 'ltr' : 'rtl'; }
       dash_posHint:'براہ راست بینک میں — وصولی کی نقدی نہیں', dash_creditHint:'گاہکوں کے ذمے — ابھی نقدی نہیں',
       dash_deliveryDeductHint:'براہ راست بینک کو ادا — ڈرائیور کے ہاتھ میں نہیں', dash_vatOnDeliveryFoot:'صرف ترسیل چارجز پر',
       dash_byLocation:'مقام کے لحاظ سے', dash_shortfallsNote:'{x} ریال کا فرق کچھ حوالگیوں کی وصولی پر درج کمی ہے۔',
-      home_actionsWaiting:'آپ کے منتظر اقدامات', home_mySummary:'میرا خلاصہ', ui_openDoc:'دستاویز کھولیں', ui_showPassword:'پاس ورڈ دکھائیں', ui_hidePassword:'پاس ورڈ چھپائیں', report_transactions2:'ٹرانزیکشنز کی تفصیل'
+      home_actionsWaiting:'آپ کے منتظر اقدامات', home_mySummary:'میرا خلاصہ', ui_openDoc:'دستاویز کھولیں', inv_chip:'دعوت نامہ', inv_hi:'خوش آمدید، {name}', inv_lead:'آپ کو کیش کلیکشن اور منظوری سسٹم میں <b>{role}</b> کے طور پر شامل ہونے کی دعوت دی گئی ہے۔ اپنا اکاؤنٹ فعال کرنے کے لیے پاس ورڈ منتخب کریں۔', inv_pw:'نیا پاس ورڈ', inv_pw2:'پاس ورڈ کی تصدیق', inv_rules:'کم از کم 8 حروف — حروف، نمبر اور علامات ملانا بہتر ہے', inv_mismatch:'پاس ورڈ ایک جیسے نہیں ہیں', inv_accept:'دعوت قبول کریں اور اکاؤنٹ فعال کریں', inv_validUntil:'دعوت {date} تک درست ہے', inv_checking:'دعوت کی تصدیق ہو رہی ہے…', inv_doneTitle:'دعوت قبول ہو گئی 🎉', inv_doneBody:'آپ کا پاس ورڈ سیٹ ہو گیا۔ سسٹم استعمال کرنے کے لیے ابھی لاگ اِن کریں۔', inv_signIn:'ابھی لاگ اِن کریں', inv_expiredTitle:'دعوت کی مدت ختم ہو گئی', inv_expiredBody:'یہ 7 دن سے زیادہ پہلے بھیجی گئی تھی۔ ایڈمن سے دوبارہ بھیجنے کو کہیں۔', inv_usedTitle:'دعوت پہلے ہی قبول ہو چکی ہے', inv_usedBody:'آپ کا اکاؤنٹ پہلے سے فعال ہے — اپنے منتخب کردہ پاس ورڈ سے لاگ اِن کریں۔', inv_invalidTitle:'دعوت کا لنک درست نہیں', inv_invalidBody:'شاید نئی دعوت بھیجی گئی ہے۔ تازہ ترین دعوتی ای میل کھولیں یا ایڈمن سے رابطہ کریں۔', inv_goLogin:'لاگ اِن پر جائیں', inv_retry:'دوبارہ کوشش کریں', err_invitePending:'آپ نے ابھی دعوت قبول نہیں کی — دعوتی ای میل کھول کر «دعوت قبول کریں» دبائیں۔', err_inviteInvalid:'دعوت کا لنک درست نہیں', err_inviteUsed:'یہ دعوت پہلے استعمال ہو چکی ہے', err_inviteExpired:'دعوت کی مدت ختم ہو گئی', err_alreadyAccepted:'یہ صارف دعوت قبول کر چکا ہے', err_userInactive:'صارف غیر فعال ہے', us_status:'حالت', us_lastLogin:'آخری لاگ اِن', us_never:'ابھی لاگ اِن نہیں کیا', us_invited:'دعوت بھیج دی گئی', us_invite_expired:'دعوت ختم', us_accepted:'دعوت قبول', us_active:'فعال', us_disabled:'غیر فعال', us_all:'سب', us_inviteTitle:'نئے صارف کو دعوت دیں', us_inviteHint:'انہیں «دعوت قبول کریں» بٹن والی ای میل ملے گی اور وہ خود پاس ورڈ منتخب کریں گے۔ حالت خود بدلتی ہے: دعوت بھیجی گئی ← قبول ← فعال۔', us_send:'دعوت بھیجیں', us_resend:'دعوت دوبارہ بھیجیں', us_sentTo:'دعوت {email} کو بھیج دی گئی', us_notSent:'صارف بن گیا لیکن ای میل نہیں جا سکی — «دعوت دوبارہ بھیجیں» دبائیں۔', us_resent:'دعوت دوبارہ بھیج دی گئی', us_subInvited:'{when} بھیجی گئی', us_subExpired:'{when} ختم ہوئی', us_subAccepted:'{when} قبول کی', us_subActive:'{when} سے', us_user:'صارف', rel_now:'ابھی', rel_min:'{n} منٹ پہلے', rel_hour:'{n} گھنٹے پہلے', rel_day:'{n} دن پہلے', rel_in:'{n} دن میں', ui_showPassword:'پاس ورڈ دکھائیں', ui_hidePassword:'پاس ورڈ چھپائیں', report_transactions2:'ٹرانزیکشنز کی تفصیل'
     }
   };
   Object.keys(add).forEach(function(lang){
@@ -1643,6 +1712,8 @@ var ERROR_KEYS_ = {
   no_held_cash:'err_noHeldCash', no_store_manager:'err_noStoreManager', delivery_without_sale:'err_deliveryWithoutSale', not_disputed:'err_notDisputed', not_flagged:'err_notFlagged', not_found:'err_notFound',
   not_pending:'err_notPending', nothing_owed:'err_nothingOwed', too_many_rows:'err_tooManyRows',
   feature_disabled:'err_featureDisabled', invalid_rows:'err_invalidRows',
+  invite_pending:'err_invitePending', invite_invalid:'err_inviteInvalid', invite_used:'err_inviteUsed', invite_expired:'err_inviteExpired',
+  already_accepted:'err_alreadyAccepted', user_inactive:'err_userInactive',
   unknown_action:'err_unknownAction', weak_password:'err_weakPassword', wrong_current_password:'err_wrongCurrentPassword',
   network:'err_network'
 };
@@ -1721,7 +1792,7 @@ function doLogin(){
     btn.disabled = false;
     if (!res.ok) {
       var box = qs('#loginMsg');
-      box.innerHTML = '<div class="msg err">'+esc(t(res.error==='locked'?'locked':'invalidCredentials'))+'</div>';
+      box.innerHTML = '<div class="msg err">'+esc(res.error==='invite_pending' ? errMsg_(res) : t(res.error==='locked'?'locked':'invalidCredentials'))+'</div>';
       return;
     }
     state.user = res.user;
@@ -1801,13 +1872,149 @@ function doForgotPassword(){
   var email = qs('#fpEmail').value.trim();
   if(!email) return;
   var btn = qs('#fpBtn'); btn.disabled = true;
-  api('forgotPassword', { email: email }).then(function(res){
+  api('forgotPassword', { email: email, appUrl: appUrl_() }).then(function(res){
     btn.disabled = false;
     var box = qs('#fpMsg');
     if (!res.ok) { box.innerHTML = '<div class="msg err">'+esc(errMsg_(res))+'</div>'; return; }
     box.innerHTML = '<div class="msg ok">'+esc(t(res.throttled ? 'forgotPasswordThrottled' : 'forgotPasswordSent'))+'</div>';
     qs('#fpEmail').value='';
   });
+}
+
+// ---------------- invitation accept page ----------------
+// Opened from the "Accept invitation" button in the invitation email
+// (?invite=TOKEN). No session involved: the person has no password yet.
+function appUrl_(){ return location.origin + location.pathname; }
+function inviteTokenFromUrl_(){
+  try { var m = /[?&]invite=([A-Za-z0-9]+)/.exec(location.search); return m ? m[1] : null; } catch (e) { return null; }
+}
+function leaveInvite_(prefillEmail){
+  state.inviteToken = null; state.inviteInfo = null;
+  try { history.replaceState(null, '', location.pathname + location.hash); } catch (e) {}
+  // whoever was signed in on this browser before isn't the person who just
+  // accepted, so start from a clean sign-in
+  if (state.token) {
+    state.token=''; state.user=null; state.meta=null;
+    ['bgc_token','bgc_lastLogin','bgc_user','bgc_meta'].forEach(function(k){ localStorage.removeItem(k); });
+    clearScreenCache_();
+  }
+  render();
+  if (prefillEmail) { var f = qs('#loginEmail'); if (f) { f.value = prefillEmail; var p = qs('#loginPw'); if (p) p.focus(); } }
+}
+function pwScore_(pw){
+  if (!pw) return 0;
+  var sc = pw.length >= 8 ? 1 : 0;
+  if (sc && /[A-Za-z\u0600-\u06FF]/.test(pw) && /\d/.test(pw)) sc++;
+  if (sc && /[^A-Za-z0-9\u0600-\u06FF]/.test(pw)) sc++;
+  if (sc && pw.length >= 12) sc++;
+  return Math.max(pw.length ? 1 : 0, sc);
+}
+function renderAcceptInvite(){
+  var root = qs('#app'); root.innerHTML='';
+  var box = el('<div class="brand-page">' +
+    '<img class="brand-logo" src="'+LOGO_SRC+'" alt="Best Gas Carrier Co.">' +
+    '<div class="brand-title">'+esc(t('appName'))+'</div>' +
+    '<div class="card login-card inv-card" id="invCard"></div>' +
+    '<div class="login-footer">Best Gas Carrier Co.</div>' +
+    '</div>');
+  root.appendChild(box);
+  var card = qs('#invCard', box);
+  var info = state.inviteInfo;
+
+  if (!info) {
+    card.innerHTML = '<div class="inv-ico">'+icon_('envelope')+'</div><div class="muted" style="font-size:13.5px;">'+esc(t('inv_checking'))+'</div>' +
+      '<div class="inv-skel" style="width:70%"></div><div class="inv-skel" style="width:50%"></div>';
+    api('inviteInfo', { inviteToken: state.inviteToken }, { silent: true }).then(function(res){
+      if (!state.inviteToken) return;
+      if (!res.ok) {
+        card.innerHTML = '<div class="inv-ico bad">'+icon_('linkOff')+'</div><div class="msg err">'+esc(errMsg_(res))+'</div>' +
+          '<button class="btn" id="invRetry">'+esc(t('inv_retry'))+'</button>';
+        qs('#invRetry', card).addEventListener('click', renderAcceptInvite);
+        return;
+      }
+      state.inviteInfo = res;
+      if (res.language && !localStorage.getItem('bgc_lang')) setLang(res.language);
+      renderAcceptInvite();
+    });
+    return;
+  }
+
+  if (info.status === 'done' || info.status !== 'valid') {
+    var kinds = {
+      done:    { cls:'done', ic:'checkBig', title:'inv_doneTitle', body:'inv_doneBody', btn:'inv_signIn' },
+      used:    { cls:'', ic:'check', title:'inv_usedTitle', body:'inv_usedBody', btn:'inv_goLogin' },
+      expired: { cls:'warn', ic:'hourglass', title:'inv_expiredTitle', body:'inv_expiredBody', btn:'inv_goLogin' },
+      invalid: { cls:'bad', ic:'linkOff', title:'inv_invalidTitle', body:'inv_invalidBody', btn:'inv_goLogin' }
+    };
+    var k = kinds[info.status] || kinds.invalid;
+    card.innerHTML = langPills() +
+      '<div class="inv-ico '+k.cls+'">'+icon_(k.ic)+'</div>' +
+      '<h2 class="inv-hi">'+esc(t(k.title))+'</h2>' +
+      '<p class="inv-lead">'+esc(t(k.body))+'</p>' +
+      '<button class="btn" id="invGo">'+esc(t(k.btn))+'</button>';
+    wireLangPills(renderAcceptInvite);
+    qs('#invGo', card).addEventListener('click', function(){ leaveInvite_(info.email || ''); });
+    return;
+  }
+
+  var until = info.expiresAt ? fmtStamp_(info.expiresAt).slice(0, 10) : '';
+  card.innerHTML = langPills() +
+    '<div class="inv-chip">'+icon_('envelope')+esc(t('inv_chip'))+'</div>' +
+    '<h2 class="inv-hi">'+esc(t('inv_hi').replace('{name}', info.name || ''))+'</h2>' +
+    '<p class="inv-lead">'+esc(t('inv_lead')).replace('&lt;b&gt;{role}&lt;/b&gt;', '<b>'+esc(roleLabel(info.role))+'</b>')+'</p>' +
+    '<div id="invMsg"></div>' +
+    '<div class="field"><label>'+esc(t('email'))+'</label><input type="email" value="'+esc(info.email||'')+'" readonly dir="ltr" autocomplete="username"></div>' +
+    '<div class="field"><label>'+esc(t('inv_pw'))+'</label><input id="invPw" type="password" autocomplete="new-password"></div>' +
+    '<div class="pw-meter" id="invMeter" data-s="0"><i></i><i></i><i></i><i></i></div>' +
+    '<p class="pw-rules" id="invRules">'+esc(t('inv_rules'))+'</p>' +
+    '<div class="field"><label>'+esc(t('inv_pw2'))+'</label><input id="invPw2" type="password" autocomplete="new-password"></div>' +
+    '<button class="btn" id="invBtn">'+esc(t('inv_accept'))+'</button>' +
+    (until ? '<div class="inv-note">'+esc(t('inv_validUntil').replace('{date}', until))+'</div>' : '');
+  wirePasswordEye_(card);
+  wireLangPills(renderAcceptInvite);
+  var pw = qs('#invPw', card), pw2 = qs('#invPw2', card), meter = qs('#invMeter', card), rules = qs('#invRules', card);
+  pw.addEventListener('input', function(){ meter.setAttribute('data-s', pwScore_(pw.value.trim())); rules.classList.remove('bad'); });
+  function submit(){
+    var a = pw.value.trim(), b = pw2.value.trim(), msg = qs('#invMsg', card);
+    msg.innerHTML = '';
+    if (a.length < 8) { rules.classList.add('bad'); pw.focus(); return; }
+    if (a !== b) { msg.innerHTML = '<div class="msg err">'+esc(t('inv_mismatch'))+'</div>'; pw2.focus(); return; }
+    var btn = qs('#invBtn', card); btn.disabled = true;
+    api('acceptInvite', { inviteToken: state.inviteToken, password: a }).then(function(res){
+      btn.disabled = false;
+      if (!res.ok) {
+        if (res.error === 'invite_used' || res.error === 'invite_expired' || res.error === 'invite_invalid') {
+          state.inviteInfo = { status: res.error.replace('invite_', ''), email: info.email };
+          renderAcceptInvite(); return;
+        }
+        msg.innerHTML = '<div class="msg err">'+esc(errMsg_(res))+'</div>'; return;
+      }
+      state.inviteInfo = { status: 'done', email: res.email || info.email };
+      renderAcceptInvite();
+    });
+  }
+  qs('#invBtn', card).addEventListener('click', submit);
+  pw2.addEventListener('keydown', function(e){ if (e.key === 'Enter') submit(); });
+}
+
+// Local wall-clock "yyyy-mm-dd hh:mm" (Gregorian, Latin digits) from an ISO
+// timestamp; the raw ISO string is UTC, three hours off for Riyadh.
+function fmtStamp_(iso){
+  if (!iso) return '';
+  var d = new Date(iso); if (isNaN(d)) return String(iso);
+  function p(n){ return (n < 10 ? '0' : '') + n; }
+  return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+' '+p(d.getHours())+':'+p(d.getMinutes());
+}
+function relTime_(iso){
+  if (!iso) return '';
+  var diff = Date.now() - new Date(iso).getTime();
+  if (diff < 0) return t('rel_in').replace('{n}', Math.ceil(-diff / 86400000));
+  var m = Math.floor(diff / 60000);
+  if (m < 1) return t('rel_now');
+  if (m < 60) return t('rel_min').replace('{n}', m);
+  var h = Math.floor(m / 60);
+  if (h < 24) return t('rel_hour').replace('{n}', h);
+  return t('rel_day').replace('{n}', Math.floor(h / 24));
 }
 
 function logout(){
@@ -1939,6 +2146,15 @@ var ICONS = {
   layers: '<path d="m12 2 10 5-10 5L2 7z"/><path d="m2 17 10 5 10-5M2 12l10 5 10-5"/>',
   trend: '<path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/>',
   eye: '<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+  envelope: '<rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="m3.5 6.5 8.5 6.5 8.5-6.5"/>',
+  paperPlane: '<path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4 20-7z"/>',
+  hourglass: '<path d="M6 2h12M6 22h12M7 2c0 5 10 5 10 10S7 17 7 22M17 2c0 5-10 5-10 10s10 5 10 10"/>',
+  linkOff: '<path d="M9 15l6-6"/><path d="M11 6l.5-.5a4.2 4.2 0 0 1 6 6l-.5.5M13 18l-.5.5a4.2 4.2 0 0 1-6-6l.5-.5"/><path d="M3 3l18 18"/>',
+  checkBig: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
+  key: '<circle cx="8" cy="15" r="4"/><path d="M10.9 12.1 20 3l1.5 1.5-1.6 1.6 1.6 1.6-2.2 2.2-1.6-1.6-2.3 2.3"/>',
+  pencilEdit: '<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>',
+  ban: '<circle cx="12" cy="12" r="9"/><path d="m5.6 5.6 12.8 12.8"/>',
+  power: '<path d="M12 3v9"/><path d="M6.4 6.4a8 8 0 1 0 11.2 0"/>',
   eyeOff: '<path d="M10.6 5.1A10.7 10.7 0 0 1 12 5c6.4 0 10 7 10 7a17.6 17.6 0 0 1-3.3 4.2"/><path d="M6.6 6.6C3.8 8.4 2 12 2 12s3.6 7 10 7a9.7 9.7 0 0 0 5.4-1.6"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/><path d="M2 2l20 20"/>'
 };
 function icon_(name){ return '<svg class="ic2" viewBox="0 0 24 24" aria-hidden="true">'+(ICONS[name]||'')+'</svg>'; }
@@ -5327,43 +5543,101 @@ function renderAdminPermissions(content){
 function renderAdminUsers(content){
   var meta = state.meta || {};
   var roles = ['admin','finance','accountant','operations_manager','deputy_operations_manager','cluster_manager','store_manager','collector','driver'];
-  var form = el('<div class="card"><h2>'+esc(t('admin_addUser'))+'</h2>' +
+  var form = el('<div class="card"><h2>'+esc(t('us_inviteTitle'))+'</h2>' +
+    '<div class="inv-hint">'+icon_('envelope')+'<span>'+esc(t('us_inviteHint'))+'</span></div>' +
     '<div class="grid">' +
       '<div class="field"><label>'+esc(t('admin_name'))+'</label><input id="uName"></div>' +
-      '<div class="field"><label>'+esc(t('email'))+'</label><input id="uEmail" type="email"></div>' +
+      '<div class="field"><label>'+esc(t('email'))+'</label><input id="uEmail" type="email" dir="ltr"></div>' +
       '<div class="field"><label>'+esc(t('admin_role'))+'</label><select id="uRole">'+roles.map(function(r){return '<option value="'+r+'">'+esc(roleLabel(r))+'</option>';}).join('')+'</select></div>' +
       '<div class="field"><label>'+esc(t('admin_iqamaId'))+'</label><input id="uIqamaId"></div>' +
     '</div>' +
-    '<button class="btn" id="uAdd">'+esc(t('admin_addUser'))+'</button><div id="uMsg"></div></div>');
+    '<button class="btn" id="uAdd"><svg class="bi" viewBox="0 0 24 24">'+ICONS.paperPlane+'</svg>'+esc(t('us_send'))+'</button><div id="uMsg"></div></div>');
   content.appendChild(form);
   qs('#uAdd', form).addEventListener('click', function(){
-    api('adminCreateUser', { data: { name: qs('#uName',form).value, email: qs('#uEmail',form).value, role: qs('#uRole',form).value, iqamaId: qs('#uIqamaId',form).value } })
+    var btn = qs('#uAdd', form); btn.disabled = true;
+    var email = qs('#uEmail',form).value.trim();
+    api('adminCreateUser', { appUrl: appUrl_(), data: { name: qs('#uName',form).value.trim(), email: email, role: qs('#uRole',form).value, iqamaId: qs('#uIqamaId',form).value } })
       .then(function(res){
-        qs('#uMsg',form).innerHTML = res.ok ? '<div class="msg ok">'+esc(t('ok_saved'))+'</div>' : '<div class="msg err">'+esc(errMsg_(res))+'</div>';
-        if (res.ok) refreshMetaThen(function(){ renderAdmin(qs('#screenBody')); });
+        btn.disabled = false;
+        if (!res.ok) { qs('#uMsg',form).innerHTML = '<div class="msg err">'+esc(errMsg_(res))+'</div>'; return; }
+        state.usNewId = res.user && res.user.id;
+        state.usFlash = res.inviteSent === false ? { type:'err', text: t('us_notSent') } : { type:'ok', text: t('us_sentTo').replace('{email}', email) };
+        refreshMetaThen(function(){ renderAdmin(qs('#screenBody')); });
       });
   });
+  if (state.usFlash) {
+    qs('#uMsg', form).innerHTML = '<div class="msg '+state.usFlash.type+'">'+esc(state.usFlash.text)+'</div>';
+    state.usFlash = null;
+  }
 
-  var listCard = el('<div class="card"><h2>'+esc(t('admin_users'))+'</h2><table><thead><tr>' +
-    '<th>'+esc(t('admin_name'))+'</th><th>'+esc(t('email'))+'</th><th>'+esc(t('admin_role'))+'</th><th>'+esc(t('admin_iqamaId'))+'</th><th>'+esc(t('admin_active'))+'</th><th class="col-actions"></th>' +
-    '</tr></thead><tbody id="uBody"></tbody></table></div>');
+  // status counts double as filters
+  var order = ['invited','invite_expired','accepted','active','disabled'];
+  var counts = { all: 0 };
+  (meta.users||[]).forEach(function(u){ var st = u.status || (u.active ? 'active' : 'disabled'); counts[st] = (counts[st]||0) + 1; counts.all++; });
+  var filter = state.usFilter || 'all';
+  if (filter !== 'all' && !counts[filter]) filter = 'all';
+  var chips = el('<div class="us-chips"></div>');
+  ['all'].concat(order).forEach(function(k){
+    if (k !== 'all' && !counts[k]) return;
+    var b = el('<button type="button" class="'+(filter===k?'on':'')+'">'+(k==='all'?'':'<span class="us-badge '+k+'" style="padding:0;background:none;"></span>')+esc(t(k==='all'?'us_all':'us_'+k))+' <b>'+(counts[k]||0)+'</b></button>');
+    b.addEventListener('click', function(){ state.usFilter = k; renderAdmin(qs('#screenBody')); });
+    chips.appendChild(b);
+  });
+
+  var listCard = el('<div class="card"><h2>'+esc(t('admin_users'))+'</h2><div class="tbl-scroll"><table><thead><tr>' +
+    '<th>'+esc(t('us_user'))+'</th><th>'+esc(t('admin_role'))+'</th><th>'+esc(t('us_status'))+'</th><th>'+esc(t('us_lastLogin'))+'</th><th>'+esc(t('admin_iqamaId'))+'</th><th class="col-actions"></th>' +
+    '</tr></thead><tbody id="uBody"></tbody></table></div></div>');
+  listCard.insertBefore(chips, listCard.children[1]);
   content.appendChild(listCard);
   var tbody = qs('#uBody', listCard);
   var langOpts = [['ar','العربية'],['en','English'],['ur','اردو']];
   (meta.users||[]).forEach(function(u){
-    var tr = el('<tr><td>'+esc(u.name)+'</td><td>'+esc(u.email||'')+'</td><td>'+esc(roleLabel(u.role))+'</td><td>'+esc(u.iqamaId||'—')+'</td><td>'+(u.active?'✓':'—')+'</td><td class="col-actions"></td></tr>');
+    var st = u.status || (u.active ? 'active' : 'disabled');
+    if (filter !== 'all' && st !== filter) return;
+    var sub = st === 'invited' ? t('us_subInvited').replace('{when}', relTime_(u.invitedAt))
+      : st === 'invite_expired' ? t('us_subExpired').replace('{when}', relTime_(u.inviteExpiresAt))
+      : st === 'accepted' ? t('us_subAccepted').replace('{when}', relTime_(u.acceptedAt))
+      : st === 'active' && u.activatedAt ? t('us_subActive').replace('{when}', fmtStamp_(u.activatedAt).slice(0,10)) : '';
+    var last = u.lastLoginAt
+      ? '<span class="us-when" title="'+esc(fmtStamp_(u.lastLoginAt))+'"><bdi dir="ltr">'+esc(fmtStamp_(u.lastLoginAt))+'</bdi><span class="rel">'+esc(relTime_(u.lastLoginAt))+'</span></span>'
+      : '<span class="muted" style="font-size:12px;">'+esc(t('us_never'))+'</span>';
+    var tr = el('<tr'+(u.id===state.usNewId?' class="us-new"':'')+'>' +
+      '<td class="us-name"><b>'+esc(u.name)+'</b><span>'+esc(u.email||'')+'</span></td>' +
+      '<td>'+esc(roleLabel(u.role))+'</td>' +
+      '<td><span class="us-badge '+st+'">'+esc(t('us_'+st))+'</span>'+(sub?'<span class="us-sub">'+esc(sub)+'</span>':'')+'</td>' +
+      '<td>'+last+'</td>' +
+      '<td>'+esc(u.iqamaId||'—')+'</td><td class="col-actions"></td></tr>');
     // Buttons go in an inner flex row, never flex on the <td> itself: a flex
     // table cell stops being a table cell, shrinks to a sliver, and its buttons
     // spill over the Role / Iqama / Active columns.
-    var actions = el('<div style="display:flex;gap:6px;justify-content:flex-end;"></div>');
+    var actions = el('<div class="us-acts"></div>');
     tr.lastChild.appendChild(actions);
-    var resetBtn = el('<button class="btn secondary">'+esc(t('admin_resetPw'))+'</button>');
-    resetBtn.addEventListener('click', function(){ api('adminResetPassword',{id:u.id}).then(function(){ toast('ok_saved','ok'); }); });
-    var toggleBtn = el('<button class="btn secondary">'+esc(u.active?t('admin_delete'):t('admin_active'))+'</button>');
+    // Icon buttons with tooltips: three text buttons per row pushed the
+    // table past the width of the card and the row got clipped.
+    function iconBtn_(icon, label, cls){
+      var btn = el('<button type="button" class="ico-btn '+(cls||'')+'" title="'+esc(label)+'" aria-label="'+esc(label)+'">'+icon_(icon)+'</button>');
+      return btn;
+    }
+    var pendingInvite = st === 'invited' || st === 'invite_expired';
+    var resetBtn = pendingInvite
+      ? iconBtn_('paperPlane', t('us_resend'), 'primary')
+      : iconBtn_('key', t('admin_resetPw'));
+    resetBtn.addEventListener('click', function(){
+      resetBtn.disabled = true;
+      api(pendingInvite ? 'adminResendInvite' : 'adminResetPassword', { id: u.id, appUrl: appUrl_() }).then(function(res){
+        resetBtn.disabled = false;
+        if (!res.ok) { toastRaw_(errMsg_(res), 'err'); return; }
+        if (pendingInvite) {
+          state.usFlash = res.inviteSent === false ? { type:'err', text: t('us_notSent') } : { type:'ok', text: t('us_sentTo').replace('{email}', u.email) };
+          refreshMetaThen(function(){ renderAdmin(qs('#screenBody')); });
+        } else toast('ok_saved','ok');
+      });
+    });
+    var toggleBtn = iconBtn_(u.active ? 'ban' : 'power', u.active ? t('admin_delete') : t('admin_active'), u.active ? 'danger' : '');
     toggleBtn.addEventListener('click', function(){
       api('adminUpdateUser',{id:u.id, data:{active: !u.active}}).then(function(){ refreshMetaThen(function(){ renderAdmin(qs('#screenBody')); }); });
     });
-    var editBtn = el('<button class="btn secondary">'+esc(t('admin_edit'))+'</button>');
+    var editBtn = iconBtn_('pencilEdit', t('admin_edit'));
     actions.appendChild(resetBtn); actions.appendChild(toggleBtn); actions.appendChild(editBtn);
     tbody.appendChild(tr);
 
@@ -5612,6 +5886,7 @@ function render(){
   document.documentElement.lang = state.lang;
   document.documentElement.dir = dirFor(state.lang);
   if (!state.apiUrl) { renderUrlSetup(); return; }
+  if (state.inviteToken) { renderAcceptInvite(); return; }
   if (!state.token) { renderLogin(); return; }
   if (!state.user) {
     if (restoreSession_()) { refreshSessionInBackground_(); render(); return; }
@@ -5645,6 +5920,7 @@ function loadWhoAmI(){
   });
 }
 
+state.inviteToken = inviteTokenFromUrl_();
 render();
 })();
 </script>

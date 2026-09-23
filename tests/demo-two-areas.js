@@ -29,10 +29,16 @@ function bootstrapAdmin(email, plainPw) {
   ctx.writeRow(SHEETS.USERS, admin);
   return admin;
 }
+// Invitations carry a single-use link, not a password: accept it once with
+// a fixed demo password and print that.
+var DEMO_PW = 'Welcome#1';
 function lastInviteFor(email) {
   var log = ctx._debug.mailLog;
   for (var i = log.length - 1; i >= 0; i--) {
-    if (log[i].to === email) { var m = /Temporary password: (\S+)/.exec(log[i].body); if (m) return m[1]; }
+    if (log[i].to === email) {
+      var m = /[?&]invite=([A-Za-z0-9]+)/.exec(log[i].body);
+      if (m) { ctx.route_({ action: 'acceptInvite', inviteToken: m[1], password: DEMO_PW }); return DEMO_PW; }
+    }
   }
   return null;
 }

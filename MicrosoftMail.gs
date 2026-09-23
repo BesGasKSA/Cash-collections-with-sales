@@ -46,7 +46,7 @@ function graphToken_(cfg) {
   return parsed.access_token;
 }
 
-function sendViaGraph_(cfg, to, subject, body) {
+function sendViaGraph_(cfg, to, subject, body, html) {
   var res = UrlFetchApp.fetch('https://graph.microsoft.com/v1.0/users/' + encodeURIComponent(cfg.sender) + '/sendMail', {
     method: 'post',
     contentType: 'application/json',
@@ -54,7 +54,7 @@ function sendViaGraph_(cfg, to, subject, body) {
     payload: JSON.stringify({
       message: {
         subject: subject,
-        body: { contentType: 'Text', content: body },
+        body: html ? { contentType: 'HTML', content: html } : { contentType: 'Text', content: body },
         toRecipients: [{ emailAddress: { address: to } }]
       },
       saveToSentItems: true
