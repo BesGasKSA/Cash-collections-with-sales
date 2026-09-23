@@ -1438,5 +1438,21 @@ check(call({ action: 'createDailyEntry', token: aliTok, date: '2026-08-26', sour
   cashSales: 1000, creditSales: 900, directDepositAmount: 500, directDepositRef: 'X' }).error === 'deposit_exceeds_cash',
   'and a موازنة can no longer exceed the cash once the credit part is taken out');
 
+console.log('--- an admin write answers with the fresh reference data, saving a round trip ---');
+var beforeClusters = call({ action: 'listMeta', token: adminTok }).clusters.length;
+var newArea = call({ action: 'adminSaveEntity', token: adminTok, kind: 'cluster', data: { name: 'Eastern Area' } });
+check(newArea.ok && newArea.meta && newArea.meta.ok, 'saving an area returns the reference data with it');
+check(newArea.meta.clusters.length === beforeClusters + 1, 'and that data already contains the area just created — no second call needed');
+check(newArea.meta.clusters.some(function (c) { return c.id === newArea.entity.id; }), 'including its id, so the screen can redraw straight away');
+
+var newUser2 = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Meta Rider', email: 'metarider@bestgas.sa', role: 'driver' } });
+check(newUser2.ok && newUser2.meta && newUser2.meta.users.some(function (u) { return u.email === 'metarider@bestgas.sa'; }),
+  'inviting a user does the same');
+var del = call({ action: 'adminDeleteEntity', token: adminTok, kind: 'cluster', id: newArea.entity.id });
+check(del.ok && del.meta && !del.meta.clusters.some(function (c) { return c.id === newArea.entity.id; }),
+  'and so does deleting one — the response already reflects the deletion');
+check(call({ action: 'adminSaveEntity', token: adminTok, kind: 'cluster', data: { name: '' } }).meta === undefined,
+  'a rejected write carries no reference data — there is nothing new to show');
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);
