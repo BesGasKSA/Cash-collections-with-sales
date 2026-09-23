@@ -186,7 +186,10 @@ function nonSalesFields_(r) {
     expenseItemId: Number(r.expenseAmount || 0) > 0 ? r.expenseItemId : null,
     expenseReason: Number(r.expenseAmount || 0) > 0 ? String(r.expenseReason || '').trim() : '',
     directDepositAmount: Number(r.directDepositAmount || 0),
-    directDepositRef: Number(r.directDepositAmount || 0) > 0 ? String(r.directDepositRef || '').trim() : ''
+    directDepositRef: Number(r.directDepositAmount || 0) > 0 ? String(r.directDepositRef || '').trim() : '',
+    // What the deposit was for, in the depositor's own words. The company
+    // calls these deposits "الموازنات", which is what the form suggests.
+    directDepositNote: Number(r.directDepositAmount || 0) > 0 ? String(r.directDepositNote || '').trim() : ''
   };
 }
 
@@ -206,6 +209,7 @@ function recordDirectDeposit_(entry, user) {
     breakdown: { storeCash: 0, carCash: 0, posCash: 0, deliveryFee: 0, posSales: 0, creditSales: 0, vatOnDelivery: 0,
       otherCash: 0, expenses: 0, directDeposit: 0, netCashOwed: Number(entry.directDepositAmount || 0) },
     bankReference: entry.directDepositRef || '',
+    note: entry.directDepositNote || '',
     attachmentId: null,
     sourceEntryIds: [entry.id],
     sourceHandoffIds: [],

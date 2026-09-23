@@ -1386,5 +1386,14 @@ var otherDay = call({ action: 'importDailyEntries', token: aliTok, rows: [
 ] });
 check(otherDay.results[0].error === 'deposit_exceeds_cash', 'and cash from a different day never counts towards it');
 
+console.log('--- a direct deposit (موازنة) carries its own description ---');
+var mawazana = call({ action: 'createDailyEntry', token: aliTok, date: '2026-08-12', sourceType: 'store', sourceId: store.entity.id,
+  cashSales: 900, directDepositAmount: 400, directDepositRef: 'MZN-55', directDepositNote: 'موازنة مبيعات يوم الخميس' });
+check(mawazana.ok && mawazana.entry.directDepositNote === 'موازنة مبيعات يوم الخميس', 'the description is stored on the entry');
+check(mawazana.deposit && mawazana.deposit.note === 'موازنة مبيعات يوم الخميس', 'and travels onto the deposit record itself, next to the bank reference');
+var noAmount = call({ action: 'createDailyEntry', token: aliTok, date: '2026-08-12', sourceType: 'store', sourceId: store.entity.id,
+  cashSales: 100, directDepositNote: 'stray text' });
+check(noAmount.ok && noAmount.entry.directDepositNote === '' && !noAmount.deposit, 'a description with no deposit behind it is dropped, not stored');
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);
