@@ -134,7 +134,7 @@ function deliveryNeedsSale_(sourceType, sourceId, date, cashSales, posSales, sib
 // the thing the approval chain exists to prevent. The item comes from admin
 // master data (income_items / expense_items) so the report can group it; the
 // note says what actually happened.
-function checkNonSalesFields_(r) {
+function checkNonSalesFields_(r, siblingCash) {
   var other = Number(r.otherCash || 0);
   if (other < 0 || Number(r.expenseAmount || 0) < 0 || Number(r.directDepositAmount || 0) < 0) return 'invalid_input';
   if (other > 0) {
@@ -155,10 +155,25 @@ function checkNonSalesFields_(r) {
     // to the hand, minus what it already takes out.
     var vat = vatRate_();
     var delivery = Number(r.deliveryFeeBankAmount || 0);
-    var inHand = Number(r.cashSales || 0) + other - delivery + (delivery > 0 ? (delivery / (1 + vat)) * vat : 0) - exp;
+    // `siblingCash` is the cash on the OTHER rows of the same submission for
+    // the same source and date: one real day gets split across several rows
+    // in product mode, and the deposit rides on the first of them.
+    var inHand = Number(r.cashSales || 0) + Number(siblingCash || 0) + other - delivery + (delivery > 0 ? (delivery / (1 + vat)) * vat : 0) - exp;
     if (dep > inHand + 0.005) return 'deposit_exceeds_cash';
   }
   return null;
+}
+
+// Cash on the other rows of this submission for the same source and date.
+function siblingCash_(rows, index) {
+  var me = rows[index] || {};
+  var sum = 0;
+  for (var i = 0; i < rows.length; i++) {
+    if (i === index) continue;
+    var o = rows[i] || {};
+    if (o.sourceType === me.sourceType && o.sourceId === me.sourceId && o.date === me.date) sum += Number(o.cashSales || 0);
+  }
+  return sum;
 }
 
 // The non-sales columns every entry row carries, whichever path created it.
@@ -295,7 +310,7 @@ function actionImportEntries_(req, user) {
       results.push({ row: i, ok: false, error: 'delivery_without_sale' });
       continue;
     }
-    var rowErr = checkNonSalesFields_(r);
+    var rowErr = checkNonSalesFields_(r, siblingCash_(rows, i));
     if (rowErr) {
       results.push({ row: i, ok: false, error: rowErr });
       continue;
@@ -688,7 +703,7 @@ function actionBulkSubmitAreaBatch_(req, user) {
       errors.push({ row: i, error: 'delivery_without_sale' });
       continue;
     }
-    var nonSales = checkNonSalesFields_(r);
+    var nonSales = checkNonSalesFields_(r, siblingCash_(rows, i));
     if (nonSales) {
       errors.push({ row: i, error: nonSales });
       continue;
