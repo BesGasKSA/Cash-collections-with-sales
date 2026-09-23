@@ -33,7 +33,14 @@ var SHEETS = {
   RISK_ITEMS: 'risk_items',
   // Area-manager bulk uploads awaiting Deputy Operations Manager approval —
   // an explicit, toggleable exception to the normal chain. See CLAUDE.md.
-  AREA_BULK_BATCHES: 'area_bulk_batches'
+  AREA_BULK_BATCHES: 'area_bulk_batches',
+  // Master data for the two kinds of money that move at a source without
+  // being a sale: cash collected for something else (an old credit sale
+  // being paid off, a cylinder deposit, scrap) and cash paid out of the
+  // takings (fuel, a repair). Both are picked from a list an admin keeps,
+  // never typed free-hand, so the report can group them.
+  INCOME_ITEMS: 'income_items',
+  EXPENSE_ITEMS: 'expense_items'
 };
 
 var IDLE_MS = 12 * 3600 * 1000;      // 12h idle session expiry

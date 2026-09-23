@@ -79,6 +79,17 @@ function checkEntryScope_(user, sourceType, sourceId) {
     return { ok: true, locationId: locationId };
   }
 
+  // An area manager enters data for every branch in their own area — the
+  // store, its cars and its POS machines — because branches that cannot use
+  // the app themselves report their day to them. Deliberately wider than it
+  // used to be (it used to be bulk-upload-only, behind a feature toggle),
+  // and still bounded by the area they actually manage.
+  if (user.role === 'cluster_manager') {
+    var loc = getById_(SHEETS.LOCATIONS, locationId);
+    if (!loc || !clusterManagerOwnsCluster_(user.id, loc.clusterId)) return { ok: false, error: 'forbidden' };
+    return { ok: true, locationId: locationId };
+  }
+
   if (user.role === 'driver') {
     if (sourceType === 'car') {
       var car = getById_(SHEETS.CARS, sourceId);
@@ -115,6 +126,85 @@ function deliveryNeedsSale_(sourceType, sourceId, date, cashSales, posSales, sib
   });
 }
 
+// The three non-sales money movements share one validator, used by both the
+// single-entry form and the bulk import — two copies of these rules would
+// drift the moment one of them changed.
+//
+// Why a reason is mandatory: an unexplained amount on either side is exactly
+// the thing the approval chain exists to prevent. The item comes from admin
+// master data (income_items / expense_items) so the report can group it; the
+// note says what actually happened.
+function checkNonSalesFields_(r) {
+  var other = Number(r.otherCash || 0);
+  if (other < 0 || Number(r.expenseAmount || 0) < 0 || Number(r.directDepositAmount || 0) < 0) return 'invalid_input';
+  if (other > 0) {
+    var inc = r.otherCashItemId ? getById_(SHEETS.INCOME_ITEMS, r.otherCashItemId) : null;
+    if (!inc || inc.active === false) return 'invalid_income_item';
+    if (!String(r.otherCashReason || '').trim()) return 'reason_required';
+  }
+  var exp = Number(r.expenseAmount || 0);
+  if (exp > 0) {
+    var ex = r.expenseItemId ? getById_(SHEETS.EXPENSE_ITEMS, r.expenseItemId) : null;
+    if (!ex || ex.active === false) return 'invalid_expense_item';
+    if (!String(r.expenseReason || '').trim()) return 'reason_required';
+  }
+  var dep = Number(r.directDepositAmount || 0);
+  if (dep > 0) {
+    if (!String(r.directDepositRef || '').trim()) return 'deposit_needs_reference';
+    // You can only bank cash you actually hold: everything this entry adds
+    // to the hand, minus what it already takes out.
+    var vat = vatRate_();
+    var delivery = Number(r.deliveryFeeBankAmount || 0);
+    var inHand = Number(r.cashSales || 0) + other - delivery + (delivery > 0 ? (delivery / (1 + vat)) * vat : 0) - exp;
+    if (dep > inHand + 0.005) return 'deposit_exceeds_cash';
+  }
+  return null;
+}
+
+// The non-sales columns every entry row carries, whichever path created it.
+function nonSalesFields_(r) {
+  return {
+    otherCash: Number(r.otherCash || 0),
+    otherCashItemId: Number(r.otherCash || 0) > 0 ? r.otherCashItemId : null,
+    otherCashReason: Number(r.otherCash || 0) > 0 ? String(r.otherCashReason || '').trim() : '',
+    expenseAmount: Number(r.expenseAmount || 0),
+    expenseItemId: Number(r.expenseAmount || 0) > 0 ? r.expenseItemId : null,
+    expenseReason: Number(r.expenseAmount || 0) > 0 ? String(r.expenseReason || '').trim() : '',
+    directDepositAmount: Number(r.directDepositAmount || 0),
+    directDepositRef: Number(r.directDepositAmount || 0) > 0 ? String(r.directDepositRef || '').trim() : ''
+  };
+}
+
+// Cash banked at the source is still a deposit: it is written as the same
+// kind:'deposit' row the collector's deposit creates, so bank reconciliation,
+// the 'deposited' totals and the deposit document all pick it up with no
+// special cases — only `direct:true` and sourceEntryIds tell them apart.
+function recordDirectDeposit_(entry, user) {
+  var deposit = {
+    id: Utilities.getUuid(),
+    kind: 'deposit',
+    direct: true,
+    fromUserId: user.id,
+    toUserId: null,
+    locationId: entry.locationId,
+    amount: Number(entry.directDepositAmount || 0),
+    breakdown: { storeCash: 0, carCash: 0, posCash: 0, deliveryFee: 0, posSales: 0, creditSales: 0, vatOnDelivery: 0,
+      otherCash: 0, expenses: 0, directDeposit: 0, netCashOwed: Number(entry.directDepositAmount || 0) },
+    bankReference: entry.directDepositRef || '',
+    attachmentId: null,
+    sourceEntryIds: [entry.id],
+    sourceHandoffIds: [],
+    consumedBy: null,
+    status: 'completed',
+    createdAt: new Date().toISOString(),
+    confirmedAt: new Date().toISOString(),
+    confirmedBy: user.id
+  };
+  writeRow(SHEETS.HANDOFFS, deposit);
+  logAudit_('direct_deposit', user.id, deposit.id);
+  return deposit;
+}
+
 function actionCreateEntry_(req, user) {
   if (!req.date || !req.sourceType || !req.sourceId) return { ok: false, error: 'invalid_input' };
   var scope = checkEntryScope_(user, req.sourceType, req.sourceId);
@@ -124,6 +214,8 @@ function actionCreateEntry_(req, user) {
     !deliveryNeedsSale_(req.sourceType, req.sourceId, req.date, req.cashSales, req.posSales, false, req.creditSales)) {
     return { ok: false, error: 'delivery_without_sale' };
   }
+  var nonSalesErr = checkNonSalesFields_(req);
+  if (nonSalesErr) return { ok: false, error: nonSalesErr };
 
   var entry = {
     id: Utilities.getUuid(),
@@ -158,9 +250,12 @@ function actionCreateEntry_(req, user) {
     note: req.note || '',
     consumedBy: null
   };
+  var extra = nonSalesFields_(req);
+  safeOwnKeys_(extra).forEach(function (k) { entry[k] = extra[k]; });
   writeRow(SHEETS.ENTRIES, entry);
+  var directDeposit = entry.directDepositAmount > 0 ? recordDirectDeposit_(entry, user) : null;
   logAudit_('create_entry', user.id, entry.id);
-  return { ok: true, entry: entry };
+  return { ok: true, entry: entry, deposit: directDeposit };
 }
 
 // Bulk version of actionCreateEntry_ for CSV/Excel import — same per-row
@@ -200,6 +295,11 @@ function actionImportEntries_(req, user) {
       results.push({ row: i, ok: false, error: 'delivery_without_sale' });
       continue;
     }
+    var rowErr = checkNonSalesFields_(r);
+    if (rowErr) {
+      results.push({ row: i, ok: false, error: rowErr });
+      continue;
+    }
     var entry = {
       id: Utilities.getUuid(),
       date: r.date,
@@ -219,7 +319,10 @@ function actionImportEntries_(req, user) {
       note: r.note || '',
       consumedBy: null
     };
+    var rowExtra = nonSalesFields_(r);
+    safeOwnKeys_(rowExtra).forEach(function (k) { entry[k] = rowExtra[k]; });
     writeRow(SHEETS.ENTRIES, entry);
+    if (entry.directDepositAmount > 0) recordDirectDeposit_(entry, user);
     created++;
     results.push({ row: i, ok: true, id: entry.id });
   }
@@ -271,36 +374,50 @@ function entrySalesTotal_(e) {
 // A store or car can carry its own mounted POS terminal too, so a store/car
 // entry can also report card/bank posSales alongside its cash — same
 // no-cash-risk treatment as a dedicated 'pos' source, just logged on the
-// store's/car's own entry instead of a separate pos_machines row. A store
-// never has a delivery fee though (nothing to deliver), so that field stays
-// car/pos-only.
-// netCashOwed = branchCash + carCash + posCash - (carDeliveryFee + posDeliveryFee) + vatOnDelivery
+// store's/car's own entry instead of a separate pos_machines row.
+//
+// Delivery fees apply to EVERY source type, including a branch store: the
+// branch sells with delivery too, and the fee is paid to the bank, not held
+// as cash. Restricting it to car/pos silently dropped a branch's (and an
+// area manager's bulk-uploaded) delivery lines out of the formula.
+//
+// Three more things move cash at the source without being a sale:
+//   otherCash  — money collected for something else (an old credit sale paid
+//                off, a cylinder deposit, scrap): real cash in hand, so it is
+//                ADDED to what must be handed over.
+//   expenses   — cash paid out of the takings (fuel, a small repair): the
+//                money is gone, so it is DEDUCTED.
+//   directDeposit — cash taken straight to the bank at the source: already
+//                banked, so it is DEDUCTED and only the remainder travels up
+//                the handoff chain.
+//
+// netCashOwed = cash(branch+car+pos) + otherCash - deliveryFee + vatOnDelivery
+//               - expenses - directDeposit
 function computeNet_(entries) {
   var storeCash = 0, carCash = 0, posCash = 0, deliveryFee = 0, posSales = 0, creditSales = 0;
+  var otherCash = 0, expenses = 0, directDeposit = 0;
   entries.forEach(function (e) {
     // creditSales is tallied the same way across all three source types as
     // posSales — a sale on credit carries no cash risk either, since no
     // money has moved yet, so it never touches netCashOwed below.
     creditSales += Number(e.creditSales || 0);
-    if (e.sourceType === 'store') {
-      storeCash += Number(e.cashSales || 0);
-      posSales += Number(e.posSales || 0);
-    } else if (e.sourceType === 'car') {
-      carCash += Number(e.cashSales || 0);
-      deliveryFee += Number(e.deliveryFeeBankAmount || 0);
-      posSales += Number(e.posSales || 0);
-    } else if (e.sourceType === 'pos') {
-      posCash += Number(e.cashSales || 0);
-      deliveryFee += Number(e.deliveryFeeBankAmount || 0);
-      posSales += Number(e.posSales || 0);
-    }
+    deliveryFee += Number(e.deliveryFeeBankAmount || 0);
+    posSales += Number(e.posSales || 0);
+    otherCash += Number(e.otherCash || 0);
+    expenses += Number(e.expenseAmount || 0);
+    directDeposit += Number(e.directDepositAmount || 0);
+    if (e.sourceType === 'store') storeCash += Number(e.cashSales || 0);
+    else if (e.sourceType === 'car') carCash += Number(e.cashSales || 0);
+    else if (e.sourceType === 'pos') posCash += Number(e.cashSales || 0);
   });
   var vat = vatRate_();
   var vatOnDelivery = deliveryFee > 0 ? (deliveryFee / (1 + vat)) * vat : 0;
-  var netCashOwed = storeCash + carCash + posCash - deliveryFee + vatOnDelivery;
+  var netCashOwed = storeCash + carCash + posCash + otherCash - deliveryFee + vatOnDelivery - expenses - directDeposit;
   return {
     storeCash: storeCash, carCash: carCash, posCash: posCash, deliveryFee: deliveryFee,
-    posSales: posSales, creditSales: creditSales, vatOnDelivery: vatOnDelivery, netCashOwed: netCashOwed
+    posSales: posSales, creditSales: creditSales, vatOnDelivery: vatOnDelivery,
+    otherCash: otherCash, expenses: expenses, directDeposit: directDeposit,
+    netCashOwed: netCashOwed
   };
 }
 
@@ -311,7 +428,8 @@ function computeNet_(entries) {
 // clawback). Without this, receivers only ever saw one flat total with no
 // way to see what it was made of.
 function sumBreakdowns_(breakdowns) {
-  var out = { storeCash: 0, carCash: 0, posCash: 0, deliveryFee: 0, posSales: 0, creditSales: 0, vatOnDelivery: 0, netCashOwed: 0 };
+  var out = { storeCash: 0, carCash: 0, posCash: 0, deliveryFee: 0, posSales: 0, creditSales: 0, vatOnDelivery: 0,
+    otherCash: 0, expenses: 0, directDeposit: 0, netCashOwed: 0 };
   breakdowns.forEach(function (b) {
     if (!b) return;
     out.storeCash += Number(b.storeCash || 0);
@@ -321,6 +439,9 @@ function sumBreakdowns_(breakdowns) {
     out.posSales += Number(b.posSales || 0);
     out.creditSales += Number(b.creditSales || 0);
     out.vatOnDelivery += Number(b.vatOnDelivery || 0);
+    out.otherCash += Number(b.otherCash || 0);
+    out.expenses += Number(b.expenses || 0);
+    out.directDeposit += Number(b.directDeposit || 0);
     out.netCashOwed += Number(b.netCashOwed || 0);
   });
   return out;
@@ -567,6 +688,11 @@ function actionBulkSubmitAreaBatch_(req, user) {
       errors.push({ row: i, error: 'delivery_without_sale' });
       continue;
     }
+    var nonSales = checkNonSalesFields_(r);
+    if (nonSales) {
+      errors.push({ row: i, error: nonSales });
+      continue;
+    }
     prepared.push({ row: r, locationId: scope.locationId });
   }
   if (errors.length) return { ok: false, error: 'invalid_rows', results: errors };
@@ -575,7 +701,7 @@ function actionBulkSubmitAreaBatch_(req, user) {
   var isDryRun = !!req.dryRun;
   var entries = prepared.map(function (p) {
     var r = p.row;
-    return {
+    var e = {
       id: Utilities.getUuid(),
       date: r.date,
       sourceType: r.sourceType,
@@ -596,6 +722,9 @@ function actionBulkSubmitAreaBatch_(req, user) {
       consumedBy: batchId,
       voided: false
     };
+    var rowExtra = nonSalesFields_(r);
+    safeOwnKeys_(rowExtra).forEach(function (k) { e[k] = rowExtra[k]; });
+    return e;
   });
 
   var byLocation = {};
@@ -738,9 +867,16 @@ function actionDeputyApproveBatch_(req, user) {
     viaBulkBatch: batch.id
   };
   writeRow(SHEETS.HANDOFFS, handoff);
+  var uploader = getById_(SHEETS.USERS, batch.uploadedBy) || user;
   batch.entryIds.forEach(function (id) {
     var e = getById_(SHEETS.ENTRIES, id);
-    if (e) { e.consumedBy = handoff.id; writeRow(SHEETS.ENTRIES, e); }
+    if (!e) return;
+    e.consumedBy = handoff.id;
+    writeRow(SHEETS.ENTRIES, e);
+    // Cash the branch banked itself, reported through the upload: the
+    // deposit record is created now, not at upload time, so a rejected
+    // batch never leaves a deposit behind.
+    if (Number(e.directDepositAmount || 0) > 0) recordDirectDeposit_(e, uploader);
   });
 
   batch.status = 'deputy_approved';
@@ -1321,7 +1457,11 @@ function actionDashboardAll_(req, user) {
 // ---------- Sales report ----------
 
 function actionSalesReport_(req, user) {
-  if (!isCompanyWide_(user.role) && user.role !== 'cluster_manager') {
+  // A branch manager reads their own branch's report; an area manager
+  // their own area's; everyone company-wide sees all of it. The scoping
+  // below is what keeps the filters honest — a filter the client sends for
+  // someone else's branch simply narrows an already-scoped set.
+  if (!isCompanyWide_(user.role) && user.role !== 'cluster_manager' && user.role !== 'store_manager') {
     return { ok: false, error: 'forbidden' };
   }
 
@@ -1339,6 +1479,31 @@ function actionSalesReport_(req, user) {
       .filter(function (l) { return clusterManagerOwnsCluster_(user.id, l.clusterId); })
       .map(function (l) { return l.id; });
     entries = entries.filter(function (e) { return myLocationIds.indexOf(e.locationId) >= 0; });
+  }
+
+  if (user.role === 'store_manager') {
+    var myStore = storeOfManager_(user.id);
+    entries = myStore ? entries.filter(function (e) { return e.locationId === myStore.locationId; }) : [];
+  }
+
+  if (req.clusterId) {
+    entries = entries.filter(function (e) { var l = locById[e.locationId]; return l && l.clusterId === req.clusterId; });
+  }
+  // Payment method filters on how the money arrived, not on the source.
+  if (req.paymentMethod) {
+    var field = { cash: 'cashSales', pos: 'posSales', credit: 'creditSales', delivery: 'deliveryFeeBankAmount',
+      other: 'otherCash', expense: 'expenseAmount', deposit: 'directDepositAmount' }[req.paymentMethod];
+    if (field) entries = entries.filter(function (e) { return Number(e[field] || 0) > 0; });
+  }
+  // The person behind the source (a car's driver, a POS machine's holder),
+  // which is a different question from who typed the entry in.
+  if (req.driverUserId) {
+    var myCars = readSheet(SHEETS.CARS).filter(function (c) { return c.driverUserId === req.driverUserId; }).map(function (c) { return c.id; });
+    var myPos = readSheet(SHEETS.POS).filter(function (p) { return p.assignedUserId === req.driverUserId; }).map(function (p) { return p.id; });
+    entries = entries.filter(function (e) {
+      return (e.sourceType === 'car' && myCars.indexOf(e.sourceId) >= 0) ||
+        (e.sourceType === 'pos' && myPos.indexOf(e.sourceId) >= 0);
+    });
   }
 
   if (req.dateFrom) entries = entries.filter(function (e) { return e.date >= req.dateFrom; });

@@ -634,8 +634,16 @@ check(combined.ok, 'getDashboardAll succeeds for a company-wide role');
 close(combined.report.totals.netCashOwed, separateReport.totals.netCashOwed, 'bundled report.totals matches the separate getSalesReport call');
 check(combined.handoffs.handoffs.length === separateHandoffs.handoffs.length, 'bundled handoffs list matches the separate listHandoffs call');
 close(combined.dashboard.companyOutstanding, separateDash.companyOutstanding, 'bundled dashboard.companyOutstanding matches the separate listDashboard call');
+// A branch manager may now read their own branch's report, so the bundle
+// succeeds for them — but still only with their own branch's rows, and the
+// bundle must not show them anything the separate call would not.
 var combinedStore = call({ action: 'getDashboardAll', token: aliTok });
-check(!combinedStore.ok && combinedStore.error === 'forbidden', 'a plain store manager gets the same forbidden from getDashboardAll as from getSalesReport directly -- the bundle does not loosen any individual permission check');
+var separateStoreReport = call({ action: 'getSalesReport', token: aliTok });
+check(combinedStore.ok && combinedStore.report.entries.length === separateStoreReport.entries.length,
+  'the bundle gives a branch manager exactly what the separate getSalesReport call gives them -- it does not loosen any individual permission check');
+check(combinedStore.report.entries.every(function (e) { return e.locationId === location.entity.id; }),
+  'and only rows from their own branch');
+check(call({ action: 'getSalesReport', token: musaTok }).error === 'forbidden', 'a collector still gets no report at all');
 
 console.log('--- dashboard period comparison: last 7 days vs. the 7 days before ---');
 function isoOffset(daysAgo) { var d = new Date(); d.setDate(d.getDate() - daysAgo); return d.toISOString().slice(0, 10); }
@@ -1272,6 +1280,92 @@ check(call({ action: 'adminResendInvite', token: aliTok, id: inv2.id }).error ==
 var visibleToManager = call({ action: 'listMeta', token: aliTok }).users.filter(function (u) { return u.id === inv.user.id; })[0];
 check(visibleToManager && visibleToManager.lastLoginAt === undefined && visibleToManager.status === undefined, 'non-company-wide users do not see anyone\'s status or last login');
 check(ctx.inviteAppUrl_({ appUrl: 'javascript:alert(1)' }) === ctx.DEFAULT_APP_URL && ctx.inviteAppUrl_({ appUrl: 'https://x.example/app/index.html?y=1' }) === 'https://x.example/app/', 'the link base only accepts a clean https app address');
+
+console.log('--- master data: non-sales collection items and expense items ---');
+var incomeItem = call({ action: 'adminSaveEntity', token: adminTok, kind: 'income_item', data: { name: 'تحصيل مبيعات آجلة' } });
+var expenseItem = call({ action: 'adminSaveEntity', token: adminTok, kind: 'expense_item', data: { name: 'وقود' } });
+check(incomeItem.ok && expenseItem.ok, 'admin can create a collection item and an expense item');
+check(call({ action: 'adminSaveEntity', token: adminTok, kind: 'income_item', data: { name: '' } }).error === 'invalid_input', 'an item needs a name');
+check(call({ action: 'adminSaveEntity', token: aliTok, kind: 'expense_item', data: { name: 'Sneaky' } }).error === 'forbidden', 'only admin keeps the master data');
+var incomeId = incomeItem.entity.id, expenseId = expenseItem.entity.id;
+
+console.log('--- product price: fixed or editable per product ---');
+var fixedProduct = call({ action: 'adminSaveEntity', token: adminTok, kind: 'product', data: { name: 'أسطوانة 12.5kg', type: 'goods', unitPrice: 45, priceLocked: true } });
+check(fixedProduct.ok && fixedProduct.entity.priceLocked === true && fixedProduct.entity.unitPrice === 45, 'a product can carry a fixed price');
+check(call({ action: 'adminSaveEntity', token: adminTok, kind: 'product', data: { name: 'Bad', priceLocked: true } }).error === 'invalid_input', 'a price cannot be locked when there is no price to lock');
+var openProduct = call({ action: 'adminSaveEntity', token: adminTok, kind: 'product', data: { name: 'خدمة توصيل', type: 'services', unitPrice: 20 } });
+check(openProduct.ok && !openProduct.entity.priceLocked, 'and a product can keep an editable suggested price');
+
+console.log('--- a branch store has delivery fees too ---');
+var branchDelivery = call({ action: 'createDailyEntry', token: aliTok, date: '2026-07-01', sourceType: 'store', sourceId: store.entity.id, cashSales: 1000, deliveryFeeBankAmount: 115 });
+check(branchDelivery.ok, 'a branch store entry accepts a delivery fee');
+var branchNet = ctx.computeNet_([branchDelivery.entry]);
+close(branchNet.deliveryFee, 115, 'the fee is counted');
+close(branchNet.vatOnDelivery, 15, 'its VAT is credited back');
+close(branchNet.netCashOwed, 900, 'and the branch owes the cash minus the delivery fee before VAT');
+
+console.log('--- non-sales collections, expenses and direct deposits ---');
+check(call({ action: 'createDailyEntry', token: aliTok, date: '2026-07-02', sourceType: 'store', sourceId: store.entity.id, otherCash: 200 }).error === 'invalid_income_item', 'money collected outside sales must name an item from the master data');
+check(call({ action: 'createDailyEntry', token: aliTok, date: '2026-07-02', sourceType: 'store', sourceId: store.entity.id, otherCash: 200, otherCashItemId: incomeId }).error === 'reason_required', 'and must say why');
+check(call({ action: 'createDailyEntry', token: aliTok, date: '2026-07-02', sourceType: 'store', sourceId: store.entity.id, cashSales: 100, expenseAmount: 50, expenseItemId: 'nope', expenseReason: 'x' }).error === 'invalid_expense_item', 'a cash expense must name an item from the master data');
+check(call({ action: 'createDailyEntry', token: aliTok, date: '2026-07-02', sourceType: 'store', sourceId: store.entity.id, cashSales: 100, expenseAmount: 50, expenseItemId: expenseId }).error === 'reason_required', 'and must say why too');
+check(call({ action: 'createDailyEntry', token: aliTok, date: '2026-07-02', sourceType: 'store', sourceId: store.entity.id, cashSales: 100, directDepositAmount: 50 }).error === 'deposit_needs_reference', 'cash banked at the source needs a bank reference');
+check(call({ action: 'createDailyEntry', token: aliTok, date: '2026-07-02', sourceType: 'store', sourceId: store.entity.id, cashSales: 100, directDepositAmount: 500, directDepositRef: 'REF-1' }).error === 'deposit_exceeds_cash', 'and can never exceed the cash that entry actually produced');
+
+var depositsBefore = ctx.readSheet(SHEETS.HANDOFFS).filter(function (h) { return h.kind === 'deposit'; }).length;
+var mixed = call({ action: 'createDailyEntry', token: aliTok, date: '2026-07-03', sourceType: 'store', sourceId: store.entity.id,
+  cashSales: 1000, deliveryFeeBankAmount: 115,
+  otherCash: 200, otherCashItemId: incomeId, otherCashReason: 'سداد فاتورة آجلة لعميل',
+  expenseAmount: 50, expenseItemId: expenseId, expenseReason: 'تعبئة وقود السيارة',
+  directDepositAmount: 300, directDepositRef: 'BANK-99' });
+check(mixed.ok, 'one entry can carry a sale, a collection, an expense and a direct deposit');
+var mixedNet = ctx.computeNet_([mixed.entry]);
+close(mixedNet.otherCash, 200, 'the collection is tracked on its own');
+close(mixedNet.expenses, 50, 'so is the expense');
+close(mixedNet.directDeposit, 300, 'so is the amount already banked');
+// 1000 cash + 200 collected - 115 delivery + 15 VAT back - 50 spent - 300 banked
+close(mixedNet.netCashOwed, 750, 'and only the remainder is still owed to the chain');
+
+var deposits = ctx.readSheet(SHEETS.HANDOFFS).filter(function (h) { return h.kind === 'deposit'; });
+check(deposits.length === depositsBefore + 1, 'banking cash at the source writes a deposit record');
+var direct = deposits[deposits.length - 1];
+check(direct.direct === true && direct.status === 'completed' && direct.bankReference === 'BANK-99', 'marked as a direct deposit, completed, with its reference');
+check(direct.sourceEntryIds.length === 1 && direct.sourceEntryIds[0] === mixed.entry.id, 'and linked back to the entry it came from');
+check(direct.amount === 300 && mixed.deposit && mixed.deposit.id === direct.id, 'for the amount deposited');
+var recon = call({ action: 'getReconciliation', token: adminTok });
+check(recon.ok && recon.unmatchedDeposits.some(function (d) { return d.id === direct.id; }), 'and the bank reconciliation sees it like any other deposit');
+
+console.log('--- the remainder still travels the normal chain ---');
+var restHandoff = call({ action: 'createHandoff', token: aliTok, kind: 'location_to_cluster', locationId: location.entity.id });
+check(restHandoff.ok, 'the branch hands over what is left');
+// the two 2026-07 entries above are the only unconsumed ones for this location
+close(restHandoff.handoff.amount, restHandoff.handoff.breakdown.netCashOwed, 'and the amount handed over is exactly what its own breakdown adds up to');
+close(restHandoff.handoff.breakdown.otherCash, 200, 'the collection shows in the handoff breakdown');
+close(restHandoff.handoff.breakdown.expenses, 50, 'the expense shows too');
+close(restHandoff.handoff.breakdown.directDeposit, 300, 'and so does the amount already banked');
+
+console.log('--- an area manager enters data for every branch in their own area ---');
+var amStore = call({ action: 'createDailyEntry', token: saraTok, date: '2026-07-10', sourceType: 'store', sourceId: store.entity.id, cashSales: 500, deliveryFeeBankAmount: 57.5 });
+check(amStore.ok, 'the area manager can enter a branch store day, delivery fee included');
+var amStoreNet = ctx.computeNet_([amStore.entry]);
+close(amStoreNet.netCashOwed, 450, 'and the branch delivery fee is deducted before VAT, same as a car');
+var amCar = call({ action: 'createDailyEntry', token: saraTok, date: '2026-07-10', sourceType: 'car', sourceId: car.entity.id, cashSales: 300 });
+check(amCar.ok, 'and a car in that branch');
+var amPos = call({ action: 'createDailyEntry', token: saraTok, date: '2026-07-10', sourceType: 'pos', sourceId: pos.entity.id, cashSales: 100, deliveryFeeBankAmount: 23 });
+check(amPos.ok, 'and a POS machine in that branch');
+var outsideStore = call({ action: 'adminSaveEntity', token: adminTok, kind: 'cluster', data: { name: 'Far Area' } });
+var outsideLoc = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: 'Jeddah', name: 'Far Branch', clusterId: outsideStore.entity.id } });
+var outsideBranchStore = call({ action: 'adminSaveEntity', token: adminTok, kind: 'store', data: { locationId: outsideLoc.entity.id, name: 'Far Store' } });
+check(call({ action: 'createDailyEntry', token: saraTok, date: '2026-07-10', sourceType: 'store', sourceId: outsideBranchStore.entity.id, cashSales: 10 }).error === 'forbidden',
+  'but never for a branch outside their own area');
+check(call({ action: 'createDailyEntry', token: musaTok, date: '2026-07-10', sourceType: 'store', sourceId: store.entity.id, cashSales: 10 }).error === 'forbidden',
+  'and a collector still cannot enter sales at all');
+var amImport = call({ action: 'importDailyEntries', token: saraTok, rows: [
+  { date: '2026-07-11', sourceType: 'store', sourceId: store.entity.id, cashSales: 200, deliveryFeeBankAmount: 11.5 },
+  { date: '2026-07-11', sourceType: 'store', sourceId: outsideBranchStore.entity.id, cashSales: 200 }
+] });
+check(amImport.ok && amImport.created === 1 && amImport.results[1].error === 'forbidden',
+  'a CSV import by the area manager takes their own branches and refuses the rest');
 
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);

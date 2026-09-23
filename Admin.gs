@@ -12,7 +12,9 @@ var ENTITY_SHEET = {
   pos: SHEETS.POS,
   cluster: SHEETS.CLUSTERS,
   zone: SHEETS.ZONES,
-  product: SHEETS.PRODUCTS
+  product: SHEETS.PRODUCTS,
+  income_item: SHEETS.INCOME_ITEMS,
+  expense_item: SHEETS.EXPENSE_ITEMS
 };
 
 // child sheet + the field on the child that points at the parent, used to
@@ -27,7 +29,11 @@ var ENTITY_CHILDREN = {
   // a product with existing sales history stays selectable in entry forms
   // (deactivate instead) but blocking delete protects the report from
   // orphaned productIds it can no longer label.
-  product: [{ sheet: SHEETS.ENTRIES, field: 'productId' }]
+  product: [{ sheet: SHEETS.ENTRIES, field: 'productId' }],
+  // same reasoning as product: an item already used by an entry stays
+  // selectable history, so deactivate rather than delete.
+  income_item: [{ sheet: SHEETS.ENTRIES, field: 'otherCashItemId' }],
+  expense_item: [{ sheet: SHEETS.ENTRIES, field: 'expenseItemId' }]
 };
 
 function requireAdmin_(user) {
@@ -395,6 +401,13 @@ function validateEntity_(kind, d) {
     if (!d.city || !d.name) return 'invalid_input';
   } else if (kind === 'product') {
     if (!d.name) return 'invalid_input';
+    // A fixed price is only meaningful if there is a price: unitPrice is
+    // optional, but locking one that was never set would leave the entry
+    // form with a read-only empty box nobody can fill.
+    if (d.unitPrice != null && d.unitPrice !== '' && !(Number(d.unitPrice) >= 0)) return 'invalid_input';
+    if (d.priceLocked && !(Number(d.unitPrice) > 0)) return 'invalid_input';
+  } else if (kind === 'income_item' || kind === 'expense_item') {
+    if (!d.name) return 'invalid_input';
   } else {
     return 'invalid_kind';
   }
@@ -517,6 +530,8 @@ function actionMeta_(req, user) {
   var clusters = readSheet(SHEETS.CLUSTERS);
   var zones = readSheet(SHEETS.ZONES);
   var products = readSheet(SHEETS.PRODUCTS);
+  var incomeItems = readSheet(SHEETS.INCOME_ITEMS);
+  var expenseItems = readSheet(SHEETS.EXPENSE_ITEMS);
   var users = readSheet(SHEETS.USERS).map(publicUser_);
 
   if (!isCompanyWide_(user.role)) {
@@ -531,6 +546,7 @@ function actionMeta_(req, user) {
     ok: true,
     locations: locations, stores: stores, cars: cars, pos: pos,
     clusters: clusters, zones: zones, products: products, users: users,
+    incomeItems: incomeItems, expenseItems: expenseItems,
     config: { vatRate: vatRate_(), staleThresholdHours: staleThresholdHours_(), heldThresholdHours: heldThresholdHours_(), secondApprovalThreshold: secondApprovalThreshold_(), areaManagerBulkUploadEnabled: areaManagerBulkUploadEnabled_() }
   };
 }
