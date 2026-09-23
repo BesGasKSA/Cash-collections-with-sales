@@ -44,17 +44,24 @@ function api(payload) {
 // cash banked on the spot as a موازنة.
 var DAY = new Date().toISOString().slice(0, 10);
 var PRODUCTS = [
-  { name: 'أسطوانة غاز 12.5 كجم', price: 45, locked: true, qty: 40 },
-  { name: 'أسطوانة غاز 25 كجم', price: 85, locked: true, qty: 20 },
-  { name: 'أسطوانة غاز 50 كجم', price: 160, locked: true, qty: 10 },
-  { name: 'غاز سائب — لتر', price: 3.5, locked: false, qty: 300 },
-  { name: 'منظّم ضغط', price: 60, locked: false, qty: 15 },
-  { name: 'خرطوم غاز', price: 25, locked: false, qty: 25 },
-  { name: 'صمّام أمان', price: 18, locked: false, qty: 30 }
+  { name: 'أسطوانة غاز 12.5 كجم', price: 45, locked: true, qty: 40, pay: 'cash', type: 'goods' },
+  { name: 'أسطوانة غاز 25 كجم', price: 85, locked: true, qty: 20, pay: 'cash', type: 'goods' },
+  { name: 'غاز سائب — لتر', price: 3.5, locked: false, qty: 300, pay: 'cash', type: 'goods' },
+  // paid to the bank, never held as cash — and only a services product may
+  // carry a delivery line
+  { name: 'رسوم توصيل', price: 115, locked: false, qty: 5, pay: 'delivery', type: 'services' },
+  // sold on account: inside the day's sales, but no cash came in for it
+  { name: 'أسطوانة غاز 12.5 كجم', price: 45, locked: true, qty: 20, pay: 'credit', type: 'goods' }
 ];
 var INSURANCE = 1200, EXPENSE = 350, MOAZANA = 3000;
-var CASH_TOTAL = PRODUCTS.reduce(function (s, p) { return s + p.price * p.qty; }, 0); // 8,215
-var NET = CASH_TOTAL + INSURANCE - EXPENSE - MOAZANA;                                 // 6,065
+var VAT_RATE = 0.15;
+function sumFor(pay) { return PRODUCTS.filter(function (p) { return p.pay === pay; }).reduce(function (s, p) { return s + p.price * p.qty; }, 0); }
+var CASH_TOTAL = sumFor('cash');        // 4,550 over three lines
+var DELIVERY = sumFor('delivery');      // 575 paid to the bank
+var CREDIT = sumFor('credit');          // 900 on account
+var VAT_BACK = DELIVERY / (1 + VAT_RATE) * VAT_RATE;   // 75
+var DELIVERY_BASE = DELIVERY - VAT_BACK;               // 500
+var NET = CASH_TOTAL + INSURANCE - DELIVERY_BASE - EXPENSE - CREDIT - MOAZANA; // 4,550 + 1,200 − 500 − 350 − 900 − 3,000 = 1,000
 function money(n) { return Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
 
 var seeded = {};
@@ -66,7 +73,10 @@ async function seed() {
   seeded.products = [];
   for (var i = 0; i < PRODUCTS.length; i++) {
     var p = PRODUCTS[i];
-    var r = await call({ action: 'adminSaveEntity', kind: 'product', data: { name: p.name, type: 'goods', unitPrice: p.price, priceLocked: p.locked } });
+    // the credit line re-uses a product that is already seeded
+    var already = seeded.products.filter(function (x) { return x.name === p.name; })[0];
+    if (already) { seeded.products.push(Object.assign({}, p, { id: already.id })); continue; }
+    var r = await call({ action: 'adminSaveEntity', kind: 'product', data: { name: p.name, type: p.type || 'goods', unitPrice: p.price, priceLocked: p.locked } });
     seeded.products.push(Object.assign({ id: r.entity.id }, p));
   }
   var inc = await call({ action: 'adminSaveEntity', kind: 'income_item', data: { name: 'تأمين أسطوانات' } });
@@ -101,7 +111,7 @@ function writeCsv() {
     var extra = i === 0
       ? [INSURANCE, 'تأمين أسطوانات', 'تأمين مسترد على 24 أسطوانة', EXPENSE, 'وقود سيارة التوصيل', 'تعبئة وقود سيارة التوصيل', MOAZANA, 'MZN-' + DAY.replace(/-/g, '') + '-2', 'موازنة مبيعات نصف اليوم'].join(',')
       : ',,,,,,,,';
-    lines.push([DAY, b.name, 'store', store.name, p.name, p.qty, p.price, 'cash', extra, '', '', ''].join(','));
+    lines.push([DAY, b.name, 'store', store.name, p.name, p.qty, p.price, p.pay, extra, '', '', ''].join(','));
   });
   var file = path.join(OUT, 'رفع-دفعة-المنطقة.csv');
   fs.writeFileSync(file, '﻿' + lines.join('\n'), 'utf8');
@@ -131,9 +141,9 @@ var sleep = function (ms) { return new Promise(function (r) { setTimeout(r, ms);
 async function stage(fn, args) { return page.evaluate(fn, args); }
 async function say(title, body, hold) {
   await page.evaluate(function (a) { window.stage.say(a.t, a.b); }, { t: title, b: body || '' });
-  await sleep(hold != null ? hold : 2600);
+  await sleep(hold != null ? hold : 4200);
 }
-async function point(html, wait) { await page.evaluate(function (h) { window.stage.point(h); }, html); await sleep(wait || 1700); }
+async function point(html, wait) { await page.evaluate(function (h) { window.stage.point(h); }, html); await sleep(wait || 2400); }
 async function chapter(n, name) { await page.evaluate(function (a) { window.stage.chapter(a.n, a.name); }, { n: n, name: name }); }
 async function progress(pct, left, right) { await page.evaluate(function (a) { window.stage.progress(a.p, a.l, a.r); }, { p: pct, l: left, r: right }); }
 async function caption(text) { await page.evaluate(function (t) { window.stage.caption(t); }, text || ''); }
@@ -154,7 +164,7 @@ async function tap(sel, opts) {
   await page.evaluate(function (r) { window.stage.tapAt(r.x + r.width / 2, r.y + r.height / 2); }, rect);
   await sleep(420);
   await appFrame.evaluate(function (s) { var el = document.querySelector(s); if (el) el.click(); }, sel);
-  await sleep(opts.wait != null ? opts.wait : 900);
+  await sleep(opts.wait != null ? opts.wait : 1500);
   if (!opts.keepRing) await ring(null);
   return true;
 }
@@ -176,31 +186,31 @@ async function typeIn(sel, value, opts) {
   await ring(sel);
   await appFrame.focus(sel).catch(function () {});
   await appFrame.evaluate(function (s) { var e = document.querySelector(s); if (e) { e.value = ''; } }, sel);
-  await appFrame.type(sel, String(value), { delay: opts.delay || 45 });
+  await appFrame.type(sel, String(value), { delay: opts.delay || 85 });
   await appFrame.evaluate(function (s) {
     var e = document.querySelector(s); if (!e) return;
     e.dispatchEvent(new Event('input', { bubbles: true }));
     e.dispatchEvent(new Event('blur', { bubbles: true }));
   }, sel);
-  await sleep(opts.wait != null ? opts.wait : 500);
+  await sleep(opts.wait != null ? opts.wait : 900);
   if (!opts.keepRing) await ring(null);
 }
 async function pick(sel, value, opts) {
   opts = opts || {};
   await ring(sel);
   await appFrame.select(sel, String(value));
-  await sleep(opts.wait != null ? opts.wait : 650);
+  await sleep(opts.wait != null ? opts.wait : 1000);
   if (!opts.keepRing) await ring(null);
 }
 async function scrollTo(sel, block) {
   await appFrame.evaluate(function (a) {
     var e = document.querySelector(a.s); if (e) e.scrollIntoView({ block: a.b || 'center', behavior: 'smooth' });
   }, { s: sel, b: block });
-  await sleep(900);
+  await sleep(1500);
 }
 async function scrollBy(px) {
   await appFrame.evaluate(function (p) { window.scrollBy({ top: p, behavior: 'smooth' }); }, px);
-  await sleep(1100);
+  await sleep(1800);
 }
 async function signInAs(who) {
   var t = seeded.tokens[who];
@@ -314,10 +324,12 @@ async function film(csv) {
   await caption('');
   await signInAs('area');
   await sleep(1400);
-  await point('<b>٧ منتجات</b> بيعت نقداً في فرع واحد', 1100);
-  await point('<b>تأمين أسطوانات</b> — نقدية من غير البيع <span class="fig">' + money(INSURANCE) + '</span>', 1100);
-  await point('<b>مصروفات</b> وقود دُفعت من النقدية <span class="fig">' + money(EXPENSE) + '</span>', 1100);
-  await point('<b>موازنة</b> أُودعت بالبنك مباشرة <span class="fig">' + money(MOAZANA) + '</span>', 1400);
+  await point('<b>٣ منتجات</b> بيعت نقداً <span class="fig">' + money(CASH_TOTAL) + '</span>', 1500);
+  await point('<b>رسوم توصيل</b> مدفوعة للبنك <span class="fig">' + money(DELIVERY) + '</span>', 1500);
+  await point('<b>بيع آجل</b> لم يُستلم نقداً <span class="fig">' + money(CREDIT) + '</span>', 1500);
+  await point('<b>تأمين أسطوانات</b> — تحصيل غير بيعي <span class="fig">' + money(INSURANCE) + '</span>', 1500);
+  await point('<b>مصروفات</b> وقود من النقدية <span class="fig">' + money(EXPENSE) + '</span>', 1500);
+  await point('<b>موازنة</b> أُودعت بالبنك مباشرة <span class="fig">' + money(MOAZANA) + '</span>', 1800);
 
   // -------------------------------------------------- 2. the area dashboard
   await chapter('2', 'لوحة مدير المنطقة');
@@ -382,14 +394,18 @@ async function film(csv) {
     }, { i: i });
     var base = '[data-rec="line' + i + '"] ';
     await scrollTo(base + '.lnProduct');
+    if (p.pay && p.pay !== 'cash') await pick(base + '.lnPayment', p.pay, { wait: 700 });
     await pick(base + '.lnProduct', p.id, { wait: 500 });
     await typeIn(base + '.lnQty', p.qty, { delay: 70, wait: 450 });
-    await caption(p.name + ' — ' + p.qty + ' × ' + money(p.price) + ' = ' + money(p.qty * p.price));
+    var payWord = p.pay === 'delivery' ? ' — رسوم توصيل (بنك)' : p.pay === 'credit' ? ' — بيع آجل' : '';
+    await caption(p.name + payWord + ' — ' + p.qty + ' × ' + money(p.price) + ' = ' + money(p.qty * p.price));
+    if (p.pay === 'delivery') await point('<b>رسوم التوصيل</b> تُدفع للبنك — تُخصم قبل الضريبة، والضريبة تُسترد', 2400);
+    if (p.pay === 'credit') await point('<b>البيع الآجل</b> ضمن المبيعات، لكنه <b>يُخصم</b> من النقدية — لم يُستلم', 2400);
     if (i === 0) await point('السعر يأتي من <b>بيانات المنتج</b>، والإجمالي الفرعي يُحسب فوراً', 1800);
     if (p.locked && i === 0) await point('هذا المنتج سعره <b>ثابت</b> — لا يمكن تعديله عند الإدخال', 1800);
-    await sleep(1300);
+    await sleep(2100);
   }
-  await caption('إجمالي المبيعات النقدية ' + money(CASH_TOTAL));
+  await caption('نقدي ' + money(CASH_TOTAL) + ' · توصيل ' + money(DELIVERY) + ' · آجل ' + money(CREDIT));
   await sleep(1600);
   await caption('');
 
@@ -423,9 +439,10 @@ async function film(csv) {
   await scrollTo('#eNetPreview');
   await ring('#eNetPreview');
   await sleep(2600);
-  await point(money(CASH_TOTAL) + ' نقدي <b>+</b> ' + money(INSURANCE) + ' تحصيلات', 900);
-  await point('<b>−</b> ' + money(EXPENSE) + ' مصروفات <b>−</b> ' + money(MOAZANA) + ' موازنة', 900);
-  await point('<b>= ' + money(NET) + '</b> صافي الواجب تسليمه', 1400);
+  await point(money(CASH_TOTAL) + ' نقدي <b>+</b> ' + money(INSURANCE) + ' تحصيلات غير بيعية', 1700);
+  await point('<b>−</b> ' + money(DELIVERY_BASE) + ' توصيل قبل الضريبة (الضريبة ' + money(VAT_BACK) + ' تُسترد)', 1700);
+  await point('<b>−</b> ' + money(EXPENSE) + ' مصروفات <b>−</b> ' + money(CREDIT) + ' آجل <b>−</b> ' + money(MOAZANA) + ' موازنة', 1700);
+  await point('<b>= ' + money(NET) + '</b> صافي النقدية الواجب تسليمها', 2000);
   await ring(null);
   await scrollTo('#eSubmit');
   await tap('#eSubmit', { wait: 2600 });
@@ -545,7 +562,7 @@ async function film(csv) {
     await caption('');
   }
   await say('تمّت الدورة كاملة', 'من إدخال مدير المنطقة، إلى الاعتماد، إلى استلام المحصّل وإيداعه، إلى لوحات الأدمن — بنفس المعادلة في كل شاشة.');
-  await point('صافي ما سُلّم من الإدخال اليدوي <span class="fig">' + money(NET) + '</span>', 900);
+  await point('صافي ما سُلّم من الإدخال اليدوي <span class="fig">' + money(NET) + '</span>', 1600);
   await point('والموازنة <span class="fig">' + money(MOAZANA) + '</span> ظهرت إيداعاً بنكياً', 900);
   await point('والتسوية البنكية تطابقها مع كشف البنك', 1200);
   await progress(100, 'انتهى', 'الناقل الأفضل للغاز');
