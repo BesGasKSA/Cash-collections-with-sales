@@ -388,11 +388,24 @@ function sendInvite_(u, tempPassword) {
 // Structural conflict-of-interest guards: the same person may never hold
 // two roles that would let them approve their own handoff (see also the
 // runtime checks in Collection.gs at handoff-creation and confirm time).
+// The picker offers only the right role, but the picker is the client's
+// word for it; this is the server's.
+function userHasRole_(userId, role) {
+  var u = getById_(SHEETS.USERS, userId);
+  if (!u || u.active === false) return false;
+  // An admin may stand in for any position while the org is being set up or
+  // while somebody is away; the conflict-of-interest checks still apply to
+  // them exactly as they do to anyone else.
+  return u.role === role || u.role === 'admin';
+}
+
 function validateEntity_(kind, d) {
   if (kind === 'location') {
     if (!d.city || !d.name) return 'invalid_input';
   } else if (kind === 'store') {
     if (!d.locationId || !d.name) return 'invalid_input';
+    // A branch with no manager has nobody to hand its cash to.
+    if (!d.storeManagerUserId) return 'manager_required';
     var loc = getById_(SHEETS.LOCATIONS, d.locationId);
     if (!loc) return 'invalid_location';
     if (d.storeManagerUserId && loc.clusterId) {
@@ -401,19 +414,31 @@ function validateEntity_(kind, d) {
         return 'conflict_of_interest';
       }
     }
+    if (!userHasRole_(d.storeManagerUserId, 'store_manager')) return 'wrong_role';
   } else if (kind === 'car') {
     if (!d.locationId || !d.label) return 'invalid_input';
+    if (!d.driverUserId) return 'driver_required';
+    if (!userHasRole_(d.driverUserId, 'driver')) return 'wrong_role';
     if (!getById_(SHEETS.LOCATIONS, d.locationId)) return 'invalid_location';
   } else if (kind === 'pos') {
     if (!d.ownerType || !d.ownerId || !d.label) return 'invalid_input';
+    // Somebody carries every machine, and their name is who the cash on it
+    // is traced to.
+    if (!d.assignedUserId) return 'holder_required';
     if (d.ownerType !== 'store' && d.ownerType !== 'car') return 'invalid_owner_type';
     var ownerSheet = d.ownerType === 'store' ? SHEETS.STORES : SHEETS.CARS;
     if (!getById_(ownerSheet, d.ownerId)) return 'invalid_owner';
   } else if (kind === 'cluster') {
     if (!d.name) return 'invalid_input';
-    if (d.clusterManagerUserId && d.collectorUserId && d.clusterManagerUserId === d.collectorUserId) {
+    // Both ends of the area's hop: who collects from its branches, and who
+    // takes it to the bank.
+    if (!d.clusterManagerUserId) return 'manager_required';
+    if (!d.collectorUserId) return 'collector_required';
+    if (d.clusterManagerUserId === d.collectorUserId) {
       return 'conflict_of_interest';
     }
+    if (!userHasRole_(d.clusterManagerUserId, 'cluster_manager')) return 'wrong_role';
+    if (!userHasRole_(d.collectorUserId, 'collector')) return 'wrong_role';
   } else if (kind === 'zone') {
     if (!d.city || !d.name) return 'invalid_input';
   } else if (kind === 'product') {
