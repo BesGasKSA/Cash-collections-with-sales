@@ -1165,6 +1165,69 @@
     .bt-ind,.tile,.st-row,.rrow,.tx{transition:none !important;}
     .dr,.dr-scrim,.tile,.cx-body{transition:none !important;}
   }
+  /* ---- designed dropdown (see ddEnhance_) ---- */
+  select.dd-native{position:absolute !important;width:1px !important;height:1px !important;min-height:0 !important;
+    padding:0 !important;margin:0 !important;border:0 !important;opacity:0 !important;pointer-events:none !important;
+    clip:rect(0 0 0 0);overflow:hidden;}
+  .dd-btn{width:100%;display:flex;align-items:center;gap:10px;padding:10px 12px 10px 14px;min-height:44px;
+    border:1px solid var(--border);border-radius:12px;background:var(--card);color:var(--text);
+    font:inherit;font-size:14px;line-height:1.35;text-align:start;cursor:pointer;
+    transition:border-color .16s ease, box-shadow .16s ease, background .16s ease;}
+  html[dir="rtl"] .dd-btn{padding:10px 14px 10px 12px;}
+  .dd-btn .dd-v{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600;}
+  .dd-btn.is-empty .dd-v{color:var(--muted);font-weight:500;}
+  .dd-btn .dd-car{width:26px;height:26px;border-radius:8px;display:grid;place-items:center;flex:none;
+    background:var(--green-pale);color:var(--green-dark);transition:transform .22s cubic-bezier(.2,.8,.2,1), background .16s ease, color .16s ease;}
+  .dd-btn .dd-car svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round;}
+  .dd-btn:hover{border-color:var(--muted-2);}
+  .dd-btn:hover .dd-car{background:color-mix(in srgb, var(--green) 18%, transparent);}
+  .dd-btn:focus-visible,.dd-btn[aria-expanded="true"]{outline:none;border-color:var(--green);background:#fff;
+    box-shadow:0 0 0 3px color-mix(in srgb, var(--green) 16%, transparent);}
+  .dd-btn[aria-expanded="true"] .dd-car{transform:rotate(180deg);background:var(--green);color:#fff;}
+  .dd-btn:disabled{background:var(--bg);color:var(--muted);border-style:dashed;cursor:default;box-shadow:none;}
+  .dd-btn:disabled .dd-car{opacity:.35;}
+  .field:focus-within .dd-btn{border-color:var(--green);}
+
+  .dd-layer{position:fixed;inset:0;z-index:10000;}
+  .dd-back{position:absolute;inset:0;}
+  .dd-pop{position:fixed;display:flex;flex-direction:column;background:var(--card);border:1px solid var(--border-soft);
+    border-radius:14px;padding:6px;overflow:hidden;
+    box-shadow:0 22px 50px -14px rgba(30,45,33,.32), 0 3px 10px rgba(30,45,33,.08);
+    animation:ddIn .17s cubic-bezier(.2,.8,.2,1);transform-origin:top center;}
+  .dd-pop.up{transform-origin:bottom center;animation-name:ddInUp;}
+  @keyframes ddIn{from{opacity:0;transform:translateY(-6px) scale(.98);}to{opacity:1;transform:none;}}
+  @keyframes ddInUp{from{opacity:0;transform:translateY(6px) scale(.98);}to{opacity:1;transform:none;}}
+  .dd-search{display:flex;align-items:center;gap:8px;margin:0 0 6px;padding:0 10px;border-radius:10px;background:var(--bg);
+    border:1px solid var(--border-soft);}
+  .dd-search svg{width:16px;height:16px;flex:none;stroke:var(--muted);fill:none;stroke-width:2.2;stroke-linecap:round;}
+  .dd-search input.dd-q{border:0 !important;background:transparent !important;box-shadow:none !important;padding:9px 0 !important;
+    min-height:0 !important;font-size:14px;font-weight:500;direction:inherit;text-align:start;}
+  .dd-list{position:relative;list-style:none;margin:0;padding:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;}
+  .dd-opt{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;cursor:pointer;font-size:14px;
+    color:var(--text);transition:background .1s ease;user-select:none;}
+  .dd-opt .dd-t{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .dd-opt .dd-ck{width:18px;height:18px;flex:none;opacity:0;color:var(--green);transform:scale(.6);
+    transition:opacity .15s ease, transform .2s cubic-bezier(.2,.8,.2,1);}
+  .dd-opt .dd-ck svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2.8;stroke-linecap:round;stroke-linejoin:round;}
+  .dd-opt.act{background:color-mix(in srgb, var(--green) 8%, transparent);}
+  .dd-opt[aria-selected="true"]{background:var(--green-pale);color:var(--green-dark);font-weight:700;}
+  .dd-opt[aria-selected="true"] .dd-ck{opacity:1;transform:none;}
+  .dd-opt.ph .dd-t{color:var(--muted);}
+  .dd-opt[aria-disabled="true"]{opacity:.45;cursor:default;}
+  .dd-opt mark{background:color-mix(in srgb, var(--green) 22%, transparent);color:inherit;border-radius:3px;padding:0 1px;}
+  .dd-empty{padding:16px 10px;text-align:center;color:var(--muted);font-size:13px;}
+  .dd-grab{width:42px;height:5px;border-radius:5px;background:var(--border);margin:2px auto 10px;flex:none;}
+  .dd-title{font-weight:800;font-size:15.5px;padding:0 8px 10px;flex:none;}
+  /* phone: a bottom sheet with finger-sized rows */
+  .dd-layer.sheet .dd-back{background:rgba(22,32,24,.45);animation:ddFade .2s ease;}
+  .dd-layer.sheet .dd-pop{left:0;right:0;bottom:0;top:auto;border-radius:22px 22px 0 0;border:0;max-height:78vh;max-height:78dvh;
+    padding:8px 12px calc(14px + env(safe-area-inset-bottom));animation:ddUp .28s cubic-bezier(.2,.9,.25,1);}
+  .dd-layer.sheet .dd-opt{padding:13px 12px;font-size:15.5px;min-height:48px;border-radius:12px;}
+  .dd-layer.sheet .dd-search input.dd-q{font-size:16px;padding:11px 0 !important;}
+  @keyframes ddUp{from{transform:translateY(100%);}to{transform:none;}}
+  @keyframes ddFade{from{opacity:0;}to{opacity:1;}}
+  @media (max-width:700px){ .field .dd-btn{font-size:16px;min-height:46px;} }
+  @media (prefers-reduced-motion: reduce){ .dd-pop,.dd-back{animation:none !important;} .dd-btn .dd-car{transition:none;} }
 </style>
 </head>
 <body>
@@ -4241,6 +4304,241 @@ function moneyBlock_(id, colorKey, iconName, titleKey, hintKey, bodyHtml){
 var PAYMENT_FILTER_ = [['cash','entry_payment_cash'],['pos','entry_payment_pos']];
 var MOVEMENT_FILTER_ = [['credit','entry_creditTitle'],['delivery','entry_deliveryTitle'],['other','report_otherCash'],
   ['expense','report_expenses'],['deposit','report_directDeposit']];
+// ---------------- designed dropdown ----------------
+var DD_ = { open: null };
+var DD_CHECK_ = '<svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+function ddEligible_(sel){
+  return sel && sel.tagName === 'SELECT' && !sel._dd && !sel.multiple && !(sel.size > 1) &&
+    !sel.closest('header, .sb-user, [data-native]');
+}
+function ddEnhance_(sel){
+  if (!ddEligible_(sel) || !sel.parentNode) return;
+  var btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'dd-btn';
+  btn.setAttribute('aria-haspopup', 'listbox');
+  btn.setAttribute('aria-expanded', 'false');
+  btn.innerHTML = '<span class="dd-v"></span><span class="dd-car" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></span>';
+  if (sel.style.cssText) btn.style.cssText = sel.style.cssText.replace(/display\s*:\s*none;?/i, '');
+  if (sel.style.display === 'none') btn.style.display = 'none';
+  var lbl = sel.closest('.field') && sel.closest('.field').querySelector('label');
+  if (lbl && lbl.textContent) btn.setAttribute('aria-label', lbl.textContent.replace('*', '').trim());
+  sel._dd = btn; btn._sel = sel;
+  sel.classList.add('dd-native');
+  sel.tabIndex = -1;
+  sel.parentNode.insertBefore(btn, sel.nextSibling);
+  ddSync_(sel);
+  btn.addEventListener('click', function(){
+    if (DD_.open && DD_.open.sel === sel) ddClose_(true); else ddOpen_(sel);
+  });
+  btn.addEventListener('keydown', function(e){
+    if (['ArrowDown','ArrowUp','Enter',' '].indexOf(e.key) >= 0){ e.preventDefault(); ddOpen_(sel); }
+  });
+  sel.addEventListener('change', function(){ ddSync_(sel); });
+  sel.addEventListener('focus', function(){ btn.focus(); });
+  new MutationObserver(function(){ ddSync_(sel); })
+    .observe(sel, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ['disabled','selected','style'] });
+}
+function ddSync_(sel){
+  var btn = sel._dd; if (!btn) return;
+  var o = sel.options[sel.selectedIndex];
+  btn.firstChild.textContent = o ? o.textContent : '';
+  btn.classList.toggle('is-empty', !o || o.value === '');
+  btn.disabled = !!sel.disabled;
+  btn.style.display = sel.style.display === 'none' ? 'none' : '';
+}
+function ddScan_(root){
+  if (!root || root.nodeType !== 1) return;
+  if (root.tagName === 'SELECT') { ddEnhance_(root); return; }
+  var list = root.getElementsByTagName('select');
+  for (var i = 0; i < list.length; i++) ddEnhance_(list[i]);
+}
+function ddEsc_(x){ return String(x).replace(/[&<>"]/g, function(c){ return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]; }); }
+function ddNorm_(x){
+  // match Arabic regardless of hamza forms and taa marbuta
+  return String(x || '').toLowerCase().replace(/[إأآ]/g, 'ا').replace(/ة/g, 'ه').replace(/ى/g, 'ي').trim();
+}
+function ddOpen_(sel){
+  ddClose_(false);
+  var btn = sel._dd;
+  if (!btn || btn.disabled) return;
+  var phone = window.matchMedia('(max-width:700px)').matches;
+  var opts = Array.prototype.slice.call(sel.options);
+  var searchable = opts.length > 8;
+  var label = btn.getAttribute('aria-label') || '';
+  var layer = document.createElement('div');
+  layer.className = 'dd-layer' + (phone ? ' sheet' : '');
+  layer.innerHTML = '<div class="dd-back"></div><div class="dd-pop" role="dialog"' + (label ? ' aria-label="'+ddEsc_(label)+'"' : '') + '>' +
+    (phone ? '<div class="dd-grab"></div>' + (label ? '<div class="dd-title">'+ddEsc_(label)+'</div>' : '') : '') +
+    (searchable ? '<div class="dd-search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>' +
+      '<input class="dd-q" type="search" autocomplete="off" placeholder="'+ddEsc_(t('lf_search'))+'…"></div>' : '') +
+    '<ul class="dd-list" role="listbox"></ul></div>';
+  document.body.appendChild(layer);
+  var pop = layer.querySelector('.dd-pop'), ul = layer.querySelector('.dd-list'), q = layer.querySelector('.dd-q');
+  var active = -1, shown = [];
+
+  function draw(){
+    var term = q ? ddNorm_(q.value) : '';
+    shown = [];
+    ul.innerHTML = '';
+    opts.forEach(function(o, i){
+      var text = o.textContent;
+      if (term && ddNorm_(text).indexOf(term) < 0) return;
+      shown.push(i);
+      var li = document.createElement('li');
+      li.className = 'dd-opt' + (o.value === '' ? ' ph' : '');
+      li.setAttribute('role', 'option');
+      li.setAttribute('aria-selected', i === sel.selectedIndex ? 'true' : 'false');
+      if (o.disabled) li.setAttribute('aria-disabled', 'true');
+      li.dataset.i = i;
+      var shownText = ddEsc_(text);
+      if (term){
+        var at = ddNorm_(text).indexOf(term);
+        if (at >= 0) shownText = ddEsc_(text.slice(0, at)) + '<mark>' + ddEsc_(text.slice(at, at + term.length)) + '</mark>' + ddEsc_(text.slice(at + term.length));
+      }
+      li.innerHTML = '<span class="dd-t">' + shownText + '</span><span class="dd-ck">' + DD_CHECK_ + '</span>';
+      ul.appendChild(li);
+    });
+    if (!shown.length) ul.innerHTML = '<li class="dd-empty">' + ddEsc_(t('lf_noMatch')) + '</li>';
+    setActive(shown.indexOf(sel.selectedIndex) >= 0 ? shown.indexOf(sel.selectedIndex) : 0, true);
+  }
+  function setActive(k, center){
+    var items = ul.querySelectorAll('.dd-opt');
+    if (!items.length) { active = -1; return; }
+    active = Math.max(0, Math.min(items.length - 1, k));
+    for (var j = 0; j < items.length; j++) items[j].classList.toggle('act', j === active);
+    var it = items[active];
+    // scroll the list only — scrollIntoView would also move the page, and a
+    // page scroll closes the list
+    if (it){
+      var top = it.offsetTop, bottom = top + it.offsetHeight;
+      if (center) ul.scrollTop = Math.max(0, top - (ul.clientHeight - it.offsetHeight) / 2);
+      else if (top < ul.scrollTop) ul.scrollTop = top;
+      else if (bottom > ul.scrollTop + ul.clientHeight) ul.scrollTop = bottom - ul.clientHeight;
+    }
+  }
+  function pick(i){
+    var o = opts[i];
+    if (!o || o.disabled) return;
+    var changed = sel.selectedIndex !== i;
+    sel.selectedIndex = i;
+    ddClose_(true);
+    if (changed){
+      sel.dispatchEvent(new Event('input', { bubbles: true }));
+      sel.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+  }
+  function place(){
+    if (phone) return;
+    var r = btn.getBoundingClientRect();
+    var vw = document.documentElement.clientWidth, vh = window.innerHeight;
+    var width = Math.min(Math.max(r.width, 220), vw - 16);
+    var below = vh - r.bottom - 10, above = r.top - 10;
+    var up = below < 240 && above > below;
+    var maxH = Math.min(360, (up ? above : below) - 8);
+    pop.style.width = width + 'px';
+    pop.style.maxHeight = Math.max(160, maxH) + 'px';
+    var rtl = document.documentElement.dir === 'rtl';
+    var left = rtl ? r.right - width : r.left;
+    pop.style.left = Math.max(8, Math.min(left, vw - width - 8)) + 'px';
+    if (up) { pop.classList.add('up'); pop.style.bottom = (vh - r.top + 6) + 'px'; pop.style.top = 'auto'; }
+    else { pop.style.top = (r.bottom + 6) + 'px'; pop.style.bottom = 'auto'; }
+  }
+  function onKey(e){
+    var items = ul.querySelectorAll('.dd-opt');
+    if (e.key === 'Escape'){ e.preventDefault(); ddClose_(true); return; }
+    if (e.key === 'Tab'){ ddClose_(false); return; }
+    if (e.key === 'ArrowDown'){ e.preventDefault(); setActive(active + 1); return; }
+    if (e.key === 'ArrowUp'){ e.preventDefault(); setActive(active - 1); return; }
+    if (e.key === 'Home' && !q){ e.preventDefault(); setActive(0); return; }
+    if (e.key === 'End' && !q){ e.preventDefault(); setActive(items.length - 1); return; }
+    if (e.key === 'Enter' || (e.key === ' ' && !q)){
+      e.preventDefault();
+      if (items[active]) pick(Number(items[active].dataset.i));
+      return;
+    }
+    // no search box: typing a letter jumps to the first item that starts with it
+    if (!q && e.key.length === 1){
+      var ch = ddNorm_(e.key);
+      for (var j = 1; j <= items.length; j++){
+        var k = (active + j) % items.length;
+        if (ddNorm_(items[k].textContent).indexOf(ch) === 0){ setActive(k); break; }
+      }
+    }
+  }
+
+  ul.addEventListener('mousedown', function(e){ e.preventDefault(); });
+  ul.addEventListener('click', function(e){
+    var li = e.target.closest('.dd-opt');
+    if (li) pick(Number(li.dataset.i));
+  });
+  ul.addEventListener('mousemove', function(e){
+    var li = e.target.closest('.dd-opt');
+    if (!li) return;
+    var items = Array.prototype.slice.call(ul.querySelectorAll('.dd-opt'));
+    var k = items.indexOf(li);
+    if (k !== active){ active = k; items.forEach(function(x, j){ x.classList.toggle('act', j === k); }); }
+  });
+  layer.querySelector('.dd-back').addEventListener('click', function(){ ddClose_(true); });
+  if (q) q.addEventListener('input', draw);
+  layer.addEventListener('keydown', onKey);
+
+  function onScroll(e){ if (!pop.contains(e.target)) ddClose_(false); }
+  function onResize(){ ddClose_(false); }
+  if (!phone){
+    window.addEventListener('scroll', onScroll, true);
+    window.addEventListener('resize', onResize);
+  }
+  DD_.open = { sel: sel, layer: layer, cleanup: function(){
+    window.removeEventListener('scroll', onScroll, true);
+    window.removeEventListener('resize', onResize);
+  } };
+  btn.setAttribute('aria-expanded', 'true');
+  place();
+  draw();
+  // focus the search box on a desktop; on a phone that would throw up the
+  // keyboard over the list, so focus the list's first row instead
+  if (q && !phone) q.focus(); else { pop.tabIndex = -1; pop.focus({ preventScroll: true }); }
+}
+function ddClose_(refocus){
+  var o = DD_.open;
+  if (!o) return;
+  DD_.open = null;
+  o.cleanup();
+  if (o.sel._dd) o.sel._dd.setAttribute('aria-expanded', 'false');
+  if (o.layer.parentNode) o.layer.parentNode.removeChild(o.layer);
+  if (refocus && o.sel._dd && document.contains(o.sel._dd)) o.sel._dd.focus({ preventScroll: true });
+}
+(function ddInit_(){
+  // a script setting .value / .selectedIndex updates the button too
+  var P = HTMLSelectElement.prototype;
+  ['value', 'selectedIndex'].forEach(function(k){
+    var d = Object.getOwnPropertyDescriptor(P, k);
+    if (!d || !d.set || !d.configurable) return;
+    Object.defineProperty(P, k, { configurable: true, enumerable: d.enumerable, get: d.get,
+      set: function(v){ d.set.call(this, v); if (this._dd) ddSync_(this); } });
+  });
+  function start(){
+    ddScan_(document.body);
+    new MutationObserver(function(muts){
+      muts.forEach(function(m){
+        Array.prototype.forEach.call(m.removedNodes, function(n){
+          if (n.nodeType !== 1) return;
+          var gone = n.tagName === 'SELECT' ? [n] : Array.prototype.slice.call(n.getElementsByTagName('select'));
+          gone.forEach(function(sel){
+            if (!sel._dd || document.contains(sel)) return;
+            if (DD_.open && DD_.open.sel === sel) ddClose_(false);
+            // a select swapped out with replaceChild leaves its button behind
+            if (sel._dd.parentNode && !n.contains(sel._dd)) sel._dd.parentNode.removeChild(sel._dd);
+          });
+        });
+        Array.prototype.forEach.call(m.addedNodes, ddScan_);
+      });
+    }).observe(document.body, { childList: true, subtree: true });
+  }
+  if (document.body) start(); else document.addEventListener('DOMContentLoaded', start);
+})();
+
 function listFilters_(opts){
   opts = opts || {};
   var fields = opts.fields || ['text'];
