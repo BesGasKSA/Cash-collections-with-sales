@@ -746,6 +746,25 @@
     .dr-h{touch-action:none;cursor:grab;}
   }
   @keyframes bgcTabBounce{0%{transform:scale(1);}35%{transform:scale(1.28) translateY(-3px);}65%{transform:scale(.94);}100%{transform:scale(1.08) translateY(-1px);}}
+  /* ---- the shared filter bar ---- */
+  .lf{padding:0;overflow:hidden;}
+  .lf-head{display:flex;align-items:center;gap:8px;padding:6px 10px 6px 14px;}
+  .lf-toggle{all:unset;box-sizing:border-box;flex:1;display:flex;align-items:center;gap:10px;cursor:pointer;
+    padding:10px 4px;font-size:13.5px;font-weight:700;color:var(--text);}
+  .lf-toggle svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+  .lf-toggle svg:last-child{margin-inline-start:auto;color:var(--muted);transition:transform .22s ease;}
+  html[dir="rtl"] .lf-toggle svg:last-child{transform:rotate(180deg);}
+  .lf.open .lf-toggle svg:last-child,html[dir="rtl"] .lf.open .lf-toggle svg:last-child{transform:rotate(90deg);}
+  .lf-count{font-size:11.5px;font-weight:700;color:var(--green);background:var(--green-pale);border-radius:999px;padding:3px 9px;}
+  .lf-count:empty{display:none;}
+  .lf-clear{all:unset;box-sizing:border-box;cursor:pointer;font-size:12px;font-weight:700;color:var(--muted);
+    padding:7px 11px;border-radius:9px;}
+  .lf-clear:hover{background:var(--bg);color:var(--danger);}
+  .lf-body{padding:2px 14px 14px;border-top:1px solid var(--border-soft);}
+  .lf-body .grid{gap:10px;}
+  .lf .field label{font-size:11px;}
+  .lf-wide{grid-column:1/-1;}
+  .lf-empty{padding:18px 4px;text-align:center;color:var(--muted);font-size:13px;}
   /* ---- repeatable collection / expense lines ---- */
   .mlines{display:flex;flex-direction:column;gap:10px;margin-top:10px;}
   .mline{border:1px dashed var(--border-soft);border-radius:12px;padding:10px 12px 2px;background:var(--bg);}
@@ -1045,7 +1064,7 @@ var ICON_B64 = 'iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAYAAAA9zQYyAAAcG0lEQVR42u2dd1cU
 // Stamped by tools/stamp-build.js at publish time so the running app can
 // say which build it is — a cached page is the usual reason a shipped change
 // seems missing.
-var BUILD_ID = '2026-09-24 04:17 · 59b1942';
+var BUILD_ID = '2026-09-24 04:23 · db34ac0';
 var LOGO_SRC = 'data:image/png;base64,' + LOGO_B64;
 var ICON_SRC = LOGO_SRC; // same asset — see the comment above LOGO_B64
 
@@ -1612,7 +1631,7 @@ function dirFor(lang){ return lang==='en' ? 'ltr' : 'rtl'; }
       dash_posHint:'تُسوّى مباشرة في البنك — ليست نقدية للتحصيل', dash_creditHint:'مطالبات على العملاء — تُخصم لأنها ضمن المبيعات ولم تُحصَّل نقداً',
       dash_deliveryDeductHint:'تُدفع مباشرة للبنك — لا تستلمها يد السائق', dash_vatOnDeliveryFoot:'على رسوم التوصيل فقط',
       dash_byLocation:'حسب الفرع', dash_shortfallsNote:'الفرق {x} ر.س يمثل عجزاً مسجلاً عند استلام بعض التسليمات.',
-      home_actionsWaiting:'إجراءات بانتظارك', home_mySummary:'ملخصي', ui_openDoc:'عرض المستند', report_allAreas:'كل المناطق', report_payment:'طريقة الدفع', report_allPayments:'كل طرق الدفع', report_driver:'السائق', report_allDrivers:'كل السائقين', entry_otherTitle:'تحصيلات غير بيعية', entry_otherHint:'نقدية استُلمت لسبب غير البيع اليومي (سداد مبيعات آجلة، تأمين أسطوانات، بيع فوارغ…). تُضاف إلى النقدية الواجب تسليمها.', entry_otherAmount:'المبلغ المُحصَّل', entry_otherItem:'البند', entry_reason:'السبب / البيان', entry_reasonPlaceholder:'اكتب سبب المبلغ بوضوح', entry_expenseTitle:'مصروفات نقدية', entry_expenseHint:'مبالغ صُرفت من النقدية في الموقع (وقود، صيانة بسيطة…). تُخصم من النقدية الواجب تسليمها.', entry_expenseAmount:'المبلغ المصروف', entry_expenseItem:'بند المصروف', entry_depositTitle:'الموازنات — إيداع مباشر في البنك', entry_depositHint:'مبلغ أودعه في البنك مباشرةً من يحمل النقدية (السائق أو مدير الفرع أو مدير المنطقة) قبل تسليمها. يُخصم من المبلغ، والباقي يكمل دورة التسليم المعتادة.', entry_depositAmount:'المبلغ المُودع', entry_depositRef:'مرجع الإيداع البنكي', entry_depositNote:'بيان الموازنة', entry_depositNotePlaceholder:'مثال: موازنة مبيعات يوم … أو رقم القسيمة', entry_netOwed:'صافي النقدية الواجب تسليمها', entry_netHint:'هذا ما سيظهر للمستلم عند التسليم', entry_confirmLines:'تأكيد بنود المنتجات', entry_addCollection:'+ إضافة بند تحصيل', entry_lineCount:'{n} بنود', entry_confirmSection:'تأكيد هذا القسم', entry_deliveryTitle:'رسوم التوصيل (تُدفع للبنك)', entry_deliveryHint:'رسوم توصيل محصّلة للبنك وليست نقدية باليد. تُخصم من النقدية الواجب تسليمها قبل الضريبة، وضريبتها تُسترد.', entry_creditTitle:'المبيعات الآجلة (كريدت)', entry_fromLines:'يُحسب تلقائياً من بنود المنتجات أعلاه', entry_addExpense:'+ إضافة بند مصروف', entry_editLines:'تعديل البنود', entry_linesConfirmed:'تم تأكيد {n} بنود', entry_linesTotal:'إجمالي البنود:', entry_linesNeeded:'أضف بنداً واحداً على الأقل بكمية وسعر قبل التأكيد', entry_priceFixed:'السعر ثابت لهذا المنتج ولا يمكن تعديله', admin_unitPrice:'سعر الوحدة', admin_priceLocked:'سعر ثابت (غير قابل للتعديل عند الإدخال)', admin_itemName:'اسم البند', admin_incomeItems:'بنود التحصيلات', admin_expenseItems:'بنود المصروفات', admin_addIncomeItem:'إضافة بند تحصيل', admin_addExpenseItem:'إضافة بند مصروف', report_otherCash:'تحصيلات غير بيعية', report_expenses:'مصروفات نقدية', report_directDeposit:'الموازنات (إيداع مباشر)', dash_includesBankedAtSource:'يشمل {n} موازنات أُودعت مباشرة من الموقع', err_invalidIncomeItem:'اختر بند التحصيل من القائمة', err_invalidExpenseItem:'اختر بند المصروف من القائمة', err_reasonRequired:'السبب مطلوب', err_depositNeedsReference:'مرجع الإيداع البنكي مطلوب', err_depositExceedsCash:'المبلغ المُودع أكبر من النقدية المتاحة في هذا الإدخال', inv_chip:'دعوة للانضمام', inv_hi:'مرحباً {name}', inv_lead:'تمت دعوتك للانضمام إلى نظام تحصيل النقدية والموافقات بصلاحية <b>{role}</b>. اختر كلمة مرور لتفعيل حسابك.', inv_pw:'كلمة المرور الجديدة', inv_pw2:'تأكيد كلمة المرور', inv_rules:'8 أحرف على الأقل — يُفضَّل مزج الأحرف والأرقام والرموز', inv_mismatch:'كلمتا المرور غير متطابقتين', inv_accept:'قبول الدعوة وتفعيل الحساب', inv_validUntil:'الدعوة صالحة حتى {date}', inv_checking:'جارٍ التحقق من الدعوة…', inv_doneTitle:'تم قبول الدعوة 🎉', inv_doneBody:'تم تعيين كلمة المرور بنجاح. سجّل الدخول الآن لبدء استخدام النظام.', inv_signIn:'تسجيل الدخول الآن', inv_expiredTitle:'انتهت صلاحية الدعوة', inv_expiredBody:'مرّ أكثر من 7 أيام على إرسال هذه الدعوة. اطلب من مدير النظام إعادة إرسالها.', inv_usedTitle:'تم قبول هذه الدعوة مسبقاً', inv_usedBody:'حسابك مفعّل بالفعل — سجّل الدخول بكلمة المرور التي اخترتها.', inv_invalidTitle:'رابط الدعوة غير صالح', inv_invalidBody:'ربما أُعيد إرسال الدعوة برابط أحدث. افتح آخر رسالة دعوة وصلتك أو تواصل مع مدير النظام.', inv_goLogin:'الذهاب لتسجيل الدخول', inv_retry:'إعادة المحاولة', err_invitePending:'لم تقبل دعوتك بعد — افتح رسالة الدعوة في بريدك واضغط «قبول الدعوة».', err_inviteInvalid:'رابط الدعوة غير صالح', err_inviteUsed:'تم استخدام هذه الدعوة مسبقاً', err_inviteExpired:'انتهت صلاحية الدعوة', err_alreadyAccepted:'هذا المستخدم قبل الدعوة بالفعل', err_userInactive:'المستخدم معطّل', us_status:'الحالة', us_lastLogin:'آخر دخول', us_never:'لم يسجّل الدخول بعد', us_invited:'تم إرسال الدعوة', us_invite_expired:'انتهت الدعوة', us_accepted:'تم قبول الدعوة', us_active:'نشط', us_disabled:'معطّل', us_all:'الكل', us_inviteTitle:'دعوة مستخدم جديد', us_inviteHint:'سيصله بريد احترافي يحتوي على زر «قبول الدعوة» ليختار كلمة المرور بنفسه. تتغير الحالة تلقائياً: تم إرسال الدعوة ← قبل الدعوة ← نشط.', us_send:'إرسال الدعوة', us_resend:'إعادة إرسال الدعوة', us_sentTo:'تم إرسال الدعوة إلى {email}', us_inviteLink:'رابط الدعوة — إذا لم يعمل الزر في البريد', us_copyLink:'نسخ الرابط', us_openLink:'فتح الرابط', us_copied:'تم نسخ الرابط', us_notSent:'تم إنشاء المستخدم لكن تعذّر إرسال البريد — اضغط «إعادة إرسال الدعوة».', us_resent:'تمت إعادة إرسال الدعوة', us_subInvited:'أُرسلت {when}', us_subExpired:'انتهت {when}', us_subAccepted:'قُبلت {when}', us_subActive:'منذ {when}', us_user:'المستخدم', rel_now:'الآن', rel_min:'قبل {n} دقيقة', rel_hour:'قبل {n} ساعة', rel_day:'قبل {n} يوم', rel_in:'بعد {n} يوم', ui_showPassword:'إظهار كلمة المرور', ui_hidePassword:'إخفاء كلمة المرور', report_transactions2:'المعاملات بالتفصيل'
+      home_actionsWaiting:'إجراءات بانتظارك', home_mySummary:'ملخصي', ui_openDoc:'عرض المستند', report_allAreas:'كل المناطق', report_payment:'طريقة الدفع', report_allPayments:'كل طرق الدفع', report_driver:'السائق', report_allDrivers:'كل السائقين', entry_otherTitle:'تحصيلات غير بيعية', entry_otherHint:'نقدية استُلمت لسبب غير البيع اليومي (سداد مبيعات آجلة، تأمين أسطوانات، بيع فوارغ…). تُضاف إلى النقدية الواجب تسليمها.', entry_otherAmount:'المبلغ المُحصَّل', entry_otherItem:'البند', entry_reason:'السبب / البيان', entry_reasonPlaceholder:'اكتب سبب المبلغ بوضوح', entry_expenseTitle:'مصروفات نقدية', entry_expenseHint:'مبالغ صُرفت من النقدية في الموقع (وقود، صيانة بسيطة…). تُخصم من النقدية الواجب تسليمها.', entry_expenseAmount:'المبلغ المصروف', entry_expenseItem:'بند المصروف', entry_depositTitle:'الموازنات — إيداع مباشر في البنك', entry_depositHint:'مبلغ أودعه في البنك مباشرةً من يحمل النقدية (السائق أو مدير الفرع أو مدير المنطقة) قبل تسليمها. يُخصم من المبلغ، والباقي يكمل دورة التسليم المعتادة.', entry_depositAmount:'المبلغ المُودع', entry_depositRef:'مرجع الإيداع البنكي', entry_depositNote:'بيان الموازنة', entry_depositNotePlaceholder:'مثال: موازنة مبيعات يوم … أو رقم القسيمة', entry_netOwed:'صافي النقدية الواجب تسليمها', entry_netHint:'هذا ما سيظهر للمستلم عند التسليم', entry_confirmLines:'تأكيد بنود المنتجات', entry_addCollection:'+ إضافة بند تحصيل', lf_title:'تصفية القائمة', lf_search:'بحث', lf_searchHint:'اكتب أي كلمة أو رقم…', lf_clear:'مسح', lf_allStatuses:'كل الحالات', lf_allPeople:'الكل', lf_noMatch:'لا توجد نتائج مطابقة للتصفية', lf_showing:'{n} من {total}', entry_lineCount:'{n} بنود', entry_confirmSection:'تأكيد هذا القسم', entry_deliveryTitle:'رسوم التوصيل (تُدفع للبنك)', entry_deliveryHint:'رسوم توصيل محصّلة للبنك وليست نقدية باليد. تُخصم من النقدية الواجب تسليمها قبل الضريبة، وضريبتها تُسترد.', entry_creditTitle:'المبيعات الآجلة (كريدت)', entry_fromLines:'يُحسب تلقائياً من بنود المنتجات أعلاه', entry_addExpense:'+ إضافة بند مصروف', entry_editLines:'تعديل البنود', entry_linesConfirmed:'تم تأكيد {n} بنود', entry_linesTotal:'إجمالي البنود:', entry_linesNeeded:'أضف بنداً واحداً على الأقل بكمية وسعر قبل التأكيد', entry_priceFixed:'السعر ثابت لهذا المنتج ولا يمكن تعديله', admin_unitPrice:'سعر الوحدة', admin_priceLocked:'سعر ثابت (غير قابل للتعديل عند الإدخال)', admin_itemName:'اسم البند', admin_incomeItems:'بنود التحصيلات', admin_expenseItems:'بنود المصروفات', admin_addIncomeItem:'إضافة بند تحصيل', admin_addExpenseItem:'إضافة بند مصروف', report_otherCash:'تحصيلات غير بيعية', report_expenses:'مصروفات نقدية', report_directDeposit:'الموازنات (إيداع مباشر)', dash_includesBankedAtSource:'يشمل {n} موازنات أُودعت مباشرة من الموقع', err_invalidIncomeItem:'اختر بند التحصيل من القائمة', err_invalidExpenseItem:'اختر بند المصروف من القائمة', err_reasonRequired:'السبب مطلوب', err_depositNeedsReference:'مرجع الإيداع البنكي مطلوب', err_depositExceedsCash:'المبلغ المُودع أكبر من النقدية المتاحة في هذا الإدخال', inv_chip:'دعوة للانضمام', inv_hi:'مرحباً {name}', inv_lead:'تمت دعوتك للانضمام إلى نظام تحصيل النقدية والموافقات بصلاحية <b>{role}</b>. اختر كلمة مرور لتفعيل حسابك.', inv_pw:'كلمة المرور الجديدة', inv_pw2:'تأكيد كلمة المرور', inv_rules:'8 أحرف على الأقل — يُفضَّل مزج الأحرف والأرقام والرموز', inv_mismatch:'كلمتا المرور غير متطابقتين', inv_accept:'قبول الدعوة وتفعيل الحساب', inv_validUntil:'الدعوة صالحة حتى {date}', inv_checking:'جارٍ التحقق من الدعوة…', inv_doneTitle:'تم قبول الدعوة 🎉', inv_doneBody:'تم تعيين كلمة المرور بنجاح. سجّل الدخول الآن لبدء استخدام النظام.', inv_signIn:'تسجيل الدخول الآن', inv_expiredTitle:'انتهت صلاحية الدعوة', inv_expiredBody:'مرّ أكثر من 7 أيام على إرسال هذه الدعوة. اطلب من مدير النظام إعادة إرسالها.', inv_usedTitle:'تم قبول هذه الدعوة مسبقاً', inv_usedBody:'حسابك مفعّل بالفعل — سجّل الدخول بكلمة المرور التي اخترتها.', inv_invalidTitle:'رابط الدعوة غير صالح', inv_invalidBody:'ربما أُعيد إرسال الدعوة برابط أحدث. افتح آخر رسالة دعوة وصلتك أو تواصل مع مدير النظام.', inv_goLogin:'الذهاب لتسجيل الدخول', inv_retry:'إعادة المحاولة', err_invitePending:'لم تقبل دعوتك بعد — افتح رسالة الدعوة في بريدك واضغط «قبول الدعوة».', err_inviteInvalid:'رابط الدعوة غير صالح', err_inviteUsed:'تم استخدام هذه الدعوة مسبقاً', err_inviteExpired:'انتهت صلاحية الدعوة', err_alreadyAccepted:'هذا المستخدم قبل الدعوة بالفعل', err_userInactive:'المستخدم معطّل', us_status:'الحالة', us_lastLogin:'آخر دخول', us_never:'لم يسجّل الدخول بعد', us_invited:'تم إرسال الدعوة', us_invite_expired:'انتهت الدعوة', us_accepted:'تم قبول الدعوة', us_active:'نشط', us_disabled:'معطّل', us_all:'الكل', us_inviteTitle:'دعوة مستخدم جديد', us_inviteHint:'سيصله بريد احترافي يحتوي على زر «قبول الدعوة» ليختار كلمة المرور بنفسه. تتغير الحالة تلقائياً: تم إرسال الدعوة ← قبل الدعوة ← نشط.', us_send:'إرسال الدعوة', us_resend:'إعادة إرسال الدعوة', us_sentTo:'تم إرسال الدعوة إلى {email}', us_inviteLink:'رابط الدعوة — إذا لم يعمل الزر في البريد', us_copyLink:'نسخ الرابط', us_openLink:'فتح الرابط', us_copied:'تم نسخ الرابط', us_notSent:'تم إنشاء المستخدم لكن تعذّر إرسال البريد — اضغط «إعادة إرسال الدعوة».', us_resent:'تمت إعادة إرسال الدعوة', us_subInvited:'أُرسلت {when}', us_subExpired:'انتهت {when}', us_subAccepted:'قُبلت {when}', us_subActive:'منذ {when}', us_user:'المستخدم', rel_now:'الآن', rel_min:'قبل {n} دقيقة', rel_hour:'قبل {n} ساعة', rel_day:'قبل {n} يوم', rel_in:'بعد {n} يوم', ui_showPassword:'إظهار كلمة المرور', ui_hidePassword:'إخفاء كلمة المرور', report_transactions2:'المعاملات بالتفصيل'
     },
     en: {
       ui_menu:'Menu', ui_more:'More', ui_back:'Back', ui_close:'Close', ui_language:'Language',
@@ -1634,7 +1653,7 @@ function dirFor(lang){ return lang==='en' ? 'ltr' : 'rtl'; }
       dash_posHint:'Settles straight to the bank — not cash to collect', dash_creditHint:'Owed by customers — deducted: part of sales, but no cash came in',
       dash_deliveryDeductHint:'Paid straight to the bank — never in the driver\'s hand', dash_vatOnDeliveryFoot:'On delivery fees only',
       dash_byLocation:'By location', dash_shortfallsNote:'The {x} SAR difference is shortfalls recorded when some handoffs were received.',
-      home_actionsWaiting:'actions waiting for you', home_mySummary:'My summary', ui_openDoc:'Open document', report_allAreas:'All areas', report_payment:'Payment method', report_allPayments:'All payment methods', report_driver:'Driver', report_allDrivers:'All drivers', entry_otherTitle:'Collections that are not sales', entry_otherHint:'Cash received for something other than the day\'s sales (an old credit sale paid off, a cylinder deposit, empties sold…). Added to the cash to hand over.', entry_otherAmount:'Amount collected', entry_otherItem:'Item', entry_reason:'Reason / description', entry_reasonPlaceholder:'Say clearly what this amount was for', entry_expenseTitle:'Cash expenses', entry_expenseHint:'Cash paid out at the source (fuel, a small repair…). Deducted from the cash to hand over.', entry_expenseAmount:'Amount paid', entry_expenseItem:'Expense item', entry_depositTitle:'Banked at the source (الموازنات)', entry_depositHint:'Cash the holder (driver, branch manager or area manager) banked themselves before handing the rest over. It is deducted here, and only the remainder travels the normal handover chain.', entry_depositAmount:'Amount deposited', entry_depositRef:'Bank reference', entry_depositNote:'Deposit description', entry_depositNotePlaceholder:'e.g. settlement for the day\'s sales, or the slip number', entry_netOwed:'Net cash to hand over', entry_netHint:'This is the figure the receiver will see', entry_confirmLines:'Confirm product lines', entry_addCollection:'+ Add a collection line', entry_lineCount:'{n} lines', entry_confirmSection:'Confirm this section', entry_deliveryTitle:'Delivery fees (paid to the bank)', entry_deliveryHint:'Delivery fees collected for the bank, never held as cash. Deducted before VAT, and their VAT is credited back.', entry_creditTitle:'Credit sales', entry_fromLines:'Calculated from the product lines above', entry_addExpense:'+ Add an expense line', entry_editLines:'Edit lines', entry_linesConfirmed:'{n} lines confirmed', entry_linesTotal:'Lines total:', entry_linesNeeded:'Add at least one line with a quantity and a price before confirming', entry_priceFixed:'This product has a fixed price and cannot be edited', admin_unitPrice:'Unit price', admin_priceLocked:'Fixed price (not editable at entry)', admin_itemName:'Item name', admin_incomeItems:'Collection items', admin_expenseItems:'Expense items', admin_addIncomeItem:'Add collection item', admin_addExpenseItem:'Add expense item', report_otherCash:'Non-sales collections', report_expenses:'Cash expenses', report_directDeposit:'Banked at the source (الموازنات)', dash_includesBankedAtSource:'includes {n} banked at the source (الموازنات)', err_invalidIncomeItem:'Pick the collection item from the list', err_invalidExpenseItem:'Pick the expense item from the list', err_reasonRequired:'A reason is required', err_depositNeedsReference:'The bank reference is required', err_depositExceedsCash:'The deposit is larger than the cash this entry produced', inv_chip:'Invitation', inv_hi:'Welcome, {name}', inv_lead:'You have been invited to join the Cash Collection & Approval System as <b>{role}</b>. Choose a password to activate your account.', inv_pw:'New password', inv_pw2:'Confirm password', inv_rules:'At least 8 characters — mixing letters, numbers and symbols is best', inv_mismatch:'The passwords do not match', inv_accept:'Accept invitation & activate', inv_validUntil:'Invitation valid until {date}', inv_checking:'Checking your invitation…', inv_doneTitle:'Invitation accepted 🎉', inv_doneBody:'Your password is set. Sign in now to start using the system.', inv_signIn:'Sign in now', inv_expiredTitle:'This invitation has expired', inv_expiredBody:'It was sent more than 7 days ago. Ask your system administrator to resend it.', inv_usedTitle:'Invitation already accepted', inv_usedBody:'Your account is already active — sign in with the password you chose.', inv_invalidTitle:'Invitation link not valid', inv_invalidBody:'A newer invitation may have been sent. Open the latest invitation email, or contact your administrator.', inv_goLogin:'Go to sign in', inv_retry:'Try again', err_invitePending:'Your invitation has not been accepted yet — open the invitation email and press "Accept invitation".', err_inviteInvalid:'Invitation link not valid', err_inviteUsed:'This invitation was already used', err_inviteExpired:'This invitation has expired', err_alreadyAccepted:'This user already accepted the invitation', err_userInactive:'This user is disabled', us_status:'Status', us_lastLogin:'Last login', us_never:'Never signed in', us_invited:'Invitation sent', us_invite_expired:'Invitation expired', us_accepted:'Accepted invitation', us_active:'Active', us_disabled:'Disabled', us_all:'All', us_inviteTitle:'Invite a new user', us_inviteHint:'They receive a professional email with an "Accept invitation" button and choose their own password. Status updates by itself: Invitation sent → Accepted → Active.', us_send:'Send invitation', us_resend:'Resend invitation', us_sentTo:'Invitation sent to {email}', us_inviteLink:'Invitation link — if the button in the email does not work', us_copyLink:'Copy link', us_openLink:'Open link', us_copied:'Link copied', us_notSent:'User created, but the email could not be sent — press "Resend invitation".', us_resent:'Invitation sent again', us_subInvited:'Sent {when}', us_subExpired:'Expired {when}', us_subAccepted:'Accepted {when}', us_subActive:'Since {when}', us_user:'User', rel_now:'just now', rel_min:'{n} min ago', rel_hour:'{n} h ago', rel_day:'{n} days ago', rel_in:'in {n} days', ui_showPassword:'Show password', ui_hidePassword:'Hide password', report_transactions2:'Transactions in detail'
+      home_actionsWaiting:'actions waiting for you', home_mySummary:'My summary', ui_openDoc:'Open document', report_allAreas:'All areas', report_payment:'Payment method', report_allPayments:'All payment methods', report_driver:'Driver', report_allDrivers:'All drivers', entry_otherTitle:'Collections that are not sales', entry_otherHint:'Cash received for something other than the day\'s sales (an old credit sale paid off, a cylinder deposit, empties sold…). Added to the cash to hand over.', entry_otherAmount:'Amount collected', entry_otherItem:'Item', entry_reason:'Reason / description', entry_reasonPlaceholder:'Say clearly what this amount was for', entry_expenseTitle:'Cash expenses', entry_expenseHint:'Cash paid out at the source (fuel, a small repair…). Deducted from the cash to hand over.', entry_expenseAmount:'Amount paid', entry_expenseItem:'Expense item', entry_depositTitle:'Banked at the source (الموازنات)', entry_depositHint:'Cash the holder (driver, branch manager or area manager) banked themselves before handing the rest over. It is deducted here, and only the remainder travels the normal handover chain.', entry_depositAmount:'Amount deposited', entry_depositRef:'Bank reference', entry_depositNote:'Deposit description', entry_depositNotePlaceholder:'e.g. settlement for the day\'s sales, or the slip number', entry_netOwed:'Net cash to hand over', entry_netHint:'This is the figure the receiver will see', entry_confirmLines:'Confirm product lines', entry_addCollection:'+ Add a collection line', lf_title:'Filter this list', lf_search:'Search', lf_searchHint:'Any word or number…', lf_clear:'Clear', lf_allStatuses:'All statuses', lf_allPeople:'Everyone', lf_noMatch:'Nothing matches these filters', lf_showing:'{n} of {total}', entry_lineCount:'{n} lines', entry_confirmSection:'Confirm this section', entry_deliveryTitle:'Delivery fees (paid to the bank)', entry_deliveryHint:'Delivery fees collected for the bank, never held as cash. Deducted before VAT, and their VAT is credited back.', entry_creditTitle:'Credit sales', entry_fromLines:'Calculated from the product lines above', entry_addExpense:'+ Add an expense line', entry_editLines:'Edit lines', entry_linesConfirmed:'{n} lines confirmed', entry_linesTotal:'Lines total:', entry_linesNeeded:'Add at least one line with a quantity and a price before confirming', entry_priceFixed:'This product has a fixed price and cannot be edited', admin_unitPrice:'Unit price', admin_priceLocked:'Fixed price (not editable at entry)', admin_itemName:'Item name', admin_incomeItems:'Collection items', admin_expenseItems:'Expense items', admin_addIncomeItem:'Add collection item', admin_addExpenseItem:'Add expense item', report_otherCash:'Non-sales collections', report_expenses:'Cash expenses', report_directDeposit:'Banked at the source (الموازنات)', dash_includesBankedAtSource:'includes {n} banked at the source (الموازنات)', err_invalidIncomeItem:'Pick the collection item from the list', err_invalidExpenseItem:'Pick the expense item from the list', err_reasonRequired:'A reason is required', err_depositNeedsReference:'The bank reference is required', err_depositExceedsCash:'The deposit is larger than the cash this entry produced', inv_chip:'Invitation', inv_hi:'Welcome, {name}', inv_lead:'You have been invited to join the Cash Collection & Approval System as <b>{role}</b>. Choose a password to activate your account.', inv_pw:'New password', inv_pw2:'Confirm password', inv_rules:'At least 8 characters — mixing letters, numbers and symbols is best', inv_mismatch:'The passwords do not match', inv_accept:'Accept invitation & activate', inv_validUntil:'Invitation valid until {date}', inv_checking:'Checking your invitation…', inv_doneTitle:'Invitation accepted 🎉', inv_doneBody:'Your password is set. Sign in now to start using the system.', inv_signIn:'Sign in now', inv_expiredTitle:'This invitation has expired', inv_expiredBody:'It was sent more than 7 days ago. Ask your system administrator to resend it.', inv_usedTitle:'Invitation already accepted', inv_usedBody:'Your account is already active — sign in with the password you chose.', inv_invalidTitle:'Invitation link not valid', inv_invalidBody:'A newer invitation may have been sent. Open the latest invitation email, or contact your administrator.', inv_goLogin:'Go to sign in', inv_retry:'Try again', err_invitePending:'Your invitation has not been accepted yet — open the invitation email and press "Accept invitation".', err_inviteInvalid:'Invitation link not valid', err_inviteUsed:'This invitation was already used', err_inviteExpired:'This invitation has expired', err_alreadyAccepted:'This user already accepted the invitation', err_userInactive:'This user is disabled', us_status:'Status', us_lastLogin:'Last login', us_never:'Never signed in', us_invited:'Invitation sent', us_invite_expired:'Invitation expired', us_accepted:'Accepted invitation', us_active:'Active', us_disabled:'Disabled', us_all:'All', us_inviteTitle:'Invite a new user', us_inviteHint:'They receive a professional email with an "Accept invitation" button and choose their own password. Status updates by itself: Invitation sent → Accepted → Active.', us_send:'Send invitation', us_resend:'Resend invitation', us_sentTo:'Invitation sent to {email}', us_inviteLink:'Invitation link — if the button in the email does not work', us_copyLink:'Copy link', us_openLink:'Open link', us_copied:'Link copied', us_notSent:'User created, but the email could not be sent — press "Resend invitation".', us_resent:'Invitation sent again', us_subInvited:'Sent {when}', us_subExpired:'Expired {when}', us_subAccepted:'Accepted {when}', us_subActive:'Since {when}', us_user:'User', rel_now:'just now', rel_min:'{n} min ago', rel_hour:'{n} h ago', rel_day:'{n} days ago', rel_in:'in {n} days', ui_showPassword:'Show password', ui_hidePassword:'Hide password', report_transactions2:'Transactions in detail'
     },
     ur: {
       ui_menu:'مینو', ui_more:'مزید', ui_back:'واپس', ui_close:'بند کریں', ui_language:'زبان',
@@ -1656,7 +1675,7 @@ function dirFor(lang){ return lang==='en' ? 'ltr' : 'rtl'; }
       dash_posHint:'براہ راست بینک میں — وصولی کی نقدی نہیں', dash_creditHint:'گاہکوں پر واجب — منہا، کیونکہ فروخت میں شامل مگر نقدی نہیں آئی',
       dash_deliveryDeductHint:'براہ راست بینک کو ادا — ڈرائیور کے ہاتھ میں نہیں', dash_vatOnDeliveryFoot:'صرف ترسیل چارجز پر',
       dash_byLocation:'مقام کے لحاظ سے', dash_shortfallsNote:'{x} ریال کا فرق کچھ حوالگیوں کی وصولی پر درج کمی ہے۔',
-      home_actionsWaiting:'آپ کے منتظر اقدامات', home_mySummary:'میرا خلاصہ', ui_openDoc:'دستاویز کھولیں', report_allAreas:'تمام علاقے', report_payment:'ادائیگی کا طریقہ', report_allPayments:'تمام طریقے', report_driver:'ڈرائیور', report_allDrivers:'تمام ڈرائیور', entry_otherTitle:'فروخت کے علاوہ وصولیاں', entry_otherHint:'روزانہ فروخت کے علاوہ موصول ہونے والی نقدی (پرانا اُدھار، سلنڈر ڈپازٹ، خالی سلنڈر…)۔ جمع کرانے والی رقم میں شامل ہوتی ہے۔', entry_otherAmount:'وصول شدہ رقم', entry_otherItem:'مد', entry_reason:'وجہ / تفصیل', entry_reasonPlaceholder:'واضح لکھیں کہ رقم کس لیے ہے', entry_expenseTitle:'نقد اخراجات', entry_expenseHint:'موقع پر نقدی سے ادا کی گئی رقم (ایندھن، معمولی مرمت…)۔ جمع کرانے والی رقم سے منہا ہوگی۔', entry_expenseAmount:'ادا شدہ رقم', entry_expenseItem:'اخراجات کی مد', entry_depositTitle:'الموازنات — براہِ راست بینک میں جمع', entry_depositHint:'نقدی رکھنے والے (ڈرائیور، برانچ منیجر یا علاقہ منیجر) نے حوالے سے پہلے خود بینک میں جمع کرائی رقم۔ یہ رقم منہا ہو جاتی ہے اور باقی معمول کے مطابق آگے جاتی ہے۔', entry_depositAmount:'جمع شدہ رقم', entry_depositRef:'بینک حوالہ', entry_depositNote:'جمع کی تفصیل', entry_depositNotePlaceholder:'مثلاً: دن کی فروخت کی موازنة یا سلپ نمبر', entry_netOwed:'جمع کرانے کے لیے خالص نقدی', entry_netHint:'وصول کنندہ کو یہی رقم نظر آئے گی', entry_confirmLines:'پروڈکٹ لائنز کی تصدیق', entry_addCollection:'+ وصولی کی لائن شامل کریں', entry_lineCount:'{n} لائنز', entry_confirmSection:'اس سیکشن کی تصدیق', entry_deliveryTitle:'ڈلیوری فیس (بینک کو ادا)', entry_deliveryHint:'ڈلیوری فیس بینک کے لیے وصول ہوتی ہے، ہاتھ میں نقدی نہیں۔ ٹیکس سے پہلے منہا ہوتی ہے اور اس کا ٹیکس واپس ملتا ہے۔', entry_creditTitle:'اُدھار فروخت (کریڈٹ)', entry_fromLines:'اوپر دی گئی پروڈکٹ لائنز سے خودکار حساب', entry_addExpense:'+ اخراجات کی لائن شامل کریں', entry_editLines:'لائنز میں ترمیم', entry_linesConfirmed:'{n} لائنز کی تصدیق ہو گئی', entry_linesTotal:'لائنز کا کل:', entry_linesNeeded:'تصدیق سے پہلے کم از کم ایک لائن مقدار اور قیمت کے ساتھ شامل کریں', entry_priceFixed:'اس پروڈکٹ کی قیمت مقرر ہے، تبدیل نہیں ہو سکتی', admin_unitPrice:'فی یونٹ قیمت', admin_priceLocked:'مقررہ قیمت (اندراج کے وقت تبدیل نہ ہو)', admin_itemName:'مد کا نام', admin_incomeItems:'وصولی کی مدات', admin_expenseItems:'اخراجات کی مدات', admin_addIncomeItem:'وصولی کی مد شامل کریں', admin_addExpenseItem:'اخراجات کی مد شامل کریں', report_otherCash:'فروخت کے علاوہ وصولیاں', report_expenses:'نقد اخراجات', report_directDeposit:'الموازنات (براہِ راست جمع)', dash_includesBankedAtSource:'{n} الموازنات موقع سے جمع شدہ شامل ہے', err_invalidIncomeItem:'فہرست سے وصولی کی مد منتخب کریں', err_invalidExpenseItem:'فہرست سے اخراجات کی مد منتخب کریں', err_reasonRequired:'وجہ ضروری ہے', err_depositNeedsReference:'بینک حوالہ ضروری ہے', err_depositExceedsCash:'جمع کی رقم اس اندراج کی نقدی سے زیادہ ہے', inv_chip:'دعوت نامہ', inv_hi:'خوش آمدید، {name}', inv_lead:'آپ کو کیش کلیکشن اور منظوری سسٹم میں <b>{role}</b> کے طور پر شامل ہونے کی دعوت دی گئی ہے۔ اپنا اکاؤنٹ فعال کرنے کے لیے پاس ورڈ منتخب کریں۔', inv_pw:'نیا پاس ورڈ', inv_pw2:'پاس ورڈ کی تصدیق', inv_rules:'کم از کم 8 حروف — حروف، نمبر اور علامات ملانا بہتر ہے', inv_mismatch:'پاس ورڈ ایک جیسے نہیں ہیں', inv_accept:'دعوت قبول کریں اور اکاؤنٹ فعال کریں', inv_validUntil:'دعوت {date} تک درست ہے', inv_checking:'دعوت کی تصدیق ہو رہی ہے…', inv_doneTitle:'دعوت قبول ہو گئی 🎉', inv_doneBody:'آپ کا پاس ورڈ سیٹ ہو گیا۔ سسٹم استعمال کرنے کے لیے ابھی لاگ اِن کریں۔', inv_signIn:'ابھی لاگ اِن کریں', inv_expiredTitle:'دعوت کی مدت ختم ہو گئی', inv_expiredBody:'یہ 7 دن سے زیادہ پہلے بھیجی گئی تھی۔ ایڈمن سے دوبارہ بھیجنے کو کہیں۔', inv_usedTitle:'دعوت پہلے ہی قبول ہو چکی ہے', inv_usedBody:'آپ کا اکاؤنٹ پہلے سے فعال ہے — اپنے منتخب کردہ پاس ورڈ سے لاگ اِن کریں۔', inv_invalidTitle:'دعوت کا لنک درست نہیں', inv_invalidBody:'شاید نئی دعوت بھیجی گئی ہے۔ تازہ ترین دعوتی ای میل کھولیں یا ایڈمن سے رابطہ کریں۔', inv_goLogin:'لاگ اِن پر جائیں', inv_retry:'دوبارہ کوشش کریں', err_invitePending:'آپ نے ابھی دعوت قبول نہیں کی — دعوتی ای میل کھول کر «دعوت قبول کریں» دبائیں۔', err_inviteInvalid:'دعوت کا لنک درست نہیں', err_inviteUsed:'یہ دعوت پہلے استعمال ہو چکی ہے', err_inviteExpired:'دعوت کی مدت ختم ہو گئی', err_alreadyAccepted:'یہ صارف دعوت قبول کر چکا ہے', err_userInactive:'صارف غیر فعال ہے', us_status:'حالت', us_lastLogin:'آخری لاگ اِن', us_never:'ابھی لاگ اِن نہیں کیا', us_invited:'دعوت بھیج دی گئی', us_invite_expired:'دعوت ختم', us_accepted:'دعوت قبول', us_active:'فعال', us_disabled:'غیر فعال', us_all:'سب', us_inviteTitle:'نئے صارف کو دعوت دیں', us_inviteHint:'انہیں «دعوت قبول کریں» بٹن والی ای میل ملے گی اور وہ خود پاس ورڈ منتخب کریں گے۔ حالت خود بدلتی ہے: دعوت بھیجی گئی ← قبول ← فعال۔', us_send:'دعوت بھیجیں', us_resend:'دعوت دوبارہ بھیجیں', us_sentTo:'دعوت {email} کو بھیج دی گئی', us_inviteLink:'دعوت کا لنک — اگر ای میل کا بٹن کام نہ کرے', us_copyLink:'لنک کاپی کریں', us_openLink:'لنک کھولیں', us_copied:'لنک کاپی ہو گیا', us_notSent:'صارف بن گیا لیکن ای میل نہیں جا سکی — «دعوت دوبارہ بھیجیں» دبائیں۔', us_resent:'دعوت دوبارہ بھیج دی گئی', us_subInvited:'{when} بھیجی گئی', us_subExpired:'{when} ختم ہوئی', us_subAccepted:'{when} قبول کی', us_subActive:'{when} سے', us_user:'صارف', rel_now:'ابھی', rel_min:'{n} منٹ پہلے', rel_hour:'{n} گھنٹے پہلے', rel_day:'{n} دن پہلے', rel_in:'{n} دن میں', ui_showPassword:'پاس ورڈ دکھائیں', ui_hidePassword:'پاس ورڈ چھپائیں', report_transactions2:'ٹرانزیکشنز کی تفصیل'
+      home_actionsWaiting:'آپ کے منتظر اقدامات', home_mySummary:'میرا خلاصہ', ui_openDoc:'دستاویز کھولیں', report_allAreas:'تمام علاقے', report_payment:'ادائیگی کا طریقہ', report_allPayments:'تمام طریقے', report_driver:'ڈرائیور', report_allDrivers:'تمام ڈرائیور', entry_otherTitle:'فروخت کے علاوہ وصولیاں', entry_otherHint:'روزانہ فروخت کے علاوہ موصول ہونے والی نقدی (پرانا اُدھار، سلنڈر ڈپازٹ، خالی سلنڈر…)۔ جمع کرانے والی رقم میں شامل ہوتی ہے۔', entry_otherAmount:'وصول شدہ رقم', entry_otherItem:'مد', entry_reason:'وجہ / تفصیل', entry_reasonPlaceholder:'واضح لکھیں کہ رقم کس لیے ہے', entry_expenseTitle:'نقد اخراجات', entry_expenseHint:'موقع پر نقدی سے ادا کی گئی رقم (ایندھن، معمولی مرمت…)۔ جمع کرانے والی رقم سے منہا ہوگی۔', entry_expenseAmount:'ادا شدہ رقم', entry_expenseItem:'اخراجات کی مد', entry_depositTitle:'الموازنات — براہِ راست بینک میں جمع', entry_depositHint:'نقدی رکھنے والے (ڈرائیور، برانچ منیجر یا علاقہ منیجر) نے حوالے سے پہلے خود بینک میں جمع کرائی رقم۔ یہ رقم منہا ہو جاتی ہے اور باقی معمول کے مطابق آگے جاتی ہے۔', entry_depositAmount:'جمع شدہ رقم', entry_depositRef:'بینک حوالہ', entry_depositNote:'جمع کی تفصیل', entry_depositNotePlaceholder:'مثلاً: دن کی فروخت کی موازنة یا سلپ نمبر', entry_netOwed:'جمع کرانے کے لیے خالص نقدی', entry_netHint:'وصول کنندہ کو یہی رقم نظر آئے گی', entry_confirmLines:'پروڈکٹ لائنز کی تصدیق', entry_addCollection:'+ وصولی کی لائن شامل کریں', lf_title:'فہرست فلٹر کریں', lf_search:'تلاش', lf_searchHint:'کوئی لفظ یا نمبر…', lf_clear:'صاف کریں', lf_allStatuses:'تمام حالتیں', lf_allPeople:'سب', lf_noMatch:'فلٹر کے مطابق کچھ نہیں ملا', lf_showing:'{total} میں سے {n}', entry_lineCount:'{n} لائنز', entry_confirmSection:'اس سیکشن کی تصدیق', entry_deliveryTitle:'ڈلیوری فیس (بینک کو ادا)', entry_deliveryHint:'ڈلیوری فیس بینک کے لیے وصول ہوتی ہے، ہاتھ میں نقدی نہیں۔ ٹیکس سے پہلے منہا ہوتی ہے اور اس کا ٹیکس واپس ملتا ہے۔', entry_creditTitle:'اُدھار فروخت (کریڈٹ)', entry_fromLines:'اوپر دی گئی پروڈکٹ لائنز سے خودکار حساب', entry_addExpense:'+ اخراجات کی لائن شامل کریں', entry_editLines:'لائنز میں ترمیم', entry_linesConfirmed:'{n} لائنز کی تصدیق ہو گئی', entry_linesTotal:'لائنز کا کل:', entry_linesNeeded:'تصدیق سے پہلے کم از کم ایک لائن مقدار اور قیمت کے ساتھ شامل کریں', entry_priceFixed:'اس پروڈکٹ کی قیمت مقرر ہے، تبدیل نہیں ہو سکتی', admin_unitPrice:'فی یونٹ قیمت', admin_priceLocked:'مقررہ قیمت (اندراج کے وقت تبدیل نہ ہو)', admin_itemName:'مد کا نام', admin_incomeItems:'وصولی کی مدات', admin_expenseItems:'اخراجات کی مدات', admin_addIncomeItem:'وصولی کی مد شامل کریں', admin_addExpenseItem:'اخراجات کی مد شامل کریں', report_otherCash:'فروخت کے علاوہ وصولیاں', report_expenses:'نقد اخراجات', report_directDeposit:'الموازنات (براہِ راست جمع)', dash_includesBankedAtSource:'{n} الموازنات موقع سے جمع شدہ شامل ہے', err_invalidIncomeItem:'فہرست سے وصولی کی مد منتخب کریں', err_invalidExpenseItem:'فہرست سے اخراجات کی مد منتخب کریں', err_reasonRequired:'وجہ ضروری ہے', err_depositNeedsReference:'بینک حوالہ ضروری ہے', err_depositExceedsCash:'جمع کی رقم اس اندراج کی نقدی سے زیادہ ہے', inv_chip:'دعوت نامہ', inv_hi:'خوش آمدید، {name}', inv_lead:'آپ کو کیش کلیکشن اور منظوری سسٹم میں <b>{role}</b> کے طور پر شامل ہونے کی دعوت دی گئی ہے۔ اپنا اکاؤنٹ فعال کرنے کے لیے پاس ورڈ منتخب کریں۔', inv_pw:'نیا پاس ورڈ', inv_pw2:'پاس ورڈ کی تصدیق', inv_rules:'کم از کم 8 حروف — حروف، نمبر اور علامات ملانا بہتر ہے', inv_mismatch:'پاس ورڈ ایک جیسے نہیں ہیں', inv_accept:'دعوت قبول کریں اور اکاؤنٹ فعال کریں', inv_validUntil:'دعوت {date} تک درست ہے', inv_checking:'دعوت کی تصدیق ہو رہی ہے…', inv_doneTitle:'دعوت قبول ہو گئی 🎉', inv_doneBody:'آپ کا پاس ورڈ سیٹ ہو گیا۔ سسٹم استعمال کرنے کے لیے ابھی لاگ اِن کریں۔', inv_signIn:'ابھی لاگ اِن کریں', inv_expiredTitle:'دعوت کی مدت ختم ہو گئی', inv_expiredBody:'یہ 7 دن سے زیادہ پہلے بھیجی گئی تھی۔ ایڈمن سے دوبارہ بھیجنے کو کہیں۔', inv_usedTitle:'دعوت پہلے ہی قبول ہو چکی ہے', inv_usedBody:'آپ کا اکاؤنٹ پہلے سے فعال ہے — اپنے منتخب کردہ پاس ورڈ سے لاگ اِن کریں۔', inv_invalidTitle:'دعوت کا لنک درست نہیں', inv_invalidBody:'شاید نئی دعوت بھیجی گئی ہے۔ تازہ ترین دعوتی ای میل کھولیں یا ایڈمن سے رابطہ کریں۔', inv_goLogin:'لاگ اِن پر جائیں', inv_retry:'دوبارہ کوشش کریں', err_invitePending:'آپ نے ابھی دعوت قبول نہیں کی — دعوتی ای میل کھول کر «دعوت قبول کریں» دبائیں۔', err_inviteInvalid:'دعوت کا لنک درست نہیں', err_inviteUsed:'یہ دعوت پہلے استعمال ہو چکی ہے', err_inviteExpired:'دعوت کی مدت ختم ہو گئی', err_alreadyAccepted:'یہ صارف دعوت قبول کر چکا ہے', err_userInactive:'صارف غیر فعال ہے', us_status:'حالت', us_lastLogin:'آخری لاگ اِن', us_never:'ابھی لاگ اِن نہیں کیا', us_invited:'دعوت بھیج دی گئی', us_invite_expired:'دعوت ختم', us_accepted:'دعوت قبول', us_active:'فعال', us_disabled:'غیر فعال', us_all:'سب', us_inviteTitle:'نئے صارف کو دعوت دیں', us_inviteHint:'انہیں «دعوت قبول کریں» بٹن والی ای میل ملے گی اور وہ خود پاس ورڈ منتخب کریں گے۔ حالت خود بدلتی ہے: دعوت بھیجی گئی ← قبول ← فعال۔', us_send:'دعوت بھیجیں', us_resend:'دعوت دوبارہ بھیجیں', us_sentTo:'دعوت {email} کو بھیج دی گئی', us_inviteLink:'دعوت کا لنک — اگر ای میل کا بٹن کام نہ کرے', us_copyLink:'لنک کاپی کریں', us_openLink:'لنک کھولیں', us_copied:'لنک کاپی ہو گیا', us_notSent:'صارف بن گیا لیکن ای میل نہیں جا سکی — «دعوت دوبارہ بھیجیں» دبائیں۔', us_resent:'دعوت دوبارہ بھیج دی گئی', us_subInvited:'{when} بھیجی گئی', us_subExpired:'{when} ختم ہوئی', us_subAccepted:'{when} قبول کی', us_subActive:'{when} سے', us_user:'صارف', rel_now:'ابھی', rel_min:'{n} منٹ پہلے', rel_hour:'{n} گھنٹے پہلے', rel_day:'{n} دن پہلے', rel_in:'{n} دن میں', ui_showPassword:'پاس ورڈ دکھائیں', ui_hidePassword:'پاس ورڈ چھپائیں', report_transactions2:'ٹرانزیکشنز کی تفصیل'
     }
   };
   Object.keys(add).forEach(function(lang){
@@ -2746,6 +2765,12 @@ function entryAmt_(e){
   return { cash: cash, pos: pos, credit: credit, gross: cash + pos + credit, delivery: delivery, vat: vat,
     deliveryBase: delivery - vat, other: other, expense: expense, banked: banked,
     net: cash + other - delivery + vat - expense - banked - credit };
+}
+// name of a master-data item (collection / expense), for search text
+function itemName_(listName, id){
+  if (!id) return '';
+  var x = byId((state.meta||{})[listName], id);
+  return x ? (x.name || '') : '';
 }
 function sourceName_(e){
   var m = state.meta || {};
@@ -3979,6 +4004,107 @@ function moneyBlock_(id, colorKey, iconName, titleKey, hintKey, bodyHtml){
   '</section>';
 }
 
+// A filter bar for a list screen. opts:
+//   fields: which controls to show, in order
+//   status: [[value, label], ...] for the status picker
+//   people:  [[id, name], ...] for the person picker (screen decides who)
+//   labels:  { person: 'key', status: 'key' } to name those two controls
+//   onChange: called with no arguments whenever a value changes
+// Returns { node, match(row), active() } where row is
+//   { date, locationId, clusterId, sourceType, people:[ids], status, amount, text }
+function listFilters_(opts){
+  opts = opts || {};
+  var fields = opts.fields || ['text'];
+  var meta = state.meta || {};
+  var myBranchIds = branchIdsForEntry_();
+  var branches = (meta.locations || []).filter(function(l){ return myBranchIds === null || myBranchIds.indexOf(l.id) >= 0; });
+  var myClusterIds = [];
+  branches.forEach(function(l){ if (l.clusterId && myClusterIds.indexOf(l.clusterId) < 0) myClusterIds.push(l.clusterId); });
+  var areas = (meta.clusters || []).filter(function(c){ return myClusterIds.indexOf(c.id) >= 0; });
+
+  function has(f){ return fields.indexOf(f) >= 0; }
+  var parts = [];
+  if (has('text')) parts.push('<div class="field lf-wide"><label>'+esc(t('lf_search'))+'</label><input class="lfText" type="search" placeholder="'+esc(t('lf_searchHint'))+'"></div>');
+  if (has('date')) parts.push('<div class="field"><label>'+esc(t('report_from'))+'</label><input class="lfFrom" type="date"></div>' +
+    '<div class="field"><label>'+esc(t('report_to'))+'</label><input class="lfTo" type="date"></div>');
+  if (has('area') && areas.length > 1) parts.push('<div class="field"><label>'+esc(t('admin_cluster'))+'</label><select class="lfArea"><option value="">'+esc(t('report_allAreas'))+'</option>' +
+    areas.map(function(c){ return '<option value="'+c.id+'">'+esc(c.name)+'</option>'; }).join('') + '</select></div>');
+  if (has('branch') && branches.length > 1) parts.push('<div class="field"><label>'+esc(t('report_location'))+'</label><select class="lfBranch"><option value="">'+esc(t('report_allLocations'))+'</option>' +
+    branches.map(function(l){ return '<option value="'+l.id+'">'+esc(l.city+' — '+l.name)+'</option>'; }).join('') + '</select></div>');
+  if (has('sourceType')) parts.push('<div class="field"><label>'+esc(t('entry_sourceType'))+'</label><select class="lfType"><option value="">'+esc(t('report_allTypes'))+'</option>' +
+    ['store','car','pos'].map(function(k){ return '<option value="'+k+'">'+esc(t('entry_source_'+k))+'</option>'; }).join('') + '</select></div>');
+  if (has('payment')) parts.push('<div class="field"><label>'+esc(t('report_payment'))+'</label><select class="lfPay"><option value="">'+esc(t('report_allPayments'))+'</option>' +
+    [['cash','entry_cash'],['pos','entry_pos'],['credit','entry_credit'],['delivery','entry_delivery'],['other','report_otherCash'],['expense','report_expenses'],['deposit','report_directDeposit']]
+      .map(function(p){ return '<option value="'+p[0]+'">'+esc(t(p[1]))+'</option>'; }).join('') + '</select></div>');
+  if (has('status') && (opts.status||[]).length) parts.push('<div class="field"><label>'+esc(t((opts.labels&&opts.labels.status)||'us_status'))+'</label><select class="lfStatus"><option value="">'+esc(t('lf_allStatuses'))+'</option>' +
+    opts.status.map(function(p){ return '<option value="'+esc(p[0])+'">'+esc(p[1])+'</option>'; }).join('') + '</select></div>');
+  if (has('person') && (opts.people||[]).length) parts.push('<div class="field"><label>'+esc(t((opts.labels&&opts.labels.person)||'report_enteredBy'))+'</label><select class="lfPerson"><option value="">'+esc(t('lf_allPeople'))+'</option>' +
+    opts.people.map(function(p){ return '<option value="'+esc(p[0])+'">'+esc(p[1])+'</option>'; }).join('') + '</select></div>');
+  if (has('amount')) parts.push('<div class="field"><label>'+esc(t('report_amountMin'))+'</label><input class="lfMin" type="number" step="0.01" min="0"></div>' +
+    '<div class="field"><label>'+esc(t('report_amountMax'))+'</label><input class="lfMax" type="number" step="0.01" min="0"></div>');
+
+  var node = el('<section class="card lf">' +
+    '<div class="lf-head"><button type="button" class="lf-toggle">'+icon_('search')+'<span>'+esc(t('lf_title'))+'</span><span class="lf-count"></span>'+icon_('chevron')+'</button>' +
+      '<button type="button" class="lf-clear" hidden>'+esc(t('lf_clear'))+'</button></div>' +
+    '<div class="lf-body" hidden><div class="grid">'+parts.join('')+'</div></div>' +
+  '</section>');
+
+  var body = qs('.lf-body', node), toggle = qs('.lf-toggle', node), clear = qs('.lf-clear', node);
+  function val(sel){ var e = qs(sel, node); return e ? String(e.value || '').trim() : ''; }
+  function values(){
+    return { text: val('.lfText').toLowerCase(), from: val('.lfFrom'), to: val('.lfTo'), area: val('.lfArea'),
+      branch: val('.lfBranch'), type: val('.lfType'), pay: val('.lfPay'), status: val('.lfStatus'),
+      person: val('.lfPerson'), min: val('.lfMin'), max: val('.lfMax') };
+  }
+  function activeCount(){
+    var v = values(), n = 0;
+    Object.keys(v).forEach(function(k){ if (v[k]) n++; });
+    return n;
+  }
+  function refreshHead(){
+    var n = activeCount();
+    qs('.lf-count', node).textContent = n ? t('report_activeFilters').replace(/^/, n + ' ') : '';
+    clear.hidden = !n;
+  }
+  function changed(){ refreshHead(); if (opts.onChange) opts.onChange(); }
+  qsa('input, select', node).forEach(function(inp){
+    inp.addEventListener('input', changed);
+    inp.addEventListener('change', changed);
+  });
+  toggle.addEventListener('click', function(){
+    body.hidden = !body.hidden;
+    node.classList.toggle('open', !body.hidden);
+  });
+  clear.addEventListener('click', function(){
+    qsa('input, select', node).forEach(function(inp){ inp.value = ''; });
+    changed();
+  });
+
+  function match(row){
+    var v = values();
+    if (v.text) {
+      var hay = String(row.text || '').toLowerCase();
+      if (hay.indexOf(v.text) < 0) return false;
+    }
+    if (v.from && (!row.date || row.date < v.from)) return false;
+    if (v.to && (!row.date || row.date > v.to)) return false;
+    if (v.branch && row.locationId !== v.branch) return false;
+    if (v.area) {
+      var loc = byId((state.meta||{}).locations, row.locationId);
+      if (!loc || loc.clusterId !== v.area) return false;
+    }
+    if (v.type && row.sourceType !== v.type) return false;
+    if (v.status && String(row.status) !== v.status) return false;
+    if (v.person && (row.people || []).indexOf(v.person) < 0) return false;
+    if (v.pay && !(row.pay || {})[v.pay]) return false;
+    if (v.min && !(Number(row.amount || 0) >= Number(v.min))) return false;
+    if (v.max && !(Number(row.amount || 0) <= Number(v.max))) return false;
+    return true;
+  }
+  refreshHead();
+  return { node: node, match: match, values: values, active: activeCount };
+}
+
 function renderEntries(body){
   var role = state.user.role;
   var sourceOptions = '';
@@ -4724,22 +4850,56 @@ function renderEntries(body){
     }
   }
 
+  var entryFilter = listFilters_({
+    fields: ['text','date','area','branch','sourceType','payment','status','person','amount'],
+    status: [['open', t('st_notHandedOff')], ['handed', t('st_inHandoff')]],
+    people: (meta.users||[]).filter(function(u){ return ['driver','store_manager','cluster_manager','admin'].indexOf(u.role) >= 0; })
+      .map(function(u){ return [u.id, u.name]; }),
+    onChange: drawEntryList
+  });
+  body.appendChild(entryFilter.node);
   var listCard = el('<div class="card"><h2>'+esc(t('entry_list'))+'</h2><div id="entryListBody"></div></div>');
   body.appendChild(listCard);
   loadEntryList();
 
+  var entryRows = [];
+  function drawEntryList(){
+    var wrap = qs('#entryListBody');
+    if (!wrap) return;
+    if (!entryRows.length){ wrap.innerHTML = '<div class="muted">'+esc(t('noData'))+'</div>'; return; }
+    var shown = entryFilter ? entryRows.filter(function(r){ return entryFilter.match(r.norm); }) : entryRows;
+    if (!shown.length){ wrap.innerHTML = '<div class="lf-empty">'+esc(t('lf_noMatch'))+'</div>'; return; }
+    wrap.innerHTML = '<table><thead><tr><th>'+esc(t('entry_date'))+'</th><th>'+esc(t('entry_sourceType'))+'</th><th>'+esc(t('handoff_amount'))+'</th><th></th></tr></thead><tbody>' +
+      shown.slice(0,60).map(function(r){ return r.html; }).join('') + '</tbody></table>' +
+      '<div class="muted" style="margin-top:8px;font-size:11.5px;">'+esc(t('lf_showing').replace('{n}', Math.min(shown.length,60)).replace('{total}', entryRows.length))+'</div>';
+  }
   function loadEntryList(){
     api('listEntries', {}).then(function(res){
       var wrap = qs('#entryListBody');
-      if(!res.ok || !res.entries.length){ wrap.innerHTML = '<div class="muted">'+esc(t('noData'))+'</div>'; return; }
-      var rows = res.entries.slice(0,30).map(function(e){
+      if(!res.ok || !res.entries.length){ entryRows = []; drawEntryList(); return; }
+      entryRows = res.entries.map(function(e){
         // A car or pos entry can carry cash, card/POS, and credit sales all
         // at once now, so a single-column quick list shows their sum rather
         // than picking just one and silently dropping the others.
         var amt = Number(e.cashSales||0) + Number(e.posSales||0) + Number(e.creditSales||0);
-        return '<tr><td>'+esc(e.date)+'</td><td>'+esc(t('entry_source_'+e.sourceType))+'</td><td>'+money(amt)+'</td><td>'+(e.consumedBy?'✓':'')+'</td></tr>';
-      }).join('');
-      wrap.innerHTML = '<table><thead><tr><th>'+esc(t('entry_date'))+'</th><th>'+esc(t('entry_sourceType'))+'</th><th>'+esc(t('handoff_amount'))+'</th><th></th></tr></thead><tbody>'+rows+'</tbody></table>';
+        return {
+          html: '<tr><td>'+esc(e.date)+'</td><td>'+esc(t('entry_source_'+e.sourceType))+'</td><td>'+money(amt)+'</td><td>'+(e.consumedBy?'✓':'')+'</td></tr>',
+          norm: {
+            date: e.date, locationId: e.locationId, sourceType: e.sourceType, amount: amt,
+            people: [e.enteredBy], status: e.consumedBy ? 'handed' : 'open',
+            pay: { cash: Number(e.cashSales||0) > 0, pos: Number(e.posSales||0) > 0, credit: Number(e.creditSales||0) > 0,
+              delivery: Number(e.deliveryFeeBankAmount||0) > 0, other: Number(e.otherCash||0) > 0,
+              expense: Number(e.expenseAmount||0) > 0, deposit: Number(e.directDepositAmount||0) > 0 },
+            // everything a person might actually type into the box: the
+            // reasons and bank references are usually what they remember
+            text: [e.date, t('entry_source_'+e.sourceType), sourceName_(e), locationName(e.locationId),
+              userName(e.enteredBy), productName_(e.productId), e.note, money(amt),
+              e.otherCashReason, e.expenseReason, e.directDepositRef, e.directDepositNote,
+              itemName_('incomeItems', e.otherCashItemId), itemName_('expenseItems', e.expenseItemId)].join(' ')
+          }
+        };
+      });
+      drawEntryList();
     });
   }
 }
@@ -5392,9 +5552,30 @@ function renderHandoffs(body){
     // toUserId===me for everyone, admin included, would leave that
     // capability with no way to actually reach it, so admin sees every
     // pending handoff here, not just their own.
-    var pending = res.handoffs.filter(function(h){ return h.status==='pending' && (h.toUserId===state.user.id || role==='admin'); });
-    var disputed = res.handoffs.filter(function(h){ return h.status==='disputed'; });
-    var history = res.handoffs.filter(function(h){ return pending.indexOf(h)<0; });
+    // One bar over all three lists on this screen: what you are looking for
+    // is a handoff, not "a handoff in the third card".
+    var hFilter = listFilters_({
+      fields: ['text','date','area','branch','status','person','amount'],
+      status: [['pending', t('handoff_pending')], ['confirmed', t('handoff_confirmed')],
+        ['disputed', t('handoff_disputed')], ['rejected', t('handoff_rejected')], ['deposit', t('st_deposited')]],
+      people: (state.meta.users||[]).map(function(u){ return [u.id, u.name]; }),
+      labels: { person: 'handoff_from' },
+      onChange: function(){ renderHandoffs(body); }
+    });
+    body.appendChild(hFilter.node);
+    function hNorm(h){
+      return {
+        date: (h.createdAt||'').slice(0,10), locationId: h.locationId || null, amount: Number(h.amount||0),
+        people: [h.fromUserId, h.toUserId].filter(Boolean),
+        status: h.kind === 'deposit' ? 'deposit' : h.status,
+        text: [userName(h.fromUserId), userName(h.toUserId), t('kind_'+h.kind), t('handoff_'+h.status),
+          locationName(h.locationId), h.bankReference, h.note, money(h.amount)].join(' ')
+      };
+    }
+    var visible = res.handoffs.filter(function(h){ return hFilter.match(hNorm(h)); });
+    var pending = visible.filter(function(h){ return h.status==='pending' && (h.toUserId===state.user.id || role==='admin'); });
+    var disputed = visible.filter(function(h){ return h.status==='disputed'; });
+    var history = visible.filter(function(h){ return pending.indexOf(h)<0; });
     setNotifCount(pending.length + ((role==='admin'||role==='finance') ? disputed.length : 0));
 
     if (pending.length){
@@ -5414,7 +5595,7 @@ function renderHandoffs(body){
     var hc = el('<div class="card"><h2>'+esc(t('nav_handoffs'))+'</h2><div id="hList"></div></div>');
     body.appendChild(hc);
     var hl = qs('#hList', hc);
-    if (!history.length){ hl.innerHTML = '<div class="muted">'+esc(t('noData'))+'</div>'; }
+    if (!history.length){ hl.innerHTML = '<div class="'+(hFilter.active() ? 'lf-empty' : 'muted')+'">'+esc(t(hFilter.active() ? 'lf_noMatch' : 'noData'))+'</div>'; }
     history.slice(0,40).forEach(function(h){ hl.appendChild(handoffItem(h, false, false)); });
   });
 }
@@ -6053,6 +6234,14 @@ function renderRisk(body){
 
   if (!isCompanyWide) return;
 
+  var riskFilter = listFilters_({
+    fields: ['text','date','status','person'],
+    status: [['open', t('risk_status_open')], ['in_progress', t('risk_status_in_progress')], ['resolved', t('risk_status_resolved')]],
+    people: (state.meta.users||[]).map(function(u){ return [u.id, u.name]; }),
+    labels: { person: 'risk_reportedBy' },
+    onChange: function(){ loadRiskList(); }
+  });
+  body.appendChild(riskFilter.node);
   var listCard = el('<div class="card"><h2>'+esc(t('risk_list'))+'</h2><div id="riskListBody">'+esc(t('loading'))+'</div></div>');
   body.appendChild(listCard);
   loadRiskList();
@@ -6064,7 +6253,15 @@ function renderRisk(body){
       if (!res.items.length){ wrap.innerHTML = '<div class="muted">'+esc(t('risk_noItems'))+'</div>'; return; }
       wrap.innerHTML = '';
       var statusClass = { open:'pending', in_progress:'rejected', resolved:'confirmed' };
-      res.items.forEach(function(it){
+      var riskShown = res.items.filter(function(it){
+        return riskFilter.match({
+          date: (it.createdAt||'').slice(0,10), status: it.status, people: [it.reportedBy],
+          text: [it.title, it.description, userName(it.reportedBy), t('risk_status_'+it.status),
+            t('risk_severity_'+it.severity), it.resolutionNote].join(' ')
+        });
+      });
+      if (!riskShown.length){ wrap.innerHTML = '<div class="lf-empty">'+esc(t('lf_noMatch'))+'</div>'; return; }
+      riskShown.forEach(function(it){
         var row = el('<div class="list-item">' +
           '<div class="top"><div><strong>'+esc(it.title)+'</strong> <span class="badge '+statusClass[it.status]+'">'+esc(t('risk_status_'+it.status))+'</span></div>' +
             '<div class="muted">'+esc(t(it.type==='risk'?'risk_type_risk':'risk_type_complaint'))+' · '+esc(t('risk_severity_'+it.severity))+'</div></div>' +
@@ -6574,10 +6771,32 @@ function renderAdminAudit(content){
   content.innerHTML = '<div class="card">'+esc(t('loading'))+'</div>';
   api('listAudit', { limit: 200 }).then(function(res){
     if(!res.ok){ content.innerHTML = '<div class="msg err">'+esc(errMsg_(res))+'</div>'; return; }
-    var rows = res.audit.map(function(a){
-      return '<tr><td>'+esc((a.at||'').slice(0,19).replace('T',' '))+'</td><td>'+esc(a.action)+'</td><td>'+esc(userName(a.userId))+'</td><td>'+esc(a.detail||'')+'</td></tr>';
-    }).join('');
-    content.innerHTML = '<div class="card"><table><thead><tr><th>'+esc(t('handoff_created'))+'</th><th>action</th><th>'+esc(t('admin_name'))+'</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+    content.innerHTML = '';
+    var auditFilter = listFilters_({
+      fields: ['text','date','person'],
+      people: (state.meta.users||[]).map(function(u){ return [u.id, u.name]; }),
+      labels: { person: 'admin_name' },
+      onChange: draw
+    });
+    content.appendChild(auditFilter.node);
+    var card = el('<div class="card"><div class="tbl-scroll" id="auditBody"></div></div>');
+    content.appendChild(card);
+    function draw(){
+      var shown = res.audit.filter(function(a){
+        return auditFilter.match({
+          date: (a.at||'').slice(0,10), people: [a.userId],
+          text: [a.action, userName(a.userId), a.detail, (a.at||'').slice(0,19)].join(' ')
+        });
+      });
+      var body2 = qs('#auditBody', card);
+      if (!shown.length){ body2.innerHTML = '<div class="lf-empty">'+esc(t('lf_noMatch'))+'</div>'; return; }
+      body2.innerHTML = '<table><thead><tr><th>'+esc(t('handoff_created'))+'</th><th>action</th><th>'+esc(t('admin_name'))+'</th><th></th></tr></thead><tbody>' +
+        shown.map(function(a){
+          return '<tr><td>'+esc((a.at||'').slice(0,19).replace('T',' '))+'</td><td>'+esc(a.action)+'</td><td>'+esc(userName(a.userId))+'</td><td>'+esc(a.detail||'')+'</td></tr>';
+        }).join('') + '</tbody></table>' +
+        '<div class="muted" style="margin-top:8px;font-size:11.5px;">'+esc(t('lf_showing').replace('{n}', shown.length).replace('{total}', res.audit.length))+'</div>';
+    }
+    draw();
   });
 }
 
