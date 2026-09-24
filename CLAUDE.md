@@ -61,6 +61,23 @@ Cluster ── clusterManagerUserId, collectorUserId
 Zone (city + name) — pure geography, unrelated to the tree above
 ```
 
+**Every link must name its person (2026-09-24).** `validateEntity_` refuses
+to save an area without both `clusterManagerUserId` and `collectorUserId`
+(`manager_required` / `collector_required`), a branch store without
+`storeManagerUserId` (`manager_required`), a car without `driverUserId`
+(`driver_required`), or a POS machine without `assignedUserId`
+(`holder_required`). The person must also hold the matching role
+(`wrong_role`), except that an **admin may stand in** on any link while the
+real person is being hired (`userHasRole_`). `conflict_of_interest` is
+checked before `wrong_role`, so the same person as manager and collector
+still reports the conflict. Rows saved before this rule can still be
+missing people. The home screen's **منطقتي / فرعي** panel
+(`myOrgPanel_`) shows the area manager their area, collector, branches, and
+each branch's manager, cars/drivers and POS/holders. A branch manager sees
+the same panel for their own branch, with the area manager above it. Any
+missing link shows in red. Every master-data row also has an edit panel now
+(`entityFieldInput_`), built from the same field spec as the add form.
+
 A POS machine's `ownerType`/`ownerId` points at either a store or a car —
 a single car can carry more than one POS terminal, and a branch usually
 has several. `daily_entries.sourceType` is `store` / `car` / `pos`, each

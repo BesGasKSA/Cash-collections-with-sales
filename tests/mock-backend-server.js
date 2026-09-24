@@ -82,9 +82,13 @@ var multiLocations = [
 multiLocations.forEach(function (row) {
   var city = row[0], name = row[1], clusterId = row[2];
   var loc = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: city, name: name, clusterId: clusterId } }).entity;
-  call({ action: 'adminSaveEntity', token: adminTok, kind: 'store', data: { locationId: loc.id, name: name + ' Branch', storeManagerUserId: null } });
-  var mCar = call({ action: 'adminSaveEntity', token: adminTok, kind: 'car', data: { locationId: loc.id, label: name + ' Truck', driverUserId: null } }).entity;
-  call({ action: 'adminSaveEntity', token: adminTok, kind: 'pos', data: { ownerType: 'car', ownerId: mCar.id, label: name + ' POS', assignedUserId: null } });
+  // every link needs its person now, so each branch gets a manager and a driver
+  var slug = name.toLowerCase();
+  var bm = call({ action: 'adminCreateUser', token: adminTok, data: { name: name + ' Branch Manager', email: slug + '.bm@bestgas.sa', role: 'store_manager' } }).user;
+  var dr = call({ action: 'adminCreateUser', token: adminTok, data: { name: name + ' Driver', email: slug + '.driver@bestgas.sa', role: 'driver' } }).user;
+  call({ action: 'adminSaveEntity', token: adminTok, kind: 'store', data: { locationId: loc.id, name: name + ' Branch', storeManagerUserId: bm.id } });
+  var mCar = call({ action: 'adminSaveEntity', token: adminTok, kind: 'car', data: { locationId: loc.id, label: name + ' Truck', driverUserId: dr.id } }).entity;
+  call({ action: 'adminSaveEntity', token: adminTok, kind: 'pos', data: { ownerType: 'car', ownerId: mCar.id, label: name + ' POS', assignedUserId: dr.id } });
 });
 
 // Products — one goods line and one services line, so the area-bulk

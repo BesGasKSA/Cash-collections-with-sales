@@ -230,7 +230,9 @@ var resolveByPartyAdmin = call({ action: 'resolveDispute', token: adminTok, id: 
 check(!resolveByPartyAdmin.ok && resolveByPartyAdmin.error === 'conflict_of_interest', 'an admin who is a party to the disputed handoff cannot resolve it');
 
 console.log('--- authorization boundaries ---');
-var car2 = call({ action: 'adminSaveEntity', token: adminTok, kind: 'car', data: { locationId: location.entity.id, label: 'Truck-2', driverUserId: null } }).entity;
+// every car has a driver now, so 'not your car' means another driver's car
+var driver2 = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Bilal', email: 'bilal@bestgas.sa', role: 'driver' } }).user;
+var car2 = call({ action: 'adminSaveEntity', token: adminTok, kind: 'car', data: { locationId: location.entity.id, label: 'Truck-2', driverUserId: driver2.id } }).entity;
 var wrongDriverEntry = call({ action: 'createDailyEntry', token: hassanTok, date: '2026-09-03', sourceType: 'car', sourceId: car2.id, cashSales: 100 });
 check(!wrongDriverEntry.ok && wrongDriverEntry.error === 'forbidden', 'a driver cannot log cash for a car not assigned to them');
 
@@ -242,9 +244,10 @@ var wrongLocationHandoff = call({ action: 'createHandoff', token: aliTok, kind: 
 check(!wrongLocationHandoff.ok && wrongLocationHandoff.error === 'forbidden', 'a store manager cannot submit a handoff for a location they do not manage');
 
 console.log('--- cluster manager report scoping ---');
-var cluster2 = call({ action: 'adminSaveEntity', token: adminTok, kind: 'cluster', data: { name: 'Other Cluster' } }).entity;
+// an area is created with both ends of its hop assigned
 var otherManager = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Nora', email: 'nora@bestgas.sa', role: 'cluster_manager' } }).user;
-call({ action: 'adminSaveEntity', token: adminTok, kind: 'cluster', data: { id: cluster2.id, clusterManagerUserId: otherManager.id } });
+var otherCollector = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Rakan', email: 'rakan@bestgas.sa', role: 'collector' } }).user;
+var cluster2 = call({ action: 'adminSaveEntity', token: adminTok, kind: 'cluster', data: { name: 'Other Cluster', clusterManagerUserId: otherManager.id, collectorUserId: otherCollector.id } }).entity;
 call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { id: location2.id, clusterId: cluster2.id } });
 var noraTok = acceptInvite('nora@bestgas.sa');
 var noraReport = call({ action: 'getSalesReport', token: noraTok });
@@ -327,7 +330,7 @@ var nonAdminImport = call({ action: 'importDailyEntries', token: aliTok, rows: [
 check(nonAdminImport.ok, 'store manager can also import within their own scope (same checkEntryScope_ as a single entry)');
 
 var otherLocation = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: 'Jeddah', name: 'Other Branch', clusterId: cluster.entity.id } }).entity;
-var otherCar = call({ action: 'adminSaveEntity', token: adminTok, kind: 'car', data: { locationId: otherLocation.id, label: 'Truck-Other', driverUserId: null } }).entity;
+var otherCar = call({ action: 'adminSaveEntity', token: adminTok, kind: 'car', data: { locationId: otherLocation.id, label: 'Truck-Other', driverUserId: driver2.id } }).entity;
 var scopedImport = call({ action: 'importDailyEntries', token: aliTok, rows: [{ date: '2026-09-11', sourceType: 'car', sourceId: otherCar.id, cashSales: 10 }] });
 check(scopedImport.ok && scopedImport.created === 0 && scopedImport.results[0].error === 'forbidden', 'store manager importing a source outside their own location is rejected per-row, same as a single entry');
 
@@ -340,7 +343,8 @@ check(!zoneNoCity.ok && zoneNoCity.error === 'invalid_input', 'zone requires bot
 var zonedLocation = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: 'Riyadh', name: 'Yasmeen Branch', clusterId: cluster.entity.id, zoneId: zoneRiyadhEast.entity.id } });
 check(zonedLocation.ok && zonedLocation.entity.zoneId === zoneRiyadhEast.entity.id, 'a location can optionally carry a zoneId, independent of its clusterId (cluster still the money-chain assignment)');
 
-var zonedStore = call({ action: 'adminSaveEntity', token: adminTok, kind: 'store', data: { locationId: zonedLocation.entity.id, name: 'Yasmeen Store' } });
+var mgr1 = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Yasmeen Store Manager', email: 'mgr1.fx@bestgas.sa', role: 'store_manager' } }).user;
+var zonedStore = call({ action: 'adminSaveEntity', token: adminTok, kind: 'store', data: { locationId: zonedLocation.entity.id, name: 'Yasmeen Store', storeManagerUserId: mgr1.id } });
 check(zonedStore.ok, 'store created under the zoned location');
 var zonedEntry = call({ action: 'createDailyEntry', token: adminTok, date: '2026-09-12', sourceType: 'store', sourceId: zonedStore.entity.id, cashSales: 777 });
 check(zonedEntry.ok, 'entry recorded against the zoned location (admin, since Ali already manages a different store)');
@@ -409,7 +413,8 @@ var financeTok = acceptInvite('fatima@bestgas.sa');
 // holding by this point in the file.
 var reconCluster = call({ action: 'adminSaveEntity', token: adminTok, kind: 'cluster', data: { name: 'ReconCluster', clusterManagerUserId: sara.id, collectorUserId: musa.id } }).entity;
 var reconLocation = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: 'Jeddah', name: 'Recon Location', clusterId: reconCluster.id } }).entity;
-var reconStore = call({ action: 'adminSaveEntity', token: adminTok, kind: 'store', data: { locationId: reconLocation.id, name: 'Recon Branch' } }).entity;
+var mgr2 = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Recon Branch Manager', email: 'mgr2.fx@bestgas.sa', role: 'store_manager' } }).user;
+var reconStore = call({ action: 'adminSaveEntity', token: adminTok, kind: 'store', data: { locationId: reconLocation.id, name: 'Recon Branch', storeManagerUserId: mgr2.id } }).entity;
 var reconEntry = call({ action: 'createDailyEntry', token: adminTok, date: '2026-09-14', sourceType: 'store', sourceId: reconStore.id, cashSales: 555 });
 check(reconEntry.ok, 'entry for reconciliation scenario');
 var reconHandoff1 = call({ action: 'createHandoff', token: adminTok, kind: 'location_to_cluster', locationId: reconLocation.id });
@@ -468,7 +473,8 @@ check(!afterManual.unmatchedDeposits.some(function (d) { return d.id === reconDe
 console.log('--- LPG cylinder exchange tracking: full delivered vs empty returned, independent of the cash formula ---');
 var cylProduct = call({ action: 'adminSaveEntity', token: adminTok, kind: 'product', data: { name: 'Cylinder 20kg', type: 'goods' } }).entity;
 var cylLocation = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: 'Dammam', name: 'Cylinder Depot', clusterId: cluster.entity.id } }).entity;
-var cylStore = call({ action: 'adminSaveEntity', token: adminTok, kind: 'store', data: { locationId: cylLocation.id, name: 'Cylinder Store' } }).entity;
+var mgr3 = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Cylinder Store Manager', email: 'mgr3.fx@bestgas.sa', role: 'store_manager' } }).user;
+var cylStore = call({ action: 'adminSaveEntity', token: adminTok, kind: 'store', data: { locationId: cylLocation.id, name: 'Cylinder Store', storeManagerUserId: mgr3.id } }).entity;
 
 var cylEntry1 = call({ action: 'createDailyEntry', token: adminTok, date: '2026-09-15', sourceType: 'store', sourceId: cylStore.id, productId: cylProduct.id, cashSales: 100, cylindersOut: 30, cylindersIn: 22 });
 check(cylEntry1.ok, 'entry with cylinder counts saved');
@@ -493,7 +499,8 @@ check(cylReport2.cylinderByLocation.length === 1, 'an entry with no productId is
 
 console.log('--- SLA escalation: a handoff left pending too long gets flagged, once ---');
 var slaLocation = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: 'Riyadh', name: 'SLA Test', clusterId: cluster.entity.id } }).entity;
-var slaStore = call({ action: 'adminSaveEntity', token: adminTok, kind: 'store', data: { locationId: slaLocation.id, name: 'SLA Store' } }).entity;
+var mgr4 = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'SLA Store Manager', email: 'mgr4.fx@bestgas.sa', role: 'store_manager' } }).user;
+var slaStore = call({ action: 'adminSaveEntity', token: adminTok, kind: 'store', data: { locationId: slaLocation.id, name: 'SLA Store', storeManagerUserId: mgr4.id } }).entity;
 call({ action: 'createDailyEntry', token: adminTok, date: '2026-09-13', sourceType: 'store', sourceId: slaStore.id, cashSales: 200 });
 var slaHandoff = call({ action: 'createHandoff', token: adminTok, kind: 'location_to_cluster', locationId: slaLocation.id }).handoff;
 // backdate it directly (createHandoff always stamps "now") so the
@@ -529,7 +536,8 @@ check(metaAfterConfig.ok && metaAfterConfig.config.secondApprovalThreshold === 5
   'listMeta reflects the saved SLA/second-approval config, not just vatRate — the Settings screen reads this on every load');
 
 var bigLocation = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: 'Riyadh', name: 'Big Amount Test', clusterId: cluster.entity.id } }).entity;
-var bigStore = call({ action: 'adminSaveEntity', token: adminTok, kind: 'store', data: { locationId: bigLocation.id, name: 'Big Store' } }).entity;
+var mgr5 = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Big Store Manager', email: 'mgr5.fx@bestgas.sa', role: 'store_manager' } }).user;
+var bigStore = call({ action: 'adminSaveEntity', token: adminTok, kind: 'store', data: { locationId: bigLocation.id, name: 'Big Store', storeManagerUserId: mgr5.id } }).entity;
 call({ action: 'createDailyEntry', token: adminTok, date: '2026-09-13', sourceType: 'store', sourceId: bigStore.id, cashSales: 6000 });
 var bigHandoff = call({ action: 'createHandoff', token: adminTok, kind: 'location_to_cluster', locationId: bigLocation.id }).handoff;
 var mailBefore3 = ctx._debug.mailLog.length;
@@ -542,7 +550,8 @@ check(largeAmountMail.some(function (m) { return m.to === sara.email; }) && larg
   'the cluster\'s own manager and collector are also notified, same recipient set as the shortfall/stale escalations — not just admin/finance');
 
 var smallLocation = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: 'Riyadh', name: 'Small Amount Test', clusterId: cluster.entity.id } }).entity;
-var smallStore = call({ action: 'adminSaveEntity', token: adminTok, kind: 'store', data: { locationId: smallLocation.id, name: 'Small Store' } }).entity;
+var mgr6 = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Small Store Manager', email: 'mgr6.fx@bestgas.sa', role: 'store_manager' } }).user;
+var smallStore = call({ action: 'adminSaveEntity', token: adminTok, kind: 'store', data: { locationId: smallLocation.id, name: 'Small Store', storeManagerUserId: mgr6.id } }).entity;
 call({ action: 'createDailyEntry', token: adminTok, date: '2026-09-13', sourceType: 'store', sourceId: smallStore.id, cashSales: 300 });
 var smallHandoff = call({ action: 'createHandoff', token: adminTok, kind: 'location_to_cluster', locationId: smallLocation.id }).handoff;
 var smallConfirm = call({ action: 'confirmHandoff', token: saraTok, id: smallHandoff.id });
@@ -648,7 +657,8 @@ check(call({ action: 'getSalesReport', token: musaTok }).error === 'forbidden', 
 console.log('--- dashboard period comparison: last 7 days vs. the 7 days before ---');
 function isoOffset(daysAgo) { var d = new Date(); d.setDate(d.getDate() - daysAgo); return d.toISOString().slice(0, 10); }
 var cmpLocation = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: 'Riyadh', name: 'Comparison Test', clusterId: cluster.entity.id } }).entity;
-var cmpStore = call({ action: 'adminSaveEntity', token: adminTok, kind: 'store', data: { locationId: cmpLocation.id, name: 'Comparison Store' } }).entity;
+var mgr7 = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Comparison Store Manager', email: 'mgr7.fx@bestgas.sa', role: 'store_manager' } }).user;
+var cmpStore = call({ action: 'adminSaveEntity', token: adminTok, kind: 'store', data: { locationId: cmpLocation.id, name: 'Comparison Store', storeManagerUserId: mgr7.id } }).entity;
 call({ action: 'createDailyEntry', token: adminTok, date: isoOffset(0), sourceType: 'store', sourceId: cmpStore.id, cashSales: 400 });
 call({ action: 'createDailyEntry', token: adminTok, date: isoOffset(9), sourceType: 'store', sourceId: cmpStore.id, cashSales: 300 });
 var cmpForbidden = call({ action: 'getDashboardComparison', token: aliTok });
@@ -677,7 +687,8 @@ check(!yesterdaySnapshot.byHolder[sara.id], "yesterday's snapshot does not inclu
 
 console.log('--- sales report filters: city, entered-by, product, and amount range narrow results independently ---');
 var filterLoc = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: 'Jeddah', name: 'Filter Test', clusterId: cluster.entity.id } }).entity;
-var filterStore = call({ action: 'adminSaveEntity', token: adminTok, kind: 'store', data: { locationId: filterLoc.id, name: 'Filter Store' } }).entity;
+var mgr8 = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Filter Store Manager', email: 'mgr8.fx@bestgas.sa', role: 'store_manager' } }).user;
+var filterStore = call({ action: 'adminSaveEntity', token: adminTok, kind: 'store', data: { locationId: filterLoc.id, name: 'Filter Store', storeManagerUserId: mgr8.id } }).entity;
 call({ action: 'createDailyEntry', token: adminTok, date: '2026-09-11', sourceType: 'store', sourceId: filterStore.id, productId: prodA.id, cashSales: 900 });
 
 var cityReport = call({ action: 'getSalesReport', token: adminTok, city: 'Jeddah' });
@@ -826,7 +837,7 @@ check(iqamaUntouched.ok && iqamaUntouched.user.iqamaId === '1122334455', 'editin
 
 var posWithId = call({
   action: 'adminSaveEntity', token: adminTok, kind: 'pos',
-  data: { ownerType: 'car', ownerId: car.entity.id, label: 'POS-iqama-test', posId: 'DEV-7788', posConfig: 'merchantId=99120044;terminal=T1' }
+  data: { ownerType: 'car', ownerId: car.entity.id, label: 'POS-iqama-test', assignedUserId: hassan.id, posId: 'DEV-7788', posConfig: 'merchantId=99120044;terminal=T1' }
 });
 check(posWithId.ok && posWithId.entity.posId === 'DEV-7788' && posWithId.entity.posConfig === 'merchantId=99120044;terminal=T1',
   'posId/posConfig are plain pass-through fields on the pos entity, no backend whitelist blocks them (actionAdminSaveEntity_ merges any field in req.data)');
@@ -940,7 +951,8 @@ check(metaOn.config.areaManagerBulkUploadEnabled === true, 'listMeta reflects th
 
 console.log('--- cluster-scoped entry check ---');
 var otherLocation = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: 'Jeddah', name: 'Rawdah', clusterId: cluster2.id } }).entity;
-var otherStore = call({ action: 'adminSaveEntity', token: adminTok, kind: 'store', data: { locationId: otherLocation.id, name: 'Rawdah Branch', storeManagerUserId: null } }).entity;
+var rawdahMgr = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Rawdah Manager', email: 'rawdah.fx@bestgas.sa', role: 'store_manager' } }).user;
+var otherStore = call({ action: 'adminSaveEntity', token: adminTok, kind: 'store', data: { locationId: otherLocation.id, name: 'Rawdah Branch', storeManagerUserId: rawdahMgr.id } }).entity;
 var crossClusterSubmit = call({
   action: 'bulkSubmitAreaBatch', token: saraTok, clusterId: cluster.entity.id,
   rows: [{ date: '2026-09-27', sourceType: 'store', sourceId: otherStore.id, cashSales: 500 }]
@@ -1353,9 +1365,12 @@ var amCar = call({ action: 'createDailyEntry', token: saraTok, date: '2026-07-10
 check(amCar.ok, 'and a car in that branch');
 var amPos = call({ action: 'createDailyEntry', token: saraTok, date: '2026-07-10', sourceType: 'pos', sourceId: pos.entity.id, cashSales: 100, deliveryFeeBankAmount: 23 });
 check(amPos.ok, 'and a POS machine in that branch');
-var outsideStore = call({ action: 'adminSaveEntity', token: adminTok, kind: 'cluster', data: { name: 'Far Area' } });
+var farMgr = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Far Area Manager', email: 'farmgr.fx@bestgas.sa', role: 'cluster_manager' } }).user;
+var farCollector = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Far Collector', email: 'farcol.fx@bestgas.sa', role: 'collector' } }).user;
+var outsideStore = call({ action: 'adminSaveEntity', token: adminTok, kind: 'cluster', data: { name: 'Far Area', clusterManagerUserId: farMgr.id, collectorUserId: farCollector.id } });
 var outsideLoc = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: 'Jeddah', name: 'Far Branch', clusterId: outsideStore.entity.id } });
-var outsideBranchStore = call({ action: 'adminSaveEntity', token: adminTok, kind: 'store', data: { locationId: outsideLoc.entity.id, name: 'Far Store' } });
+var mgr9 = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Far Store Manager', email: 'mgr9.fx@bestgas.sa', role: 'store_manager' } }).user;
+var outsideBranchStore = call({ action: 'adminSaveEntity', token: adminTok, kind: 'store', data: { locationId: outsideLoc.entity.id, name: 'Far Store', storeManagerUserId: mgr9.id } });
 check(call({ action: 'createDailyEntry', token: saraTok, date: '2026-07-10', sourceType: 'store', sourceId: outsideBranchStore.entity.id, cashSales: 10 }).error === 'forbidden',
   'but never for a branch outside their own area');
 check(call({ action: 'createDailyEntry', token: musaTok, date: '2026-07-10', sourceType: 'store', sourceId: store.entity.id, cashSales: 10 }).error === 'forbidden',
@@ -1440,7 +1455,9 @@ check(call({ action: 'createDailyEntry', token: aliTok, date: '2026-08-26', sour
 
 console.log('--- an admin write answers with the fresh reference data, saving a round trip ---');
 var beforeClusters = call({ action: 'listMeta', token: adminTok }).clusters.length;
-var newArea = call({ action: 'adminSaveEntity', token: adminTok, kind: 'cluster', data: { name: 'Eastern Area' } });
+var eastMgr = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Eastern Area Manager', email: 'eastmgr.fx@bestgas.sa', role: 'cluster_manager' } }).user;
+var eastCollector = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Eastern Collector', email: 'eastcol.fx@bestgas.sa', role: 'collector' } }).user;
+var newArea = call({ action: 'adminSaveEntity', token: adminTok, kind: 'cluster', data: { name: 'Eastern Area', clusterManagerUserId: eastMgr.id, collectorUserId: eastCollector.id } });
 check(newArea.ok && newArea.meta && newArea.meta.ok, 'saving an area returns the reference data with it');
 check(newArea.meta.clusters.length === beforeClusters + 1, 'and that data already contains the area just created — no second call needed');
 check(newArea.meta.clusters.some(function (c) { return c.id === newArea.entity.id; }), 'including its id, so the screen can redraw straight away');
@@ -1482,6 +1499,28 @@ var movedSheet = arch.archived[0].archivedAs;
 check(ctx.readSheet(movedSheet).length === arch.archived[0].rows, 'the archived rows are still readable under the new tab name — nothing was deleted');
 check(ctx.readSheet(SHEETS.AUDIT).some(function (a) { return a.action === 'admin_archive_transactions'; }),
   'and the fresh audit trail opens with the archive itself');
+
+console.log('--- every link in the chain must name its person ---');
+function saveErr(kind, data, id) { return call({ action: 'adminSaveEntity', token: adminTok, kind: kind, id: id, data: data }).error; }
+check(saveErr('store', { locationId: location.entity.id, name: 'Nobody Branch' }) === 'manager_required',
+  'a branch cannot be saved without its branch manager');
+check(saveErr('store', { locationId: location.entity.id, name: 'Driver-run Branch', storeManagerUserId: hassan.id }) === 'wrong_role',
+  'and the manager has to actually be a branch manager, not a driver');
+check(saveErr('car', { locationId: location.entity.id, label: 'Truck-X' }) === 'driver_required',
+  'a car cannot be saved without its driver');
+check(saveErr('car', { locationId: location.entity.id, label: 'Truck-Y', driverUserId: ali.id }) === 'wrong_role',
+  'and the driver has to be a driver');
+check(saveErr('pos', { ownerType: 'car', ownerId: car.entity.id, label: 'POS-X' }) === 'holder_required',
+  'a POS machine cannot be saved without the person who carries it');
+check(saveErr('cluster', { name: 'Headless Area' }) === 'manager_required',
+  'an area cannot be saved without its area manager');
+check(saveErr('cluster', { name: 'No-bank Area', clusterManagerUserId: otherManager.id }) === 'collector_required',
+  'nor without the collector who takes its cash to the bank');
+var standIn = call({ action: 'listMeta', token: adminTok }).users.filter(function (u) { return u.role === 'admin'; })[0];
+var standInStore = call({ action: 'adminSaveEntity', token: adminTok, kind: 'store', data: { locationId: location.entity.id, name: 'Admin-held Branch', storeManagerUserId: standIn.id } });
+check(standInStore.ok, 'an admin may stand in on a link while the real person is being hired');
+check(saveErr('store', { locationId: location.entity.id, name: 'Admin-held Branch', storeManagerUserId: '' }, standInStore.entity.id) === 'manager_required',
+  'and editing an existing branch cannot blank its manager either');
 
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);
