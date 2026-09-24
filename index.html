@@ -190,10 +190,35 @@
      centered elsewhere — that's a different, still-standard pattern. */
   label{display:block;font-size:12px;color:var(--muted);margin-bottom:5px;font-weight:600;text-transform:uppercase;letter-spacing:.03em;text-align:start;}
   html[dir="rtl"] label{text-transform:none;letter-spacing:0;}
-  input,select,textarea{width:100%;padding:10px 13px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:14px;background:var(--bg);color:var(--text);font-family:inherit;transition:border-color .15s ease, background .15s ease, box-shadow .15s ease;}
+  input,select,textarea{width:100%;padding:11px 14px;border:1px solid var(--border);border-radius:12px;font-size:14px;
+    background:var(--card);color:var(--text);font-family:inherit;line-height:1.4;
+    transition:border-color .16s ease, background .16s ease, box-shadow .16s ease;}
   input:hover,select:hover,textarea:hover{border-color:var(--muted-2);}
-  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--green);background:#fff;box-shadow:0 0 0 3px var(--green-pale);}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--green);background:#fff;
+    box-shadow:0 0 0 3px color-mix(in srgb, var(--green) 16%, transparent);}
+  input::placeholder,textarea::placeholder{color:var(--muted-2);}
+  input[readonly],input:disabled,select:disabled,textarea:disabled{background:var(--bg);color:var(--muted);border-style:dashed;cursor:default;}
+  input[readonly]:focus{box-shadow:none;border-color:var(--border);}
+  /* money and counts line up digit over digit, and read left-to-right even
+     inside an Arabic form */
+  input[inputmode="decimal"],input[inputmode="numeric"],input[type="number"]{
+    font-variant-numeric:tabular-nums;font-weight:700;direction:ltr;text-align:end;letter-spacing:.01em;}
+  html[dir="rtl"] input[inputmode="decimal"],html[dir="rtl"] input[inputmode="numeric"],html[dir="rtl"] input[type="number"]{text-align:start;}
+  input[type="date"]{direction:ltr;text-align:start;font-variant-numeric:tabular-nums;}
+
+  /* one dropdown treatment everywhere: native behaviour, drawn arrow */
+  select{-webkit-appearance:none;-moz-appearance:none;appearance:none;cursor:pointer;
+    padding-inline-end:38px;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%234D6D51' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;background-size:15px;background-position:right 13px center;}
+  html[dir="rtl"] select{background-position:left 13px center;}
+  select:focus{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%234D6D51' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 15 6-6 6 6'/%3E%3C/svg%3E");}
+  select:disabled{background-image:none;}
+  select option{color:var(--text);background:#fff;padding:8px;}
+
   .field{margin-bottom:12px;}
+  .field label{transition:color .16s ease;}
+  .field:focus-within label{color:var(--green-dark);}
   button.btn{background:var(--green);color:#fff;border:none;padding:10px 18px;border-radius:var(--radius-sm);font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:var(--shadow-sm);transition:background .15s ease, transform .1s ease, box-shadow .15s ease;}
   button.btn:hover{background:var(--green-dark);box-shadow:var(--shadow-md);}
   button.btn:active{transform:scale(.97);}
@@ -202,16 +227,24 @@
   button.btn.danger{background:var(--danger);}
   button.btn.danger:hover{background:#a13c26;}
   button.btn:disabled{opacity:.45;cursor:not-allowed;transform:none;box-shadow:none;}
-  table{width:100%;border-collapse:separate;border-spacing:0;font-size:13.5px;border:1px solid var(--border-soft);border-radius:var(--radius-sm);overflow:hidden;}
-  th,td{padding:11px 14px;border-bottom:1px solid var(--border-soft);text-align:start;}
-  th{color:var(--muted);font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.05em;background:var(--bg);border-bottom:1.5px solid var(--border);}
-  html[dir="rtl"] th{text-transform:none;letter-spacing:0;}
-  tbody tr{transition:background .1s ease;}
-  tbody tr:nth-child(even){background:rgba(32,36,31,.014);}
-  tbody tr:last-child td{border-bottom:none;}
-  tbody tr:hover{background:var(--green-pale);}
-  td{color:var(--text);}
-  .col-actions{width:1%;white-space:nowrap;text-align:end;}
+  /* A data table, not a spreadsheet: no outer box, no filled header bar, no
+     zebra, no vertical rules. One hairline between rows, and alignment and
+     weight carry the structure. */
+  table{width:100%;border-collapse:collapse;font-size:13.5px;background:transparent;}
+  th,td{padding:12px 10px;text-align:start;vertical-align:middle;}
+  th:first-child,td:first-child{padding-inline-start:2px;}
+  th:last-child,td:last-child{padding-inline-end:2px;}
+  th{color:var(--muted);font-weight:700;font-size:11.5px;letter-spacing:.02em;
+    border-bottom:1px solid var(--border);white-space:nowrap;}
+  td{color:var(--text);border-top:1px solid var(--border-soft);}
+  tbody tr:first-child td{border-top:none;}
+  tbody tr{transition:background .14s ease;}
+  tbody tr:hover{background:color-mix(in srgb, var(--green) 5%, transparent);}
+  /* the first column names the row, so it carries the weight */
+  tbody td:first-child{font-weight:600;}
+  /* every figure in a table lines up digit over digit */
+  td,th{font-variant-numeric:tabular-nums;}
+  .col-actions{width:1%;white-space:nowrap;text-align:end;padding-inline-start:12px !important;}
   .btn-icon{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;padding:0;border-radius:8px;border:1px solid transparent;background:transparent;color:var(--muted);cursor:pointer;transition:background .15s ease,color .15s ease;}
   .btn-icon svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
   .btn-icon:hover{background:var(--danger-bg);color:var(--danger);}
@@ -390,7 +423,8 @@
   .sb-user .nm{font-weight:700;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .sb-user .rl{font-size:11.5px;opacity:.65;}
   .sb-user .ctl{display:flex;gap:8px;}
-  .sb-user .build{font-size:10.5px;opacity:.55;letter-spacing:.02em;font-variant-numeric:tabular-nums;}
+  .sb-user .build{font-size:10px;opacity:.5;letter-spacing:.01em;font-variant-numeric:tabular-nums;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;direction:ltr;text-align:start;}
   .sb-user select,.sb-user .out{flex:1;height:34px;border-radius:10px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.1);color:#fff;font-size:12.5px;font-weight:600;padding:0 10px;cursor:pointer;min-width:0;}
   .sb-user select option{color:#1c211d;}
   .sb-user .out:hover{background:rgba(255,255,255,.18);}
@@ -828,8 +862,17 @@
     .grid{gap:10px;}
 
     /* --- the greeting: a strip, not a poster --- */
+    /* One column on a phone: two columns meant the status block ran tall
+       beside wrapping text and left a dead rectangle underneath it. */
     .hero{padding:16px 16px 14px;border-radius:18px;margin-bottom:12px;
-      grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:start;}
+      grid-template-columns:minmax(0,1fr);gap:12px;align-items:start;}
+    .hero .cta{flex-direction:row;align-items:center;gap:10px;text-align:start;
+      background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.14);
+      border-radius:13px;padding:9px 12px;}
+    .hero .cta .big{font-size:22px;line-height:1;}
+    .hero .cta .big svg{width:20px !important;height:20px !important;}
+    .hero .cta .cap{font-size:12px;max-width:none;flex:1;opacity:.92;}
+    .hero .cta button{margin-inline-start:auto;}
     .hero .hi{font-size:12px;}
     .hero .nm{font-size:20px;line-height:1.2;}
     .hero .rl{font-size:11.5px;}
@@ -1084,7 +1127,7 @@ var ICON_B64 = 'iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAYAAAA9zQYyAAAcG0lEQVR42u2dd1cU
 // Stamped by tools/stamp-build.js at publish time so the running app can
 // say which build it is — a cached page is the usual reason a shipped change
 // seems missing.
-var BUILD_ID = '2026-09-24 04:32 · 8533847';
+var BUILD_ID = '2026-09-24 04:35 · 198e8fd';
 var LOGO_SRC = 'data:image/png;base64,' + LOGO_B64;
 var ICON_SRC = LOGO_SRC; // same asset — see the comment above LOGO_B64
 
