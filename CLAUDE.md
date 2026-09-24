@@ -118,6 +118,24 @@ over cash it never held. If you are tempted to re-scope a money field by
 source type, make sure the entry form, the CSV templates/parsers, and
 `computeNet_` all agree, or the formula quietly disagrees with the form.
 
+### Credit sales and delivery fees are deductions, not payment methods (2026-09-24)
+
+A product line is paid in **cash or POS only**. Credit sales and delivery
+fees each have their own lines section on the entry screen, as expenses do.
+A delivery line carries `deliveryNote`. A credit line carries
+`creditCustomer`, which the server requires (`customer_required`). The first
+line of each section goes on the entry row, and every further line becomes a
+sibling row (`extraMoneyRows_`). **Why:** a line tagged "credit"/"delivery"
+used to put its amount into `creditSales`/`deliveryFeeBankAmount` *instead
+of* `cashSales`, while `computeNet_` deducts both from a cash figure that is
+meant to include them. The amount was taken off twice. The area-bulk CSV
+follows the same rule: `paymentMethod` is `cash|pos`, plus
+`deliveryFee,deliveryNote,creditSales,creditCustomer` columns. Filters split
+the same way: **payment method** (`cash`/`pos`) and **movement type**
+(`credit`/`delivery`/`other`/`expense`/`deposit`, `movementType` on
+`getSalesReport`). The report still accepts the old combined values on
+`paymentMethod` for a cached client.
+
 ### Money that moves at the source without being a sale (2026-09-23)
 
 Three fields, all on `daily_entries`, all validated by one shared

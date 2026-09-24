@@ -148,6 +148,10 @@ function checkNonSalesFields_(r, siblingCash) {
     if (!ex || ex.active === false) return 'invalid_expense_item';
     if (!String(r.expenseReason || '').trim()) return 'reason_required';
   }
+  // A credit sale is money the branch is owed; without a name on it nobody
+  // can chase it.
+  if (Number(r.creditSales || 0) < 0 || Number(r.deliveryFeeBankAmount || 0) < 0) return 'invalid_input';
+  if (Number(r.creditSales || 0) > 0 && !String(r.creditCustomer || '').trim()) return 'customer_required';
   var dep = Number(r.directDepositAmount || 0);
   if (dep > 0) {
     if (!String(r.directDepositRef || '').trim()) return 'deposit_needs_reference';
@@ -192,7 +196,10 @@ function nonSalesFields_(r) {
     directDepositRef: Number(r.directDepositAmount || 0) > 0 ? String(r.directDepositRef || '').trim() : '',
     // What the deposit was for, in the depositor's own words. The company
     // calls these deposits "الموازنات", which is what the form suggests.
-    directDepositNote: Number(r.directDepositAmount || 0) > 0 ? String(r.directDepositNote || '').trim() : ''
+    directDepositNote: Number(r.directDepositAmount || 0) > 0 ? String(r.directDepositNote || '').trim() : '',
+    // what a delivery-fee line was for, and who owes a credit sale
+    deliveryNote: Number(r.deliveryFeeBankAmount || 0) > 0 ? String(r.deliveryNote || '').trim() : '',
+    creditCustomer: Number(r.creditSales || 0) > 0 ? String(r.creditCustomer || '').trim() : ''
   };
 }
 
@@ -1514,11 +1521,15 @@ function actionSalesReport_(req, user) {
     entries = entries.filter(function (e) { var l = locById[e.locationId]; return l && l.clusterId === req.clusterId; });
   }
   // Payment method filters on how the money arrived, not on the source.
-  if (req.paymentMethod) {
-    var field = { cash: 'cashSales', pos: 'posSales', credit: 'creditSales', delivery: 'deliveryFeeBankAmount',
-      other: 'otherCash', expense: 'expenseAmount', deposit: 'directDepositAmount' }[req.paymentMethod];
+  // Payment method is how a sale was paid (cash or card); movement type is
+  // everything else that moves the cash figure. The old combined values
+  // still work on paymentMethod, for a cached client.
+  var MOVE_FIELDS_ = { cash: 'cashSales', pos: 'posSales', credit: 'creditSales', delivery: 'deliveryFeeBankAmount',
+    other: 'otherCash', expense: 'expenseAmount', deposit: 'directDepositAmount' };
+  [req.paymentMethod, req.movementType].forEach(function (key) {
+    var field = key && hasOwn_(MOVE_FIELDS_, key) ? MOVE_FIELDS_[key] : null;
     if (field) entries = entries.filter(function (e) { return Number(e[field] || 0) > 0; });
-  }
+  });
   // The person behind the source (a car's driver, a POS machine's holder),
   // which is a different question from who typed the entry in.
   if (req.driverUserId) {

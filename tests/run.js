@@ -890,7 +890,7 @@ check(bulkDeliveryOnly.ok && bulkDeliveryOnly.created === 0 && bulkDeliveryOnly.
 
 console.log('--- credit sales: counted in total sales, DEDUCTED from the cash owed, and satisfies the delivery-needs-a-sale rule ---');
 var creditNetBefore = call({ action: 'getSalesReport', token: adminTok, dateFrom: '2026-09-24', dateTo: '2026-09-24' }).totals.netCashOwed;
-var creditOnlyEntry = call({ action: 'createDailyEntry', token: aliTok, date: '2026-09-24', sourceType: 'store', sourceId: store.entity.id, creditSales: 900 });
+var creditOnlyEntry = call({ action: 'createDailyEntry', token: aliTok, date: '2026-09-24', sourceType: 'store', sourceId: store.entity.id, creditSales: 900, creditCustomer: 'Al-Rashid Trading' });
 check(creditOnlyEntry.ok, 'a store entry with only creditSales (no cash/POS) saves fine — credit alone is a valid entry');
 check(creditOnlyEntry.entry.creditSales === 900, 'creditSales is stored on the entry exactly as sent');
 
@@ -898,7 +898,7 @@ var creditReport = call({ action: 'getSalesReport', token: adminTok, dateFrom: '
 close(creditReport.totals.netCashOwed, creditNetBefore - 900, 'a credit sale comes back out of the cash owed: the sales figure includes it, but no cash arrived');
 close(creditReport.totals.creditSales, 900, 'the report totals track creditSales separately, alongside cashSales/posSales');
 
-var creditMixedEntry = call({ action: 'createDailyEntry', token: aliTok, date: '2026-09-24', sourceType: 'store', sourceId: store.entity.id, cashSales: 200, creditSales: 300 });
+var creditMixedEntry = call({ action: 'createDailyEntry', token: aliTok, date: '2026-09-24', sourceType: 'store', sourceId: store.entity.id, cashSales: 200, creditSales: 300, creditCustomer: 'Al-Rashid Trading' });
 check(creditMixedEntry.ok, 'an entry can carry both cashSales and creditSales together');
 var creditMixedReport = call({ action: 'getSalesReport', token: adminTok, dateFrom: '2026-09-24', dateTo: '2026-09-24' });
 close(creditMixedReport.totals.netCashOwed, creditNetBefore - 900 + 200 - 300, 'a mixed cash+credit entry adds its cash and deducts its credit');
@@ -914,7 +914,7 @@ check(creditProductRow && creditProductRow.creditAmount >= 1200, 'the by-product
 var creditDeliveryAlone = call({ action: 'createDailyEntry', token: hassanTok, date: '2026-09-25', sourceType: 'car', sourceId: car.entity.id, deliveryFeeBankAmount: 500 });
 check(!creditDeliveryAlone.ok && creditDeliveryAlone.error === 'delivery_without_sale', 'still rejected with no sale of any kind on file that day');
 
-var creditSaleFirst = call({ action: 'createDailyEntry', token: hassanTok, date: '2026-09-25', sourceType: 'car', sourceId: car.entity.id, creditSales: 250 });
+var creditSaleFirst = call({ action: 'createDailyEntry', token: hassanTok, date: '2026-09-25', sourceType: 'car', sourceId: car.entity.id, creditSales: 250, creditCustomer: 'Al-Rashid Trading' });
 check(creditSaleFirst.ok, 'a credit-only sale saves fine on its own');
 
 var creditDeliveryAfter = call({ action: 'createDailyEntry', token: hassanTok, date: '2026-09-25', sourceType: 'car', sourceId: car.entity.id, deliveryFeeBankAmount: 500 });
@@ -922,7 +922,7 @@ check(creditDeliveryAfter.ok, 'a delivery fee is now accepted — a same-day cre
 
 var bulkCreditAndDelivery = call({ action: 'importDailyEntries', token: adminTok, rows: [
   { date: '2026-09-26', sourceType: 'car', sourceId: car.entity.id, deliveryFeeBankAmount: 200 },
-  { date: '2026-09-26', sourceType: 'car', sourceId: car.entity.id, creditSales: 150 }
+  { date: '2026-09-26', sourceType: 'car', sourceId: car.entity.id, creditSales: 150, creditCustomer: 'Al-Rashid Trading' }
 ] });
 check(bulkCreditAndDelivery.ok && bulkCreditAndDelivery.created === 2, 'product-mode\'s split rows (a delivery line plus a credit-tagged line in the same batch) both succeed, regardless of order');
 
@@ -1440,7 +1440,7 @@ check(asManager.ok && asManager.entries.length <= afterWrite.entries.length, 'th
 
 console.log('--- credit sales deduct like an expense or a موازنة ---');
 var creditDay = call({ action: 'createDailyEntry', token: aliTok, date: '2026-08-25', sourceType: 'store', sourceId: store.entity.id,
-  cashSales: 5000, creditSales: 1200,
+  cashSales: 5000, creditSales: 1200, creditCustomer: 'Al-Rashid Trading',
   expenseAmount: 300, expenseItemId: expenseId, expenseReason: 'وقود',
   directDepositAmount: 1000, directDepositRef: 'MZN-CR-1', directDepositNote: 'موازنة' });
 check(creditDay.ok, 'a day with cash, credit, an expense and a موازنة saves');
@@ -1450,7 +1450,7 @@ close(creditNet.netCashOwed, 2500, 'the credit part comes out of the cash owed, 
 close(creditNet.creditSales, 1200, 'and stays visible on its own line so the deduction can be explained');
 
 check(call({ action: 'createDailyEntry', token: aliTok, date: '2026-08-26', sourceType: 'store', sourceId: store.entity.id,
-  cashSales: 1000, creditSales: 900, directDepositAmount: 500, directDepositRef: 'X' }).error === 'deposit_exceeds_cash',
+  cashSales: 1000, creditSales: 900, creditCustomer: 'Al-Rashid Trading', directDepositAmount: 500, directDepositRef: 'X' }).error === 'deposit_exceeds_cash',
   'and a موازنة can no longer exceed the cash once the credit part is taken out');
 
 console.log('--- an admin write answers with the fresh reference data, saving a round trip ---');
@@ -1521,6 +1521,29 @@ var standInStore = call({ action: 'adminSaveEntity', token: adminTok, kind: 'sto
 check(standInStore.ok, 'an admin may stand in on a link while the real person is being hired');
 check(saveErr('store', { locationId: location.entity.id, name: 'Admin-held Branch', storeManagerUserId: '' }, standInStore.entity.id) === 'manager_required',
   'and editing an existing branch cannot blank its manager either');
+
+console.log('--- credit and delivery are deductions with their own lines, not payment methods ---');
+var noCustomer = call({ action: 'createDailyEntry', token: aliTok, date: '2021-03-01', sourceType: 'store', sourceId: store.entity.id, cashSales: 1000, creditSales: 200 });
+check(!noCustomer.ok && noCustomer.error === 'customer_required', 'a credit sale without the customer who owes it is refused');
+var creditRow = call({ action: 'createDailyEntry', token: aliTok, date: '2021-03-01', sourceType: 'store', sourceId: store.entity.id,
+  cashSales: 1000, creditSales: 200, creditCustomer: 'Nakheel Restaurant', deliveryFeeBankAmount: 46, deliveryNote: 'Two deliveries, Al-Narjis' });
+check(creditRow.ok && creditRow.entry.creditCustomer === 'Nakheel Restaurant' && creditRow.entry.deliveryNote === 'Two deliveries, Al-Narjis',
+  'the customer and the delivery description are kept on the entry');
+// the day is one sale of 1000 in cash, 200 of it on credit and 46 of delivery fees paid to the bank:
+// every line is counted once, as sold, and each deduction taken once
+var net = ctx.computeNet_([creditRow.entry]).netCashOwed;
+close(net, 1000 - 46 + (46 / 1.15) * 0.15 - 200, 'the entry nets to cash, less delivery (VAT back), less credit — each taken once');
+// extra lines ride as their own rows in one submission, as expenses do
+var multi = call({ action: 'importDailyEntries', token: aliTok, rows: [
+  { date: '2021-03-02', sourceType: 'store', sourceId: store.entity.id, cashSales: 900, creditSales: 100, creditCustomer: 'A', deliveryFeeBankAmount: 23, deliveryNote: 'first' },
+  { date: '2021-03-02', sourceType: 'store', sourceId: store.entity.id, cashSales: 0, creditSales: 50, creditCustomer: 'B', deliveryFeeBankAmount: 23, deliveryNote: 'second' }
+] });
+check(multi.ok && multi.created === 2, 'a second credit line and a second delivery line save as a sibling row of the same day');
+var byMove = call({ action: 'getSalesReport', token: adminTok, dateFrom: '2021-03-01', dateTo: '2021-03-02', movementType: 'credit' });
+check(byMove.ok && byMove.entries.length === 3 && byMove.entries.every(function (e) { return e.creditSales > 0; }),
+  'the report filters on movement type separately from payment method');
+var byPay = call({ action: 'getSalesReport', token: adminTok, dateFrom: '2021-03-01', dateTo: '2021-03-02', paymentMethod: 'cash', movementType: 'delivery' });
+check(byPay.ok && byPay.entries.length === 2, 'and the two filters combine (cash sales that also carry a delivery fee)');
 
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);
