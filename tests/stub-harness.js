@@ -9,7 +9,7 @@ var fs = require('fs');
 var path = require('path');
 var crypto = require('crypto');
 
-function makeSheet(name, svcCalls) {
+function makeSheet(name, svcCalls, registry) {
   var rows = []; // array of [id, jsonString, updatedAtIso]
   return {
     name: name,
@@ -41,6 +41,9 @@ function makeSheet(name, svcCalls) {
         }
       };
     },
+    getName: function () { return name; },
+    // renaming a tab is how the app archives a round of movement
+    setName: function (n) { if (registry) { delete registry[name]; registry[n] = this; } name = n; return this; },
     appendRow: function (arr) { rows.push(arr.slice()); },
     deleteRow: function (r) { rows.splice(r - 1, 1); },
     _rows: rows
@@ -62,7 +65,7 @@ function buildContext() {
     getActiveSpreadsheet: function () {
       return {
         getSheetByName: function (name) { return sheets[name] || null; },
-        insertSheet: function (name) { var s = makeSheet(name, svcCalls); sheets[name] = s; return s; }
+        insertSheet: function (name) { var s = makeSheet(name, svcCalls, sheets); sheets[name] = s; return s; }
       };
     }
   };
@@ -116,6 +119,16 @@ function buildContext() {
     base64DecodeWebSafe: function (str) {
       var b64 = str.replace(/-/g, '+').replace(/_/g, '/');
       return Array.from(Buffer.from(b64, 'base64'));
+    },
+    // enough of formatDate for the patterns this app uses (yyyy-MM-dd, HHmm)
+    formatDate: function (d, tz, fmt) {
+      function p(x){ return (x<10?'0':'')+x; }
+      return String(fmt)
+        .replace('yyyy', d.getFullYear())
+        .replace('MM', p(d.getMonth()+1))
+        .replace('dd', p(d.getDate()))
+        .replace('HH', p(d.getHours()))
+        .replace('mm', p(d.getMinutes()));
     },
     base64Encode: function (bytes) { return Buffer.from(bytes).toString('base64'); },
     base64Decode: function (str) { return Array.from(Buffer.from(str, 'base64')); },

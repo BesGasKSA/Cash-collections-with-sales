@@ -709,7 +709,10 @@ function route_(req) {
     // through the same reviewed path.
     adminSaveEntity: function () { return withMeta_(actionAdminSaveEntity_(req, user), req, user); },
     adminDeleteEntity: function () { return withMeta_(actionAdminDeleteEntity_(req, user), req, user); },
-    adminSetConfig: function () { return withMeta_(actionAdminSetConfig_(req, user), req, user); }
+    adminSetConfig: function () { return withMeta_(actionAdminSetConfig_(req, user), req, user); },
+    // starts a fresh round of testing by archiving the movement tabs —
+    // renames, never deletes (see Admin.gs)
+    adminArchiveTransactions: function () { return actionAdminArchiveTransactions_(req, user); }
   };
 
   if (!hasOwn_(handlers, action)) throw new Error('unknown_action');

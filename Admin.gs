@@ -537,6 +537,40 @@ function setupFirstAdmin() {
   Logger.log('First admin created: ' + ADMIN_EMAIL + ' — temp password also emailed: ' + temp);
 }
 
+// ---------- Starting a fresh test round ----------
+// The tabs that hold movement, as opposed to the org itself. Renaming these
+// is what "start fresh" means here: nothing is deleted, and the previous
+// round stays in the workbook under a dated name.
+var TRANSACTIONAL_SHEETS_ = [
+  SHEETS.ENTRIES, SHEETS.HANDOFFS, SHEETS.AREA_BULK_BATCHES,
+  SHEETS.BANK_LINES, SHEETS.RISK_ITEMS, SHEETS.AUDIT
+];
+
+function actionAdminArchiveTransactions_(req, user) {
+  requireAdmin_(user);
+  // A word the caller has to type, so this can never be one stray tap.
+  if (String(req.confirm || '') !== 'ARCHIVE') return { ok: false, error: 'confirm_required' };
+
+  var ss = spreadsheet_();
+  var stamp = Utilities.formatDate(new Date(), 'Asia/Riyadh', 'yyyy-MM-dd_HHmm');
+  var archived = [];
+  for (var i = 0; i < TRANSACTIONAL_SHEETS_.length; i++) {
+    var name = TRANSACTIONAL_SHEETS_[i];
+    var sh = ss.getSheetByName(name);
+    if (!sh) continue;
+    var rows = Math.max(0, sh.getLastRow() - 1);
+    if (!rows) continue;                       // nothing in it, leave it alone
+    sh.setName(name + '_archive_' + stamp);
+    archived.push({ sheet: name, rows: rows, archivedAs: name + '_archive_' + stamp });
+    delete exec_().sheets[name];
+    bumpVersion_(name);                        // every cached copy is now stale
+  }
+  // sheet_() recreates each one empty on the next read, including the audit
+  // tab this line writes into.
+  logAudit_('admin_archive_transactions', user.id, archived.map(function (a) { return a.sheet + ':' + a.rows; }).join(', ') || 'nothing to archive');
+  return { ok: true, archived: archived, stamp: stamp };
+}
+
 // ---------- Reference data (used by every role to render forms/pickers) ----------
 
 function actionMeta_(req, user) {
