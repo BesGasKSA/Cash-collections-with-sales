@@ -1454,5 +1454,34 @@ check(del.ok && del.meta && !del.meta.clusters.some(function (c) { return c.id =
 check(call({ action: 'adminSaveEntity', token: adminTok, kind: 'cluster', data: { name: '' } }).meta === undefined,
   'a rejected write carries no reference data — there is nothing new to show');
 
+console.log('--- starting a fresh test round archives movement, and keeps the org ---');
+check(call({ action: 'adminArchiveTransactions', token: adminTok }).error === 'confirm_required',
+  'archiving needs the confirmation word, so it can never be one stray tap');
+check(call({ action: 'adminArchiveTransactions', token: aliTok, confirm: 'ARCHIVE' }).error === 'forbidden',
+  'and only an admin may do it');
+
+var beforeEntries = call({ action: 'listEntries', token: adminTok }).entries.length;
+var beforeUsers = call({ action: 'listMeta', token: adminTok }).users.length;
+var beforeProducts = call({ action: 'listMeta', token: adminTok }).products.length;
+check(beforeEntries > 0 && beforeUsers > 0, 'there is movement and an org to begin with');
+
+var arch = call({ action: 'adminArchiveTransactions', token: adminTok, confirm: 'ARCHIVE' });
+check(arch.ok && arch.archived.length > 0, 'the archive runs and reports what it moved');
+check(arch.archived.every(function (a) { return a.archivedAs.indexOf(a.sheet + '_archive_') === 0 && a.rows > 0; }),
+  'each moved tab keeps its name plus a dated suffix, and its row count is reported');
+
+check(call({ action: 'listEntries', token: adminTok }).entries.length === 0, 'the entries are gone from the system');
+check(call({ action: 'listHandoffs', token: adminTok }).handoffs.length === 0, 'so are the handoffs and deposits');
+var metaAfter = call({ action: 'listMeta', token: adminTok });
+check(metaAfter.users.length === beforeUsers, 'every user is still there');
+check(metaAfter.products.length === beforeProducts, 'so is the product master data');
+check(metaAfter.locations.length > 0 && metaAfter.clusters.length > 0, 'and the branches and areas the org is built from');
+
+// the rows are not destroyed: they are sitting in the workbook under the new name
+var movedSheet = arch.archived[0].archivedAs;
+check(ctx.readSheet(movedSheet).length === arch.archived[0].rows, 'the archived rows are still readable under the new tab name — nothing was deleted');
+check(ctx.readSheet(SHEETS.AUDIT).some(function (a) { return a.action === 'admin_archive_transactions'; }),
+  'and the fresh audit trail opens with the archive itself');
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);
