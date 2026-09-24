@@ -1015,6 +1015,74 @@
   .invite-link .btn{padding:8px 14px;font-size:12.5px;}
   .invite-link a.btn{text-decoration:none;display:inline-flex;align-items:center;}
   .field label .req{color:var(--danger);margin-inline-start:3px;font-weight:800;}
+  /* ---- master-data screens and record profiles ---- */
+  .ent-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:4px 0 12px;}
+  .ent-ht{display:flex;align-items:center;gap:12px;min-width:0;}
+  .ent-ht > div{display:flex;flex-direction:column;}
+  .ent-ht b{font-size:18px;font-weight:800;letter-spacing:-.01em;}
+  .ent-ht span{font-size:12.5px;color:var(--muted);}
+  .ent-ic,.pf-ic{width:44px;height:44px;border-radius:13px;display:grid;place-items:center;flex:none;
+    background:linear-gradient(145deg,var(--green),var(--green-dark));color:#fff;font-weight:800;font-size:15px;}
+  .ent-ic svg,.pf-ic svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:2;}
+  .ent-tools{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+  .ent-search{display:flex;align-items:center;gap:8px;padding:0 12px;border:1px solid var(--border);border-radius:12px;background:var(--card);min-width:220px;}
+  .ent-search svg{width:16px;height:16px;stroke:var(--muted);fill:none;stroke-width:2.2;flex:none;}
+  .ent-search input{border:0 !important;box-shadow:none !important;background:transparent !important;padding:10px 0 !important;min-height:0 !important;}
+  .ent-add .ent-addGrid{margin-bottom:6px;}
+  .ent-list{padding-top:6px;}
+  .ent-empty{padding:22px 10px;text-align:center;color:var(--muted);}
+  tr.pf-row{cursor:pointer;}
+  tr.pf-row:focus-visible{outline:2px solid var(--green);outline-offset:-2px;}
+  td.ent-name{font-weight:700;color:var(--green-dark);}
+  .field-check{display:flex;flex-direction:column;justify-content:center;}
+  .pf-back{display:inline-flex;align-items:center;gap:6px;border:0;background:none;color:var(--green-dark);font:inherit;font-weight:700;
+    font-size:13.5px;cursor:pointer;padding:6px 2px;margin:0 0 8px;}
+  .pf-back svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2.4;}
+  html[dir="rtl"] .pf-back svg{transform:scaleX(-1);}
+  .pf-hero{display:flex;align-items:center;gap:14px;flex-wrap:wrap;background:var(--card);border:1px solid var(--border-soft);
+    border-radius:18px;padding:16px 18px;margin-bottom:14px;box-shadow:0 8px 24px -18px rgba(77,109,81,.35);}
+  .pf-hero .pf-ic{width:56px;height:56px;border-radius:16px;font-size:18px;}
+  .pf-ht{flex:1;min-width:180px;display:flex;flex-direction:column;gap:2px;}
+  .pf-kind{font-size:11.5px;font-weight:700;color:var(--muted);}
+  .pf-ht b{font-size:21px;font-weight:800;letter-spacing:-.015em;line-height:1.25;}
+  .pf-sub{font-size:12.5px;color:var(--muted);}
+  .pf-badges{display:flex;flex-direction:column;align-items:flex-end;gap:6px;}
+  .pf-meta{font-size:11.5px;color:var(--muted);}
+  .pf-grid{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:14px;align-items:start;}
+  .pf-card h2{display:flex;align-items:center;gap:8px;}
+  .pf-card h2 svg{width:17px;height:17px;stroke:var(--green);fill:none;stroke-width:2.2;}
+  .pf-actions{gap:10px;flex-wrap:wrap;margin-top:4px;}
+  .pf-relg{padding:10px 0;border-top:1px dashed var(--border);}
+  .pf-relg:first-child{border-top:0;padding-top:0;}
+  .pf-rell{font-size:12px;font-weight:700;color:var(--muted);margin-bottom:7px;}
+  .pf-rell em{font-style:normal;background:var(--bg);border:1px solid var(--border-soft);border-radius:999px;padding:0 7px;margin-inline-start:4px;color:var(--text);}
+  .pf-chips{display:flex;flex-wrap:wrap;gap:6px;}
+  .pf-chip{display:inline-flex;align-items:center;gap:8px;padding:5px 12px 5px 5px;border-radius:999px;border:1px solid var(--border-soft);
+    background:var(--bg);font:inherit;cursor:pointer;max-width:100%;transition:border-color .15s ease, background .15s ease, transform .15s ease;}
+  html[dir="rtl"] .pf-chip{padding:5px 5px 5px 12px;}
+  .pf-chip:hover{border-color:var(--green);background:var(--green-pale);transform:translateY(-1px);}
+  .pf-cic{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;flex:none;background:var(--card);color:var(--green-dark);
+    font-size:11px;font-weight:800;border:1px solid var(--border-soft);}
+  .pf-cic svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2.2;}
+  .pf-ct{display:flex;flex-direction:column;line-height:1.2;min-width:0;text-align:start;}
+  .pf-ct b{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .pf-ct i{font-style:normal;font-size:10.5px;color:var(--muted);}
+  .pf-none{padding:6px 2px;font-size:13px;}
+  .pf-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:12px;}
+  .pf-tile{background:var(--bg);border:1px solid var(--border-soft);border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:4px;}
+  .pf-tile span{font-size:12px;color:var(--muted);font-weight:600;}
+  .pf-tile b{font-size:19px;font-weight:800;}
+  .pf-tl{list-style:none;margin:0;padding:0;}
+  .pf-tl li{display:flex;gap:12px;padding:8px 0;position:relative;}
+  .pf-tl li + li{border-top:1px solid var(--border-soft);}
+  .pf-tld{width:9px;height:9px;border-radius:50%;background:var(--green);margin-top:6px;flex:none;box-shadow:0 0 0 3px var(--green-pale);}
+  .pf-tl b{display:block;font-size:13.5px;}
+  .pf-tl span{font-size:12px;color:var(--muted);}
+  @media (max-width:900px){ .pf-grid{grid-template-columns:1fr;} }
+  @media (max-width:700px){
+    .ent-tools{width:100%;} .ent-search{flex:1;min-width:0;}
+    .pf-hero{padding:14px;} .pf-ht b{font-size:18px;} .pf-badges{align-items:flex-start;width:100%;flex-direction:row;flex-wrap:wrap;}
+  }
   /* ---- chain health ---- */
   .tab-badge{display:inline-grid;place-items:center;min-width:19px;height:19px;padding:0 5px;margin-inline-start:6px;border-radius:999px;
     background:var(--danger);color:#fff;font-size:11px;font-weight:800;line-height:1;vertical-align:1px;}
@@ -1330,7 +1398,7 @@ var L = {
     home_companyOutstanding:'إجمالي النقدية غير المودعة', home_openDisputes:'اعتراضات مفتوحة (الإدارة)',
     home_actionPending:'{n} تسليم بانتظار تأكيدك', home_actionDisputes:'{n} اعتراض يحتاج إلى حل',
     home_actionNone:'لا يوجد إجراء مطلوب الآن — كل شيء محدّث', home_actionCta:'عرض التسليمات ←',
-    entry_addDelivery:'+ إضافة بند توصيل', entry_deliveryAmount:'مبلغ رسوم التوصيل', entry_deliveryNote:'البيان', entry_deliveryNotePh:'مثال: توصيل لعميل حي النرجس', entry_addCredit:'+ إضافة بيع آجل', entry_creditAmount:'مبلغ البيع الآجل', entry_creditCustomer:'اسم العميل', entry_creditCustomerPh:'العميل المدين بهذا المبلغ', err_customerRequired:'اكتب اسم العميل لكل بيع آجل', report_movement:'نوع الحركة', report_allMovements:'كل الحركات', admin_chain:'سلامة الربط', chain_map:'خريطة المناطق والفروع', chain_ok:'كل الحلقات مرتبطة — لا توجد فجوات', chain_gaps:'{n} فجوة في دورة التحصيل تحتاج معالجة', chain_hint:'كل منطقة تحتاج مدير منطقة ومُحصّلاً، وكل فرع متجراً ومديراً، وكل سيارة سائقاً، وكل جهاز نقاط بيع حاملاً — وإلا تتوقف النقدية في الطريق.', chain_fix:'معالجة', chain_areas:'مناطق', chain_branches:'فروع', chain_stores:'متاجر', chain_cars:'سيارات', chain_pos:'أجهزة نقاط بيع', gap_areaManager:'المنطقة «{x}» بلا مدير منطقة', gap_areaCollector:'المنطقة «{x}» بلا مُحصّل', gap_branchArea:'الفرع «{x}» غير مرتبط بمنطقة', gap_branchStore:'الفرع «{x}» بلا متجر', gap_storeManager:'المتجر «{x}» بلا مدير فرع', gap_carDriver:'السيارة «{x}» بلا سائق', gap_posHolder:'جهاز نقاط البيع «{x}» بلا حامل', gap_disabled:'{who} معطّل لكنه ما زال مسنداً إلى «{x}»', gap_idle:'{who} ({x}) غير مسند إلى أي حلقة', org_disabled:'معطّل', org_myArea:'منطقتي', org_myBranch:'فرعي', org_area:'المنطقة', org_branches:'فروع', org_cars:'السيارات والسائقون', org_pos:'أجهزة نقاط البيع', org_unassigned:'غير معيّن', org_gaps:'{n} غير معيّن', org_noArea:'لم تُسند إليك أي منطقة بعد — راجع مدير النظام', org_noBranch:'لم يُسند إليك أي فرع بعد — راجع مدير النظام', home_lastLogin:'آخر تسجيل دخول ناجح', home_firstLogin:'هذا أول تسجيل دخول لك', home_city:'الفرع',
+    entry_addDelivery:'+ إضافة بند توصيل', entry_deliveryAmount:'مبلغ رسوم التوصيل', entry_deliveryNote:'البيان', entry_deliveryNotePh:'مثال: توصيل لعميل حي النرجس', entry_addCredit:'+ إضافة بيع آجل', entry_creditAmount:'مبلغ البيع الآجل', entry_creditCustomer:'اسم العميل', entry_creditCustomerPh:'العميل المدين بهذا المبلغ', err_customerRequired:'اكتب اسم العميل لكل بيع آجل', report_movement:'نوع الحركة', report_allMovements:'كل الحركات', err_userInOtherArea:'هذا الشخص مسند إلى منطقة أخرى — لكل منطقة أشخاصها ولا يُسند أحد إلى منطقتين', gap_multiArea:'{who} مسند إلى أكثر من منطقة: {x}', pf_count:'{n} سجل', pf_emptyList:'لا توجد سجلات بعد — ابدأ بالإضافة', pf_open:'فتح الملف', pf_backTo:'العودة إلى {x}', pf_notFound:'السجل غير موجود — ربما حُذف', pf_details:'البيانات', pf_links:'الارتباطات', pf_noLinks:'لا توجد ارتباطات بسجلات أخرى', pf_people:'الأشخاص', pf_managesArea:'يدير المنطقة', pf_collectsArea:'يُحصّل للمنطقة', pf_activity:'النشاط', pf_entries:'الإدخالات', pf_sales:'المبيعات', pf_amount:'المبلغ', pf_handed:'سُلّم', pf_noActivity:'لا يوجد نشاط مسجّل بعد', pf_history:'سجل التعديلات', pf_noHistory:'لا توجد تعديلات مسجّلة', pf_auSaved:'حُفظت البيانات', pf_auDeleted:'حُذف', pf_auInvite:'أُرسلت الدعوة', pf_auResend:'أُعيد إرسال الدعوة', pf_auReset:'أُعيد تعيين كلمة المرور', pf_auUpdateUser:'عُدّلت بيانات المستخدم', pf_auAccepted:'قُبلت الدعوة', pf_auChangePw:'غُيّرت كلمة المرور', pf_auLogin:'تسجيل دخول', pf_kindLocation:'فرع', pf_kindStore:'متجر', pf_kindCar:'سيارة', pf_kindPos:'جهاز نقاط بيع', pf_kindCluster:'منطقة', pf_kindZone:'نطاق', pf_kindProduct:'منتج', pf_kindIncome:'بند تحصيل', pf_kindExpense:'بند مصروف', pf_kindUser:'مستخدم', admin_chain:'سلامة الربط', chain_map:'خريطة المناطق والفروع', chain_ok:'كل الحلقات مرتبطة — لا توجد فجوات', chain_gaps:'{n} فجوة في دورة التحصيل تحتاج معالجة', chain_hint:'كل منطقة تحتاج مدير منطقة ومُحصّلاً، وكل فرع متجراً ومديراً، وكل سيارة سائقاً، وكل جهاز نقاط بيع حاملاً — وإلا تتوقف النقدية في الطريق.', chain_fix:'معالجة', chain_areas:'مناطق', chain_branches:'فروع', chain_stores:'متاجر', chain_cars:'سيارات', chain_pos:'أجهزة نقاط بيع', gap_areaManager:'المنطقة «{x}» بلا مدير منطقة', gap_areaCollector:'المنطقة «{x}» بلا مُحصّل', gap_branchArea:'الفرع «{x}» غير مرتبط بمنطقة', gap_branchStore:'الفرع «{x}» بلا متجر', gap_storeManager:'المتجر «{x}» بلا مدير فرع', gap_carDriver:'السيارة «{x}» بلا سائق', gap_posHolder:'جهاز نقاط البيع «{x}» بلا حامل', gap_disabled:'{who} معطّل لكنه ما زال مسنداً إلى «{x}»', gap_idle:'{who} ({x}) غير مسند إلى أي حلقة', org_disabled:'معطّل', org_myArea:'منطقتي', org_myBranch:'فرعي', org_area:'المنطقة', org_branches:'فروع', org_cars:'السيارات والسائقون', org_pos:'أجهزة نقاط البيع', org_unassigned:'غير معيّن', org_gaps:'{n} غير معيّن', org_noArea:'لم تُسند إليك أي منطقة بعد — راجع مدير النظام', org_noBranch:'لم يُسند إليك أي فرع بعد — راجع مدير النظام', home_lastLogin:'آخر تسجيل دخول ناجح', home_firstLogin:'هذا أول تسجيل دخول لك', home_city:'الفرع',
     home_hijriSuffix:'هـ',
     entry_new:'إدخال يومي جديد', entry_date:'التاريخ', entry_sourceType:'المصدر', entry_source_store:'الفرع',
     entry_source_car:'سيارة', entry_source_pos:'جهاز نقاط بيع', entry_cash:'المبيعات النقدية', entry_delivery:'رسوم التوصيل (بنك)',
@@ -1502,7 +1570,7 @@ var L = {
     home_companyOutstanding:'Total cash not yet deposited', home_openDisputes:'Open disputes (company-wide)',
     home_actionPending:'{n} handoff(s) awaiting your confirmation', home_actionDisputes:'{n} dispute(s) need resolving',
     home_actionNone:'Nothing needs your attention right now — you\'re all caught up', home_actionCta:'View handoffs →',
-    entry_addDelivery:'+ Add a delivery line', entry_deliveryAmount:'Delivery fee amount', entry_deliveryNote:'Description', entry_deliveryNotePh:'e.g. delivery to a customer in Al-Narjis', entry_addCredit:'+ Add a credit sale', entry_creditAmount:'Credit sale amount', entry_creditCustomer:'Customer name', entry_creditCustomerPh:'Who owes this amount', err_customerRequired:'Enter the customer name for every credit sale', report_movement:'Movement type', report_allMovements:'All movements', admin_chain:'Chain health', chain_map:'Areas and branches', chain_ok:'Every link is assigned — no gaps', chain_gaps:'{n} gaps in the collection chain need fixing', chain_hint:'Every area needs an area manager and a collector, every branch a store and a manager, every car a driver and every POS machine a holder — otherwise cash stops on the way.', chain_fix:'Fix', chain_areas:'areas', chain_branches:'branches', chain_stores:'stores', chain_cars:'cars', chain_pos:'POS machines', gap_areaManager:'Area “{x}” has no area manager', gap_areaCollector:'Area “{x}” has no collector', gap_branchArea:'Branch “{x}” is not linked to an area', gap_branchStore:'Branch “{x}” has no store', gap_storeManager:'Store “{x}” has no branch manager', gap_carDriver:'Car “{x}” has no driver', gap_posHolder:'POS machine “{x}” has no holder', gap_disabled:'{who} is disabled but still assigned to “{x}”', gap_idle:'{who} ({x}) is not assigned to any link', org_disabled:'Disabled', org_myArea:'My area', org_myBranch:'My branch', org_area:'Area', org_branches:'branches', org_cars:'Cars and drivers', org_pos:'POS machines', org_unassigned:'Unassigned', org_gaps:'{n} unassigned', org_noArea:'No area is assigned to you yet — contact the administrator', org_noBranch:'No branch is assigned to you yet — contact the administrator', home_lastLogin:'Last successful login', home_firstLogin:'This is your first login', home_city:'Location',
+    entry_addDelivery:'+ Add a delivery line', entry_deliveryAmount:'Delivery fee amount', entry_deliveryNote:'Description', entry_deliveryNotePh:'e.g. delivery to a customer in Al-Narjis', entry_addCredit:'+ Add a credit sale', entry_creditAmount:'Credit sale amount', entry_creditCustomer:'Customer name', entry_creditCustomerPh:'Who owes this amount', err_customerRequired:'Enter the customer name for every credit sale', report_movement:'Movement type', report_allMovements:'All movements', err_userInOtherArea:'This person is already on another area — each area has its own people, and nobody serves two', gap_multiArea:'{who} is assigned to more than one area: {x}', pf_count:'{n} records', pf_emptyList:'No records yet — start by adding one', pf_open:'Open profile', pf_backTo:'Back to {x}', pf_notFound:'Record not found — it may have been deleted', pf_details:'Details', pf_links:'Linked records', pf_noLinks:'Not linked to any other record', pf_people:'People', pf_managesArea:'Manages area', pf_collectsArea:'Collects for area', pf_activity:'Activity', pf_entries:'Entries', pf_sales:'Sales', pf_amount:'Amount', pf_handed:'Handed over', pf_noActivity:'No activity recorded yet', pf_history:'Change history', pf_noHistory:'No changes recorded', pf_auSaved:'Details saved', pf_auDeleted:'Deleted', pf_auInvite:'Invitation sent', pf_auResend:'Invitation resent', pf_auReset:'Password reset', pf_auUpdateUser:'User details changed', pf_auAccepted:'Invitation accepted', pf_auChangePw:'Password changed', pf_auLogin:'Signed in', pf_kindLocation:'Branch', pf_kindStore:'Store', pf_kindCar:'Car', pf_kindPos:'POS machine', pf_kindCluster:'Area', pf_kindZone:'Zone', pf_kindProduct:'Product', pf_kindIncome:'Collection item', pf_kindExpense:'Expense item', pf_kindUser:'User', admin_chain:'Chain health', chain_map:'Areas and branches', chain_ok:'Every link is assigned — no gaps', chain_gaps:'{n} gaps in the collection chain need fixing', chain_hint:'Every area needs an area manager and a collector, every branch a store and a manager, every car a driver and every POS machine a holder — otherwise cash stops on the way.', chain_fix:'Fix', chain_areas:'areas', chain_branches:'branches', chain_stores:'stores', chain_cars:'cars', chain_pos:'POS machines', gap_areaManager:'Area “{x}” has no area manager', gap_areaCollector:'Area “{x}” has no collector', gap_branchArea:'Branch “{x}” is not linked to an area', gap_branchStore:'Branch “{x}” has no store', gap_storeManager:'Store “{x}” has no branch manager', gap_carDriver:'Car “{x}” has no driver', gap_posHolder:'POS machine “{x}” has no holder', gap_disabled:'{who} is disabled but still assigned to “{x}”', gap_idle:'{who} ({x}) is not assigned to any link', org_disabled:'Disabled', org_myArea:'My area', org_myBranch:'My branch', org_area:'Area', org_branches:'branches', org_cars:'Cars and drivers', org_pos:'POS machines', org_unassigned:'Unassigned', org_gaps:'{n} unassigned', org_noArea:'No area is assigned to you yet — contact the administrator', org_noBranch:'No branch is assigned to you yet — contact the administrator', home_lastLogin:'Last successful login', home_firstLogin:'This is your first login', home_city:'Location',
     home_hijriSuffix:'AH',
     entry_new:'New daily entry', entry_date:'Date', entry_sourceType:'Source', entry_source_store:'Store branch',
     entry_source_car:'Car', entry_source_pos:'POS machine', entry_cash:'Cash sales', entry_delivery:'Delivery fee (bank)',
@@ -1670,7 +1738,7 @@ var L = {
     home_companyOutstanding:'کل غیر جمع شدہ نقدی', home_openDisputes:'کھلے اعتراضات (پوری کمپنی)',
     home_actionPending:'{n} ترسیل آپ کی تصدیق کے منتظر ہیں', home_actionDisputes:'{n} اعتراضات کو حل کرنے کی ضرورت ہے',
     home_actionNone:'ابھی کوئی کارروائی درکار نہیں — سب کچھ مکمل ہے', home_actionCta:'ترسیل دیکھیں ←',
-    entry_addDelivery:'+ ڈلیوری لائن شامل کریں', entry_deliveryAmount:'ڈلیوری فیس کی رقم', entry_deliveryNote:'تفصیل', entry_deliveryNotePh:'مثلاً: گاہک کو ڈلیوری', entry_addCredit:'+ اُدھار فروخت شامل کریں', entry_creditAmount:'اُدھار فروخت کی رقم', entry_creditCustomer:'گاہک کا نام', entry_creditCustomerPh:'یہ رقم کس کے ذمے ہے', err_customerRequired:'ہر اُدھار فروخت کے لیے گاہک کا نام لکھیں', report_movement:'حرکت کی قسم', report_allMovements:'تمام حرکات', admin_chain:'ربط کی صحت', chain_map:'علاقے اور برانچیں', chain_ok:'ہر کڑی مقرر ہے — کوئی خلا نہیں', chain_gaps:'وصولی کی زنجیر میں {n} خلا درست کرنے ہیں', chain_hint:'ہر علاقے کو علاقہ منیجر اور کلکٹر، ہر برانچ کو اسٹور اور منیجر، ہر گاڑی کو ڈرائیور اور ہر POS مشین کو رکھنے والا چاہیے۔', chain_fix:'درست کریں', chain_areas:'علاقے', chain_branches:'برانچیں', chain_stores:'اسٹور', chain_cars:'گاڑیاں', chain_pos:'POS مشینیں', gap_areaManager:'علاقہ «{x}» کا کوئی منیجر نہیں', gap_areaCollector:'علاقہ «{x}» کا کوئی کلکٹر نہیں', gap_branchArea:'برانچ «{x}» کسی علاقے سے منسلک نہیں', gap_branchStore:'برانچ «{x}» کا کوئی اسٹور نہیں', gap_storeManager:'اسٹور «{x}» کا کوئی برانچ منیجر نہیں', gap_carDriver:'گاڑی «{x}» کا کوئی ڈرائیور نہیں', gap_posHolder:'POS مشین «{x}» رکھنے والا کوئی نہیں', gap_disabled:'{who} غیر فعال ہے مگر «{x}» پر مقرر ہے', gap_idle:'{who} ({x}) کسی کڑی پر مقرر نہیں', org_disabled:'غیر فعال', org_myArea:'میرا علاقہ', org_myBranch:'میری برانچ', org_area:'علاقہ', org_branches:'برانچیں', org_cars:'گاڑیاں اور ڈرائیور', org_pos:'POS مشینیں', org_unassigned:'غیر مقرر', org_gaps:'{n} غیر مقرر', org_noArea:'آپ کو ابھی کوئی علاقہ نہیں دیا گیا', org_noBranch:'آپ کو ابھی کوئی برانچ نہیں دی گئی', home_lastLogin:'آخری کامیاب لاگ اِن', home_firstLogin:'یہ آپ کا پہلا لاگ اِن ہے', home_city:'مقام',
+    entry_addDelivery:'+ ڈلیوری لائن شامل کریں', entry_deliveryAmount:'ڈلیوری فیس کی رقم', entry_deliveryNote:'تفصیل', entry_deliveryNotePh:'مثلاً: گاہک کو ڈلیوری', entry_addCredit:'+ اُدھار فروخت شامل کریں', entry_creditAmount:'اُدھار فروخت کی رقم', entry_creditCustomer:'گاہک کا نام', entry_creditCustomerPh:'یہ رقم کس کے ذمے ہے', err_customerRequired:'ہر اُدھار فروخت کے لیے گاہک کا نام لکھیں', report_movement:'حرکت کی قسم', report_allMovements:'تمام حرکات', err_userInOtherArea:'یہ شخص پہلے سے کسی اور علاقے پر مقرر ہے — کوئی دو علاقوں پر نہیں ہو سکتا', gap_multiArea:'{who} ایک سے زیادہ علاقوں پر مقرر ہے: {x}', pf_count:'{n} ریکارڈ', pf_emptyList:'ابھی کوئی ریکارڈ نہیں', pf_open:'پروفائل کھولیں', pf_backTo:'{x} پر واپس', pf_notFound:'ریکارڈ نہیں ملا', pf_details:'تفصیلات', pf_links:'منسلک ریکارڈ', pf_noLinks:'کسی ریکارڈ سے منسلک نہیں', pf_people:'افراد', pf_managesArea:'علاقہ منیجر', pf_collectsArea:'علاقے کا کلکٹر', pf_activity:'سرگرمی', pf_entries:'اندراجات', pf_sales:'فروخت', pf_amount:'رقم', pf_handed:'حوالے', pf_noActivity:'ابھی کوئی سرگرمی نہیں', pf_history:'تبدیلیوں کی تاریخ', pf_noHistory:'کوئی تبدیلی درج نہیں', pf_auSaved:'تفصیلات محفوظ', pf_auDeleted:'حذف', pf_auInvite:'دعوت بھیجی گئی', pf_auResend:'دعوت دوبارہ بھیجی گئی', pf_auReset:'پاس ورڈ ری سیٹ', pf_auUpdateUser:'صارف کی تفصیلات تبدیل', pf_auAccepted:'دعوت قبول', pf_auChangePw:'پاس ورڈ تبدیل', pf_auLogin:'لاگ اِن', pf_kindLocation:'برانچ', pf_kindStore:'اسٹور', pf_kindCar:'گاڑی', pf_kindPos:'POS مشین', pf_kindCluster:'علاقہ', pf_kindZone:'زون', pf_kindProduct:'پروڈکٹ', pf_kindIncome:'وصولی کی مد', pf_kindExpense:'اخراجات کی مد', pf_kindUser:'صارف', admin_chain:'ربط کی صحت', chain_map:'علاقے اور برانچیں', chain_ok:'ہر کڑی مقرر ہے — کوئی خلا نہیں', chain_gaps:'وصولی کی زنجیر میں {n} خلا درست کرنے ہیں', chain_hint:'ہر علاقے کو علاقہ منیجر اور کلکٹر، ہر برانچ کو اسٹور اور منیجر، ہر گاڑی کو ڈرائیور اور ہر POS مشین کو رکھنے والا چاہیے۔', chain_fix:'درست کریں', chain_areas:'علاقے', chain_branches:'برانچیں', chain_stores:'اسٹور', chain_cars:'گاڑیاں', chain_pos:'POS مشینیں', gap_areaManager:'علاقہ «{x}» کا کوئی منیجر نہیں', gap_areaCollector:'علاقہ «{x}» کا کوئی کلکٹر نہیں', gap_branchArea:'برانچ «{x}» کسی علاقے سے منسلک نہیں', gap_branchStore:'برانچ «{x}» کا کوئی اسٹور نہیں', gap_storeManager:'اسٹور «{x}» کا کوئی برانچ منیجر نہیں', gap_carDriver:'گاڑی «{x}» کا کوئی ڈرائیور نہیں', gap_posHolder:'POS مشین «{x}» رکھنے والا کوئی نہیں', gap_disabled:'{who} غیر فعال ہے مگر «{x}» پر مقرر ہے', gap_idle:'{who} ({x}) کسی کڑی پر مقرر نہیں', org_disabled:'غیر فعال', org_myArea:'میرا علاقہ', org_myBranch:'میری برانچ', org_area:'علاقہ', org_branches:'برانچیں', org_cars:'گاڑیاں اور ڈرائیور', org_pos:'POS مشینیں', org_unassigned:'غیر مقرر', org_gaps:'{n} غیر مقرر', org_noArea:'آپ کو ابھی کوئی علاقہ نہیں دیا گیا', org_noBranch:'آپ کو ابھی کوئی برانچ نہیں دی گئی', home_lastLogin:'آخری کامیاب لاگ اِن', home_firstLogin:'یہ آپ کا پہلا لاگ اِن ہے', home_city:'مقام',
     home_hijriSuffix:'ھ',
     entry_new:'نیا روزانہ اندراج', entry_date:'تاریخ', entry_sourceType:'ذریعہ', entry_source_store:'برانچ',
     entry_source_car:'گاڑی', entry_source_pos:'POS مشین', entry_cash:'نقد فروخت', entry_delivery:'ڈلیوری فیس (بینک)',
@@ -2122,7 +2190,7 @@ var ERROR_KEYS_ = {
   not_pending:'err_notPending', nothing_owed:'err_nothingOwed', too_many_rows:'err_tooManyRows',
   feature_disabled:'err_featureDisabled', invalid_rows:'err_invalidRows',
   invalid_income_item:'err_invalidIncomeItem', invalid_expense_item:'err_invalidExpenseItem', reason_required:'err_reasonRequired',
-  customer_required:'err_customerRequired',
+  customer_required:'err_customerRequired', user_in_other_area:'err_userInOtherArea',
   deposit_needs_reference:'err_depositNeedsReference', deposit_exceeds_cash:'err_depositExceedsCash',
   confirm_required:'err_confirmRequired',
   manager_required:'err_managerRequired', collector_required:'err_collectorRequired',
@@ -6950,6 +7018,17 @@ function chainGaps_(){
     if (!p.assignedUserId) add('gap_posHolder', p.label, 'pos');
     else if (off(p.assignedUserId)) add('gap_disabled', p.label, 'pos', userName(p.assignedUserId));
   });
+  // one person, one area
+  var areaCount = {};
+  (meta.clusters||[]).forEach(function(c){
+    [c.clusterManagerUserId, c.collectorUserId].forEach(function(uid){
+      if (!uid) return;
+      (areaCount[uid] = areaCount[uid] || []).push(c.name);
+    });
+  });
+  Object.keys(areaCount).forEach(function(uid){
+    if (areaCount[uid].length > 1) add('gap_multiArea', areaCount[uid].join('، '), 'clusters', userName(uid));
+  });
   // people hired into a link of the chain but never placed on one
   users.forEach(function(u){
     if (u.active === false) return;
@@ -7012,7 +7091,7 @@ function renderAdmin(body){
       var gapN = tb[0] === 'chain' ? chainGaps_().length : 0;
       var b = el('<button'+(adminTab===tb[0]?' class="active"':'')+'>'+esc(t(tb[1])) +
         (gapN ? ' <span class="tab-badge">'+gapN+'</span>' : '') + '</button>');
-      b.addEventListener('click', function(){ adminTab=tb[0]; render(); });
+      b.addEventListener('click', function(){ adminTab=tb[0]; adminProfile = null; render(); });
       tabBar.appendChild(b);
     });
     groupWrap.appendChild(tabBar);
@@ -7022,7 +7101,8 @@ function renderAdmin(body){
   body.appendChild(content);
 
   var renderers = {
-    users: renderAdminUsers, permissions: renderAdminPermissions, chain: renderAdminChain,
+    users: function(c){ if (adminProfile && adminProfile.kind === 'user') renderAdminProfile(c, 'user', adminProfile.id); else renderAdminUsers(c); },
+    permissions: renderAdminPermissions, chain: renderAdminChain,
     locations: function(c){ renderAdminEntity(c,'location'); },
     stores: function(c){ renderAdminEntity(c,'store'); }, cars: function(c){ renderAdminEntity(c,'car'); },
     pos: function(c){ renderAdminEntity(c,'pos'); }, clusters: function(c){ renderAdminEntity(c,'cluster'); },
@@ -7228,42 +7308,10 @@ function renderAdminUsers(content){
     actions.appendChild(resetBtn); actions.appendChild(toggleBtn); actions.appendChild(editBtn);
     tbody.appendChild(tr);
 
-    var editRow = el('<tr hidden><td colspan="6"></td></tr>');
-    var editCell = editRow.firstChild;
-    editCell.appendChild(el(
-      '<div class="card" style="margin:0;background:var(--bg-soft,#f7f5ef);">' +
-        '<h2 style="font-size:14px;">'+esc(t('admin_editProfile'))+'</h2>' +
-        '<div class="grid">' +
-          '<div class="field"><label>'+esc(t('admin_name'))+'</label><input class="ueName" value="'+esc(u.name)+'"></div>' +
-          '<div class="field"><label>'+esc(t('email'))+'</label><input class="ueEmail" type="email" value="'+esc(u.email||'')+'"></div>' +
-          '<div class="field"><label>'+esc(t('admin_role'))+'</label><select class="ueRole">'+roles.map(function(r){return '<option value="'+r+'"'+(r===u.role?' selected':'')+'>'+esc(roleLabel(r))+'</option>';}).join('')+'</select></div>' +
-          '<div class="field"><label>'+esc(t('language'))+'</label><select class="ueLang">'+langOpts.map(function(l){return '<option value="'+l[0]+'"'+(l[0]===(u.language||'ar')?' selected':'')+'>'+l[1]+'</option>';}).join('')+'</select></div>' +
-          '<div class="field"><label>'+esc(t('admin_active'))+'</label><select class="ueActive"><option value="1"'+(u.active?' selected':'')+'>'+esc(t('admin_active'))+'</option><option value="0"'+(!u.active?' selected':'')+'>—</option></select></div>' +
-          '<div class="field"><label>'+esc(t('admin_iqamaId'))+'</label><input class="ueIqamaId" value="'+esc(u.iqamaId||'')+'"></div>' +
-        '</div>' +
-        '<div class="row" style="gap:10px;">' +
-          '<button type="button" class="btn ueSave">'+esc(t('save'))+'</button>' +
-          '<button type="button" class="btn secondary ueCancel">'+esc(t('cancel'))+'</button>' +
-        '</div><div class="ueMsg"></div>' +
-      '</div>'
-    ));
-    tbody.appendChild(editRow);
-
-    editBtn.addEventListener('click', function(){ editRow.hidden = !editRow.hidden; });
-    qs('.ueCancel', editCell).addEventListener('click', function(){ editRow.hidden = true; });
-    qs('.ueSave', editCell).addEventListener('click', function(){
-      api('adminUpdateUser', { id: u.id, data: {
-        name: qs('.ueName', editCell).value,
-        email: qs('.ueEmail', editCell).value,
-        role: qs('.ueRole', editCell).value,
-        language: qs('.ueLang', editCell).value,
-        active: qs('.ueActive', editCell).value === '1',
-        iqamaId: qs('.ueIqamaId', editCell).value
-      } }).then(function(res){
-        if (!res.ok){ qs('.ueMsg', editCell).innerHTML = '<div class="msg err">'+esc(errMsg_(res))+'</div>'; return; }
-        refreshMetaThen(function(){ renderAdmin(qs('#screenBody')); }, res);
-      });
-    });
+    // the person's own page holds the edit form, links and history
+    editBtn.addEventListener('click', function(e){ e.stopPropagation(); openProfile_('user', u.id); });
+    tr.classList.add('pf-row');
+    tr.addEventListener('click', function(e){ if (!e.target.closest('button')) openProfile_('user', u.id); });
   });
 }
 
@@ -7272,17 +7320,17 @@ var ENTITY_FIELDS = {
     {k:'city', l:'admin_city'}, {k:'name', l:'admin_locName'},
     {k:'clusterId', l:'admin_cluster', pick:'clusters', pickLabel:function(x){return x.name;}},
     {k:'zoneId', l:'admin_zone', pick:'zones', pickLabel:function(x){return x.city+' — '+x.name;}}
-  ], cols:['city','name'] },
+  ], cols:['name','city','clusterId','zoneId'] },
   store: { addKey:'admin_addStore', fields:[
     {k:'locationId', l:'admin_location', pick:'locations', pickLabel:function(x){return x.city+' — '+x.name;}},
     {k:'name', l:'admin_storeName'},
     {k:'storeManagerUserId', l:'admin_manager', pick:'users', pickLabel:function(x){return x.name;}, pickFilter:function(x){return x.role==='store_manager';}}
-  ], cols:['name','locationId'] },
+  ], cols:['name','locationId','storeManagerUserId'] },
   car: { addKey:'admin_addCar', fields:[
     {k:'locationId', l:'admin_location', pick:'locations', pickLabel:function(x){return x.city+' — '+x.name;}},
     {k:'label', l:'admin_carLabel'},
     {k:'driverUserId', l:'admin_driver', pick:'users', pickLabel:function(x){return x.name;}, pickFilter:function(x){return x.role==='driver';}}
-  ], cols:['label','locationId'] },
+  ], cols:['label','locationId','driverUserId'] },
   pos: { addKey:'admin_addPos', fields:[
     {k:'ownerType', l:'admin_ownerType', options:[['store','admin_stores'],['car','admin_cars']]},
     {k:'ownerId', l:'admin_owner'},
@@ -7297,12 +7345,12 @@ var ENTITY_FIELDS = {
   // from the location its own car/store already shows in their own admin
   // lists. Shows the actual store/car name plus its location instead, same
   // information store/car rows already carry via locationId.
-  cols:['label','posId','owner'] },
+  cols:['label','posId','owner','assignedUserId'] },
   cluster: { addKey:'admin_addCluster', fields:[
     {k:'name', l:'admin_clusterName'},
     {k:'clusterManagerUserId', l:'admin_clusterManager', pick:'users', pickLabel:function(x){return x.name;}, pickFilter:function(x){return x.role==='cluster_manager';}},
     {k:'collectorUserId', l:'admin_collector', pick:'users', pickLabel:function(x){return x.name;}, pickFilter:function(x){return x.role==='collector';}}
-  ], cols:['name'] },
+  ], cols:['name','clusterManagerUserId','collectorUserId','branches'] },
   // Pure geography — City/Zone, independent of Cluster (which is the
   // employee-based management assignment above). A location can optionally
   // point at a zone for the Country > City > Zone > Location filtering view.
@@ -7316,10 +7364,12 @@ var ENTITY_FIELDS = {
     // Fixed price: the entry form shows it read-only, so a branch can't
     // quietly sell at its own price. Left off, the price is only a
     // suggestion the person entering can still change.
-    {k:'priceLocked', l:'admin_priceLocked', type:'check'}
-  ], cols:['name','unitPrice'] },
-  income_item: { addKey:'admin_addIncomeItem', fields:[{k:'name', l:'admin_itemName'}], cols:['name'] },
-  expense_item: { addKey:'admin_addExpenseItem', fields:[{k:'name', l:'admin_itemName'}], cols:['name'] }
+    {k:'priceLocked', l:'admin_priceLocked', type:'check'},
+    // an inactive product or item drops out of the entry screen's lists
+    {k:'active', l:'admin_active', type:'check'}
+  ], cols:['name','type','unitPrice','active'] },
+  income_item: { addKey:'admin_addIncomeItem', fields:[{k:'name', l:'admin_itemName'}, {k:'active', l:'admin_active', type:'check'}], cols:['name','active'] },
+  expense_item: { addKey:'admin_addExpenseItem', fields:[{k:'name', l:'admin_itemName'}, {k:'active', l:'admin_active', type:'check'}], cols:['name','active'] }
 };
 
 function metaListFor_(kind){
@@ -7329,97 +7379,209 @@ function metaListFor_(kind){
   return m[map[kind]]||[];
 }
 
-function renderAdminEntity(content, kind){
-  var spec = ENTITY_FIELDS[kind];
+// One input for one entity field, optionally pre-filled — the add form and
+// the profile build their fields from the same spec through this.
+function entityFieldInput_(f, value, meta, kind){
+  var input;
+  if (f.pick){
+    var options = (meta[f.pick]||[]).filter(function(x){ return !f.pickFilter || f.pickFilter(x); });
+    // one person, one area: someone already on another area is not offered
+    if (kind === 'cluster' && (f.k === 'clusterManagerUserId' || f.k === 'collectorUserId')){
+      var taken = [];
+      (meta.clusters||[]).forEach(function(c){
+        if (c.clusterManagerUserId && String(c.clusterManagerUserId) !== String(value)) taken.push(c.clusterManagerUserId);
+        if (c.collectorUserId && String(c.collectorUserId) !== String(value)) taken.push(c.collectorUserId);
+      });
+      options = options.filter(function(x){ return String(x.id) === String(value) || taken.indexOf(x.id) < 0; });
+    }
+    input = el('<select data-k="'+f.k+'"><option value="">—</option>' +
+      options.map(function(x){ return '<option value="'+x.id+'"'+(String(value)===String(x.id)?' selected':'')+'>'+esc(f.pickLabel(x))+'</option>'; }).join('') +
+    '</select>');
+  } else if (f.options){
+    input = el('<select data-k="'+f.k+'">' +
+      f.options.map(function(o){ return '<option value="'+o[0]+'"'+(String(value)===String(o[0])?' selected':'')+'>'+esc(t(o[1]))+'</option>'; }).join('') +
+    '</select>');
+  } else if (f.type === 'check'){
+    input = el('<input type="checkbox" data-k="'+f.k+'" style="width:18px;height:18px;"'+(value?' checked':'')+'>');
+  } else if (f.type === 'number'){
+    input = el('<input type="text" inputmode="decimal" data-k="'+f.k+'" placeholder="0" value="'+esc(value != null && value !== '' ? value : '')+'">');
+    wireCommaInput_(input, true);
+  } else {
+    input = el('<input data-k="'+f.k+'" value="'+esc(value != null ? value : '')+'">');
+  }
+  return input;
+}
+function entityFieldValue_(f, input){
+  if (!input) return null;
+  return f.type === 'check' ? input.checked : f.type === 'number' ? numFromInput_(input) : input.value;
+}
+// A field the collection chain depends on: the server refuses the row
+// without it, so the form marks it.
+var REQUIRED_ASSIGNMENTS_ = {
+  cluster: ['name', 'clusterManagerUserId', 'collectorUserId'],
+  location: ['city', 'name'],
+  store: ['locationId', 'name', 'storeManagerUserId'],
+  car: ['locationId', 'label', 'driverUserId'],
+  pos: ['ownerType', 'ownerId', 'label', 'assignedUserId'],
+  zone: ['city', 'name'],
+  product: ['name'], income_item: ['name'], expense_item: ['name']
+};
+function isRequiredField_(kind, key){
+  return (REQUIRED_ASSIGNMENTS_[kind] || []).indexOf(key) >= 0;
+}
+
+// Which admin tab lists each kind, and the icon it goes by.
+var KIND_TAB_ = { location:'locations', store:'stores', car:'cars', pos:'pos', cluster:'clusters', zone:'zones',
+  product:'products', income_item:'incomeItems', expense_item:'expenseItems', user:'users' };
+var KIND_ICON_ = { location:'home', store:'box', car:'truck', pos:'card', cluster:'pin', zone:'layers',
+  product:'box', income_item:'wallet', expense_item:'cash', user:'user' };
+var KIND_LABEL_ = { location:'pf_kindLocation', store:'pf_kindStore', car:'pf_kindCar', pos:'pf_kindPos', cluster:'pf_kindCluster',
+  zone:'pf_kindZone', product:'pf_kindProduct', income_item:'pf_kindIncome', expense_item:'pf_kindExpense', user:'pf_kindUser' };
+var adminProfile = null;
+function recordOf_(kind, id){
   var meta = state.meta || {};
-  var form = el('<div class="card"><h2>'+esc(t(spec.addKey))+'</h2><div class="grid" id="eFields"></div><button class="btn" id="eAdd">'+esc(t(spec.addKey))+'</button><div id="eMsg"></div></div>');
-  content.appendChild(form);
-  var fieldsWrap = qs('#eFields', form);
-
+  return byId(kind === 'user' ? meta.users : metaListFor_(kind), id);
+}
+function recordTitle_(kind, r){
+  if (!r) return '—';
+  if (kind === 'location' || kind === 'zone') return (r.city ? r.city + ' — ' : '') + r.name;
+  return r.name || r.label || '—';
+}
+function openProfile_(kind, id){
+  adminTab = KIND_TAB_[kind] || adminTab;
+  adminProfile = { kind: kind, id: id };
+  render();
+  try { window.scrollTo(0, 0); } catch (e) {}
+}
+// A POS machine's owner list follows its owner type, in every form.
+function wirePosOwner_(grid, currentOwnerId){
+  var meta = state.meta || {};
+  var typeSel = qs('[data-k="ownerType"]', grid);
+  if (!typeSel) return;
+  function refresh(){
+    var list = typeSel.value === 'store' ? (meta.stores||[]) : (meta.cars||[]);
+    var cur = qs('[data-k="ownerId"]', grid);
+    var keep = cur && cur.value ? cur.value : currentOwnerId;
+    var sel = el('<select data-k="ownerId">' + list.map(function(x){
+      return '<option value="'+x.id+'"'+(String(keep)===String(x.id)?' selected':'')+'>'+esc((x.name||x.label)+' — '+locationName(x.locationId))+'</option>';
+    }).join('') + '</select>');
+    cur.parentNode.replaceChild(sel, cur);
+  }
+  typeSel.addEventListener('change', function(){ var c = qs('[data-k="ownerId"]', grid); if (c) c.value = ''; refresh(); });
+  refresh();
+}
+function entityForm_(kind, item){
+  var spec = ENTITY_FIELDS[kind], meta = state.meta || {};
+  var grid = el('<div class="grid"></div>');
   spec.fields.forEach(function(f){
-    var wrap = el('<div class="field"><label>'+esc(t(f.l))+'</label></div>');
-    var input;
-    if (f.pick){
-      var options = (meta[f.pick]||[]).filter(function(x){ return !f.pickFilter || f.pickFilter(x); });
-      input = el('<select data-k="'+f.k+'"><option value="">—</option>'+options.map(function(x){return '<option value="'+x.id+'">'+esc(f.pickLabel(x))+'</option>';}).join('')+'</select>');
-    } else if (f.options){
-      input = el('<select data-k="'+f.k+'">'+f.options.map(function(o){return '<option value="'+o[0]+'">'+esc(t(o[1]))+'</option>';}).join('')+'</select>');
-    } else if (f.type === 'check'){
-      input = el('<input type="checkbox" data-k="'+f.k+'" style="width:18px;height:18px;">');
-    } else if (f.type === 'number'){
-      input = el('<input type="text" inputmode="decimal" data-k="'+f.k+'" placeholder="0">');
-    } else {
-      input = el('<input data-k="'+f.k+'">');
-    }
-    wrap.appendChild(input);
-    fieldsWrap.appendChild(wrap);
+    var wrap = el('<div class="field'+(f.type==='check'?' field-check':'')+'"><label>'+esc(t(f.l))+(isRequiredField_(kind, f.k) ? '<span class="req">*</span>' : '')+'</label></div>');
+    var v = item ? item[f.k] : (f.k === 'active' ? true : '');
+    wrap.appendChild(entityFieldInput_(f, v, meta, kind));
+    grid.appendChild(wrap);
   });
-
-  // pos owner picker depends on ownerType
-  if (kind==='pos'){
-    var ownerTypeSel = qs('[data-k="ownerType"]', fieldsWrap);
-    var ownerIdWrap = qs('[data-k="ownerId"]', fieldsWrap).parentNode;
-    function refreshOwnerOptions(){
-      var type = ownerTypeSel.value;
-      var list = type==='store' ? (meta.stores||[]) : (meta.cars||[]);
-      var sel = el('<select data-k="ownerId">'+list.map(function(x){return '<option value="'+x.id+'">'+esc(x.name||x.label)+'</option>';}).join('')+'</select>');
-      ownerIdWrap.replaceChild(sel, qs('[data-k="ownerId"]', ownerIdWrap));
+  if (kind === 'pos') wirePosOwner_(grid, item && item.ownerId);
+  return {
+    node: grid,
+    values: function(){
+      var d = {};
+      spec.fields.forEach(function(f){ d[f.k] = entityFieldValue_(f, qs('[data-k="'+f.k+'"]', grid)); });
+      return d;
     }
-    ownerTypeSel.addEventListener('change', refreshOwnerOptions);
-    refreshOwnerOptions();
+  };
+}
+// What a list cell or a profile line shows for one field: names, not ids.
+function fieldDisplay_(kind, item, c){
+  var spec = ENTITY_FIELDS[kind], meta = state.meta || {};
+  if (kind === 'pos' && c === 'owner') return posOwnerName_(item) + ' — ' + locationName(posOwnerLocationId_(item));
+  if (kind === 'pos' && c === 'locationId') return locationName(posOwnerLocationId_(item));
+  if (c === 'branches') return String((meta.locations||[]).filter(function(l){ return l.clusterId === item.id; }).length);
+  if (c === 'active') return item.active === false ? t('org_disabled') : t('admin_active');
+  var v = item[c];
+  if (c === 'locationId') return v ? locationName(v) : '—';
+  var f = spec.fields.filter(function(x){ return x.k===c; })[0];
+  if (f && f.pick){
+    var ref = byId(meta[f.pick], v);
+    return ref ? f.pickLabel(ref) : (v ? '—' : '—');
   }
+  if (f && f.options){
+    var opt = f.options.filter(function(o){ return o[0]===v; })[0];
+    return opt ? t(opt[1]) : (v || '—');
+  }
+  if (f && f.type === 'check') return v ? '✓' : '—';
+  if (f && f.type === 'number') return v != null && v !== '' ? money(v) : '—';
+  return v != null && v !== '' ? String(v) : '—';
+}
+function fieldLabel_(kind, c){
+  if (kind === 'pos' && c === 'owner') return t('admin_owner');
+  if (c === 'branches') return t('chain_branches');
+  if (c === 'active') return t('us_status');
+  if (kind === 'pos' && c === 'locationId') return t('admin_location');
+  var f = ENTITY_FIELDS[kind].fields.filter(function(x){ return x.k===c; })[0];
+  return f ? t(f.l) : c;
+}
 
-  qs('#eAdd', form).addEventListener('click', function(){
-    var data = {};
-    spec.fields.forEach(function(f){
-      var input = qs('[data-k="'+f.k+'"]', fieldsWrap);
-      data[f.k] = f.type === 'check' ? input.checked : f.type === 'number' ? numFromInput_(input) : input.value;
-    });
-    api('adminSaveEntity', { kind: kind, data: data }).then(function(res){
-      qs('#eMsg', form).innerHTML = res.ok ? '<div class="msg ok">'+esc(t('ok_saved'))+'</div>' : '<div class="msg err">'+esc(errMsg_(res))+'</div>';
-      if (res.ok) refreshMetaThen(function(){ renderAdmin(qs('#screenBody')); }, res);
-    });
-  });
-
+function renderAdminEntity(content, kind){
+  if (adminProfile && adminProfile.kind === kind) { renderAdminProfile(content, kind, adminProfile.id); return; }
+  var spec = ENTITY_FIELDS[kind];
   var list = metaListFor_(kind);
-  // column header = the matching field's own label translation, not the
-  // raw storage key (that showed literal "locationId"/"name" on screen).
-  function colLabel_(c){
-    if (kind === 'pos' && c === 'owner') return t('admin_owner');
-    var f = spec.fields.filter(function(x){ return x.k===c; })[0];
-    return f ? t(f.l) : c;
-  }
-  var listCard = el('<div class="card"><h2>'+esc(t('admin_'+({location:'locations',store:'stores',car:'cars',pos:'pos',cluster:'clusters',zone:'zones',product:'products',income_item:'incomeItems',expense_item:'expenseItems'})[kind]))+'</h2><table><thead><tr>' +
-    spec.cols.map(function(c){ return '<th>'+esc(colLabel_(c))+'</th>'; }).join('') + '<th class="col-actions"></th></tr></thead><tbody id="entBody"></tbody></table></div>');
-  content.appendChild(listCard);
-  // A column backed by an options-based field (e.g. pos's ownerType:
-  // 'store'/'car') must show the translated option label, not the raw
-  // stored value — same reasoning as locationId already being resolved to
-  // a readable name instead of a bare id.
-  function colValue_(item, c){
-    if (kind === 'pos' && c === 'owner') return posOwnerName_(item) + ' — ' + locationName(posOwnerLocationId_(item));
-    var v = item[c];
-    if (c === 'locationId') return locationName(v);
-    var f = spec.fields.filter(function(x){ return x.k===c; })[0];
-    if (f && f.options) {
-      var opt = f.options.filter(function(o){ return o[0]===v; })[0];
-      return opt ? t(opt[1]) : v;
-    }
-    return v;
-  }
-  var tbody = qs('#entBody', listCard);
-  list.forEach(function(item){
-    var tds = spec.cols.map(function(c){
-      return '<td>'+esc(colValue_(item, c))+'</td>';
-    }).join('');
-    var tr = el('<tr>'+tds+'<td class="col-actions"></td></tr>');
-    var acts = el('<div class="us-acts"></div>');
-    tr.lastChild.appendChild(acts);
+  var title = t('admin_' + KIND_TAB_[kind]);
 
-    var editBtn = el('<button type="button" class="ico-btn" title="'+esc(t('admin_edit'))+'" aria-label="'+esc(t('admin_edit'))+'">'+icon_('pencilEdit')+'</button>');
+  var head = el('<div class="ent-head">' +
+    '<div class="ent-ht"><span class="ent-ic">'+icon_(KIND_ICON_[kind])+'</span>' +
+      '<div><b>'+esc(title)+'</b><span>'+esc(t('pf_count').replace('{n}', list.length))+'</span></div></div>' +
+    '<div class="ent-tools">' +
+      '<label class="ent-search">'+icon_('search')+'<input type="search" placeholder="'+esc(t('lf_searchHint'))+'"></label>' +
+      '<button type="button" class="btn ent-addBtn">'+esc(t(spec.addKey))+'</button>' +
+    '</div></div>');
+  content.appendChild(head);
+
+  // the add form stays shut until it is asked for
+  var addCard = el('<div class="card ent-add" hidden><h2>'+esc(t(spec.addKey))+'</h2><div class="ent-addGrid"></div>' +
+    '<div class="row" style="gap:10px;flex-wrap:wrap;"><button type="button" class="btn ent-save">'+esc(t('save'))+'</button>' +
+    '<button type="button" class="btn secondary ent-cancel">'+esc(t('cancel'))+'</button></div><div class="ent-msg"></div></div>');
+  content.appendChild(addCard);
+  var addForm = entityForm_(kind, null);
+  qs('.ent-addGrid', addCard).appendChild(addForm.node);
+  qs('.ent-addBtn', head).addEventListener('click', function(){
+    addCard.hidden = !addCard.hidden;
+    if (!addCard.hidden) { var f0 = qs('input,select,.dd-btn', addCard); if (f0) f0.focus(); }
+  });
+  qs('.ent-cancel', addCard).addEventListener('click', function(){ addCard.hidden = true; });
+  qs('.ent-save', addCard).addEventListener('click', function(){
+    var btn = qs('.ent-save', addCard); btn.disabled = true;
+    api('adminSaveEntity', { kind: kind, data: addForm.values() }).then(function(res){
+      btn.disabled = false;
+      if (!res.ok){ qs('.ent-msg', addCard).innerHTML = '<div class="msg err">'+esc(errMsg_(res))+'</div>'; return; }
+      toast('ok_saved', 'ok');
+      refreshMetaThen(function(){ renderAdmin(qs('#screenBody')); }, res);
+    });
+  });
+
+  var listCard = el('<div class="card ent-list"><div class="tbl-scroll"><table><thead><tr>' +
+    spec.cols.map(function(c){ return '<th>'+esc(fieldLabel_(kind, c))+'</th>'; }).join('') +
+    '<th class="col-actions"></th></tr></thead><tbody></tbody></table></div>' +
+    '<div class="ent-empty" hidden>'+esc(t(list.length ? 'lf_noMatch' : 'pf_emptyList'))+'</div></div>');
+  content.appendChild(listCard);
+  var tbody = qs('tbody', listCard);
+  list.forEach(function(item){
+    var cells = spec.cols.map(function(c, i){
+      var v = fieldDisplay_(kind, item, c);
+      var off = c === 'active' && item.active === false;
+      return '<td'+(i===0?' class="ent-name"':'')+'>'+(off ? '<span class="us-badge disabled">'+esc(v)+'</span>' : esc(v))+'</td>';
+    }).join('');
+    var tr = el('<tr class="pf-row" tabindex="0">'+cells+'<td class="col-actions"></td></tr>');
+    tr.dataset.text = spec.cols.map(function(c){ return fieldDisplay_(kind, item, c); }).join(' ').toLowerCase();
+    var acts = el('<div class="us-acts"></div>');
+    var openBtn = el('<button type="button" class="ico-btn" title="'+esc(t('pf_open'))+'" aria-label="'+esc(t('pf_open'))+'">'+icon_('pencilEdit')+'</button>');
     var delBtn = el('<button type="button" class="ico-btn danger" title="'+esc(t('admin_delete'))+'" aria-label="'+esc(t('admin_delete'))+'">'+icon_('close')+'</button>');
-    acts.appendChild(editBtn); acts.appendChild(delBtn);
-    delBtn.addEventListener('click', function(){
+    acts.appendChild(openBtn); acts.appendChild(delBtn);
+    tr.lastChild.appendChild(acts);
+    function open(){ openProfile_(kind, item.id); }
+    openBtn.addEventListener('click', function(e){ e.stopPropagation(); open(); });
+    tr.addEventListener('click', function(e){ if (!e.target.closest('button')) open(); });
+    tr.addEventListener('keydown', function(e){ if (e.key === 'Enter' && e.target === tr) open(); });
+    delBtn.addEventListener('click', function(e){
+      e.stopPropagation();
       if (!confirm(t('confirm_delete'))) return;
       api('adminDeleteEntity', { kind: kind, id: item.id }).then(function(res){
         if (!res.ok){ toastRaw_(errMsg_(res), 'err'); return; }
@@ -7427,47 +7589,235 @@ function renderAdminEntity(content, kind){
       });
     });
     tbody.appendChild(tr);
-
-    // the edit panel: same fields as the add form, filled in
-    var editRow = el('<tr hidden><td colspan="'+(spec.cols.length+1)+'"></td></tr>');
-    var cell = editRow.firstChild;
-    var panel = el('<div class="card" style="margin:0 0 4px;background:var(--bg);"><div class="grid"></div>' +
-      '<div class="row" style="gap:10px;flex-wrap:wrap;"><button type="button" class="btn eeSave">'+esc(t('save'))+'</button>' +
-      '<button type="button" class="btn secondary eeCancel">'+esc(t('cancel'))+'</button></div><div class="eeMsg"></div></div>');
-    var grid = qs('.grid', panel);
-    spec.fields.forEach(function(f){
-      var wrap2 = el('<div class="field"><label>'+esc(t(f.l))+(isRequiredField_(kind, f.k) ? '<span class="req">*</span>' : '')+'</label></div>');
-      wrap2.appendChild(entityFieldInput_(f, item[f.k], meta, kind));
-      grid.appendChild(wrap2);
+  });
+  var empty = qs('.ent-empty', listCard);
+  empty.hidden = list.length > 0;
+  qs('.ent-search input', head).addEventListener('input', function(){
+    var q = this.value.trim().toLowerCase(), shown = 0;
+    qsa('tr.pf-row', tbody).forEach(function(tr){
+      var hit = !q || tr.dataset.text.indexOf(q) >= 0;
+      tr.hidden = !hit; if (hit) shown++;
     });
-    cell.appendChild(panel);
-    tbody.appendChild(editRow);
+    empty.hidden = shown > 0;
+  });
+}
 
-    // a POS machine's owner list depends on the owner type, here too
-    if (kind === 'pos'){
-      var typeSel = qs('[data-k="ownerType"]', grid);
-      function ownerOptions_(){
-        var list = typeSel.value === 'store' ? (meta.stores||[]) : (meta.cars||[]);
-        var cur = qs('[data-k="ownerId"]', grid);
-        var sel2 = el('<select data-k="ownerId">' + list.map(function(x){
-          return '<option value="'+x.id+'"'+(String(item.ownerId)===String(x.id)?' selected':'')+'>'+esc((x.name||x.label)+' — '+locationName(x.locationId))+'</option>';
-        }).join('') + '</select>');
-        cur.parentNode.replaceChild(sel2, cur);
-      }
-      typeSel.addEventListener('change', ownerOptions_);
-      ownerOptions_();
-    }
+// ---------------- record profile ----------------
+// Everything a record is linked to, grouped, each entry openable.
+function relationsOf_(kind, r){
+  var meta = state.meta || {};
+  var groups = [];
+  function grp(label, items){ if (items.length) groups.push({ label: label, items: items }); }
+  function one(k, id){ var x = recordOf_(k, id); return x ? [{ kind: k, id: x.id, title: recordTitle_(k, x), sub: k === 'user' ? roleLabel(x.role) : '' }] : []; }
+  function many(k, list){ return list.map(function(x){ return { kind: k, id: x.id, title: recordTitle_(k, x), sub: k === 'user' ? roleLabel(x.role) : '' }; }); }
+  var stores = meta.stores || [], cars = meta.cars || [], pos = meta.pos || [], locs = meta.locations || [], clusters = meta.clusters || [];
+  function posOf(ownerType, ids){ return pos.filter(function(p){ return p.ownerType === ownerType && ids.indexOf(p.ownerId) >= 0; }); }
+  if (kind === 'location'){
+    var ls = stores.filter(function(x){ return x.locationId === r.id; }), lc = cars.filter(function(x){ return x.locationId === r.id; });
+    grp(t('pf_kindCluster'), one('cluster', r.clusterId));
+    grp(t('pf_kindZone'), one('zone', r.zoneId));
+    grp(t('admin_stores'), many('store', ls));
+    grp(t('admin_cars'), many('car', lc));
+    grp(t('admin_pos'), many('pos', posOf('store', ls.map(function(x){ return x.id; })).concat(posOf('car', lc.map(function(x){ return x.id; })))));
+    var people = [];
+    ls.forEach(function(x){ if (x.storeManagerUserId) people = people.concat(one('user', x.storeManagerUserId)); });
+    lc.forEach(function(x){ if (x.driverUserId) people = people.concat(one('user', x.driverUserId)); });
+    grp(t('pf_people'), people);
+  } else if (kind === 'cluster'){
+    grp(t('admin_clusterManager'), one('user', r.clusterManagerUserId));
+    grp(t('admin_collector'), one('user', r.collectorUserId));
+    grp(t('admin_locations'), many('location', locs.filter(function(l){ return l.clusterId === r.id; })));
+  } else if (kind === 'zone'){
+    grp(t('admin_locations'), many('location', locs.filter(function(l){ return l.zoneId === r.id; })));
+  } else if (kind === 'store' || kind === 'car'){
+    var loc = byId(locs, r.locationId);
+    grp(t('pf_kindLocation'), one('location', r.locationId));
+    if (loc) grp(t('pf_kindCluster'), one('cluster', loc.clusterId));
+    grp(t(kind === 'store' ? 'admin_manager' : 'admin_driver'), one('user', kind === 'store' ? r.storeManagerUserId : r.driverUserId));
+    grp(t('admin_pos'), many('pos', posOf(kind, [r.id])));
+  } else if (kind === 'pos'){
+    grp(t(r.ownerType === 'store' ? 'pf_kindStore' : 'pf_kindCar'), one(r.ownerType === 'store' ? 'store' : 'car', r.ownerId));
+    grp(t('pf_kindLocation'), one('location', posOwnerLocationId_(r)));
+    grp(t('admin_assignedDriver'), one('user', r.assignedUserId));
+  } else if (kind === 'user'){
+    grp(t('pf_managesArea'), many('cluster', clusters.filter(function(c){ return c.clusterManagerUserId === r.id; })));
+    grp(t('pf_collectsArea'), many('cluster', clusters.filter(function(c){ return c.collectorUserId === r.id; })));
+    grp(t('admin_stores'), many('store', stores.filter(function(x){ return x.storeManagerUserId === r.id; })));
+    grp(t('admin_cars'), many('car', cars.filter(function(x){ return x.driverUserId === r.id; })));
+    grp(t('admin_pos'), many('pos', pos.filter(function(x){ return x.assignedUserId === r.id; })));
+  }
+  return groups;
+}
+// The sales-report filter that selects a record's own activity.
+function activityFilter_(kind, r){
+  if (kind === 'location') return { locationId: r.id };
+  if (kind === 'cluster') return { clusterId: r.id };
+  if (kind === 'zone') return { zoneId: r.id };
+  if (kind === 'store' || kind === 'car' || kind === 'pos') return { sourceType: kind, sourceId: r.id };
+  if (kind === 'product') return { productId: r.id };
+  if (kind === 'user') return r.role === 'driver' ? { driverUserId: r.id } : { enteredBy: r.id };
+  if (kind === 'income_item' || kind === 'expense_item') return {};
+  return null;
+}
+var AUDIT_LABELS_ = { admin_invite_user:'pf_auInvite', admin_resend_invite:'pf_auResend', admin_reset_password:'pf_auReset',
+  admin_update_user:'pf_auUpdateUser', invite_accepted:'pf_auAccepted', change_password:'pf_auChangePw', login:'pf_auLogin' };
+function auditLabel_(action){
+  if (AUDIT_LABELS_[action]) return t(AUDIT_LABELS_[action]);
+  if (/^admin_save_/.test(action)) return t('pf_auSaved');
+  if (/^admin_delete_/.test(action)) return t('pf_auDeleted');
+  return action;
+}
 
-    editBtn.addEventListener('click', function(){ editRow.hidden = !editRow.hidden; });
-    qs('.eeCancel', panel).addEventListener('click', function(){ editRow.hidden = true; });
-    qs('.eeSave', panel).addEventListener('click', function(){
-      var data2 = {};
-      spec.fields.forEach(function(f){ data2[f.k] = entityFieldValue_(f, qs('[data-k="'+f.k+'"]', grid)); });
-      api('adminSaveEntity', { kind: kind, id: item.id, data: data2 }).then(function(res){
-        if (!res.ok){ qs('.eeMsg', panel).innerHTML = '<div class="msg err">'+esc(errMsg_(res))+'</div>'; return; }
-        refreshMetaThen(function(){ renderAdmin(qs('#screenBody')); }, res);
+function renderAdminProfile(content, kind, id){
+  var meta = state.meta || {};
+  var r = recordOf_(kind, id);
+  var listTitle = t('admin_' + KIND_TAB_[kind]);
+  var back = el('<button type="button" class="pf-back">'+icon_('back')+'<span>'+esc(t('pf_backTo').replace('{x}', listTitle))+'</span></button>');
+  back.addEventListener('click', function(){ adminProfile = null; render(); });
+  content.appendChild(back);
+  if (!r){ content.appendChild(el('<div class="msg err">'+esc(t('pf_notFound'))+'</div>')); return; }
+
+  // ---- hero ----
+  var off = r.active === false;
+  var sub = [];
+  if (kind === 'user') sub = [roleLabel(r.role), r.email || ''];
+  if (kind === 'store' || kind === 'car') sub.push(locationName(r.locationId));
+  if (kind === 'pos') sub.push(posOwnerName_(r) + ' — ' + locationName(posOwnerLocationId_(r)));
+  if (kind === 'location' && r.clusterId) sub.push(clusterName(r.clusterId));
+  var st = kind === 'user' ? (r.status || (r.active ? 'active' : 'disabled')) : null;
+  var hero = el('<div class="pf-hero">' +
+    '<span class="pf-ic">'+(kind === 'user' ? esc(initials_(r.name)) : icon_(KIND_ICON_[kind]))+'</span>' +
+    '<div class="pf-ht"><span class="pf-kind">'+esc(t(KIND_LABEL_[kind]))+'</span><b>'+esc(recordTitle_(kind, r))+'</b>' +
+      '<span class="pf-sub">'+esc(sub.filter(Boolean).join(' · '))+'</span></div>' +
+    '<div class="pf-badges">' +
+      (st ? '<span class="us-badge '+st+'">'+esc(t('us_'+st))+'</span>' : '<span class="us-badge '+(off?'disabled':'active')+'">'+esc(off ? t('org_disabled') : t('admin_active'))+'</span>') +
+      (kind === 'user' && r.lastLoginAt ? '<span class="pf-meta">'+esc(t('us_lastLogin'))+': <bdi dir="ltr">'+esc(fmtStamp_(r.lastLoginAt))+'</bdi></span>' : '') +
+    '</div></div>');
+  content.appendChild(hero);
+
+  var gridWrap = el('<div class="pf-grid"></div>');
+  content.appendChild(gridWrap);
+
+  // ---- details, editable in place ----
+  var details = el('<div class="card pf-card"><h2>'+icon_('pencilEdit')+esc(t('pf_details'))+'</h2><div class="pf-form"></div>' +
+    '<div class="row pf-actions"><button type="button" class="btn pf-save">'+esc(t('save'))+'</button></div><div class="pf-msg"></div></div>');
+  gridWrap.appendChild(details);
+  var formBox = qs('.pf-form', details), getValues;
+  if (kind === 'user'){
+    var roles = ['admin','finance','accountant','operations_manager','deputy_operations_manager','cluster_manager','store_manager','collector','driver'];
+    var langOpts = [['ar','العربية'],['en','English'],['ur','اردو']];
+    formBox.appendChild(el('<div class="grid">' +
+      '<div class="field"><label>'+esc(t('admin_name'))+'</label><input class="ueName" value="'+esc(r.name||'')+'"></div>' +
+      '<div class="field"><label>'+esc(t('email'))+'</label><input class="ueEmail" type="email" dir="ltr" value="'+esc(r.email||'')+'"></div>' +
+      '<div class="field"><label>'+esc(t('admin_role'))+'</label><select class="ueRole">'+roles.map(function(x){ return '<option value="'+x+'"'+(x===r.role?' selected':'')+'>'+esc(roleLabel(x))+'</option>'; }).join('')+'</select></div>' +
+      '<div class="field"><label>'+esc(t('language'))+'</label><select class="ueLang">'+langOpts.map(function(l){ return '<option value="'+l[0]+'"'+(l[0]===(r.language||'ar')?' selected':'')+'>'+l[1]+'</option>'; }).join('')+'</select></div>' +
+      '<div class="field"><label>'+esc(t('admin_iqamaId'))+'</label><input class="ueIqamaId" value="'+esc(r.iqamaId||'')+'"></div>' +
+      '<div class="field field-check"><label>'+esc(t('admin_active'))+'</label><input type="checkbox" class="ueActive" style="width:18px;height:18px;"'+(r.active!==false?' checked':'')+'></div>' +
+    '</div>'));
+    getValues = function(){ return {
+      name: qs('.ueName', formBox).value.trim(), email: qs('.ueEmail', formBox).value.trim(), role: qs('.ueRole', formBox).value,
+      language: qs('.ueLang', formBox).value, iqamaId: qs('.ueIqamaId', formBox).value.trim(), active: qs('.ueActive', formBox).checked
+    }; };
+    // the invitation / password button belongs on the person's page too
+    var pending = st === 'invited' || st === 'invite_expired';
+    var mailBtn = el('<button type="button" class="btn secondary">'+esc(t(pending ? 'us_resend' : 'admin_resetPw'))+'</button>');
+    qs('.pf-actions', details).appendChild(mailBtn);
+    mailBtn.addEventListener('click', function(){
+      mailBtn.disabled = true;
+      api(pending ? 'adminResendInvite' : 'adminResetPassword', { id: r.id, appUrl: appUrl_() }).then(function(res){
+        mailBtn.disabled = false;
+        qs('.pf-msg', details).innerHTML = res.ok
+          ? '<div class="msg ok">'+esc(pending ? t('us_resent') : t('ok_saved'))+'</div>' + (res.inviteUrl ? '<div class="il-u" style="margin-top:6px;"><bdi dir="ltr">'+esc(res.inviteUrl)+'</bdi></div>' : '')
+          : '<div class="msg err">'+esc(errMsg_(res))+'</div>';
       });
     });
+  } else {
+    var form = entityForm_(kind, r);
+    formBox.appendChild(form.node);
+    getValues = form.values;
+    var delBtn = el('<button type="button" class="btn danger">'+esc(t('admin_delete'))+'</button>');
+    qs('.pf-actions', details).appendChild(delBtn);
+    delBtn.addEventListener('click', function(){
+      if (!confirm(t('confirm_delete'))) return;
+      api('adminDeleteEntity', { kind: kind, id: r.id }).then(function(res){
+        if (!res.ok){ qs('.pf-msg', details).innerHTML = '<div class="msg err">'+esc(errMsg_(res))+'</div>'; return; }
+        adminProfile = null;
+        refreshMetaThen(function(){ render(); }, res);
+      });
+    });
+  }
+  qs('.pf-save', details).addEventListener('click', function(){
+    var btn = qs('.pf-save', details); btn.disabled = true;
+    var call = kind === 'user' ? api('adminUpdateUser', { id: r.id, data: getValues() }) : api('adminSaveEntity', { kind: kind, id: r.id, data: getValues() });
+    call.then(function(res){
+      btn.disabled = false;
+      if (!res.ok){ qs('.pf-msg', details).innerHTML = '<div class="msg err">'+esc(errMsg_(res))+'</div>'; return; }
+      toast('ok_saved', 'ok');
+      refreshMetaThen(function(){ render(); }, res);
+    });
+  });
+
+  // ---- links ----
+  var rel = relationsOf_(kind, r);
+  var links = el('<div class="card pf-card"><h2>'+icon_('layers')+esc(t('pf_links'))+'</h2><div class="pf-rel"></div></div>');
+  gridWrap.appendChild(links);
+  var relBox = qs('.pf-rel', links);
+  if (!rel.length) relBox.appendChild(el('<div class="muted pf-none">'+esc(t('pf_noLinks'))+'</div>'));
+  rel.forEach(function(g){
+    var row = el('<div class="pf-relg"><div class="pf-rell">'+esc(g.label)+' <em class="num">'+g.items.length+'</em></div><div class="pf-chips"></div></div>');
+    g.items.forEach(function(it){
+      var c = el('<button type="button" class="pf-chip"><span class="pf-cic">'+(it.kind==='user' ? esc(initials_(it.title)) : icon_(KIND_ICON_[it.kind]))+'</span>' +
+        '<span class="pf-ct"><b>'+esc(it.title)+'</b>'+(it.sub ? '<i>'+esc(it.sub)+'</i>' : '')+'</span></button>');
+      c.addEventListener('click', function(){ openProfile_(it.kind, it.id); });
+      qs('.pf-chips', row).appendChild(c);
+    });
+    relBox.appendChild(row);
+  });
+
+  // ---- activity ----
+  var filter = activityFilter_(kind, r);
+  if (filter){
+    var act = el('<div class="card pf-card pf-wide"><h2>'+icon_('report')+esc(t('pf_activity'))+'</h2><div class="pf-act"><div class="muted">'+esc(t('loading'))+'</div></div></div>');
+    content.appendChild(act);
+    api('getSalesReport', filter, { silent: true }).then(function(res){
+      var box = qs('.pf-act', act);
+      if (!res.ok){ box.innerHTML = '<div class="msg err">'+esc(errMsg_(res))+'</div>'; return; }
+      var entries = res.entries || [];
+      var tiles;
+      if (kind === 'income_item' || kind === 'expense_item'){
+        var amtKey = kind === 'income_item' ? 'otherCash' : 'expenseAmount', idKey = kind === 'income_item' ? 'otherCashItemId' : 'expenseItemId';
+        entries = entries.filter(function(e){ return e[idKey] === r.id && Number(e[amtKey]||0) > 0; });
+        var sum = entries.reduce(function(a2, e){ return a2 + Number(e[amtKey]||0); }, 0);
+        tiles = [[t('pf_entries'), entries.length], [t('pf_amount'), money(sum)]];
+      } else {
+        var tot = res.totals || {};
+        var sales = entries.reduce(function(a2, e){ return a2 + Number(e.cashSales||0) + Number(e.posSales||0); }, 0);
+        tiles = [[t('pf_entries'), entries.length], [t('pf_sales'), money(sales)], [t('entry_netOwed'), money(tot.netCashOwed||0)]];
+      }
+      var recent = entries.slice().sort(function(x, y){ return String(y.date).localeCompare(String(x.date)); }).slice(0, 8);
+      box.innerHTML = '<div class="pf-tiles">' + tiles.map(function(x){ return '<div class="pf-tile"><span>'+esc(x[0])+'</span><b class="num">'+esc(String(x[1]))+'</b></div>'; }).join('') + '</div>' +
+        (recent.length
+          ? '<div class="tbl-scroll"><table><thead><tr><th>'+esc(t('entry_date'))+'</th><th>'+esc(t('entry_sourceType'))+'</th><th>'+esc(t('report_location'))+'</th><th>'+esc(t('pf_sales'))+'</th><th>'+esc(t('us_status'))+'</th></tr></thead><tbody>' +
+            recent.map(function(e){
+              return '<tr><td><bdi dir="ltr">'+esc(e.date)+'</bdi></td><td>'+esc(t('entry_source_'+e.sourceType))+'</td><td>'+esc(locationName(e.locationId))+'</td>' +
+                '<td class="num">'+money(Number(e.cashSales||0)+Number(e.posSales||0))+'</td><td>'+esc(e.consumedBy ? t('pf_handed') : t('pf_open'))+'</td></tr>';
+            }).join('') + '</tbody></table></div>'
+          : '<div class="muted pf-none">'+esc(t('pf_noActivity'))+'</div>');
+    });
+  }
+
+  // ---- history ----
+  var hist = el('<div class="card pf-card pf-wide"><h2>'+icon_('clock')+esc(t('pf_history'))+'</h2><div class="pf-hist"><div class="muted">'+esc(t('loading'))+'</div></div></div>');
+  content.appendChild(hist);
+  api('listAudit', { limit: 1000 }, { silent: true }).then(function(res){
+    var box = qs('.pf-hist', hist);
+    if (!res.ok){ box.innerHTML = '<div class="msg err">'+esc(errMsg_(res))+'</div>'; return; }
+    var rows = (res.audit || []).filter(function(a2){ return a2.detail === r.id || (kind === 'user' && a2.userId === r.id && /^(login|invite_accepted|change_password)$/.test(a2.action)); }).slice(0, 20);
+    box.innerHTML = rows.length
+      ? '<ul class="pf-tl">' + rows.map(function(a2){
+          return '<li><span class="pf-tld"></span><div><b>'+esc(auditLabel_(a2.action))+'</b><span>'+esc(userName(a2.userId))+' · <bdi dir="ltr">'+esc(fmtStamp_(a2.at))+'</bdi></span></div></li>';
+        }).join('') + '</ul>'
+      : '<div class="muted pf-none">'+esc(t('pf_noHistory'))+'</div>';
   });
 }
 
