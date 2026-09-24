@@ -68,7 +68,9 @@ var ahmed = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Ah
 var mazen = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Mazen (Collector)', email: 'mazen@bestgas.sa', role: 'collector' } }).user;
 
 var northArea = call({ action: 'adminSaveEntity', token: adminTok, kind: 'cluster', data: { name: 'North Area', clusterManagerUserId: muzafer.id, collectorUserId: mazen.id } }).entity;
-var southArea = call({ action: 'adminSaveEntity', token: adminTok, kind: 'cluster', data: { name: 'South Area', clusterManagerUserId: muntasir.id, collectorUserId: mazen.id } }).entity;
+// one person, one area: the South gets its own collector
+var rami = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Rami (Collector)', email: 'rami@bestgas.sa', role: 'collector' } }).user;
+var southArea = call({ action: 'adminSaveEntity', token: adminTok, kind: 'cluster', data: { name: 'South Area', clusterManagerUserId: muntasir.id, collectorUserId: rami.id } }).entity;
 
 // city, location name, clusterId — one store + one car + one pos per location
 var multiLocations = [
@@ -114,7 +116,8 @@ console.log('-- multi-area-manager scenario (North Area / South Area, 3 location
 console.log('muzafer@bestgas.sa (area mgr, North) / temp: ' + lastInviteFor('muzafer@bestgas.sa'));
 console.log('muntasir@bestgas.sa (area mgr, South) / temp: ' + lastInviteFor('muntasir@bestgas.sa'));
 console.log('ahmed@bestgas.sa (deputy ops mgr)     / temp: ' + lastInviteFor('ahmed@bestgas.sa'));
-console.log('mazen@bestgas.sa (collector, both)    / temp: ' + lastInviteFor('mazen@bestgas.sa'));
+console.log('mazen@bestgas.sa (collector, North)  / temp: ' + lastInviteFor('mazen@bestgas.sa'));
+console.log('rami@bestgas.sa (collector, South)   / temp: ' + lastInviteFor('rami@bestgas.sa'));
 console.log('');
 
 var ROOT = path.join(__dirname, '..');

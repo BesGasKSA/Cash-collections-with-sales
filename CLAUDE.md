@@ -75,8 +75,29 @@ missing people. The home screen's **منطقتي / فرعي** panel
 (`myOrgPanel_`) shows the area manager their area, collector, branches, and
 each branch's manager, cars/drivers and POS/holders. A branch manager sees
 the same panel for their own branch, with the area manager above it. Any
-missing link shows in red. Admin → Master data → **سلامة الربط** (`chainGaps_` / `renderAdminChain`) lists every gap company-wide: missing people, branches with no area or store, disabled users still assigned, and people in a chain role placed nowhere. Each gap has a button to the tab that fixes it, and the tab shows the gap count as a badge. Every master-data row also has an edit panel now
-(`entityFieldInput_`), built from the same field spec as the add form.
+missing link shows in red. Admin → Master data → **سلامة الربط** (`chainGaps_` / `renderAdminChain`) lists every gap company-wide: missing people, branches with no area or store, disabled users still assigned, and people in a chain role placed nowhere. Each gap has a button to the tab that fixes it, and the tab shows the gap count as a badge. **One person, one area (2026-09-24).** Nobody may be area manager or
+collector on two areas at once, admins standing in included, and being
+manager on one and collector on another counts too (`user_in_other_area`,
+checked in `validateEntity_` against every other cluster row). The area
+pickers stop offering anyone already on another area, and chain health lists
+legacy rows that break the rule (`gap_multiArea`).
+
+**Every master-data type is a screen, and every record has a profile
+(2026-09-24).** `renderAdminEntity` is a type screen: count, search, an add
+form that stays shut until asked for, and columns that resolve ids to names
+(`fieldDisplay_`). Clicking a row, or a user, opens `renderAdminProfile`
+(`adminProfile = {kind,id}`, `openProfile_`). The profile shows the record's
+details editable in place (`entityForm_`, built through `entityFieldInput_`),
+then its links as chips that open their own profiles (`relationsOf_`), then
+its activity from `getSalesReport` (`activityFilter_`), then its change
+history from the audit trail (rows whose `detail` is the record's id).
+Products and collection/expense items gained an `active` switch. An inactive
+one drops out of the entry screen's lists. **Trap, hit once:**
+`entityFieldInput_` was called by the old edit panel but never defined (the
+patch that added it failed half-way and wrote nothing), so every
+master-data tab threw on its first row. Syntax checks cannot catch a missing
+function, and `tests/run.js` never renders the client. Open every admin tab
+in the browser after touching this code.
 
 A POS machine's `ownerType`/`ownerId` points at either a store or a car —
 a single car can carry more than one POS terminal, and a branch usually
@@ -935,6 +956,18 @@ action via a temporary diagnostic function (same pattern as the password-
 reset trap in "Redeploying" below — inject, run once, remove, redeploy
 clean), or (b) ask the user to add a permission rule allowing it, per the
 denial message. Don't retry the same edit hoping it clears.
+
+What exists instead is **archive-by-rename**
+(`actionAdminArchiveTransactions_`, Admin → Settings → start a fresh test
+round). Each movement tab (`TRANSACTIONAL_SHEETS_`) is renamed
+`<name>_archive_<yyyy-MM-dd_HHmmss>`, its version is bumped so no cached copy
+survives, and `sheet_()` recreates it empty on the next read. Users and
+master data are untouched. The name gets a `_2`, `_3`… suffix if it is
+already taken. Before 2026-09-24 the stamp had minutes only, so a second
+round started in the same minute (the audit tab always holds the first
+round's own line) hit Google Sheets' duplicate-name error half-way through.
+The test stub's `setName` now throws on a duplicate like the real thing,
+because it used to overwrite silently and hid the bug.
 
 ### 7. A single-class CSS rule silently loses to a same-specificity rule that appears later in the file
 

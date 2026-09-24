@@ -411,7 +411,12 @@ var financeTok = acceptInvite('fatima@bestgas.sa');
 // leftover unconsumed entries, so the deposit amount here is known exactly
 // rather than inherited from whatever else this shared cluster is still
 // holding by this point in the file.
-var reconCluster = call({ action: 'adminSaveEntity', token: adminTok, kind: 'cluster', data: { name: 'ReconCluster', clusterManagerUserId: sara.id, collectorUserId: musa.id } }).entity;
+// its own people too: nobody may serve two areas
+var reconMgr = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Recon Area Manager', email: 'reconmgr.fx@bestgas.sa', role: 'cluster_manager' } }).user;
+var reconCol = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Recon Collector', email: 'reconcol.fx@bestgas.sa', role: 'collector' } }).user;
+var reconMgrTok = acceptInvite('reconmgr.fx@bestgas.sa');
+var reconColTok = acceptInvite('reconcol.fx@bestgas.sa');
+var reconCluster = call({ action: 'adminSaveEntity', token: adminTok, kind: 'cluster', data: { name: 'ReconCluster', clusterManagerUserId: reconMgr.id, collectorUserId: reconCol.id } }).entity;
 var reconLocation = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: 'Jeddah', name: 'Recon Location', clusterId: reconCluster.id } }).entity;
 var mgr2 = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Recon Branch Manager', email: 'mgr2.fx@bestgas.sa', role: 'store_manager' } }).user;
 var reconStore = call({ action: 'adminSaveEntity', token: adminTok, kind: 'store', data: { locationId: reconLocation.id, name: 'Recon Branch', storeManagerUserId: mgr2.id } }).entity;
@@ -419,10 +424,10 @@ var reconEntry = call({ action: 'createDailyEntry', token: adminTok, date: '2026
 check(reconEntry.ok, 'entry for reconciliation scenario');
 var reconHandoff1 = call({ action: 'createHandoff', token: adminTok, kind: 'location_to_cluster', locationId: reconLocation.id });
 close(reconHandoff1.handoff.amount, 555, 'fresh location, so the handoff amount is exactly the one entry');
-call({ action: 'confirmHandoff', token: saraTok, id: reconHandoff1.handoff.id });
-var reconHandoff2 = call({ action: 'createHandoff', token: saraTok, kind: 'cluster_to_collector', clusterId: reconCluster.id });
-call({ action: 'confirmHandoff', token: musaTok, id: reconHandoff2.handoff.id });
-var reconDeposit = call({ action: 'recordDeposit', token: musaTok, bankReference: 'BANKREF-555' });
+call({ action: 'confirmHandoff', token: reconMgrTok, id: reconHandoff1.handoff.id });
+var reconHandoff2 = call({ action: 'createHandoff', token: reconMgrTok, kind: 'cluster_to_collector', clusterId: reconCluster.id });
+call({ action: 'confirmHandoff', token: reconColTok, id: reconHandoff2.handoff.id });
+var reconDeposit = call({ action: 'recordDeposit', token: reconColTok, bankReference: 'BANKREF-555' });
 check(reconDeposit.ok, 'deposit recorded for reconciliation scenario');
 close(reconDeposit.handoff.amount, 555, 'deposit amount is exactly the entry amount (store-only, no VAT/delivery)');
 
@@ -574,7 +579,8 @@ console.log('--- second approval: four eyes means two different people, even whe
 // declaring and approving their own submission) must still not be able to
 // also acknowledge their own second-approval sign-off; that has to be a
 // different person, exactly like resolving a dispute you're a party to.
-var selfAckCluster = call({ action: 'adminSaveEntity', token: adminTok, kind: 'cluster', data: { name: 'Self-Ack Cluster', clusterManagerUserId: admin.id, collectorUserId: musa.id } }).entity;
+var selfAckCollector = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Self-Ack Collector', email: 'selfackcol.fx@bestgas.sa', role: 'collector' } }).user;
+var selfAckCluster = call({ action: 'adminSaveEntity', token: adminTok, kind: 'cluster', data: { name: 'Self-Ack Cluster', clusterManagerUserId: admin.id, collectorUserId: selfAckCollector.id } }).entity;
 var selfAckManager = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Self-Ack Store Manager', email: 'selfack@bestgas.sa', role: 'store_manager' } }).user;
 var selfAckManagerTok = acceptInvite('selfack@bestgas.sa');
 var selfAckLocation = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: 'Riyadh', name: 'Self-Ack Test', clusterId: selfAckCluster.id } }).entity;
@@ -1500,6 +1506,17 @@ check(ctx.readSheet(movedSheet).length === arch.archived[0].rows, 'the archived 
 check(ctx.readSheet(SHEETS.AUDIT).some(function (a) { return a.action === 'admin_archive_transactions'; }),
   'and the fresh audit trail opens with the archive itself');
 
+// A second round started within the same minute: the audit tab always holds
+// the first archive's own line, so its dated name was about to be reused.
+call({ action: 'createDailyEntry', token: aliTok, date: '2026-09-28', sourceType: 'store', sourceId: store.entity.id, cashSales: 10 });
+var arch2 = call({ action: 'adminArchiveTransactions', token: adminTok, confirm: 'ARCHIVE' });
+check(arch2.ok && arch2.archived.length >= 2, 'a second fresh start straight after the first still works');
+var names2 = arch2.archived.map(function (a) { return a.archivedAs; });
+check(names2.every(function (n) { return arch.archived.map(function (a) { return a.archivedAs; }).indexOf(n) < 0; }),
+  'and never reuses (or overwrites) the first round\'s archive tab names');
+check(ctx.readSheet(movedSheet).length === arch.archived[0].rows, 'the first round\'s archive is untouched by the second');
+check(call({ action: 'listEntries', token: adminTok }).entries.length === 0, 'and the system is empty again');
+
 console.log('--- every link in the chain must name its person ---');
 function saveErr(kind, data, id) { return call({ action: 'adminSaveEntity', token: adminTok, kind: kind, id: id, data: data }).error; }
 check(saveErr('store', { locationId: location.entity.id, name: 'Nobody Branch' }) === 'manager_required',
@@ -1544,6 +1561,18 @@ check(byMove.ok && byMove.entries.length === 3 && byMove.entries.every(function 
   'the report filters on movement type separately from payment method');
 var byPay = call({ action: 'getSalesReport', token: adminTok, dateFrom: '2021-03-01', dateTo: '2021-03-02', paymentMethod: 'cash', movementType: 'delivery' });
 check(byPay.ok && byPay.entries.length === 2, 'and the two filters combine (cash sales that also carry a delivery fee)');
+
+console.log('--- one person, one area ---');
+var dupMgr = call({ action: 'adminSaveEntity', token: adminTok, kind: 'cluster', data: { name: 'Twin Area', clusterManagerUserId: sara.id, collectorUserId: farCollector.id } });
+check(!dupMgr.ok && dupMgr.error === 'user_in_other_area', 'an area manager already running an area cannot be given a second one');
+var soloMgr = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Solo Area Manager', email: 'solo.fx@bestgas.sa', role: 'cluster_manager' } }).user;
+var dupCol = call({ action: 'adminSaveEntity', token: adminTok, kind: 'cluster', data: { name: 'Twin Area', clusterManagerUserId: soloMgr.id, collectorUserId: musa.id } });
+check(!dupCol.ok && dupCol.error === 'user_in_other_area', 'nor can a collector who already collects for another area');
+var soloCol = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Solo Collector', email: 'solocol.fx@bestgas.sa', role: 'collector' } }).user;
+var twin = call({ action: 'adminSaveEntity', token: adminTok, kind: 'cluster', data: { name: 'Twin Area', clusterManagerUserId: soloMgr.id, collectorUserId: soloCol.id } });
+check(twin.ok, 'two people nobody else uses make a valid area');
+check(call({ action: 'adminSaveEntity', token: adminTok, kind: 'cluster', id: twin.entity.id, data: { name: 'Twin Area (renamed)' } }).ok,
+  'editing an area keeps its own people — it is not counted against itself');
 
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);

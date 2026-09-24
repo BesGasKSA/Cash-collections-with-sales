@@ -439,6 +439,14 @@ function validateEntity_(kind, d) {
     }
     if (!userHasRole_(d.clusterManagerUserId, 'cluster_manager')) return 'wrong_role';
     if (!userHasRole_(d.collectorUserId, 'collector')) return 'wrong_role';
+    // One person, one area: nobody manages or collects for two areas at
+    // once, admins standing in included. The same person as manager here and
+    // collector there counts too.
+    var mine = [d.clusterManagerUserId, d.collectorUserId];
+    var taken = readSheet(SHEETS.CLUSTERS).some(function (c) {
+      return c.id !== d.id && (mine.indexOf(c.clusterManagerUserId) >= 0 || mine.indexOf(c.collectorUserId) >= 0);
+    });
+    if (taken) return 'user_in_other_area';
   } else if (kind === 'zone') {
     if (!d.city || !d.name) return 'invalid_input';
   } else if (kind === 'product') {
@@ -577,7 +585,7 @@ function actionAdminArchiveTransactions_(req, user) {
   if (String(req.confirm || '') !== 'ARCHIVE') return { ok: false, error: 'confirm_required' };
 
   var ss = spreadsheet_();
-  var stamp = Utilities.formatDate(new Date(), 'Asia/Riyadh', 'yyyy-MM-dd_HHmm');
+  var stamp = Utilities.formatDate(new Date(), 'Asia/Riyadh', 'yyyy-MM-dd_HHmmss');
   var archived = [];
   for (var i = 0; i < TRANSACTIONAL_SHEETS_.length; i++) {
     var name = TRANSACTIONAL_SHEETS_[i];
@@ -585,8 +593,13 @@ function actionAdminArchiveTransactions_(req, user) {
     if (!sh) continue;
     var rows = Math.max(0, sh.getLastRow() - 1);
     if (!rows) continue;                       // nothing in it, leave it alone
-    sh.setName(name + '_archive_' + stamp);
-    archived.push({ sheet: name, rows: rows, archivedAs: name + '_archive_' + stamp });
+    // Google Sheets refuses a duplicate tab name, and a second round started
+    // straight after the first (the audit tab always holds the first round's
+    // own line) would otherwise reuse this one and fail half-way through.
+    var target = name + '_archive_' + stamp, n = 2;
+    while (ss.getSheetByName(target)) target = name + '_archive_' + stamp + '_' + (n++);
+    sh.setName(target);
+    archived.push({ sheet: name, rows: rows, archivedAs: target });
     delete exec_().sheets[name];
     bumpVersion_(name);                        // every cached copy is now stale
   }

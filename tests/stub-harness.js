@@ -43,7 +43,13 @@ function makeSheet(name, svcCalls, registry) {
     },
     getName: function () { return name; },
     // renaming a tab is how the app archives a round of movement
-    setName: function (n) { if (registry) { delete registry[name]; registry[n] = this; } name = n; return this; },
+    // Google Sheets refuses a second tab with the same name; so does the stub,
+    // or a clash would silently overwrite one tab with another here.
+    setName: function (n) {
+      if (registry && registry[n] && registry[n] !== this) throw new Error('A sheet with the name "' + n + '" already exists. Please enter another name.');
+      if (registry) { delete registry[name]; registry[n] = this; }
+      name = n; return this;
+    },
     appendRow: function (arr) { rows.push(arr.slice()); },
     deleteRow: function (r) { rows.splice(r - 1, 1); },
     _rows: rows
@@ -128,7 +134,8 @@ function buildContext() {
         .replace('MM', p(d.getMonth()+1))
         .replace('dd', p(d.getDate()))
         .replace('HH', p(d.getHours()))
-        .replace('mm', p(d.getMinutes()));
+        .replace('mm', p(d.getMinutes()))
+        .replace('ss', p(d.getSeconds()));
     },
     base64Encode: function (bytes) { return Buffer.from(bytes).toString('base64'); },
     base64Decode: function (str) { return Array.from(Buffer.from(str, 'base64')); },

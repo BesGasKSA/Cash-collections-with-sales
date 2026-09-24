@@ -1,6 +1,6 @@
 /**
- * ONE-OFF DEMO SEED — TWO area managers, BOTH in Riyadh city, one shared
- * collector. Zero transactions at seed time (the cycle is run live).
+ * ONE-OFF DEMO SEED — TWO area managers, BOTH in Riyadh city, one
+ * collector each. Zero transactions at seed time (the cycle is run live).
  * Every employee has an Iqama ID, every POS has a POS ID + POS Config,
  * area-bulk upload enabled.
  *
@@ -42,12 +42,14 @@ function lastInviteFor(email) {
   return null;
 }
 
-console.log('Seeding TWO-area-manager (both Riyadh, shared collector) demo scenario...');
+console.log('Seeding TWO-area-manager (both Riyadh, one collector each) demo scenario...');
 bootstrapAdmin('admin@bestgas.sa', 'Bootstrap#1');
 var adminTok = call({ action: 'login', email: 'admin@bestgas.sa', password: 'Bootstrap#1' }).token;
 
 var deputy = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Khalid (Deputy Operations Manager)', email: 'khalid@bestgas.sa', role: 'deputy_operations_manager' } }).user;
+// one person, one area: each area has its own collector
 var collector = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Yousef (Collector)', email: 'yousef@bestgas.sa', role: 'collector' } }).user;
+var collector2 = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Anas (Collector)', email: 'anas@bestgas.sa', role: 'collector' } }).user;
 
 var cylinderProduct = call({ action: 'adminSaveEntity', token: adminTok, kind: 'product', data: { name: 'LPG Cylinder 12kg', type: 'goods', active: true } }).entity;
 var deliveryProduct = call({ action: 'adminSaveEntity', token: adminTok, kind: 'product', data: { name: 'Delivery Fee', type: 'services', active: true } }).entity;
@@ -74,7 +76,7 @@ var AREAS = [
 var allLocRows = [];
 AREAS.forEach(function (area, ai) {
   var areaMgr = call({ action: 'adminCreateUser', token: adminTok, data: { name: area.areaMgrName, email: area.areaMgrEmail, role: 'cluster_manager' } }).user;
-  var cluster = call({ action: 'adminSaveEntity', token: adminTok, kind: 'cluster', data: { name: area.areaName, clusterManagerUserId: areaMgr.id, collectorUserId: collector.id } }).entity;
+  var cluster = call({ action: 'adminSaveEntity', token: adminTok, kind: 'cluster', data: { name: area.areaName, clusterManagerUserId: areaMgr.id, collectorUserId: (ai === 0 ? collector : collector2).id } }).entity;
   area.locs.forEach(function (row, i) {
     var name = row[0], mgrName = row[1], drvName = row[2], mgrIqama = row[3], drvIqama = row[4], posId = row[5];
     var idx = ai + '_' + i;
@@ -97,7 +99,8 @@ call({ action: 'adminSetConfig', token: adminTok, data: { areaManagerBulkUploadE
 console.log('\nSeeded (ZERO transactions). Sign in at http://localhost:' + PORT + '/ with API URL http://localhost:' + PORT + '/api\n');
 console.log('admin@bestgas.sa   / Bootstrap#1                     (mustChangePw: no)');
 console.log('khalid@bestgas.sa (deputy, both areas) / temp: ' + lastInviteFor('khalid@bestgas.sa'));
-console.log('yousef@bestgas.sa (collector, both areas) / temp: ' + lastInviteFor('yousef@bestgas.sa'));
+console.log('yousef@bestgas.sa (collector, North) / temp: ' + lastInviteFor('yousef@bestgas.sa'));
+console.log('anas@bestgas.sa (collector, South)   / temp: ' + lastInviteFor('anas@bestgas.sa'));
 allLocRows.forEach(function (r) {
   console.log(r.area + ' / ' + r.name + ':  ' + r.mgrEmail + ' temp=' + lastInviteFor(r.mgrEmail) + '   ' + r.drvEmail + ' temp=' + lastInviteFor(r.drvEmail));
 });
