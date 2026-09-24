@@ -1015,6 +1015,27 @@
   .invite-link .btn{padding:8px 14px;font-size:12.5px;}
   .invite-link a.btn{text-decoration:none;display:inline-flex;align-items:center;}
   .field label .req{color:var(--danger);margin-inline-start:3px;font-weight:800;}
+  /* ---- chain health ---- */
+  .tab-badge{display:inline-grid;place-items:center;min-width:19px;height:19px;padding:0 5px;margin-inline-start:6px;border-radius:999px;
+    background:var(--danger);color:#fff;font-size:11px;font-weight:800;line-height:1;vertical-align:1px;}
+  .chain-head{display:flex;align-items:center;gap:12px;}
+  .chain-ic{width:44px;height:44px;border-radius:13px;display:grid;place-items:center;flex:none;}
+  .chain-ic svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2.2;}
+  .chain-ic.ok{background:var(--green-pale);color:var(--green-dark);}
+  .chain-ic.bad{background:color-mix(in srgb, var(--danger) 10%, transparent);color:var(--danger);}
+  .chain-ht{display:flex;flex-direction:column;gap:3px;min-width:0;}
+  .chain-ht b{font-size:16px;font-weight:800;}
+  .chain-ht span{font-size:12.5px;color:var(--muted);line-height:1.5;}
+  .chain-counts{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 4px;}
+  .chain-counts span{display:inline-flex;align-items:baseline;gap:6px;padding:7px 12px;border-radius:999px;background:var(--bg);
+    border:1px solid var(--border-soft);font-size:12.5px;color:var(--muted);}
+  .chain-counts b{font-size:15px;color:var(--text);}
+  .chain-list{list-style:none;margin:12px 0 0;padding:0;display:flex;flex-direction:column;gap:6px;}
+  .chain-list li{display:flex;align-items:center;gap:10px;padding:9px 10px 9px 12px;border-radius:12px;
+    background:color-mix(in srgb, var(--danger) 5%, transparent);border:1px solid color-mix(in srgb, var(--danger) 16%, transparent);}
+  .chain-dot{width:8px;height:8px;border-radius:50%;background:var(--danger);flex:none;}
+  .chain-tx{flex:1;min-width:0;font-size:13.5px;font-weight:600;}
+  .chain-list .chain-fix{padding:7px 14px;font-size:12.5px;min-height:0;flex:none;}
   /* ---- my area / my branch ---- */
   .org{margin:0 0 20px;}
   .org-area{background:var(--card);border:1px solid var(--border-soft);border-radius:18px;padding:16px;margin-bottom:12px;
@@ -1309,7 +1330,7 @@ var L = {
     home_companyOutstanding:'إجمالي النقدية غير المودعة', home_openDisputes:'اعتراضات مفتوحة (الإدارة)',
     home_actionPending:'{n} تسليم بانتظار تأكيدك', home_actionDisputes:'{n} اعتراض يحتاج إلى حل',
     home_actionNone:'لا يوجد إجراء مطلوب الآن — كل شيء محدّث', home_actionCta:'عرض التسليمات ←',
-    entry_addDelivery:'+ إضافة بند توصيل', entry_deliveryAmount:'مبلغ رسوم التوصيل', entry_deliveryNote:'البيان', entry_deliveryNotePh:'مثال: توصيل لعميل حي النرجس', entry_addCredit:'+ إضافة بيع آجل', entry_creditAmount:'مبلغ البيع الآجل', entry_creditCustomer:'اسم العميل', entry_creditCustomerPh:'العميل المدين بهذا المبلغ', err_customerRequired:'اكتب اسم العميل لكل بيع آجل', report_movement:'نوع الحركة', report_allMovements:'كل الحركات', org_myArea:'منطقتي', org_myBranch:'فرعي', org_area:'المنطقة', org_branches:'فروع', org_cars:'السيارات والسائقون', org_pos:'أجهزة نقاط البيع', org_unassigned:'غير معيّن', org_gaps:'{n} غير معيّن', org_noArea:'لم تُسند إليك أي منطقة بعد — راجع مدير النظام', org_noBranch:'لم يُسند إليك أي فرع بعد — راجع مدير النظام', home_lastLogin:'آخر تسجيل دخول ناجح', home_firstLogin:'هذا أول تسجيل دخول لك', home_city:'الفرع',
+    entry_addDelivery:'+ إضافة بند توصيل', entry_deliveryAmount:'مبلغ رسوم التوصيل', entry_deliveryNote:'البيان', entry_deliveryNotePh:'مثال: توصيل لعميل حي النرجس', entry_addCredit:'+ إضافة بيع آجل', entry_creditAmount:'مبلغ البيع الآجل', entry_creditCustomer:'اسم العميل', entry_creditCustomerPh:'العميل المدين بهذا المبلغ', err_customerRequired:'اكتب اسم العميل لكل بيع آجل', report_movement:'نوع الحركة', report_allMovements:'كل الحركات', admin_chain:'سلامة الربط', chain_map:'خريطة المناطق والفروع', chain_ok:'كل الحلقات مرتبطة — لا توجد فجوات', chain_gaps:'{n} فجوة في دورة التحصيل تحتاج معالجة', chain_hint:'كل منطقة تحتاج مدير منطقة ومُحصّلاً، وكل فرع متجراً ومديراً، وكل سيارة سائقاً، وكل جهاز نقاط بيع حاملاً — وإلا تتوقف النقدية في الطريق.', chain_fix:'معالجة', chain_areas:'مناطق', chain_branches:'فروع', chain_stores:'متاجر', chain_cars:'سيارات', chain_pos:'أجهزة نقاط بيع', gap_areaManager:'المنطقة «{x}» بلا مدير منطقة', gap_areaCollector:'المنطقة «{x}» بلا مُحصّل', gap_branchArea:'الفرع «{x}» غير مرتبط بمنطقة', gap_branchStore:'الفرع «{x}» بلا متجر', gap_storeManager:'المتجر «{x}» بلا مدير فرع', gap_carDriver:'السيارة «{x}» بلا سائق', gap_posHolder:'جهاز نقاط البيع «{x}» بلا حامل', gap_disabled:'{who} معطّل لكنه ما زال مسنداً إلى «{x}»', gap_idle:'{who} ({x}) غير مسند إلى أي حلقة', org_disabled:'معطّل', org_myArea:'منطقتي', org_myBranch:'فرعي', org_area:'المنطقة', org_branches:'فروع', org_cars:'السيارات والسائقون', org_pos:'أجهزة نقاط البيع', org_unassigned:'غير معيّن', org_gaps:'{n} غير معيّن', org_noArea:'لم تُسند إليك أي منطقة بعد — راجع مدير النظام', org_noBranch:'لم يُسند إليك أي فرع بعد — راجع مدير النظام', home_lastLogin:'آخر تسجيل دخول ناجح', home_firstLogin:'هذا أول تسجيل دخول لك', home_city:'الفرع',
     home_hijriSuffix:'هـ',
     entry_new:'إدخال يومي جديد', entry_date:'التاريخ', entry_sourceType:'المصدر', entry_source_store:'الفرع',
     entry_source_car:'سيارة', entry_source_pos:'جهاز نقاط بيع', entry_cash:'المبيعات النقدية', entry_delivery:'رسوم التوصيل (بنك)',
@@ -1481,7 +1502,7 @@ var L = {
     home_companyOutstanding:'Total cash not yet deposited', home_openDisputes:'Open disputes (company-wide)',
     home_actionPending:'{n} handoff(s) awaiting your confirmation', home_actionDisputes:'{n} dispute(s) need resolving',
     home_actionNone:'Nothing needs your attention right now — you\'re all caught up', home_actionCta:'View handoffs →',
-    entry_addDelivery:'+ Add a delivery line', entry_deliveryAmount:'Delivery fee amount', entry_deliveryNote:'Description', entry_deliveryNotePh:'e.g. delivery to a customer in Al-Narjis', entry_addCredit:'+ Add a credit sale', entry_creditAmount:'Credit sale amount', entry_creditCustomer:'Customer name', entry_creditCustomerPh:'Who owes this amount', err_customerRequired:'Enter the customer name for every credit sale', report_movement:'Movement type', report_allMovements:'All movements', org_myArea:'My area', org_myBranch:'My branch', org_area:'Area', org_branches:'branches', org_cars:'Cars and drivers', org_pos:'POS machines', org_unassigned:'Unassigned', org_gaps:'{n} unassigned', org_noArea:'No area is assigned to you yet — contact the administrator', org_noBranch:'No branch is assigned to you yet — contact the administrator', home_lastLogin:'Last successful login', home_firstLogin:'This is your first login', home_city:'Location',
+    entry_addDelivery:'+ Add a delivery line', entry_deliveryAmount:'Delivery fee amount', entry_deliveryNote:'Description', entry_deliveryNotePh:'e.g. delivery to a customer in Al-Narjis', entry_addCredit:'+ Add a credit sale', entry_creditAmount:'Credit sale amount', entry_creditCustomer:'Customer name', entry_creditCustomerPh:'Who owes this amount', err_customerRequired:'Enter the customer name for every credit sale', report_movement:'Movement type', report_allMovements:'All movements', admin_chain:'Chain health', chain_map:'Areas and branches', chain_ok:'Every link is assigned — no gaps', chain_gaps:'{n} gaps in the collection chain need fixing', chain_hint:'Every area needs an area manager and a collector, every branch a store and a manager, every car a driver and every POS machine a holder — otherwise cash stops on the way.', chain_fix:'Fix', chain_areas:'areas', chain_branches:'branches', chain_stores:'stores', chain_cars:'cars', chain_pos:'POS machines', gap_areaManager:'Area “{x}” has no area manager', gap_areaCollector:'Area “{x}” has no collector', gap_branchArea:'Branch “{x}” is not linked to an area', gap_branchStore:'Branch “{x}” has no store', gap_storeManager:'Store “{x}” has no branch manager', gap_carDriver:'Car “{x}” has no driver', gap_posHolder:'POS machine “{x}” has no holder', gap_disabled:'{who} is disabled but still assigned to “{x}”', gap_idle:'{who} ({x}) is not assigned to any link', org_disabled:'Disabled', org_myArea:'My area', org_myBranch:'My branch', org_area:'Area', org_branches:'branches', org_cars:'Cars and drivers', org_pos:'POS machines', org_unassigned:'Unassigned', org_gaps:'{n} unassigned', org_noArea:'No area is assigned to you yet — contact the administrator', org_noBranch:'No branch is assigned to you yet — contact the administrator', home_lastLogin:'Last successful login', home_firstLogin:'This is your first login', home_city:'Location',
     home_hijriSuffix:'AH',
     entry_new:'New daily entry', entry_date:'Date', entry_sourceType:'Source', entry_source_store:'Store branch',
     entry_source_car:'Car', entry_source_pos:'POS machine', entry_cash:'Cash sales', entry_delivery:'Delivery fee (bank)',
@@ -1649,7 +1670,7 @@ var L = {
     home_companyOutstanding:'کل غیر جمع شدہ نقدی', home_openDisputes:'کھلے اعتراضات (پوری کمپنی)',
     home_actionPending:'{n} ترسیل آپ کی تصدیق کے منتظر ہیں', home_actionDisputes:'{n} اعتراضات کو حل کرنے کی ضرورت ہے',
     home_actionNone:'ابھی کوئی کارروائی درکار نہیں — سب کچھ مکمل ہے', home_actionCta:'ترسیل دیکھیں ←',
-    entry_addDelivery:'+ ڈلیوری لائن شامل کریں', entry_deliveryAmount:'ڈلیوری فیس کی رقم', entry_deliveryNote:'تفصیل', entry_deliveryNotePh:'مثلاً: گاہک کو ڈلیوری', entry_addCredit:'+ اُدھار فروخت شامل کریں', entry_creditAmount:'اُدھار فروخت کی رقم', entry_creditCustomer:'گاہک کا نام', entry_creditCustomerPh:'یہ رقم کس کے ذمے ہے', err_customerRequired:'ہر اُدھار فروخت کے لیے گاہک کا نام لکھیں', report_movement:'حرکت کی قسم', report_allMovements:'تمام حرکات', org_myArea:'میرا علاقہ', org_myBranch:'میری برانچ', org_area:'علاقہ', org_branches:'برانچیں', org_cars:'گاڑیاں اور ڈرائیور', org_pos:'POS مشینیں', org_unassigned:'غیر مقرر', org_gaps:'{n} غیر مقرر', org_noArea:'آپ کو ابھی کوئی علاقہ نہیں دیا گیا', org_noBranch:'آپ کو ابھی کوئی برانچ نہیں دی گئی', home_lastLogin:'آخری کامیاب لاگ اِن', home_firstLogin:'یہ آپ کا پہلا لاگ اِن ہے', home_city:'مقام',
+    entry_addDelivery:'+ ڈلیوری لائن شامل کریں', entry_deliveryAmount:'ڈلیوری فیس کی رقم', entry_deliveryNote:'تفصیل', entry_deliveryNotePh:'مثلاً: گاہک کو ڈلیوری', entry_addCredit:'+ اُدھار فروخت شامل کریں', entry_creditAmount:'اُدھار فروخت کی رقم', entry_creditCustomer:'گاہک کا نام', entry_creditCustomerPh:'یہ رقم کس کے ذمے ہے', err_customerRequired:'ہر اُدھار فروخت کے لیے گاہک کا نام لکھیں', report_movement:'حرکت کی قسم', report_allMovements:'تمام حرکات', admin_chain:'ربط کی صحت', chain_map:'علاقے اور برانچیں', chain_ok:'ہر کڑی مقرر ہے — کوئی خلا نہیں', chain_gaps:'وصولی کی زنجیر میں {n} خلا درست کرنے ہیں', chain_hint:'ہر علاقے کو علاقہ منیجر اور کلکٹر، ہر برانچ کو اسٹور اور منیجر، ہر گاڑی کو ڈرائیور اور ہر POS مشین کو رکھنے والا چاہیے۔', chain_fix:'درست کریں', chain_areas:'علاقے', chain_branches:'برانچیں', chain_stores:'اسٹور', chain_cars:'گاڑیاں', chain_pos:'POS مشینیں', gap_areaManager:'علاقہ «{x}» کا کوئی منیجر نہیں', gap_areaCollector:'علاقہ «{x}» کا کوئی کلکٹر نہیں', gap_branchArea:'برانچ «{x}» کسی علاقے سے منسلک نہیں', gap_branchStore:'برانچ «{x}» کا کوئی اسٹور نہیں', gap_storeManager:'اسٹور «{x}» کا کوئی برانچ منیجر نہیں', gap_carDriver:'گاڑی «{x}» کا کوئی ڈرائیور نہیں', gap_posHolder:'POS مشین «{x}» رکھنے والا کوئی نہیں', gap_disabled:'{who} غیر فعال ہے مگر «{x}» پر مقرر ہے', gap_idle:'{who} ({x}) کسی کڑی پر مقرر نہیں', org_disabled:'غیر فعال', org_myArea:'میرا علاقہ', org_myBranch:'میری برانچ', org_area:'علاقہ', org_branches:'برانچیں', org_cars:'گاڑیاں اور ڈرائیور', org_pos:'POS مشینیں', org_unassigned:'غیر مقرر', org_gaps:'{n} غیر مقرر', org_noArea:'آپ کو ابھی کوئی علاقہ نہیں دیا گیا', org_noBranch:'آپ کو ابھی کوئی برانچ نہیں دی گئی', home_lastLogin:'آخری کامیاب لاگ اِن', home_firstLogin:'یہ آپ کا پہلا لاگ اِن ہے', home_city:'مقام',
     home_hijriSuffix:'ھ',
     entry_new:'نیا روزانہ اندراج', entry_date:'تاریخ', entry_sourceType:'ذریعہ', entry_source_store:'برانچ',
     entry_source_car:'گاڑی', entry_source_pos:'POS مشین', entry_cash:'نقد فروخت', entry_delivery:'ڈلیوری فیس (بینک)',
@@ -3912,11 +3933,14 @@ function statCard(n, label){
 // ---------------- home ----------------
 // The chain around the signed-in person, from master data. Returns null when
 // the role has no place in the branch hierarchy.
-function myOrgPanel_(){
+function myOrgPanel_(all){
   var meta = state.meta || {};
   var role = state.user.role, me = state.user.id;
   var clusters, branches;
-  if (role === 'cluster_manager'){
+  if (all){
+    clusters = (meta.clusters||[]).slice();
+    branches = (meta.locations||[]).slice();
+  } else if (role === 'cluster_manager'){
     clusters = (meta.clusters||[]).filter(function(c){ return c.clusterManagerUserId === me; });
     var ids = clusters.map(function(c){ return c.id; });
     branches = (meta.locations||[]).filter(function(l){ return ids.indexOf(l.clusterId) >= 0; });
@@ -3930,10 +3954,12 @@ function myOrgPanel_(){
 
   function person(id, roleKey){
     if (!id) return '<span class="org-p missing">'+icon_('alert')+'<span>'+esc(t('org_unassigned'))+'</span></span>';
-    var nm = userName(id);
-    return '<span class="org-p"><span class="org-av">'+esc(initials_(nm))+'</span><span class="org-pn"><b>'+esc(nm)+'</b>' +
-      (roleKey ? '<i>'+esc(t(roleKey))+'</i>' : '') + '</span></span>';
+    var nm = userName(id), u = byId(meta.users, id);
+    var off = u && u.active === false;
+    return '<span class="org-p'+(off?' missing':'')+'"><span class="org-av">'+esc(initials_(nm))+'</span><span class="org-pn"><b>'+esc(nm)+'</b>' +
+      (roleKey || off ? '<i>'+esc(off ? t('org_disabled') : t(roleKey))+'</i>' : '') + '</span></span>';
   }
+  function isOff_(id){ var u = byId(meta.users, id); return !!(u && u.active === false); }
   function branchCard(l){
     var stores = (meta.stores||[]).filter(function(st){ return st.locationId === l.id; });
     var cars = (meta.cars||[]).filter(function(c){ return c.locationId === l.id; });
@@ -3943,14 +3969,15 @@ function myOrgPanel_(){
     });
     var managers = stores.length ? stores.map(function(st){ return person(st.storeManagerUserId, 'role_store_manager'); }).join('') : person(null);
     var gaps = stores.filter(function(st){ return !st.storeManagerUserId; }).length + (stores.length ? 0 : 1) +
-      cars.filter(function(c){ return !c.driverUserId; }).length + pos.filter(function(p){ return !p.assignedUserId; }).length;
+      cars.filter(function(c){ return !c.driverUserId || isOff_(c.driverUserId); }).length + pos.filter(function(p){ return !p.assignedUserId || isOff_(p.assignedUserId); }).length +
+      stores.filter(function(st){ return st.storeManagerUserId && isOff_(st.storeManagerUserId); }).length;
     function sub(iconName, labelKey, list, labelOf, holderOf){
       if (!list.length) return '';
       return '<div class="org-sub"><div class="org-sh">'+icon_(iconName)+'<span>'+esc(t(labelKey))+'</span><em class="num">'+list.length+'</em></div>' +
         '<ul>' + list.map(function(x){
           var h = holderOf(x);
           return '<li><span class="org-lb">'+esc(labelOf(x))+'</span>' +
-            (h ? '<span class="org-hd">'+esc(userName(h))+'</span>' : '<span class="org-hd missing">'+esc(t('org_unassigned'))+'</span>') + '</li>';
+            (h ? (function(){ var hu = byId(meta.users, h), hoff = hu && hu.active === false; return '<span class="org-hd'+(hoff?' missing':'')+'">'+esc(userName(h) + (hoff ? ' · ' + t('org_disabled') : ''))+'</span>'; })() : '<span class="org-hd missing">'+esc(t('org_unassigned'))+'</span>') + '</li>';
         }).join('') + '</ul></div>';
     }
     return '<article class="org-b'+(gaps?' has-gap':'')+'">' +
@@ -3973,7 +4000,7 @@ function myOrgPanel_(){
       '<div class="org-ah"><span class="org-ai">'+icon_('pin')+'</span><div class="org-at"><span>'+esc(t('org_area'))+'</span><b>'+esc(c.name)+'</b></div>' +
         '<div class="org-stats"><span><b class="num">'+inArea.length+'</b>'+esc(t('org_branches'))+'</span></div></div>' +
       '<div class="org-people">' +
-        (role === 'store_manager' ? person(c.clusterManagerUserId, 'role_cluster_manager') : '') +
+        (all || role === 'store_manager' ? person(c.clusterManagerUserId, 'role_cluster_manager') : '') +
         person(c.collectorUserId, 'role_collector') +
       '</div>' +
       '<div class="org-grid">' + inArea.map(branchCard).join('') + '</div>' +
@@ -6893,13 +6920,86 @@ function renderRisk(body){
 // ---------------- admin ----------------
 var adminTab = 'users';
 
+// Every hole in the collection chain, as { key, subject, tab }. key is an
+// i18n template, subject the thing it names, tab where the admin fixes it.
+function chainGaps_(){
+  var meta = state.meta || {};
+  var users = meta.users || [], gaps = [];
+  function off(id){ var u = byId(users, id); return !!(u && u.active === false); }
+  function add(key, subject, tab, who){ gaps.push({ key: key, subject: subject, tab: tab, who: who || '' }); }
+  (meta.clusters||[]).forEach(function(c){
+    if (!c.clusterManagerUserId) add('gap_areaManager', c.name, 'clusters');
+    else if (off(c.clusterManagerUserId)) add('gap_disabled', c.name, 'clusters', userName(c.clusterManagerUserId));
+    if (!c.collectorUserId) add('gap_areaCollector', c.name, 'clusters');
+    else if (off(c.collectorUserId)) add('gap_disabled', c.name, 'clusters', userName(c.collectorUserId));
+  });
+  (meta.locations||[]).forEach(function(l){
+    var nm = (l.city ? l.city + ' — ' : '') + l.name;
+    if (!l.clusterId || !byId(meta.clusters, l.clusterId)) add('gap_branchArea', nm, 'locations');
+    if (!(meta.stores||[]).some(function(st){ return st.locationId === l.id; })) add('gap_branchStore', nm, 'stores');
+  });
+  (meta.stores||[]).forEach(function(st){
+    if (!st.storeManagerUserId) add('gap_storeManager', st.name, 'stores');
+    else if (off(st.storeManagerUserId)) add('gap_disabled', st.name, 'stores', userName(st.storeManagerUserId));
+  });
+  (meta.cars||[]).forEach(function(c){
+    if (!c.driverUserId) add('gap_carDriver', c.label, 'cars');
+    else if (off(c.driverUserId)) add('gap_disabled', c.label, 'cars', userName(c.driverUserId));
+  });
+  (meta.pos||[]).forEach(function(p){
+    if (!p.assignedUserId) add('gap_posHolder', p.label, 'pos');
+    else if (off(p.assignedUserId)) add('gap_disabled', p.label, 'pos', userName(p.assignedUserId));
+  });
+  // people hired into a link of the chain but never placed on one
+  users.forEach(function(u){
+    if (u.active === false) return;
+    var placed = true;
+    if (u.role === 'cluster_manager') placed = (meta.clusters||[]).some(function(c){ return c.clusterManagerUserId === u.id; });
+    else if (u.role === 'collector') placed = (meta.clusters||[]).some(function(c){ return c.collectorUserId === u.id; });
+    else if (u.role === 'store_manager') placed = (meta.stores||[]).some(function(st){ return st.storeManagerUserId === u.id; });
+    else if (u.role === 'driver') placed = (meta.cars||[]).some(function(c){ return c.driverUserId === u.id; }) ||
+      (meta.pos||[]).some(function(p){ return p.assignedUserId === u.id; });
+    if (!placed) add('gap_idle', t('role_' + u.role), { cluster_manager: 'clusters', collector: 'clusters', store_manager: 'stores', driver: 'cars' }[u.role], u.name);
+  });
+  return gaps;
+}
+
+function renderAdminChain(content){
+  var meta = state.meta || {};
+  var gaps = chainGaps_();
+  var counts = [
+    ['chain_areas', (meta.clusters||[]).length], ['chain_branches', (meta.locations||[]).length],
+    ['chain_stores', (meta.stores||[]).length], ['chain_cars', (meta.cars||[]).length], ['chain_pos', (meta.pos||[]).length]
+  ];
+  var card = el('<div class="card chain">' +
+    '<div class="chain-head">' +
+      '<span class="chain-ic '+(gaps.length?'bad':'ok')+'">'+icon_(gaps.length ? 'alert' : 'check')+'</span>' +
+      '<div class="chain-ht"><b>'+esc(gaps.length ? t('chain_gaps').replace('{n}', gaps.length) : t('chain_ok'))+'</b>' +
+        '<span>'+esc(t('chain_hint'))+'</span></div>' +
+    '</div>' +
+    '<div class="chain-counts">' + counts.map(function(c){ return '<span><b class="num">'+c[1]+'</b>'+esc(t(c[0]))+'</span>'; }).join('') + '</div>' +
+    (gaps.length ? '<ul class="chain-list"></ul>' : '') +
+  '</div>');
+  var ul = qs('.chain-list', card);
+  gaps.forEach(function(g){
+    var text = t(g.key).replace('{x}', g.subject).replace('{who}', g.who);
+    var li = el('<li><span class="chain-dot"></span><span class="chain-tx">'+esc(text)+'</span>' +
+      '<button type="button" class="btn secondary chain-fix">'+esc(t('chain_fix'))+'</button></li>');
+    qs('.chain-fix', li).addEventListener('click', function(){ adminTab = g.tab; render(); });
+    ul.appendChild(li);
+  });
+  content.appendChild(card);
+  content.appendChild(secTitle_(t('chain_map')));
+  content.appendChild(myOrgPanel_(true));
+}
+
 function renderAdmin(body){
   // Grouped like a real ERP admin area: reference/catalog data the whole
   // hierarchy is built from ("Master Data") is visually separate from
   // system-level screens (accounts, settings, the trail of who-did-what).
   var groups = [
     { key:'system', label:'admin_groupSystem', tabs:[['users','admin_users'],['permissions','admin_permissions']] },
-    { key:'master', label:'admin_groupMaster', tabs:[['locations','admin_locations'],['stores','admin_stores'],
+    { key:'master', label:'admin_groupMaster', tabs:[['chain','admin_chain'],['locations','admin_locations'],['stores','admin_stores'],
         ['cars','admin_cars'],['pos','admin_pos'],['clusters','admin_clusters'],['zones','admin_zones'],['products','admin_products'],
         ['incomeItems','admin_incomeItems'],['expenseItems','admin_expenseItems']] },
     { key:'other', label:'admin_groupOther', tabs:[['config','admin_config'],['audit','admin_audit']] }
@@ -6909,7 +7009,9 @@ function renderAdmin(body){
     var groupWrap = el('<div style="margin-bottom:8px;"><div class="muted" style="font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;">'+esc(t(g.label))+'</div></div>');
     var tabBar = el('<div class="tabs"></div>');
     g.tabs.forEach(function(tb){
-      var b = el('<button'+(adminTab===tb[0]?' class="active"':'')+'>'+esc(t(tb[1]))+'</button>');
+      var gapN = tb[0] === 'chain' ? chainGaps_().length : 0;
+      var b = el('<button'+(adminTab===tb[0]?' class="active"':'')+'>'+esc(t(tb[1])) +
+        (gapN ? ' <span class="tab-badge">'+gapN+'</span>' : '') + '</button>');
       b.addEventListener('click', function(){ adminTab=tb[0]; render(); });
       tabBar.appendChild(b);
     });
@@ -6920,7 +7022,7 @@ function renderAdmin(body){
   body.appendChild(content);
 
   var renderers = {
-    users: renderAdminUsers, permissions: renderAdminPermissions,
+    users: renderAdminUsers, permissions: renderAdminPermissions, chain: renderAdminChain,
     locations: function(c){ renderAdminEntity(c,'location'); },
     stores: function(c){ renderAdminEntity(c,'store'); }, cars: function(c){ renderAdminEntity(c,'car'); },
     pos: function(c){ renderAdminEntity(c,'pos'); }, clusters: function(c){ renderAdminEntity(c,'cluster'); },

@@ -75,7 +75,7 @@ missing people. The home screen's **منطقتي / فرعي** panel
 (`myOrgPanel_`) shows the area manager their area, collector, branches, and
 each branch's manager, cars/drivers and POS/holders. A branch manager sees
 the same panel for their own branch, with the area manager above it. Any
-missing link shows in red. Every master-data row also has an edit panel now
+missing link shows in red. Admin → Master data → **سلامة الربط** (`chainGaps_` / `renderAdminChain`) lists every gap company-wide: missing people, branches with no area or store, disabled users still assigned, and people in a chain role placed nowhere. Each gap has a button to the tab that fixes it, and the tab shows the gap count as a badge. Every master-data row also has an edit panel now
 (`entityFieldInput_`), built from the same field spec as the add form.
 
 A POS machine's `ownerType`/`ownerId` points at either a store or a car —
