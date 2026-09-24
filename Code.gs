@@ -490,62 +490,7 @@ function userStatus_(u) {
 // ---------- Web app entry points ----------
 
 function doGet(e) {
-  // Temporary timing probe: ?diag=<key> reports where a request's time
-  // actually goes (spreadsheet open, each sheet read, cache and lock), so a
-  // "the system is slow" report can be measured instead of guessed. Read
-  // only, apart from taking and releasing the script lock. Remove when done.
-  if (e && e.parameter && e.parameter.diag === DIAG_KEY_) return json_(diagTiming_());
   return json_({ ok: true, service: 'bestgas-cash-collection' });
-}
-
-var DIAG_KEY_ = 'bgc-diag-7f3a91c4';
-function diagTiming_() {
-  var t0 = Date.now(), marks = [], last = t0;
-  function mark(name, extra) {
-    var now = Date.now();
-    marks.push({ step: name, ms: now - last, extra: extra || null });
-    last = now;
-  }
-  resetExecMemo_();
-  scriptProps_(); mark('read script properties');
-  spreadsheet_(); mark('open spreadsheet');
-
-  var cache = CacheService.getScriptCache();
-  cache.get('diag_probe'); mark('cache get');
-  cache.put('diag_probe', '1', 60); mark('cache put');
-
-  var sheets = [];
-  for (var k in SHEETS) {
-    if (!SHEETS.hasOwnProperty(k)) continue;
-    var name = SHEETS[k];
-    var before = Date.now();
-    var rows = readSheet(name);
-    var bytes = JSON.stringify(rows).length;
-    sheets.push({ sheet: name, rows: rows.length, kb: Math.round(bytes / 1024), ms: Date.now() - before });
-  }
-  mark('read every sheet (cold or cached, see per-sheet ms)');
-
-  var lockStart = Date.now();
-  var lock = LockService.getScriptLock();
-  var gotLock = lock.tryLock(20000);
-  var lockMs = Date.now() - lockStart;
-  if (gotLock) lock.releaseLock();
-  mark('acquire script lock', gotLock ? 'acquired' : 'BUSY — another execution is holding it');
-
-  return {
-    ok: true, diag: true,
-    totalMs: Date.now() - t0,
-    lockMs: lockMs, lockAcquired: gotLock,
-    steps: marks,
-    sheets: sheets.sort(function (a, b) { return b.ms - a.ms; }),
-    triggers: (function () {
-      try {
-        return ScriptApp.getProjectTriggers().map(function (tr) {
-          return { fn: tr.getHandlerFunction(), type: String(tr.getEventType()) };
-        });
-      } catch (err) { return String(err); }
-    })()
-  };
 }
 
 function doPost(e) {
