@@ -91,9 +91,10 @@ function actionAdminCreateUser_(req, user) {
   };
   var token = issueInvite_(newUser, user);
   writeRow(SHEETS.USERS, newUser);
-  var sent = sendInvitation_(newUser, token, user, inviteAppUrl_(req));
+  var base = inviteAppUrl_(req);
+  var sent = sendInvitation_(newUser, token, user, base);
   logAudit_('admin_invite_user', user.id, newUser.id);
-  return { ok: true, user: publicUser_(newUser), inviteSent: sent };
+  return { ok: true, user: publicUser_(newUser), inviteSent: sent, inviteUrl: base + '?invite=' + encodeURIComponent(token) };
 }
 
 var INVITE_TTL_DAYS = 7;
@@ -146,9 +147,10 @@ function actionAdminResendInvite_(req, user) {
   if (st !== 'invited' && st !== 'invite_expired') return { ok: false, error: 'already_accepted' };
   var token = issueInvite_(target, user);
   writeRow(SHEETS.USERS, target);
-  var sent = sendInvitation_(target, token, user, inviteAppUrl_(req));
+  var base2 = inviteAppUrl_(req);
+  var sent = sendInvitation_(target, token, user, base2);
   logAudit_('admin_resend_invite', user.id, target.id);
-  return { ok: true, user: publicUser_(target), inviteSent: sent };
+  return { ok: true, user: publicUser_(target), inviteSent: sent, inviteUrl: base2 + '?invite=' + encodeURIComponent(token) };
 }
 
 // Public (no session): what the accept page needs to greet the person.
@@ -242,57 +244,72 @@ function sendInvitation_(u, token, inviter, appUrl) {
 // app (data: images are stripped by Gmail); the text wordmark under it
 // still carries the brand when a mail client blocks images.
 function inviteEmailHtml_(u, link, who, role, expTxt, appUrl) {
-  var G = '#4D6D51', GD = '#3B5540', CREAM = '#F2EEE4', INK = '#1F2A22', MUTED = '#6B7468';
+  var G = '#4D6D51', GD = '#2F4A36', DEEP = '#1D2F23', CREAM = '#F2EEE4', INK = '#1B231D', MUTED = '#6E7A70', LINE = '#E6E2D6';
   var e = htmlEsc_, L = e(link);
+  // Bulletproof button: VML for Outlook/Word, a padded anchor everywhere
+  // else. Both carry the same href, so only one of them ever renders.
   function button(label) {
-    return '<table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:26px auto 8px;"><tr><td align="center" bgcolor="' + G + '" style="border-radius:12px;background:' + G + ';">' +
-      '<a href="' + L + '" target="_blank" style="display:inline-block;padding:15px 40px;font-family:Tahoma,Arial,sans-serif;font-size:16px;font-weight:bold;color:#ffffff;text-decoration:none;border-radius:12px;">' + label + '</a></td></tr></table>';
+    return '<table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:0 auto;"><tr><td align="center">' +
+      '<!--[if mso]>' +
+      '<v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="' + L + '" style="height:52px;v-text-anchor:middle;width:280px;" arcsize="24%" stroke="f" fillcolor="' + G + '">' +
+      '<w:anchorlock/><center style="color:#ffffff;font-family:Tahoma,Arial,sans-serif;font-size:16px;font-weight:bold;">' + label + '</center>' +
+      '</v:roundrect>' +
+      '<![endif]-->' +
+      '<!--[if !mso]><!-- -->' +
+      '<a href="' + L + '" target="_blank" style="display:block;width:280px;background:' + G + ';color:#ffffff;font-family:Tahoma,Arial,sans-serif;font-size:16px;font-weight:bold;line-height:52px;text-align:center;text-decoration:none;border-radius:13px;">' + label + '</a>' +
+      '<!--<![endif]-->' +
+    '</td></tr></table>';
   }
-  function row(k, v) {
-    return '<tr><td style="padding:8px 0;color:' + MUTED + ';font-size:13px;">' + k + '</td><td align="right" style="padding:8px 0;color:' + INK + ';font-size:13px;font-weight:bold;">' + v + '</td></tr>';
+  // The link in full, under the button: a click is never the only way in.
+  function fallback(intro) {
+    return '<div style="margin-top:14px;font-family:Arial,sans-serif;font-size:12px;line-height:1.7;color:' + MUTED + ';text-align:center;">' + intro + '</div>' +
+      '<div dir="ltr" style="margin-top:6px;font-family:Arial,sans-serif;font-size:12px;text-align:center;word-break:break-all;"><a href="' + L + '" style="color:' + G + ';">' + L + '</a></div>';
   }
-  return '<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>' +
-    '<body style="margin:0;padding:0;background:' + CREAM + ';">' +
-    '<div style="display:none;max-height:0;overflow:hidden;">' + e(who) + ' invited you to Best Gas Cash Collection</div>' +
-    '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:' + CREAM + ';"><tr><td align="center" style="padding:32px 14px;">' +
-    '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;background:#ffffff;border-radius:18px;overflow:hidden;">' +
-    // header
-    '<tr><td align="center" bgcolor="' + G + '" style="background:' + G + ';background-image:linear-gradient(135deg,' + G + ',' + GD + ');padding:34px 24px 28px;">' +
-      '<img src="' + e(appUrl) + 'assets/mail-logo.png" width="76" height="76" alt="Best Gas" style="display:block;margin:0 auto 14px;border:0;border-radius:18px;">' +
-      '<div style="font-family:Tahoma,Arial,sans-serif;color:#ffffff;font-size:20px;font-weight:bold;">الناقل الأفضل للغاز</div>' +
-      '<div style="font-family:Arial,sans-serif;color:' + CREAM + ';font-size:11px;letter-spacing:3px;margin-top:6px;">BEST GAS CARRIER CO.</div>' +
-      '<div style="display:inline-block;margin-top:18px;padding:6px 16px;border-radius:999px;background:#5f7e63;font-family:Tahoma,Arial,sans-serif;color:#ffffff;font-size:12px;">دعوة للانضمام &nbsp;&bull;&nbsp; Invitation</div>' +
+  function row(k, v, last) {
+    return '<tr><td style="padding:11px 0;border-bottom:' + (last ? 'none' : '1px solid ' + LINE) + ';color:' + MUTED + ';font-size:12.5px;">' + k + '</td>' +
+      '<td align="right" style="padding:11px 0;border-bottom:' + (last ? 'none' : '1px solid ' + LINE) + ';color:' + INK + ';font-size:13px;font-weight:bold;">' + v + '</td></tr>';
+  }
+  return '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">' +
+    '<html xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office"><head>' +
+    '<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">' +
+    '<!--[if mso]><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml><![endif]-->' +
+    '</head><body style="margin:0;padding:0;background:' + CREAM + ';">' +
+    '<div style="display:none;max-height:0;overflow:hidden;">' + e(who) + ' يدعوك للانضمام — اضغط لقبول الدعوة وتعيين كلمة المرور</div>' +
+    '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:' + CREAM + ';"><tr><td align="center" style="padding:30px 12px 40px;">' +
+    '<table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;background:#ffffff;border-radius:20px;overflow:hidden;border:1px solid ' + LINE + ';">' +
+    // ---- header ----
+    '<tr><td align="center" bgcolor="' + GD + '" style="background:' + GD + ';background-image:linear-gradient(160deg,' + G + ' 0%,' + GD + ' 55%,' + DEEP + ' 100%);padding:38px 28px 32px;">' +
+      '<img src="' + e(appUrl) + 'assets/mail-logo.png" width="72" height="72" alt="الناقل الأفضل للغاز" style="display:block;margin:0 auto 16px;border:0;border-radius:20px;">' +
+      '<div style="font-family:Tahoma,Arial,sans-serif;color:#ffffff;font-size:21px;font-weight:bold;letter-spacing:-.2px;">الناقل الأفضل للغاز</div>' +
+      '<div style="font-family:Arial,sans-serif;color:#cddccf;font-size:10.5px;letter-spacing:3.4px;margin-top:7px;">BEST GAS CARRIER CO.</div>' +
     '</td></tr>' +
-    // Arabic
-    '<tr><td dir="rtl" align="right" style="padding:34px 36px 6px;font-family:Tahoma,Arial,sans-serif;text-align:right;color:' + INK + ';">' +
-      '<div style="font-size:22px;font-weight:bold;margin-bottom:12px;">مرحباً ' + e(u.name) + '،</div>' +
-      '<div style="font-size:15px;line-height:1.9;color:#3d463f;">يسعدنا انضمامك إلينا. قام <b>' + e(who) + '</b> بدعوتك للانضمام إلى <b>نظام تحصيل النقدية والموافقات</b> بصلاحية <b style="color:' + G + ';">' + e(role[0]) + '</b>.<br>اضغط الزر أدناه لقبول الدعوة واختيار كلمة المرور الخاصة بك.</div>' +
-      button('قبول الدعوة') +
+    // ---- the ask, in Arabic, with the button right there ----
+    '<tr><td dir="rtl" align="right" style="padding:34px 36px 0;font-family:Tahoma,Arial,sans-serif;text-align:right;color:' + INK + ';">' +
+      '<div style="font-size:12px;font-weight:bold;color:' + G + ';letter-spacing:1.6px;">دعوة للانضمام</div>' +
+      '<div style="font-size:25px;font-weight:bold;margin-top:10px;line-height:1.35;">مرحباً ' + e(u.name) + '</div>' +
+      '<div style="font-size:15px;line-height:1.95;color:#414B43;margin-top:12px;">دعاك <b>' + e(who) + '</b> للانضمام إلى <b>نظام تحصيل النقدية والموافقات</b> بصلاحية <b style="color:' + G + ';">' + e(role[0]) + '</b>. اضغط الزر أدناه لقبول الدعوة واختيار كلمة المرور الخاصة بك.</div>' +
     '</td></tr>' +
-    // details
-    '<tr><td style="padding:10px 36px;">' +
-      '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#F7F5EF;border-radius:12px;font-family:Tahoma,Arial,sans-serif;">' +
-      '<tr><td style="padding:6px 18px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">' +
-        row('Email / البريد', '<span dir="ltr">' + e(u.email) + '</span>') +
-        row('Role / الصلاحية', e(role[1]) + ' · ' + e(role[0])) +
-        row('Valid until / صالحة حتى', '<span dir="ltr">' + e(expTxt) + '</span>') +
-      '</table></td></tr></table>' +
+    '<tr><td style="padding:26px 36px 0;">' + button('قبول الدعوة وتعيين كلمة المرور') +
+      fallback('إذا لم يفتح الزر، انسخ هذا الرابط والصقه في المتصفح:') + '</td></tr>' +
+    // ---- the details ----
+    '<tr><td style="padding:26px 36px 0;">' +
+      '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="font-family:Tahoma,Arial,sans-serif;border-top:1px solid ' + LINE + ';">' +
+        row('البريد / Email', '<span dir="ltr">' + e(u.email) + '</span>') +
+        row('الصلاحية / Role', e(role[0]) + ' · ' + e(role[1])) +
+        row('صالحة حتى / Valid until', '<span dir="ltr">' + e(expTxt) + '</span>', true) +
+      '</table>' +
     '</td></tr>' +
-    // English
-    '<tr><td dir="ltr" align="left" style="padding:26px 36px 6px;font-family:Arial,sans-serif;text-align:left;color:' + INK + ';">' +
-      '<div style="border-top:1px solid #EEEAE0;padding-top:24px;font-size:20px;font-weight:bold;margin-bottom:10px;">Hello ' + e(u.name) + ',</div>' +
-      '<div style="font-size:15px;line-height:1.7;color:#3d463f;"><b>' + e(who) + '</b> has invited you to join the <b>Best Gas Cash Collection &amp; Approval System</b> as <b style="color:' + G + ';">' + e(role[1]) + '</b>. Accept the invitation to choose your password and sign in.</div>' +
-      button('Accept invitation') +
+    // ---- the same thing in English ----
+    '<tr><td dir="ltr" align="left" style="padding:26px 36px 0;font-family:Arial,sans-serif;text-align:left;color:' + INK + ';border-top:1px solid ' + LINE + ';">' +
+      '<div style="font-size:19px;font-weight:bold;padding-top:24px;">Hello ' + e(u.name) + '</div>' +
+      '<div style="font-size:14.5px;line-height:1.75;color:#414B43;margin-top:10px;"><b>' + e(who) + '</b> invited you to join the <b>Best Gas Cash Collection &amp; Approval System</b> as <b style="color:' + G + ';">' + e(role[1]) + '</b>. Accept the invitation to choose your password and sign in.</div>' +
     '</td></tr>' +
-    // fallback link
-    '<tr><td style="padding:14px 36px 30px;font-family:Arial,sans-serif;">' +
-      '<div style="font-size:12px;color:' + MUTED + ';line-height:1.7;text-align:center;">إذا لم يعمل الزر، انسخ الرابط التالي في المتصفح<br>If the button doesn\'t work, paste this link into your browser:</div>' +
-      '<div dir="ltr" style="margin-top:8px;font-size:12px;text-align:center;word-break:break-all;"><a href="' + L + '" style="color:' + G + ';">' + L + '</a></div>' +
-    '</td></tr>' +
-    // footer
-    '<tr><td align="center" bgcolor="#F7F5EF" style="background:#F7F5EF;padding:18px 28px;font-family:Tahoma,Arial,sans-serif;font-size:11.5px;color:' + MUTED + ';line-height:1.8;">' +
-      'الرابط شخصي ويُستخدم مرة واحدة فقط. إذا لم تكن تتوقع هذه الدعوة يمكنك تجاهل هذه الرسالة.<br>' +
-      'This link is personal and works once. If you weren\'t expecting this invitation, you can ignore this email.<br>' +
+    '<tr><td style="padding:22px 36px 34px;">' + button('Accept invitation') +
+      fallback('If the button does not open, copy this link into your browser:') + '</td></tr>' +
+    // ---- footer ----
+    '<tr><td align="center" bgcolor="#F7F5EF" style="background:#F7F5EF;padding:20px 30px;font-family:Tahoma,Arial,sans-serif;font-size:11.5px;color:' + MUTED + ';line-height:1.85;border-top:1px solid ' + LINE + ';">' +
+      'الرابط شخصي ويُستخدم مرة واحدة، وصالح 7 أيام. إذا لم تكن تتوقع هذه الدعوة تجاهل هذه الرسالة.<br>' +
+      'This link is personal, works once, and expires in 7 days. If you were not expecting it, ignore this email.<br>' +
       '<span style="color:' + G + ';font-weight:bold;">Best Gas Carrier Co.</span>' +
     '</td></tr>' +
     '</table></td></tr></table></body></html>';
