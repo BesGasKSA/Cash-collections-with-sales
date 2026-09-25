@@ -77,6 +77,17 @@ var saraTok = acceptInvite('sara@bestgas.sa');
 var musaTok = acceptInvite('musa@bestgas.sa');
 var aliTok = acceptInvite('ali@bestgas.sa');
 var hassanTok = acceptInvite('hassan@bestgas.sa');
+// The Deputy Operations Manager validates every area manager -> collector
+// handover before the collector sees it; this one does that for the flows below.
+var walid = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Walid (Deputy)', email: 'walid@bestgas.sa', role: 'deputy_operations_manager' } }).user;
+var walidTok = acceptInvite('walid@bestgas.sa');
+function deputyValidates(res) {
+  if (!res || !res.ok) return res;
+  check(res.handoff.status === 'pending_deputy', 'the area manager\'s handover waits for the deputy first');
+  var v = call({ action: 'deputyValidateHandoff', token: walidTok, id: res.handoff.id });
+  check(v.ok && v.handoff.status === 'pending', 'the deputy validates it, and only then does it reach the collector');
+  return res;
+}
 
 console.log('--- build hierarchy: cluster -> location -> store/car -> pos ---');
 var cluster = call({ action: 'adminSaveEntity', token: adminTok, kind: 'cluster', data: { name: 'Central', clusterManagerUserId: sara.id, collectorUserId: musa.id } });
@@ -104,7 +115,7 @@ console.log('--- confirm chain: location -> cluster -> collector -> deposit ---'
 var confirm1 = call({ action: 'confirmHandoff', token: saraTok, id: handoff1.handoff.id });
 check(confirm1.ok && confirm1.handoff.status === 'confirmed', 'cluster manager confirms receipt');
 
-var handoff2 = call({ action: 'createHandoff', token: saraTok, kind: 'cluster_to_collector', clusterId: cluster.entity.id });
+var handoff2 = deputyValidates(call({ action: 'createHandoff', token: saraTok, kind: 'cluster_to_collector', clusterId: cluster.entity.id }));
 check(handoff2.ok, 'cluster manager creates handoff to collector');
 close(handoff2.handoff.amount, 7652.173913043478, 'cluster-to-collector amount carries forward unchanged');
 check(!!handoff2.handoff.breakdown, 'cluster-to-collector handoff carries a breakdown, not just a flat amount');
@@ -157,7 +168,7 @@ check(resolve3b.ok && resolve3b.handoff.status === 'confirmed', 'admin confirms 
 // close out handoff3b's chain so it isn't still sitting confirmed-and-unconsumed
 // when the next cluster batch is built below (createHandoff cluster_to_collector
 // sweeps up every confirmed, unconsumed location handoff in the cluster).
-var closeOut = call({ action: 'createHandoff', token: saraTok, kind: 'cluster_to_collector', clusterId: cluster.entity.id });
+var closeOut = deputyValidates(call({ action: 'createHandoff', token: saraTok, kind: 'cluster_to_collector', clusterId: cluster.entity.id }));
 check(closeOut.ok, 'cluster manager closes out the 1000 handoff separately');
 call({ action: 'confirmHandoff', token: musaTok, id: closeOut.handoff.id, receivedAmount: closeOut.handoff.amount });
 call({ action: 'recordDeposit', token: musaTok, bankReference: 'REF-CLEANUP' });
@@ -176,7 +187,7 @@ close(shortConfirm.handoff.amount, 1800, 'handoff amount moves to what was actua
 close(shortConfirm.handoff.originalAmount, 2000, 'the original declared amount is preserved for audit');
 close(shortConfirm.handoff.breakdown.netCashOwed, 1800, 'breakdown net is updated to match so downstream reports stay consistent');
 
-var handoff4b = call({ action: 'createHandoff', token: saraTok, kind: 'cluster_to_collector', clusterId: cluster.entity.id });
+var handoff4b = deputyValidates(call({ action: 'createHandoff', token: saraTok, kind: 'cluster_to_collector', clusterId: cluster.entity.id }));
 check(handoff4b.ok, 'cluster manager batches the already-confirmed location handoff — no admin step was needed in between');
 close(handoff4b.handoff.amount, 1800, 'cluster-to-collector amount reflects the actually-received figure, not the original overstated claim');
 
@@ -425,7 +436,7 @@ check(reconEntry.ok, 'entry for reconciliation scenario');
 var reconHandoff1 = call({ action: 'createHandoff', token: adminTok, kind: 'location_to_cluster', locationId: reconLocation.id });
 close(reconHandoff1.handoff.amount, 555, 'fresh location, so the handoff amount is exactly the one entry');
 call({ action: 'confirmHandoff', token: reconMgrTok, id: reconHandoff1.handoff.id });
-var reconHandoff2 = call({ action: 'createHandoff', token: reconMgrTok, kind: 'cluster_to_collector', clusterId: reconCluster.id });
+var reconHandoff2 = deputyValidates(call({ action: 'createHandoff', token: reconMgrTok, kind: 'cluster_to_collector', clusterId: reconCluster.id }));
 call({ action: 'confirmHandoff', token: reconColTok, id: reconHandoff2.handoff.id });
 var reconDeposit = call({ action: 'recordDeposit', token: reconColTok, bankReference: 'BANKREF-555' });
 check(reconDeposit.ok, 'deposit recorded for reconciliation scenario');
@@ -917,18 +928,18 @@ check(creditProductRow && creditProductRow.creditAmount >= 1200, 'the by-product
 // services genuinely changed hands, payment just hasn't landed yet), so it
 // must satisfy the same "delivery needs an accompanying sale" rule that
 // cash/POS already do — see deliveryNeedsSale_ in Collection.gs.
-var creditDeliveryAlone = call({ action: 'createDailyEntry', token: hassanTok, date: '2026-09-25', sourceType: 'car', sourceId: car.entity.id, deliveryFeeBankAmount: 500 });
+var creditDeliveryAlone = call({ action: 'createDailyEntry', token: hassanTok, date: '2026-08-25', sourceType: 'car', sourceId: car.entity.id, deliveryFeeBankAmount: 500 });
 check(!creditDeliveryAlone.ok && creditDeliveryAlone.error === 'delivery_without_sale', 'still rejected with no sale of any kind on file that day');
 
-var creditSaleFirst = call({ action: 'createDailyEntry', token: hassanTok, date: '2026-09-25', sourceType: 'car', sourceId: car.entity.id, creditSales: 250, creditCustomer: 'Al-Rashid Trading' });
+var creditSaleFirst = call({ action: 'createDailyEntry', token: hassanTok, date: '2026-08-25', sourceType: 'car', sourceId: car.entity.id, creditSales: 250, creditCustomer: 'Al-Rashid Trading' });
 check(creditSaleFirst.ok, 'a credit-only sale saves fine on its own');
 
-var creditDeliveryAfter = call({ action: 'createDailyEntry', token: hassanTok, date: '2026-09-25', sourceType: 'car', sourceId: car.entity.id, deliveryFeeBankAmount: 500 });
+var creditDeliveryAfter = call({ action: 'createDailyEntry', token: hassanTok, date: '2026-08-25', sourceType: 'car', sourceId: car.entity.id, deliveryFeeBankAmount: 500 });
 check(creditDeliveryAfter.ok, 'a delivery fee is now accepted — a same-day credit sale on file counts as "a sale" just like cash/POS would');
 
 var bulkCreditAndDelivery = call({ action: 'importDailyEntries', token: adminTok, rows: [
-  { date: '2026-09-26', sourceType: 'car', sourceId: car.entity.id, deliveryFeeBankAmount: 200 },
-  { date: '2026-09-26', sourceType: 'car', sourceId: car.entity.id, creditSales: 150, creditCustomer: 'Al-Rashid Trading' }
+  { date: '2026-08-26', sourceType: 'car', sourceId: car.entity.id, deliveryFeeBankAmount: 200 },
+  { date: '2026-08-26', sourceType: 'car', sourceId: car.entity.id, creditSales: 150, creditCustomer: 'Al-Rashid Trading' }
 ] });
 check(bulkCreditAndDelivery.ok && bulkCreditAndDelivery.created === 2, 'product-mode\'s split rows (a delivery line plus a credit-tagged line in the same batch) both succeed, regardless of order');
 
@@ -946,7 +957,7 @@ var metaOff = call({ action: 'listMeta', token: adminTok });
 check(metaOff.config.areaManagerBulkUploadEnabled === false, 'the feature defaults to off');
 var blockedWhileOff = call({
   action: 'bulkSubmitAreaBatch', token: saraTok, clusterId: cluster.entity.id,
-  rows: [{ date: '2026-09-27', sourceType: 'store', sourceId: store.entity.id, cashSales: 500 }]
+  rows: [{ date: '2026-08-27', sourceType: 'store', sourceId: store.entity.id, cashSales: 500 }]
 });
 check(!blockedWhileOff.ok && blockedWhileOff.error === 'feature_disabled', 'submitting a bulk batch while the toggle is off is rejected, even with otherwise-valid input');
 
@@ -961,36 +972,36 @@ var rawdahMgr = call({ action: 'adminCreateUser', token: adminTok, data: { name:
 var otherStore = call({ action: 'adminSaveEntity', token: adminTok, kind: 'store', data: { locationId: otherLocation.id, name: 'Rawdah Branch', storeManagerUserId: rawdahMgr.id } }).entity;
 var crossClusterSubmit = call({
   action: 'bulkSubmitAreaBatch', token: saraTok, clusterId: cluster.entity.id,
-  rows: [{ date: '2026-09-27', sourceType: 'store', sourceId: otherStore.id, cashSales: 500 }]
+  rows: [{ date: '2026-08-27', sourceType: 'store', sourceId: otherStore.id, cashSales: 500 }]
 });
 check(!crossClusterSubmit.ok && crossClusterSubmit.error === 'invalid_rows' && crossClusterSubmit.results[0].error === 'forbidden',
   "a cluster manager submitting a row for a location outside their own cluster is rejected — the whole batch, all-or-nothing");
 var storeManagerBulkAttempt = call({
   action: 'bulkSubmitAreaBatch', token: aliTok, clusterId: cluster.entity.id,
-  rows: [{ date: '2026-09-27', sourceType: 'store', sourceId: store.entity.id, cashSales: 500 }]
+  rows: [{ date: '2026-08-27', sourceType: 'store', sourceId: store.entity.id, cashSales: 500 }]
 });
 check(!storeManagerBulkAttempt.ok && storeManagerBulkAttempt.error === 'forbidden', 'a store manager (not a cluster manager) cannot call the bulk action at all');
 
 console.log('--- dry-run preview: area manager sees the real computed breakdown before anything is written ---');
-var beforeDryRunEntries = call({ action: 'listEntries', token: adminTok, locationId: location.entity.id, date: '2026-09-27' }).entries.length;
+var beforeDryRunEntries = call({ action: 'listEntries', token: adminTok, locationId: location.entity.id, date: '2026-08-27' }).entries.length;
 var dryRun = call({
   action: 'bulkSubmitAreaBatch', token: saraTok, clusterId: cluster.entity.id, dryRun: true,
   rows: [
-    { date: '2026-09-27', sourceType: 'store', sourceId: store.entity.id, cashSales: 7000, posSales: 4000 },
-    { date: '2026-09-27', sourceType: 'car', sourceId: car.entity.id, cashSales: 5000, deliveryFeeBankAmount: 5000, posSales: 6000 }
+    { date: '2026-08-27', sourceType: 'store', sourceId: store.entity.id, cashSales: 7000, posSales: 4000 },
+    { date: '2026-08-27', sourceType: 'car', sourceId: car.entity.id, cashSales: 5000, deliveryFeeBankAmount: 5000, posSales: 6000 }
   ]
 });
 check(dryRun.ok && dryRun.dryRun === true, 'a dryRun request succeeds and is flagged as a dry run');
 close(dryRun.batch.breakdown.netCashOwed, 7652.17, 'the dry-run breakdown matches the real xlsx-example formula exactly');
-var afterDryRunEntries = call({ action: 'listEntries', token: adminTok, locationId: location.entity.id, date: '2026-09-27' }).entries.length;
+var afterDryRunEntries = call({ action: 'listEntries', token: adminTok, locationId: location.entity.id, date: '2026-08-27' }).entries.length;
 check(afterDryRunEntries === beforeDryRunEntries, 'a dry run writes no entries at all');
 var afterDryRunBatches = call({ action: 'listAreaBulkBatches', token: deputyTok }).batches.filter(function (b) { return b.id === dryRun.batch.id; });
 check(afterDryRunBatches.length === 0, 'a dry run writes no area_bulk_batches row either — the Deputy never sees it');
 var realAfterDryRun = call({
   action: 'bulkSubmitAreaBatch', token: saraTok, clusterId: cluster.entity.id,
   rows: [
-    { date: '2026-09-27', sourceType: 'store', sourceId: store.entity.id, cashSales: 7000, posSales: 4000 },
-    { date: '2026-09-27', sourceType: 'car', sourceId: car.entity.id, cashSales: 5000, deliveryFeeBankAmount: 5000, posSales: 6000 }
+    { date: '2026-08-27', sourceType: 'store', sourceId: store.entity.id, cashSales: 7000, posSales: 4000 },
+    { date: '2026-08-27', sourceType: 'car', sourceId: car.entity.id, cashSales: 5000, deliveryFeeBankAmount: 5000, posSales: 6000 }
   ]
 });
 check(realAfterDryRun.ok && !realAfterDryRun.dryRun, 'submitting for real right after (identical payload, no dryRun flag) succeeds normally');
@@ -1007,9 +1018,9 @@ console.log('--- product-level bulk rows: qty x unitPrice per line, multiple lin
 var productDryRun = call({
   action: 'bulkSubmitAreaBatch', token: saraTok, clusterId: cluster.entity.id, dryRun: true,
   rows: [
-    { date: '2026-09-28', sourceType: 'store', sourceId: store.entity.id, productId: cylProduct.id, qty: 10, unitPrice: 100, cashSales: 1000 },
-    { date: '2026-09-28', sourceType: 'car', sourceId: car.entity.id, productId: cylProduct.id, qty: 5, unitPrice: 100, cashSales: 500 },
-    { date: '2026-09-28', sourceType: 'car', sourceId: car.entity.id, productId: servicesProduct.entity.id, qty: 1, unitPrice: 115, deliveryFeeBankAmount: 115 }
+    { date: '2026-08-28', sourceType: 'store', sourceId: store.entity.id, productId: cylProduct.id, qty: 10, unitPrice: 100, cashSales: 1000 },
+    { date: '2026-08-28', sourceType: 'car', sourceId: car.entity.id, productId: cylProduct.id, qty: 5, unitPrice: 100, cashSales: 500 },
+    { date: '2026-08-28', sourceType: 'car', sourceId: car.entity.id, productId: servicesProduct.entity.id, qty: 1, unitPrice: 115, deliveryFeeBankAmount: 115 }
   ]
 });
 check(productDryRun.ok && productDryRun.dryRun === true, 'a batch of product-level lines (one line per product x payment method) dry-runs successfully');
@@ -1019,13 +1030,13 @@ close(productDryRun.batch.breakdown.netCashOwed, expectedProductNet, 'multiple p
 var productSubmit = call({
   action: 'bulkSubmitAreaBatch', token: saraTok, clusterId: cluster.entity.id,
   rows: [
-    { date: '2026-09-28', sourceType: 'store', sourceId: store.entity.id, productId: cylProduct.id, qty: 10, unitPrice: 100, cashSales: 1000 },
-    { date: '2026-09-28', sourceType: 'car', sourceId: car.entity.id, productId: cylProduct.id, qty: 5, unitPrice: 100, cashSales: 500 },
-    { date: '2026-09-28', sourceType: 'car', sourceId: car.entity.id, productId: servicesProduct.entity.id, qty: 1, unitPrice: 115, deliveryFeeBankAmount: 115 }
+    { date: '2026-08-28', sourceType: 'store', sourceId: store.entity.id, productId: cylProduct.id, qty: 10, unitPrice: 100, cashSales: 1000 },
+    { date: '2026-08-28', sourceType: 'car', sourceId: car.entity.id, productId: cylProduct.id, qty: 5, unitPrice: 100, cashSales: 500 },
+    { date: '2026-08-28', sourceType: 'car', sourceId: car.entity.id, productId: servicesProduct.entity.id, qty: 1, unitPrice: 115, deliveryFeeBankAmount: 115 }
   ]
 });
 check(productSubmit.ok, 'the same product-level batch submits for real');
-var productEntries = call({ action: 'listEntries', token: adminTok, locationId: location.entity.id, date: '2026-09-28' }).entries;
+var productEntries = call({ action: 'listEntries', token: adminTok, locationId: location.entity.id, date: '2026-08-28' }).entries;
 var storeProductLine = productEntries.filter(function (e) { return e.sourceType === 'store'; })[0];
 check(storeProductLine && storeProductLine.productId === cylProduct.id && storeProductLine.qty === 10 && storeProductLine.unitPrice === 100,
   'the store product line carries productId/qty/unitPrice through to the stored entry, same as a single-location product-mode entry would');
@@ -1036,7 +1047,7 @@ console.log('--- product-level rows still need a sibling sale for a delivery lin
 var deliveryOnlyProductBatch = call({
   action: 'bulkSubmitAreaBatch', token: saraTok, clusterId: cluster.entity.id, dryRun: true,
   rows: [
-    { date: '2026-09-29', sourceType: 'car', sourceId: car.entity.id, productId: servicesProduct.entity.id, qty: 1, unitPrice: 115, deliveryFeeBankAmount: 115 }
+    { date: '2026-08-29', sourceType: 'car', sourceId: car.entity.id, productId: servicesProduct.entity.id, qty: 1, unitPrice: 115, deliveryFeeBankAmount: 115 }
   ]
 });
 check(!deliveryOnlyProductBatch.ok && deliveryOnlyProductBatch.error === 'invalid_rows' && deliveryOnlyProductBatch.results[0].error === 'delivery_without_sale',
@@ -1044,8 +1055,8 @@ check(!deliveryOnlyProductBatch.ok && deliveryOnlyProductBatch.error === 'invali
 var deliveryWithSiblingProductBatch = call({
   action: 'bulkSubmitAreaBatch', token: saraTok, clusterId: cluster.entity.id, dryRun: true,
   rows: [
-    { date: '2026-09-29', sourceType: 'car', sourceId: car.entity.id, productId: cylProduct.id, qty: 2, unitPrice: 100, cashSales: 200 },
-    { date: '2026-09-29', sourceType: 'car', sourceId: car.entity.id, productId: servicesProduct.entity.id, qty: 1, unitPrice: 115, deliveryFeeBankAmount: 115 }
+    { date: '2026-08-29', sourceType: 'car', sourceId: car.entity.id, productId: cylProduct.id, qty: 2, unitPrice: 100, cashSales: 200 },
+    { date: '2026-08-29', sourceType: 'car', sourceId: car.entity.id, productId: servicesProduct.entity.id, qty: 1, unitPrice: 115, deliveryFeeBankAmount: 115 }
   ]
 });
 check(deliveryWithSiblingProductBatch.ok, 'adding a sibling cash product-line in the same batch, same source+date, satisfies the delivery-needs-a-sale rule');
@@ -1054,8 +1065,8 @@ console.log('--- full happy path: multi-location upload -> pending_deputy -> dep
 var happyBatch = call({
   action: 'bulkSubmitAreaBatch', token: saraTok, clusterId: cluster.entity.id,
   rows: [
-    { date: '2026-09-28', sourceType: 'store', sourceId: store.entity.id, cashSales: 4000, posSales: 500 },
-    { date: '2026-09-28', sourceType: 'car', sourceId: car.entity.id, cashSales: 3000, deliveryFeeBankAmount: 1000 }
+    { date: '2026-07-28', sourceType: 'store', sourceId: store.entity.id, cashSales: 4000, posSales: 500 },
+    { date: '2026-07-28', sourceType: 'car', sourceId: car.entity.id, cashSales: 3000, deliveryFeeBankAmount: 1000 }
   ]
 });
 check(happyBatch.ok && happyBatch.batch.status === 'pending_deputy', 'a clean multi-location batch is created and lands pending_deputy');
@@ -1067,7 +1078,7 @@ check(deputyApprove.ok, 'the deputy approves the batch');
 check(deputyApprove.handoff.kind === 'cluster_to_collector' && deputyApprove.handoff.status === 'pending' && deputyApprove.handoff.toUserId === musa.id,
   'approval creates a real cluster_to_collector handoff addressed to the cluster\'s collector');
 close(deputyApprove.handoff.amount, deputyApprove.batch.breakdown.netCashOwed, "the handoff's amount matches computeNet_ summed across the batch's locations");
-var entryAfterApprove = call({ action: 'listEntries', token: adminTok, locationId: location.entity.id, date: '2026-09-28' }).entries[0];
+var entryAfterApprove = call({ action: 'listEntries', token: adminTok, locationId: location.entity.id, date: '2026-07-28' }).entries[0];
 check(entryAfterApprove.consumedBy === deputyApprove.handoff.id, "each entry's consumedBy now points at the real handoff, not the batch");
 
 var collectorConfirm = call({ action: 'confirmHandoff', token: musaTok, id: deputyApprove.handoff.id, receivedAmount: deputyApprove.handoff.amount });
@@ -1079,9 +1090,9 @@ console.log('--- areaBulkBatchDetail: the product-level VAT breakdown survives a
 var productBatch = call({
   action: 'bulkSubmitAreaBatch', token: saraTok, clusterId: cluster.entity.id,
   rows: [
-    { date: '2026-09-30', sourceType: 'store', sourceId: store.entity.id, productId: cylProduct.id, qty: 10, unitPrice: 100, cashSales: 1000 },
-    { date: '2026-09-30', sourceType: 'car', sourceId: car.entity.id, productId: cylProduct.id, qty: 5, unitPrice: 100, cashSales: 500 },
-    { date: '2026-09-30', sourceType: 'car', sourceId: car.entity.id, productId: servicesProduct.entity.id, qty: 1, unitPrice: 115, deliveryFeeBankAmount: 115 }
+    { date: '2026-08-30', sourceType: 'store', sourceId: store.entity.id, productId: cylProduct.id, qty: 10, unitPrice: 100, cashSales: 1000 },
+    { date: '2026-08-30', sourceType: 'car', sourceId: car.entity.id, productId: cylProduct.id, qty: 5, unitPrice: 100, cashSales: 500 },
+    { date: '2026-08-30', sourceType: 'car', sourceId: car.entity.id, productId: servicesProduct.entity.id, qty: 1, unitPrice: 115, deliveryFeeBankAmount: 115 }
   ]
 });
 check(productBatch.ok, 'a product-level batch (qty/unitPrice per row) submits fine, same as any other');
@@ -1106,17 +1117,17 @@ check(!missingDetail.ok && missingDetail.error === 'not_found', 'a bogus batch i
 console.log('--- reject-and-resubmit ---');
 var rejectBatch = call({
   action: 'bulkSubmitAreaBatch', token: saraTok, clusterId: cluster.entity.id,
-  rows: [{ date: '2026-09-29', sourceType: 'store', sourceId: store.entity.id, cashSales: 900 }]
+  rows: [{ date: '2026-08-29', sourceType: 'store', sourceId: store.entity.id, cashSales: 900 }]
 });
 check(rejectBatch.ok, 'a second batch is submitted');
 var deputyReject = call({ action: 'deputyRejectBatch', token: deputyTok, id: rejectBatch.batch.id, note: 'wrong figure, please recheck' });
 check(deputyReject.ok && deputyReject.batch.status === 'deputy_rejected' && deputyReject.batch.rejectionNote === 'wrong figure, please recheck',
   'the deputy rejects with a note');
-var voidedEntry = call({ action: 'listEntries', token: adminTok, locationId: location.entity.id, date: '2026-09-29' }).entries[0];
+var voidedEntry = call({ action: 'listEntries', token: adminTok, locationId: location.entity.id, date: '2026-08-29' }).entries[0];
 check(voidedEntry.voided === true && !voidedEntry.consumedBy, 'the rejected entry is marked voided, not just released back to unconsumed');
 var resubmitBatch = call({
   action: 'bulkSubmitAreaBatch', token: saraTok, clusterId: cluster.entity.id,
-  rows: [{ date: '2026-09-29', sourceType: 'store', sourceId: store.entity.id, cashSales: 950 }]
+  rows: [{ date: '2026-08-29', sourceType: 'store', sourceId: store.entity.id, cashSales: 950 }]
 });
 check(resubmitBatch.ok, 'the area manager resubmits a corrected batch for the same date/source');
 var resubmitApprove = call({ action: 'deputyApproveBatch', token: deputyTok, id: resubmitBatch.batch.id });
@@ -1477,6 +1488,158 @@ check(del.ok && del.meta && !del.meta.clusters.some(function (c) { return c.id =
 check(call({ action: 'adminSaveEntity', token: adminTok, kind: 'cluster', data: { name: '' } }).meta === undefined,
   'a rejected write carries no reference data — there is nothing new to show');
 
+console.log('--- controls: what can change, by whom, and when it locks ---');
+// A branch of its own, so nothing earlier in the file is in flight here.
+var ctlMgr = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Ctl Area Manager', email: 'ctlmgr.fx@bestgas.sa', role: 'cluster_manager' } }).user;
+var ctlCol = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Ctl Collector', email: 'ctlcol.fx@bestgas.sa', role: 'collector' } }).user;
+var ctlBm = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Ctl Branch Manager', email: 'ctlbm.fx@bestgas.sa', role: 'store_manager' } }).user;
+var ctlDrv = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Ctl Driver', email: 'ctldrv.fx@bestgas.sa', role: 'driver' } }).user;
+var ctlMgrTok = acceptInvite('ctlmgr.fx@bestgas.sa'), ctlColTok = acceptInvite('ctlcol.fx@bestgas.sa');
+var ctlBmTok = acceptInvite('ctlbm.fx@bestgas.sa'), ctlDrvTok = acceptInvite('ctldrv.fx@bestgas.sa');
+var ctlArea = call({ action: 'adminSaveEntity', token: adminTok, kind: 'cluster', data: { name: 'Ctl Area', clusterManagerUserId: ctlMgr.id, collectorUserId: ctlCol.id } }).entity;
+var ctlLoc = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: 'Dammam', name: 'Ctl Branch', clusterId: ctlArea.id } }).entity;
+var ctlStore = call({ action: 'adminSaveEntity', token: adminTok, kind: 'store', data: { locationId: ctlLoc.id, name: 'Ctl Store', storeManagerUserId: ctlBm.id } }).entity;
+var ctlCar = call({ action: 'adminSaveEntity', token: adminTok, kind: 'car', data: { locationId: ctlLoc.id, label: 'Ctl Truck', driverUserId: ctlDrv.id } }).entity;
+var today = ctx.todayRiyadh_();
+var yd = new Date(today + 'T12:00:00Z'); yd.setUTCDate(yd.getUTCDate() - 1); var yesterday = yd.toISOString().slice(0, 10);
+var fd = new Date(today + 'T12:00:00Z'); fd.setUTCDate(fd.getUTCDate() + 2); var future = fd.toISOString().slice(0, 10);
+
+// --- dates and figures ---
+var fut = call({ action: 'createDailyEntry', token: ctlBmTok, date: future, sourceType: 'store', sourceId: ctlStore.id, cashSales: 100 });
+check(!fut.ok && fut.error === 'future_date', 'an entry dated in the future is refused');
+var neg = call({ action: 'createDailyEntry', token: ctlBmTok, date: today, sourceType: 'store', sourceId: ctlStore.id, cashSales: -500 });
+check(!neg.ok && neg.error === 'invalid_input', 'a negative sale is refused (it would quietly cut what is owed)');
+var badDate = call({ action: 'createDailyEntry', token: ctlBmTok, date: '24/09/2026', sourceType: 'store', sourceId: ctlStore.id, cashSales: 100 });
+check(!badDate.ok && badDate.error === 'invalid_date', 'a malformed date is refused');
+
+// --- cancelling before handover ---
+var y1 = call({ action: 'createDailyEntry', token: ctlBmTok, date: yesterday, sourceType: 'store', sourceId: ctlStore.id, cashSales: 1000, submissionId: 'sub-1' });
+check(y1.ok && y1.entry.submissionId === 'sub-1', 'an entry saves, carrying its submission id');
+var voidNoReason = call({ action: 'voidEntries', token: ctlBmTok, ids: [y1.entry.id] });
+check(!voidNoReason.ok && voidNoReason.error === 'reason_required', 'cancelling needs a reason');
+var voidByAdmin = call({ action: 'voidEntries', token: adminTok, ids: [y1.entry.id], reason: 'x' });
+check(!voidByAdmin.ok && voidByAdmin.error === 'not_your_entry', 'not even an admin can cancel someone else\'s entry');
+var voidByMgr = call({ action: 'voidEntries', token: ctlMgrTok, ids: [y1.entry.id], reason: 'x' });
+check(!voidByMgr.ok && voidByMgr.error === 'not_your_entry', 'nor can the area manager');
+var voidOwn = call({ action: 'voidEntries', token: ctlBmTok, ids: [y1.entry.id], reason: 'typed 1000 instead of 100' });
+check(voidOwn.ok && voidOwn.voided === 1, 'the author cancels their own entry before handing it over');
+var voidedRow = ctx.readSheet(SHEETS.ENTRIES).filter(function (e) { return e.id === y1.entry.id; })[0];
+check(voidedRow && voidedRow.voided === true && voidedRow.voidReason === 'typed 1000 instead of 100', 'the row stays on file, marked cancelled with its reason — nothing is deleted');
+check(call({ action: 'voidEntries', token: ctlBmTok, ids: [y1.entry.id], reason: 'again' }).error === 'already_voided', 'a cancelled entry cannot be cancelled twice');
+var noEntriesAfterVoid = call({ action: 'createHandoff', token: ctlBmTok, kind: 'location_to_cluster', locationId: ctlLoc.id });
+check(!noEntriesAfterVoid.ok, 'a cancelled entry is not handed over');
+
+// --- the lock: once handed over, nobody changes it ---
+var y2 = call({ action: 'createDailyEntry', token: ctlBmTok, date: yesterday, sourceType: 'store', sourceId: ctlStore.id, cashSales: 100 });
+var hand = call({ action: 'createHandoff', token: ctlBmTok, kind: 'location_to_cluster', locationId: ctlLoc.id });
+check(hand.ok && hand.handoff.amount === 100, 'the corrected entry is handed over');
+var voidLocked = call({ action: 'voidEntries', token: ctlBmTok, ids: [y2.entry.id], reason: 'changed my mind' });
+check(!voidLocked.ok && voidLocked.error === 'entry_locked', 'once handed over, even its author cannot cancel it');
+function ctlState(id, tok) { return call({ action: 'listEntries', token: tok || ctlBmTok }).entries.filter(function (e) { return e.id === id; })[0]; }
+check(ctlState(y1.entry.id).lockState === 'voided' && ctlState(y1.entry.id).canVoid === false, 'the list shows the cancelled entry as cancelled');
+check(ctlState(y2.entry.id).lockState === 'submitted' && ctlState(y2.entry.id).canVoid === false, 'and the handed-over one as waiting for approval, locked');
+var backdate = call({ action: 'createDailyEntry', token: ctlBmTok, date: yesterday, sourceType: 'store', sourceId: ctlStore.id, cashSales: 0,
+  expenseAmount: 60, expenseItemId: expenseId, expenseReason: 'late fuel' });
+check(!backdate.ok && backdate.error === 'day_closed', 'nothing can be added to a day already handed over (an expense there would cut accepted cash)');
+var sameDay = call({ action: 'createDailyEntry', token: ctlBmTok, date: today, sourceType: 'store', sourceId: ctlStore.id, cashSales: 40 });
+check(sameDay.ok, 'today stays open for a second handover');
+
+// --- receipt: the receiver only ---
+var onBehalf = call({ action: 'confirmHandoff', token: adminTok, id: hand.handoff.id });
+check(!onBehalf.ok && onBehalf.error === 'receiver_only', 'an admin cannot confirm a receipt on the receiver\'s behalf');
+var byOther = call({ action: 'confirmHandoff', token: ctlColTok, id: hand.handoff.id });
+check(!byOther.ok && byOther.error === 'receiver_only', 'nor can anyone else in the chain');
+var flagOnBehalf = call({ action: 'disputeHandoff', token: adminTok, id: hand.handoff.id, note: 'area manager on leave' });
+check(flagOnBehalf.ok && flagOnBehalf.handoff.status === 'disputed', 'an admin can still flag (dispute) it for someone absent — that moves no money');
+// the dispute is settled by someone else, who can record a shortage
+var settle = call({ action: 'resolveDispute', token: financeTok, id: hand.handoff.id, resolution: 'confirm', receivedAmount: 80, note: 'counted 80' });
+check(settle.ok && settle.handoff.confirmedBy === finance.id && settle.handoff.confirmedViaDispute === true,
+  'a dispute settled as confirmed names the person who settled it, not the receiver');
+check(settle.handoff.amount === 80 && settle.handoff.shortfall === 20, 'and records the amount actually received, with the shortfall');
+check(ctlState(y2.entry.id).lockState === 'approved', 'once the next level has confirmed, the list shows it approved');
+var adminSettlesOwn = call({ action: 'disputeHandoff', token: adminTok, id: sameDay.entry.id });
+check(!adminSettlesOwn.ok, 'a dispute needs a real handoff');
+
+// an admin starting a handoff names the real holder as the giver
+var todayCar = call({ action: 'createDailyEntry', token: ctlDrvTok, date: today, sourceType: 'car', sourceId: ctlCar.id, cashSales: 300 });
+var carHand = call({ action: 'createHandoff', token: adminTok, kind: 'car_to_location', carId: ctlCar.id });
+check(carHand.ok && carHand.handoff.fromUserId === ctlDrv.id && carHand.handoff.createdBy === admin.id,
+  'a handoff an admin starts names the driver who holds the cash, and records the admin as who pressed the button');
+
+// --- nobody moves while cash is in flight ---
+var otherBm = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Ctl Branch Manager 2', email: 'ctlbm2.fx@bestgas.sa', role: 'store_manager' } }).user;
+var swapBm = call({ action: 'adminSaveEntity', token: adminTok, kind: 'store', id: ctlStore.id, data: { storeManagerUserId: otherBm.id } });
+check(!swapBm.ok && swapBm.error === 'person_holds_cash', 'the branch manager cannot be replaced while holding cash or an open handover');
+var otherDrv = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Ctl Driver 2', email: 'ctldrv2.fx@bestgas.sa', role: 'driver' } }).user;
+var swapDrv = call({ action: 'adminSaveEntity', token: adminTok, kind: 'car', id: ctlCar.id, data: { driverUserId: otherDrv.id } });
+check(!swapDrv.ok && swapDrv.error === 'person_holds_cash', 'nor the driver while their handover is open');
+var moveBranch = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', id: ctlLoc.id, data: { clusterId: cluster.entity.id } });
+check(!moveBranch.ok && moveBranch.error === 'cash_in_flight', 'a branch cannot move to another area while its cash is in flight');
+var renameOk = call({ action: 'adminSaveEntity', token: adminTok, kind: 'store', id: ctlStore.id, data: { name: 'Ctl Store (renamed)' } });
+check(renameOk.ok, 'a harmless change (a name) still saves while cash is in flight');
+var disableHolder = call({ action: 'adminUpdateUser', token: adminTok, id: ctlDrv.id, data: { active: false } });
+check(!disableHolder.ok && disableHolder.error === 'person_holds_cash', 'a person holding cash cannot be disabled');
+var roleAssigned = call({ action: 'adminUpdateUser', token: adminTok, id: otherBm.id, data: { role: 'driver' } });
+check(roleAssigned.ok, 'an unassigned person with nothing in flight can change role');
+var roleOfAssigned = call({ action: 'adminUpdateUser', token: adminTok, id: ctlMgr.id, data: { role: 'collector' } });
+check(!roleOfAssigned.ok && (roleOfAssigned.error === 'user_has_assignments' || roleOfAssigned.error === 'person_holds_cash'),
+  'someone named on a link cannot be given another role until the link is reassigned');
+
+// --- admins cannot lock the company out ---
+check(call({ action: 'adminUpdateUser', token: adminTok, id: admin.id, data: { active: false } }).error === 'cannot_change_self', 'an admin cannot disable themselves');
+check(call({ action: 'adminUpdateUser', token: adminTok, id: admin.id, data: { role: 'finance' } }).error === 'cannot_change_self', 'nor demote themselves');
+
+// --- settings ---
+check(call({ action: 'adminSetConfig', token: adminTok, data: { vatRate: 15 } }).error === 'invalid_input', 'a VAT rate of 15 (meant 0.15) is refused');
+check(call({ action: 'adminSetConfig', token: adminTok, data: { secondApprovalThreshold: -1 } }).error === 'invalid_input', 'a negative threshold is refused');
+call({ action: 'adminSetConfig', token: adminTok, data: { staleThresholdHours: 30 } });
+check(ctx.readSheet(SHEETS.AUDIT).some(function (a) { return a.action === 'admin_set_config' && /staleThresholdHours: \S+ → 30/.test(a.detail || ''); }),
+  'a settings change is audited with what changed, from what to what');
+
+console.log('--- the deputy checks the area manager -> collector handover ---');
+// a fresh area so the amounts are known
+var dpMgr = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Dp Area Manager', email: 'dpmgr.fx@bestgas.sa', role: 'cluster_manager' } }).user;
+var dpCol = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Dp Collector', email: 'dpcol.fx@bestgas.sa', role: 'collector' } }).user;
+var dpBm = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Dp Branch Manager', email: 'dpbm.fx@bestgas.sa', role: 'store_manager' } }).user;
+var dpMgrTok = acceptInvite('dpmgr.fx@bestgas.sa'), dpColTok = acceptInvite('dpcol.fx@bestgas.sa'), dpBmTok = acceptInvite('dpbm.fx@bestgas.sa');
+var dpArea = call({ action: 'adminSaveEntity', token: adminTok, kind: 'cluster', data: { name: 'Dp Area', clusterManagerUserId: dpMgr.id, collectorUserId: dpCol.id } }).entity;
+var dpLoc = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: 'Khobar', name: 'Dp Branch', clusterId: dpArea.id } }).entity;
+var dpStore = call({ action: 'adminSaveEntity', token: adminTok, kind: 'store', data: { locationId: dpLoc.id, name: 'Dp Store', storeManagerUserId: dpBm.id } }).entity;
+call({ action: 'createDailyEntry', token: dpBmTok, date: ctx.todayRiyadh_(), sourceType: 'store', sourceId: dpStore.id, cashSales: 2500 });
+var dpL = call({ action: 'createHandoff', token: dpBmTok, kind: 'location_to_cluster', locationId: dpLoc.id });
+call({ action: 'confirmHandoff', token: dpMgrTok, id: dpL.handoff.id });
+var dpC = call({ action: 'createHandoff', token: dpMgrTok, kind: 'cluster_to_collector', clusterId: dpArea.id });
+check(dpC.ok && dpC.handoff.status === 'pending_deputy' && dpC.handoff.amount === 2500, 'the area manager\'s request opens waiting for the deputy');
+check(call({ action: 'confirmHandoff', token: dpColTok, id: dpC.handoff.id }).error === 'not_pending', 'the collector cannot confirm it before the deputy validates');
+check(call({ action: 'listDashboard', token: walidTok }).pendingForMe.some(function (h) { return h.id === dpC.handoff.id; }), 'it is on the deputy\'s list of things to act on');
+check(call({ action: 'deputyValidateHandoff', token: dpMgrTok, id: dpC.handoff.id }).error === 'forbidden', 'the area manager cannot validate their own request');
+check(call({ action: 'deputyValidateHandoff', token: financeTok, id: dpC.handoff.id }).error === 'forbidden', 'nor can Finance — this is the deputy\'s authority');
+check(call({ action: 'deputyReturnHandoff', token: walidTok, id: dpC.handoff.id }).error === 'reason_required', 'sending it back needs a reason');
+var dpRet = call({ action: 'deputyReturnHandoff', token: walidTok, id: dpC.handoff.id, reason: 'Branch Dp deposit slip missing' });
+check(dpRet.ok && dpRet.handoff.status === 'returned' && dpRet.handoff.returnReason === 'Branch Dp deposit slip missing', 'the deputy sends it back to the area manager with the reason');
+check(ctx._debug.mailLog.some(function (m) { return m.to === 'dpmgr.fx@bestgas.sa' && /deposit slip missing/.test(m.body); }), 'and the area manager is told why by email');
+check(call({ action: 'deputyValidateHandoff', token: walidTok, id: dpC.handoff.id }).error === 'not_pending', 'a returned request cannot be validated afterwards');
+var dpC2 = call({ action: 'createHandoff', token: dpMgrTok, kind: 'cluster_to_collector', clusterId: dpArea.id });
+check(dpC2.ok && dpC2.handoff.amount === 2500, 'the branch cash went back to the area manager, who sends a corrected request');
+var dpV = call({ action: 'deputyValidateHandoff', token: walidTok, id: dpC2.handoff.id, note: 'slip attached' });
+check(dpV.ok && dpV.handoff.status === 'pending' && dpV.handoff.deputyValidatedBy === walid.id, 'the deputy validates the corrected request');
+var dpConf = call({ action: 'confirmHandoff', token: dpColTok, id: dpC2.handoff.id });
+check(dpConf.ok && dpConf.handoff.status === 'confirmed', 'and the collector can now confirm receiving it');
+check(ctx.readSheet(SHEETS.AUDIT).some(function (a) { return a.action === 'deputy_return_handoff' && a.detail === dpC.handoff.id; }) &&
+  ctx.readSheet(SHEETS.AUDIT).some(function (a) { return a.action === 'deputy_validate_handoff' && a.detail === dpC2.handoff.id; }),
+  'both decisions are in the audit trail');
+
+console.log('--- the deputy sees everything, acts only in their own step ---');
+var dEntries = call({ action: 'listEntries', token: walidTok });
+check(dEntries.ok && dEntries.entries.length === call({ action: 'listEntries', token: adminTok }).entries.length, 'the deputy sees every branch\'s entries');
+check(call({ action: 'listHandoffs', token: walidTok }).handoffs.length === call({ action: 'listHandoffs', token: adminTok }).handoffs.length, 'and every handover');
+check(call({ action: 'getSalesReport', token: walidTok }).ok && call({ action: 'getDashboardAll', token: walidTok }).ok, 'and every report and dashboard');
+check(call({ action: 'getReconciliation', token: walidTok }).ok, 'and the bank reconciliation');
+check(call({ action: 'importBankStatement', token: walidTok, rows: [{ date: '2026-08-01', amount: 1, reference: 'x' }] }).error === 'forbidden', 'but cannot import bank statements');
+check(call({ action: 'adminSetConfig', token: walidTok, data: { vatRate: 0.2 } }).error === 'forbidden', 'nor touch the settings');
+check(call({ action: 'adminSaveEntity', token: walidTok, kind: 'zone', data: { city: 'X', name: 'Y' } }).error === 'forbidden', 'nor the master data');
+check(call({ action: 'createDailyEntry', token: walidTok, date: ctx.todayRiyadh_(), sourceType: 'store', sourceId: store.entity.id, cashSales: 1 }).error === 'forbidden', 'nor enter figures');
+
 console.log('--- starting a fresh test round archives movement, and keeps the org ---');
 check(call({ action: 'adminArchiveTransactions', token: adminTok }).error === 'confirm_required',
   'archiving needs the confirmation word, so it can never be one stray tap');
@@ -1508,7 +1671,7 @@ check(ctx.readSheet(SHEETS.AUDIT).some(function (a) { return a.action === 'admin
 
 // A second round started within the same minute: the audit tab always holds
 // the first archive's own line, so its dated name was about to be reused.
-call({ action: 'createDailyEntry', token: aliTok, date: '2026-09-28', sourceType: 'store', sourceId: store.entity.id, cashSales: 10 });
+call({ action: 'createDailyEntry', token: aliTok, date: '2026-08-28', sourceType: 'store', sourceId: store.entity.id, cashSales: 10 });
 var arch2 = call({ action: 'adminArchiveTransactions', token: adminTok, confirm: 'ARCHIVE' });
 check(arch2.ok && arch2.archived.length >= 2, 'a second fresh start straight after the first still works');
 var names2 = arch2.archived.map(function (a) { return a.archivedAs; });
@@ -1573,6 +1736,15 @@ var twin = call({ action: 'adminSaveEntity', token: adminTok, kind: 'cluster', d
 check(twin.ok, 'two people nobody else uses make a valid area');
 check(call({ action: 'adminSaveEntity', token: adminTok, kind: 'cluster', id: twin.entity.id, data: { name: 'Twin Area (renamed)' } }).ok,
   'editing an area keeps its own people — it is not counted against itself');
+
+console.log('--- going live switches "start fresh" off for good ---');
+var goLive = call({ action: 'adminSetConfig', token: adminTok, data: { liveLocked: true } });
+check(goLive.ok && goLive.config.liveLocked === true, 'the admin switches the system to live');
+check(call({ action: 'listMeta', token: adminTok }).config.liveLocked === true, 'listMeta carries the live flag, so the settings screen shows it');
+var archAfterLive = call({ action: 'adminArchiveTransactions', token: adminTok, confirm: 'ARCHIVE' });
+check(!archAfterLive.ok && archAfterLive.error === 'live_locked', 'once live, starting a fresh round is refused');
+var unlock = call({ action: 'adminSetConfig', token: adminTok, data: { liveLocked: false } });
+check(!unlock.ok && unlock.error === 'live_locked', 'and the switch cannot be turned back off from the app');
 
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);
