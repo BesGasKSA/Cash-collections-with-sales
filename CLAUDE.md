@@ -333,6 +333,75 @@ interest" sections. If you change any handoff-creation or confirm/dispute
 code, re-run the tests; a passing structural check does not prove the
 runtime one still holds and vice versa.
 
+## Locking and the approval matrix (2026-09-24)
+
+The user's rule is that **once data is handed to the next level, nobody may
+change it, and once that level approves it, it stays locked for good.**
+Admins are included. The rules below implement it. The Admin →
+Permissions screen shows them (`PERM_ROWS` plus the `rule_*` list), and the
+"controls:" and "deputy" sections of `tests/run.js` cover every one.
+
+- **No row is edited or deleted.** There has never been an edit or delete
+  action for entries or handoffs. Keep it that way. A correction is a new,
+  visible movement.
+- **Cancelling (`voidEntries`)** is allowed only for the entry's own author
+  (`enteredBy`), only while `!consumedBy`, and only with a reason. Nobody
+  else can cancel an entry, not even an admin or the area manager. The row
+  stays on file with `voided/voidReason/voidedBy/voidedAt`. An entry with a
+  direct deposit (الموازنة) can't be cancelled, because it's a bank movement.
+  Rows saved from one form share a `submissionId`, so a whole day is
+  cancelled together, all or nothing. Every reader that counts cash filters
+  `!e.voided`. Three readers once didn't and were fixed: the delivery check,
+  the car handoff and the dashboard comparison.
+- **Day lock (`entryDateError_`)**: an entry is refused if its source+date
+  is a past day that already has a handed-over entry (`day_closed`), if the
+  date is in the future (`future_date`, Riyadh calendar), or if it's
+  malformed. Today stays open, so a second handover the same day still
+  works. Without the lock, a backdated expense, credit sale or الموازنة
+  quietly cut cash that had already been accepted. **Negative** sales,
+  quantities and prices are refused too.
+- **Only the receiver confirms receipt (`receiver_only`).** The old admin
+  "confirm on behalf" path is gone. An admin can still *dispute* on
+  someone's behalf, because that only flags the handoff and moves no money.
+  A handoff an admin creates records the real cash holder as `fromUserId`
+  and the admin as `createdBy`. `createdBy` can't confirm, settle or
+  validate it.
+- **Settling a dispute as "confirm"** records the settler as `confirmedBy`
+  (`confirmedViaDispute`), accepts the amount actually received (shortfall
+  and escalation apply), and raises the same large-amount second-approval
+  flag as a normal confirmation. It used to credit the receiver and skip
+  four-eyes.
+- **The Deputy Operations Manager validates every area-manager → collector
+  handoff.** `createClusterHandoff_` opens it as `pending_deputy`, so the
+  collector can't confirm it yet. `deputyValidateHandoff` turns it
+  `pending` and notifies the collector. `deputyReturnHandoff` (reason
+  required) sets it `returned`, releases the swept-up branch handoffs back
+  to the area manager's held cash, and emails them the reason. The deputy
+  role or an admin may act, as the fallback when there is no deputy, but
+  never a party to the handoff. An area-bulk batch already carries the
+  deputy's approval, so its handoff opens straight at `pending`. The deputy
+  sees everything company-wide, including entries (view only) and bank
+  reconciliation (read only via `requireReconciliationView_`), but gets no
+  Admin, settings or data entry.
+- **Nothing moves while cash is in flight** (`personBusy_`, `placeBusy_`,
+  `inFlightError_`). Nobody on a link can be replaced, disabled or given a
+  new role while they have unhanded entries, an open (`pending`,
+  `pending_deputy`, `disputed`) handoff, or confirmed cash not passed on. No
+  branch, store, car or POS can be moved while cash sits there. The errors
+  are `person_holds_cash` and `cash_in_flight`. Changing someone's role
+  also needs them off every link first (`user_has_assignments`). The
+  deposit action no longer requires a *current* collector assignment:
+  whoever holds confirmed collector cash can bank it.
+- **Admin self-protection**: an admin can't disable or demote themselves
+  (`cannot_change_self`), and the last active admin can't be removed
+  (`last_admin`).
+- **Settings** refuse nonsense values (VAT must be between 0 and 1,
+  thresholds can't be negative). Every change is audited with `key: old →
+  new`.
+- **Go-live (`liveLocked`)** is one way. Once set, "start a fresh test
+  round" is refused (`live_locked`) and the flag can't be unset from the
+  app.
+
 ## Area-manager bulk upload — a deliberate, toggleable exception to the chain
 
 Added 2026-09-14, for clusters where drivers/store managers genuinely can't

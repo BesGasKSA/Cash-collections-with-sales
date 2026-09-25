@@ -1015,6 +1015,63 @@
   .invite-link .btn{padding:8px 14px;font-size:12.5px;}
   .invite-link a.btn{text-decoration:none;display:inline-flex;align-items:center;}
   .field label .req{color:var(--danger);margin-inline-start:3px;font-weight:800;}
+  /* ---- the entries list ---- */
+  .el-head,.el-row{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(0,1.1fr) minmax(0,.9fr) minmax(0,.9fr) minmax(0,1fr) minmax(0,1.25fr) 34px;
+    gap:12px;align-items:center;}
+  .el-head{padding:0 14px 8px;font-size:11.5px;font-weight:700;color:var(--muted);border-bottom:1px solid var(--border);}
+  .el-row{padding:12px 14px;border-radius:14px;border:1px solid var(--border-soft);background:var(--card);margin-top:8px;cursor:pointer;
+    transition:border-color .15s ease, box-shadow .15s ease;}
+  .el-row:hover{border-color:color-mix(in srgb, var(--green) 35%, transparent);box-shadow:0 6px 18px -14px rgba(77,109,81,.45);}
+  .el-row.open{border-color:var(--green);}
+  .el-row.st-voided{opacity:.62;}
+  .el-row.st-voided .el-fig b{text-decoration:line-through;}
+  .el-main{display:flex;align-items:center;gap:10px;min-width:0;}
+  .el-ic{width:36px;height:36px;border-radius:11px;display:grid;place-items:center;flex:none;background:var(--green-pale);color:var(--green-dark);}
+  .el-ic svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;}
+  .el-who,.el-date,.el-fig{display:flex;flex-direction:column;min-width:0;line-height:1.3;}
+  .el-who b{font-size:14px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .el-who span,.el-date span{font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .el-date b{font-size:13px;font-weight:700;font-variant-numeric:tabular-nums;}
+  .el-fig span{display:none;font-size:11px;color:var(--muted);}
+  .el-fig b{font-size:14px;font-weight:700;font-variant-numeric:tabular-nums;}
+  .el-fig.ded b{color:var(--danger);}
+  .el-fig.net b{color:var(--green-dark);font-weight:800;}
+  .el-badge{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:999px;font-size:12px;font-weight:700;white-space:nowrap;}
+  .el-badge svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2.4;flex:none;}
+  .el-badge.open{background:color-mix(in srgb, #b7791f 12%, transparent);color:#8a5a12;}
+  .el-badge.submitted{background:color-mix(in srgb, #2b6cb0 11%, transparent);color:#24568c;}
+  .el-badge.approved{background:var(--green-pale);color:var(--green-dark);}
+  .el-badge.voided{background:color-mix(in srgb, var(--danger) 9%, transparent);color:var(--danger);}
+  .el-more{width:32px;height:32px;border-radius:10px;border:1px solid var(--border-soft);background:var(--bg);display:grid;place-items:center;cursor:pointer;color:var(--muted);}
+  .el-more svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2.4;transition:transform .2s ease;transform:rotate(90deg);}
+  .el-row.open .el-more svg{transform:rotate(-90deg);}
+  .el-detail{grid-column:1 / -1;border-top:1px dashed var(--border);padding-top:10px;margin-top:4px;cursor:default;}
+  .el-lines{list-style:none;margin:0 0 8px;padding:0;display:flex;flex-direction:column;gap:4px;}
+  .el-lines.off{opacity:.55;}
+  .el-lines li{display:flex;justify-content:space-between;gap:12px;padding:7px 10px;border-radius:9px;background:var(--bg);font-size:13px;}
+  .el-ll{display:flex;flex-direction:column;min-width:0;}
+  .el-ll i{font-style:normal;font-size:11.5px;color:var(--muted);}
+  .el-la{font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap;}
+  .el-la.neg{color:var(--danger);} .el-la.pos{color:var(--green-dark);}
+  .el-prod{background:transparent !important;padding:4px 2px !important;}
+  .el-vat,.el-note{font-size:12px;color:var(--muted);margin:2px 2px 6px;}
+  .el-lock,.el-voidinfo,.ho-onlyrecv,.live-on{display:flex;align-items:flex-start;gap:8px;padding:9px 12px;border-radius:10px;font-size:12.5px;line-height:1.6;margin-top:6px;
+    background:color-mix(in srgb, #2b6cb0 7%, transparent);color:#24568c;}
+  .el-voidinfo{background:color-mix(in srgb, var(--danger) 7%, transparent);color:var(--danger);}
+  .live-on{background:var(--green-pale);color:var(--green-dark);font-weight:600;}
+  .el-lock svg,.el-voidinfo svg,.ho-onlyrecv svg,.live-on svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2.2;flex:none;margin-top:3px;}
+  .el-cancel{margin-top:10px;padding:12px;border-radius:12px;border:1px solid color-mix(in srgb, var(--danger) 22%, transparent);background:color-mix(in srgb, var(--danger) 4%, transparent);}
+  .el-empty{padding:22px 10px;text-align:center;color:var(--muted);}
+  .rules{margin:0;padding-inline-start:20px;display:flex;flex-direction:column;gap:8px;font-size:13.5px;line-height:1.75;}
+  .rules-card h2{display:flex;align-items:center;gap:8px;} .rules-card h2 svg{width:17px;height:17px;stroke:var(--green);fill:none;stroke-width:2.2;}
+  @media (max-width:900px){
+    .el-head{display:none;}
+    .el-row{grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) 34px;grid-template-areas:"main main st more" "date date date date" "f1 f2 f3 f3";row-gap:10px;}
+    .el-main{grid-area:main;} .el-st{grid-area:st;justify-self:end;} .el-more{grid-area:more;}
+    .el-date{grid-area:date;flex-direction:row;gap:8px;align-items:baseline;}
+    .el-fig:nth-of-type(3){grid-area:f1;} .el-fig.ded{grid-area:f2;} .el-fig.net{grid-area:f3;}
+    .el-fig span{display:block;}
+  }
   /* ---- master-data screens and record profiles ---- */
   .ent-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:4px 0 12px;}
   .ent-ht{display:flex;align-items:center;gap:12px;min-width:0;}
@@ -1385,7 +1442,7 @@ var L = {
     sendReset:'إرسال', backToLogin:'العودة لتسجيل الدخول', appTagline:'تحصيل النقدية والموافقات',
     mustChangePw:'يجب تغيير كلمة المرور', newPassword:'كلمة المرور الجديدة', currentPassword:'كلمة المرور الحالية',
     save:'حفظ', cancel:'إلغاء', logout:'خروج', language:'اللغة',
-    nav_home:'الرئيسية', nav_entries:'الإدخالات', nav_areaBulk:'رفع دفعة المنطقة', nav_deputyReview:'اعتماد دفعات المنطقة', nav_handoffs:'التسليمات', nav_report:'تقرير المبيعات', nav_admin:'الإدارة', nav_notifications:'الإشعارات — تسليمات بانتظارك',
+    nav_home:'الرئيسية', nav_entries:'الإدخالات', nav_areaBulk:'رفع دفعة المنطقة', nav_deputyReview:'اعتمادات نائب مدير العمليات', nav_handoffs:'التسليمات', nav_report:'تقرير المبيعات', nav_admin:'الإدارة', nav_notifications:'الإشعارات — تسليمات بانتظارك',
     nav_reconciliation:'التسوية البنكية', recon_title:'التسوية البنكية', recon_hint:'حمّل كشف الحساب البنكي (CSV) لمطابقة الإيداعات المُسجّلة تلقائياً بما وصل فعلياً للبنك.',
     recon_import:'استيراد كشف الحساب', recon_result:'تم استيراد {imported} صف — {matched} مطابقة تلقائية',
     recon_totalDeposits:'إجمالي الإيداعات', recon_reconciled:'مُسوّاة', recon_unmatchedDeposits:'إيداعات غير مطابقة',
@@ -1398,7 +1455,7 @@ var L = {
     home_companyOutstanding:'إجمالي النقدية غير المودعة', home_openDisputes:'اعتراضات مفتوحة (الإدارة)',
     home_actionPending:'{n} تسليم بانتظار تأكيدك', home_actionDisputes:'{n} اعتراض يحتاج إلى حل',
     home_actionNone:'لا يوجد إجراء مطلوب الآن — كل شيء محدّث', home_actionCta:'عرض التسليمات ←',
-    entry_addDelivery:'+ إضافة بند توصيل', entry_deliveryAmount:'مبلغ رسوم التوصيل', entry_deliveryNote:'البيان', entry_deliveryNotePh:'مثال: توصيل لعميل حي النرجس', entry_addCredit:'+ إضافة بيع آجل', entry_creditAmount:'مبلغ البيع الآجل', entry_creditCustomer:'اسم العميل', entry_creditCustomerPh:'العميل المدين بهذا المبلغ', err_customerRequired:'اكتب اسم العميل لكل بيع آجل', report_movement:'نوع الحركة', report_allMovements:'كل الحركات', err_userInOtherArea:'هذا الشخص مسند إلى منطقة أخرى — لكل منطقة أشخاصها ولا يُسند أحد إلى منطقتين', gap_multiArea:'{who} مسند إلى أكثر من منطقة: {x}', pf_count:'{n} سجل', pf_emptyList:'لا توجد سجلات بعد — ابدأ بالإضافة', pf_open:'فتح الملف', pf_backTo:'العودة إلى {x}', pf_notFound:'السجل غير موجود — ربما حُذف', pf_details:'البيانات', pf_links:'الارتباطات', pf_noLinks:'لا توجد ارتباطات بسجلات أخرى', pf_people:'الأشخاص', pf_managesArea:'يدير المنطقة', pf_collectsArea:'يُحصّل للمنطقة', pf_activity:'النشاط', pf_entries:'الإدخالات', pf_sales:'المبيعات', pf_amount:'المبلغ', pf_handed:'سُلّم', pf_noActivity:'لا يوجد نشاط مسجّل بعد', pf_history:'سجل التعديلات', pf_noHistory:'لا توجد تعديلات مسجّلة', pf_auSaved:'حُفظت البيانات', pf_auDeleted:'حُذف', pf_auInvite:'أُرسلت الدعوة', pf_auResend:'أُعيد إرسال الدعوة', pf_auReset:'أُعيد تعيين كلمة المرور', pf_auUpdateUser:'عُدّلت بيانات المستخدم', pf_auAccepted:'قُبلت الدعوة', pf_auChangePw:'غُيّرت كلمة المرور', pf_auLogin:'تسجيل دخول', pf_kindLocation:'فرع', pf_kindStore:'متجر', pf_kindCar:'سيارة', pf_kindPos:'جهاز نقاط بيع', pf_kindCluster:'منطقة', pf_kindZone:'نطاق', pf_kindProduct:'منتج', pf_kindIncome:'بند تحصيل', pf_kindExpense:'بند مصروف', pf_kindUser:'مستخدم', admin_chain:'سلامة الربط', chain_map:'خريطة المناطق والفروع', chain_ok:'كل الحلقات مرتبطة — لا توجد فجوات', chain_gaps:'{n} فجوة في دورة التحصيل تحتاج معالجة', chain_hint:'كل منطقة تحتاج مدير منطقة ومُحصّلاً، وكل فرع متجراً ومديراً، وكل سيارة سائقاً، وكل جهاز نقاط بيع حاملاً — وإلا تتوقف النقدية في الطريق.', chain_fix:'معالجة', chain_areas:'مناطق', chain_branches:'فروع', chain_stores:'متاجر', chain_cars:'سيارات', chain_pos:'أجهزة نقاط بيع', gap_areaManager:'المنطقة «{x}» بلا مدير منطقة', gap_areaCollector:'المنطقة «{x}» بلا مُحصّل', gap_branchArea:'الفرع «{x}» غير مرتبط بمنطقة', gap_branchStore:'الفرع «{x}» بلا متجر', gap_storeManager:'المتجر «{x}» بلا مدير فرع', gap_carDriver:'السيارة «{x}» بلا سائق', gap_posHolder:'جهاز نقاط البيع «{x}» بلا حامل', gap_disabled:'{who} معطّل لكنه ما زال مسنداً إلى «{x}»', gap_idle:'{who} ({x}) غير مسند إلى أي حلقة', org_disabled:'معطّل', org_myArea:'منطقتي', org_myBranch:'فرعي', org_area:'المنطقة', org_branches:'فروع', org_cars:'السيارات والسائقون', org_pos:'أجهزة نقاط البيع', org_unassigned:'غير معيّن', org_gaps:'{n} غير معيّن', org_noArea:'لم تُسند إليك أي منطقة بعد — راجع مدير النظام', org_noBranch:'لم يُسند إليك أي فرع بعد — راجع مدير النظام', home_lastLogin:'آخر تسجيل دخول ناجح', home_firstLogin:'هذا أول تسجيل دخول لك', home_city:'الفرع',
+    entry_addDelivery:'+ إضافة بند توصيل', entry_deliveryAmount:'مبلغ رسوم التوصيل', entry_deliveryNote:'البيان', entry_deliveryNotePh:'مثال: توصيل لعميل حي النرجس', entry_addCredit:'+ إضافة بيع آجل', entry_creditAmount:'مبلغ البيع الآجل', entry_creditCustomer:'اسم العميل', entry_creditCustomerPh:'العميل المدين بهذا المبلغ', err_customerRequired:'اكتب اسم العميل لكل بيع آجل', report_movement:'نوع الحركة', report_allMovements:'كل الحركات', err_userInOtherArea:'هذا الشخص مسند إلى منطقة أخرى — لكل منطقة أشخاصها ولا يُسند أحد إلى منطقتين', gap_multiArea:'{who} مسند إلى أكثر من منطقة: {x}', pf_count:'{n} سجل', pf_emptyList:'لا توجد سجلات بعد — ابدأ بالإضافة', pf_open:'فتح الملف', pf_backTo:'العودة إلى {x}', pf_notFound:'السجل غير موجود — ربما حُذف', pf_details:'البيانات', pf_links:'الارتباطات', pf_noLinks:'لا توجد ارتباطات بسجلات أخرى', pf_people:'الأشخاص', pf_managesArea:'يدير المنطقة', pf_collectsArea:'يُحصّل للمنطقة', pf_activity:'النشاط', pf_entries:'الإدخالات', pf_sales:'المبيعات', pf_amount:'المبلغ', pf_handed:'سُلّم', pf_noActivity:'لا يوجد نشاط مسجّل بعد', pf_history:'سجل التعديلات', pf_noHistory:'لا توجد تعديلات مسجّلة', pf_auSaved:'حُفظت البيانات', pf_auDeleted:'حُذف', pf_auInvite:'أُرسلت الدعوة', pf_auResend:'أُعيد إرسال الدعوة', pf_auReset:'أُعيد تعيين كلمة المرور', pf_auUpdateUser:'عُدّلت بيانات المستخدم', pf_auAccepted:'قُبلت الدعوة', pf_auChangePw:'غُيّرت كلمة المرور', pf_auLogin:'تسجيل دخول', pf_kindLocation:'فرع', pf_kindStore:'متجر', pf_kindCar:'سيارة', pf_kindPos:'جهاز نقاط بيع', pf_kindCluster:'منطقة', pf_kindZone:'نطاق', pf_kindProduct:'منتج', pf_kindIncome:'بند تحصيل', pf_kindExpense:'بند مصروف', pf_kindUser:'مستخدم', err_futureDate:'لا يمكن إدخال بيانات بتاريخ مستقبلي', err_dayClosed:'هذا اليوم سُلِّم بالفعل لهذا المصدر — لا يمكن الإضافة إليه بعد التسليم', err_invalidDate:'التاريخ غير صحيح', err_notYourEntry:'لا يمكن إلغاء الإدخال إلا من قِبل من أدخله', err_entryLocked:'الإدخال مقفل — سُلِّم للمستوى التالي ولا يمكن تعديله أو إلغاؤه', err_hasDirectDeposit:'إدخال يتضمن موازنة أُودعت في البنك لا يُلغى من هنا — راجع المالية', err_alreadyVoided:'هذا الإدخال ملغى بالفعل', err_receiverOnly:'يؤكد الاستلام المستلم نفسه فقط', err_personHoldsCash:'لا يمكن التغيير: هذا الشخص يحمل نقدية أو لديه تسليم مفتوح — أكمل التسليم أولاً', err_cashInFlight:'لا يمكن النقل: توجد نقدية أو تسليمات مفتوحة هنا — أكمل التسليم أولاً', err_userHasAssignments:'الشخص مسند إلى حلقة في دورة التحصيل — أعد إسنادها لغيره قبل تغيير دوره', err_cannotChangeSelf:'لا يمكنك تعطيل حسابك أو تغيير دورك بنفسك', err_lastAdmin:'لا بد من بقاء مدير نظام نشط واحد على الأقل', err_liveLocked:'النظام في التشغيل الفعلي — هذا الإجراء معطّل نهائياً', el_place:'المصدر', el_dateBy:'التاريخ / المُدخِل', el_sales:'المبيعات', el_deduct:'الخصومات', el_net:'الصافي للتسليم', el_open:'مفتوح', el_openMine:'مفتوح — يمكنك إلغاؤه', el_submitted:'بانتظار الاعتماد', el_approved:'معتمد', el_voided:'ملغى', el_empty:'لا توجد إدخالات بعد', el_details:'التفاصيل', el_voidReason:'سبب الإلغاء', el_lockedSubmitted:'مقفل: سُلِّم للمستوى التالي بانتظار الاعتماد — لا يمكن لأحد تعديله أو إلغاؤه', el_lockedApproved:'مقفل نهائياً: اعتمده المستوى التالي — لا يمكن لأحد تعديله، ويُصحَّح أي خطأ بحركة جديدة موثّقة', el_onlyAuthor:'يمكن إلغاؤه قبل التسليم بواسطة {who} فقط', el_cancelReason:'سبب الإلغاء (إلزامي)', el_cancelPh:'مثال: أدخلت 1,000 بدل 100', el_cancel:'إلغاء هذا الإدخال', el_cancelConfirm:'سيُلغى الإدخال ويبقى محفوظاً في السجل مع السبب. هل تريد المتابعة؟', el_cancelled:'تم إلغاء الإدخال — يمكنك إدخاله من جديد بالأرقام الصحيحة', ho_receiverOnly:'يؤكد الاستلام {who} فقط — المستلم نفسه', ho_flag:'تعليق للمراجعة', ho_resolveNote:'ملاحظة القرار (ما الذي تحققت منه؟)', live_title:'التشغيل الفعلي', live_hint:'عند الانتهاء من الاختبار فعّل التشغيل الفعلي. بعدها يُعطَّل «بدء جولة اختبار جديدة» نهائياً ولا يمكن إعادة تفعيله من النظام، حتى لا تُؤرشف بيانات حقيقية أبداً.', live_confirm:'اكتب LIVE للتأكيد', live_btn:'تفعيل التشغيل الفعلي (نهائي)', live_on:'النظام في التشغيل الفعلي منذ {date} — بدء جولة اختبار جديدة معطّل نهائياً.', perm_voidOwn:'إلغاء إدخاله هو قبل التسليم (بسبب مكتوب)', perm_handover:'تسليم النقدية للمستوى التالي', perm_confirmReceipt:'تأكيد استلام النقدية (المستلم نفسه فقط)', perm_flagOnBehalf:'تعليق تسليم للمراجعة نيابةً عن غائب', perm_deposit:'إيداع النقدية في البنك', perm_secondApproval:'الموافقة الثانية على المبالغ الكبيرة (غير من أكّد)', perm_goLive:'تفعيل التشغيل الفعلي / بدء جولة اختبار', rules_title:'قواعد الاعتماد والقفل', rule_lock:'بعد أن يسلّم المُدخِل بياناته للمستوى التالي تُقفل: لا يعدّلها ولا يلغيها أحد — ولا مدير النظام. وبعد اعتماد المستوى التالي تبقى مقفلة نهائياً.', rule_void:'قبل التسليم فقط، يلغي المُدخِل إدخاله هو فقط بسبب مكتوب، ويبقى الإدخال الملغى محفوظاً في السجل. لا يُحذف أي سطر أبداً.', rule_dayClosed:'اليوم الذي سُلِّم لمصدر ما يُغلق: لا تُضاف إليه مبيعات أو مصروفات أو آجل أو موازنات بعد التسليم. اليوم الحالي يبقى مفتوحاً لتسليم ثانٍ.', rule_noFuture:'لا إدخال بتاريخ مستقبلي ولا بمبالغ سالبة.', rule_receiverOnly:'يؤكد استلام النقدية المستلم نفسه فقط — لا يؤكد أحد نيابةً عن غيره، ولا مدير النظام. يمكن لمدير النظام تعليق التسليم للمراجعة فقط.', rule_selfApproval:'لا يعتمد أحد ما سلّمه بنفسه: المسلِّم لا يؤكد، ومن أنشأ التسليم لا يعتمده، وطرفا النزاع لا يحسمانه.', rule_disputeSettle:'يحسم النزاع مدير النظام أو المالية من غير أطرافه، ويُسجَّل المبلغ المستلم فعلاً والعجز باسم من حسم.', rule_secondApproval:'المبالغ فوق الحد المحدد تحتاج موافقة ثانية من شخص غير من أكّد الاستلام.', rule_holder:'التسليم الذي ينشئه مدير النظام يُسجَّل باسم حامل النقدية الفعلي، ويُسجَّل مدير النظام كمنشئ فقط.', rule_inFlight:'لا يُستبدل شخص في دورة التحصيل، ولا يُعطَّل حسابه أو يُغيَّر دوره، ولا يُنقل فرع أو متجر أو سيارة، ما دامت هناك نقدية أو تسليمات مفتوحة لديه.', rule_oneArea:'لكل منطقة مديرها ومُحصّلها، ولا يُسند شخص إلى منطقتين.', rule_adminSelf:'لا يعطّل مدير النظام حسابه ولا يغيّر دوره، ويبقى دائماً مدير نظام نشط واحد على الأقل.', rule_settings:'تغيير الإعدادات (الضريبة والحدود) يُسجَّل في سجل التدقيق بالقيمة السابقة والجديدة.', rule_goLive:'بعد تفعيل التشغيل الفعلي يُعطَّل بدء جولة اختبار جديدة نهائياً.', rule_audit:'كل إدخال وتسليم واعتماد وإلغاء وتعديل يُسجَّل في سجل التدقيق باسم فاعله ووقته، ولا يمكن تعديل السجل من النظام.', dp_requests:'طلبات تسليم مدراء المناطق للمُحصّلين', dp_requestsHint:'لا يصل طلب مدير المنطقة إلى المُحصّل إلا بعد تحققك: راجع المبلغ وتفاصيل الفروع ثم اعتمده، أو أعده لمدير المنطقة مع سبب واضح للتصحيح.', dp_none:'لا توجد طلبات بانتظار تحققك', dp_waiting:'بانتظار تحقق نائب مدير العمليات قبل وصوله للمُحصّل', dp_validate:'تحقق واعتماد', dp_validateConfirm:'اعتماد تسليم {amount} إلى {who}؟ بعد الاعتماد يصل الطلب للمُحصّل ليؤكد الاستلام.', dp_validated:'تم الاعتماد — أُرسل الطلب للمُحصّل', dp_return:'إعادة للتصحيح', dp_returnReason:'سبب الإعادة (سيصل لمدير المنطقة) — إلزامي', dp_returnedBy:'أعاده {who} للتصحيح:', dp_validatedBy:'تحقق منه واعتمده: {who}', perm_reconcileView:'عرض التسوية البنكية', perm_entriesView:'عرض الإدخالات اليومية وتصفيتها', perm_deputyValidate:'التحقق من طلب تسليم مدير المنطقة للمُحصّل واعتماده أو إعادته', rule_deputy:'لا يصل تسليم مدير المنطقة إلى المُحصّل إلا بعد تحقق نائب مدير العمليات واعتماده، وله أن يعيده لمدير المنطقة مع سبب مكتوب للتصحيح. لا يتحقق من الطلب أحد أطرافه.', recon_viewOnly:'عرض فقط — الاستيراد والمطابقة من صلاحية المالية', admin_chain:'سلامة الربط', chain_map:'خريطة المناطق والفروع', chain_ok:'كل الحلقات مرتبطة — لا توجد فجوات', chain_gaps:'{n} فجوة في دورة التحصيل تحتاج معالجة', chain_hint:'كل منطقة تحتاج مدير منطقة ومُحصّلاً، وكل فرع متجراً ومديراً، وكل سيارة سائقاً، وكل جهاز نقاط بيع حاملاً — وإلا تتوقف النقدية في الطريق.', chain_fix:'معالجة', chain_areas:'مناطق', chain_branches:'فروع', chain_stores:'متاجر', chain_cars:'سيارات', chain_pos:'أجهزة نقاط بيع', gap_areaManager:'المنطقة «{x}» بلا مدير منطقة', gap_areaCollector:'المنطقة «{x}» بلا مُحصّل', gap_branchArea:'الفرع «{x}» غير مرتبط بمنطقة', gap_branchStore:'الفرع «{x}» بلا متجر', gap_storeManager:'المتجر «{x}» بلا مدير فرع', gap_carDriver:'السيارة «{x}» بلا سائق', gap_posHolder:'جهاز نقاط البيع «{x}» بلا حامل', gap_disabled:'{who} معطّل لكنه ما زال مسنداً إلى «{x}»', gap_idle:'{who} ({x}) غير مسند إلى أي حلقة', org_disabled:'معطّل', org_myArea:'منطقتي', org_myBranch:'فرعي', org_area:'المنطقة', org_branches:'فروع', org_cars:'السيارات والسائقون', org_pos:'أجهزة نقاط البيع', org_unassigned:'غير معيّن', org_gaps:'{n} غير معيّن', org_noArea:'لم تُسند إليك أي منطقة بعد — راجع مدير النظام', org_noBranch:'لم يُسند إليك أي فرع بعد — راجع مدير النظام', home_lastLogin:'آخر تسجيل دخول ناجح', home_firstLogin:'هذا أول تسجيل دخول لك', home_city:'الفرع',
     home_hijriSuffix:'هـ',
     entry_new:'إدخال يومي جديد', entry_date:'التاريخ', entry_sourceType:'المصدر', entry_source_store:'الفرع',
     entry_source_car:'سيارة', entry_source_pos:'جهاز نقاط بيع', entry_cash:'المبيعات النقدية', entry_delivery:'رسوم التوصيل (بنك)',
@@ -1447,7 +1504,7 @@ var L = {
     dash_cylinderTitle:'رصيد الأسطوانات (تبادل الفارغ بالممتلئ)', dash_cylinderHint:'الفرق بين الأسطوانات الممتلئة المُسلَّمة والفارغة المُستلَمة — رصيد موجب يعني أسطوانات لا تزال في الميدان.',
     dash_cylinderLocation:'الفرع', dash_cylinderProduct:'المنتج', dash_cylinderOut:'ممتلئة', dash_cylinderIn:'فارغة', dash_cylinderBalance:'الرصيد المتبقي',
     handoff_createLocation:'تسليم نقدية الفرع لمدير الفرع', handoff_createCluster:'تسليم المنطقة للمُحصّل',
-    handoff_pending:'قيد الانتظار', handoff_confirmed:'مؤكد', handoff_disputed:'معترض عليه', handoff_rejected:'مرفوض', handoff_completed:'مكتمل',
+    handoff_pending_deputy:'بانتظار تحقق نائب مدير العمليات', handoff_returned:'أُعيد للتصحيح', handoff_pending:'قيد الانتظار', handoff_confirmed:'مؤكد', handoff_disputed:'معترض عليه', handoff_rejected:'مرفوض', handoff_completed:'مكتمل',
     handoff_confirm:'تأكيد الاستلام', handoff_dispute:'اعتراض', handoff_disputeNote:'سبب الاعتراض',
     handoff_from:'من', handoff_to:'إلى', handoff_amount:'المبلغ', handoff_created:'التاريخ',
     handoff_deposit:'تسجيل إيداع بنكي', handoff_bankRef:'المرجع البنكي', handoff_slip:'صورة إيصال الإيداع',
@@ -1557,7 +1614,7 @@ var L = {
     sendReset:'Send', backToLogin:'Back to sign in', appTagline:'Cash Collection & Approvals',
     mustChangePw:'You must change your password', newPassword:'New password', currentPassword:'Current password',
     save:'Save', cancel:'Cancel', logout:'Log out', language:'Language',
-    nav_home:'Home', nav_entries:'Entries', nav_areaBulk:'Area Bulk Upload', nav_deputyReview:'Area Batch Approvals', nav_handoffs:'Handoffs', nav_report:'Sales Report', nav_admin:'Admin', nav_notifications:'Notifications — handoffs awaiting you',
+    nav_home:'Home', nav_entries:'Entries', nav_areaBulk:'Area Bulk Upload', nav_deputyReview:'Deputy approvals', nav_handoffs:'Handoffs', nav_report:'Sales Report', nav_admin:'Admin', nav_notifications:'Notifications — handoffs awaiting you',
     nav_reconciliation:'Bank Reconciliation', recon_title:'Bank Reconciliation', recon_hint:'Upload the bank statement (CSV) to automatically match recorded deposits against what actually arrived at the bank.',
     recon_import:'Import statement', recon_result:'Imported {imported} rows — {matched} auto-matched',
     recon_totalDeposits:'Total deposits', recon_reconciled:'Reconciled', recon_unmatchedDeposits:'Unmatched deposits',
@@ -1570,7 +1627,7 @@ var L = {
     home_companyOutstanding:'Total cash not yet deposited', home_openDisputes:'Open disputes (company-wide)',
     home_actionPending:'{n} handoff(s) awaiting your confirmation', home_actionDisputes:'{n} dispute(s) need resolving',
     home_actionNone:'Nothing needs your attention right now — you\'re all caught up', home_actionCta:'View handoffs →',
-    entry_addDelivery:'+ Add a delivery line', entry_deliveryAmount:'Delivery fee amount', entry_deliveryNote:'Description', entry_deliveryNotePh:'e.g. delivery to a customer in Al-Narjis', entry_addCredit:'+ Add a credit sale', entry_creditAmount:'Credit sale amount', entry_creditCustomer:'Customer name', entry_creditCustomerPh:'Who owes this amount', err_customerRequired:'Enter the customer name for every credit sale', report_movement:'Movement type', report_allMovements:'All movements', err_userInOtherArea:'This person is already on another area — each area has its own people, and nobody serves two', gap_multiArea:'{who} is assigned to more than one area: {x}', pf_count:'{n} records', pf_emptyList:'No records yet — start by adding one', pf_open:'Open profile', pf_backTo:'Back to {x}', pf_notFound:'Record not found — it may have been deleted', pf_details:'Details', pf_links:'Linked records', pf_noLinks:'Not linked to any other record', pf_people:'People', pf_managesArea:'Manages area', pf_collectsArea:'Collects for area', pf_activity:'Activity', pf_entries:'Entries', pf_sales:'Sales', pf_amount:'Amount', pf_handed:'Handed over', pf_noActivity:'No activity recorded yet', pf_history:'Change history', pf_noHistory:'No changes recorded', pf_auSaved:'Details saved', pf_auDeleted:'Deleted', pf_auInvite:'Invitation sent', pf_auResend:'Invitation resent', pf_auReset:'Password reset', pf_auUpdateUser:'User details changed', pf_auAccepted:'Invitation accepted', pf_auChangePw:'Password changed', pf_auLogin:'Signed in', pf_kindLocation:'Branch', pf_kindStore:'Store', pf_kindCar:'Car', pf_kindPos:'POS machine', pf_kindCluster:'Area', pf_kindZone:'Zone', pf_kindProduct:'Product', pf_kindIncome:'Collection item', pf_kindExpense:'Expense item', pf_kindUser:'User', admin_chain:'Chain health', chain_map:'Areas and branches', chain_ok:'Every link is assigned — no gaps', chain_gaps:'{n} gaps in the collection chain need fixing', chain_hint:'Every area needs an area manager and a collector, every branch a store and a manager, every car a driver and every POS machine a holder — otherwise cash stops on the way.', chain_fix:'Fix', chain_areas:'areas', chain_branches:'branches', chain_stores:'stores', chain_cars:'cars', chain_pos:'POS machines', gap_areaManager:'Area “{x}” has no area manager', gap_areaCollector:'Area “{x}” has no collector', gap_branchArea:'Branch “{x}” is not linked to an area', gap_branchStore:'Branch “{x}” has no store', gap_storeManager:'Store “{x}” has no branch manager', gap_carDriver:'Car “{x}” has no driver', gap_posHolder:'POS machine “{x}” has no holder', gap_disabled:'{who} is disabled but still assigned to “{x}”', gap_idle:'{who} ({x}) is not assigned to any link', org_disabled:'Disabled', org_myArea:'My area', org_myBranch:'My branch', org_area:'Area', org_branches:'branches', org_cars:'Cars and drivers', org_pos:'POS machines', org_unassigned:'Unassigned', org_gaps:'{n} unassigned', org_noArea:'No area is assigned to you yet — contact the administrator', org_noBranch:'No branch is assigned to you yet — contact the administrator', home_lastLogin:'Last successful login', home_firstLogin:'This is your first login', home_city:'Location',
+    entry_addDelivery:'+ Add a delivery line', entry_deliveryAmount:'Delivery fee amount', entry_deliveryNote:'Description', entry_deliveryNotePh:'e.g. delivery to a customer in Al-Narjis', entry_addCredit:'+ Add a credit sale', entry_creditAmount:'Credit sale amount', entry_creditCustomer:'Customer name', entry_creditCustomerPh:'Who owes this amount', err_customerRequired:'Enter the customer name for every credit sale', report_movement:'Movement type', report_allMovements:'All movements', err_userInOtherArea:'This person is already on another area — each area has its own people, and nobody serves two', gap_multiArea:'{who} is assigned to more than one area: {x}', pf_count:'{n} records', pf_emptyList:'No records yet — start by adding one', pf_open:'Open profile', pf_backTo:'Back to {x}', pf_notFound:'Record not found — it may have been deleted', pf_details:'Details', pf_links:'Linked records', pf_noLinks:'Not linked to any other record', pf_people:'People', pf_managesArea:'Manages area', pf_collectsArea:'Collects for area', pf_activity:'Activity', pf_entries:'Entries', pf_sales:'Sales', pf_amount:'Amount', pf_handed:'Handed over', pf_noActivity:'No activity recorded yet', pf_history:'Change history', pf_noHistory:'No changes recorded', pf_auSaved:'Details saved', pf_auDeleted:'Deleted', pf_auInvite:'Invitation sent', pf_auResend:'Invitation resent', pf_auReset:'Password reset', pf_auUpdateUser:'User details changed', pf_auAccepted:'Invitation accepted', pf_auChangePw:'Password changed', pf_auLogin:'Signed in', pf_kindLocation:'Branch', pf_kindStore:'Store', pf_kindCar:'Car', pf_kindPos:'POS machine', pf_kindCluster:'Area', pf_kindZone:'Zone', pf_kindProduct:'Product', pf_kindIncome:'Collection item', pf_kindExpense:'Expense item', pf_kindUser:'User', err_futureDate:'Entries cannot be dated in the future', err_dayClosed:'This day has already been handed over for this source — nothing can be added to it', err_invalidDate:'The date is not valid', err_notYourEntry:'Only the person who entered it can cancel an entry', err_entryLocked:'Locked — handed to the next level; it cannot be changed or cancelled', err_hasDirectDeposit:'An entry with an amount already banked cannot be cancelled here — contact Finance', err_alreadyVoided:'This entry is already cancelled', err_receiverOnly:'Only the receiver can confirm receipt', err_personHoldsCash:'Not allowed: this person holds cash or has an open handover — finish it first', err_cashInFlight:'Not allowed: there is cash or an open handover here — finish it first', err_userHasAssignments:'This person is on a link of the collection chain — reassign it before changing their role', err_cannotChangeSelf:'You cannot disable yourself or change your own role', err_lastAdmin:'At least one active admin must remain', err_liveLocked:'The system is live — this is permanently disabled', el_place:'Source', el_dateBy:'Date / entered by', el_sales:'Sales', el_deduct:'Deductions', el_net:'Net to hand over', el_open:'Open', el_openMine:'Open — you can cancel it', el_submitted:'Awaiting approval', el_approved:'Approved', el_voided:'Cancelled', el_empty:'No entries yet', el_details:'Details', el_voidReason:'Cancellation reason', el_lockedSubmitted:'Locked: handed to the next level, awaiting approval — nobody can change or cancel it', el_lockedApproved:'Locked for good: approved by the next level — nobody can change it; any error is corrected by a new, documented movement', el_onlyAuthor:'Only {who} can cancel this, before it is handed over', el_cancelReason:'Reason for cancelling (required)', el_cancelPh:'e.g. typed 1,000 instead of 100', el_cancel:'Cancel this entry', el_cancelConfirm:'The entry will be cancelled and kept on record with the reason. Continue?', el_cancelled:'Entry cancelled — you can enter it again with the right figures', ho_receiverOnly:'Only {who} — the receiver — can confirm receipt', ho_flag:'Flag for review', ho_resolveNote:'Decision note (what did you verify?)', live_title:'Go live', live_hint:'When testing is finished, switch the system to live. From then on "start a fresh test round" is disabled for good and cannot be turned back on from the app, so real figures can never be archived away.', live_confirm:'Type LIVE to confirm', live_btn:'Go live (permanent)', live_on:'The system has been live since {date} — starting a fresh test round is permanently disabled.', perm_voidOwn:'Cancel own entry before handover (with a reason)', perm_handover:'Hand cash to the next level', perm_confirmReceipt:'Confirm receiving cash (the receiver only)', perm_flagOnBehalf:'Flag a handover for review for someone absent', perm_deposit:'Deposit cash at the bank', perm_secondApproval:'Second approval of large amounts (not the confirmer)', perm_goLive:'Go live / start a test round', rules_title:'Approval and locking rules', rule_lock:'Once the person who entered data hands it to the next level it is locked: nobody changes or cancels it — not even an admin. Once the next level approves, it stays locked for good.', rule_void:'Before handover only, the author can cancel their own entry with a written reason; the cancelled entry stays on record. No row is ever deleted.', rule_dayClosed:'A day handed over for a source is closed: no sales, expenses, credit or الموازنات can be added to it afterwards. Today stays open for a second handover.', rule_noFuture:'No future-dated entries and no negative amounts.', rule_receiverOnly:'Receipt of cash is confirmed by the receiver only — nobody confirms for someone else, not even an admin. An admin may only flag a handover for review.', rule_selfApproval:'Nobody approves their own handover: the giver cannot confirm, whoever created a handover cannot approve it, and parties to a dispute cannot settle it.', rule_disputeSettle:'Disputes are settled by an admin or Finance who is not a party; the amount actually received and any shortfall are recorded under the settler\'s name.', rule_secondApproval:'Amounts above the set threshold need a second approval from someone other than the confirmer.', rule_holder:'A handover an admin creates is recorded against the real cash holder; the admin is recorded only as its creator.', rule_inFlight:'Nobody on the chain is replaced, disabled or given a new role, and no branch, store or car is moved, while cash or an open handover sits with them.', rule_oneArea:'Each area has its own manager and collector; nobody serves two areas.', rule_adminSelf:'An admin cannot disable themselves or change their own role, and at least one active admin always remains.', rule_settings:'Settings changes (VAT, thresholds) are audited with the old and new values.', rule_goLive:'After going live, starting a fresh test round is disabled for good.', rule_audit:'Every entry, handover, approval, cancellation and change is audited with who did it and when; the audit trail cannot be edited from the app.', dp_requests:'Area managers\' requests to hand cash to collectors', dp_requestsHint:'An area manager\'s request reaches the collector only after you validate it: check the amount and the branch detail, then validate it, or send it back to the area manager with a clear reason to correct.', dp_none:'No requests are waiting for your validation', dp_waiting:'Waiting for the Deputy Operations Manager to validate it before it reaches the collector', dp_validate:'Validate', dp_validateConfirm:'Validate the handover of {amount} to {who}? Once validated it reaches the collector to confirm receipt.', dp_validated:'Validated — the request has gone to the collector', dp_return:'Send back for correction', dp_returnReason:'Reason for sending it back (the area manager will see it) — required', dp_returnedBy:'Sent back for correction by {who}:', dp_validatedBy:'Validated by {who}', perm_reconcileView:'View bank reconciliation', perm_entriesView:'View and filter daily entries', perm_deputyValidate:'Validate an area manager\'s handover to the collector, or send it back', rule_deputy:'An area manager\'s handover reaches the collector only after the Deputy Operations Manager validates it; the deputy may send it back to the area manager with a written reason to correct. Nobody who is a party to it may validate it.', recon_viewOnly:'View only — importing and matching belong to Finance', admin_chain:'Chain health', chain_map:'Areas and branches', chain_ok:'Every link is assigned — no gaps', chain_gaps:'{n} gaps in the collection chain need fixing', chain_hint:'Every area needs an area manager and a collector, every branch a store and a manager, every car a driver and every POS machine a holder — otherwise cash stops on the way.', chain_fix:'Fix', chain_areas:'areas', chain_branches:'branches', chain_stores:'stores', chain_cars:'cars', chain_pos:'POS machines', gap_areaManager:'Area “{x}” has no area manager', gap_areaCollector:'Area “{x}” has no collector', gap_branchArea:'Branch “{x}” is not linked to an area', gap_branchStore:'Branch “{x}” has no store', gap_storeManager:'Store “{x}” has no branch manager', gap_carDriver:'Car “{x}” has no driver', gap_posHolder:'POS machine “{x}” has no holder', gap_disabled:'{who} is disabled but still assigned to “{x}”', gap_idle:'{who} ({x}) is not assigned to any link', org_disabled:'Disabled', org_myArea:'My area', org_myBranch:'My branch', org_area:'Area', org_branches:'branches', org_cars:'Cars and drivers', org_pos:'POS machines', org_unassigned:'Unassigned', org_gaps:'{n} unassigned', org_noArea:'No area is assigned to you yet — contact the administrator', org_noBranch:'No branch is assigned to you yet — contact the administrator', home_lastLogin:'Last successful login', home_firstLogin:'This is your first login', home_city:'Location',
     home_hijriSuffix:'AH',
     entry_new:'New daily entry', entry_date:'Date', entry_sourceType:'Source', entry_source_store:'Store branch',
     entry_source_car:'Car', entry_source_pos:'POS machine', entry_cash:'Cash sales', entry_delivery:'Delivery fee (bank)',
@@ -1619,7 +1676,7 @@ var L = {
     dash_cylinderTitle:'Cylinder balance (empty-for-full exchange)', dash_cylinderHint:'The gap between full cylinders delivered and empty ones returned — a positive balance means cylinders are still out in the field.',
     dash_cylinderLocation:'Location', dash_cylinderProduct:'Product', dash_cylinderOut:'Full', dash_cylinderIn:'Empty', dash_cylinderBalance:'Balance owed back',
     handoff_createLocation:'Hand off branch cash to Area Manager', handoff_createCluster:'Hand off to Collector',
-    handoff_pending:'Pending', handoff_confirmed:'Confirmed', handoff_disputed:'Disputed', handoff_rejected:'Rejected', handoff_completed:'Completed',
+    handoff_pending_deputy:'Awaiting deputy validation', handoff_returned:'Returned for correction', handoff_pending:'Pending', handoff_confirmed:'Confirmed', handoff_disputed:'Disputed', handoff_rejected:'Rejected', handoff_completed:'Completed',
     handoff_confirm:'Confirm receipt', handoff_dispute:'Dispute', handoff_disputeNote:'Reason for dispute',
     handoff_from:'From', handoff_to:'To', handoff_amount:'Amount', handoff_created:'Date',
     handoff_deposit:'Record bank deposit', handoff_bankRef:'Bank reference', handoff_slip:'Deposit slip photo',
@@ -1738,7 +1795,7 @@ var L = {
     home_companyOutstanding:'کل غیر جمع شدہ نقدی', home_openDisputes:'کھلے اعتراضات (پوری کمپنی)',
     home_actionPending:'{n} ترسیل آپ کی تصدیق کے منتظر ہیں', home_actionDisputes:'{n} اعتراضات کو حل کرنے کی ضرورت ہے',
     home_actionNone:'ابھی کوئی کارروائی درکار نہیں — سب کچھ مکمل ہے', home_actionCta:'ترسیل دیکھیں ←',
-    entry_addDelivery:'+ ڈلیوری لائن شامل کریں', entry_deliveryAmount:'ڈلیوری فیس کی رقم', entry_deliveryNote:'تفصیل', entry_deliveryNotePh:'مثلاً: گاہک کو ڈلیوری', entry_addCredit:'+ اُدھار فروخت شامل کریں', entry_creditAmount:'اُدھار فروخت کی رقم', entry_creditCustomer:'گاہک کا نام', entry_creditCustomerPh:'یہ رقم کس کے ذمے ہے', err_customerRequired:'ہر اُدھار فروخت کے لیے گاہک کا نام لکھیں', report_movement:'حرکت کی قسم', report_allMovements:'تمام حرکات', err_userInOtherArea:'یہ شخص پہلے سے کسی اور علاقے پر مقرر ہے — کوئی دو علاقوں پر نہیں ہو سکتا', gap_multiArea:'{who} ایک سے زیادہ علاقوں پر مقرر ہے: {x}', pf_count:'{n} ریکارڈ', pf_emptyList:'ابھی کوئی ریکارڈ نہیں', pf_open:'پروفائل کھولیں', pf_backTo:'{x} پر واپس', pf_notFound:'ریکارڈ نہیں ملا', pf_details:'تفصیلات', pf_links:'منسلک ریکارڈ', pf_noLinks:'کسی ریکارڈ سے منسلک نہیں', pf_people:'افراد', pf_managesArea:'علاقہ منیجر', pf_collectsArea:'علاقے کا کلکٹر', pf_activity:'سرگرمی', pf_entries:'اندراجات', pf_sales:'فروخت', pf_amount:'رقم', pf_handed:'حوالے', pf_noActivity:'ابھی کوئی سرگرمی نہیں', pf_history:'تبدیلیوں کی تاریخ', pf_noHistory:'کوئی تبدیلی درج نہیں', pf_auSaved:'تفصیلات محفوظ', pf_auDeleted:'حذف', pf_auInvite:'دعوت بھیجی گئی', pf_auResend:'دعوت دوبارہ بھیجی گئی', pf_auReset:'پاس ورڈ ری سیٹ', pf_auUpdateUser:'صارف کی تفصیلات تبدیل', pf_auAccepted:'دعوت قبول', pf_auChangePw:'پاس ورڈ تبدیل', pf_auLogin:'لاگ اِن', pf_kindLocation:'برانچ', pf_kindStore:'اسٹور', pf_kindCar:'گاڑی', pf_kindPos:'POS مشین', pf_kindCluster:'علاقہ', pf_kindZone:'زون', pf_kindProduct:'پروڈکٹ', pf_kindIncome:'وصولی کی مد', pf_kindExpense:'اخراجات کی مد', pf_kindUser:'صارف', admin_chain:'ربط کی صحت', chain_map:'علاقے اور برانچیں', chain_ok:'ہر کڑی مقرر ہے — کوئی خلا نہیں', chain_gaps:'وصولی کی زنجیر میں {n} خلا درست کرنے ہیں', chain_hint:'ہر علاقے کو علاقہ منیجر اور کلکٹر، ہر برانچ کو اسٹور اور منیجر، ہر گاڑی کو ڈرائیور اور ہر POS مشین کو رکھنے والا چاہیے۔', chain_fix:'درست کریں', chain_areas:'علاقے', chain_branches:'برانچیں', chain_stores:'اسٹور', chain_cars:'گاڑیاں', chain_pos:'POS مشینیں', gap_areaManager:'علاقہ «{x}» کا کوئی منیجر نہیں', gap_areaCollector:'علاقہ «{x}» کا کوئی کلکٹر نہیں', gap_branchArea:'برانچ «{x}» کسی علاقے سے منسلک نہیں', gap_branchStore:'برانچ «{x}» کا کوئی اسٹور نہیں', gap_storeManager:'اسٹور «{x}» کا کوئی برانچ منیجر نہیں', gap_carDriver:'گاڑی «{x}» کا کوئی ڈرائیور نہیں', gap_posHolder:'POS مشین «{x}» رکھنے والا کوئی نہیں', gap_disabled:'{who} غیر فعال ہے مگر «{x}» پر مقرر ہے', gap_idle:'{who} ({x}) کسی کڑی پر مقرر نہیں', org_disabled:'غیر فعال', org_myArea:'میرا علاقہ', org_myBranch:'میری برانچ', org_area:'علاقہ', org_branches:'برانچیں', org_cars:'گاڑیاں اور ڈرائیور', org_pos:'POS مشینیں', org_unassigned:'غیر مقرر', org_gaps:'{n} غیر مقرر', org_noArea:'آپ کو ابھی کوئی علاقہ نہیں دیا گیا', org_noBranch:'آپ کو ابھی کوئی برانچ نہیں دی گئی', home_lastLogin:'آخری کامیاب لاگ اِن', home_firstLogin:'یہ آپ کا پہلا لاگ اِن ہے', home_city:'مقام',
+    entry_addDelivery:'+ ڈلیوری لائن شامل کریں', entry_deliveryAmount:'ڈلیوری فیس کی رقم', entry_deliveryNote:'تفصیل', entry_deliveryNotePh:'مثلاً: گاہک کو ڈلیوری', entry_addCredit:'+ اُدھار فروخت شامل کریں', entry_creditAmount:'اُدھار فروخت کی رقم', entry_creditCustomer:'گاہک کا نام', entry_creditCustomerPh:'یہ رقم کس کے ذمے ہے', err_customerRequired:'ہر اُدھار فروخت کے لیے گاہک کا نام لکھیں', report_movement:'حرکت کی قسم', report_allMovements:'تمام حرکات', err_userInOtherArea:'یہ شخص پہلے سے کسی اور علاقے پر مقرر ہے — کوئی دو علاقوں پر نہیں ہو سکتا', gap_multiArea:'{who} ایک سے زیادہ علاقوں پر مقرر ہے: {x}', pf_count:'{n} ریکارڈ', pf_emptyList:'ابھی کوئی ریکارڈ نہیں', pf_open:'پروفائل کھولیں', pf_backTo:'{x} پر واپس', pf_notFound:'ریکارڈ نہیں ملا', pf_details:'تفصیلات', pf_links:'منسلک ریکارڈ', pf_noLinks:'کسی ریکارڈ سے منسلک نہیں', pf_people:'افراد', pf_managesArea:'علاقہ منیجر', pf_collectsArea:'علاقے کا کلکٹر', pf_activity:'سرگرمی', pf_entries:'اندراجات', pf_sales:'فروخت', pf_amount:'رقم', pf_handed:'حوالے', pf_noActivity:'ابھی کوئی سرگرمی نہیں', pf_history:'تبدیلیوں کی تاریخ', pf_noHistory:'کوئی تبدیلی درج نہیں', pf_auSaved:'تفصیلات محفوظ', pf_auDeleted:'حذف', pf_auInvite:'دعوت بھیجی گئی', pf_auResend:'دعوت دوبارہ بھیجی گئی', pf_auReset:'پاس ورڈ ری سیٹ', pf_auUpdateUser:'صارف کی تفصیلات تبدیل', pf_auAccepted:'دعوت قبول', pf_auChangePw:'پاس ورڈ تبدیل', pf_auLogin:'لاگ اِن', pf_kindLocation:'برانچ', pf_kindStore:'اسٹور', pf_kindCar:'گاڑی', pf_kindPos:'POS مشین', pf_kindCluster:'علاقہ', pf_kindZone:'زون', pf_kindProduct:'پروڈکٹ', pf_kindIncome:'وصولی کی مد', pf_kindExpense:'اخراجات کی مد', pf_kindUser:'صارف', err_futureDate:'مستقبل کی تاریخ کا اندراج نہیں ہو سکتا', err_dayClosed:'یہ دن اس ذریعے کے لیے حوالے ہو چکا — اس میں کچھ شامل نہیں ہو سکتا', err_invalidDate:'تاریخ درست نہیں', err_notYourEntry:'اندراج صرف درج کرنے والا منسوخ کر سکتا ہے', err_entryLocked:'مقفل — اگلے درجے کو حوالے ہو چکا، تبدیل یا منسوخ نہیں ہو سکتا', err_hasDirectDeposit:'بینک میں جمع شدہ رقم والا اندراج یہاں منسوخ نہیں ہو سکتا — فنانس سے رابطہ کریں', err_alreadyVoided:'یہ اندراج پہلے ہی منسوخ ہے', err_receiverOnly:'وصولی کی تصدیق صرف وصول کنندہ کر سکتا ہے', err_personHoldsCash:'اجازت نہیں: اس شخص کے پاس نقدی یا کھلا حوالہ ہے — پہلے مکمل کریں', err_cashInFlight:'اجازت نہیں: یہاں نقدی یا کھلا حوالہ ہے — پہلے مکمل کریں', err_userHasAssignments:'یہ شخص زنجیر کی کسی کڑی پر ہے — کردار بدلنے سے پہلے دوبارہ مقرر کریں', err_cannotChangeSelf:'آپ اپنا اکاؤنٹ غیر فعال یا اپنا کردار تبدیل نہیں کر سکتے', err_lastAdmin:'کم از کم ایک فعال ایڈمن رہنا ضروری ہے', err_liveLocked:'سسٹم لائیو ہے — یہ مستقل طور پر بند ہے', el_place:'ذریعہ', el_dateBy:'تاریخ / درج کنندہ', el_sales:'فروخت', el_deduct:'کٹوتیاں', el_net:'حوالے کرنے کی خالص رقم', el_open:'کھلا', el_openMine:'کھلا — آپ منسوخ کر سکتے ہیں', el_submitted:'منظوری کا منتظر', el_approved:'منظور شدہ', el_voided:'منسوخ', el_empty:'ابھی کوئی اندراج نہیں', el_details:'تفصیل', el_voidReason:'منسوخی کی وجہ', el_lockedSubmitted:'مقفل: اگلے درجے کو حوالے، منظوری کا منتظر', el_lockedApproved:'مستقل مقفل: اگلے درجے نے منظور کر لیا', el_onlyAuthor:'حوالے سے پہلے صرف {who} منسوخ کر سکتا ہے', el_cancelReason:'منسوخی کی وجہ (لازمی)', el_cancelPh:'مثلاً: 100 کی جگہ 1,000 لکھا', el_cancel:'یہ اندراج منسوخ کریں', el_cancelConfirm:'اندراج منسوخ ہو کر وجہ کے ساتھ ریکارڈ میں رہے گا۔ جاری رکھیں؟', el_cancelled:'اندراج منسوخ — درست اعداد کے ساتھ دوبارہ درج کریں', ho_receiverOnly:'وصولی کی تصدیق صرف {who} (وصول کنندہ) کر سکتا ہے', ho_flag:'جائزے کے لیے نشان زد کریں', ho_resolveNote:'فیصلے کا نوٹ', live_title:'لائیو', live_hint:'ٹیسٹنگ مکمل ہونے پر سسٹم لائیو کریں۔ اس کے بعد نیا ٹیسٹ راؤنڈ مستقل طور پر بند ہو جائے گا۔', live_confirm:'تصدیق کے لیے LIVE لکھیں', live_btn:'لائیو کریں (مستقل)', live_on:'سسٹم {date} سے لائیو ہے — نیا ٹیسٹ راؤنڈ مستقل طور پر بند ہے۔', perm_voidOwn:'حوالے سے پہلے اپنا اندراج منسوخ کریں (وجہ کے ساتھ)', perm_handover:'نقدی اگلے درجے کو حوالے کریں', perm_confirmReceipt:'نقدی کی وصولی کی تصدیق (صرف وصول کنندہ)', perm_flagOnBehalf:'غیر حاضر کی جگہ جائزے کے لیے نشان زد کریں', perm_deposit:'بینک میں جمع کریں', perm_secondApproval:'بڑی رقوم کی دوسری منظوری', perm_goLive:'لائیو کریں / ٹیسٹ راؤنڈ', rules_title:'منظوری اور لاک کے اصول', rule_lock:'اگلے درجے کو حوالے کے بعد ڈیٹا مقفل — کوئی تبدیل یا منسوخ نہیں کر سکتا، ایڈمن بھی نہیں۔', rule_void:'حوالے سے پہلے صرف درج کنندہ وجہ کے ساتھ منسوخ کر سکتا ہے؛ کوئی سطر حذف نہیں ہوتی۔', rule_dayClosed:'حوالے کیا گیا دن بند ہو جاتا ہے۔', rule_noFuture:'مستقبل کی تاریخ یا منفی رقم نہیں۔', rule_receiverOnly:'وصولی کی تصدیق صرف وصول کنندہ کرتا ہے۔', rule_selfApproval:'کوئی اپنا حوالہ خود منظور نہیں کرتا۔', rule_disputeSettle:'تنازعہ غیر فریق ایڈمن یا فنانس حل کرتا ہے۔', rule_secondApproval:'حد سے زیادہ رقوم کی دوسری منظوری کوئی اور دیتا ہے۔', rule_holder:'ایڈمن کا بنایا ہوا حوالہ اصل نقدی رکھنے والے کے نام۔', rule_inFlight:'نقدی یا کھلے حوالے کے دوران کوئی تبدیلی نہیں۔', rule_oneArea:'ہر علاقے کے اپنے افراد۔', rule_adminSelf:'ایڈمن خود کو غیر فعال نہیں کر سکتا۔', rule_settings:'ترتیبات کی تبدیلی پرانی اور نئی قدر کے ساتھ آڈٹ ہوتی ہے۔', rule_goLive:'لائیو کے بعد نیا ٹیسٹ راؤنڈ بند۔', rule_audit:'ہر عمل آڈٹ لاگ میں درج ہوتا ہے۔', dp_requests:'علاقہ منیجرز کی کلکٹر کو حوالگی کی درخواستیں', dp_requestsHint:'علاقہ منیجر کی درخواست آپ کی تصدیق کے بعد ہی کلکٹر تک پہنچتی ہے۔', dp_none:'آپ کی تصدیق کی کوئی درخواست نہیں', dp_waiting:'کلکٹر تک پہنچنے سے پہلے نائب منیجر آپریشنز کی تصدیق کا منتظر', dp_validate:'تصدیق کریں', dp_validateConfirm:'{who} کو {amount} کی حوالگی کی تصدیق کریں؟', dp_validated:'تصدیق ہو گئی — درخواست کلکٹر کو بھیج دی گئی', dp_return:'درستگی کے لیے واپس', dp_returnReason:'واپسی کی وجہ (لازمی)', dp_returnedBy:'{who} نے درستگی کے لیے واپس کیا:', dp_validatedBy:'تصدیق کنندہ: {who}', perm_reconcileView:'بینک مطابقت دیکھیں', perm_entriesView:'روزانہ اندراجات دیکھیں', perm_deputyValidate:'علاقہ منیجر کی حوالگی کی تصدیق یا واپسی', rule_deputy:'علاقہ منیجر کی حوالگی نائب منیجر آپریشنز کی تصدیق کے بعد ہی کلکٹر تک پہنچتی ہے۔', recon_viewOnly:'صرف دیکھیں — امپورٹ اور میچنگ فنانس کا کام', admin_chain:'ربط کی صحت', chain_map:'علاقے اور برانچیں', chain_ok:'ہر کڑی مقرر ہے — کوئی خلا نہیں', chain_gaps:'وصولی کی زنجیر میں {n} خلا درست کرنے ہیں', chain_hint:'ہر علاقے کو علاقہ منیجر اور کلکٹر، ہر برانچ کو اسٹور اور منیجر، ہر گاڑی کو ڈرائیور اور ہر POS مشین کو رکھنے والا چاہیے۔', chain_fix:'درست کریں', chain_areas:'علاقے', chain_branches:'برانچیں', chain_stores:'اسٹور', chain_cars:'گاڑیاں', chain_pos:'POS مشینیں', gap_areaManager:'علاقہ «{x}» کا کوئی منیجر نہیں', gap_areaCollector:'علاقہ «{x}» کا کوئی کلکٹر نہیں', gap_branchArea:'برانچ «{x}» کسی علاقے سے منسلک نہیں', gap_branchStore:'برانچ «{x}» کا کوئی اسٹور نہیں', gap_storeManager:'اسٹور «{x}» کا کوئی برانچ منیجر نہیں', gap_carDriver:'گاڑی «{x}» کا کوئی ڈرائیور نہیں', gap_posHolder:'POS مشین «{x}» رکھنے والا کوئی نہیں', gap_disabled:'{who} غیر فعال ہے مگر «{x}» پر مقرر ہے', gap_idle:'{who} ({x}) کسی کڑی پر مقرر نہیں', org_disabled:'غیر فعال', org_myArea:'میرا علاقہ', org_myBranch:'میری برانچ', org_area:'علاقہ', org_branches:'برانچیں', org_cars:'گاڑیاں اور ڈرائیور', org_pos:'POS مشینیں', org_unassigned:'غیر مقرر', org_gaps:'{n} غیر مقرر', org_noArea:'آپ کو ابھی کوئی علاقہ نہیں دیا گیا', org_noBranch:'آپ کو ابھی کوئی برانچ نہیں دی گئی', home_lastLogin:'آخری کامیاب لاگ اِن', home_firstLogin:'یہ آپ کا پہلا لاگ اِن ہے', home_city:'مقام',
     home_hijriSuffix:'ھ',
     entry_new:'نیا روزانہ اندراج', entry_date:'تاریخ', entry_sourceType:'ذریعہ', entry_source_store:'برانچ',
     entry_source_car:'گاڑی', entry_source_pos:'POS مشین', entry_cash:'نقد فروخت', entry_delivery:'ڈلیوری فیس (بینک)',
@@ -1787,7 +1844,7 @@ var L = {
     dash_cylinderTitle:'سلنڈر بیلنس (خالی کے بدلے بھرا تبادلہ)', dash_cylinderHint:'ترسیل شدہ بھرے سلنڈروں اور واپس آئے خالی سلنڈروں کا فرق — مثبت بیلنس کا مطلب سلنڈر ابھی میدان میں موجود ہیں۔',
     dash_cylinderLocation:'مقام', dash_cylinderProduct:'پروڈکٹ', dash_cylinderOut:'بھرے', dash_cylinderIn:'خالی', dash_cylinderBalance:'باقی بیلنس',
     handoff_createLocation:'برانچ نقدی علاقہ منیجر کو دیں', handoff_createCluster:'کلکٹر کو ترسیل کریں',
-    handoff_pending:'زیر التواء', handoff_confirmed:'تصدیق شدہ', handoff_disputed:'متنازعہ', handoff_rejected:'مسترد', handoff_completed:'مکمل',
+    handoff_pending_deputy:'نائب منیجر آپریشنز کی تصدیق کا منتظر', handoff_returned:'درستگی کے لیے واپس', handoff_pending:'زیر التواء', handoff_confirmed:'تصدیق شدہ', handoff_disputed:'متنازعہ', handoff_rejected:'مسترد', handoff_completed:'مکمل',
     handoff_confirm:'وصولی کی تصدیق', handoff_dispute:'اعتراض', handoff_disputeNote:'اعتراض کی وجہ',
     handoff_from:'سے', handoff_to:'کو', handoff_amount:'رقم', handoff_created:'تاریخ',
     handoff_deposit:'بینک جمع درج کریں', handoff_bankRef:'بینک ریفرنس', handoff_slip:'جمع رسید کی تصویر',
@@ -2191,6 +2248,10 @@ var ERROR_KEYS_ = {
   feature_disabled:'err_featureDisabled', invalid_rows:'err_invalidRows',
   invalid_income_item:'err_invalidIncomeItem', invalid_expense_item:'err_invalidExpenseItem', reason_required:'err_reasonRequired',
   customer_required:'err_customerRequired', user_in_other_area:'err_userInOtherArea',
+  future_date:'err_futureDate', day_closed:'err_dayClosed', invalid_date:'err_invalidDate', not_your_entry:'err_notYourEntry',
+  entry_locked:'err_entryLocked', has_direct_deposit:'err_hasDirectDeposit', already_voided:'err_alreadyVoided', receiver_only:'err_receiverOnly',
+  person_holds_cash:'err_personHoldsCash', cash_in_flight:'err_cashInFlight', user_has_assignments:'err_userHasAssignments',
+  cannot_change_self:'err_cannotChangeSelf', last_admin:'err_lastAdmin', live_locked:'err_liveLocked',
   deposit_needs_reference:'err_depositNeedsReference', deposit_exceeds_cash:'err_depositExceedsCash',
   confirm_required:'err_confirmRequired',
   manager_required:'err_managerRequired', collector_required:'err_collectorRequired',
@@ -2648,12 +2709,12 @@ function navItemsForRole_(){
   var items = [['home','nav_home']];
   var isCompanyWideRole = ['admin','finance','accountant','operations_manager','deputy_operations_manager'].indexOf(role)>=0;
   if (isCompanyWideRole) items.push(['dashboard','nav_dashboard']);
-  if (['store_manager','driver','cluster_manager','admin'].indexOf(role)>=0) items.push(['entries','nav_entries']);
+  if (['store_manager','driver','cluster_manager','admin','deputy_operations_manager','finance','accountant','operations_manager'].indexOf(role)>=0) items.push(['entries','nav_entries']);
   if ((role==='cluster_manager' || role==='admin') && state.meta && state.meta.config && state.meta.config.areaManagerBulkUploadEnabled) items.push(['areaBulk','nav_areaBulk']);
   if (role==='deputy_operations_manager' || role==='admin') items.push(['deputyReview','nav_deputyReview']);
   items.push(['handoffs','nav_handoffs']);
   if (['admin','finance','accountant','operations_manager','deputy_operations_manager','cluster_manager','store_manager'].indexOf(role)>=0) items.push(['report','nav_report']);
-  if (['admin','finance'].indexOf(role)>=0) items.push(['reconciliation','nav_reconciliation']);
+  if (['admin','finance','deputy_operations_manager'].indexOf(role)>=0) items.push(['reconciliation','nav_reconciliation']);
   items.push(['risk','nav_risk']);
   if (role==='admin') items.push(['admin','nav_admin']);
   return items;
@@ -4729,6 +4790,14 @@ function listFilters_(opts){
   return { node: node, match: match, values: values, active: activeCount };
 }
 
+// Today's date on this device, for the date pickers (the server checks the
+// real rule against Riyadh time).
+function localToday_(){
+  var d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+function newSubmissionId_(){ return 'sub-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
+
 function renderEntries(body){
   var role = state.user.role;
   var sourceOptions = '';
@@ -4741,7 +4810,7 @@ function renderEntries(body){
       '<div class="ec-done" hidden></div>' +
       '<div class="ec-open">' +
         '<div class="grid">' +
-          '<div class="field"><label>'+esc(t('entry_date'))+'</label><input id="eDate" type="date" value="'+new Date().toISOString().slice(0,10)+'"></div>' +
+          '<div class="field"><label>'+esc(t('entry_date'))+'</label><input id="eDate" type="date" value="'+localToday_()+'" max="'+localToday_()+'"></div>' +
           '<div class="field"><label>'+esc(t('entry_sourceType'))+'</label><select id="eType"></select></div>' +
           '<div class="field"><label id="eSourceLabel"></label><select id="eSource"></select></div>' +
           '<div class="field"><label>'+esc(t('entry_location'))+'</label><input id="eLocation" type="text" readonly value="—"></div>' +
@@ -4811,6 +4880,8 @@ function renderEntries(body){
   '</div>');
   body.innerHTML = '';
   body.appendChild(form);
+  // reviewers see every entry and every filter, but enter nothing
+  if (['store_manager','driver','cluster_manager','admin'].indexOf(role) < 0) form.hidden = true;
   wireCommaInput_(qs('#eCash', form), true);
   wireCommaInput_(qs('#eDelivery', form), true);
   wireCommaInput_(qs('#ePos', form), true);
@@ -4900,7 +4971,7 @@ function renderEntries(body){
       var row = {
         date: baseRow.date, sourceType: baseRow.sourceType, sourceId: baseRow.sourceId,
         cashSales: 0, posSales: 0, creditSales: 0, deliveryFeeBankAmount: 0,
-        note: baseRow.note || ''
+        note: baseRow.note || '', submissionId: baseRow.submissionId || null
       };
       if (others[i]) { row.otherCash = others[i].amount; row.otherCashItemId = others[i].itemId; row.otherCashReason = others[i].reason; }
       if (expenses[i]) { row.expenseAmount = expenses[i].amount; row.expenseItemId = expenses[i].itemId; row.expenseReason = expenses[i].reason; }
@@ -5362,11 +5433,14 @@ function renderEntries(body){
     var sourceType = typeSel.value;
     var sourceId = qs('#eSource', form).value;
     var note = qs('#eNote', form).value;
+    // every row this save writes carries the same id, so the list shows them
+    // as the one day's entry they are
+    var submissionId = newSubmissionId_();
     if (!sourceId){ qs('#entryMsg',form).innerHTML='<div class="msg err">'+esc(t('err_noSourceSelected'))+'</div>'; return; }
 
     if (mode === 'direct') {
       var payload = {
-        date: date, sourceType: sourceType, sourceId: sourceId,
+        date: date, sourceType: sourceType, sourceId: sourceId, submissionId: submissionId,
         cylindersOut: numFromInput_(qs('#eCylOut', form)),
         cylindersIn: numFromInput_(qs('#eCylIn', form)),
         productId: productSel.value || null,
@@ -5416,7 +5490,7 @@ function renderEntries(body){
       }
       var subtotal = qty * price;
       rows.push({
-        date: date, sourceType: sourceType, sourceId: sourceId, productId: productId,
+        date: date, sourceType: sourceType, sourceId: sourceId, productId: productId, submissionId: submissionId,
         qty: qty, unitPrice: price,
         cashSales: payment==='pos' ? 0 : subtotal,
         posSales: payment==='pos' ? subtotal : 0,
@@ -5544,7 +5618,7 @@ function renderEntries(body){
 
   var entryFilter = listFilters_({
     fields: ['text','date','area','branch','sourceType','payment','movement','status','person','amount'],
-    status: [['open', t('st_notHandedOff')], ['handed', t('st_inHandoff')]],
+    status: [['open', t('el_open')], ['submitted', t('el_submitted')], ['approved', t('el_approved')], ['voided', t('el_voided')]],
     people: (meta.users||[]).filter(function(u){ return ['driver','store_manager','cluster_manager','admin'].indexOf(u.role) >= 0; })
       .map(function(u){ return [u.id, u.name]; }),
     onChange: drawEntryList
@@ -5558,36 +5632,127 @@ function renderEntries(body){
   function drawEntryList(){
     var wrap = qs('#entryListBody');
     if (!wrap) return;
-    if (!entryRows.length){ wrap.innerHTML = '<div class="muted">'+esc(t('noData'))+'</div>'; return; }
+    if (!entryRows.length){ wrap.innerHTML = '<div class="el-empty">'+esc(t('el_empty'))+'</div>'; return; }
     var shown = entryFilter ? entryRows.filter(function(r){ return entryFilter.match(r.norm); }) : entryRows;
     if (!shown.length){ wrap.innerHTML = '<div class="lf-empty">'+esc(t('lf_noMatch'))+'</div>'; return; }
-    wrap.innerHTML = '<table><thead><tr><th>'+esc(t('entry_date'))+'</th><th>'+esc(t('entry_sourceType'))+'</th><th>'+esc(t('handoff_amount'))+'</th><th></th></tr></thead><tbody>' +
-      shown.slice(0,60).map(function(r){ return r.html; }).join('') + '</tbody></table>' +
-      '<div class="muted" style="margin-top:8px;font-size:11.5px;">'+esc(t('lf_showing').replace('{n}', Math.min(shown.length,60)).replace('{total}', entryRows.length))+'</div>';
+    wrap.innerHTML = '<div class="el-head"><span>'+esc(t('el_place'))+'</span><span>'+esc(t('el_dateBy'))+'</span>' +
+      '<span>'+esc(t('el_sales'))+'</span><span>'+esc(t('el_deduct'))+'</span><span>'+esc(t('el_net'))+'</span><span>'+esc(t('us_status'))+'</span><span></span></div>';
+    shown.slice(0, 60).forEach(function(r){ wrap.appendChild(r.node()); });
+    wrap.appendChild(el('<div class="muted" style="margin-top:8px;font-size:11.5px;">'+esc(t('lf_showing').replace('{n}', Math.min(shown.length,60)).replace('{total}', entryRows.length))+'</div>'));
+  }
+  // One saved form is one card, however many rows it was stored as.
+  function entryGroups_(entries){
+    var groups = {}, order = [];
+    entries.forEach(function(e){
+      var key = e.submissionId || [e.enteredBy, e.sourceType, e.sourceId, e.date, String(e.createdAt || e.updatedAt || '').slice(0, 16)].join('|');
+      if (!groups[key]){ groups[key] = []; order.push(key); }
+      groups[key].push(e);
+    });
+    return order.map(function(k){ return groups[k]; });
+  }
+  function entryCard_(rows){
+    var e0 = rows[0];
+    var live = rows.filter(function(e){ return !e.voided; });
+    var sumOf = function(k){ return live.reduce(function(a, e){ return a + Number(e[k]||0); }, 0); };
+    var cash = sumOf('cashSales'), pos = sumOf('posSales'), credit = sumOf('creditSales'), delivery = sumOf('deliveryFeeBankAmount');
+    var other = sumOf('otherCash'), expense = sumOf('expenseAmount'), deposit = sumOf('directDepositAmount');
+    var vatRate = (state.meta && state.meta.config && state.meta.config.vatRate) || 0.15;
+    var vatBack = delivery > 0 ? (delivery / (1 + vatRate)) * vatRate : 0;
+    var sales = cash + pos;
+    var deduct = credit + (delivery - vatBack) + expense + deposit;
+    var net = cash + other - delivery + vatBack - expense - deposit - credit;
+    var states = rows.map(function(e){ return e.lockState || (e.voided ? 'voided' : e.consumedBy ? 'submitted' : 'open'); });
+    var st = states.indexOf('approved') >= 0 ? 'approved' : states.indexOf('submitted') >= 0 ? 'submitted'
+      : states.every(function(x){ return x === 'voided'; }) ? 'voided' : 'open';
+    var voidIds = live.map(function(e){ return e.id; });
+    var canVoid = st === 'open' && live.length > 0 && live.every(function(e){ return e.canVoid; });
+    var icon = { store:'box', car:'truck', pos:'card' }[e0.sourceType] || 'box';
+    var stIcon = { open:'pencilEdit', submitted:'clock', approved:'check', voided:'close' }[st];
+    var stLabel = st === 'open' ? (canVoid ? t('el_openMine') : t('el_open')) : t('el_' + st);
+
+    function line(label, amount, sign, sub){
+      if (!amount) return '';
+      return '<li><span class="el-ll"><b>'+esc(label)+'</b>'+(sub ? '<i>'+esc(sub)+'</i>' : '')+'</span>' +
+        '<span class="el-la '+(sign < 0 ? 'neg' : 'pos')+'"><bdi dir="ltr">'+(sign < 0 ? '−' : '')+money(amount)+'</bdi></span></li>';
+    }
+    var detail = '';
+    rows.forEach(function(e){
+      var off = e.voided;
+      var lines = '';
+      if (e.productId) lines += '<li class="el-prod"><span class="el-ll"><b>'+esc(productName_(e.productId))+'</b>' +
+        (e.qty ? '<i><bdi dir="ltr">'+money(e.qty)+' × '+money(e.unitPrice)+'</bdi></i>' : '')+'</span><span></span></li>';
+      lines += line(t('entry_cash'), Number(e.cashSales||0), 1);
+      lines += line(t('entry_pos'), Number(e.posSales||0), 1);
+      lines += line(t('entry_otherTitle'), Number(e.otherCash||0), 1, [itemName_('incomeItems', e.otherCashItemId), e.otherCashReason].filter(Boolean).join(' — '));
+      lines += line(t('entry_creditTitle'), Number(e.creditSales||0), -1, e.creditCustomer);
+      lines += line(t('entry_deliveryTitle'), Number(e.deliveryFeeBankAmount||0), -1, e.deliveryNote);
+      lines += line(t('entry_expenseTitle'), Number(e.expenseAmount||0), -1, [itemName_('expenseItems', e.expenseItemId), e.expenseReason].filter(Boolean).join(' — '));
+      lines += line(t('entry_depositTitle'), Number(e.directDepositAmount||0), -1, [e.directDepositRef, e.directDepositNote].filter(Boolean).join(' — '));
+      if (lines) detail += '<ul class="el-lines'+(off ? ' off' : '')+'">'+lines+'</ul>';
+    });
+    if (vatBack && live.length) detail += '<div class="el-vat">'+esc(t('report_vat'))+': <bdi dir="ltr">+'+money(vatBack)+'</bdi></div>';
+    var notes = rows.map(function(e){ return e.note; }).filter(Boolean);
+    if (notes.length) detail += '<div class="el-note">'+esc(t('entry_note'))+': '+esc(notes.filter(function(n, i){ return notes.indexOf(n) === i; }).join(' · '))+'</div>';
+    var vr = rows.filter(function(e){ return e.voided && e.voidReason; })[0];
+    if (vr) detail += '<div class="el-voidinfo">'+icon_('close')+'<span><b>'+esc(t('el_voidReason'))+':</b> '+esc(vr.voidReason)+' — '+esc(userName(vr.voidedBy))+' · <bdi dir="ltr">'+esc(fmtStamp_(vr.voidedAt))+'</bdi></span></div>';
+    if (st === 'submitted' || st === 'approved') detail += '<div class="el-lock">'+icon_('key')+'<span>'+esc(t(st === 'approved' ? 'el_lockedApproved' : 'el_lockedSubmitted'))+'</span></div>';
+    if (st === 'open' && !canVoid && live.length) detail += '<div class="el-lock">'+icon_('user')+'<span>'+esc(t('el_onlyAuthor').replace('{who}', userName(e0.enteredBy)))+'</span></div>';
+
+    var node = el('<article class="el-row st-'+st+'">' +
+      '<div class="el-main"><span class="el-ic">'+icon_(icon)+'</span><div class="el-who"><b>'+esc(sourceName_(e0))+'</b>' +
+        '<span>'+esc(t('entry_source_'+e0.sourceType))+' · '+esc(locationName(e0.locationId))+'</span></div></div>' +
+      '<div class="el-date"><b><bdi dir="ltr">'+esc(e0.date)+'</bdi></b><span>'+esc(userName(e0.enteredBy))+'</span></div>' +
+      '<div class="el-fig"><span>'+esc(t('el_sales'))+'</span><b><bdi dir="ltr">'+money(sales)+'</bdi></b></div>' +
+      '<div class="el-fig ded"><span>'+esc(t('el_deduct'))+'</span><b><bdi dir="ltr">'+(deduct ? '−'+money(deduct) : '—')+'</bdi></b></div>' +
+      '<div class="el-fig net"><span>'+esc(t('el_net'))+'</span><b><bdi dir="ltr">'+money(net)+'</bdi></b></div>' +
+      '<div class="el-st"><span class="el-badge '+st+'">'+icon_(stIcon)+'<span>'+esc(stLabel)+'</span></span></div>' +
+      '<button type="button" class="el-more" aria-expanded="false" aria-label="'+esc(t('el_details'))+'">'+icon_('chevron')+'</button>' +
+      '<div class="el-detail" hidden>'+detail +
+        (canVoid ? '<div class="el-cancel"><div class="field"><label>'+esc(t('el_cancelReason'))+'</label><input class="elReason" placeholder="'+esc(t('el_cancelPh'))+'"></div>' +
+          '<button type="button" class="btn danger elVoid">'+esc(t('el_cancel'))+'</button><div class="elMsg"></div></div>' : '') +
+      '</div>' +
+    '</article>');
+    var more = qs('.el-more', node), det = qs('.el-detail', node);
+    function toggle(){ det.hidden = !det.hidden; more.setAttribute('aria-expanded', String(!det.hidden)); node.classList.toggle('open', !det.hidden); }
+    more.addEventListener('click', function(ev){ ev.stopPropagation(); toggle(); });
+    node.addEventListener('click', function(ev){ if (!ev.target.closest('.el-detail, button, input')) toggle(); });
+    var vb = qs('.elVoid', node);
+    if (vb) vb.addEventListener('click', function(){
+      var reason = qs('.elReason', node).value.trim();
+      if (!reason){ qs('.elMsg', node).innerHTML = '<div class="msg err">'+esc(t('err_reasonRequired'))+'</div>'; return; }
+      if (!confirm(t('el_cancelConfirm'))) return;
+      vb.disabled = true;
+      api('voidEntries', { ids: voidIds, reason: reason }).then(function(res){
+        vb.disabled = false;
+        if (!res.ok){ qs('.elMsg', node).innerHTML = '<div class="msg err">'+esc(errMsg_(res))+'</div>'; return; }
+        toast('el_cancelled', 'ok');
+        loadEntryList();
+      });
+    });
+    return node;
   }
   function loadEntryList(){
     api('listEntries', {}).then(function(res){
-      var wrap = qs('#entryListBody');
       if(!res.ok || !res.entries.length){ entryRows = []; drawEntryList(); return; }
-      entryRows = res.entries.map(function(e){
-        // A car or pos entry can carry cash, card/POS, and credit sales all
-        // at once now, so a single-column quick list shows their sum rather
-        // than picking just one and silently dropping the others.
-        var amt = Number(e.cashSales||0) + Number(e.posSales||0) + Number(e.creditSales||0);
+      entryRows = entryGroups_(res.entries).map(function(rows){
+        var e0 = rows[0];
+        var live = rows.filter(function(e){ return !e.voided; });
+        var has = function(k){ return live.some(function(e){ return Number(e[k]||0) > 0; }); };
+        var sales = live.reduce(function(a, e){ return a + Number(e.cashSales||0) + Number(e.posSales||0); }, 0);
+        var states = rows.map(function(e){ return e.lockState || (e.voided ? 'voided' : e.consumedBy ? 'submitted' : 'open'); });
+        var st = states.indexOf('approved') >= 0 ? 'approved' : states.indexOf('submitted') >= 0 ? 'submitted'
+          : states.every(function(x){ return x === 'voided'; }) ? 'voided' : 'open';
         return {
-          html: '<tr><td>'+esc(e.date)+'</td><td>'+esc(t('entry_source_'+e.sourceType))+'</td><td>'+money(amt)+'</td><td>'+(e.consumedBy?'✓':'')+'</td></tr>',
+          node: function(){ return entryCard_(rows); },
           norm: {
-            date: e.date, locationId: e.locationId, sourceType: e.sourceType, amount: amt,
-            people: [e.enteredBy], status: e.consumedBy ? 'handed' : 'open',
-            pay: { cash: Number(e.cashSales||0) > 0, pos: Number(e.posSales||0) > 0, credit: Number(e.creditSales||0) > 0,
-              delivery: Number(e.deliveryFeeBankAmount||0) > 0, other: Number(e.otherCash||0) > 0,
-              expense: Number(e.expenseAmount||0) > 0, deposit: Number(e.directDepositAmount||0) > 0 },
-            // everything a person might actually type into the box: the
-            // reasons and bank references are usually what they remember
-            text: [e.date, t('entry_source_'+e.sourceType), sourceName_(e), locationName(e.locationId),
-              userName(e.enteredBy), productName_(e.productId), e.note, money(amt),
-              e.otherCashReason, e.expenseReason, e.directDepositRef, e.directDepositNote,
-              itemName_('incomeItems', e.otherCashItemId), itemName_('expenseItems', e.expenseItemId)].join(' ')
+            date: e0.date, locationId: e0.locationId, sourceType: e0.sourceType, amount: sales,
+            people: [e0.enteredBy], status: st,
+            pay: { cash: has('cashSales'), pos: has('posSales'), credit: has('creditSales'), delivery: has('deliveryFeeBankAmount'),
+              other: has('otherCash'), expense: has('expenseAmount'), deposit: has('directDepositAmount') },
+            // everything a person might type into the search box
+            text: rows.map(function(e){ return [e.date, t('entry_source_'+e.sourceType), sourceName_(e), locationName(e.locationId),
+              userName(e.enteredBy), productName_(e.productId), e.note, e.otherCashReason, e.expenseReason, e.creditCustomer, e.deliveryNote,
+              e.directDepositRef, e.directDepositNote, e.voidReason, itemName_('incomeItems', e.otherCashItemId), itemName_('expenseItems', e.expenseItemId)].join(' '); }).join(' ') + ' ' + money(sales)
           }
         };
       });
@@ -5917,6 +6082,17 @@ function renderDeputyReview(body){
     body.innerHTML = '';
     if (!res.ok){ body.innerHTML = '<div class="msg err">'+esc(errMsg_(res))+'</div>'; return; }
 
+    // the area managers' requests to hand cash to their collector
+    var reqCard = el('<div class="card"><h2>'+esc(t('dp_requests'))+'</h2><div class="muted" style="font-size:12.5px;margin-bottom:8px;">'+esc(t('dp_requestsHint'))+'</div><div class="dpList">'+esc(t('loading'))+'</div></div>');
+    body.appendChild(reqCard);
+    api('listHandoffs', {}).then(function(hr){
+      var list = qs('.dpList', reqCard);
+      if (!hr.ok){ list.innerHTML = '<div class="msg err">'+esc(errMsg_(hr))+'</div>'; return; }
+      var waiting = (hr.handoffs||[]).filter(function(h){ return h.status === 'pending_deputy'; });
+      list.innerHTML = waiting.length ? '' : '<div class="muted">'+esc(t('dp_none'))+'</div>';
+      waiting.forEach(function(h){ list.appendChild(handoffItem(h, true)); });
+    });
+
     var header = el('<div class="card"><h2>'+esc(t('deputy_title'))+'</h2><div class="muted" style="font-size:12.5px;">'+esc(t('deputy_hint'))+'</div></div>');
     body.appendChild(header);
 
@@ -6086,7 +6262,50 @@ function handoffItem(h, showConfirm, showResolve){
   }
 
   var actions = qs('#hActions', div);
-  if (showConfirm && h.status==='pending'){
+  // a refusal is shown, never swallowed by a silent redraw
+  function after_(res){ if (res && !res.ok){ toastRaw_(errMsg_(res), 'err'); return; } render(); }
+  // the Deputy Operations Manager checks an area manager's handover before
+  // the collector sees it: validate, or send it back with a reason
+  if (h.status === 'pending_deputy'){
+    var me = state.user.id, myRole = state.user.role;
+    var mayValidate = (myRole === 'deputy_operations_manager' || myRole === 'admin') && [h.fromUserId, h.toUserId, h.createdBy].indexOf(me) < 0;
+    actions.parentNode.insertBefore(el('<div class="ho-onlyrecv">'+icon_('clock')+'<span>'+esc(t('dp_waiting'))+'</span></div>'), actions);
+    if (mayValidate){
+      var vb = el('<button class="btn">'+icon_('check')+esc(t('dp_validate'))+'</button>');
+      vb.addEventListener('click', function(){
+        if (!confirm(t('dp_validateConfirm').replace('{amount}', money(h.amount)).replace('{who}', userName(h.toUserId)))) return;
+        api('deputyValidateHandoff', { id: h.id }).then(function(res){ if (res.ok) toast('dp_validated', 'ok'); after_(res); });
+      });
+      var rb = el('<button class="btn danger">'+esc(t('dp_return'))+'</button>');
+      rb.addEventListener('click', function(){
+        var reason = prompt(t('dp_returnReason'));
+        if (reason === null) return;
+        if (!reason.trim()){ toastRaw_(t('err_reasonRequired'), 'err'); return; }
+        api('deputyReturnHandoff', { id: h.id, reason: reason.trim() }).then(after_);
+      });
+      actions.appendChild(vb); actions.appendChild(rb);
+    }
+  }
+  if (h.status === 'returned' && h.returnReason){
+    actions.parentNode.insertBefore(el('<div class="el-voidinfo">'+icon_('back')+'<span><b>'+esc(t('dp_returnedBy').replace('{who}', userName(h.deputyReturnedBy)))+'</b> '+esc(h.returnReason)+'</span></div>'), actions);
+  }
+  if (h.deputyValidatedBy){
+    actions.parentNode.insertBefore(el('<div class="muted" style="font-size:12px;margin-top:6px;">'+esc(t('dp_validatedBy').replace('{who}', userName(h.deputyValidatedBy)))+'</div>'), actions);
+  }
+  // only the person the cash was handed to can confirm it arrived
+  if (showConfirm && h.status==='pending' && h.toUserId !== state.user.id){
+    actions.parentNode.insertBefore(el('<div class="ho-onlyrecv">'+icon_('user')+'<span>'+esc(t('ho_receiverOnly').replace('{who}', userName(h.toUserId)))+'</span></div>'), actions);
+    if (h.fromUserId !== state.user.id){
+      var fb = el('<button class="btn secondary">'+esc(t('ho_flag'))+'</button>');
+      fb.addEventListener('click', function(){
+        var note = prompt(t('handoff_disputeNote'));
+        if (note === null) return;
+        api('disputeHandoff',{id:h.id, note:note}).then(after_);
+      });
+      actions.appendChild(fb);
+    }
+  }
+  if (showConfirm && h.status==='pending' && h.toUserId === state.user.id){
     var recv = el('<div class="field"><label>'+esc(t('handoff_receivedAmount'))+'</label>' +
       '<input id="hRecvAmt" type="text" inputmode="decimal" value="'+esc(money(h.amount))+'"></div>');
     actions.parentNode.insertBefore(recv, actions);
@@ -6096,27 +6315,41 @@ function handoffItem(h, showConfirm, showResolve){
       var raw = String(recvInput.value || '').replace(/,/g, '').trim();
       var receivedAmount = raw === '' ? h.amount : Number(raw);
       api('confirmHandoff',{id:h.id, receivedAmount:receivedAmount}).then(function(res){
-        if (res.ok && res.handoff && res.handoff.shortfall != null) { toast('handoff_shortfallAccepted', 'ok'); return; }
+        if (!res.ok) { toastRaw_(errMsg_(res), 'err'); return; }
+        if (res.handoff && res.handoff.shortfall != null) { toast('handoff_shortfallAccepted', 'ok'); return; }
         render();
       });
     });
     var db = el('<button class="btn danger">'+esc(t('handoff_dispute'))+'</button>');
     db.addEventListener('click', function(){
-      var note = prompt(t('handoff_disputeNote'))||'';
-      api('disputeHandoff',{id:h.id, note:note}).then(function(){ render(); });
+      var note = prompt(t('handoff_disputeNote'));
+      if (note === null) return;
+      api('disputeHandoff',{id:h.id, note:note}).then(after_);
     });
     actions.appendChild(cb); actions.appendChild(db);
   }
   if (showResolve && h.status==='disputed'){
+    // settling as confirmed records what actually arrived
+    var resAmt = el('<div class="field"><label>'+esc(t('handoff_receivedAmount'))+'</label><input class="hResAmt" type="text" inputmode="decimal" value="'+esc(money(h.amount))+'"></div>');
+    actions.parentNode.insertBefore(resAmt, actions);
     var rc = el('<button class="btn">'+esc(t('handoff_resolveConfirm'))+'</button>');
-    rc.addEventListener('click', function(){ api('resolveDispute',{id:h.id, resolution:'confirm'}).then(function(){ render(); }); });
+    rc.addEventListener('click', function(){
+      var rawR = String(qs('.hResAmt', div).value || '').replace(/,/g, '').trim();
+      var note = prompt(t('ho_resolveNote'));
+      if (note === null) return;
+      api('resolveDispute',{id:h.id, resolution:'confirm', receivedAmount: rawR === '' ? h.amount : Number(rawR), note: note}).then(after_);
+    });
     var rr = el('<button class="btn danger">'+esc(t('handoff_resolveReject'))+'</button>');
-    rr.addEventListener('click', function(){ api('resolveDispute',{id:h.id, resolution:'reject'}).then(function(){ render(); }); });
+    rr.addEventListener('click', function(){
+      var note = prompt(t('ho_resolveNote'));
+      if (note === null) return;
+      api('resolveDispute',{id:h.id, resolution:'reject', note: note}).then(after_);
+    });
     actions.appendChild(rc); actions.appendChild(rr);
   }
   if (h.requiresSecondApproval && !h.secondApprovedBy && (state.user.role==='admin' || state.user.role==='finance')){
     var ackBtn = el('<button class="btn secondary">'+esc(t('handoff_acknowledgeSecond'))+'</button>');
-    ackBtn.addEventListener('click', function(){ api('acknowledgeSecondApproval',{id:h.id}).then(function(){ render(); }); });
+    ackBtn.addEventListener('click', function(){ api('acknowledgeSecondApproval',{id:h.id}).then(after_); });
     actions.appendChild(ackBtn);
   }
   return div;
@@ -6248,7 +6481,7 @@ function renderHandoffs(body){
     // is a handoff, not "a handoff in the third card".
     var hFilter = listFilters_({
       fields: ['text','date','area','branch','payment','movement','status','person','amount'],
-      status: [['pending', t('handoff_pending')], ['confirmed', t('handoff_confirmed')],
+      status: [['pending_deputy', t('handoff_pending_deputy')], ['returned', t('handoff_returned')], ['pending', t('handoff_pending')], ['confirmed', t('handoff_confirmed')],
         ['disputed', t('handoff_disputed')], ['rejected', t('handoff_rejected')], ['deposit', t('st_deposited')]],
       people: (state.meta.users||[]).map(function(u){ return [u.id, u.name]; }),
       labels: { person: 'handoff_from' },
@@ -6269,7 +6502,10 @@ function renderHandoffs(body){
       };
     }
     var visible = res.handoffs.filter(function(h){ return hFilter.match(hNorm(h)); });
-    var pending = visible.filter(function(h){ return h.status==='pending' && (h.toUserId===state.user.id || role==='admin'); });
+    var pending = visible.filter(function(h){
+      if (h.status==='pending' && (h.toUserId===state.user.id || role==='admin')) return true;
+      return h.status==='pending_deputy' && (role==='deputy_operations_manager' || role==='admin');
+    });
     var disputed = visible.filter(function(h){ return h.status==='disputed'; });
     var history = visible.filter(function(h){ return pending.indexOf(h)<0; });
     setNotifCount(pending.length + ((role==='admin'||role==='finance') ? disputed.length : 0));
@@ -6807,6 +7043,7 @@ function renderReconciliation(body){
     api('getReconciliation', {}).then(function(res){
       if (!res.ok){ body.innerHTML = '<div class="msg err">'+esc(errMsg_(res))+'</div>'; return; }
       body.innerHTML = '';
+      var canAct = ['admin','finance'].indexOf(state.user.role) >= 0;
 
       var importCard = el('<div class="card">' +
         '<h2>'+esc(t('recon_title'))+'</h2>' +
@@ -6815,7 +7052,8 @@ function renderReconciliation(body){
         '<div id="reconMsg"></div>' +
       '</div>');
       body.appendChild(importCard);
-      qs('#reconFile', importCard).addEventListener('change', function(e){
+      if (!canAct) { qs('#reconFile', importCard).remove(); importCard.appendChild(el('<div class="ho-onlyrecv">'+icon_('eye')+'<span>'+esc(t('recon_viewOnly'))+'</span></div>')); }
+      if (canAct) qs('#reconFile', importCard).addEventListener('change', function(e){
         var file = e.target.files[0];
         if (!file) return;
         var reader = new FileReader();
@@ -6862,6 +7100,7 @@ function renderReconciliation(body){
             '<button class="btn secondary">'+esc(t('recon_link'))+'</button>' +
           '</div>');
           var sel = qs('select', row);
+          if (!canAct) { qs('.field', row).remove(); qs('button', row).remove(); depList.appendChild(row); return; }
           qs('button', row).addEventListener('click', function(){
             if (!sel.value) return;
             api('manualMatchReconciliation', { lineId: sel.value, handoffId: d.id }).then(function(res3){
@@ -7150,19 +7389,29 @@ var PERM_ROLES = ['admin','finance','accountant','operations_manager','deputy_op
 var PERM_ROWS = [
   { key:'perm_home', roles:['admin','finance','accountant','operations_manager','deputy_operations_manager','cluster_manager','store_manager','collector','driver'] },
   { key:'perm_home_company', roles:['admin','finance','accountant','operations_manager','deputy_operations_manager'] },
-  { key:'perm_entries', roles:['admin','store_manager','driver'] },
+  { key:'perm_entries', roles:['admin','cluster_manager','store_manager','driver'] },
+  { key:'perm_voidOwn', roles:['admin','cluster_manager','store_manager','driver'] },
+  { key:'perm_handover', roles:['admin','cluster_manager','store_manager','driver'] },
+  { key:'perm_confirmReceipt', roles:['cluster_manager','store_manager','collector'] },
+  { key:'perm_flagOnBehalf', roles:['admin'] },
+  { key:'perm_deposit', roles:['collector'] },
   { key:'perm_area_bulk_upload', roles:['admin','cluster_manager'] },
   { key:'perm_deputy_approve', roles:['admin','deputy_operations_manager'] },
+  { key:'perm_deputyValidate', roles:['admin','deputy_operations_manager'] },
   { key:'perm_handoffs_own', roles:['admin','finance','accountant','operations_manager','deputy_operations_manager','cluster_manager','store_manager','collector','driver'] },
   { key:'perm_handoffs_all', roles:['admin','finance','accountant','operations_manager','deputy_operations_manager'] },
   { key:'perm_report_own', roles:['cluster_manager'] },
   { key:'perm_report_all', roles:['admin','finance','accountant','operations_manager','deputy_operations_manager'] },
   { key:'perm_audit', roles:['admin','finance','accountant','operations_manager','deputy_operations_manager'] },
   { key:'perm_resolve', roles:['admin','finance'] },
+  { key:'perm_secondApproval', roles:['admin','finance'] },
   { key:'perm_reconcile', roles:['admin','finance'] },
+  { key:'perm_reconcileView', roles:['admin','finance','deputy_operations_manager'] },
+  { key:'perm_entriesView', roles:['admin','finance','accountant','operations_manager','deputy_operations_manager','cluster_manager','store_manager'] },
   { key:'perm_risk_report', roles:['admin','finance','accountant','operations_manager','deputy_operations_manager','cluster_manager','store_manager','collector','driver'] },
   { key:'perm_risk_view', roles:['admin','finance','accountant','operations_manager','deputy_operations_manager'] },
-  { key:'perm_manage', roles:['admin'] }
+  { key:'perm_manage', roles:['admin'] },
+  { key:'perm_goLive', roles:['admin'] }
 ];
 
 function renderAdminPermissions(content){
@@ -7179,6 +7428,13 @@ function renderAdminPermissions(content){
   card.appendChild(table);
   card.appendChild(el('<small class="hint">'+esc(t('perm_note'))+'</small>'));
   content.appendChild(card);
+  // the rules the ticks above do not show: who may NOT act, and when a
+  // figure stops being changeable at all
+  var rules = ['rule_lock','rule_void','rule_dayClosed','rule_noFuture','rule_deputy','rule_receiverOnly','rule_selfApproval','rule_disputeSettle',
+    'rule_secondApproval','rule_holder','rule_inFlight','rule_oneArea','rule_adminSelf','rule_settings','rule_goLive','rule_audit'];
+  var rc2 = el('<div class="card rules-card"><h2>'+icon_('key')+esc(t('rules_title'))+'</h2><ol class="rules"></ol></div>');
+  rules.forEach(function(k){ qs('.rules', rc2).appendChild(el('<li>'+esc(t(k))+'</li>')); });
+  content.appendChild(rc2);
 }
 
 function renderAdminUsers(content){
@@ -7846,7 +8102,27 @@ function renderAdminConfig(content){
     '<div class="field"><label>'+esc(t('admin_freshConfirmLabel'))+'</label><input id="cArchWord" placeholder="ARCHIVE" dir="ltr"></div>' +
     '<button class="btn danger" id="cArchive">'+esc(t('admin_freshGo'))+'</button><div id="cArchMsg"></div></div>');
   content.appendChild(fresh);
-  qs('#cArchive', fresh).addEventListener('click', function(){
+  // Going live is one way: "start fresh" is then gone for good, so a real
+  // day's figures can never be archived away from the app.
+  if (cfg.liveLocked){
+    fresh.innerHTML = '<h2>'+esc(t('live_title'))+'</h2><div class="live-on">'+icon_('key')+'<span>'+esc(t('live_on').replace('{date}', fmtStamp_(cfg.liveLockedAt || '')))+'</span></div>';
+  } else {
+    var liveCard = el('<div class="card"><h2>'+esc(t('live_title'))+'</h2>' +
+      '<p class="muted" style="font-size:13px;line-height:1.85;margin:0 0 12px;">'+esc(t('live_hint'))+'</p>' +
+      '<div class="field"><label>'+esc(t('live_confirm'))+'</label><input id="cLiveWord" placeholder="LIVE" dir="ltr"></div>' +
+      '<button class="btn" id="cGoLive">'+esc(t('live_btn'))+'</button><div id="cLiveMsg"></div></div>');
+    content.insertBefore(liveCard, fresh);
+    qs('#cGoLive', liveCard).addEventListener('click', function(){
+      if (qs('#cLiveWord', liveCard).value.trim().toUpperCase() !== 'LIVE'){
+        qs('#cLiveMsg', liveCard).innerHTML = '<div class="msg err">'+esc(t('live_confirm'))+'</div>'; return;
+      }
+      api('adminSetConfig', { data: { liveLocked: true } }).then(function(res){
+        if (!res.ok){ qs('#cLiveMsg', liveCard).innerHTML = '<div class="msg err">'+esc(errMsg_(res))+'</div>'; return; }
+        refreshMetaThen(function(){ renderAdmin(qs('#screenBody')); });
+      });
+    });
+  }
+  if (qs('#cArchive', fresh)) qs('#cArchive', fresh).addEventListener('click', function(){
     var word = qs('#cArchWord', fresh).value.trim().toUpperCase();
     if (word !== 'ARCHIVE') {
       qs('#cArchMsg', fresh).innerHTML = '<div class="msg err">'+esc(t('admin_freshConfirmLabel'))+'</div>';

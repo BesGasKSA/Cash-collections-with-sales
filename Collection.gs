@@ -121,7 +121,7 @@ function deliveryNeedsSale_(sourceType, sourceId, date, cashSales, posSales, sib
   if (Number(cashSales || 0) > 0 || Number(posSales || 0) > 0 || Number(creditSales || 0) > 0) return true;
   if (siblingHasSale) return true;
   return readSheet(SHEETS.ENTRIES).some(function (e) {
-    return e.sourceType === sourceType && e.sourceId === sourceId && e.date === date &&
+    return !e.voided && e.sourceType === sourceType && e.sourceId === sourceId && e.date === date &&
       (Number(e.cashSales || 0) > 0 || Number(e.posSales || 0) > 0 || Number(e.creditSales || 0) > 0);
   });
 }
@@ -150,7 +150,13 @@ function checkNonSalesFields_(r, siblingCash) {
   }
   // A credit sale is money the branch is owed; without a name on it nobody
   // can chase it.
-  if (Number(r.creditSales || 0) < 0 || Number(r.deliveryFeeBankAmount || 0) < 0) return 'invalid_input';
+  // A negative figure would quietly take cash off what is owed.
+  var nums = [r.cashSales, r.posSales, r.creditSales, r.deliveryFeeBankAmount, r.qty, r.unitPrice, r.cylindersOut, r.cylindersIn];
+  for (var ni = 0; ni < nums.length; ni++) {
+    if (nums[ni] == null || nums[ni] === '') continue;
+    var nv = Number(nums[ni]);
+    if (!isFinite(nv) || nv < 0) return 'invalid_input';
+  }
   if (Number(r.creditSales || 0) > 0 && !String(r.creditCustomer || '').trim()) return 'customer_required';
   var dep = Number(r.directDepositAmount || 0);
   if (dep > 0) {
@@ -234,10 +240,66 @@ function recordDirectDeposit_(entry, user) {
   return deposit;
 }
 
+// The company's calendar day, in Riyadh.
+function todayRiyadh_() {
+  return Utilities.formatDate(new Date(), 'Asia/Riyadh', 'yyyy-MM-dd');
+}
+
+// A day a source has already handed over is closed: nothing more may be
+// added to it, because anything added there (an expense, a credit sale, a
+// الموازنة) would quietly change figures the next level has accepted. Today
+// stays open, so a second handover in the same day still works. Future dates
+// are never accepted.
+function entryDateError_(sourceType, sourceId, date) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(date || ''))) return 'invalid_date';
+  var today = todayRiyadh_();
+  if (date > today) return 'future_date';
+  if (date < today) {
+    var handed = readSheet(SHEETS.ENTRIES).some(function (e) {
+      return e.sourceType === sourceType && e.sourceId === sourceId && e.date === date && e.consumedBy && !e.voided;
+    });
+    if (handed) return 'day_closed';
+  }
+  return null;
+}
+
+// Cancelling an entry: only its own author, only before it has been handed
+// over, always with a reason, and never by deleting the row. A cancelled
+// entry stays on file (voided) and drops out of every total. Several ids go
+// together (one submission's rows) and all-or-nothing.
+function actionVoidEntries_(req, user) {
+  var ids = Array.isArray(req.ids) ? req.ids : (req.id ? [req.id] : []);
+  var reason = String(req.reason || '').trim();
+  if (!ids.length) return { ok: false, error: 'invalid_input' };
+  if (!reason) return { ok: false, error: 'reason_required' };
+  var rows = [];
+  for (var i = 0; i < ids.length; i++) {
+    var e = getById_(SHEETS.ENTRIES, ids[i]);
+    if (!e) return { ok: false, error: 'not_found' };
+    if (e.voided) return { ok: false, error: 'already_voided' };
+    // not even an admin: the person who wrote it is the only one who may
+    // take it back, so nobody else can make someone's figure disappear
+    if (e.enteredBy !== user.id) return { ok: false, error: 'not_your_entry' };
+    if (e.consumedBy) return { ok: false, error: 'entry_locked' };
+    // money already banked is a bank movement, not a draft
+    if (Number(e.directDepositAmount || 0) > 0) return { ok: false, error: 'has_direct_deposit' };
+    rows.push(e);
+  }
+  var at = new Date().toISOString();
+  rows.forEach(function (e) {
+    e.voided = true; e.voidedAt = at; e.voidedBy = user.id; e.voidReason = reason;
+    writeRow(SHEETS.ENTRIES, e);
+    logAudit_('void_entry', user.id, e.id);
+  });
+  return { ok: true, voided: rows.length };
+}
+
 function actionCreateEntry_(req, user) {
   if (!req.date || !req.sourceType || !req.sourceId) return { ok: false, error: 'invalid_input' };
   var scope = checkEntryScope_(user, req.sourceType, req.sourceId);
   if (!scope.ok) return { ok: false, error: scope.error };
+  var dateErr = entryDateError_(req.sourceType, req.sourceId, req.date);
+  if (dateErr) return { ok: false, error: dateErr };
 
   if (Number(req.deliveryFeeBankAmount || 0) > 0 &&
     !deliveryNeedsSale_(req.sourceType, req.sourceId, req.date, req.cashSales, req.posSales, false, req.creditSales)) {
@@ -277,6 +339,9 @@ function actionCreateEntry_(req, user) {
     cylindersOut: Number(req.cylindersOut || 0),
     cylindersIn: Number(req.cylindersIn || 0),
     note: req.note || '',
+    // rows saved together from one form share this, so the list can show
+    // them as the one day's entry they are
+    submissionId: req.submissionId ? String(req.submissionId).slice(0, 64) : null,
     consumedBy: null
   };
   var extra = nonSalesFields_(req);
@@ -319,6 +384,11 @@ function actionImportEntries_(req, user) {
       results.push({ row: i, ok: false, error: scope.error });
       continue;
     }
+    var rowDateErr = entryDateError_(r.sourceType, r.sourceId, r.date);
+    if (rowDateErr) {
+      results.push({ row: i, ok: false, error: rowDateErr });
+      continue;
+    }
     if (Number(r.deliveryFeeBankAmount || 0) > 0 &&
       !deliveryNeedsSale_(r.sourceType, r.sourceId, r.date, r.cashSales, r.posSales, batchHasSale(r.sourceType, r.sourceId, r.date), r.creditSales)) {
       results.push({ row: i, ok: false, error: 'delivery_without_sale' });
@@ -346,6 +416,7 @@ function actionImportEntries_(req, user) {
       cylindersOut: Number(r.cylindersOut || 0),
       cylindersIn: Number(r.cylindersIn || 0),
       note: r.note || '',
+      submissionId: r.submissionId ? String(r.submissionId).slice(0, 64) : null,
       consumedBy: null
     };
     var rowExtra = nonSalesFields_(r);
@@ -382,7 +453,55 @@ function actionListEntries_(req, user) {
   if (req.date) rows = rows.filter(function (e) { return e.date === req.date; });
 
   rows.sort(function (a, b) { return new Date(b.updatedAt) - new Date(a.updatedAt); });
+  // Where each entry stands, worked out here so the list and the rules can
+  // never disagree: open (its author may still cancel it), submitted (in a
+  // handover or batch awaiting the next level — locked), approved (the next
+  // level confirmed it — locked for good), or voided.
+  var hStatus = {};
+  readSheet(SHEETS.HANDOFFS).forEach(function (h) { hStatus[h.id] = h.status; });
+  readSheet(SHEETS.AREA_BULK_BATCHES).forEach(function (b) { hStatus[b.id] = b.status; });
+  rows.forEach(function (e) {
+    var st = e.consumedBy ? hStatus[e.consumedBy] : null;
+    e.lockState = e.voided ? 'voided'
+      : !e.consumedBy ? 'open'
+      : (st === 'confirmed' || st === 'completed') ? 'approved'
+      : 'submitted';
+    e.canVoid = e.lockState === 'open' && e.enteredBy === user.id && !(Number(e.directDepositAmount || 0) > 0);
+  });
   return { ok: true, entries: rows };
+}
+
+// Cash or approvals still in motion around a person: entries they wrote
+// that are not handed over yet, handoffs from or to them still open, and
+// confirmed cash they received and have not passed on.
+function personBusy_(userId) {
+  if (!userId) return false;
+  var busyEntry = readSheet(SHEETS.ENTRIES).some(function (e) { return e.enteredBy === userId && !e.consumedBy && !e.voided; });
+  if (busyEntry) return true;
+  return readSheet(SHEETS.HANDOFFS).some(function (h) {
+    if (h.kind === 'deposit') return false;
+    var open = h.status === 'pending' || h.status === 'disputed' || h.status === 'pending_deputy';
+    if (open && (h.fromUserId === userId || h.toUserId === userId)) return true;
+    return h.toUserId === userId && h.status === 'confirmed' && !h.consumedBy;
+  });
+}
+// The same for a place: a branch, or one store / car / POS machine.
+function placeBusy_(kind, id) {
+  var entries = readSheet(SHEETS.ENTRIES).filter(function (e) { return !e.consumedBy && !e.voided; });
+  if (kind === 'location') {
+    if (entries.some(function (e) { return e.locationId === id; })) return true;
+    return readSheet(SHEETS.HANDOFFS).some(function (h) {
+      if (h.locationId !== id || h.kind === 'deposit') return false;
+      return h.status === 'pending' || h.status === 'disputed' || (h.status === 'confirmed' && !h.consumedBy);
+    });
+  }
+  if (entries.some(function (e) { return e.sourceType === kind && e.sourceId === id; })) return true;
+  if (kind === 'car') {
+    return readSheet(SHEETS.HANDOFFS).some(function (h) {
+      return h.carId === id && (h.status === 'pending' || h.status === 'disputed' || (h.status === 'confirmed' && !h.consumedBy));
+    });
+  }
+  return false;
 }
 
 function unconsumedEntriesForLocation_(locationId) {
@@ -516,7 +635,7 @@ function createCarHandoff_(req, user) {
   if (store.storeManagerUserId === user.id) return { ok: false, error: 'conflict_of_interest' };
 
   var entries = readSheet(SHEETS.ENTRIES).filter(function (e) {
-    return e.sourceType === 'car' && e.sourceId === car.id && !e.consumedBy;
+    return e.sourceType === 'car' && e.sourceId === car.id && !e.consumedBy && !e.voided;
   });
   if (!entries.length) return { ok: false, error: 'no_entries' };
   var totals = computeNet_(entries);
@@ -525,7 +644,9 @@ function createCarHandoff_(req, user) {
   var handoff = {
     id: Utilities.getUuid(),
     kind: 'car_to_location',
-    fromUserId: user.id,
+    // the driver holds this cash, whoever pressed the button
+    fromUserId: user.role === 'admin' ? car.driverUserId : user.id,
+    createdBy: user.id,
     toUserId: store.storeManagerUserId,
     locationId: location.id,
     carId: car.id,
@@ -583,7 +704,8 @@ function createLocationHandoff_(req, user) {
   var handoff = {
     id: Utilities.getUuid(),
     kind: 'location_to_cluster',
-    fromUserId: user.id,
+    fromUserId: user.role === 'admin' && store && store.storeManagerUserId ? store.storeManagerUserId : user.id,
+    createdBy: user.id,
     toUserId: cluster.clusterManagerUserId,
     locationId: location.id,
     clusterId: cluster.id,
@@ -623,7 +745,8 @@ function createClusterHandoff_(req, user) {
   var handoff = {
     id: Utilities.getUuid(),
     kind: 'cluster_to_collector',
-    fromUserId: user.id,
+    fromUserId: user.role === 'admin' ? cluster.clusterManagerUserId : user.id,
+    createdBy: user.id,
     toUserId: cluster.collectorUserId,
     clusterId: cluster.id,
     amount: amount,
@@ -632,13 +755,14 @@ function createClusterHandoff_(req, user) {
     sourceEntryIds: [],
     sourceHandoffIds: held.map(function (h) { return h.id; }),
     consumedBy: null,
-    status: 'pending',
+    // the Deputy Operations Manager validates it before the collector sees it
+    status: 'pending_deputy',
     createdAt: new Date().toISOString()
   };
   writeRow(SHEETS.HANDOFFS, handoff);
   held.forEach(function (h) { h.consumedBy = handoff.id; writeRow(SHEETS.HANDOFFS, h); });
   logAudit_('create_handoff_cluster', user.id, handoff.id);
-  notifyPending_(handoff);
+  notifyDeputyPendingHandoff_(handoff);
   return { ok: true, handoff: handoff };
 }
 
@@ -712,6 +836,11 @@ function actionBulkSubmitAreaBatch_(req, user) {
     var scope = checkClusterBulkEntryScope_(user, cluster.id, r.sourceType, r.sourceId);
     if (!scope.ok) {
       errors.push({ row: i, error: scope.error });
+      continue;
+    }
+    var bulkDateErr = entryDateError_(r.sourceType, r.sourceId, r.date);
+    if (bulkDateErr) {
+      errors.push({ row: i, error: bulkDateErr });
       continue;
     }
     if (Number(r.deliveryFeeBankAmount || 0) > 0 &&
@@ -997,8 +1126,10 @@ function actionConfirmHandoff_(req, user) {
   var h = getById_(SHEETS.HANDOFFS, req.id);
   if (!h) return { ok: false, error: 'not_found' };
   if (h.status !== 'pending') return { ok: false, error: 'not_pending' };
-  if (h.fromUserId === user.id) return { ok: false, error: 'conflict_of_interest' };
-  if (user.role !== 'admin' && h.toUserId !== user.id) return { ok: false, error: 'forbidden' };
+  if (h.fromUserId === user.id || h.createdBy === user.id) return { ok: false, error: 'conflict_of_interest' };
+  // Only the person the cash was handed to can say it arrived — nobody, an
+  // admin included, confirms a receipt on someone else's behalf.
+  if (h.toUserId !== user.id) return { ok: false, error: 'receiver_only' };
 
   var declared = Number(h.amount);
   var received = req.receivedAmount === undefined || req.receivedAmount === null || req.receivedAmount === ''
@@ -1030,11 +1161,7 @@ function actionConfirmHandoff_(req, user) {
   }
 
   writeRow(SHEETS.HANDOFFS, h);
-  logAudit_(
-    hasVariance ? (h.toUserId === user.id ? 'confirm_partial' : 'admin_confirm_partial') :
-      (h.toUserId === user.id ? 'confirm_handoff' : 'admin_confirm_on_behalf'),
-    user.id, h.id
-  );
+  logAudit_(hasVariance ? 'confirm_partial' : 'confirm_handoff', user.id, h.id);
   if (hasVariance) escalateShortfall_(h);
   if (needsSecondApproval) escalateLargeAmount_(h);
   return { ok: true, handoff: h };
@@ -1065,6 +1192,68 @@ function escalateLargeAmount_(handoff) {
   Object.keys(recipients).forEach(function (id) {
     try { sendMail_(recipients[id].email, subject, body); } catch (e) { /* best-effort */ }
   });
+}
+
+// ---------- The deputy's check on the area manager -> collector handover ----------
+function requireDeputy_(user) {
+  if (user.role !== 'deputy_operations_manager' && user.role !== 'admin') throw new Error('forbidden');
+}
+function deputyHandoffGuard_(h, user) {
+  if (!h) return 'not_found';
+  if (h.kind !== 'cluster_to_collector') return 'invalid_kind';
+  if (h.status !== 'pending_deputy') return 'not_pending';
+  // nobody validates a handover they are part of
+  if (h.fromUserId === user.id || h.toUserId === user.id || h.createdBy === user.id) return 'conflict_of_interest';
+  return null;
+}
+function actionDeputyValidateHandoff_(req, user) {
+  requireDeputy_(user);
+  var h = getById_(SHEETS.HANDOFFS, req.id);
+  var err = deputyHandoffGuard_(h, user);
+  if (err) return { ok: false, error: err };
+  h.status = 'pending';
+  h.deputyValidatedBy = user.id;
+  h.deputyValidatedAt = new Date().toISOString();
+  h.deputyNote = String(req.note || '').trim();
+  writeRow(SHEETS.HANDOFFS, h);
+  logAudit_('deputy_validate_handoff', user.id, h.id);
+  notifyPending_(h);
+  return { ok: true, handoff: h };
+}
+function actionDeputyReturnHandoff_(req, user) {
+  requireDeputy_(user);
+  var reason = String(req.reason || '').trim();
+  if (!reason) return { ok: false, error: 'reason_required' };
+  var h = getById_(SHEETS.HANDOFFS, req.id);
+  var err = deputyHandoffGuard_(h, user);
+  if (err) return { ok: false, error: err };
+  h.status = 'returned';
+  h.deputyReturnedBy = user.id;
+  h.deputyReturnedAt = new Date().toISOString();
+  h.returnReason = reason;
+  writeRow(SHEETS.HANDOFFS, h);
+  // the branch handovers go back to the area manager's held cash, to be
+  // corrected and sent again
+  releaseConsumed_(h);
+  logAudit_('deputy_return_handoff', user.id, h.id);
+  var mgr = getById_(SHEETS.USERS, h.fromUserId);
+  if (mgr && mgr.email) {
+    try {
+      sendMail_(mgr.email, 'أُعيد طلب التسليم للتصحيح / Handover returned for correction',
+        'أعاد نائب مدير العمليات طلب تسليمك للمُحصّل بمبلغ ' + Number(h.amount).toFixed(2) + ' للتصحيح.\nالسبب: ' + reason +
+        '\n\nThe Deputy Operations Manager returned your handover to the collector (' + Number(h.amount).toFixed(2) + ') for correction.\nReason: ' + reason);
+    } catch (e) { /* best-effort */ }
+  }
+  return { ok: true, handoff: h };
+}
+function notifyDeputyPendingHandoff_(h) {
+  var to = readSheet(SHEETS.USERS).filter(function (u) {
+    return u.active !== false && u.email && (u.role === 'deputy_operations_manager' || u.role === 'admin');
+  });
+  var subject = 'طلب تسليم من مدير منطقة بانتظار تحققك / Area handover awaiting your validation';
+  var body = 'طلب مدير المنطقة ' + (getById_(SHEETS.USERS, h.fromUserId) || {}).name + ' تسليم ' + Number(h.amount).toFixed(2) +
+    ' للمُحصّل، ويحتاج تحققك قبل وصوله إليه.\n\nAn area manager\'s handover of ' + Number(h.amount).toFixed(2) + ' to the collector needs your validation before it reaches them.';
+  to.forEach(function (u) { try { sendMail_(u.email, subject, body); } catch (e) { /* best-effort */ } });
 }
 
 function actionAcknowledgeSecondApproval_(req, user) {
@@ -1123,12 +1312,35 @@ function actionResolveDispute_(req, user) {
   // an admin/finance account that is also a party to this specific handoff
   // (e.g. also holds a store/cluster assignment) may not rule on its own
   // dispute — route it to a different admin.
-  if (h.fromUserId === user.id || h.toUserId === user.id) return { ok: false, error: 'conflict_of_interest' };
+  if (h.fromUserId === user.id || h.toUserId === user.id || h.createdBy === user.id) return { ok: false, error: 'conflict_of_interest' };
 
+  var flagLarge = false;
   if (req.resolution === 'confirm') {
+    // The amount the receiver actually got, when the dispute was a shortage;
+    // left out, the declared amount stands.
+    var declared = Number(h.amount);
+    var received = req.receivedAmount === undefined || req.receivedAmount === null || req.receivedAmount === ''
+      ? declared : Number(req.receivedAmount);
+    if (!isFinite(received) || received < 0) return { ok: false, error: 'invalid_input' };
+    var shortfall = Math.round((declared - received) * 100) / 100;
+    h.receivedAmount = received;
+    if (Math.abs(shortfall) > 0.01) {
+      h.originalAmount = declared;
+      h.amount = received;
+      h.shortfall = shortfall;
+      if (h.breakdown) h.breakdown = Object.assign({}, h.breakdown, { netCashOwed: received });
+    }
     h.status = 'confirmed';
     h.confirmedAt = new Date().toISOString();
-    h.confirmedBy = h.toUserId;
+    // the person who settled it is the one who approved it
+    h.confirmedBy = user.id;
+    h.confirmedViaDispute = true;
+    var threshold = secondApprovalThreshold_();
+    if (threshold > 0 && received >= threshold) {
+      h.requiresSecondApproval = true;
+      h.secondApprovalThresholdAtTime = threshold;
+      flagLarge = true;
+    }
   } else if (req.resolution === 'reject') {
     h.status = 'rejected';
     releaseConsumed_(h);
@@ -1140,13 +1352,15 @@ function actionResolveDispute_(req, user) {
   h.resolutionNote = req.note || '';
   writeRow(SHEETS.HANDOFFS, h);
   logAudit_('resolve_dispute', user.id, h.id);
+  if (flagLarge) escalateLargeAmount_(h);
+  if (h.shortfall) escalateShortfall_(h);
   return { ok: true, handoff: h };
 }
 
 function actionRecordDeposit_(req, user) {
-  if (user.role !== 'admin' && collectorClusterIds_(user.id).length === 0) {
-    return { ok: false, error: 'forbidden' };
-  }
+  // Whoever holds confirmed collector cash can bank it — including a
+  // collector moved off their area since, who would otherwise be left holding
+  // cash nobody can move.
 
   var held = readSheet(SHEETS.HANDOFFS).filter(function (h) {
     return h.kind === 'cluster_to_collector' && h.toUserId === user.id && h.status === 'confirmed' && !h.consumedBy;
@@ -1439,7 +1653,10 @@ function actionAdminInstallStaleTrigger_(req, user) {
 
 function actionDashboard_(req, user) {
   var handoffs = readSheet(SHEETS.HANDOFFS);
-  var pendingForMe = handoffs.filter(function (h) { return h.status === 'pending' && h.toUserId === user.id; });
+  var pendingForMe = handoffs.filter(function (h) {
+    if (h.status === 'pending' && h.toUserId === user.id) return true;
+    return user.role === 'deputy_operations_manager' && h.status === 'pending_deputy';
+  });
   var heldByMe = handoffs.filter(function (h) { return h.status === 'confirmed' && h.toUserId === user.id && !h.consumedBy; });
   var disputedInvolvingMe = handoffs.filter(function (h) {
     return h.status === 'disputed' && (h.toUserId === user.id || h.fromUserId === user.id);
@@ -1715,7 +1932,7 @@ function actionShortfallByEntrant_(req, user) {
 // comparing as strings avoids any timezone ambiguity from parsing into Date.
 function actionDashboardComparison_(req, user) {
   requireCompanyWide_(user);
-  var entries = readSheet(SHEETS.ENTRIES);
+  var entries = readSheet(SHEETS.ENTRIES).filter(function (e) { return !e.voided; });
 
   function isoDateOffset_(daysAgo) {
     var d = new Date();

@@ -315,6 +315,16 @@ function inviteEmailHtml_(u, link, who, role, expTxt, appUrl) {
     '</table></td></tr></table></body></html>';
 }
 
+// Every link in the chain a person is named on.
+function userAssignments_(userId) {
+  var out = [];
+  readSheet(SHEETS.CLUSTERS).forEach(function (c) { if (c.clusterManagerUserId === userId || c.collectorUserId === userId) out.push(c.id); });
+  readSheet(SHEETS.STORES).forEach(function (s) { if (s.storeManagerUserId === userId) out.push(s.id); });
+  readSheet(SHEETS.CARS).forEach(function (c) { if (c.driverUserId === userId) out.push(c.id); });
+  readSheet(SHEETS.POS).forEach(function (p) { if (p.assignedUserId === userId) out.push(p.id); });
+  return out;
+}
+
 function actionAdminUpdateUser_(req, user) {
   requireAdmin_(user);
   var target = getById_(SHEETS.USERS, req.id);
@@ -331,6 +341,20 @@ function actionAdminUpdateUser_(req, user) {
     if (existing && existing.id !== target.id) return { ok: false, error: 'email_exists' };
     target.email = email;
   }
+  var roleChange = d.role != null && d.role !== target.role;
+  var disabling = d.active != null && !d.active && target.active !== false;
+  if (roleChange || disabling) {
+    // an admin cannot lock themselves out, and the company always keeps one
+    if (target.id === user.id) return { ok: false, error: 'cannot_change_self' };
+    if (target.role === 'admin') {
+      var otherAdmins = readSheet(SHEETS.USERS).filter(function (u) { return u.role === 'admin' && u.active !== false && u.id !== target.id; });
+      if (!otherAdmins.length) return { ok: false, error: 'last_admin' };
+    }
+    // someone holding cash or with a handover open keeps their role and
+    // access until it is passed on, or it would be stuck with nobody able to move it
+    if (personBusy_(target.id)) return { ok: false, error: 'person_holds_cash' };
+  }
+  if (roleChange && userAssignments_(target.id).length) return { ok: false, error: 'user_has_assignments' };
   if (d.role != null) {
     if (!validRole_(d.role)) return { ok: false, error: 'invalid_input' };
     target.role = d.role;
@@ -464,6 +488,21 @@ function validateEntity_(kind, d) {
   return null;
 }
 
+// Changing who stands on a link, or where a store/car/POS/branch belongs,
+// is refused while cash or an approval is still in motion there: the open
+// handoff would point at the wrong person, or the cash would be stranded.
+function inFlightError_(kind, before, after) {
+  function changed(k) { return String(before[k] || '') !== String(after[k] || ''); }
+  var people = { store: ['storeManagerUserId'], car: ['driverUserId'], pos: ['assignedUserId'], cluster: ['clusterManagerUserId', 'collectorUserId'] }[kind] || [];
+  for (var i = 0; i < people.length; i++) {
+    if (changed(people[i]) && personBusy_(before[people[i]])) return 'person_holds_cash';
+  }
+  if (kind === 'location' && changed('clusterId') && placeBusy_('location', before.id)) return 'cash_in_flight';
+  if ((kind === 'store' || kind === 'car') && changed('locationId') && placeBusy_(kind, before.id)) return 'cash_in_flight';
+  if (kind === 'pos' && (changed('ownerId') || changed('ownerType')) && placeBusy_('pos', before.id)) return 'cash_in_flight';
+  return null;
+}
+
 function actionAdminSaveEntity_(req, user) {
   requireAdmin_(user);
   var kind = req.kind;
@@ -486,6 +525,10 @@ function actionAdminSaveEntity_(req, user) {
   safeOwnKeys_(d).forEach(function (k1) { merged[k1] = d[k1]; });
   var err = validateEntity_(kind, merged);
   if (err) return { ok: false, error: err };
+  if (req.id) {
+    var flightErr = inFlightError_(kind, obj, merged);
+    if (flightErr) return { ok: false, error: flightErr };
+  }
 
   safeOwnKeys_(d).forEach(function (k) { obj[k] = d[k]; });
   if (obj.active === undefined) obj.active = true;
@@ -524,6 +567,16 @@ function actionAdminSetConfig_(req, user) {
   requireAdmin_(user);
   var cfg = config_();
   var d = req.data || {};
+  var before = JSON.stringify(cfg);
+  if (d.vatRate != null && (!(Number(d.vatRate) >= 0) || Number(d.vatRate) >= 1)) return { ok: false, error: 'invalid_input' };
+  ['staleThresholdHours', 'heldThresholdHours', 'secondApprovalThreshold'].forEach(function (k) {
+    if (d[k] != null && !(Number(d[k]) >= 0)) d.__bad = true;
+  });
+  if (d.__bad) return { ok: false, error: 'invalid_input' };
+  // Going live is one way: once on, nothing in the app turns it off, so
+  // "start a fresh round" can never be run against real data.
+  if (d.liveLocked === false && cfg.liveLocked === true) return { ok: false, error: 'live_locked' };
+  if (d.liveLocked === true) { cfg.liveLocked = true; cfg.liveLockedAt = new Date().toISOString(); cfg.liveLockedBy = user.id; }
   if (d.vatRate != null) cfg.vatRate = Number(d.vatRate);
   if (d.senderName != null) cfg.senderName = String(d.senderName);
   if (d.staleThresholdHours != null) cfg.staleThresholdHours = Number(d.staleThresholdHours);
@@ -531,7 +584,12 @@ function actionAdminSetConfig_(req, user) {
   if (d.secondApprovalThreshold != null) cfg.secondApprovalThreshold = Number(d.secondApprovalThreshold);
   if (d.areaManagerBulkUploadEnabled != null) cfg.areaManagerBulkUploadEnabled = !!d.areaManagerBulkUploadEnabled;
   writeRow(SHEETS.CONFIG, cfg);
-  logAudit_('admin_set_config', user.id, null);
+  // what changed, from what to what — a settings change moves money too
+  var was = JSON.parse(before), diff = [];
+  ['vatRate', 'staleThresholdHours', 'heldThresholdHours', 'secondApprovalThreshold', 'areaManagerBulkUploadEnabled', 'liveLocked', 'senderName'].forEach(function (k) {
+    if (String(was[k]) !== String(cfg[k])) diff.push(k + ': ' + was[k] + ' → ' + cfg[k]);
+  });
+  logAudit_('admin_set_config', user.id, diff.join('; ') || 'no change');
   return { ok: true, config: cfg };
 }
 
@@ -583,6 +641,7 @@ function actionAdminArchiveTransactions_(req, user) {
   requireAdmin_(user);
   // A word the caller has to type, so this can never be one stray tap.
   if (String(req.confirm || '') !== 'ARCHIVE') return { ok: false, error: 'confirm_required' };
+  if (config_().liveLocked === true) return { ok: false, error: 'live_locked' };
 
   var ss = spreadsheet_();
   var stamp = Utilities.formatDate(new Date(), 'Asia/Riyadh', 'yyyy-MM-dd_HHmmss');
@@ -636,6 +695,6 @@ function actionMeta_(req, user) {
     locations: locations, stores: stores, cars: cars, pos: pos,
     clusters: clusters, zones: zones, products: products, users: users,
     incomeItems: incomeItems, expenseItems: expenseItems,
-    config: { vatRate: vatRate_(), staleThresholdHours: staleThresholdHours_(), heldThresholdHours: heldThresholdHours_(), secondApprovalThreshold: secondApprovalThreshold_(), areaManagerBulkUploadEnabled: areaManagerBulkUploadEnabled_() }
+    config: { vatRate: vatRate_(), staleThresholdHours: staleThresholdHours_(), heldThresholdHours: heldThresholdHours_(), secondApprovalThreshold: secondApprovalThreshold_(), areaManagerBulkUploadEnabled: areaManagerBulkUploadEnabled_(), liveLocked: config_().liveLocked === true, liveLockedAt: config_().liveLockedAt || null }
   };
 }

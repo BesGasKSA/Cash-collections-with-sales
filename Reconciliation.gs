@@ -16,6 +16,11 @@ var RECON_AMOUNT_TOLERANCE = 0.01;
 function requireReconciliationAccess_(user) {
   if (user.role !== 'admin' && user.role !== 'finance') throw new Error('forbidden');
 }
+// Seeing the reconciliation is wider than acting on it: the Deputy
+// Operations Manager reviews it too, but only Admin/Finance import and match.
+function requireReconciliationView_(user) {
+  if (user.role !== 'admin' && user.role !== 'finance' && user.role !== 'deputy_operations_manager') throw new Error('forbidden');
+}
 
 function unmatchedDeposits_() {
   return readSheet(SHEETS.HANDOFFS).filter(function (h) {
@@ -96,7 +101,7 @@ function actionImportBankStatement_(req, user) {
 }
 
 function actionReconciliationSummary_(req, user) {
-  requireReconciliationAccess_(user);
+  requireReconciliationView_(user);
   var allDeposits = readSheet(SHEETS.HANDOFFS).filter(function (h) { return h.kind === 'deposit' && h.status === 'completed'; });
   var reconciledCount = allDeposits.filter(function (d) { return d.reconciled; }).length;
   var unmatchedDep = unmatchedDeposits_().sort(function (a, b) { return new Date(b.createdAt) - new Date(a.createdAt); });

@@ -592,6 +592,9 @@ function route_(req) {
     listMeta: function () { return actionMeta_(req, user); },
 
     // entries
+    voidEntries: function () { return actionVoidEntries_(req, user); },
+    deputyValidateHandoff: function () { return actionDeputyValidateHandoff_(req, user); },
+    deputyReturnHandoff: function () { return actionDeputyReturnHandoff_(req, user); },
     createDailyEntry: function () { return actionCreateEntry_(req, user); },
     importDailyEntries: function () { return actionImportEntries_(req, user); },
     listEntries: function () { return actionListEntries_(req, user); },
