@@ -68,6 +68,40 @@ var VAT_BACK = DELIVERY / (1 + VAT_RATE) * VAT_RATE;                            
 var NET = CASH_TOTAL + INSURANCE - DELIVERY + VAT_BACK - EXPENSE - CREDIT - MOAZANA;      // 1,000
 function money(n) { return Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
 
+// The second way: the Naseem branch's day, uploaded as one CSV file.
+var CSV_DAY = {
+  qty: [30, 15, 200],                       // 1,350 + 1,275 + 700 = 3,325 cash
+  delivery: 230, deliveryNote: 'توصيل طلبين — حي النسيم',
+  credit: 600, customer: 'مؤسسة الريان',
+  insurance: 800, expense: 225, moazana: 2000
+};
+var CSV_CASH = PRODUCTS.reduce(function (s, p, i) { return s + p.price * CSV_DAY.qty[i]; }, 0);
+var CSV_NET = CSV_CASH + CSV_DAY.insurance - CSV_DAY.delivery + CSV_DAY.delivery / (1 + VAT_RATE) * VAT_RATE
+  - CSV_DAY.expense - CSV_DAY.credit - CSV_DAY.moazana;                                  // 1,100
+function localDay() {
+  var d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+// Same columns as the area template the app downloads.
+function writeCsv() {
+  var header = 'date,locationName,sourceType,sourceName,product,qty,unitPrice,paymentMethod,deliveryFee,deliveryNote,creditSales,creditCustomer,' +
+    'otherCash,otherCashItem,otherCashReason,expenseAmount,expenseItem,expenseReason,directDeposit,depositRef,depositNote,cylindersOut,cylindersIn,note';
+  var day = localDay(), b = seeded.csvBranch, st = seeded.csvStore;
+  var lines = [header];
+  PRODUCTS.forEach(function (p, i) {
+    var money = i === 0
+      ? [CSV_DAY.delivery, CSV_DAY.deliveryNote, CSV_DAY.credit, CSV_DAY.customer,
+         CSV_DAY.insurance, 'تأمين أسطوانات', 'تأمين مسترد على 16 أسطوانة',
+         CSV_DAY.expense, 'وقود سيارة التوصيل', 'تعبئة وقود سيارة التوصيل',
+         CSV_DAY.moazana, 'MZN-NSM-0927', 'موازنة مبيعات الصباح']
+      : ['', '', '', '', '', '', '', '', '', '', '', '', ''];
+    lines.push([day, b.name, 'store', st.name, p.name, CSV_DAY.qty[i], p.price, 'cash'].concat(money, ['', '', '']).join(','));
+  });
+  var file = path.join(OUT, 'يوم-فرع-النسيم.csv');
+  fs.writeFileSync(file, '﻿' + lines.join('\n'), 'utf8');
+  return file;
+}
+
 var seeded = {};
 async function seed() {
   var admin = await api({ action: 'login', email: 'admin@bestgas.sa', password: 'Bootstrap#1' });
@@ -96,8 +130,10 @@ async function seed() {
   seeded.cluster = meta.clusters.filter(function (c) { return c.name.indexOf('North') >= 0; })[0];
   seeded.branch = meta.locations.filter(function (l) { return l.name === 'Olaya'; })[0];
   seeded.store = meta.stores.filter(function (s) { return s.locationId === seeded.branch.id; })[0];
+  seeded.csvBranch = meta.locations.filter(function (l) { return l.name === 'Naseem'; })[0];
+  seeded.csvStore = meta.stores.filter(function (s) { return s.locationId === seeded.csvBranch.id; })[0];
   seeded.tokens = {};
-  var people = [['branch', 'olaya.bm@bestgas.sa'], ['area', 'muzafer@bestgas.sa'], ['deputy', 'ahmed@bestgas.sa'], ['collector', 'mazen@bestgas.sa']];
+  var people = [['area', 'muzafer@bestgas.sa'], ['deputy', 'ahmed@bestgas.sa'], ['collector', 'mazen@bestgas.sa']];
   for (var w = 0; w < people.length; w++) {
     var lg = await api({ action: 'login', email: people[w][1], password: 'Welcome#1' });
     if (!lg.ok) throw new Error('cannot sign in ' + people[w][1] + ': ' + lg.error);
@@ -290,7 +326,8 @@ async function tapTab(text) {
 async function main() {
   console.log('seeding…');
   await seed();
-  console.log('seeded; branch ' + seeded.branch.name + ', area ' + seeded.cluster.name);
+  var csvFile = writeCsv();
+  console.log('seeded; manual ' + seeded.branch.name + ', csv ' + seeded.csvBranch.name + ' → ' + csvFile);
 
   var browser = await puppeteer.launch({
     headless: 'new',
@@ -310,7 +347,7 @@ async function main() {
   if (logo) await page.evaluate(function (l) { window.stage.setLogo(l); }, logo);
 
   var stop = startRecording(page);
-  try { await film(); }
+  try { await film(csvFile); }
   catch (e) { console.log('FILM ERROR: ' + (e && e.stack || e)); }
   stop();
   await sleep(400);
@@ -352,18 +389,18 @@ if (process.argv[2] === '--encode-only') {
   encode(path.join(dirArg, 'frames'), path.join(dirArg, 'دليل-نظام-تحصيل-النقدية.mp4')).then(function () { process.exit(0); });
 }
 
-async function film() {
-  var TOTAL = 'من ٧';
+async function film(csvFile) {
+  var TOTAL = 'من ٨';
 
   // ------------------------------------------------------------ 1. opening
   await chapter('1', 'مقدمة');
-  await progress(2, 'الفصل ١ ' + TOTAL, 'دورة يوم كامل');
-  await say('دليل نظام تحصيل النقدية والموافقات', 'نتابع يوماً واحداً لفرع العليا من أول إدخال حتى الإيداع في البنك — وكل من يلمس النقدية في الطريق.', 5200);
-  await point('<b>مدير الفرع</b> يُدخل اليوم ويسلّم', 1400);
-  await point('<b>مدير المنطقة</b> يستلم ويرسل الطلب', 1400);
-  await point('<b>نائب مدير العمليات</b> يتحقق ويعتمد', 1400);
-  await point('<b>المُحصّل</b> يستلم ويودع في البنك', 1400);
-  await point('<b>الأدمن</b> يرى كل شيء — ولا يعدّل ما اعتُمد', 2200);
+  await progress(2, 'الفصل ١ ' + TOTAL, 'الدورة تبدأ من مدير المنطقة');
+  await say('دليل نظام تحصيل النقدية والموافقات', 'الدورة تبدأ من مدير المنطقة، وله طريقتان لإدخال يوم فروعه: يدوياً من الشاشة، أو دفعة واحدة من ملف CSV.', 5400);
+  await point('<b>الطريقة ١</b>: إدخال يدوي — يوم فرع العليا', 1600);
+  await point('<b>الطريقة ٢</b>: ملف CSV — يوم فرع النسيم', 1600);
+  await point('ثم <b>نائب مدير العمليات</b> يتحقق ويعتمد كليهما', 1600);
+  await point('ثم <b>المُحصّل</b> يستلم ويودع في البنك', 1600);
+  await point('وفي النهاية: كل رقم معتمد <b>مقفل نهائياً</b>', 2200);
   await showLogin();
   await say('الدخول', 'كل مستخدم يدخل ببريده وكلمة المرور التي اختارها بنفسه من رابط الدعوة.', 2600);
   await caption('شاشة الدخول');
@@ -371,22 +408,31 @@ async function film() {
   await ring('#loginPw'); await sleep(1500); await ring(null);
   await caption('');
 
-  // -------------------------------------------------- 2. the branch's day
-  await chapter('2', 'مدير الفرع — إدخال اليوم');
-  await progress(10, 'الفصل ٢ ' + TOTAL, 'إدخال يوم كامل');
-  await signInAs('branch');
-  await say('مدير فرع العليا يُدخل يومه', 'الشاشة مقسّمة إلى أقسام، كل قسم يُفتح عند الحاجة ويُغلق بزر تأكيد — فلا يضيع رقم.');
+  // -------------------------------------------------- 2. the area manager
+  await chapter('2', 'مدير المنطقة');
+  await progress(8, 'الفصل ٢ ' + TOTAL, 'منطقتي وفروعي');
+  await signInAs('area');
+  await say('مدير المنطقة يعرف منطقته', 'الرئيسية تعرض منطقته، ومُحصّلها، وكل فرع فيها بمديره وسيارته وسائقه وأجهزة نقاط البيع.');
+  await caption('الرئيسية — منطقتي');
+  if (await waitFor('.org', 8000)) { await scrollTo('.org', 'start'); await sleep(2600); await scrollBy(320); await sleep(1600); }
+  await point('يُدخل بيانات أي فرع في منطقته — المتجر والسيارات ونقاط البيع', 2400);
+  await caption('');
+
+  // ------------------------------------------- 3. way 1: manual entry
+  await chapter('3', 'الطريقة ١ — إدخال يدوي');
+  await progress(16, 'الفصل ٣ ' + TOTAL, 'يوم فرع العليا يدوياً');
+  await say('الطريقة الأولى: إدخال يدوي', 'يوم فرع العليا. الشاشة أقسام، كل قسم يُفتح عند الحاجة ويُغلق بزر تأكيد — فلا يضيع رقم.');
   await go('الإدخالات');
   await caption('شاشة الإدخالات');
   await sleep(1400);
-  await point('التاريخ لا يقبل يوماً مستقبلياً، والمصدر والفرع يظهران تلقائياً', 2200);
-  await ring('#eSource'); await sleep(1600); await ring(null);
-  await point('طريقة الإدخال الافتراضية: <b>حسب المنتج</b> (كمية × سعر)', 2000);
+  await point('التاريخ لا يقبل يوماً مستقبلياً، والمصدر من فروع منطقته فقط', 2200);
+  await pick('#eSource', seeded.store.id);
+  await point('الفرع يظهر تلقائياً، وطريقة الإدخال الافتراضية <b>حسب المنتج</b>', 2200);
   await tap('#eConfirmBasic', { wait: 1800 });
   await caption('تأكيد المصدر والتاريخ — يُطوى في سطر واحد');
   await sleep(1400);
 
-  await say('المبيعات: ثلاثة منتجات', 'السعر يأتي من البيانات الأساسية. المنتج ذو السعر الثابت لا يمكن تعديل سعره عند الإدخال.');
+  await say('المبيعات: ثلاثة منتجات', 'السعر يأتي من البيانات الأساسية، والمنتج ذو السعر الثابت لا يمكن تعديل سعره.');
   for (var i = 0; i < seeded.products.length; i++) {
     var p = seeded.products[i];
     if (i > 0) await tap('#eAddLine', { wait: 900 });
@@ -399,14 +445,14 @@ async function film() {
       await point('<b>طريقة الدفع</b>: نقدي أو نقاط بيع فقط — الآجل والتوصيل أقسام مستقلة', 2400);
       await ring(base + ' .lnPayment'); await sleep(1400); await ring(null);
     }
-    await sleep(1800);
+    await sleep(1600);
   }
   await caption('المبيعات النقدية ' + money(CASH_TOTAL));
   await scrollTo('#eConfirmLines');
   await tap('#eConfirmLines', { wait: 2000 });
   await caption('');
 
-  await say('رسوم التوصيل — بنود مستقلة', 'تُدفع للبنك ولا تبقى نقداً بيد الفرع: تُخصم قبل الضريبة، وضريبتها تُسترد.');
+  await say('رسوم التوصيل', 'تُدفع للبنك ولا تبقى نقداً: تُخصم قبل الضريبة، وضريبتها تُسترد. ويمكن إضافة أكثر من بند.');
   await scrollTo('#eDeliveryWrap');
   await tap('#eDeliveryWrap .me-toggle', { wait: 1100 });
   for (var d = 0; d < DELIVERIES.length; d++) {
@@ -416,11 +462,11 @@ async function film() {
     await typeIn(dl + ' .mlAmount', DELIVERIES[d][0], { delay: 95 });
     await typeIn(dl + ' .mlReason', DELIVERIES[d][1], { delay: 32 });
   }
-  await point('رأس القسم يعرض <b>عدد البنود والإجمالي</b> مباشرة', 2000);
+  await point('رأس القسم يعرض <b>عدد البنود والإجمالي</b>', 1800);
   await scrollTo('#eDeliveryWrap .me-confirm');
   await tap('#eDeliveryWrap .me-confirm', { wait: 1800 });
 
-  await say('المبيعات الآجلة', 'ضمن المبيعات لكنها لم تُستلم نقداً — فتُخصم. واسم العميل إلزامي حتى يمكن متابعة المبلغ.');
+  await say('المبيعات الآجلة', 'ضمن المبيعات لكنها لم تُستلم نقداً — فتُخصم. واسم العميل إلزامي لمتابعة المبلغ.');
   await scrollTo('#eCreditWrap');
   await tap('#eCreditWrap .me-toggle', { wait: 1100 });
   var cl = await tag('#eCreditLines .mline', 0, 'cl0');
@@ -444,15 +490,15 @@ async function film() {
   await typeIn(xl + ' .mlReason', 'تعبئة وقود سيارة التوصيل', { delay: 32 });
   await tap('#eExpenseWrap .me-confirm', { wait: 1600 });
 
-  await say('الموازنات', 'جزء من النقدية أودعه مدير الفرع في البنك بنفسه قبل التسليم — بمرجع بنكي وبيان.');
+  await say('الموازنات', 'جزء من النقدية أُودع في البنك مباشرة قبل التسليم — بمرجع بنكي وبيان.');
   await scrollTo('#eDepositWrap');
   await tap('#eDepositWrap .me-toggle', { wait: 1100 });
   await typeIn('#eDeposit', MOAZANA, { delay: 95 });
-  await typeIn('#eDepositRef', 'MZN-OLY-0925', { delay: 40 });
+  await typeIn('#eDepositRef', 'MZN-OLY-0927', { delay: 40 });
   await typeIn('#eDepositNote', 'موازنة مبيعات نصف اليوم', { delay: 32 });
   await tap('#eDepositWrap .me-confirm', { wait: 1600 });
 
-  await say('المعادلة أمامه قبل الحفظ', 'نفس المعادلة التي سيراها كل من يستلم هذه النقدية بعده.');
+  await say('المعادلة أمامه قبل الحفظ', 'نفس المعادلة التي سيراها نائب مدير العمليات والمُحصّل بعده.');
   await scrollTo('#eNetPreview', 'start');
   await ring('#eNetPreview');
   await sleep(2400);
@@ -464,169 +510,156 @@ async function film() {
   await scrollTo('#eSubmit');
   await tap('#eSubmit', { wait: 3000 });
   await caption('تم الحفظ — والموازنة سُجّلت إيداعاً بنكياً تلقائياً');
-  await sleep(1600);
-
-  await say('الإدخال في القائمة', 'بطاقة واحدة لليوم: المصدر، من أدخل، المبيعات، الخصومات، الصافي، والحالة.');
+  await sleep(1400);
   if (await waitFor('.el-row', 8000)) {
     await scrollTo('.el-row', 'start');
-    await ring('.el-row'); await sleep(2200); await ring(null);
-    await tap('.el-row .el-more', { wait: 1800 });
-    await scrollBy(260);
-    await point('<b>مفتوح</b>: يستطيع مدير الفرع إلغاءه بسبب مكتوب — قبل التسليم فقط', 2800);
-    await point('بعد التسليم يُقفل، ولا يعدّله أحد — ولا مدير النظام', 2600);
+    await ring('.el-row'); await sleep(2000); await ring(null);
+    await point('<b>مفتوح</b>: يستطيع إلغاءه بسبب مكتوب — قبل الإرسال فقط', 2600);
   }
   await caption('');
 
-  await say('التسليم لمدير المنطقة', 'بضغطة واحدة تُجمع نقدية اليوم وتُرسل لمدير المنطقة ليؤكد استلامها.');
-  await go('التسليمات');
-  await sleep(1200);
-  if (await waitFor('#hCreateLoc', 8000)) {
-    await scrollTo('#hCreateLoc');
-    await tap('#hCreateLoc', { wait: 2600 });
-    await caption('أُرسل التسليم — بانتظار تأكيد مدير المنطقة');
-    await sleep(2200);
+  // -------------------------------------------------- 4. way 2: the CSV
+  await chapter('4', 'الطريقة ٢ — ملف CSV');
+  await progress(40, 'الفصل ٤ ' + TOTAL, 'يوم فرع النسيم بملف');
+  await say('الطريقة الثانية: ملف CSV', 'يوم فرع النسيم كاملاً في ملف واحد: يحمّل القالب، يعبّئه في Excel، ثم يرفعه.');
+  await go('رفع دفعة المنطقة');
+  await caption('رفع دفعة المنطقة');
+  await sleep(1400);
+  await ring('#abTemplateBtn'); await sleep(1800); await ring(null);
+  await point('القالب: المنتج والكمية والسعر، ثم أعمدة التوصيل والآجل والتحصيلات والمصروفات والموازنة', 2800);
+  var fileInput = await appFrame.$('#abFile');
+  if (fileInput) {
+    await ring('#abFile');
+    await fileInput.uploadFile(csvFile);
+    await sleep(2400);
+    await ring(null);
+  }
+  await caption('معاينة كل سطر وحالته قبل الإرسال');
+  await scrollBy(300);
+  await sleep(1800);
+  await point('لا يُرسل شيء حتى تكون كل الأسطر سليمة', 2000);
+  if (await waitFor('#abSubmit', 15000)) {
+    await scrollTo('#abCalcWrap', 'start');
+    await caption('الحساب الفعلي من الخادم قبل الإرسال');
+    await sleep(2800);
+    await point('نفس المعادلة: الصافي <span class="fig">' + money(CSV_NET) + '</span>', 2400);
+    await scrollTo('#abSubmit');
+    await tap('#abSubmit', { wait: 3200 });
+    await caption('أُرسلت الدفعة لنائب مدير العمليات');
+    await sleep(2000);
   }
   await caption('');
 
-  // -------------------------------------------------- 3. the area manager
-  await chapter('3', 'مدير المنطقة');
-  await progress(38, 'الفصل ٣ ' + TOTAL, 'يستلم ثم يرسل الطلب');
-  await signInAs('area');
-  await say('مدير المنطقة يعرف منطقته', 'الشاشة الرئيسية تعرض منطقته، ومُحصّلها، وفروعها، ومدير كل فرع وسائقيه وأجهزته.');
-  await caption('الرئيسية — منطقتي');
-  if (await waitFor('.org', 8000)) { await scrollTo('.org', 'start'); await sleep(2400); await scrollBy(300); await sleep(1600); }
-  await caption('');
-  await say('يؤكد ما استلمه فعلاً', 'يرى تفصيل المبلغ، ويكتب ما وصله فعلاً — وأي عجز يُسجَّل ويُصعَّد تلقائياً.');
+  // ------------------------------------- 5. the manual day's request
+  await chapter('5', 'إرسال الطلب');
+  await progress(52, 'الفصل ٥ ' + TOTAL, 'اليوم اليدوي إلى نائب مدير العمليات');
+  await say('ويرسل يوم العليا للاعتماد', 'الطلب لا يذهب للمُحصّل مباشرة: يمر أولاً بنائب مدير العمليات. والدفعة جاهزة للإرسال تشمل ما أدخله بنفسه.');
   await go('التسليمات');
-  await sleep(1200);
-  await point('لا يؤكد الاستلام إلا <b>المستلم نفسه</b> — لا أحد نيابةً عنه', 2400);
-  if (await waitFor('#hRecvAmt', 8000)) {
-    await scrollTo('#hRecvAmt');
-    await ring('#hRecvAmt'); await sleep(1800); await ring(null);
-    await tapText('تأكيد الاستلام', { wait: 2800 });
-  }
-  await say('ثم يرسل طلب التسليم', 'الطلب لا يذهب للمُحصّل مباشرة: يمر أولاً بنائب مدير العمليات ليتحقق منه.');
+  await sleep(1400);
   if (await waitFor('.ac-card', 8000)) {
     await scrollTo('.ac-card', 'start');
-    await ring('.ac-steps'); await sleep(3200); await ring(null);
-    await point('<b>١</b> أنت ترسل <b>٢</b> النائب يتحقق <b>٣</b> المُحصّل يؤكد', 2400);
-    await ring('.ac-ready'); await sleep(1800); await ring(null);
-    await tap('#hCreateClu', { wait: 2800 });
+    await ring('.ac-steps'); await sleep(3000); await ring(null);
+    await point('<b>١</b> يرسل <b>٢</b> النائب يتحقق <b>٣</b> المُحصّل يؤكد', 2400);
+    await sleep(1200);
+    await ring('.ac-ready'); await sleep(2200); await ring(null);
+    await tap('#hCreateClu', { wait: 3000 });
     await caption('أُرسل الطلب لنائب مدير العمليات');
     await sleep(2200);
   }
   await caption('');
 
-  // -------------------------------------------------------- 4. the deputy
-  await chapter('4', 'نائب مدير العمليات');
-  await progress(55, 'الفصل ٤ ' + TOTAL, 'التحقق والاعتماد');
+  // -------------------------------------------------------- 6. the deputy
+  await chapter('6', 'نائب مدير العمليات');
+  await progress(64, 'الفصل ٦ ' + TOTAL, 'التحقق والاعتماد');
   await signInAs('deputy');
-  await say('نائب مدير العمليات يتحقق', 'يرى كل الفروع وكل التسليمات ولوحات الشركة وفلاترها — دون صلاحية الإعدادات أو الإدخال.');
+  await say('نائب مدير العمليات يتحقق من الاثنين', 'يرى كل الفروع والتسليمات ولوحات الشركة وفلاترها — دون صلاحية الإعدادات أو الإدخال.');
   await go('اعتمادات نائب مدير العمليات');
-  await sleep(1200);
+  await sleep(1400);
   if (await waitFor('.dpList .list-item', 8000)) {
     await scrollTo('.dpList .list-item', 'start');
-    await caption('طلب مدير المنطقة بانتظار تحققه');
+    await caption('الطريقة ١: طلب يوم العليا');
     await sleep(2200);
     await point('يعتمده، أو <b>يعيده لمدير المنطقة</b> مع سبب مكتوب للتصحيح', 2600);
-    await point('ولا يتحقق من الطلب أحد أطرافه', 2000);
     await tapText('تحقق واعتماد', { wait: 3000 });
-    await caption('اعتُمد — ووصل الطلب للمُحصّل الآن');
-    await sleep(2200);
+    await caption('اعتُمد — وصل الطلب للمُحصّل');
+    await sleep(1800);
+  }
+  var approveSel = await appFrame.evaluate(function () {
+    var b = document.querySelector('[id^="dApprove-"]'); if (!b) return null;
+    b.setAttribute('data-rec', 'dapprove'); return '[data-rec="dapprove"]';
+  });
+  if (approveSel) {
+    await scrollTo(approveSel, 'end');
+    await caption('الطريقة ٢: دفعة فرع النسيم');
+    await sleep(1400);
+    await scrollBy(-260);
+    await sleep(1800);
+    await point('يرى كل فرع في الدفعة وتفصيل مبلغه قبل الاعتماد', 2200);
+    await scrollTo(approveSel);
+    await tap(approveSel, { wait: 3200 });
+    await caption('اعتُمدت الدفعة — ووصلت للمُحصّل');
+    await sleep(2000);
   }
   await caption('');
 
-  // ----------------------------------------------------- 5. the collector
-  await chapter('5', 'المُحصّل');
-  await progress(68, 'الفصل ٥ ' + TOTAL, 'الاستلام والإيداع');
+  // ----------------------------------------------------- 7. the collector
+  await chapter('7', 'المُحصّل');
+  await progress(78, 'الفصل ٧ ' + TOTAL, 'الاستلام والإيداع');
   await signInAs('collector');
-  await say('المُحصّل يستلم ثم يودع', 'يرى من اعتمد الطلب، يؤكد المبلغ الذي وصله، ثم يسجل الإيداع البنكي بمرجعه.');
+  await say('المُحصّل يستلم ثم يودع', 'أمامه تسليمان: يوم العليا ودفعة النسيم. يؤكد ما وصله من كل منهما، ثم يودع المجموع في البنك.');
   await go('التسليمات');
   await sleep(1400);
-  if (await waitFor('#hRecvAmt', 8000)) {
-    await scrollTo('#hRecvAmt');
-    await tapText('تأكيد الاستلام', { wait: 3000 });
+  for (var c = 0; c < 2; c++) {
+    if (await waitFor('#hRecvAmt', 6000)) {
+      await scrollTo('#hRecvAmt');
+      await ring('#hRecvAmt'); await sleep(1400); await ring(null);
+      await tapText('تأكيد الاستلام', { wait: 3200 });
+    }
   }
+  await caption('استلم ' + money(NET + CSV_NET));
   if (await waitFor('#hBankRef', 8000)) {
     await scrollTo('#hBankRef');
-    await typeIn('#hBankRef', 'SNB-2026-0925-118', { delay: 45 });
+    await typeIn('#hBankRef', 'SNB-2026-0927-204', { delay: 45 });
     await tap('#hDeposit', { wait: 3000 });
-    await caption('أُودع في البنك — اكتملت الدورة');
-    await sleep(2200);
+    await caption('أُودع ' + money(NET + CSV_NET) + ' في البنك — اكتملت الدورة');
+    await sleep(2400);
   }
   await caption('');
 
-  // ------------------------------------------------------------ 6. the lock
-  await chapter('6', 'القفل بعد الاعتماد');
-  await progress(80, 'الفصل ٦ ' + TOTAL, 'لا تعديل بعد الاعتماد');
-  await signInAs('branch');
-  await say('ماذا يرى مدير الفرع الآن؟', 'الإدخال نفسه أصبح «معتمد» ومقفلاً نهائياً — لا زر إلغاء، ولا يعدّله أحد.');
+  // ------------------------------------------------ 8. the lock + the admin
+  await chapter('8', 'القفل والرقابة');
+  await progress(88, 'الفصل ٨ ' + TOTAL, 'لا تعديل بعد الاعتماد');
+  await signInAs('area');
+  await say('ماذا يرى مدير المنطقة الآن؟', 'إدخالاته أصبحت «معتمد» ومقفلة نهائياً — لا زر إلغاء، ولا يعدّلها أحد، ولا مدير النظام.');
   await go('الإدخالات');
   if (await waitFor('.el-row', 8000)) {
     await scrollTo('.el-row', 'start');
     await ring('.el-row .el-badge'); await sleep(2200); await ring(null);
     await tap('.el-row .el-more', { wait: 1800 });
-    await scrollBy(240);
-    await point('أي خطأ بعد الاعتماد يُصحَّح بحركة جديدة موثّقة — لا بتعديل القديم', 2800);
+    await scrollBy(260);
+    await point('أي خطأ بعد الاعتماد يُصحَّح بحركة جديدة موثّقة', 2400);
     await point('ولا يُقبل إدخال جديد بتاريخ يوم سُلِّم بالفعل', 2400);
   }
-
-  // ------------------------------------------------------------ 7. the admin
-  await chapter('7', 'الأدمن');
-  await progress(90, 'الفصل ٧ ' + TOTAL, 'الرقابة الكاملة');
   await signInAs('admin');
-  await say('الأدمن يرى الشركة كاملة', 'نفس المعادلة مجمّعة على مستوى الشركة، وكل رقم يفتح المعاملات التي كوّنته.');
+  await say('والأدمن يرى الشركة كاملة', 'لوحات وتقارير وفلاتر على مستوى الشركة، ومصفوفة صلاحيات وقواعد اعتماد مكتوبة في النظام.');
   await go('لوحة التحكم');
   await caption('لوحة التحكم');
-  await sleep(2600);
-  await scrollBy(340); await sleep(900);
-  await scrollBy(340); await sleep(900);
-  await caption('');
-  await say('فلاتر التقارير', 'طريقة الدفع (نقدي / نقاط بيع) منفصلة عن نوع الحركة (آجل، توصيل، تحصيلات، مصروفات، موازنات).');
-  await go('تقرير المبيعات');
-  await sleep(1200);
-  await tap('#rFilterToggle', { wait: 1400 });
-  await scrollTo('#rPayment');
-  await ring('#rPayment'); await sleep(1600);
-  await ring('#rMovement'); await sleep(1800); await ring(null);
-  await pick('#rMovement', 'credit');
-  await scrollTo('#rRun');
-  await tap('#rRun', { wait: 2600 });
-  await caption('النتيجة: المبيعات الآجلة فقط');
-  await sleep(1800);
-  await caption('');
-
-  await say('ملف لكل سجل', 'كل فرع ومتجر وسيارة وجهاز ومستخدم له ملف: بياناته، وما يرتبط به، ونشاطه، وسجل تعديلاته.');
-  await go('الإدارة');
-  await tapTab('الفروع');
-  var row = await appFrame.evaluate(function () {
-    var r = [].slice.call(document.querySelectorAll('tr.pf-row')).filter(function (t) { return t.textContent.indexOf('Olaya') >= 0; })[0];
-    if (!r) return null; r.setAttribute('data-rec', 'olaya'); return '[data-rec="olaya"]';
-  });
-  if (row) {
-    await scrollTo(row);
-    await tap(row, { wait: 2600 });
-    await scrollBy(420); await sleep(800);
-    await scrollBy(420); await sleep(800);
-    await scrollBy(420); await sleep(1200);
-  }
-  await say('سلامة الربط', 'قائمة بكل حلقة ناقصة في دورة التحصيل — ولكل فجوة زر يفتح مكان معالجتها.');
-  await tapTab('سلامة الربط');
   await sleep(2400);
-  await say('مصفوفة الصلاحيات وقواعد الاعتماد', 'من يستطيع ماذا، ومتى يُقفل كل رقم — مكتوبة في النظام نفسه.');
+  await scrollBy(340); await sleep(900);
+  await scrollBy(340); await sleep(900);
+  await caption('');
+  await go('الإدارة');
   await tapTab('مصفوفة الصلاحيات');
-  await sleep(1600);
+  await sleep(1400);
   if (await waitFor('.rules-card', 6000)) {
     await scrollTo('.rules-card', 'start');
-    await sleep(2400);
-    await scrollBy(360); await sleep(1400);
-    await scrollBy(360); await sleep(1400);
+    await sleep(2600);
   }
 
-  await say('الخلاصة', 'رقم واحد يسير في سلسلة واضحة، لكل خطوة صاحبها، ولا يعتمد أحد ما سلّمه بنفسه.');
-  await point('صافي يوم فرع العليا <span class="fig">' + money(NET) + '</span> وصل البنك', 1900);
-  await point('والموازنة <span class="fig">' + money(MOAZANA) + '</span> أُودعت مباشرة', 1900);
-  await point('كل خطوة مسجّلة باسم فاعلها ووقتها', 1900);
+  await say('الخلاصة', 'طريقتان للإدخال، ومسار اعتماد واحد: مدير المنطقة ← نائب مدير العمليات ← المُحصّل ← البنك.');
+  await point('يوم العليا (يدوي) <span class="fig">' + money(NET) + '</span>', 1900);
+  await point('يوم النسيم (CSV) <span class="fig">' + money(CSV_NET) + '</span>', 1900);
+  await point('أُودع معاً <span class="fig">' + money(NET + CSV_NET) + '</span> — وكل خطوة مسجّلة باسم فاعلها', 2200);
   await progress(100, 'انتهى', 'الناقل الأفضل للغاز');
   await sleep(4600);
 }
