@@ -1640,6 +1640,33 @@ check(call({ action: 'adminSetConfig', token: walidTok, data: { vatRate: 0.2 } }
 check(call({ action: 'adminSaveEntity', token: walidTok, kind: 'zone', data: { city: 'X', name: 'Y' } }).error === 'forbidden', 'nor the master data');
 check(call({ action: 'createDailyEntry', token: walidTok, date: ctx.todayRiyadh_(), sourceType: 'store', sourceId: store.entity.id, cashSales: 1 }).error === 'forbidden', 'nor enter figures');
 
+console.log('--- a day the area manager enters himself travels in his own request ---');
+var amMgr = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Am Area Manager', email: 'ammgr.fx@bestgas.sa', role: 'cluster_manager' } }).user;
+var amCol = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Am Collector', email: 'amcol.fx@bestgas.sa', role: 'collector' } }).user;
+var amBm = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Am Branch Manager', email: 'ambm.fx@bestgas.sa', role: 'store_manager' } }).user;
+var amMgrTok = acceptInvite('ammgr.fx@bestgas.sa'), amColTok = acceptInvite('amcol.fx@bestgas.sa'), amBmTok = acceptInvite('ambm.fx@bestgas.sa');
+var amArea = call({ action: 'adminSaveEntity', token: adminTok, kind: 'cluster', data: { name: 'Am Area', clusterManagerUserId: amMgr.id, collectorUserId: amCol.id } }).entity;
+var amLoc = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: 'Taif', name: 'Am Branch', clusterId: amArea.id } }).entity;
+var amStore = call({ action: 'adminSaveEntity', token: adminTok, kind: 'store', data: { locationId: amLoc.id, name: 'Am Store', storeManagerUserId: amBm.id } }).entity;
+var amEntry = call({ action: 'createDailyEntry', token: amMgrTok, date: ctx.todayRiyadh_(), sourceType: 'store', sourceId: amStore.id, cashSales: 1800 });
+check(amEntry.ok, 'the area manager enters a branch day himself');
+var bmTries = call({ action: 'createHandoff', token: amBmTok, kind: 'location_to_cluster', locationId: amLoc.id });
+check(!bmTries.ok && bmTries.error === 'no_entries', 'the branch manager cannot hand over cash the area manager collected and entered');
+var amReq = call({ action: 'createHandoff', token: amMgrTok, kind: 'cluster_to_collector', clusterId: amArea.id });
+check(amReq.ok && amReq.handoff.amount === 1800 && amReq.handoff.status === 'pending_deputy' && amReq.handoff.sourceEntryIds.indexOf(amEntry.entry.id) >= 0,
+  'it goes into the area manager\'s own request, which waits for the deputy');
+check(call({ action: 'listEntries', token: amMgrTok }).entries.filter(function (e) { return e.id === amEntry.entry.id; })[0].lockState === 'submitted',
+  'and the entry is locked from that moment');
+var amRet = call({ action: 'deputyReturnHandoff', token: walidTok, id: amReq.handoff.id, reason: 'check the branch figure' });
+check(amRet.ok && call({ action: 'listEntries', token: amMgrTok }).entries.filter(function (e) { return e.id === amEntry.entry.id; })[0].lockState === 'open',
+  'sent back by the deputy, the entry is open again for the area manager to correct');
+var amReq2 = call({ action: 'createHandoff', token: amMgrTok, kind: 'cluster_to_collector', clusterId: amArea.id });
+call({ action: 'deputyValidateHandoff', token: walidTok, id: amReq2.handoff.id });
+var amConf = call({ action: 'confirmHandoff', token: amColTok, id: amReq2.handoff.id });
+check(amConf.ok && amConf.handoff.amount === 1800, 'validated by the deputy, the collector confirms it');
+check(call({ action: 'listEntries', token: amMgrTok }).entries.filter(function (e) { return e.id === amEntry.entry.id; })[0].lockState === 'approved',
+  'and the area manager\'s entry is approved and locked for good');
+
 console.log('--- starting a fresh test round archives movement, and keeps the org ---');
 check(call({ action: 'adminArchiveTransactions', token: adminTok }).error === 'confirm_required',
   'archiving needs the confirmation word, so it can never be one stray tap');

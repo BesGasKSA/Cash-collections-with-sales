@@ -690,6 +690,9 @@ function createLocationHandoff_(req, user) {
   var store = storeOfLocation_(location.id);
   var allUnconsumed = unconsumedEntriesForLocation_(location.id);
   var directEntries = allUnconsumed.filter(function (e) {
+    // what the area manager entered for this branch is his cash, handed on
+    // in his own request (createClusterHandoff_), never by the branch manager
+    if (e.enteredBy === cluster.clusterManagerUserId) return false;
     return e.sourceType !== 'car' || (store && e.enteredBy === store.storeManagerUserId);
   });
 
@@ -735,12 +738,27 @@ function createClusterHandoff_(req, user) {
   var held = readSheet(SHEETS.HANDOFFS).filter(function (h) {
     return h.kind === 'location_to_cluster' && h.clusterId === cluster.id && h.status === 'confirmed' && !h.consumedBy;
   });
-  if (!held.length) return { ok: false, error: 'no_held_cash' };
-  var amount = held.reduce(function (s, h) { return s + Number(h.amount || 0); }, 0);
-  var breakdown = sumBreakdowns_(held.map(function (h) { return h.breakdown; }));
+  // A branch day the area manager entered himself is cash he collected
+  // himself: it travels in his own request, not through the branch
+  // manager's handover (createLocationHandoff_ leaves it out).
+  var areaLocIds = readSheet(SHEETS.LOCATIONS).filter(function (l) { return l.clusterId === cluster.id; })
+    .map(function (l) { return l.id; });
+  var ownEntries = readSheet(SHEETS.ENTRIES).filter(function (e) {
+    return !e.consumedBy && !e.voided && e.enteredBy === cluster.clusterManagerUserId && areaLocIds.indexOf(e.locationId) >= 0;
+  });
+  if (!held.length && !ownEntries.length) return { ok: false, error: 'no_held_cash' };
+  var ownByLoc = {};
+  ownEntries.forEach(function (e) { (ownByLoc[e.locationId] = ownByLoc[e.locationId] || []).push(e); });
+  var ownPerLocation = Object.keys(ownByLoc).map(function (locId) {
+    var t = computeNet_(ownByLoc[locId]);
+    return { locationId: locId, amount: t.netCashOwed, breakdown: t, enteredByAreaManager: true };
+  });
   var perLocation = held.map(function (h) {
     return { locationId: h.locationId, amount: h.amount, breakdown: h.breakdown };
-  });
+  }).concat(ownPerLocation);
+  var amount = perLocation.reduce(function (s, p) { return s + Number(p.amount || 0); }, 0);
+  var breakdown = sumBreakdowns_(perLocation.map(function (p) { return p.breakdown; }));
+  if (amount <= 0) return { ok: false, error: 'nothing_owed' };
 
   var handoff = {
     id: Utilities.getUuid(),
@@ -752,7 +770,7 @@ function createClusterHandoff_(req, user) {
     amount: amount,
     breakdown: breakdown,
     perLocation: perLocation,
-    sourceEntryIds: [],
+    sourceEntryIds: ownEntries.map(function (e) { return e.id; }),
     sourceHandoffIds: held.map(function (h) { return h.id; }),
     consumedBy: null,
     // the Deputy Operations Manager validates it before the collector sees it
@@ -761,6 +779,7 @@ function createClusterHandoff_(req, user) {
   };
   writeRow(SHEETS.HANDOFFS, handoff);
   held.forEach(function (h) { h.consumedBy = handoff.id; writeRow(SHEETS.HANDOFFS, h); });
+  ownEntries.forEach(function (e) { e.consumedBy = handoff.id; writeRow(SHEETS.ENTRIES, e); });
   logAudit_('create_handoff_cluster', user.id, handoff.id);
   notifyDeputyPendingHandoff_(handoff);
   return { ok: true, handoff: handoff };
