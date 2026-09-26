@@ -1,10 +1,13 @@
 /**
- * Records a narrated walkthrough video of the real app: area manager →
- * deputy → collector → admin, at phone width, with the narration in its own
- * column beside the phone so it never covers the UI.
+ * Records the guideline video of the real app: one branch day travelling the
+ * whole chain — branch manager → area manager → Deputy Operations Manager →
+ * collector → bank — then the lock it ends in, then what the admin sees. At
+ * phone width, with the narration in its own column beside the phone so it
+ * never covers the app.
  *
- * Needs the mock backend running (tests/mock-backend-server.js on :8905) and
- * puppeteer + ffmpeg-static available. Not part of the shipped system.
+ * Needs the mock backend running fresh (tests/mock-backend-server.js on
+ * :8905) and puppeteer + ffmpeg-static available. Not part of the shipped
+ * system.
  *
  *   node tests/record-walkthrough.js [outDir] [port]
  */
@@ -21,9 +24,12 @@ var MODULES = path.join(process.env.TMP || '/tmp', 'claude', 'C--Claude', '1b419
 var puppeteer = require(path.join(MODULES, 'puppeteer'));
 var ffmpeg = require(path.join(MODULES, 'ffmpeg-static'));
 
+var ENCODE_ONLY = process.argv[2] === '--encode-only';
 var frameDir = path.join(OUT, 'frames');
-fs.rmSync(frameDir, { recursive: true, force: true });
-fs.mkdirSync(frameDir, { recursive: true });
+if (!ENCODE_ONLY) {
+  fs.rmSync(frameDir, { recursive: true, force: true });
+  fs.mkdirSync(frameDir, { recursive: true });
+}
 
 // ---------------------------------------------------------------- API helper
 function api(payload) {
@@ -38,30 +44,28 @@ function api(payload) {
     req.end(body);
   });
 }
+function getText(url) {
+  return new Promise(function (resolve, reject) {
+    http.get(url, function (res) { var d = ''; res.on('data', function (c) { d += c; }); res.on('end', function () { resolve(d); }); }).on('error', reject);
+  });
+}
 
-// The day this walkthrough tells the story of: seven products sold for cash,
-// cylinder insurance collected, fuel paid out of the till, and part of the
-// cash banked on the spot as a موازنة.
-var DAY = new Date().toISOString().slice(0, 10);
+// The day this film follows: three products sold for cash, two delivery
+// lines paid to the bank, one credit sale, cylinder insurance collected, fuel
+// paid out of the till, and part of the cash banked on the spot (الموازنة).
 var PRODUCTS = [
-  { name: 'أسطوانة غاز 12.5 كجم', price: 45, locked: true, qty: 40, pay: 'cash', type: 'goods' },
-  { name: 'أسطوانة غاز 25 كجم', price: 85, locked: true, qty: 20, pay: 'cash', type: 'goods' },
-  { name: 'غاز سائب — لتر', price: 3.5, locked: false, qty: 300, pay: 'cash', type: 'goods' },
-  // paid to the bank, never held as cash — and only a services product may
-  // carry a delivery line
-  { name: 'رسوم توصيل', price: 115, locked: false, qty: 5, pay: 'delivery', type: 'services' },
-  // sold on account: inside the day's sales, but no cash came in for it
-  { name: 'أسطوانة غاز 12.5 كجم', price: 45, locked: true, qty: 20, pay: 'credit', type: 'goods' }
+  { name: 'أسطوانة غاز 12.5 كجم', price: 45, locked: true, qty: 40 },
+  { name: 'أسطوانة غاز 25 كجم', price: 85, locked: true, qty: 20 },
+  { name: 'غاز سائب — لتر', price: 3.5, locked: false, qty: 300 }
 ];
+var DELIVERIES = [[345, 'توصيل 3 طلبات — حي الملقا'], [230, 'توصيل طلبين — حي الياسمين']];
+var CREDIT = 900, CREDIT_CUSTOMER = 'مطعم النخيل';
 var INSURANCE = 1200, EXPENSE = 350, MOAZANA = 3000;
 var VAT_RATE = 0.15;
-function sumFor(pay) { return PRODUCTS.filter(function (p) { return p.pay === pay; }).reduce(function (s, p) { return s + p.price * p.qty; }, 0); }
-var CASH_TOTAL = sumFor('cash');        // 4,550 over three lines
-var DELIVERY = sumFor('delivery');      // 575 paid to the bank
-var CREDIT = sumFor('credit');          // 900 on account
-var VAT_BACK = DELIVERY / (1 + VAT_RATE) * VAT_RATE;   // 75
-var DELIVERY_BASE = DELIVERY - VAT_BACK;               // 500
-var NET = CASH_TOTAL + INSURANCE - DELIVERY_BASE - EXPENSE - CREDIT - MOAZANA; // 4,550 + 1,200 − 500 − 350 − 900 − 3,000 = 1,000
+var CASH_TOTAL = PRODUCTS.reduce(function (s, p) { return s + p.price * p.qty; }, 0);   // 4,550
+var DELIVERY = DELIVERIES.reduce(function (s, d) { return s + d[0]; }, 0);                // 575
+var VAT_BACK = DELIVERY / (1 + VAT_RATE) * VAT_RATE;                                     // 75
+var NET = CASH_TOTAL + INSURANCE - DELIVERY + VAT_BACK - EXPENSE - CREDIT - MOAZANA;      // 1,000
 function money(n) { return Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
 
 var seeded = {};
@@ -73,49 +77,34 @@ async function seed() {
   seeded.products = [];
   for (var i = 0; i < PRODUCTS.length; i++) {
     var p = PRODUCTS[i];
-    // the credit line re-uses a product that is already seeded
-    var already = seeded.products.filter(function (x) { return x.name === p.name; })[0];
-    if (already) { seeded.products.push(Object.assign({}, p, { id: already.id })); continue; }
-    var r = await call({ action: 'adminSaveEntity', kind: 'product', data: { name: p.name, type: p.type || 'goods', unitPrice: p.price, priceLocked: p.locked } });
+    var r = await call({ action: 'adminSaveEntity', kind: 'product', data: { name: p.name, type: 'goods', unitPrice: p.price, priceLocked: p.locked, active: true } });
     seeded.products.push(Object.assign({ id: r.entity.id }, p));
   }
-  var inc = await call({ action: 'adminSaveEntity', kind: 'income_item', data: { name: 'تأمين أسطوانات' } });
-  var inc2 = await call({ action: 'adminSaveEntity', kind: 'income_item', data: { name: 'تحصيل مبيعات آجلة' } });
-  var exp = await call({ action: 'adminSaveEntity', kind: 'expense_item', data: { name: 'وقود سيارة التوصيل' } });
-  var exp2 = await call({ action: 'adminSaveEntity', kind: 'expense_item', data: { name: 'صيانة بسيطة' } });
-  seeded.incomeItem = inc.entity; seeded.expenseItem = exp.entity;
+  seeded.incomeItem = (await call({ action: 'adminSaveEntity', kind: 'income_item', data: { name: 'تأمين أسطوانات', active: true } })).entity;
+  await call({ action: 'adminSaveEntity', kind: 'income_item', data: { name: 'تحصيل مبيعات آجلة', active: true } });
+  seeded.expenseItem = (await call({ action: 'adminSaveEntity', kind: 'expense_item', data: { name: 'وقود سيارة التوصيل', active: true } })).entity;
+  await call({ action: 'adminSaveEntity', kind: 'expense_item', data: { name: 'صيانة بسيطة', active: true } });
+
+  // the Olaya branch manager was invited by the mock seed; accept his
+  // invitation the way he would, from the link in his email
+  var mail = await getText(BASE + '/__mail?to=olaya.bm@bestgas.sa');
+  var m = /[?&]invite=([A-Za-z0-9]+)/.exec(mail);
+  if (m) await api({ action: 'acceptInvite', inviteToken: m[1], password: 'Welcome#1' });
 
   var meta = await call({ action: 'listMeta' });
   seeded.meta = meta;
-  seeded.cluster = meta.clusters.filter(function (c) { return c.name.indexOf('North') >= 0; })[0] || meta.clusters[0];
-  seeded.branches = meta.locations.filter(function (l) { return l.clusterId === seeded.cluster.id; });
-  seeded.stores = meta.stores.filter(function (s) {
-    return seeded.branches.some(function (b) { return b.id === s.locationId; });
-  });
+  seeded.cluster = meta.clusters.filter(function (c) { return c.name.indexOf('North') >= 0; })[0];
+  seeded.branch = meta.locations.filter(function (l) { return l.name === 'Olaya'; })[0];
+  seeded.store = meta.stores.filter(function (s) { return s.locationId === seeded.branch.id; })[0];
   seeded.tokens = {};
-  for (var who of [['area', 'muzafer@bestgas.sa'], ['deputy', 'ahmed@bestgas.sa'], ['collector', 'mazen@bestgas.sa']]) {
-    var lg = await api({ action: 'login', email: who[1], password: 'Welcome#1' });
-    seeded.tokens[who[0]] = { token: lg.token, name: lg.user.name, email: who[1] };
+  var people = [['branch', 'olaya.bm@bestgas.sa'], ['area', 'muzafer@bestgas.sa'], ['deputy', 'ahmed@bestgas.sa'], ['collector', 'mazen@bestgas.sa']];
+  for (var w = 0; w < people.length; w++) {
+    var lg = await api({ action: 'login', email: people[w][1], password: 'Welcome#1' });
+    if (!lg.ok) throw new Error('cannot sign in ' + people[w][1] + ': ' + lg.error);
+    seeded.tokens[people[w][0]] = { token: lg.token, name: lg.user.name, email: people[w][1] };
   }
   seeded.tokens.admin = { token: tok, name: 'Admin', email: 'admin@bestgas.sa' };
   return seeded;
-}
-
-// ------------------------------------------------------------- the CSV file
-function writeCsv() {
-  var b = seeded.branches[1] || seeded.branches[0];
-  var store = seeded.stores.filter(function (s) { return s.locationId === b.id; })[0];
-  var header = 'date,locationName,sourceType,sourceName,product,qty,unitPrice,paymentMethod,otherCash,otherCashItem,otherCashReason,expenseAmount,expenseItem,expenseReason,directDeposit,depositRef,depositNote,cylindersOut,cylindersIn,note';
-  var lines = [header];
-  PRODUCTS.forEach(function (p, i) {
-    var extra = i === 0
-      ? [INSURANCE, 'تأمين أسطوانات', 'تأمين مسترد على 24 أسطوانة', EXPENSE, 'وقود سيارة التوصيل', 'تعبئة وقود سيارة التوصيل', MOAZANA, 'MZN-' + DAY.replace(/-/g, '') + '-2', 'موازنة مبيعات نصف اليوم'].join(',')
-      : ',,,,,,,,';
-    lines.push([DAY, b.name, 'store', store.name, p.name, p.qty, p.price, p.pay, extra, '', '', ''].join(','));
-  });
-  var file = path.join(OUT, 'رفع-دفعة-المنطقة.csv');
-  fs.writeFileSync(file, '﻿' + lines.join('\n'), 'utf8');
-  return { file: file, branch: b, store: store };
 }
 
 // ------------------------------------------------------------------ recorder
@@ -138,22 +127,27 @@ function startRecording(page) {
 var page, appFrame;
 var sleep = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
 
-async function stage(fn, args) { return page.evaluate(fn, args); }
 async function say(title, body, hold) {
   await page.evaluate(function (a) { window.stage.say(a.t, a.b); }, { t: title, b: body || '' });
-  await sleep(hold != null ? hold : 4200);
+  await sleep(hold != null ? hold : 4600);
 }
-async function point(html, wait) { await page.evaluate(function (h) { window.stage.point(h); }, html); await sleep(wait || 2400); }
+async function point(html, wait) { await page.evaluate(function (h) { window.stage.point(h); }, html); await sleep(wait || 2600); }
 async function chapter(n, name) { await page.evaluate(function (a) { window.stage.chapter(a.n, a.name); }, { n: n, name: name }); }
 async function progress(pct, left, right) { await page.evaluate(function (a) { window.stage.progress(a.p, a.l, a.r); }, { p: pct, l: left, r: right }); }
 async function caption(text) { await page.evaluate(function (t) { window.stage.caption(t); }, text || ''); }
-async function ring(sel) {
-  if (!sel) { await page.evaluate(function () { window.stage.ring(null); }); return; }
-  var rect = await appFrame.evaluate(function (s) {
+// A hidden native select is drawn as the designed dropdown button next to
+// it, so the ring goes around that.
+async function rectOf(sel) {
+  return appFrame.evaluate(function (s) {
     var el = document.querySelector(s); if (!el) return null;
+    if (el.tagName === 'SELECT' && el._dd) el = el._dd;
     var r = el.getBoundingClientRect();
     return { x: r.x, y: r.y, width: r.width, height: r.height };
-  }, sel);
+  }, sel).catch(function () { return null; });
+}
+async function ring(sel) {
+  if (!sel) { await page.evaluate(function () { window.stage.ring(null); }); return null; }
+  var rect = await rectOf(sel);
   await page.evaluate(function (r) { window.stage.ring(r); }, rect);
   return rect;
 }
@@ -162,55 +156,89 @@ async function tap(sel, opts) {
   var rect = await ring(sel);
   if (!rect) { console.log('  ! missing: ' + sel); return false; }
   await page.evaluate(function (r) { window.stage.tapAt(r.x + r.width / 2, r.y + r.height / 2); }, rect);
-  await sleep(420);
+  await sleep(450);
   await appFrame.evaluate(function (s) { var el = document.querySelector(s); if (el) el.click(); }, sel);
-  await sleep(opts.wait != null ? opts.wait : 1500);
+  await sleep(opts.wait != null ? opts.wait : 1600);
   if (!opts.keepRing) await ring(null);
   return true;
 }
+// tag the nth element matching a selector, so later steps can address it
+async function tag(sel, index, name) {
+  return appFrame.evaluate(function (a) {
+    var el = document.querySelectorAll(a.s)[a.i];
+    if (!el) return null;
+    el.setAttribute('data-rec', a.n);
+    return '[data-rec="' + a.n + '"]';
+  }, { s: sel, i: index || 0, n: name });
+}
 async function tapText(text, opts) {
   var sel = await appFrame.evaluate(function (t) {
+    [].slice.call(document.querySelectorAll('[data-rec="target"]')).forEach(function (e) { e.removeAttribute('data-rec'); });
     var all = [].slice.call(document.querySelectorAll('button, .sb-item, .bt-scroll button, a'));
-    var el = all.filter(function (e) { return e.textContent.trim().indexOf(t) >= 0 && e.offsetParent !== null; })[0];
+    var el = all.filter(function (e) { return e.textContent.trim().indexOf(t) >= 0 && e.offsetParent !== null; })[0]
+      || all.filter(function (e) { return e.textContent.trim().indexOf(t) >= 0; })[0];
     if (!el) return null;
     el.setAttribute('data-rec', 'target');
     return '[data-rec="target"]';
   }, text);
   if (!sel) { console.log('  ! no button: ' + text); return false; }
   var ok = await tap(sel, opts);
-  await appFrame.evaluate(function () { var e = document.querySelector('[data-rec="target"]'); if (e) e.removeAttribute('data-rec'); });
+  await appFrame.evaluate(function () { var e = document.querySelector('[data-rec="target"]'); if (e) e.removeAttribute('data-rec'); }).catch(function () {});
   return ok;
 }
 async function typeIn(sel, value, opts) {
   opts = opts || {};
   await ring(sel);
-  await appFrame.focus(sel).catch(function () {});
-  await appFrame.evaluate(function (s) { var e = document.querySelector(s); if (e) { e.value = ''; } }, sel);
-  await appFrame.type(sel, String(value), { delay: opts.delay || 85 });
+  await appFrame.evaluate(function (s) { var e = document.querySelector(s); if (e) { e.focus(); e.value = ''; } }, sel);
+  await appFrame.type(sel, String(value), { delay: opts.delay || 90 });
   await appFrame.evaluate(function (s) {
     var e = document.querySelector(s); if (!e) return;
     e.dispatchEvent(new Event('input', { bubbles: true }));
     e.dispatchEvent(new Event('blur', { bubbles: true }));
+    e.blur();
   }, sel);
-  await sleep(opts.wait != null ? opts.wait : 900);
-  if (!opts.keepRing) await ring(null);
-}
-async function pick(sel, value, opts) {
-  opts = opts || {};
-  await ring(sel);
-  await appFrame.select(sel, String(value));
   await sleep(opts.wait != null ? opts.wait : 1000);
   if (!opts.keepRing) await ring(null);
 }
+// Picks through the designed dropdown the way a person would: open it (a
+// bottom sheet on a phone), then tap the option.
+async function pick(sel, value, opts) {
+  opts = opts || {};
+  var btnSel = await appFrame.evaluate(function (a) {
+    var s = document.querySelector(a.s); if (!s || !s._dd) return null;
+    s._dd.setAttribute('data-rec', 'ddbtn');
+    return '[data-rec="ddbtn"]';
+  }, { s: sel });
+  if (!btnSel) { await appFrame.select(sel, String(value)); await sleep(800); return; }
+  await tap(btnSel, { wait: 1300 });
+  var optSel = await appFrame.evaluate(function (a) {
+    var s = document.querySelector(a.s);
+    var idx = [].slice.call(s.options).findIndex(function (o) { return o.value === a.v; });
+    var li = document.querySelector('.dd-layer .dd-opt[data-i="' + idx + '"]');
+    if (!li) return null;
+    li.setAttribute('data-rec', 'ddopt');
+    return '[data-rec="ddopt"]';
+  }, { s: sel, v: String(value) });
+  if (optSel) await tap(optSel, { wait: opts.wait != null ? opts.wait : 1100 });
+  else { await appFrame.select(sel, String(value)); await sleep(600); }
+  await appFrame.evaluate(function () {
+    [].slice.call(document.querySelectorAll('[data-rec="ddbtn"],[data-rec="ddopt"]')).forEach(function (e) { e.removeAttribute('data-rec'); });
+  }).catch(function () {});
+}
 async function scrollTo(sel, block) {
   await appFrame.evaluate(function (a) {
-    var e = document.querySelector(a.s); if (e) e.scrollIntoView({ block: a.b || 'center', behavior: 'smooth' });
+    var e = document.querySelector(a.s); if (e && e._dd) e = e._dd;
+    if (e) e.scrollIntoView({ block: a.b || 'center', behavior: 'smooth' });
   }, { s: sel, b: block });
-  await sleep(1500);
+  await sleep(1600);
 }
 async function scrollBy(px) {
   await appFrame.evaluate(function (p) { window.scrollBy({ top: p, behavior: 'smooth' }); }, px);
-  await sleep(1800);
+  await sleep(1900);
+}
+async function scrollTop() {
+  await appFrame.evaluate(function () { window.scrollTo({ top: 0, behavior: 'smooth' }); });
+  await sleep(1200);
 }
 async function signInAs(who) {
   var t = seeded.tokens[who];
@@ -223,23 +251,20 @@ async function signInAs(who) {
     } catch (e) {}
     document.getElementById('app').src = '/?t=' + Date.now();
   }, { base: BASE, token: t.token });
-  await sleep(2600);
+  await sleep(2800);
   appFrame = page.frames().filter(function (f) { return f.url().indexOf(BASE) === 0 && f !== page.mainFrame(); })[0];
-  await sleep(600);
+  await sleep(700);
 }
-async function go(screenText) { return tapText(screenText, { wait: 1800 }); }
-// A signed-out load, so the sign-in screen plays its entrance animation.
+async function go(screenText) { return tapText(screenText, { wait: 2200 }); }
 async function showLogin() {
   await page.evaluate(function (base) {
     try { localStorage.clear(); localStorage.setItem('bgc_apiUrl', base + '/api'); localStorage.setItem('bgc_lang', 'ar'); } catch (e) {}
     document.getElementById('app').src = '/?signin=' + Date.now();
   }, BASE);
-  await sleep(2200);
+  await sleep(2400);
   appFrame = page.frames().filter(function (fr) { return fr.url().indexOf(BASE) === 0 && fr !== page.mainFrame(); })[0];
   await sleep(400);
 }
-// Some buttons only exist once a server round trip lands (the bulk batch's
-// preview, a handoff list). Wait for them instead of tapping into thin air.
 async function waitFor(sel, ms) {
   var deadline = Date.now() + (ms || 12000);
   while (Date.now() < deadline) {
@@ -252,29 +277,20 @@ async function waitFor(sel, ms) {
   console.log('  ! never appeared: ' + sel);
   return false;
 }
-async function waitForAny(sels, ms) {
-  var deadline = Date.now() + (ms || 12000);
-  while (Date.now() < deadline) {
-    var hit = await appFrame.evaluate(function (list) {
-      for (var i = 0; i < list.length; i++) {
-        var e = document.querySelector(list[i]);
-        if (e && e.offsetParent !== null) return list[i];
-      }
-      return null;
-    }, sels).catch(function () { return null; });
-    if (hit) return hit;
-    await sleep(400);
-  }
-  console.log('  ! none appeared: ' + sels.join(', '));
-  return null;
+async function tapTab(text) {
+  var sel = await appFrame.evaluate(function (t) {
+    var b = [].slice.call(document.querySelectorAll('.tabs button')).filter(function (x) { return x.textContent.trim().indexOf(t) === 0; })[0];
+    if (!b) return null; b.setAttribute('data-rec', 'tab'); return '[data-rec="tab"]';
+  }, text);
+  if (sel) { await scrollTo(sel); await tap(sel, { wait: 1800 }); }
+  await appFrame.evaluate(function () { var e = document.querySelector('[data-rec="tab"]'); if (e) e.removeAttribute('data-rec'); }).catch(function () {});
 }
 
 // ------------------------------------------------------------------ the film
 async function main() {
   console.log('seeding…');
   await seed();
-  var csv = writeCsv();
-  console.log('products seeded, csv at ' + csv.file);
+  console.log('seeded; branch ' + seeded.branch.name + ', area ' + seeded.cluster.name);
 
   var browser = await puppeteer.launch({
     headless: 'new',
@@ -282,9 +298,10 @@ async function main() {
     args: ['--force-device-scale-factor=1.5','--hide-scrollbars','--lang=ar','--no-sandbox','--disable-dev-shm-usage','--disable-gpu']
   });
   page = await browser.newPage();
+  // the app asks "are you sure?" before approving; the film says yes
+  page.on('dialog', function (d) { d.accept(d.type() === 'prompt' ? '' : undefined).catch(function () {}); });
   await page.setViewport({ width: 1280, height: 720, deviceScaleFactor: 1.5 });
   await page.goto(BASE + '/tests/stage.html', { waitUntil: 'networkidle0' });
-  // brand mark for the narration column, taken from the app itself
   var logo = await page.evaluate(async function (base) {
     var html = await fetch(base + '/index.html').then(function (r) { return r.text(); });
     var m = /<link rel="icon" type="image\/png" href="(data:image\/png;base64,[^"]+)"/.exec(html);
@@ -293,280 +310,325 @@ async function main() {
   if (logo) await page.evaluate(function (l) { window.stage.setLogo(l); }, logo);
 
   var stop = startRecording(page);
-  try { await film(csv); }
+  try { await film(); }
   catch (e) { console.log('FILM ERROR: ' + (e && e.stack || e)); }
   stop();
   await sleep(400);
   await browser.close();
 
   console.log('frames: ' + shots);
-  var out = path.join(OUT, 'bestgas-walkthrough.mp4');
+  var out = path.join(OUT, 'دليل-نظام-تحصيل-النقدية.mp4');
+  await encode(frameDir, out);
+}
+
+// Screenshots at this size land slower than the timer asks for, so a fixed
+// frame rate would play the film fast. Each frame is held for as long as it
+// was actually on screen, read from the file's own write time.
+async function encode(dir, out) {
+  var files = fs.readdirSync(dir).filter(function (f) { return /\.jpg$/.test(f); }).sort();
+  var times = files.map(function (f) { return fs.statSync(path.join(dir, f)).mtimeMs; });
+  var list = [];
+  for (var i = 0; i < files.length; i++) {
+    var dur = i + 1 < files.length ? (times[i + 1] - times[i]) / 1000 : 2;
+    dur = Math.max(0.04, Math.min(dur, 3));
+    list.push("file '" + path.join(dir, files[i]).replace(/\\/g, '/') + "'", 'duration ' + dur.toFixed(3));
+  }
+  list.push("file '" + path.join(dir, files[files.length - 1]).replace(/\\/g, '/') + "'");
+  var listFile = path.join(path.dirname(dir), 'frames.txt');
+  fs.writeFileSync(listFile, list.join('\n'));
   await new Promise(function (resolve, reject) {
-    execFile(ffmpeg, ['-y', '-framerate', String(FPS), '-i', path.join(frameDir, '%05d.jpg'),
-      '-vf', 'scale=trunc(iw/2)*2:trunc(ih/2)*2', '-c:v', 'libx264', '-preset', 'medium', '-crf', '24',
+    execFile(ffmpeg, ['-y', '-f', 'concat', '-safe', '0', '-i', listFile,
+      '-vf', 'scale=trunc(iw/2)*2:trunc(ih/2)*2,fps=25', '-c:v', 'libx264', '-preset', 'medium', '-crf', '23',
       '-pix_fmt', 'yuv420p', '-movflags', '+faststart', out],
+      { maxBuffer: 64 * 1024 * 1024 },
       function (err, so, se) { if (err) reject(new Error(se || err.message)); else resolve(); });
   });
-  console.log('video: ' + out + ' (' + (fs.statSync(out).size / 1048576).toFixed(1) + ' MB, ' + (shots / FPS).toFixed(0) + 's)');
+  var secs = (times[times.length - 1] - times[0]) / 1000 + 2;
+  console.log('video: ' + out + ' (' + (fs.statSync(out).size / 1048576).toFixed(1) + ' MB, ' + Math.round(secs) + 's)');
+}
+if (process.argv[2] === '--encode-only') {
+  // re-encode an existing frames folder: node tests/record-walkthrough.js --encode-only <outDir>
+  var dirArg = process.argv[3];
+  encode(path.join(dirArg, 'frames'), path.join(dirArg, 'دليل-نظام-تحصيل-النقدية.mp4')).then(function () { process.exit(0); });
 }
 
-async function film(csv) {
-  // ---------------------------------------------------------------- opening
+async function film() {
+  var TOTAL = 'من ٧';
+
+  // ------------------------------------------------------------ 1. opening
   await chapter('1', 'مقدمة');
-  await progress(2, 'الفصل ١ من ٥', 'مدير المنطقة');
-  await say('يوم كامل في نظام تحصيل النقدية', 'نتابع خطوة بخطوة: مدير المنطقة يدخل بيانات يوم كامل، ثم الاعتماد، ثم المحصّل، ثم لوحات الأدمن والتقارير.', 3400);
+  await progress(2, 'الفصل ١ ' + TOTAL, 'دورة يوم كامل');
+  await say('دليل نظام تحصيل النقدية والموافقات', 'نتابع يوماً واحداً لفرع العليا من أول إدخال حتى الإيداع في البنك — وكل من يلمس النقدية في الطريق.', 5200);
+  await point('<b>مدير الفرع</b> يُدخل اليوم ويسلّم', 1400);
+  await point('<b>مدير المنطقة</b> يستلم ويرسل الطلب', 1400);
+  await point('<b>نائب مدير العمليات</b> يتحقق ويعتمد', 1400);
+  await point('<b>المُحصّل</b> يستلم ويودع في البنك', 1400);
+  await point('<b>الأدمن</b> يرى كل شيء — ولا يعدّل ما اعتُمد', 2200);
   await showLogin();
+  await say('الدخول', 'كل مستخدم يدخل ببريده وكلمة المرور التي اختارها بنفسه من رابط الدعوة.', 2600);
   await caption('شاشة الدخول');
-  await sleep(2600);
-  await point('كل مستخدم يدخل ببريده وكلمة مروره التي اختارها من رابط الدعوة', 2400);
-  await ring('#loginEmail'); await sleep(1200);
-  await ring('#loginPw'); await sleep(1200); await ring(null);
-  await caption('');
-  await signInAs('area');
-  await sleep(1400);
-  await point('<b>٣ منتجات</b> بيعت نقداً <span class="fig">' + money(CASH_TOTAL) + '</span>', 1500);
-  await point('<b>رسوم توصيل</b> مدفوعة للبنك <span class="fig">' + money(DELIVERY) + '</span>', 1500);
-  await point('<b>بيع آجل</b> لم يُستلم نقداً <span class="fig">' + money(CREDIT) + '</span>', 1500);
-  await point('<b>تأمين أسطوانات</b> — تحصيل غير بيعي <span class="fig">' + money(INSURANCE) + '</span>', 1500);
-  await point('<b>مصروفات</b> وقود من النقدية <span class="fig">' + money(EXPENSE) + '</span>', 1500);
-  await point('<b>موازنة</b> أُودعت بالبنك مباشرة <span class="fig">' + money(MOAZANA) + '</span>', 1800);
-
-  // -------------------------------------------------- 2. the area dashboard
-  await chapter('2', 'لوحة مدير المنطقة');
-  await progress(14, 'الفصل ٢ من ٥', 'اللوحة والفلاتر');
-  await say('أولاً: ما الذي يراه مدير المنطقة؟', 'الشاشة الرئيسية تفتح على ملخّص فروعه هو فقط — لا يرى فروع منطقة أخرى.');
-  await caption('الشاشة الرئيسية — بيانات فروعه فقط');
-  await sleep(3000);
-  await scrollBy(260);
-  await point('بطاقات الإجراءات المعلّقة أولاً', 900);
-  await scrollBy(320);
-  await point('ثم <b>ملخص المبيعات</b> شامل ضريبة القيمة المضافة', 900);
-  await scrollBy(320);
-  await point('ثم <b>ملخص التحصيل والإيداع</b> — المعادلة سطراً بسطر', 2200);
-  await sleep(1600);
-  await scrollBy(260);
-  await point('كل سطر قابل للضغط ليفتح المعاملات التي كوّنته', 2200);
+  await ring('#loginEmail'); await sleep(1500);
+  await ring('#loginPw'); await sleep(1500); await ring(null);
   await caption('');
 
-  // ------------------------------------------------------------ 3. the report
-  await say('الفلاتر: كيف يصل لأي رقم بالضبط؟', 'شاشة تقرير المبيعات تجمع كل الفلاتر في مكان واحد، وكلها محصورة في نطاق صلاحيته.');
-  await go('تقرير المبيعات');
-  await caption('تقرير المبيعات');
-  await sleep(1200);
-  await tap('#rFilterToggle', { wait: 1200 });
-  await scrollTo('#rFilterBody', 'start');
-  await point('<b>من تاريخ / إلى تاريخ</b>', 700);
-  await typeIn('#rFrom', DAY.slice(0, 8) + '01', { delay: 25, wait: 400 });
-  await typeIn('#rTo', DAY, { delay: 25, wait: 500 });
-  await point('<b>الفرع</b> — فروع منطقته فقط', 700);
-  await ring('#rLoc'); await sleep(900); await ring(null);
-  await point('<b>طريقة الدفع</b> — نقدي، شبكة، آجل، توصيل، تحصيلات، مصروفات، موازنات', 900);
-  await ring('#rPayment'); await sleep(1000); await ring(null);
-  await point('<b>السائق</b> و<b>مُدخِل البيانات</b> و<b>المنتج</b> و<b>حدود المبلغ</b>', 1000);
-  await scrollTo('#rRun');
-  await tap('#rRun', { wait: 2200 });
-  await caption('النتيجة محصورة في فروعه هو');
-  await sleep(1400);
-  await caption('');
-
-  // ------------------------------------------------- 4. manual entry, in full
-  await chapter('3', 'الإدخال اليدوي');
-  await progress(34, 'الفصل ٣ من ٥', 'إدخال يوم كامل يدوياً');
-  await say('المثال الأول: إدخال يدوي', 'يوم كامل لفرع واحد: سبعة منتجات نقداً، تأمين، مصروفات، وموازنة — بدون تفويت أي رقم.');
+  // -------------------------------------------------- 2. the branch's day
+  await chapter('2', 'مدير الفرع — إدخال اليوم');
+  await progress(10, 'الفصل ٢ ' + TOTAL, 'إدخال يوم كامل');
+  await signInAs('branch');
+  await say('مدير فرع العليا يُدخل يومه', 'الشاشة مقسّمة إلى أقسام، كل قسم يُفتح عند الحاجة ويُغلق بزر تأكيد — فلا يضيع رقم.');
   await go('الإدخالات');
   await caption('شاشة الإدخالات');
-  await sleep(1200);
-  await pick('#eType', 'store');
-  var storeId = seeded.stores[0].id;
-  await pick('#eSource', storeId);
-  await point('الفرع يظهر تلقائياً بعد اختيار المصدر', 900);
-  await pick('#eMode', 'product');
-  await caption('وضع المنتجات: كل سطر منتج بكميته وسعره');
-  await sleep(1200);
+  await sleep(1400);
+  await point('التاريخ لا يقبل يوماً مستقبلياً، والمصدر والفرع يظهران تلقائياً', 2200);
+  await ring('#eSource'); await sleep(1600); await ring(null);
+  await point('طريقة الإدخال الافتراضية: <b>حسب المنتج</b> (كمية × سعر)', 2000);
+  await tap('#eConfirmBasic', { wait: 1800 });
+  await caption('تأكيد المصدر والتاريخ — يُطوى في سطر واحد');
+  await sleep(1400);
 
+  await say('المبيعات: ثلاثة منتجات', 'السعر يأتي من البيانات الأساسية. المنتج ذو السعر الثابت لا يمكن تعديل سعره عند الإدخال.');
   for (var i = 0; i < seeded.products.length; i++) {
     var p = seeded.products[i];
-    if (i > 0) await tap('#eAddLine', { wait: 700 });
-    var lineSel = '.eLine:nth-of-type(' + (i + 1) + ')';
-    await appFrame.evaluate(function (a) {
-      var line = document.querySelectorAll('.eLine')[a.i];
-      if (line) line.setAttribute('data-rec', 'line' + a.i);
-    }, { i: i });
-    var base = '[data-rec="line' + i + '"] ';
-    await scrollTo(base + '.lnProduct');
-    if (p.pay && p.pay !== 'cash') await pick(base + '.lnPayment', p.pay, { wait: 700 });
-    await pick(base + '.lnProduct', p.id, { wait: 500 });
-    await typeIn(base + '.lnQty', p.qty, { delay: 70, wait: 450 });
-    var payWord = p.pay === 'delivery' ? ' — رسوم توصيل (بنك)' : p.pay === 'credit' ? ' — بيع آجل' : '';
-    await caption(p.name + payWord + ' — ' + p.qty + ' × ' + money(p.price) + ' = ' + money(p.qty * p.price));
-    if (p.pay === 'delivery') await point('<b>رسوم التوصيل</b> تُدفع للبنك — تُخصم قبل الضريبة، والضريبة تُسترد', 2400);
-    if (p.pay === 'credit') await point('<b>البيع الآجل</b> ضمن المبيعات، لكنه <b>يُخصم</b> من النقدية — لم يُستلم', 2400);
-    if (i === 0) await point('السعر يأتي من <b>بيانات المنتج</b>، والإجمالي الفرعي يُحسب فوراً', 1800);
-    if (p.locked && i === 0) await point('هذا المنتج سعره <b>ثابت</b> — لا يمكن تعديله عند الإدخال', 1800);
-    await sleep(2100);
+    if (i > 0) await tap('#eAddLine', { wait: 900 });
+    var base = await tag('.eLine', i, 'line' + i);
+    await scrollTo(base + ' .lnProduct');
+    await pick(base + ' .lnProduct', p.id);
+    await typeIn(base + ' .lnQty', p.qty, { delay: 95, wait: 700 });
+    await caption(p.name + ' — ' + p.qty + ' × ' + money(p.price) + ' = ' + money(p.qty * p.price));
+    if (i === 0) {
+      await point('<b>طريقة الدفع</b>: نقدي أو نقاط بيع فقط — الآجل والتوصيل أقسام مستقلة', 2400);
+      await ring(base + ' .lnPayment'); await sleep(1400); await ring(null);
+    }
+    await sleep(1800);
   }
-  await caption('نقدي ' + money(CASH_TOTAL) + ' · توصيل ' + money(DELIVERY) + ' · آجل ' + money(CREDIT));
-  await sleep(1600);
+  await caption('المبيعات النقدية ' + money(CASH_TOTAL));
+  await scrollTo('#eConfirmLines');
+  await tap('#eConfirmLines', { wait: 2000 });
   await caption('');
 
-  await say('النقدية التي ليست مبيعات', 'ثلاثة أقسام منفصلة تحت الإدخال: ما استُلم، وما صُرف، وما أُودع في البنك مباشرة.');
-  // collections
-  await scrollTo('#eOtherWrap');
-  await tap('#eOtherWrap .me-toggle', { wait: 700 });
-  await typeIn('#eOther', INSURANCE, { delay: 70 });
-  await pick('#eOtherItem', seeded.incomeItem.id);
-  await typeIn('#eOtherReason', 'تأمين مسترد على 24 أسطوانة', { delay: 28 });
-  await point('<b>تحصيلات غير بيعية</b> — البند من البيانات الأساسية، والسبب إلزامي', 2400);
-  await sleep(900);
-  // expenses
-  await scrollTo('#eExpenseWrap');
-  await tap('#eExpenseWrap .me-toggle', { wait: 700 });
-  await typeIn('#eExpense', EXPENSE, { delay: 70 });
-  await pick('#eExpenseItem', seeded.expenseItem.id);
-  await typeIn('#eExpenseReason', 'تعبئة وقود سيارة التوصيل', { delay: 28 });
-  await point('<b>مصروفات نقدية</b> — تُخصم من النقدية الواجب تسليمها', 2400);
-  await sleep(900);
-  // moazana
-  await scrollTo('#eDepositWrap');
-  await tap('#eDepositWrap .me-toggle', { wait: 700 });
-  await typeIn('#eDeposit', MOAZANA, { delay: 70 });
-  await typeIn('#eDepositRef', 'MZN-' + DAY.replace(/-/g, '') + '-1', { delay: 28 });
-  await typeIn('#eDepositNote', 'موازنة مبيعات نصف اليوم', { delay: 28 });
-  await point('<b>الموازنات</b> — أودعها من يحمل النقدية بنفسه قبل التسليم', 2400);
-  await point('المرجع البنكي و<b>بيان الموازنة</b> يرافقان الإيداع في سجلّه', 2200);
+  await say('رسوم التوصيل — بنود مستقلة', 'تُدفع للبنك ولا تبقى نقداً بيد الفرع: تُخصم قبل الضريبة، وضريبتها تُسترد.');
+  await scrollTo('#eDeliveryWrap');
+  await tap('#eDeliveryWrap .me-toggle', { wait: 1100 });
+  for (var d = 0; d < DELIVERIES.length; d++) {
+    if (d > 0) await tap('#eDeliveryAdd', { wait: 900 });
+    var dl = await tag('#eDeliveryLines .mline', d, 'dl' + d);
+    await scrollTo(dl);
+    await typeIn(dl + ' .mlAmount', DELIVERIES[d][0], { delay: 95 });
+    await typeIn(dl + ' .mlReason', DELIVERIES[d][1], { delay: 32 });
+  }
+  await point('رأس القسم يعرض <b>عدد البنود والإجمالي</b> مباشرة', 2000);
+  await scrollTo('#eDeliveryWrap .me-confirm');
+  await tap('#eDeliveryWrap .me-confirm', { wait: 1800 });
 
-  await say('المعادلة تُحسب أمامه مباشرة', 'نفس المعادلة التي يراها المستلم لاحقاً — لا مفاجآت عند التسليم.');
-  await scrollTo('#eNetPreview');
+  await say('المبيعات الآجلة', 'ضمن المبيعات لكنها لم تُستلم نقداً — فتُخصم. واسم العميل إلزامي حتى يمكن متابعة المبلغ.');
+  await scrollTo('#eCreditWrap');
+  await tap('#eCreditWrap .me-toggle', { wait: 1100 });
+  var cl = await tag('#eCreditLines .mline', 0, 'cl0');
+  await typeIn(cl + ' .mlAmount', CREDIT, { delay: 95 });
+  await typeIn(cl + ' .mlReason', CREDIT_CUSTOMER, { delay: 45 });
+  await tap('#eCreditWrap .me-confirm', { wait: 1800 });
+
+  await say('نقدية ليست مبيعات', 'ما استُلم لسبب آخر يُضاف، وما صُرف من الصندوق يُخصم — ولكل بند سبب مكتوب.');
+  await scrollTo('#eOtherWrap');
+  await tap('#eOtherWrap .me-toggle', { wait: 1100 });
+  var ol = await tag('#eOtherLines .mline', 0, 'ol0');
+  await typeIn(ol + ' .mlAmount', INSURANCE, { delay: 95 });
+  await pick(ol + ' .mlItem', seeded.incomeItem.id);
+  await typeIn(ol + ' .mlReason', 'تأمين مسترد على 24 أسطوانة', { delay: 32 });
+  await tap('#eOtherWrap .me-confirm', { wait: 1600 });
+  await scrollTo('#eExpenseWrap');
+  await tap('#eExpenseWrap .me-toggle', { wait: 1100 });
+  var xl = await tag('#eExpenseLines .mline', 0, 'xl0');
+  await typeIn(xl + ' .mlAmount', EXPENSE, { delay: 95 });
+  await pick(xl + ' .mlItem', seeded.expenseItem.id);
+  await typeIn(xl + ' .mlReason', 'تعبئة وقود سيارة التوصيل', { delay: 32 });
+  await tap('#eExpenseWrap .me-confirm', { wait: 1600 });
+
+  await say('الموازنات', 'جزء من النقدية أودعه مدير الفرع في البنك بنفسه قبل التسليم — بمرجع بنكي وبيان.');
+  await scrollTo('#eDepositWrap');
+  await tap('#eDepositWrap .me-toggle', { wait: 1100 });
+  await typeIn('#eDeposit', MOAZANA, { delay: 95 });
+  await typeIn('#eDepositRef', 'MZN-OLY-0925', { delay: 40 });
+  await typeIn('#eDepositNote', 'موازنة مبيعات نصف اليوم', { delay: 32 });
+  await tap('#eDepositWrap .me-confirm', { wait: 1600 });
+
+  await say('المعادلة أمامه قبل الحفظ', 'نفس المعادلة التي سيراها كل من يستلم هذه النقدية بعده.');
+  await scrollTo('#eNetPreview', 'start');
   await ring('#eNetPreview');
-  await sleep(2600);
-  await point(money(CASH_TOTAL) + ' نقدي <b>+</b> ' + money(INSURANCE) + ' تحصيلات غير بيعية', 1700);
-  await point('<b>−</b> ' + money(DELIVERY_BASE) + ' توصيل قبل الضريبة (الضريبة ' + money(VAT_BACK) + ' تُسترد)', 1700);
-  await point('<b>−</b> ' + money(EXPENSE) + ' مصروفات <b>−</b> ' + money(CREDIT) + ' آجل <b>−</b> ' + money(MOAZANA) + ' موازنة', 1700);
-  await point('<b>= ' + money(NET) + '</b> صافي النقدية الواجب تسليمها', 2000);
+  await sleep(2400);
+  await point(money(CASH_TOTAL) + ' نقدي <b>+</b> ' + money(INSURANCE) + ' تأمين', 2000);
+  await point('<b>−</b> ' + money(DELIVERY) + ' توصيل <b>+</b> ' + money(VAT_BACK) + ' ضريبته المستردة', 2000);
+  await point('<b>−</b> ' + money(CREDIT) + ' آجل <b>−</b> ' + money(EXPENSE) + ' وقود <b>−</b> ' + money(MOAZANA) + ' موازنة', 2000);
+  await point('<b>= ' + money(NET) + '</b> صافي النقدية الواجب تسليمها', 2600);
   await ring(null);
   await scrollTo('#eSubmit');
-  await tap('#eSubmit', { wait: 2600 });
-  await caption('تم الحفظ — والموازنة سجّلت إيداعاً بنكياً تلقائياً');
-  await sleep(2000);
-  await caption('');
+  await tap('#eSubmit', { wait: 3000 });
+  await caption('تم الحفظ — والموازنة سُجّلت إيداعاً بنكياً تلقائياً');
+  await sleep(1600);
 
-  // ------------------------------------------------------------- 5. the CSV
-  await chapter('4', 'الرفع من ملف CSV');
-  await progress(62, 'الفصل ٤ من ٥', 'نفس اليوم بملف واحد');
-  await say('المثال الثاني: نفس البيانات بملف CSV', 'لفرع آخر، وبدل الإدخال سطراً سطراً: قالب واحد يرفع اليوم كامل ويذهب لاعتماد نائب مدير العمليات.');
-  await go('رفع دفعة المنطقة');
-  await caption('رفع دفعة المنطقة');
-  await sleep(1500);
-  await point('الأعمدة: التاريخ، الفرع، المصدر، المنتج، الكمية، السعر، طريقة الدفع', 1000);
-  await point('ثم: <b>otherCash</b> و<b>expenseAmount</b> و<b>directDeposit</b> ببياناتها', 1200);
-  var fileInput = await appFrame.$('input[type="file"]');
-  if (fileInput) {
-    await ring('input[type="file"]');
-    await fileInput.uploadFile(csv.file);
-    await sleep(2200);
-    await ring(null);
+  await say('الإدخال في القائمة', 'بطاقة واحدة لليوم: المصدر، من أدخل، المبيعات، الخصومات، الصافي، والحالة.');
+  if (await waitFor('.el-row', 8000)) {
+    await scrollTo('.el-row', 'start');
+    await ring('.el-row'); await sleep(2200); await ring(null);
+    await tap('.el-row .el-more', { wait: 1800 });
+    await scrollBy(260);
+    await point('<b>مفتوح</b>: يستطيع مدير الفرع إلغاءه بسبب مكتوب — قبل التسليم فقط', 2800);
+    await point('بعد التسليم يُقفل، ولا يعدّله أحد — ولا مدير النظام', 2600);
   }
-  await caption('معاينة قبل الإرسال: كل سطر وحالته');
-  await scrollBy(320);
-  await sleep(1600);
-  await point('لا يُرسل شيء حتى تكون كل الأسطر سليمة', 900);
-  // the server computes the real breakdown first (dryRun), and only then
-  // does the submit button exist
-  if (await waitFor('#abSubmit', 15000)) {
-    await scrollTo('#abSubmit');
-    await caption('الحساب الفعلي من الخادم قبل الإرسال');
-    await sleep(1600);
-    await point('نفس المعادلة: نقدي + تحصيلات − مصروفات − موازنة', 1100);
-    await tap('#abSubmit', { wait: 3200 });
-  }
-  await caption('بانتظار اعتماد نائب مدير العمليات');
-  await sleep(1800);
   await caption('');
 
-  // --------------------------------------------------- 6. deputy + collector
-  await chapter('5', 'الاعتماد ثم المحصّل');
-  await progress(78, 'الفصل ٥ من ٥', 'الاعتماد والتسليم والإيداع');
-  await say('نائب مدير العمليات يعتمد الدفعة', 'خطوة واحدة تفصل بين رفع البيانات ووصولها للمحصّل.');
-  await signInAs('deputy');
-  await go('اعتماد دفعات المنطقة');
-  await sleep(1600);
-  await caption('مراجعة الدفعة قبل الاعتماد');
-  await scrollBy(300);
-  await sleep(1400);
-  var approveSel = await waitForAny(['[id^="dApprove-"]'], 12000);
-  if (approveSel) { await scrollTo(approveSel); await tap(approveSel, { wait: 3200 }); }
-  await caption('اعتُمدت — وأنشأت تسليماً للمحصّل');
-  await sleep(1600);
-  await caption('');
-
-  await say('المحصّل يستلم ثم يودع', 'يرى المبلغ ومصدره بالتفصيل، يؤكّد ما استلمه فعلاً، ثم يودعه في البنك بمرجع وقسيمة.');
-  await signInAs('collector');
+  await say('التسليم لمدير المنطقة', 'بضغطة واحدة تُجمع نقدية اليوم وتُرسل لمدير المنطقة ليؤكد استلامها.');
   await go('التسليمات');
-  await caption('التسليمات بانتظاره');
-  await sleep(3000);
-  await scrollBy(260);
-  await point('يرى التفصيل: نقدي، تحصيلات، مصروفات، موازنات', 1200);
-  await sleep(800);
-  if (await tapText('تأكيد الاستلام', { wait: 3000 })) await caption('أكّد الاستلام بالمبلغ الذي وصله فعلاً');
-  await sleep(1800);
-  await scrollBy(260);
-  if (await waitFor('#hDeposit', 12000)) {
-    await scrollTo('#hDeposit');
-    await point('يسجّل الإيداع بمرجع بنكي وصورة القسيمة', 1000);
-    await tap('#hDeposit', { wait: 3000 });
-    await caption('أُودعت في البنك — واكتملت الدورة');
+  await sleep(1200);
+  if (await waitFor('#hCreateLoc', 8000)) {
+    await scrollTo('#hCreateLoc');
+    await tap('#hCreateLoc', { wait: 2600 });
+    await caption('أُرسل التسليم — بانتظار تأكيد مدير المنطقة');
+    await sleep(2200);
   }
+  await caption('');
+
+  // -------------------------------------------------- 3. the area manager
+  await chapter('3', 'مدير المنطقة');
+  await progress(38, 'الفصل ٣ ' + TOTAL, 'يستلم ثم يرسل الطلب');
+  await signInAs('area');
+  await say('مدير المنطقة يعرف منطقته', 'الشاشة الرئيسية تعرض منطقته، ومُحصّلها، وفروعها، ومدير كل فرع وسائقيه وأجهزته.');
+  await caption('الرئيسية — منطقتي');
+  if (await waitFor('.org', 8000)) { await scrollTo('.org', 'start'); await sleep(2400); await scrollBy(300); await sleep(1600); }
+  await caption('');
+  await say('يؤكد ما استلمه فعلاً', 'يرى تفصيل المبلغ، ويكتب ما وصله فعلاً — وأي عجز يُسجَّل ويُصعَّد تلقائياً.');
+  await go('التسليمات');
+  await sleep(1200);
+  await point('لا يؤكد الاستلام إلا <b>المستلم نفسه</b> — لا أحد نيابةً عنه', 2400);
+  if (await waitFor('#hRecvAmt', 8000)) {
+    await scrollTo('#hRecvAmt');
+    await ring('#hRecvAmt'); await sleep(1800); await ring(null);
+    await tapText('تأكيد الاستلام', { wait: 2800 });
+  }
+  await say('ثم يرسل طلب التسليم', 'الطلب لا يذهب للمُحصّل مباشرة: يمر أولاً بنائب مدير العمليات ليتحقق منه.');
+  if (await waitFor('.ac-card', 8000)) {
+    await scrollTo('.ac-card', 'start');
+    await ring('.ac-steps'); await sleep(3200); await ring(null);
+    await point('<b>١</b> أنت ترسل <b>٢</b> النائب يتحقق <b>٣</b> المُحصّل يؤكد', 2400);
+    await ring('.ac-ready'); await sleep(1800); await ring(null);
+    await tap('#hCreateClu', { wait: 2800 });
+    await caption('أُرسل الطلب لنائب مدير العمليات');
+    await sleep(2200);
+  }
+  await caption('');
+
+  // -------------------------------------------------------- 4. the deputy
+  await chapter('4', 'نائب مدير العمليات');
+  await progress(55, 'الفصل ٤ ' + TOTAL, 'التحقق والاعتماد');
+  await signInAs('deputy');
+  await say('نائب مدير العمليات يتحقق', 'يرى كل الفروع وكل التسليمات ولوحات الشركة وفلاترها — دون صلاحية الإعدادات أو الإدخال.');
+  await go('اعتمادات نائب مدير العمليات');
+  await sleep(1200);
+  if (await waitFor('.dpList .list-item', 8000)) {
+    await scrollTo('.dpList .list-item', 'start');
+    await caption('طلب مدير المنطقة بانتظار تحققه');
+    await sleep(2200);
+    await point('يعتمده، أو <b>يعيده لمدير المنطقة</b> مع سبب مكتوب للتصحيح', 2600);
+    await point('ولا يتحقق من الطلب أحد أطرافه', 2000);
+    await tapText('تحقق واعتماد', { wait: 3000 });
+    await caption('اعتُمد — ووصل الطلب للمُحصّل الآن');
+    await sleep(2200);
+  }
+  await caption('');
+
+  // ----------------------------------------------------- 5. the collector
+  await chapter('5', 'المُحصّل');
+  await progress(68, 'الفصل ٥ ' + TOTAL, 'الاستلام والإيداع');
+  await signInAs('collector');
+  await say('المُحصّل يستلم ثم يودع', 'يرى من اعتمد الطلب، يؤكد المبلغ الذي وصله، ثم يسجل الإيداع البنكي بمرجعه.');
+  await go('التسليمات');
+  await sleep(1400);
+  if (await waitFor('#hRecvAmt', 8000)) {
+    await scrollTo('#hRecvAmt');
+    await tapText('تأكيد الاستلام', { wait: 3000 });
+  }
+  if (await waitFor('#hBankRef', 8000)) {
+    await scrollTo('#hBankRef');
+    await typeIn('#hBankRef', 'SNB-2026-0925-118', { delay: 45 });
+    await tap('#hDeposit', { wait: 3000 });
+    await caption('أُودع في البنك — اكتملت الدورة');
+    await sleep(2200);
+  }
+  await caption('');
+
+  // ------------------------------------------------------------ 6. the lock
+  await chapter('6', 'القفل بعد الاعتماد');
+  await progress(80, 'الفصل ٦ ' + TOTAL, 'لا تعديل بعد الاعتماد');
+  await signInAs('branch');
+  await say('ماذا يرى مدير الفرع الآن؟', 'الإدخال نفسه أصبح «معتمد» ومقفلاً نهائياً — لا زر إلغاء، ولا يعدّله أحد.');
+  await go('الإدخالات');
+  if (await waitFor('.el-row', 8000)) {
+    await scrollTo('.el-row', 'start');
+    await ring('.el-row .el-badge'); await sleep(2200); await ring(null);
+    await tap('.el-row .el-more', { wait: 1800 });
+    await scrollBy(240);
+    await point('أي خطأ بعد الاعتماد يُصحَّح بحركة جديدة موثّقة — لا بتعديل القديم', 2800);
+    await point('ولا يُقبل إدخال جديد بتاريخ يوم سُلِّم بالفعل', 2400);
+  }
+
+  // ------------------------------------------------------------ 7. the admin
+  await chapter('7', 'الأدمن');
+  await progress(90, 'الفصل ٧ ' + TOTAL, 'الرقابة الكاملة');
+  await signInAs('admin');
+  await say('الأدمن يرى الشركة كاملة', 'نفس المعادلة مجمّعة على مستوى الشركة، وكل رقم يفتح المعاملات التي كوّنته.');
+  await go('لوحة التحكم');
+  await caption('لوحة التحكم');
+  await sleep(2600);
+  await scrollBy(340); await sleep(900);
+  await scrollBy(340); await sleep(900);
+  await caption('');
+  await say('فلاتر التقارير', 'طريقة الدفع (نقدي / نقاط بيع) منفصلة عن نوع الحركة (آجل، توصيل، تحصيلات، مصروفات، موازنات).');
+  await go('تقرير المبيعات');
+  await sleep(1200);
+  await tap('#rFilterToggle', { wait: 1400 });
+  await scrollTo('#rPayment');
+  await ring('#rPayment'); await sleep(1600);
+  await ring('#rMovement'); await sleep(1800); await ring(null);
+  await pick('#rMovement', 'credit');
+  await scrollTo('#rRun');
+  await tap('#rRun', { wait: 2600 });
+  await caption('النتيجة: المبيعات الآجلة فقط');
   await sleep(1800);
   await caption('');
 
-  // ------------------------------------------------------------- 7. the admin
-  await chapter('6', 'لوحات الأدمن والتقارير');
-  await progress(92, 'الخلاصة', 'الأدمن يرى كل شيء');
-  await say('وأخيراً: ماذا يرى الأدمن؟', 'نفس الأرقام مجمّعة على مستوى الشركة، وكل رقم يفتح المعاملات التي تكوّن منها.');
-  await signInAs('admin');
-  await go('لوحة التحكم');
-  await caption('لوحة التحكم — على مستوى الشركة كاملة');
-  await sleep(3200);
-  await scrollBy(300);
-  await point('<b>ملخص المبيعات</b> شامل الضريبة', 900);
-  await scrollBy(320);
-  await point('<b>ملخص التحصيل</b>: نقدي + تحصيلات − توصيل − مصروفات − مودع', 1300);
-  await scrollBy(300);
-  await point('<b>أين النقدية الآن؟</b> — مع من بالضبط', 1800);
-  await caption('كل رقم قابل للضغط');
-  await sleep(1200);
-  // every figure opens the transactions behind it, and每 transaction opens
-  // its own document — show that, don't just claim it
-  var rowSel = await appFrame.evaluate(function () {
-    var row = document.querySelectorAll('.st-row.click')[0];
-    if (!row) return null;
-    row.setAttribute('data-rec', 'metric');
-    return '[data-rec="metric"]';
+  await say('ملف لكل سجل', 'كل فرع ومتجر وسيارة وجهاز ومستخدم له ملف: بياناته، وما يرتبط به، ونشاطه، وسجل تعديلاته.');
+  await go('الإدارة');
+  await tapTab('الفروع');
+  var row = await appFrame.evaluate(function () {
+    var r = [].slice.call(document.querySelectorAll('tr.pf-row')).filter(function (t) { return t.textContent.indexOf('Olaya') >= 0; })[0];
+    if (!r) return null; r.setAttribute('data-rec', 'olaya'); return '[data-rec="olaya"]';
   });
-  if (rowSel) {
-    await scrollTo(rowSel);
-    await tap(rowSel, { wait: 2600 });
-    await caption('المعاملات التي كوّنت هذا الرقم');
-    await sleep(2600);
-    var txSel = await appFrame.evaluate(function () {
-      var tx = document.querySelectorAll('.dr .tx')[0];
-      if (!tx) return null;
-      tx.setAttribute('data-rec', 'tx');
-      return '[data-rec="tx"]';
-    });
-    if (txSel) {
-      await tap(txSel, { wait: 2600 });
-      await caption('ومنها إلى مستند المعاملة نفسه');
-      await sleep(3000);
-    }
-    await caption('');
+  if (row) {
+    await scrollTo(row);
+    await tap(row, { wait: 2600 });
+    await scrollBy(420); await sleep(800);
+    await scrollBy(420); await sleep(800);
+    await scrollBy(420); await sleep(1200);
   }
-  await say('تمّت الدورة كاملة', 'من إدخال مدير المنطقة، إلى الاعتماد، إلى استلام المحصّل وإيداعه، إلى لوحات الأدمن — بنفس المعادلة في كل شاشة.');
-  await point('صافي ما سُلّم من الإدخال اليدوي <span class="fig">' + money(NET) + '</span>', 1600);
-  await point('والموازنة <span class="fig">' + money(MOAZANA) + '</span> ظهرت إيداعاً بنكياً', 900);
-  await point('والتسوية البنكية تطابقها مع كشف البنك', 1200);
+  await say('سلامة الربط', 'قائمة بكل حلقة ناقصة في دورة التحصيل — ولكل فجوة زر يفتح مكان معالجتها.');
+  await tapTab('سلامة الربط');
+  await sleep(2400);
+  await say('مصفوفة الصلاحيات وقواعد الاعتماد', 'من يستطيع ماذا، ومتى يُقفل كل رقم — مكتوبة في النظام نفسه.');
+  await tapTab('مصفوفة الصلاحيات');
+  await sleep(1600);
+  if (await waitFor('.rules-card', 6000)) {
+    await scrollTo('.rules-card', 'start');
+    await sleep(2400);
+    await scrollBy(360); await sleep(1400);
+    await scrollBy(360); await sleep(1400);
+  }
+
+  await say('الخلاصة', 'رقم واحد يسير في سلسلة واضحة، لكل خطوة صاحبها، ولا يعتمد أحد ما سلّمه بنفسه.');
+  await point('صافي يوم فرع العليا <span class="fig">' + money(NET) + '</span> وصل البنك', 1900);
+  await point('والموازنة <span class="fig">' + money(MOAZANA) + '</span> أُودعت مباشرة', 1900);
+  await point('كل خطوة مسجّلة باسم فاعلها ووقتها', 1900);
   await progress(100, 'انتهى', 'الناقل الأفضل للغاز');
-  await sleep(4200);
+  await sleep(4600);
 }
 
-main().catch(function (e) { console.error(e); process.exit(1); });
+if (!ENCODE_ONLY) main().catch(function (e) { console.error(e); process.exit(1); });
