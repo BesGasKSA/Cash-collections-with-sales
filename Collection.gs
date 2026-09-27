@@ -272,7 +272,7 @@ function actionVoidEntries_(req, user) {
   var reason = String(req.reason || '').trim();
   if (!ids.length) return { ok: false, error: 'invalid_input' };
   if (!reason) return { ok: false, error: 'reason_required' };
-  var rows = [];
+  var rows = [], deposits = [];
   for (var i = 0; i < ids.length; i++) {
     var e = getById_(SHEETS.ENTRIES, ids[i]);
     if (!e) return { ok: false, error: 'not_found' };
@@ -281,8 +281,12 @@ function actionVoidEntries_(req, user) {
     // take it back, so nobody else can make someone's figure disappear
     if (e.enteredBy !== user.id) return { ok: false, error: 'not_your_entry' };
     if (e.consumedBy) return { ok: false, error: 'entry_locked' };
-    // money already banked is a bank movement, not a draft
-    if (Number(e.directDepositAmount || 0) > 0) return { ok: false, error: 'has_direct_deposit' };
+    // Its الموازنة goes with it — unless Finance has already matched that
+    // deposit to the bank statement: then the bank has confirmed the money
+    // moved, and the day stays as it is.
+    var dep = directDepositOf_(e.id);
+    if (dep && dep.reconciled) return { ok: false, error: 'deposit_reconciled' };
+    if (dep) deposits.push(dep);
     rows.push(e);
   }
   var at = new Date().toISOString();
@@ -291,7 +295,19 @@ function actionVoidEntries_(req, user) {
     writeRow(SHEETS.ENTRIES, e);
     logAudit_('void_entry', user.id, e.id);
   });
-  return { ok: true, voided: rows.length };
+  deposits.forEach(function (d) {
+    d.status = 'voided'; d.voidedAt = at; d.voidedBy = user.id; d.voidReason = reason;
+    writeRow(SHEETS.HANDOFFS, d);
+    logAudit_('void_direct_deposit', user.id, d.id);
+  });
+  return { ok: true, voided: rows.length, depositsVoided: deposits.length };
+}
+
+// The bank deposit a day's الموازنة wrote, if it is still standing.
+function directDepositOf_(entryId) {
+  return readSheet(SHEETS.HANDOFFS).filter(function (h) {
+    return h.kind === 'deposit' && h.direct && h.status !== 'voided' && (h.sourceEntryIds || []).indexOf(entryId) >= 0;
+  })[0] || null;
 }
 
 function actionCreateEntry_(req, user) {
@@ -457,8 +473,13 @@ function actionListEntries_(req, user) {
   // never disagree: open (its author may still cancel it), submitted (in a
   // handover or batch awaiting the next level — locked), approved (the next
   // level confirmed it — locked for good), or voided.
-  var hStatus = {};
-  readSheet(SHEETS.HANDOFFS).forEach(function (h) { hStatus[h.id] = h.status; });
+  var hStatus = {}, bankMatched = {};
+  readSheet(SHEETS.HANDOFFS).forEach(function (h) {
+    hStatus[h.id] = h.status;
+    if (h.kind === 'deposit' && h.direct && h.reconciled && h.status !== 'voided') {
+      (h.sourceEntryIds || []).forEach(function (id) { bankMatched[id] = true; });
+    }
+  });
   readSheet(SHEETS.AREA_BULK_BATCHES).forEach(function (b) { hStatus[b.id] = b.status; });
   rows.forEach(function (e) {
     var st = e.consumedBy ? hStatus[e.consumedBy] : null;
@@ -466,7 +487,12 @@ function actionListEntries_(req, user) {
       : !e.consumedBy ? 'open'
       : (st === 'confirmed' || st === 'completed') ? 'approved'
       : 'submitted';
-    e.canVoid = e.lockState === 'open' && e.enteredBy === user.id && !(Number(e.directDepositAmount || 0) > 0);
+    // why an open entry cannot be cancelled, when it cannot
+    e.voidBlock = e.lockState !== 'open' ? null
+      : e.enteredBy !== user.id ? 'not_author'
+      : bankMatched[e.id] ? 'deposit_reconciled'
+      : null;
+    e.canVoid = e.lockState === 'open' && !e.voidBlock;
   });
   return { ok: true, entries: rows };
 }

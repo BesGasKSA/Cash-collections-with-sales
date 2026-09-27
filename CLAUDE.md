@@ -347,8 +347,17 @@ Permissions screen shows them (`PERM_ROWS` plus the `rule_*` list), and the
 - **Cancelling (`voidEntries`)** is allowed only for the entry's own author
   (`enteredBy`), only while `!consumedBy`, and only with a reason. Nobody
   else can cancel an entry, not even an admin or the area manager. The row
-  stays on file with `voided/voidReason/voidedBy/voidedAt`. An entry with a
-  direct deposit (الموازنة) can't be cancelled, because it's a bank movement.
+  stays on file with `voided/voidReason/voidedBy/voidedAt`. If the entry has
+  a direct deposit (الموازنة), that deposit is cancelled with it
+  (`status:'voided'`, same reason, via `directDepositOf_`). The exception is
+  a deposit Finance has already matched to the bank statement: that refuses
+  with `deposit_reconciled`. `listEntries` sets `voidBlock`
+  (`not_author`/`deposit_reconciled`) so the card can say why. Every reader
+  that totals deposits skips `status==='voided'`: the reconciliation already
+  filtered on `completed`, and the client's `sumDeposits_`, the drill-down
+  and the dashboard list now do too. Until 2026-09-27 any entry with a
+  الموازنة was simply uncancellable, even while open, which is how a user
+  got stuck with a wrong open day.
   Rows saved from one form share a `submissionId`, so a whole day is
   cancelled together, all or nothing. Every reader that counts cash filters
   `!e.voided`. Three readers once didn't and were fixed: the delivery check,
