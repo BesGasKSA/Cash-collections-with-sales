@@ -1,0 +1,59 @@
+/* Print styles for tests/make-guide.js — the Arabic user guide (A4). */
+@page { size: A4; }
+:root { --green:#4D6D51; --green-dark:#34503a; --cream:#F2EEE4; --ink:#1c241d; --muted:#6f7d71; --line:#e3ddd0; --danger:#b3261e; }
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { font-family: 'Cairo', 'Segoe UI', Tahoma, sans-serif; color: var(--ink); font-size: 10.5pt; line-height: 1.75;
+  -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+/* ---- cover ---- */
+.cover { height: 269mm; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
+  background: radial-gradient(120% 80% at 50% 0%, #3a5a40 0%, #1f3325 70%); color: var(--cream); border-radius: 6mm;
+  break-after: page; padding: 20mm; }
+.cover .logo { width: 34mm; height: 34mm; border-radius: 8mm; background: var(--cream); padding: 2mm; margin-bottom: 8mm; }
+.cover .brand { font-size: 13pt; font-weight: 700; color: #cfe0cb; margin-bottom: 4mm; }
+.cover h1 { font-size: 27pt; line-height: 1.35; margin: 0 0 4mm; font-weight: 800; }
+.cover .sub { font-size: 12pt; color: #d9e4d5; margin: 0 0 14mm; }
+.cover .flow { display: flex; align-items: center; gap: 3mm; flex-wrap: wrap; justify-content: center; }
+.cover .flow span { background: rgba(242,238,228,.14); border: 1px solid rgba(242,238,228,.35); border-radius: 99px; padding: 2mm 5mm; font-weight: 700; font-size: 11pt; }
+.cover .flow i { font-style: normal; color: #b9cdb9; font-size: 14pt; }
+.cover .date { margin-top: 16mm; color: #b9cdb9; font-size: 10pt; }
+
+/* ---- pages and chapters ---- */
+.page { break-after: page; }
+.page:last-child { break-after: auto; }
+.chap { display: flex; align-items: center; gap: 4mm; margin: 0 0 5mm; padding-bottom: 3mm; border-bottom: 2px solid var(--green); }
+.chap .cn { min-width: 12mm; height: 12mm; padding: 0 2mm; border-radius: 3.5mm; background: var(--green); color: #fff; display: grid; place-items: center;
+  font-weight: 800; font-size: 14pt; }
+.chap h2 { margin: 0; font-size: 17pt; font-weight: 800; color: var(--green-dark); line-height: 1.3; }
+.chap p { margin: 0; color: var(--muted); font-size: 10pt; }
+h2.sub2 { font-size: 14pt; color: var(--green-dark); margin: 0 0 4mm; padding: 2mm 4mm; background: var(--cream); border-radius: 3mm; }
+
+/* ---- a step: text beside its screenshots ---- */
+.step { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6mm; align-items: start; margin: 0 0 7mm; break-inside: avoid; }
+.step h3 { margin: 0 0 2mm; font-size: 12.5pt; font-weight: 800; color: var(--ink); }
+.step ol { margin: 0; padding-inline-start: 6mm; }
+.step li { margin: 0 0 1.6mm; }
+.step li::marker { color: var(--green); font-weight: 800; }
+.step b { color: var(--green-dark); }
+.note { margin-top: 3mm; padding: 2.5mm 3.5mm; background: #f7f4ec; border: 1px solid var(--line); border-radius: 2.5mm; font-size: 8pt;
+  line-height: 1.6; color: var(--muted); direction: ltr; text-align: left; word-break: break-word; }
+.figs { display: flex; gap: 4mm; align-items: flex-start; }
+figure.ph { margin: 0; width: 60mm; padding: 1.6mm; background: #10170f; border-radius: 5mm; box-shadow: 0 1mm 3mm rgba(0,0,0,.12); }
+figure.ph img { display: block; width: 100%; border-radius: 3.5mm; background: #fff; }
+
+/* ---- tables and boxes ---- */
+table { width: 100%; border-collapse: collapse; font-size: 9.5pt; margin: 0 0 6mm; }
+th { text-align: start; background: var(--green); color: #fff; font-weight: 700; padding: 2.2mm 3mm; }
+th:first-child { border-radius: 0 2mm 0 0; } th:last-child { border-radius: 2mm 0 0 0; }
+td { padding: 2.2mm 3mm; border-bottom: 1px solid var(--line); vertical-align: top; }
+tr:nth-child(even) td { background: #faf8f3; }
+.formula { background: var(--cream); border-radius: 4mm; padding: 4mm 5mm; margin: 0 0 6mm; }
+.formula h4, .rules-short h4 { margin: 0 0 2mm; font-size: 11.5pt; color: var(--green-dark); }
+.formula p { margin: 0 0 1.5mm; font-weight: 600; }
+.formula .ex { color: var(--muted); font-weight: 600; direction: rtl; }
+.formula b { color: var(--green-dark); font-weight: 800; }
+.rules-short { border: 1.5px solid var(--green); border-radius: 4mm; padding: 4mm 5mm; }
+.rules-short ul { margin: 0; padding-inline-start: 6mm; }
+.rules-short li { margin-bottom: 1.5mm; }
+.msgs td:first-child { width: 36%; }

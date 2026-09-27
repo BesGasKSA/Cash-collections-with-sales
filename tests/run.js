@@ -250,7 +250,9 @@ check(!wrongDriverEntry.ok && wrongDriverEntry.error === 'forbidden', 'a driver 
 var nonAdminEntity = call({ action: 'adminSaveEntity', token: aliTok, kind: 'location', data: { city: 'X', name: 'Y' } });
 check(!nonAdminEntity.ok && nonAdminEntity.error === 'forbidden', 'a store manager cannot use admin entity management');
 
-var location2 = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: 'Jeddah', name: 'Other' } }).entity;
+// a branch hands its cash to its own collector
+var loc2Collector = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Other Branch Collector', email: 'loc2col.fx@bestgas.sa', role: 'collector' } }).user;
+var location2 = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: 'Jeddah', name: 'Other', collectorUserId: loc2Collector.id } }).entity;
 var wrongLocationHandoff = call({ action: 'createHandoff', token: aliTok, kind: 'location_to_cluster', locationId: location2.id });
 check(!wrongLocationHandoff.ok && wrongLocationHandoff.error === 'forbidden', 'a store manager cannot submit a handoff for a location they do not manage');
 
@@ -1726,6 +1728,33 @@ check(ctx.readSheet(SHEETS.AUDIT).some(function (a) { return a.action === 'admin
 call({ action: 'adminSetConfig', token: adminTok, data: { posSalesEnabled: false } });
 check(call({ action: 'listMeta', token: aliTok }).config.posSalesEnabled === false, 'and off again');
 
+console.log('--- collectors belong to branches: one area, two collectors ---');
+function mk(name, email, role) { return call({ action: 'adminCreateUser', token: adminTok, data: { name: name, email: email, role: role } }).user; }
+var bcMgr = mk('Bc Area Manager', 'bcmgr.fx@bestgas.sa', 'cluster_manager');
+var bcColA = mk('Bc Collector A', 'bccola.fx@bestgas.sa', 'collector');
+var bcColB = mk('Bc Collector B', 'bccolb.fx@bestgas.sa', 'collector');
+var bcBmA = mk('Bc Branch Manager A', 'bcbma.fx@bestgas.sa', 'store_manager');
+var bcBmB = mk('Bc Branch Manager B', 'bcbmb.fx@bestgas.sa', 'store_manager');
+var bcMgrTok = acceptInvite('bcmgr.fx@bestgas.sa'), bcColATok = acceptInvite('bccola.fx@bestgas.sa'), bcColBTok = acceptInvite('bccolb.fx@bestgas.sa');
+var bcBmATok = acceptInvite('bcbma.fx@bestgas.sa'), bcBmBTok = acceptInvite('bcbmb.fx@bestgas.sa');
+var bcAreaRes = call({ action: 'adminSaveEntity', token: adminTok, kind: 'cluster', data: { name: 'Bc Area', clusterManagerUserId: bcMgr.id } });
+check(bcAreaRes.ok, 'an area needs only its manager now — collectors belong to branches');
+var bcArea = bcAreaRes.entity;
+var bcNoCol = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: 'Riyadh', name: 'Bc No Collector', clusterId: bcArea.id } });
+check(!bcNoCol.ok && bcNoCol.error === 'collector_required', 'a branch cannot be saved without the collector its cash goes to');
+var bcLocA = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: 'Riyadh', name: 'Bc Branch A', clusterId: bcArea.id, collectorUserId: bcColA.id } }).entity;
+var bcLocB = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: 'Riyadh', name: 'Bc Branch B', clusterId: bcArea.id, collectorUserId: bcColB.id } }).entity;
+check(bcLocA && bcLocB && bcLocA.collectorUserId === bcColA.id && bcLocB.collectorUserId === bcColB.id, 'two branches of one area, each with its own collector');
+check(ctx.branchCollector_(bcLocA.id) === bcColA.id, 'a branch resolves to its own collector');
+check(ctx.branchCollector_(location.entity.id) === musa.id, 'a branch saved before this change still resolves to its area\'s collector');
+var bcWrongRole = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: 'Riyadh', name: 'Bc Wrong', clusterId: bcArea.id, collectorUserId: bcBmA.id } });
+check(!bcWrongRole.ok && bcWrongRole.error === 'wrong_role', 'the collector has to hold the collector role');
+var bcCrossArea = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: 'Jeddah', name: 'Bc Elsewhere', clusterId: cluster2.id, collectorUserId: bcColA.id } });
+check(!bcCrossArea.ok && bcCrossArea.error === 'user_in_other_area', 'a collector\'s branches all sit in one area');
+var bcStoreA = call({ action: 'adminSaveEntity', token: adminTok, kind: 'store', data: { locationId: bcLocA.id, name: 'Bc Store A', storeManagerUserId: bcBmA.id } }).entity;
+var bcStoreB = call({ action: 'adminSaveEntity', token: adminTok, kind: 'store', data: { locationId: bcLocB.id, name: 'Bc Store B', storeManagerUserId: bcBmB.id } }).entity;
+check(bcStoreA && bcStoreB, 'each branch has its store and manager');
+
 console.log('--- starting a fresh test round archives movement, and keeps the org ---');
 check(call({ action: 'adminArchiveTransactions', token: adminTok }).error === 'confirm_required',
   'archiving needs the confirmation word, so it can never be one stray tap');
@@ -1780,8 +1809,8 @@ check(saveErr('pos', { ownerType: 'car', ownerId: car.entity.id, label: 'POS-X' 
   'a POS machine cannot be saved without the person who carries it');
 check(saveErr('cluster', { name: 'Headless Area' }) === 'manager_required',
   'an area cannot be saved without its area manager');
-check(saveErr('cluster', { name: 'No-bank Area', clusterManagerUserId: otherManager.id }) === 'collector_required',
-  'nor without the collector who takes its cash to the bank');
+check(saveErr('cluster', { name: 'No-bank Area', clusterManagerUserId: otherManager.id }) !== 'collector_required',
+  'an area is no longer refused for having no collector — collectors belong to its branches');
 var standIn = call({ action: 'listMeta', token: adminTok }).users.filter(function (u) { return u.role === 'admin'; })[0];
 var standInStore = call({ action: 'adminSaveEntity', token: adminTok, kind: 'store', data: { locationId: location.entity.id, name: 'Admin-held Branch', storeManagerUserId: standIn.id } });
 check(standInStore.ok, 'an admin may stand in on a link while the real person is being hired');
