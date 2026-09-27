@@ -491,11 +491,35 @@ function validateEntity_(kind, d) {
 // Changing who stands on a link, or where a store/car/POS/branch belongs,
 // is refused while cash or an approval is still in motion there: the open
 // handoff would point at the wrong person, or the cash would be stranded.
+// Cash or approvals in motion for one person within one area: entries they
+// wrote at its branches not yet handed over, the area's handovers from or to
+// them still open or held, and its bulk batches they sent awaiting the deputy.
+function areaPersonBusy_(clusterId, userId) {
+  if (!userId) return false;
+  var locIds = readSheet(SHEETS.LOCATIONS).filter(function (l) { return l.clusterId === clusterId; }).map(function (l) { return l.id; });
+  if (readSheet(SHEETS.ENTRIES).some(function (e) {
+    return e.enteredBy === userId && !e.consumedBy && !e.voided && locIds.indexOf(e.locationId) >= 0;
+  })) return true;
+  if (readSheet(SHEETS.HANDOFFS).some(function (h) {
+    if (h.clusterId !== clusterId || (h.fromUserId !== userId && h.toUserId !== userId)) return false;
+    if (h.status === 'pending' || h.status === 'pending_deputy' || h.status === 'disputed') return true;
+    return h.status === 'confirmed' && h.toUserId === userId && !h.consumedBy;
+  })) return true;
+  return readSheet(SHEETS.AREA_BULK_BATCHES).some(function (b) {
+    return b.clusterId === clusterId && b.uploadedBy === userId && b.status === 'pending_deputy';
+  });
+}
+
 function inFlightError_(kind, before, after) {
   function changed(k) { return String(before[k] || '') !== String(after[k] || ''); }
   var people = { store: ['storeManagerUserId'], car: ['driverUserId'], pos: ['assignedUserId'], cluster: ['clusterManagerUserId', 'collectorUserId'] }[kind] || [];
   for (var i = 0; i < people.length; i++) {
-    if (changed(people[i]) && personBusy_(before[people[i]])) return 'person_holds_cash';
+    if (!changed(people[i])) continue;
+    // An area's people are judged on that area alone: someone still on a
+    // second area (rows saved before one-person-one-area) may hold cash
+    // there without that blocking a change here.
+    var busy = kind === 'cluster' ? areaPersonBusy_(before.id, before[people[i]]) : personBusy_(before[people[i]]);
+    if (busy) return 'person_holds_cash';
   }
   if (kind === 'location' && changed('clusterId') && placeBusy_('location', before.id)) return 'cash_in_flight';
   if ((kind === 'store' || kind === 'car') && changed('locationId') && placeBusy_(kind, before.id)) return 'cash_in_flight';
