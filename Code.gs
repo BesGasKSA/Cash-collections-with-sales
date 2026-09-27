@@ -581,6 +581,7 @@ function route_(req) {
   // every other action requires a session
   var session = requireAuth_(req);
   var user = session.user;
+  migrateBranchCollectorsOnce_();
   var newToken = renewToken_(user.id, session.hardExp);
 
   var handlers = {

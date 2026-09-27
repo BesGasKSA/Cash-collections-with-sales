@@ -1932,5 +1932,23 @@ check(!archAfterLive.ok && archAfterLive.error === 'live_locked', 'once live, st
 var unlock = call({ action: 'adminSetConfig', token: adminTok, data: { liveLocked: false } });
 check(!unlock.ok && unlock.error === 'live_locked', 'and the switch cannot be turned back off from the app');
 
+console.log('--- an area\'s collector moves onto its branches, once ---');
+var mgCol = mk('Mg Area Collector', 'mgcol.fx@bestgas.sa', 'collector');
+var mgCol2 = mk('Mg Branch Collector', 'mgcol2.fx@bestgas.sa', 'collector');
+var mgMgr = mk('Mg Area Manager', 'mgmgr.fx@bestgas.sa', 'cluster_manager');
+var mgArea = call({ action: 'adminSaveEntity', token: adminTok, kind: 'cluster', data: { name: 'Mg Legacy Area', clusterManagerUserId: mgMgr.id, collectorUserId: mgCol.id } }).entity;
+var mgL1 = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: 'Dammam', name: 'Mg One', clusterId: mgArea.id } }).entity;
+var mgL2 = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: 'Dammam', name: 'Mg Two', clusterId: mgArea.id, collectorUserId: mgCol2.id } }).entity;
+check(mgArea && mgL1 && mgL2 && !mgL1.collectorUserId, 'an area saved the old way, with a branch that leans on the area\'s collector');
+call({ action: 'listMeta', token: adminTok });
+check(ctx.getById_(ctx.SHEETS.CLUSTERS, mgArea.id).collectorUserId === mgCol.id, 'the move ran once, on the first request after the update — not on every request');
+var mgMoved = ctx.migrateBranchCollectors_();
+var mgL1After = ctx.getById_(ctx.SHEETS.LOCATIONS, mgL1.id), mgL2After = ctx.getById_(ctx.SHEETS.LOCATIONS, mgL2.id);
+check(mgMoved >= 1 && mgL1After.collectorUserId === mgCol.id, 'the branch that leaned on the area now names that same collector itself');
+check(mgL2After.collectorUserId === mgCol2.id, 'a branch with its own collector keeps them');
+check(!ctx.getById_(ctx.SHEETS.CLUSTERS, mgArea.id).collectorUserId, 'and the area no longer holds a collector of its own');
+check(ctx.branchCollector_(mgL1.id) === mgCol.id && ctx.branchCollector_(mgL2.id) === mgCol2.id, 'nobody\'s cash changes hands: every branch still goes to the same collector');
+check(ctx.migrateBranchCollectors_() === 0, 'running it again changes nothing');
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);
