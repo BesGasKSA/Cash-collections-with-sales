@@ -1667,6 +1667,34 @@ check(amConf.ok && amConf.handoff.amount === 1800, 'validated by the deputy, the
 check(call({ action: 'listEntries', token: amMgrTok }).entries.filter(function (e) { return e.id === amEntry.entry.id; })[0].lockState === 'approved',
   'and the area manager\'s entry is approved and locked for good');
 
+console.log('--- an open day with a الموازنة can be cancelled, and the الموازنة goes with it ---');
+function depOf(entryId) {
+  return ctx.readSheet(SHEETS.HANDOFFS).filter(function (h) { return h.kind === 'deposit' && h.direct && (h.sourceEntryIds || []).indexOf(entryId) >= 0; })[0];
+}
+function listed(id) { return call({ action: 'listEntries', token: ctlBmTok }).entries.filter(function (e) { return e.id === id; })[0]; }
+var dDay = call({ action: 'createDailyEntry', token: ctlBmTok, date: ctx.todayRiyadh_(), sourceType: 'store', sourceId: ctlStore.id,
+  cashSales: 900, directDepositAmount: 400, directDepositRef: 'DD-VOID-1', directDepositNote: 'typed in error' });
+check(dDay.ok && depOf(dDay.entry.id) && depOf(dDay.entry.id).status === 'completed', 'a day with a الموازنة records its bank deposit');
+check(listed(dDay.entry.id).canVoid === true, 'while open, its author is offered the cancel');
+var dVoid = call({ action: 'voidEntries', token: ctlBmTok, ids: [dDay.entry.id], reason: 'wrong branch' });
+check(dVoid.ok, 'the author cancels it');
+check(depOf(dDay.entry.id).status === 'voided' && depOf(dDay.entry.id).voidReason === 'wrong branch', 'and its الموازنة is cancelled with it, with the same reason, kept on file');
+check(!call({ action: 'getReconciliation', token: financeTok }).unmatchedDeposits.some(function (d) { return d.id === depOf(dDay.entry.id).id; }),
+  'a cancelled الموازنة no longer waits for a bank match');
+
+var mDay = call({ action: 'createDailyEntry', token: ctlBmTok, date: ctx.todayRiyadh_(), sourceType: 'store', sourceId: ctlStore.id,
+  cashSales: 800, directDepositAmount: 333, directDepositRef: 'DD-MATCH-333' });
+var mDep = depOf(mDay.entry.id);
+var mImport = call({ action: 'importBankStatement', token: financeTok, rows: [{ date: ctx.todayRiyadh_(), amount: 333, reference: 'DD-MATCH-333' }] });
+if (!depOf(mDay.entry.id).reconciled) {
+  var line = call({ action: 'getReconciliation', token: financeTok }).unmatchedLines.filter(function (l) { return l.reference === 'DD-MATCH-333'; })[0];
+  call({ action: 'manualMatchReconciliation', token: financeTok, lineId: line.id, handoffId: mDep.id });
+}
+check(depOf(mDay.entry.id).reconciled === true, 'Finance matches a second الموازنة to the bank statement');
+check(listed(mDay.entry.id).canVoid === false && listed(mDay.entry.id).voidBlock === 'deposit_reconciled', 'that day is no longer offered the cancel, and says why');
+var mVoid = call({ action: 'voidEntries', token: ctlBmTok, ids: [mDay.entry.id], reason: 'x' });
+check(!mVoid.ok && mVoid.error === 'deposit_reconciled', 'the bank has confirmed it, so it cannot be cancelled');
+
 console.log('--- starting a fresh test round archives movement, and keeps the org ---');
 check(call({ action: 'adminArchiveTransactions', token: adminTok }).error === 'confirm_required',
   'archiving needs the confirmation word, so it can never be one stray tap');
