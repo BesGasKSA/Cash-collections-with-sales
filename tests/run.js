@@ -1784,6 +1784,47 @@ check(call({ action: 'confirmHandoff', token: bcColATok, id: rA.id }).ok && call
 var depA = call({ action: 'recordDeposit', token: bcColATok, bankReference: 'BC-A-1' });
 check(depA.ok && depA.handoff.amount === 1000, 'and banks only what they received');
 
+// a CSV batch spanning both branches splits the same way on the deputy's approval
+var bcBatch = call({ action: 'bulkSubmitAreaBatch', token: bcMgrTok, clusterId: bcArea.id, rows: [
+  { date: '2026-09-21', sourceType: 'store', sourceId: bcStoreA.id, cashSales: 700 },
+  { date: '2026-09-21', sourceType: 'store', sourceId: bcStoreB.id, cashSales: 400 }
+] });
+check(bcBatch.ok, 'the area manager uploads a day covering both branches');
+var bcApprove = call({ action: 'deputyApproveBatch', token: walidTok, id: bcBatch.batch.id });
+var bcBh = (bcApprove.handoffs || []);
+var bcBhA = bcBh.filter(function (h) { return h.locationId === bcLocA.id; })[0];
+var bcBhB = bcBh.filter(function (h) { return h.locationId === bcLocB.id; })[0];
+check(bcApprove.ok && bcBh.length === 2 && bcBhA && bcBhB, 'the deputy\'s approval makes one handover per branch');
+check(bcBhA && bcBhA.toUserId === bcColA.id && bcBhA.amount === 700 && bcBhA.status === 'pending'
+  && bcBhB && bcBhB.toUserId === bcColB.id && bcBhB.amount === 400,
+  'each to its own branch\'s collector, with that branch\'s cash only');
+var bcBatchRow = ctx.getById_(ctx.SHEETS.AREA_BULK_BATCHES, bcBatch.batch.id);
+check(bcBatchRow.resultHandoffIds && bcBatchRow.resultHandoffIds.length === 2, 'the batch records every handover it produced');
+check(bcBhA && bcBhA.sourceEntryIds.every(function (id) { return ctx.getById_(ctx.SHEETS.ENTRIES, id).locationId === bcLocA.id && ctx.getById_(ctx.SHEETS.ENTRIES, id).consumedBy === bcBhA.id; }),
+  'branch A\'s entries belong to branch A\'s handover');
+check(call({ action: 'confirmHandoff', token: bcColATok, id: bcBhB.id }).error === 'receiver_only', 'collector A cannot confirm branch B\'s batch cash');
+
+// a branch that banked its whole day itself has nothing to hand over
+var bcBatch2 = call({ action: 'bulkSubmitAreaBatch', token: bcMgrTok, clusterId: bcArea.id, rows: [
+  { date: '2026-09-22', sourceType: 'store', sourceId: bcStoreA.id, cashSales: 300 },
+  { date: '2026-09-22', sourceType: 'store', sourceId: bcStoreB.id, cashSales: 250, directDepositAmount: 250, directDepositRef: 'BC-B-DD' }
+] });
+var bcApprove2 = call({ action: 'deputyApproveBatch', token: walidTok, id: bcBatch2.batch.id });
+check(bcApprove2.ok && bcApprove2.handoffs.length === 1 && bcApprove2.handoffs[0].locationId === bcLocA.id && bcApprove2.handoffs[0].amount === 300,
+  'a branch that banked its whole day directly sends no handover — only branch A goes to its collector');
+var bcB2Entry = call({ action: 'listEntries', token: bcMgrTok }).entries.filter(function (e) { return e.locationId === bcLocB.id && e.date === '2026-09-22'; })[0];
+check(bcB2Entry && bcB2Entry.lockState === 'approved' && !bcB2Entry.canVoid, 'and its day shows approved and locked, not stuck waiting');
+
+// escalations reach the branch's own collector, not the other branch's
+var bcMailFrom = ctx._debug.mailLog.length;
+ctx.escalateStaleHandoff_(ctx.getById_(ctx.SHEETS.HANDOFFS, bcHA.handoff.id), 50);
+var bcMails = ctx._debug.mailLog.slice(bcMailFrom).map(function (m) { return String(m.to); }).join(',');
+check(bcMails.indexOf('bccola.fx@bestgas.sa') >= 0 && bcMails.indexOf('bccolb.fx@bestgas.sa') < 0, 'a stale branch-A handover alerts branch A\'s collector only');
+bcMailFrom = ctx._debug.mailLog.length;
+ctx.escalateShortfall_(ctx.getById_(ctx.SHEETS.HANDOFFS, bcHB.handoff.id));
+bcMails = ctx._debug.mailLog.slice(bcMailFrom).map(function (m) { return String(m.to); }).join(',');
+check(bcMails.indexOf('bccolb.fx@bestgas.sa') >= 0 && bcMails.indexOf('bccola.fx@bestgas.sa') < 0, 'a branch-B shortfall alerts branch B\'s collector only');
+
 
 console.log('--- starting a fresh test round archives movement, and keeps the org ---');
 check(call({ action: 'adminArchiveTransactions', token: adminTok }).error === 'confirm_required',

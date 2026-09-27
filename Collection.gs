@@ -23,6 +23,16 @@ function storeOfLocation_(locationId) {
 // directly; a car_to_location handoff only carries locationId, so its
 // cluster (for escalation-recipient purposes) has to be resolved one hop
 // up through the location instead.
+// The collector a handover concerns, for alerts: the one it is addressed to,
+// or the collector of the branch it came from.
+function collectorForHandoff_(handoff) {
+  if (handoff.kind === 'cluster_to_collector') return handoff.toUserId;
+  if (handoff.locationId) return branchCollector_(handoff.locationId);
+  if (handoff.kind === 'deposit' && userHasRole_(handoff.fromUserId, 'collector')) return handoff.fromUserId;
+  var c = handoff.clusterId ? getById_(SHEETS.CLUSTERS, handoff.clusterId) : null;
+  return c ? c.collectorUserId : null;
+}
+
 function clusterIdForHandoff_(handoff) {
   if (handoff.clusterId) return handoff.clusterId;
   if (handoff.locationId) {
@@ -45,12 +55,6 @@ function branchCollector_(locationId) {
   if (loc.collectorUserId) return loc.collectorUserId;
   var c = loc.clusterId ? getById_(SHEETS.CLUSTERS, loc.clusterId) : null;
   return c && c.collectorUserId ? c.collectorUserId : null;
-}
-
-function collectorClusterIds_(userId) {
-  return readSheet(SHEETS.CLUSTERS)
-    .filter(function (c) { return c.collectorUserId === userId; })
-    .map(function (c) { return c.id; });
 }
 
 function resolveSourceLocation_(sourceType, sourceId) {
@@ -495,7 +499,7 @@ function actionListEntries_(req, user) {
     var st = e.consumedBy ? hStatus[e.consumedBy] : null;
     e.lockState = e.voided ? 'voided'
       : !e.consumedBy ? 'open'
-      : (st === 'confirmed' || st === 'completed') ? 'approved'
+      : (st === 'confirmed' || st === 'completed' || st === 'deputy_approved') ? 'approved'
       : 'submitted';
     // why an open entry cannot be cancelled, when it cannot
     e.voidBlock = e.lockState !== 'open' ? null
@@ -1090,32 +1094,52 @@ function actionDeputyApproveBatch_(req, user) {
 
   var cluster = getById_(SHEETS.CLUSTERS, batch.clusterId);
   if (!cluster) return { ok: false, error: 'not_found' };
-  if (!cluster.collectorUserId) return { ok: false, error: 'no_collector' };
-  if (cluster.collectorUserId === user.id) return { ok: false, error: 'conflict_of_interest' };
 
-  var handoff = {
-    id: Utilities.getUuid(),
-    kind: 'cluster_to_collector',
-    fromUserId: batch.uploadedBy,
-    toUserId: cluster.collectorUserId,
-    clusterId: cluster.id,
-    amount: batch.breakdown.netCashOwed,
-    breakdown: batch.breakdown,
-    perLocation: batch.perLocation,
-    sourceEntryIds: batch.entryIds,
-    sourceHandoffIds: [],
-    consumedBy: null,
-    status: 'pending',
-    createdAt: new Date().toISOString(),
-    viaBulkBatch: batch.id
-  };
-  writeRow(SHEETS.HANDOFFS, handoff);
+  // One handover per branch, each to that branch's own collector. A branch
+  // whose day nets to nothing (banked directly, say) sends none: its entries
+  // stay settled by this approval. Every branch is checked before anything
+  // is written, so a branch without a collector stops the whole approval.
+  var entryLoc = {};
+  batch.entryIds.forEach(function (id) { var e = getById_(SHEETS.ENTRIES, id); if (e) entryLoc[id] = e.locationId; });
+  var plans = [];
+  for (var i = 0; i < (batch.perLocation || []).length; i++) {
+    var pl = batch.perLocation[i];
+    if (Number(pl.amount || 0) <= 0) continue;
+    var collectorId = branchCollector_(pl.locationId);
+    if (!collectorId) return { ok: false, error: 'no_collector', locationId: pl.locationId };
+    if (collectorId === user.id || collectorId === batch.uploadedBy) return { ok: false, error: 'conflict_of_interest', locationId: pl.locationId };
+    plans.push({ pl: pl, collectorId: collectorId, entryIds: batch.entryIds.filter(function (id) { return entryLoc[id] === pl.locationId; }) });
+  }
+
+  var handoffOfEntry = {};
+  var handoffs = plans.map(function (p) {
+    var handoff = {
+      id: Utilities.getUuid(),
+      kind: 'cluster_to_collector',
+      fromUserId: batch.uploadedBy,
+      toUserId: p.collectorId,
+      clusterId: cluster.id,
+      locationId: p.pl.locationId,
+      amount: p.pl.amount,
+      breakdown: p.pl.breakdown,
+      perLocation: [p.pl],
+      sourceEntryIds: p.entryIds,
+      sourceHandoffIds: [],
+      consumedBy: null,
+      status: 'pending',
+      createdAt: new Date().toISOString(),
+      viaBulkBatch: batch.id
+    };
+    writeRow(SHEETS.HANDOFFS, handoff);
+    p.entryIds.forEach(function (id) { handoffOfEntry[id] = handoff.id; });
+    return handoff;
+  });
   var uploader = getById_(SHEETS.USERS, batch.uploadedBy) || user;
   batch.entryIds.forEach(function (id) {
     var e = getById_(SHEETS.ENTRIES, id);
     if (!e) return;
-    e.consumedBy = handoff.id;
-    writeRow(SHEETS.ENTRIES, e);
+    // an entry of a branch with nothing to hand over stays with the batch
+    if (handoffOfEntry[id]) { e.consumedBy = handoffOfEntry[id]; writeRow(SHEETS.ENTRIES, e); }
     // Cash the branch banked itself, reported through the upload: the
     // deposit record is created now, not at upload time, so a rejected
     // batch never leaves a deposit behind.
@@ -1125,12 +1149,13 @@ function actionDeputyApproveBatch_(req, user) {
   batch.status = 'deputy_approved';
   batch.deputyActedBy = user.id;
   batch.deputyActedAt = new Date().toISOString();
-  batch.resultHandoffId = handoff.id;
+  batch.resultHandoffIds = handoffs.map(function (h) { return h.id; });
+  batch.resultHandoffId = handoffs.length ? handoffs[0].id : null;
   writeRow(SHEETS.AREA_BULK_BATCHES, batch);
 
-  logAudit_('deputy_approve_batch', user.id, batch.id + ' -> ' + handoff.id);
-  notifyPending_(handoff);
-  return { ok: true, batch: batch, handoff: handoff };
+  logAudit_('deputy_approve_batch', user.id, batch.id + ' -> ' + (batch.resultHandoffIds.join(',') || 'no cash to hand over'));
+  handoffs.forEach(function (h) { notifyPending_(h); });
+  return { ok: true, batch: batch, handoff: handoffs[0] || null, handoffs: handoffs };
 }
 
 // Rejected entries are marked voided (not just released back to unconsumed)
@@ -1259,11 +1284,9 @@ function escalateLargeAmount_(handoff) {
 
   if (handoff.clusterId) {
     var cluster = getById_(SHEETS.CLUSTERS, handoff.clusterId);
-    if (cluster) {
-      add(getById_(SHEETS.USERS, cluster.clusterManagerUserId));
-      add(getById_(SHEETS.USERS, cluster.collectorUserId));
-    }
+    if (cluster) add(getById_(SHEETS.USERS, cluster.clusterManagerUserId));
   }
+  add(getById_(SHEETS.USERS, collectorForHandoff_(handoff)));
   readSheet(SHEETS.USERS)
     .filter(function (u) { return (u.role === 'admin' || u.role === 'finance') && u.email; })
     .forEach(add);
@@ -1570,11 +1593,9 @@ function escalateShortfall_(handoff) {
   var clusterId = clusterIdForHandoff_(handoff);
   if (clusterId) {
     var cluster = getById_(SHEETS.CLUSTERS, clusterId);
-    if (cluster) {
-      add(getById_(SHEETS.USERS, cluster.clusterManagerUserId));
-      add(getById_(SHEETS.USERS, cluster.collectorUserId));
-    }
+    if (cluster) add(getById_(SHEETS.USERS, cluster.clusterManagerUserId));
   }
+  add(getById_(SHEETS.USERS, collectorForHandoff_(handoff)));
   readSheet(SHEETS.USERS)
     .filter(function (u) { return (u.role === 'admin' || u.role === 'finance') && u.email; })
     .forEach(add);
@@ -1606,11 +1627,9 @@ function escalateStaleHandoff_(handoff, hoursOld) {
   var clusterId = clusterIdForHandoff_(handoff);
   if (clusterId) {
     var cluster = getById_(SHEETS.CLUSTERS, clusterId);
-    if (cluster) {
-      add(getById_(SHEETS.USERS, cluster.clusterManagerUserId));
-      add(getById_(SHEETS.USERS, cluster.collectorUserId));
-    }
+    if (cluster) add(getById_(SHEETS.USERS, cluster.clusterManagerUserId));
   }
+  add(getById_(SHEETS.USERS, collectorForHandoff_(handoff)));
   readSheet(SHEETS.USERS)
     .filter(function (u) { return (u.role === 'admin' || u.role === 'finance') && u.email; })
     .forEach(add);
@@ -1640,11 +1659,9 @@ function escalateHeldTooLong_(handoff, hoursHeld) {
   var clusterId = clusterIdForHandoff_(handoff);
   if (clusterId) {
     var cluster = getById_(SHEETS.CLUSTERS, clusterId);
-    if (cluster) {
-      add(getById_(SHEETS.USERS, cluster.clusterManagerUserId));
-      add(getById_(SHEETS.USERS, cluster.collectorUserId));
-    }
+    if (cluster) add(getById_(SHEETS.USERS, cluster.clusterManagerUserId));
   }
+  add(getById_(SHEETS.USERS, collectorForHandoff_(handoff)));
   readSheet(SHEETS.USERS)
     .filter(function (u) { return (u.role === 'admin' || u.role === 'finance') && u.email; })
     .forEach(add);
