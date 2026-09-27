@@ -1175,6 +1175,29 @@
   .cu-imp-list li.st-rep .cu-imp-chip{background:color-mix(in srgb, var(--danger) 12%, transparent);color:var(--danger);}
   .cu-imp-list li:not(.st-new) .cu-imp-n{color:var(--muted);}
   .cu-hist{list-style:none;margin:10px 0 0;padding:0;}
+  .bm-hint{font-size:12.5px;margin:-4px 0 10px;line-height:1.6;}
+  .bm-canvas{direction:ltr;height:300px;border-radius:14px;overflow:hidden;border:1px solid var(--border-soft);background:var(--bg);position:relative;z-index:0;}
+  @media (min-width:900px){ .bm-canvas{height:380px;} }
+  .bm-loading{display:grid;place-items:center;height:100%;font-size:13px;}
+  .bm-tools{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0;}
+  .bm-tools .btn{min-height:44px;display:inline-flex;align-items:center;gap:6px;}
+  .bm-tools .btn svg{width:16px;height:16px;}
+  .bm-paste{display:flex;gap:8px;flex:1 1 260px;min-width:0;}
+  .bm-paste input{flex:1;min-width:0;}
+  .bm-info{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;font-size:13px;margin-bottom:8px;}
+  .bm-ll{font-weight:700;font-variant-numeric:tabular-nums;}
+  .bm-gmaps{color:var(--green-dark);font-weight:700;}
+  .bm-zone{display:flex;flex-direction:column;gap:8px;margin-bottom:10px;}
+  .bm-z,.bm-sug{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;padding:10px 12px;border-radius:12px;background:var(--bg);font-size:13px;}
+  .bm-z span,.bm-sug span{color:var(--muted);}
+  .bm-sug{background:color-mix(in srgb,var(--green) 8%,#fff);border:1px solid color-mix(in srgb,var(--green) 24%,#fff);}
+  .bm-sug b{color:var(--green-dark);font-weight:800;}
+  .bm-sug .btn{margin-inline-start:auto;min-height:40px;}
+  .bm-ok{margin-inline-start:auto;display:inline-flex;align-items:center;gap:4px;color:var(--ok);font-weight:700;}
+  .bm-ok svg{width:15px;height:15px;}
+  .bm-pin{background:none;border:0;}
+  .bm-pin svg{width:34px;height:44px;filter:drop-shadow(0 2px 3px rgba(0,0,0,.28));}
+  .bm-actions{gap:10px;flex-wrap:wrap;}
   .cr-mode{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;border-radius:12px;background:var(--bg);border:1px solid var(--border-soft);margin:2px 0 10px;}
   .cr-seg{min-height:44px;border:0;border-radius:9px;background:transparent;font:inherit;font-weight:700;font-size:13.5px;color:var(--muted);
     display:inline-flex;align-items:center;justify-content:center;gap:7px;cursor:pointer;transition:background .15s ease,color .15s ease;}
@@ -1727,7 +1750,7 @@ var L = {
     err_wrongCurrentPassword:'كلمة المرور الحالية غير صحيحة', err_network:'تعذّر الاتصال بالخادم — تحقق من الإنترنت',
     err_noSourceSelected:'الرجاء اختيار مصدر أولاً', err_titleRequired:'الرجاء إدخال عنوان',
     noData:'لا توجد بيانات', loading:'جارِ التحميل...', total:'الإجمالي', kind_location_to_cluster:'مدير الفرع ← مدير المنطقة',
-    kind_cluster_to_collector:'مدير المنطقة ← مُحصّل', kind_deposit:'إيداع بنكي', filter:'تصفية', all:'الكل', entity_bank:'البنك', calc_totalIn:'إجمالي التحصيلات', calc_totalOut:'إجمالي الخصومات', entry_pickCustomer:'اختر العميل…', entry_creditHow:'طريقة التسجيل', entry_creditByAmount:'مبلغ', entry_creditByItems:'أصناف', entry_creditAddItem:'+ صنف', entry_creditItemsTotal:'مجموع الأصناف', err_creditItemsIncomplete:'أكمل كل صنف: المنتج والكمية', rec_code:'الرقم', rec_codeAuto:'يُمنح الرقم تلقائياً عند الحفظ', admin_customers:'العملاء', admin_cities:'المدن', admin_addCustomer:'إضافة عميل', admin_addCity:'إضافة مدينة', cu_code:'رقم العميل', cu_codeAuto:'يُمنح رقم العميل تلقائياً عند الحفظ', cu_name:'اسم العميل', cu_phone:'الجوال', ci_name:'اسم المدينة', ci_uses:'الفروع', cu_import:'استيراد قائمة', cu_importTitle:'استيراد العملاء', cu_importHint:'الصق الأسماء، اسماً في كل سطر (ويمكن إضافة المدينة والجوال بعده مفصولين بفاصلة)، أو اختر ملف Excel أو CSV. يُمنح كل عميل جديد رقماً، ويُتخطى كل اسم مسجّل مسبقاً.', cu_importPh:'مثال: شركة الغذاء النوعي للتجارة - الرمال، الرياض', cu_importFile:'اختيار ملف Excel أو CSV', cu_importCheck:'مراجعة القائمة', cu_impNew:'جديد', cu_impOnFile:'مسجّل مسبقاً', cu_impRepeat:'مكرر في القائمة', cu_impAdd:'إضافة {n} عميل', cu_impNothing:'لا يوجد اسم جديد لإضافته', cu_impDone:'أُضيف {n} عميل، وتُخطي {s}', cu_impEmpty:'لم يُعثر على أسماء في القائمة', cu_impLoadFail:'تعذّرت قراءة الملف — جرّب حفظه بصيغة CSV', pf_kindCustomer:'عميل', pf_kindCity:'مدينة', err_duplicateCustomer:'هذا العميل مسجّل مسبقاً برقم {code}', err_duplicateCity:'هذه المدينة موجودة في القائمة', err_unknownCustomer:'العميل غير مسجّل — اختره من القائمة أو اطلب من مدير النظام إضافته', err_invalidCustomer:'حساب هذا العميل موقوف، فلا يُسجَّل عليه بيع آجل جديد', err_creditItemsMismatch:'مبلغ البيع الآجل لا يطابق مجموع الأصناف', err_priceLocked:'سعر هذا المنتج ثابت ولا يُغيَّر', err_invalidProduct:'المنتج غير موجود أو موقوف', err_invalidCoordinates:'إحداثيات الموقع غير صحيحة'
+    kind_cluster_to_collector:'مدير المنطقة ← مُحصّل', kind_deposit:'إيداع بنكي', filter:'تصفية', all:'الكل', entity_bank:'البنك', bm_title:'موقع الفرع على الخريطة', bm_hint:'اضغط على الخريطة لتثبيت موقع الفرع أو اسحب الدبوس، أو استخدم موقعك الحالي وأنت داخل الفرع، أو الصق رابط الموقع من خرائط Google.', bm_here:'موقعي الحالي', bm_pastePh:'رابط خرائط Google أو 24.7136, 46.6753', bm_go:'تحديد', bm_none:'لم يُحدَّد موقع الفرع بعد', bm_openGoogle:'فتح في خرائط Google', bm_noZone:'بلا نطاق', bm_suggest:'أقرب فرع: {branch} ({dist}) — النطاق المقترح:', bm_m:'م', bm_km:'كم', bm_applyZone:'اعتماد هذا النطاق', bm_zoneMatches:'يطابق نطاق الفرع', bm_save:'حفظ الموقع', bm_clear:'إزالة الموقع', bm_noGeo:'المتصفح لا يدعم تحديد الموقع', bm_geoDenied:'تعذّر الحصول على موقعك — اسمح للمتصفح بالوصول إلى الموقع ثم أعد المحاولة', bm_badPaste:'لم نجد إحداثيات في النص — الصق رابطاً كاملاً من خرائط Google أو إحداثيات مثل 24.7136, 46.6753', bm_loadFail:'تعذّر تحميل الخريطة — تحقق من الاتصال', calc_totalIn:'إجمالي التحصيلات', calc_totalOut:'إجمالي الخصومات', entry_pickCustomer:'اختر العميل…', entry_creditHow:'طريقة التسجيل', entry_creditByAmount:'مبلغ', entry_creditByItems:'أصناف', entry_creditAddItem:'+ صنف', entry_creditItemsTotal:'مجموع الأصناف', err_creditItemsIncomplete:'أكمل كل صنف: المنتج والكمية', rec_code:'الرقم', rec_codeAuto:'يُمنح الرقم تلقائياً عند الحفظ', admin_customers:'العملاء', admin_cities:'المدن', admin_addCustomer:'إضافة عميل', admin_addCity:'إضافة مدينة', cu_code:'رقم العميل', cu_codeAuto:'يُمنح رقم العميل تلقائياً عند الحفظ', cu_name:'اسم العميل', cu_phone:'الجوال', ci_name:'اسم المدينة', ci_uses:'الفروع', cu_import:'استيراد قائمة', cu_importTitle:'استيراد العملاء', cu_importHint:'الصق الأسماء، اسماً في كل سطر (ويمكن إضافة المدينة والجوال بعده مفصولين بفاصلة)، أو اختر ملف Excel أو CSV. يُمنح كل عميل جديد رقماً، ويُتخطى كل اسم مسجّل مسبقاً.', cu_importPh:'مثال: شركة الغذاء النوعي للتجارة - الرمال، الرياض', cu_importFile:'اختيار ملف Excel أو CSV', cu_importCheck:'مراجعة القائمة', cu_impNew:'جديد', cu_impOnFile:'مسجّل مسبقاً', cu_impRepeat:'مكرر في القائمة', cu_impAdd:'إضافة {n} عميل', cu_impNothing:'لا يوجد اسم جديد لإضافته', cu_impDone:'أُضيف {n} عميل، وتُخطي {s}', cu_impEmpty:'لم يُعثر على أسماء في القائمة', cu_impLoadFail:'تعذّرت قراءة الملف — جرّب حفظه بصيغة CSV', pf_kindCustomer:'عميل', pf_kindCity:'مدينة', err_duplicateCustomer:'هذا العميل مسجّل مسبقاً برقم {code}', err_duplicateCity:'هذه المدينة موجودة في القائمة', err_unknownCustomer:'العميل غير مسجّل — اختره من القائمة أو اطلب من مدير النظام إضافته', err_invalidCustomer:'حساب هذا العميل موقوف، فلا يُسجَّل عليه بيع آجل جديد', err_creditItemsMismatch:'مبلغ البيع الآجل لا يطابق مجموع الأصناف', err_priceLocked:'سعر هذا المنتج ثابت ولا يُغيَّر', err_invalidProduct:'المنتج غير موجود أو موقوف', err_invalidCoordinates:'إحداثيات الموقع غير صحيحة'
   },
   en: {
     appName:'Best Gas — Cash Collection', login:'Sign In', email:'Email', password:'Password',
@@ -1895,7 +1918,7 @@ var L = {
     err_wrongCurrentPassword:'Current password is incorrect', err_network:"Couldn't reach the server — check your connection",
     err_noSourceSelected:'Please pick a source first', err_titleRequired:'Please enter a title',
     noData:'No data', loading:'Loading...', total:'Total', kind_location_to_cluster:'Branch → Area',
-    kind_cluster_to_collector:'Area → Collector', kind_deposit:'Bank deposit', filter:'Filter', all:'All', entity_bank:'Bank', calc_totalIn:'Total collected', calc_totalOut:'Total deductions', entry_pickCustomer:'Choose the customer…', entry_creditHow:'Record as', entry_creditByAmount:'Amount', entry_creditByItems:'Products', entry_creditAddItem:'+ Product', entry_creditItemsTotal:'Products total', err_creditItemsIncomplete:'Complete every product line: product and quantity', rec_code:'No.', rec_codeAuto:'The number is assigned when you save', admin_customers:'Customers', admin_cities:'Cities', admin_addCustomer:'Add customer', admin_addCity:'Add city', cu_code:'Customer no.', cu_codeAuto:'The customer number is assigned when you save', cu_name:'Customer name', cu_phone:'Mobile', ci_name:'City name', ci_uses:'Branches', cu_import:'Import a list', cu_importTitle:'Import customers', cu_importHint:'Paste the names, one per line (city and mobile may follow, separated by commas), or choose an Excel or CSV file. Each new customer gets a number; names already on file are skipped.', cu_importPh:'e.g. Quality Food Trading Co - Al Rimal, Riyadh', cu_importFile:'Choose an Excel or CSV file', cu_importCheck:'Check the list', cu_impNew:'New', cu_impOnFile:'Already on file', cu_impRepeat:'Repeated in the list', cu_impAdd:'Add {n} customers', cu_impNothing:'No new name to add', cu_impDone:'Added {n} customers, skipped {s}', cu_impEmpty:'No names found in the list', cu_impLoadFail:'Could not read the file — try saving it as CSV', pf_kindCustomer:'Customer', pf_kindCity:'City', err_duplicateCustomer:'This customer is already on file as {code}', err_duplicateCity:'This city is already on the list', err_unknownCustomer:'Customer not on file — pick one from the list or ask the administrator to add it', err_invalidCustomer:'This customer\'s account is closed to new credit', err_creditItemsMismatch:'The credit amount does not match its items', err_priceLocked:'This product has a fixed price', err_invalidProduct:'Product not found or inactive', err_invalidCoordinates:'The map position is not valid'
+    kind_cluster_to_collector:'Area → Collector', kind_deposit:'Bank deposit', filter:'Filter', all:'All', entity_bank:'Bank', bm_title:'Branch on the map', bm_hint:'Tap the map to pin the branch or drag the pin, use your current location while inside the branch, or paste its Google Maps link.', bm_here:'My current location', bm_pastePh:'Google Maps link or 24.7136, 46.6753', bm_go:'Locate', bm_none:'The branch has no position yet', bm_openGoogle:'Open in Google Maps', bm_noZone:'No zone', bm_suggest:'Nearest branch: {branch} ({dist}) — suggested zone:', bm_m:'m', bm_km:'km', bm_applyZone:'Use this zone', bm_zoneMatches:'Matches the branch zone', bm_save:'Save position', bm_clear:'Remove position', bm_noGeo:'This browser cannot share your location', bm_geoDenied:'Could not get your location — allow location access and try again', bm_badPaste:'No coordinates found — paste a full Google Maps link or coordinates like 24.7136, 46.6753', bm_loadFail:'The map could not load — check the connection', calc_totalIn:'Total collected', calc_totalOut:'Total deductions', entry_pickCustomer:'Choose the customer…', entry_creditHow:'Record as', entry_creditByAmount:'Amount', entry_creditByItems:'Products', entry_creditAddItem:'+ Product', entry_creditItemsTotal:'Products total', err_creditItemsIncomplete:'Complete every product line: product and quantity', rec_code:'No.', rec_codeAuto:'The number is assigned when you save', admin_customers:'Customers', admin_cities:'Cities', admin_addCustomer:'Add customer', admin_addCity:'Add city', cu_code:'Customer no.', cu_codeAuto:'The customer number is assigned when you save', cu_name:'Customer name', cu_phone:'Mobile', ci_name:'City name', ci_uses:'Branches', cu_import:'Import a list', cu_importTitle:'Import customers', cu_importHint:'Paste the names, one per line (city and mobile may follow, separated by commas), or choose an Excel or CSV file. Each new customer gets a number; names already on file are skipped.', cu_importPh:'e.g. Quality Food Trading Co - Al Rimal, Riyadh', cu_importFile:'Choose an Excel or CSV file', cu_importCheck:'Check the list', cu_impNew:'New', cu_impOnFile:'Already on file', cu_impRepeat:'Repeated in the list', cu_impAdd:'Add {n} customers', cu_impNothing:'No new name to add', cu_impDone:'Added {n} customers, skipped {s}', cu_impEmpty:'No names found in the list', cu_impLoadFail:'Could not read the file — try saving it as CSV', pf_kindCustomer:'Customer', pf_kindCity:'City', err_duplicateCustomer:'This customer is already on file as {code}', err_duplicateCity:'This city is already on the list', err_unknownCustomer:'Customer not on file — pick one from the list or ask the administrator to add it', err_invalidCustomer:'This customer\'s account is closed to new credit', err_creditItemsMismatch:'The credit amount does not match its items', err_priceLocked:'This product has a fixed price', err_invalidProduct:'Product not found or inactive', err_invalidCoordinates:'The map position is not valid'
   },
   ur: {
     appName:'بیسٹ گیس — نقد وصولی نظام', login:'لاگ ان', email:'ای میل', password:'پاس ورڈ',
@@ -2063,7 +2086,7 @@ var L = {
     err_wrongCurrentPassword:'موجودہ پاس ورڈ غلط ہے', err_network:'سرور سے رابطہ نہیں ہو سکا — انٹرنیٹ چیک کریں',
     err_noSourceSelected:'پہلے ایک ذریعہ منتخب کریں', err_titleRequired:'براہ کرم عنوان درج کریں',
     noData:'کوئی ڈیٹا نہیں', loading:'لوڈ ہو رہا ہے...', total:'کل', kind_location_to_cluster:'برانچ ← علاقہ',
-    kind_cluster_to_collector:'علاقہ ← کلکٹر', kind_deposit:'بینک جمع', filter:'فلٹر', all:'تمام', entity_bank:'بینک', calc_totalIn:'کل وصولی', calc_totalOut:'کل کٹوتیاں', entry_pickCustomer:'گاہک منتخب کریں…', entry_creditHow:'درج کرنے کا طریقہ', entry_creditByAmount:'رقم', entry_creditByItems:'اشیاء', entry_creditAddItem:'+ شے', entry_creditItemsTotal:'اشیاء کا مجموعہ', err_creditItemsIncomplete:'ہر شے مکمل کریں: پروڈکٹ اور مقدار', rec_code:'نمبر', rec_codeAuto:'محفوظ کرنے پر نمبر خود ملے گا', admin_customers:'گاہک', admin_cities:'شہر', admin_addCustomer:'گاہک شامل کریں', admin_addCity:'شہر شامل کریں', cu_code:'گاہک نمبر', cu_codeAuto:'محفوظ کرنے پر نمبر خود ملے گا', cu_name:'گاہک کا نام', cu_phone:'موبائل', ci_name:'شہر کا نام', ci_uses:'برانچیں', cu_import:'فہرست درآمد کریں', cu_importTitle:'گاہک درآمد کریں', cu_importHint:'نام چسپاں کریں، ہر سطر میں ایک، یا Excel/CSV فائل منتخب کریں۔ ہر نئے گاہک کو نمبر ملے گا، موجود نام چھوڑ دیے جائیں گے۔', cu_importPh:'مثال: کمپنی کا نام، شہر', cu_importFile:'Excel یا CSV فائل', cu_importCheck:'فہرست جانچیں', cu_impNew:'نیا', cu_impOnFile:'پہلے سے موجود', cu_impRepeat:'فہرست میں دہرایا گیا', cu_impAdd:'{n} گاہک شامل کریں', cu_impNothing:'کوئی نیا نام نہیں', cu_impDone:'{n} گاہک شامل، {s} چھوڑ دیے', cu_impEmpty:'فہرست میں کوئی نام نہیں ملا', cu_impLoadFail:'فائل نہیں پڑھی جا سکی', pf_kindCustomer:'گاہک', pf_kindCity:'شہر', err_duplicateCustomer:'یہ گاہک پہلے سے {code} پر موجود ہے', err_duplicateCity:'یہ شہر فہرست میں موجود ہے', err_unknownCustomer:'گاہک رجسٹرڈ نہیں', err_invalidCustomer:'اس گاہک کا کھاتہ بند ہے', err_creditItemsMismatch:'ادھار رقم اشیاء کے مجموعے سے مختلف ہے', err_priceLocked:'اس پروڈکٹ کی قیمت مقرر ہے', err_invalidProduct:'پروڈکٹ موجود نہیں', err_invalidCoordinates:'مقام درست نہیں'
+    kind_cluster_to_collector:'علاقہ ← کلکٹر', kind_deposit:'بینک جمع', filter:'فلٹر', all:'تمام', entity_bank:'بینک', bm_title:'نقشے پر برانچ', bm_hint:'نقشے پر ٹیپ کریں یا پن گھسیٹیں، برانچ میں ہوں تو اپنا موجودہ مقام استعمال کریں، یا Google Maps کا لنک چسپاں کریں۔', bm_here:'میرا موجودہ مقام', bm_pastePh:'Google Maps لنک یا 24.7136, 46.6753', bm_go:'تلاش', bm_none:'برانچ کا مقام ابھی طے نہیں', bm_openGoogle:'Google Maps میں کھولیں', bm_noZone:'کوئی زون نہیں', bm_suggest:'قریب ترین برانچ: {branch} ({dist}) — تجویز کردہ زون:', bm_m:'م', bm_km:'کلومیٹر', bm_applyZone:'یہ زون لگائیں', bm_zoneMatches:'برانچ کے زون سے مطابق', bm_save:'مقام محفوظ کریں', bm_clear:'مقام ہٹائیں', bm_noGeo:'براؤزر مقام نہیں دے سکتا', bm_geoDenied:'آپ کا مقام نہیں ملا — اجازت دیں اور دوبارہ کوشش کریں', bm_badPaste:'کوئی مقام نہیں ملا — پورا لنک یا 24.7136, 46.6753 چسپاں کریں', bm_loadFail:'نقشہ لوڈ نہیں ہوا', calc_totalIn:'کل وصولی', calc_totalOut:'کل کٹوتیاں', entry_pickCustomer:'گاہک منتخب کریں…', entry_creditHow:'درج کرنے کا طریقہ', entry_creditByAmount:'رقم', entry_creditByItems:'اشیاء', entry_creditAddItem:'+ شے', entry_creditItemsTotal:'اشیاء کا مجموعہ', err_creditItemsIncomplete:'ہر شے مکمل کریں: پروڈکٹ اور مقدار', rec_code:'نمبر', rec_codeAuto:'محفوظ کرنے پر نمبر خود ملے گا', admin_customers:'گاہک', admin_cities:'شہر', admin_addCustomer:'گاہک شامل کریں', admin_addCity:'شہر شامل کریں', cu_code:'گاہک نمبر', cu_codeAuto:'محفوظ کرنے پر نمبر خود ملے گا', cu_name:'گاہک کا نام', cu_phone:'موبائل', ci_name:'شہر کا نام', ci_uses:'برانچیں', cu_import:'فہرست درآمد کریں', cu_importTitle:'گاہک درآمد کریں', cu_importHint:'نام چسپاں کریں، ہر سطر میں ایک، یا Excel/CSV فائل منتخب کریں۔ ہر نئے گاہک کو نمبر ملے گا، موجود نام چھوڑ دیے جائیں گے۔', cu_importPh:'مثال: کمپنی کا نام، شہر', cu_importFile:'Excel یا CSV فائل', cu_importCheck:'فہرست جانچیں', cu_impNew:'نیا', cu_impOnFile:'پہلے سے موجود', cu_impRepeat:'فہرست میں دہرایا گیا', cu_impAdd:'{n} گاہک شامل کریں', cu_impNothing:'کوئی نیا نام نہیں', cu_impDone:'{n} گاہک شامل، {s} چھوڑ دیے', cu_impEmpty:'فہرست میں کوئی نام نہیں ملا', cu_impLoadFail:'فائل نہیں پڑھی جا سکی', pf_kindCustomer:'گاہک', pf_kindCity:'شہر', err_duplicateCustomer:'یہ گاہک پہلے سے {code} پر موجود ہے', err_duplicateCity:'یہ شہر فہرست میں موجود ہے', err_unknownCustomer:'گاہک رجسٹرڈ نہیں', err_invalidCustomer:'اس گاہک کا کھاتہ بند ہے', err_creditItemsMismatch:'ادھار رقم اشیاء کے مجموعے سے مختلف ہے', err_priceLocked:'اس پروڈکٹ کی قیمت مقرر ہے', err_invalidProduct:'پروڈکٹ موجود نہیں', err_invalidCoordinates:'مقام درست نہیں'
   }
 };
 function t(k){ var l=L[state.lang]||L.ar; return l[k]!==undefined ? l[k] : (L.en[k]!==undefined?L.en[k]:k); }
@@ -8393,6 +8416,160 @@ function customerImportCard_(){
   return card;
 }
 
+// ---------------- branch map ----------------
+var LEAFLET_JS_ = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js';
+var LEAFLET_CSS_ = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css';
+// A position from what people actually paste: a Google Maps link (the
+// place's own pin !3d..!4d first, then @lat,lng or ?q=lat,lng) or plain
+// "lat, lng" — Arabic digits and the Arabic comma accepted. null when the
+// text carries no position.
+function parseLatLng_(text){
+  var s = String(text == null ? '' : text)
+    .replace(/[٠-٩]/g, function(d){ return String(d.charCodeAt(0) - 0x0660); })
+    .replace(/[۰-۹]/g, function(d){ return String(d.charCodeAt(0) - 0x06F0); })
+    .replace(/٫/g, '.').replace(/،/g, ',').trim();
+  if (!s) return null;
+  var num = '(-?\\d{1,3}(?:\\.\\d+)?)';
+  var m = new RegExp('!3d' + num + '!4d' + num).exec(s) ||
+    new RegExp('@' + num + ',\\s*' + num).exec(s) ||
+    new RegExp('[?&](?:q|query|ll|destination|center)=' + num + '(?:,|%2C)\\s*' + num, 'i').exec(s) ||
+    new RegExp('^' + num + '\\s*[,\\s]\\s*' + num + '$').exec(s);
+  if (!m) return null;
+  var lat = Number(m[1]), lng = Number(m[2]);
+  if (!isFinite(lat) || !isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) return null;
+  return { lat: lat, lng: lng };
+}
+function distanceKm_(a, b){
+  var R = 6371, rad = Math.PI / 180;
+  var dLat = (b.lat - a.lat) * rad, dLng = (b.lng - a.lng) * rad;
+  var h = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(a.lat * rad) * Math.cos(b.lat * rad) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
+  return 2 * R * Math.asin(Math.min(1, Math.sqrt(h)));
+}
+function hasPos_(l){ return l && l.lat !== '' && l.lat != null && l.lng !== '' && l.lng != null && isFinite(Number(l.lat)) && isFinite(Number(l.lng)); }
+// The zone a position most likely sits in: the zone of the nearest other
+// branch that has both a position and a zone.
+function nearestZone_(pos, locations, selfId){
+  var best = null;
+  (locations || []).forEach(function(l){
+    if (l.id === selfId || !l.zoneId || !hasPos_(l)) return;
+    var km = distanceKm_(pos, { lat: Number(l.lat), lng: Number(l.lng) });
+    if (!best || km < best.km) best = { zoneId: l.zoneId, locationId: l.id, km: km };
+  });
+  return best;
+}
+// The branch's place on the map, on its profile: tap or drag the pin, use
+// the phone's position while standing in the branch, or paste a Google Maps
+// link. Other branches show as dots (same zone darker), and the zone of the
+// nearest located branch is offered as this branch's zone.
+// Leaflet is window.L: inside this app, L is the translations dictionary.
+function pinIcon_(){
+  return window.L.divIcon({ className: 'bm-pin', iconSize: [34, 44], iconAnchor: [17, 42],
+    html: '<svg viewBox="0 0 34 44" aria-hidden="true"><path d="M17 43s14-14.2 14-25A14 14 0 0 0 3 18c0 10.8 14 25 14 25z" fill="#4D6D51" stroke="#fff" stroke-width="2"/><circle cx="17" cy="18" r="5.5" fill="#F2EEE4"/></svg>' });
+}
+function branchMapCard_(r){
+  var meta = state.meta || {};
+  var card = el('<div class="card pf-card pf-wide bm"><h2>'+icon_('pin')+esc(t('bm_title'))+'</h2>' +
+    '<p class="muted bm-hint">'+esc(t('bm_hint'))+'</p>' +
+    '<div class="bm-canvas" aria-label="'+esc(t('bm_title'))+'"><div class="bm-loading muted">'+esc(t('loading'))+'</div></div>' +
+    '<div class="bm-tools">' +
+      '<button type="button" class="btn secondary bm-here">'+icon_('pin')+'<span>'+esc(t('bm_here'))+'</span></button>' +
+      '<div class="bm-paste"><input type="text" dir="ltr" autocomplete="off" placeholder="'+esc(t('bm_pastePh'))+'" aria-label="'+esc(t('bm_pastePh'))+'">' +
+        '<button type="button" class="btn secondary bm-go">'+esc(t('bm_go'))+'</button></div>' +
+    '</div>' +
+    '<div class="bm-info"></div><div class="bm-zone"></div>' +
+    '<div class="row bm-actions"><button type="button" class="btn bm-save" disabled>'+esc(t('bm_save'))+'</button>' +
+      (hasPos_(r) ? '<button type="button" class="btn secondary bm-clear">'+esc(t('bm_clear'))+'</button>' : '') + '</div>' +
+    '<div class="bm-msg"></div></div>');
+  var pos = hasPos_(r) ? { lat: Number(r.lat), lng: Number(r.lng) } : null;
+  var saved = pos ? { lat: pos.lat, lng: pos.lng } : null;
+  var map = null, marker = null;
+  var info = qs('.bm-info', card), zoneBox = qs('.bm-zone', card), msg = qs('.bm-msg', card), saveBtn = qs('.bm-save', card);
+  function paintInfo(){
+    if (!pos){ info.innerHTML = '<span class="muted">'+esc(t('bm_none'))+'</span>'; zoneBox.innerHTML = ''; saveBtn.disabled = true; return; }
+    info.innerHTML = '<bdi dir="ltr" class="bm-ll">'+pos.lat.toFixed(6)+', '+pos.lng.toFixed(6)+'</bdi>' +
+      '<a class="bm-gmaps" target="_blank" rel="noopener" href="https://www.google.com/maps?q='+pos.lat.toFixed(6)+','+pos.lng.toFixed(6)+'">'+esc(t('bm_openGoogle'))+'</a>';
+    saveBtn.disabled = !!(saved && Math.abs(saved.lat - pos.lat) < 1e-7 && Math.abs(saved.lng - pos.lng) < 1e-7);
+    var cur = r.zoneId ? byId(meta.zones, r.zoneId) : null;
+    var html = '<div class="bm-z"><span>'+esc(t('admin_zone'))+'</span><b>'+esc(cur ? cur.name : t('bm_noZone'))+'</b></div>';
+    var near = nearestZone_(pos, meta.locations, r.id);
+    if (near){
+      var z = byId(meta.zones, near.zoneId), nl = byId(meta.locations, near.locationId);
+      var dist = near.km < 1 ? Math.round(near.km * 1000) + ' ' + t('bm_m') : near.km.toFixed(1) + ' ' + t('bm_km');
+      html += '<div class="bm-sug"><span>'+esc(t('bm_suggest').replace('{branch}', nl ? nl.name : '').replace('{dist}', dist))+'</span><b>'+esc(z ? z.name : '')+'</b>' +
+        (near.zoneId !== r.zoneId ? '<button type="button" class="btn secondary bm-applyZone">'+esc(t('bm_applyZone'))+'</button>'
+          : '<span class="bm-ok">'+icon_('check')+esc(t('bm_zoneMatches'))+'</span>') + '</div>';
+    }
+    zoneBox.innerHTML = html;
+    var ap = qs('.bm-applyZone', zoneBox);
+    // the pin on screen is saved with the zone, so a moved pin is not lost
+    if (ap) ap.addEventListener('click', function(){ save({ zoneId: near.zoneId, lat: Number(pos.lat.toFixed(6)), lng: Number(pos.lng.toFixed(6)) }, ap); });
+  }
+  function setPos(p, fly){
+    pos = { lat: p.lat, lng: p.lng };
+    if (map){
+      if (!marker){
+        marker = window.L.marker([pos.lat, pos.lng], { draggable: true, icon: pinIcon_(), title: r.name }).addTo(map);
+        marker.on('dragend', function(){ var ll = marker.getLatLng(); setPos({ lat: ll.lat, lng: ll.lng }, false); });
+      } else marker.setLatLng([pos.lat, pos.lng]);
+      if (fly) map.setView([pos.lat, pos.lng], Math.max(map.getZoom(), 15));
+    }
+    paintInfo();
+  }
+  function save(data, btn){
+    btn.disabled = true;
+    api('adminSaveEntity', { kind: 'location', id: r.id, data: data }).then(function(res){
+      btn.disabled = false;
+      if (!res.ok){ msg.innerHTML = '<div class="msg err">'+esc(errMsg_(res))+'</div>'; return; }
+      toast('ok_saved', 'ok');
+      refreshMetaThen(function(){ renderAdmin(qs('#screenBody')); }, res);
+    });
+  }
+  saveBtn.addEventListener('click', function(){ if (pos) save({ lat: Number(pos.lat.toFixed(6)), lng: Number(pos.lng.toFixed(6)) }, saveBtn); });
+  var clr = qs('.bm-clear', card);
+  if (clr) clr.addEventListener('click', function(){ save({ lat: '', lng: '' }, clr); });
+  qs('.bm-here', card).addEventListener('click', function(){
+    var b = this;
+    if (!navigator.geolocation){ msg.innerHTML = '<div class="msg err">'+esc(t('bm_noGeo'))+'</div>'; return; }
+    b.disabled = true; msg.innerHTML = '';
+    navigator.geolocation.getCurrentPosition(function(g){ b.disabled = false; setPos({ lat: g.coords.latitude, lng: g.coords.longitude }, true); },
+      function(){ b.disabled = false; msg.innerHTML = '<div class="msg err">'+esc(t('bm_geoDenied'))+'</div>'; },
+      { enableHighAccuracy: true, timeout: 15000 });
+  });
+  function go(){
+    var p = parseLatLng_(qs('.bm-paste input', card).value);
+    if (!p){ msg.innerHTML = '<div class="msg err">'+esc(t('bm_badPaste'))+'</div>'; return; }
+    msg.innerHTML = '';
+    setPos(p, true);
+  }
+  qs('.bm-go', card).addEventListener('click', go);
+  qs('.bm-paste input', card).addEventListener('keydown', function(e){ if (e.key === 'Enter'){ e.preventDefault(); go(); } });
+  paintInfo();
+  // Leaflet and the map tiles load only here
+  loadCss_(LEAFLET_CSS_);
+  loadLib_(LEAFLET_JS_).then(function(){
+    var LF = window.L;
+    var canvas = qs('.bm-canvas', card);
+    canvas.innerHTML = '';
+    var others = (meta.locations||[]).filter(function(l){ return l.id !== r.id && hasPos_(l); });
+    var sameCity = others.filter(function(l){ return normName_(l.city) === normName_(r.city); });
+    var center = pos ? [pos.lat, pos.lng]
+      : sameCity.length ? [sameCity.reduce(function(a, l){ return a + Number(l.lat); }, 0) / sameCity.length, sameCity.reduce(function(a, l){ return a + Number(l.lng); }, 0) / sameCity.length]
+      : [24.7136, 46.6753];
+    map = LF.map(canvas, { scrollWheelZoom: false }).setView(center, pos ? 15 : 11);
+    LF.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19,
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>' }).addTo(map);
+    others.forEach(function(l){
+      var same = !!(r.zoneId && l.zoneId === r.zoneId);
+      var zn = l.zoneId ? (byId(meta.zones, l.zoneId) || {}).name : '';
+      LF.circleMarker([Number(l.lat), Number(l.lng)], { radius: same ? 8 : 6, color: same ? '#34503a' : '#8a8f86', weight: 2,
+        fillColor: same ? '#4D6D51' : '#c9ccc4', fillOpacity: 0.9 }).addTo(map).bindTooltip(l.name + (zn ? ' · ' + zn : ''), { direction: 'top' });
+    });
+    map.on('click', function(e){ setPos({ lat: e.latlng.lat, lng: e.latlng.lng }, false); });
+    if (pos) setPos(pos, false);
+    setTimeout(function(){ map.invalidateSize(); }, 250);
+  }).catch(function(){ qs('.bm-canvas', card).innerHTML = '<div class="msg err" style="margin:12px;">'+esc(t('bm_loadFail'))+'</div>'; });
+  return card;
+}
 function renderAdminEntity(content, kind){
   if (adminProfile && adminProfile.kind === kind) { renderAdminProfile(content, kind, adminProfile.id); return; }
   var spec = ENTITY_FIELDS[kind];
@@ -8656,6 +8833,8 @@ function renderAdminProfile(content, kind, id){
     });
     relBox.appendChild(row);
   });
+
+  if (kind === 'location') content.appendChild(branchMapCard_(r));
 
   // ---- activity ----
   var filter = activityFilter_(kind, r);
