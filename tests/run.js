@@ -1755,6 +1755,36 @@ var bcStoreA = call({ action: 'adminSaveEntity', token: adminTok, kind: 'store',
 var bcStoreB = call({ action: 'adminSaveEntity', token: adminTok, kind: 'store', data: { locationId: bcLocB.id, name: 'Bc Store B', storeManagerUserId: bcBmB.id } }).entity;
 check(bcStoreA && bcStoreB, 'each branch has its store and manager');
 
+// both branches hand their day to the area manager
+var bcToday = ctx.todayRiyadh_();
+call({ action: 'createDailyEntry', token: bcBmATok, date: bcToday, sourceType: 'store', sourceId: bcStoreA.id, cashSales: 1000 });
+call({ action: 'createDailyEntry', token: bcBmBTok, date: bcToday, sourceType: 'store', sourceId: bcStoreB.id, cashSales: 2000 });
+var bcHA = call({ action: 'createHandoff', token: bcBmATok, kind: 'location_to_cluster', locationId: bcLocA.id });
+var bcHB = call({ action: 'createHandoff', token: bcBmBTok, kind: 'location_to_cluster', locationId: bcLocB.id });
+call({ action: 'confirmHandoff', token: bcMgrTok, id: bcHA.handoff.id });
+call({ action: 'confirmHandoff', token: bcMgrTok, id: bcHB.handoff.id });
+// branch A alone
+var bcReqA = call({ action: 'createHandoff', token: bcMgrTok, kind: 'cluster_to_collector', clusterId: bcArea.id, locationId: bcLocA.id });
+check(bcReqA.ok && bcReqA.handoffs && bcReqA.handoffs.length === 1, 'the area manager sends branch A on its own');
+var rA = bcReqA.handoff;
+check(rA.locationId === bcLocA.id && rA.toUserId === bcColA.id && rA.amount === 1000 && rA.status === 'pending_deputy',
+  'the request carries branch A\'s cash only, addressed to branch A\'s collector, waiting for the deputy');
+// the rest
+var bcReqRest = call({ action: 'createHandoff', token: bcMgrTok, kind: 'cluster_to_collector', clusterId: bcArea.id });
+check(bcReqRest.ok && bcReqRest.handoffs.length === 1 && bcReqRest.handoff.locationId === bcLocB.id && bcReqRest.handoff.toUserId === bcColB.id && bcReqRest.handoff.amount === 2000,
+  'sending the rest creates branch B\'s request, to branch B\'s collector — branch A is not swept in again');
+var rB = bcReqRest.handoff;
+check(call({ action: 'createHandoff', token: bcMgrTok, kind: 'cluster_to_collector', clusterId: bcArea.id }).error === 'no_held_cash', 'nothing is left to send');
+check(call({ action: 'deputyValidateHandoff', token: walidTok, id: rA.id }).ok && call({ action: 'deputyValidateHandoff', token: walidTok, id: rB.id }).ok, 'the deputy validates each branch\'s request');
+var bcSwap = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', id: bcLocA.id, data: Object.assign({}, bcLocA, { collectorUserId: bcColB.id }) });
+check(!bcSwap.ok && bcSwap.error === 'person_holds_cash', 'branch A\'s collector cannot be swapped while its request is on the way to them');
+check(call({ action: 'createHandoff', token: bcMgrTok, kind: 'cluster_to_collector', clusterId: bcArea.id, locationId: location2.entity ? location2.entity.id : location2.id }).error === 'not_found', 'a branch of another area cannot be sent from this one');
+check(call({ action: 'confirmHandoff', token: bcColBTok, id: rA.id }).error === 'receiver_only', 'collector B cannot confirm branch A\'s cash');
+check(call({ action: 'confirmHandoff', token: bcColATok, id: rA.id }).ok && call({ action: 'confirmHandoff', token: bcColBTok, id: rB.id }).ok, 'each collector confirms their own branch');
+var depA = call({ action: 'recordDeposit', token: bcColATok, bankReference: 'BC-A-1' });
+check(depA.ok && depA.handoff.amount === 1000, 'and banks only what they received');
+
+
 console.log('--- starting a fresh test round archives movement, and keeps the org ---');
 check(call({ action: 'adminArchiveTransactions', token: adminTok }).error === 'confirm_required',
   'archiving needs the confirmation word, so it can never be one stray tap');

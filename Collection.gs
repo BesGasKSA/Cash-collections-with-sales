@@ -764,61 +764,89 @@ function createLocationHandoff_(req, user) {
   return { ok: true, handoff: handoff };
 }
 
+// The area manager's request to the collectors: one handoff per branch, each
+// to that branch's own collector (branchCollector_), so an area served by
+// two collectors sends each of them only their branches' cash.
+// req.locationId limits it to one branch; without it every branch with ready
+// cash is sent. Each still waits for the Deputy Operations Manager
+// (pending_deputy) before its collector sees it.
 function createClusterHandoff_(req, user) {
   var cluster = getById_(SHEETS.CLUSTERS, req.clusterId);
   if (!cluster) return { ok: false, error: 'not_found' };
   if (user.role !== 'admin' && cluster.clusterManagerUserId !== user.id) return { ok: false, error: 'forbidden' };
-  if (!cluster.collectorUserId) return { ok: false, error: 'no_collector' };
-  if (cluster.collectorUserId === user.id) return { ok: false, error: 'conflict_of_interest' };
+  var areaLocIds = readSheet(SHEETS.LOCATIONS).filter(function (l) { return l.clusterId === cluster.id; })
+    .map(function (l) { return l.id; });
+  if (req.locationId && areaLocIds.indexOf(req.locationId) < 0) return { ok: false, error: 'not_found' };
+  function wanted(locId) { return !req.locationId || locId === req.locationId; }
 
   var held = readSheet(SHEETS.HANDOFFS).filter(function (h) {
-    return h.kind === 'location_to_cluster' && h.clusterId === cluster.id && h.status === 'confirmed' && !h.consumedBy;
+    return h.kind === 'location_to_cluster' && h.clusterId === cluster.id && h.status === 'confirmed' && !h.consumedBy && wanted(h.locationId);
   });
   // A branch day the area manager entered himself is cash he collected
   // himself: it travels in his own request, not through the branch
   // manager's handover (createLocationHandoff_ leaves it out).
-  var areaLocIds = readSheet(SHEETS.LOCATIONS).filter(function (l) { return l.clusterId === cluster.id; })
-    .map(function (l) { return l.id; });
   var ownEntries = readSheet(SHEETS.ENTRIES).filter(function (e) {
-    return !e.consumedBy && !e.voided && e.enteredBy === cluster.clusterManagerUserId && areaLocIds.indexOf(e.locationId) >= 0;
+    return !e.consumedBy && !e.voided && e.enteredBy === cluster.clusterManagerUserId && areaLocIds.indexOf(e.locationId) >= 0 && wanted(e.locationId);
   });
   if (!held.length && !ownEntries.length) return { ok: false, error: 'no_held_cash' };
-  var ownByLoc = {};
-  ownEntries.forEach(function (e) { (ownByLoc[e.locationId] = ownByLoc[e.locationId] || []).push(e); });
-  var ownPerLocation = Object.keys(ownByLoc).map(function (locId) {
-    var t = computeNet_(ownByLoc[locId]);
-    return { locationId: locId, amount: t.netCashOwed, breakdown: t, enteredByAreaManager: true };
-  });
-  var perLocation = held.map(function (h) {
-    return { locationId: h.locationId, amount: h.amount, breakdown: h.breakdown };
-  }).concat(ownPerLocation);
-  var amount = perLocation.reduce(function (s, p) { return s + Number(p.amount || 0); }, 0);
-  var breakdown = sumBreakdowns_(perLocation.map(function (p) { return p.breakdown; }));
-  if (amount <= 0) return { ok: false, error: 'nothing_owed' };
 
-  var handoff = {
-    id: Utilities.getUuid(),
-    kind: 'cluster_to_collector',
-    fromUserId: user.role === 'admin' ? cluster.clusterManagerUserId : user.id,
-    createdBy: user.id,
-    toUserId: cluster.collectorUserId,
-    clusterId: cluster.id,
-    amount: amount,
-    breakdown: breakdown,
-    perLocation: perLocation,
-    sourceEntryIds: ownEntries.map(function (e) { return e.id; }),
-    sourceHandoffIds: held.map(function (h) { return h.id; }),
-    consumedBy: null,
-    // the Deputy Operations Manager validates it before the collector sees it
-    status: 'pending_deputy',
-    createdAt: new Date().toISOString()
-  };
-  writeRow(SHEETS.HANDOFFS, handoff);
-  held.forEach(function (h) { h.consumedBy = handoff.id; writeRow(SHEETS.HANDOFFS, h); });
-  ownEntries.forEach(function (e) { e.consumedBy = handoff.id; writeRow(SHEETS.ENTRIES, e); });
-  logAudit_('create_handoff_cluster', user.id, handoff.id);
-  notifyDeputyPendingHandoff_(handoff);
-  return { ok: true, handoff: handoff };
+  var groups = {}, order = [];
+  function group(locId) {
+    if (!groups[locId]) { groups[locId] = { locationId: locId, held: [], own: [] }; order.push(locId); }
+    return groups[locId];
+  }
+  held.forEach(function (h) { group(h.locationId).held.push(h); });
+  ownEntries.forEach(function (e) { group(e.locationId).own.push(e); });
+
+  // settle every branch before writing anything: one branch without a
+  // collector stops the request rather than sending half of it
+  var plans = [];
+  for (var i = 0; i < order.length; i++) {
+    var g = groups[order[i]];
+    var perLocation = g.held.map(function (h) {
+      return { locationId: h.locationId, amount: h.amount, breakdown: h.breakdown };
+    });
+    if (g.own.length) {
+      var t = computeNet_(g.own);
+      perLocation.push({ locationId: g.locationId, amount: t.netCashOwed, breakdown: t, enteredByAreaManager: true });
+    }
+    var amount = perLocation.reduce(function (s, p) { return s + Number(p.amount || 0); }, 0);
+    // a branch whose ready cash nets to nothing stays ready; its next day nets it off
+    if (amount <= 0) continue;
+    var collectorId = branchCollector_(g.locationId);
+    if (!collectorId) return { ok: false, error: 'no_collector', locationId: g.locationId };
+    if (collectorId === user.id || collectorId === cluster.clusterManagerUserId) return { ok: false, error: 'conflict_of_interest', locationId: g.locationId };
+    plans.push({ g: g, perLocation: perLocation, amount: amount, collectorId: collectorId });
+  }
+  if (!plans.length) return { ok: false, error: 'nothing_owed' };
+
+  var handoffs = plans.map(function (p) {
+    var handoff = {
+      id: Utilities.getUuid(),
+      kind: 'cluster_to_collector',
+      fromUserId: user.role === 'admin' ? cluster.clusterManagerUserId : user.id,
+      createdBy: user.id,
+      toUserId: p.collectorId,
+      clusterId: cluster.id,
+      locationId: p.g.locationId,
+      amount: p.amount,
+      breakdown: sumBreakdowns_(p.perLocation.map(function (x) { return x.breakdown; })),
+      perLocation: p.perLocation,
+      sourceEntryIds: p.g.own.map(function (e) { return e.id; }),
+      sourceHandoffIds: p.g.held.map(function (h) { return h.id; }),
+      consumedBy: null,
+      // the Deputy Operations Manager validates it before the collector sees it
+      status: 'pending_deputy',
+      createdAt: new Date().toISOString()
+    };
+    writeRow(SHEETS.HANDOFFS, handoff);
+    p.g.held.forEach(function (h) { h.consumedBy = handoff.id; writeRow(SHEETS.HANDOFFS, h); });
+    p.g.own.forEach(function (e) { e.consumedBy = handoff.id; writeRow(SHEETS.ENTRIES, e); });
+    logAudit_('create_handoff_cluster', user.id, handoff.id);
+    notifyDeputyPendingHandoff_(handoff);
+    return handoff;
+  });
+  return { ok: true, handoff: handoffs[0], handoffs: handoffs };
 }
 
 // ---------- Area-manager bulk upload -> Deputy Operations Manager approval ----------
