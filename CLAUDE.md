@@ -138,6 +138,47 @@ collectors.
   `pf_collectsBranches`), handoff cards (`ho-place`) and the deputy's batch rows
   all name the branch and its collector.
 
+**System numbers, customers, cities, branch map (2026-09-28).**
+
+- **Every record has a number** with its own prefix, assigned by the server on save and never
+  editable or reused: BR branch, AR area, CT city, ZN zone, ST store, CR car, POS machine,
+  PR product, INC/EXP items, CUS customer, EMP user (`CODE_PREFIX_`, `nextCode_(kind)`, a
+  counter per kind in script property `SEQ_<kind>`). Records saved before this are numbered
+  once (`backfillCodesOnce_`). `actionAdminSaveEntity_` holds the script lock for the whole
+  save so the duplicate check and the new number see the same file (`writeRow` releases it).
+- **Customers** (`customer`, sheet `customers`): name duplicates are caught on
+  `normalizeName_` (alef/ya/ta marbuta/hamza seats, diacritics, tatweel, spacing, case —
+  mirrored client-side as `normName_`). `adminImportCustomers` adds new names and reports
+  skips; the Customers screen imports a pasted list or an Excel/CSV file (SheetJS from
+  cdnjs, loaded on demand). A used customer cannot be deleted (`has_children`).
+  **The company's customer list is not in this repo** (it is public): it ships as
+  `CustomerSeed.js` (`var CUSTOMER_SEED_ = [...]`), created only in the Apps Script clasp
+  folder, imported once by `seedCustomersOnce_` (flag `SEEDED_CUSTOMERS`).
+- **Credit lines** name a registered customer: `settleCredit_` (run by `checkNonSalesFields_`
+  for the form, the file import and the area batch) resolves `creditCustomerId`, or a
+  number/name in `creditCustomer` from a file (`unknown_customer`, `invalid_customer` for a
+  deactivated one), and checks optional `creditItems` [{productId, qty, unitPrice}] whose
+  total becomes `creditSales` (a different amount → `credit_items_mismatch`; fixed prices
+  → `price_locked`). `computeNet_` is unchanged: items only say what the credit was.
+  `getSalesReport({customerId})`, and `byCustomer` totals credit per customer.
+- **Cities** (`city`, sheet `cities`): seeded once with Saudi cities plus every city a
+  branch or zone already names (`seedCitiesOnce_`); every city field is a picker
+  (`cityPick` in `ENTITY_FIELDS`), still stored as the name.
+- **One-time data jobs** (`runOneTimeMigrations_`: branch collectors, cities, customers,
+  numbers) run from `route_` and also from `doGet`, so the deploy's own GET ping finishes
+  them. They take no request input and each keeps its own flag.
+- **Branch map** (`branchMapCard_` on a location profile): Leaflet 1.9.4 from cdnjs and
+  OpenStreetMap tiles, loaded only there. **Trap:** inside this app `L` is the translations
+  dictionary (`var L` in the app closure), so Leaflet must be used as `window.L` — plain
+  `L.map` threw and the map showed its load-failure message. `parseLatLng_` reads pasted
+  Google Maps links (place pin `!3d..!4d` first, then `@lat,lng`, `?q=`) or plain
+  coordinates (Arabic digits too); `nearestZone_` offers the zone of the nearest located
+  branch. Locations validate `lat`/`lng` (`invalid_coordinates`).
+- **Cash calculations** read collections → total collected → deductions → total
+  deductions → net everywhere (`cashCalcRows_`, `breakdownGrid`), both subtotals
+  highlighted. The deputy's cards open with a bold branch → area → collector strip
+  (`handoffRoute_`).
+
 **Every master-data type is a screen, and every record has a profile
 (2026-09-24).** `renderAdminEntity` is a type screen: count, search, an add
 form that stays shut until asked for, and columns that resolve ids to names
