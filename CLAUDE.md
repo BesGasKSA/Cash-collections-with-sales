@@ -51,8 +51,8 @@ changed, nothing structural. Don't be thrown by the mismatch when reading
 code next to a screenshot.
 
 ```
-Cluster ── clusterManagerUserId, collectorUserId
-  └── Location (city + name) ── optional zoneId
+Cluster ── clusterManagerUserId
+  └── Location (city + name) ── collectorUserId, optional zoneId
         ├── Store  (one per location) ── storeManagerUserId
         │     └── POS machine(s) ── assignedUserId (an employee/driver)
         └── Car(s) ── driverUserId
@@ -62,8 +62,9 @@ Zone (city + name) — pure geography, unrelated to the tree above
 ```
 
 **Every link must name its person (2026-09-24).** `validateEntity_` refuses
-to save an area without both `clusterManagerUserId` and `collectorUserId`
-(`manager_required` / `collector_required`), a branch store without
+to save an area without its `clusterManagerUserId` (`manager_required`), a
+branch without the collector its cash goes to (`collector_required` — since
+2026-09-27 collectors belong to branches, see below), a branch store without
 `storeManagerUserId` (`manager_required`), a car without `driverUserId`
 (`driver_required`), or a POS machine without `assignedUserId`
 (`holder_required`). The person must also hold the matching role
@@ -72,15 +73,70 @@ real person is being hired (`userHasRole_`). `conflict_of_interest` is
 checked before `wrong_role`, so the same person as manager and collector
 still reports the conflict. Rows saved before this rule can still be
 missing people. The home screen's **منطقتي / فرعي** panel
-(`myOrgPanel_`) shows the area manager their area, collector, branches, and
-each branch's manager, cars/drivers and POS/holders. A branch manager sees
+(`myOrgPanel_`) shows the area manager their area, its collectors, branches, and
+each branch's manager, collector, cars/drivers and POS/holders. A branch manager sees
 the same panel for their own branch, with the area manager above it. Any
 missing link shows in red. Admin → Master data → **سلامة الربط** (`chainGaps_` / `renderAdminChain`) lists every gap company-wide: missing people, branches with no area or store, disabled users still assigned, and people in a chain role placed nowhere. Each gap has a button to the tab that fixes it, and the tab shows the gap count as a badge. **One person, one area (2026-09-24).** Nobody may be area manager or
 collector on two areas at once, admins standing in included, and being
 manager on one and collector on another counts too (`user_in_other_area`,
-checked in `validateEntity_` against every other cluster row). The area
+checked in `validateEntity_` against every other cluster row, and every
+branch's collector). A collector may serve several branches, but all in one area. The area
 pickers stop offering anyone already on another area, and chain health lists
 legacy rows that break the rule (`gap_multiArea`).
+
+**Collectors belong to branches, not areas (2026-09-27).** The user asked
+for one area to be served by two or more collectors, each area-manager
+request going to the collector of the branch it came from.
+`location.collectorUserId` is the link; `branchCollector_(locationId)`
+(Collection.gs) resolves it, falling back to the area's legacy
+`cluster.collectorUserId` for a row saved before the change. The client
+mirrors it as `branchCollectorOf_`; `areaCollectors_` lists an area's
+collectors.
+
+- **Validation.** A branch needs an effective collector (`collector_required`)
+  who holds the collector role (`wrong_role`), is not the area's manager
+  (`conflict_of_interest`), and whose other branches all sit in this area —
+  nor manages or legacy-collects another area (`user_in_other_area`). An area
+  needs only its manager; a legacy collector on it stays optional. A store's
+  manager can't be the branch's collector (`branchCollector_`).
+- **Per-branch requests.** `createClusterHandoff_` writes one `pending_deputy`
+  handoff per branch with ready cash (its confirmed `location_to_cluster`
+  handoffs plus the area manager's own open entries there), each carrying
+  `locationId` and `toUserId = branchCollector_`. Optional `req.locationId`
+  sends one branch. Every branch is settled before anything is written, so a
+  branch without a collector stops the whole request (`no_collector` with
+  `locationId`); a branch whose ready cash nets to ≤ 0 is skipped and stays
+  ready. Returns `{ok, handoff, handoffs}`.
+- **CSV batches split the same way.** `actionDeputyApproveBatch_` writes one
+  `pending` handoff per `perLocation` row to that branch's collector
+  (`batch.resultHandoffIds`; `resultHandoffId` stays as the first). A branch
+  whose day nets to nothing (banked directly) gets none: its entries stay
+  consumed by the batch, and `listEntries` reads `deputy_approved` as
+  `approved`, so they don't look stuck waiting.
+- **In flight.** A branch's collector can't be replaced while its cash is on
+  the way to them (`branchCollectorBusy_` → `person_holds_cash`). Handoffs
+  made before the change have no `locationId`, so this guard can't see them;
+  their `toUserId` is fixed and still receives them.
+- **Alerts.** The four `escalate*_` functions add `collectorForHandoff_(h)`
+  (the addressee of a `cluster_to_collector`, else the branch's collector)
+  instead of the area's collector.
+- **One-time migration.** `migrateBranchCollectors_` (Admin.gs) writes each
+  area's collector onto its branches that have none, then clears it from the
+  area — every branch keeps exactly the collector it had. `route_` runs it via
+  `migrateBranchCollectorsOnce_` on the first authenticated request after the
+  deploy (script property `MIGRATED_BRANCH_COLLECTORS`); audited as
+  `migrate_branch_collector` / `migrate_area_collector_cleared`. Why clear the
+  area: the area form has no collector field any more, so a leftover value
+  would be invisible and uneditable, yet still block that collector from a
+  branch in another area under the one-area rule.
+- **UI.** The branch form has the collector field (required; `wireBranchCollector_`
+  offers the chosen area's collectors plus unassigned ones). The area form has
+  none; its list shows a virtual `collectors` column. The area card (`ac-card`)
+  lists one row per branch — collector, ready amount, its own send button,
+  waiting/returned state — plus "send every ready branch". The org panel, chain
+  health (`gap_branchCollector`), profiles (`pf_collectors`,
+  `pf_collectsBranches`), handoff cards (`ho-place`) and the deputy's batch rows
+  all name the branch and its collector.
 
 **Every master-data type is a screen, and every record has a profile
 (2026-09-24).** `renderAdminEntity` is a type screen: count, search, an add
@@ -105,8 +161,9 @@ has several. `daily_entries.sourceType` is `store` / `car` / `pos`, each
 row belonging to exactly one node in this tree via `sourceId`.
 
 **Cluster and Zone are two independent things — don't merge them.**
-Cluster is an *employee's management assignment*: a cluster manager and a
-collector own a set of locations for the money-handoff chain, and that set
+Cluster is an *employee's management assignment*: a cluster manager owns a
+set of locations for the money-handoff chain (each location names its own
+collector since 2026-09-27), and that set
 doesn't have to share any geography. Zone is *pure geography* (Country is
 implicit — KSA only, not modeled as an entity — City, then Zone, e.g.
 "Riyadh — East") used only for admin/report filtering, with no manager or
@@ -311,9 +368,8 @@ can never be the one who approves receiving it**. This is enforced in
 layers, not just at the UI:
 
 1. **Structural, at entity-save time** (`Admin.gs` `validateEntity_`): a
-   cluster's `clusterManagerUserId` and `collectorUserId` must differ; a
-   store's manager can't also be the manager or collector of the cluster
-   its location belongs to.
+   branch's collector can't be its area's manager; a store's manager can't
+   also be the area's manager or the branch's collector.
 2. **At handoff-creation time** (`Collection.gs`): a cluster manager can't
    create a handoff to a collector who is themselves; same for the
    location→cluster step.
@@ -466,8 +522,8 @@ or bulk) or inflate a sales total, while staying visible in the raw
 section asserts the corrected batch's total does *not* include the voided
 one — that's the exact regression this fix prevents.
 
-**`actionDeputyApproveBatch_` hand-builds a `kind:'cluster_to_collector'`
-handoff directly, rather than routing the Deputy's decision through
+**`actionDeputyApproveBatch_` hand-builds `kind:'cluster_to_collector'`
+handoffs directly (one per branch since 2026-09-27), rather than routing the Deputy's decision through
 `actionConfirmHandoff_`/dispute.** The semantic mismatch is real, not
 cosmetic: `actionConfirmHandoff_` exists specifically to capture a
 *received-cash* variance (`receivedAmount`, `shortfall`, the whole
@@ -485,7 +541,7 @@ dispute, only a batch to approve or reject. What *is* reused, deliberately:
 of the chain), the exact `perLocation` shape `createClusterHandoff_`
 produces, `notifyPending_` (the collector gets the same "pending handoff"
 email as always, unmodified), and the conflict-of-interest *pattern* — an
-explicit `batch.uploadedBy === user.id` / `cluster.collectorUserId ===
+explicit `batch.uploadedBy === user.id` / branch collector `===
 user.id` self-check on approve, even though both are structurally
 near-impossible today (a user holds exactly one role) — because per Trap #3
 below, a self-check is never implied by the role requirement alone, and a
@@ -525,8 +581,8 @@ block the chain waiting on admin review: it confirms immediately with the
 real received amount (`h.amount` becomes `receivedAmount`, the original
 claim moves to `h.originalAmount`, the gap to `h.shortfall`), so every
 handoff further up the chain moves real cash, never the original overstated
-claim. `escalateShortfall_` emails the cluster manager, the collector for
-that cluster, and every admin/finance account the moment a shortfall is
+claim. `escalateShortfall_` emails the cluster manager, the collector of
+that branch (`collectorForHandoff_`), and every admin/finance account the moment a shortfall is
 accepted — not just the next person in line — so a shortfall absorbed at
 one level is never invisible to the rest of the chain. The separate
 "dispute" button (`actionDisputeHandoff_`, free-text note, blocks pending

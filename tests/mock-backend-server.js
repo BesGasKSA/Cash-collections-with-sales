@@ -53,8 +53,9 @@ var ali = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Ali 
 var hassan = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Hassan (Driver)', email: 'hassan@bestgas.sa', role: 'driver' } }).user;
 var nasser = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Nasser (Deputy)', email: 'deputy@bestgas.sa', role: 'deputy_operations_manager' } }).user;
 
-var cluster = call({ action: 'adminSaveEntity', token: adminTok, kind: 'cluster', data: { name: 'Central', clusterManagerUserId: sara.id, collectorUserId: musa.id } }).entity;
-var location = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: 'Riyadh', name: 'Malaz', clusterId: cluster.id } }).entity;
+// collectors belong to branches: an area names only its manager
+var cluster = call({ action: 'adminSaveEntity', token: adminTok, kind: 'cluster', data: { name: 'Central', clusterManagerUserId: sara.id } }).entity;
+var location = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: 'Riyadh', name: 'Malaz', clusterId: cluster.id, collectorUserId: musa.id } }).entity;
 var store = call({ action: 'adminSaveEntity', token: adminTok, kind: 'store', data: { locationId: location.id, name: 'Malaz Branch', storeManagerUserId: ali.id } }).entity;
 var car = call({ action: 'adminSaveEntity', token: adminTok, kind: 'car', data: { locationId: location.id, label: 'Truck-1', driverUserId: hassan.id } }).entity;
 call({ action: 'adminSaveEntity', token: adminTok, kind: 'pos', data: { ownerType: 'car', ownerId: car.id, label: 'POS-1', assignedUserId: hassan.id } });
@@ -67,28 +68,31 @@ var muntasir = call({ action: 'adminCreateUser', token: adminTok, data: { name: 
 var ahmed = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Ahmed (Deputy)', email: 'ahmed@bestgas.sa', role: 'deputy_operations_manager' } }).user;
 var mazen = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Mazen (Collector)', email: 'mazen@bestgas.sa', role: 'collector' } }).user;
 
-var northArea = call({ action: 'adminSaveEntity', token: adminTok, kind: 'cluster', data: { name: 'North Area', clusterManagerUserId: muzafer.id, collectorUserId: mazen.id } }).entity;
+var northArea = call({ action: 'adminSaveEntity', token: adminTok, kind: 'cluster', data: { name: 'North Area', clusterManagerUserId: muzafer.id } }).entity;
+// the North is served by two collectors, branch by branch
+var khalid = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Khalid (Collector)', email: 'khalid@bestgas.sa', role: 'collector' } }).user;
 // one person, one area: the South gets its own collector
 var rami = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Rami (Collector)', email: 'rami@bestgas.sa', role: 'collector' } }).user;
-var southArea = call({ action: 'adminSaveEntity', token: adminTok, kind: 'cluster', data: { name: 'South Area', clusterManagerUserId: muntasir.id, collectorUserId: rami.id } }).entity;
+var southArea = call({ action: 'adminSaveEntity', token: adminTok, kind: 'cluster', data: { name: 'South Area', clusterManagerUserId: muntasir.id } }).entity;
 
-// city, location name, clusterId — one store + one car + one pos per location
+// city, location name, clusterId, collector — one store + one car + one pos per location
 var multiLocations = [
-  ['Riyadh', 'Olaya', northArea.id],
-  ['Riyadh', 'Naseem', northArea.id],
-  ['Riyadh', 'Sulaimaniyah', northArea.id],
-  ['Jeddah', 'Rawdah', southArea.id],
-  ['Jeddah', 'Salamah', southArea.id],
-  ['Jeddah', 'Hamra', southArea.id]
+  ['Riyadh', 'Olaya', northArea.id, mazen.id],
+  ['Riyadh', 'Naseem', northArea.id, mazen.id],
+  ['Riyadh', 'Sulaimaniyah', northArea.id, khalid.id],
+  ['Jeddah', 'Rawdah', southArea.id, rami.id],
+  ['Jeddah', 'Salamah', southArea.id, rami.id],
+  ['Jeddah', 'Hamra', southArea.id, rami.id]
 ];
+var branchStore = {};
 multiLocations.forEach(function (row) {
   var city = row[0], name = row[1], clusterId = row[2];
-  var loc = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: city, name: name, clusterId: clusterId } }).entity;
+  var loc = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: city, name: name, clusterId: clusterId, collectorUserId: row[3] } }).entity;
   // every link needs its person now, so each branch gets a manager and a driver
   var slug = name.toLowerCase();
   var bm = call({ action: 'adminCreateUser', token: adminTok, data: { name: name + ' Branch Manager', email: slug + '.bm@bestgas.sa', role: 'store_manager' } }).user;
   var dr = call({ action: 'adminCreateUser', token: adminTok, data: { name: name + ' Driver', email: slug + '.driver@bestgas.sa', role: 'driver' } }).user;
-  call({ action: 'adminSaveEntity', token: adminTok, kind: 'store', data: { locationId: loc.id, name: name + ' Branch', storeManagerUserId: bm.id } });
+  branchStore[name] = call({ action: 'adminSaveEntity', token: adminTok, kind: 'store', data: { locationId: loc.id, name: name + ' Branch', storeManagerUserId: bm.id } }).entity;
   var mCar = call({ action: 'adminSaveEntity', token: adminTok, kind: 'car', data: { locationId: loc.id, label: name + ' Truck', driverUserId: dr.id } }).entity;
   call({ action: 'adminSaveEntity', token: adminTok, kind: 'pos', data: { ownerType: 'car', ownerId: mCar.id, label: name + ' POS', assignedUserId: dr.id } });
 });
@@ -118,6 +122,23 @@ console.log('muntasir@bestgas.sa (area mgr, South) / temp: ' + lastInviteFor('mu
 console.log('ahmed@bestgas.sa (deputy ops mgr)     / temp: ' + lastInviteFor('ahmed@bestgas.sa'));
 console.log('mazen@bestgas.sa (collector, North)  / temp: ' + lastInviteFor('mazen@bestgas.sa'));
 console.log('rami@bestgas.sa (collector, South)   / temp: ' + lastInviteFor('rami@bestgas.sa'));
+console.log('khalid@bestgas.sa (collector, North: Sulaimaniyah) / temp: ' + lastInviteFor('khalid@bestgas.sa'));
+console.log('  (mazen collects Olaya + Naseem; khalid collects Sulaimaniyah)');
+console.log('');
+
+// Each North branch hands today's cash to Muzafer, who confirms it — so his
+// card has a ready amount per branch, going to two different collectors.
+var muzaferTok = call({ action: 'login', email: 'muzafer@bestgas.sa', password: DEMO_PW }).token;
+[['Olaya', 1850], ['Naseem', 2400], ['Sulaimaniyah', 1320]].forEach(function (d) {
+  var slug = d[0].toLowerCase() + '.bm@bestgas.sa';
+  lastInviteFor(slug);
+  var bmTok = call({ action: 'login', email: slug, password: DEMO_PW }).token;
+  call({ action: 'createDailyEntry', token: bmTok, date: ctx.todayRiyadh_(), sourceType: 'store', sourceId: branchStore[d[0]].id, cashSales: d[1] });
+  var h = call({ action: 'createHandoff', token: bmTok, kind: 'location_to_cluster', locationId: branchStore[d[0]].locationId });
+  if (h.ok) call({ action: 'confirmHandoff', token: muzaferTok, id: h.handoff.id });
+  else console.log('seed handover failed for ' + d[0] + ': ' + h.error);
+});
+console.log('North branch days handed to Muzafer: Olaya 1,850 / Naseem 2,400 / Sulaimaniyah 1,320');
 console.log('');
 
 var ROOT = path.join(__dirname, '..');
