@@ -77,6 +77,8 @@ var saraTok = acceptInvite('sara@bestgas.sa');
 var musaTok = acceptInvite('musa@bestgas.sa');
 var aliTok = acceptInvite('ali@bestgas.sa');
 var hassanTok = acceptInvite('hassan@bestgas.sa');
+// credit sales name a registered customer: the ones the tests below use
+call({ action: 'adminImportCustomers', token: adminTok, rows: ['Al-Rashid Trading', 'Nakheel Restaurant', 'A', 'B'] });
 // The Deputy Operations Manager validates every area manager -> collector
 // handover before the collector sees it; this one does that for the flows below.
 var walid = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Walid (Deputy)', email: 'walid@bestgas.sa', role: 'deputy_operations_manager' } }).user;
@@ -1982,6 +1984,48 @@ check(seedAfter === seedBefore + 2, 'the seed adds each new name once and skips 
 call({ action: 'listMeta', token: adminTok });
 check(ctx.readSheet(ctx.SHEETS.CUSTOMERS).length === seedAfter, 'and never runs twice');
 delete ctx.CUSTOMER_SEED_;
+
+console.log('--- a credit sale names a registered customer, and may list what was taken ---');
+var ccCust = saveCustomer({ name: 'Credit Test Customer' }).entity;
+var ccOff = saveCustomer({ name: 'Closed Account Customer' }).entity;
+saveCustomer({ active: false }, ccOff.id);
+var ccLocked = call({ action: 'adminSaveEntity', token: adminTok, kind: 'product', data: { name: 'Cyl Locked Test', type: 'goods', unitPrice: 20, priceLocked: true, active: true } }).entity;
+var ccFree = call({ action: 'adminSaveEntity', token: adminTok, kind: 'product', data: { name: 'Regulator Test', type: 'goods', unitPrice: 35, active: true } }).entity;
+var ccDay = ctx.todayRiyadh_();
+function ccEntry(extra) {
+  var p = { action: 'createDailyEntry', token: aliTok, date: ccDay, sourceType: 'store', sourceId: store.entity.id, cashSales: 500 };
+  Object.keys(extra).forEach(function (k) { p[k] = extra[k]; });
+  return call(p);
+}
+var ccById = ccEntry({ creditSales: 60, creditCustomerId: ccCust.id });
+check(ccById.ok && ccById.entry.creditCustomerId === ccCust.id && ccById.entry.creditCustomer === 'Credit Test Customer', 'a credit line picked from the list carries the customer and a copy of the name');
+var ccByCode = ccEntry({ creditSales: 50, creditCustomer: ccCust.code.toLowerCase() });
+check(ccByCode.ok && ccByCode.entry.creditCustomerId === ccCust.id, 'a row that gives the customer number finds the customer (the CSV path)');
+check(ccEntry({ creditSales: 50, creditCustomer: 'Nobody By This Name' }).error === 'unknown_customer', 'a name that is not on the list is refused');
+check(ccEntry({ creditSales: 50 }).error === 'customer_required', 'a credit sale without a customer is refused');
+check(ccEntry({ creditSales: 50, creditCustomerId: ccOff.id }).error === 'invalid_customer', 'a deactivated customer cannot take new credit');
+var ccItems = ccEntry({ creditSales: 95, creditCustomerId: ccCust.id, creditItems: [{ productId: ccLocked.id, qty: 3, unitPrice: 20 }, { productId: ccFree.id, qty: 1, unitPrice: 35 }] });
+check(ccItems.ok && ccItems.entry.creditSales === 95 && ccItems.entry.creditItems.length === 2 && ccItems.entry.creditItems[0].amount === 60,
+  'a credit sale can list its products; each line keeps quantity, price and amount');
+var ccDerived = ccEntry({ creditCustomerId: ccCust.id, creditItems: [{ productId: ccFree.id, qty: 2, unitPrice: 30 }] });
+check(ccDerived.ok && ccDerived.entry.creditSales === 60, 'with items and no amount, the amount is their total');
+check(ccEntry({ creditSales: 70, creditCustomerId: ccCust.id, creditItems: [{ productId: ccLocked.id, qty: 3, unitPrice: 20 }] }).error === 'credit_items_mismatch',
+  'an amount that disagrees with the items is refused');
+check(ccEntry({ creditSales: 75, creditCustomerId: ccCust.id, creditItems: [{ productId: ccLocked.id, qty: 3, unitPrice: 25 }] }).error === 'price_locked',
+  'a fixed-price product cannot be put on credit at another price');
+check(ccEntry({ creditSales: 10, creditCustomerId: ccCust.id, creditItems: [{ productId: 'no-such-product', qty: 1, unitPrice: 10 }] }).error === 'invalid_product',
+  'an unknown product is refused');
+check(ctx.computeNet_([ccItems.entry]).netCashOwed === ctx.computeNet_([{ sourceType: 'store', cashSales: 500, creditSales: 95 }]).netCashOwed,
+  'listing the products changes nothing in the cash owed');
+var ccImport = call({ action: 'importDailyEntries', token: aliTok, rows: [
+  { date: ccDay, sourceType: 'store', sourceId: store.entity.id, cashSales: 200, creditSales: 40, creditCustomer: 'credit   test customer' }
+] });
+check(ccImport.ok && ccImport.created === 1, 'the file import resolves the customer by name too');
+var ccRep = call({ action: 'getSalesReport', token: adminTok, customerId: ccCust.id });
+check(ccRep.ok && ccRep.entries.length === 5 && ccRep.entries.every(function (e) { return e.creditCustomerId === ccCust.id; }), 'the report filters to one customer');
+var ccRow = (ccRep.byCustomer || []).filter(function (r) { return r.customerId === ccCust.id; })[0];
+check(ccRow && ccRow.creditSales === 60 + 50 + 95 + 60 + 40 && ccRow.code === ccCust.code, 'and totals the credit each customer owes');
+check(call({ action: 'adminDeleteEntity', token: adminTok, kind: 'customer', id: ccCust.id }).error === 'has_children', 'a customer with credit history cannot be deleted');
 
 console.log('--- a branch can carry its map position ---');
 var geoLoc = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', id: location.entity.id, data: { lat: 24.7136, lng: 46.6753 } });
