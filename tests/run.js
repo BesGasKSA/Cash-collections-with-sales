@@ -2027,6 +2027,34 @@ var ccRow = (ccRep.byCustomer || []).filter(function (r) { return r.customerId =
 check(ccRow && ccRow.creditSales === 60 + 50 + 95 + 60 + 40 && ccRow.code === ccCust.code, 'and totals the credit each customer owes');
 check(call({ action: 'adminDeleteEntity', token: adminTok, kind: 'customer', id: ccCust.id }).error === 'has_children', 'a customer with credit history cannot be deleted');
 
+console.log('--- every record gets a system number with its own prefix ---');
+var sqPrefix = { location: 'BR', cluster: 'AR', city: 'CT', zone: 'ZN', store: 'ST', car: 'CR', pos: 'POS', product: 'PR', income_item: 'INC', expense_item: 'EXP', customer: 'CUS' };
+var sqArea = call({ action: 'adminSaveEntity', token: adminTok, kind: 'cluster', data: { name: 'Seq Area', clusterManagerUserId: mk('Seq Manager', 'seqmgr.fx@bestgas.sa', 'cluster_manager').id } }).entity;
+var sqColl = mk('Seq Collector', 'seqcol.fx@bestgas.sa', 'collector');
+var sqLoc = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: 'Riyadh', name: 'Seq Branch', clusterId: sqArea.id, collectorUserId: sqColl.id } }).entity;
+var sqZone = call({ action: 'adminSaveEntity', token: adminTok, kind: 'zone', data: { city: 'Riyadh', name: 'Seq Zone' } }).entity;
+var sqCity = call({ action: 'adminSaveEntity', token: adminTok, kind: 'city', data: { name: 'Seq City' } }).entity;
+var sqProd = call({ action: 'adminSaveEntity', token: adminTok, kind: 'product', data: { name: 'Seq Product', active: true } }).entity;
+var sqInc = call({ action: 'adminSaveEntity', token: adminTok, kind: 'income_item', data: { name: 'Seq Income', active: true } }).entity;
+var sqExp = call({ action: 'adminSaveEntity', token: adminTok, kind: 'expense_item', data: { name: 'Seq Expense', active: true } }).entity;
+var sqStore = call({ action: 'adminSaveEntity', token: adminTok, kind: 'store', data: { locationId: sqLoc.id, name: 'Seq Store', storeManagerUserId: mk('Seq BM', 'seqbm.fx@bestgas.sa', 'store_manager').id } }).entity;
+var sqCar = call({ action: 'adminSaveEntity', token: adminTok, kind: 'car', data: { locationId: sqLoc.id, label: 'Seq Car', driverUserId: mk('Seq Driver', 'seqdr.fx@bestgas.sa', 'driver').id } }).entity;
+var sqPos = call({ action: 'adminSaveEntity', token: adminTok, kind: 'pos', data: { ownerType: 'car', ownerId: sqCar.id, label: 'Seq POS', assignedUserId: sqCar.driverUserId } }).entity;
+var sqAll = { location: sqLoc, cluster: sqArea, city: sqCity, zone: sqZone, store: sqStore, car: sqCar, pos: sqPos, product: sqProd, income_item: sqInc, expense_item: sqExp };
+check(Object.keys(sqAll).every(function (k) { return sqAll[k] && new RegExp('^' + sqPrefix[k] + '-\\d{4}$').test(sqAll[k].code); }),
+  'branches BR-, areas AR-, cities CT-, zones ZN-, stores ST-, cars CR-, POS POS-, products PR-, collection items INC-, expense items EXP-');
+var sqLoc2 = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: 'Riyadh', name: 'Seq Branch 2', clusterId: sqArea.id, collectorUserId: sqColl.id } }).entity;
+check(Number(sqLoc2.code.slice(3)) === Number(sqLoc.code.slice(3)) + 1, 'each module counts on its own');
+check(call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', id: sqLoc.id, data: { code: 'BR-0000', name: 'Seq Branch' } }).entity.code === sqLoc.code, 'an edit cannot change a number');
+var sqUser = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Seq Employee', email: 'seqemp.fx@bestgas.sa', role: 'driver' } }).user;
+check(sqUser && /^EMP-\d{4}$/.test(sqUser.code), 'a new user gets an employee number');
+ctx.writeRow(ctx.SHEETS.ZONES, { id: 'legacy-zone-sq', city: 'Riyadh', name: 'Legacy Zone', active: true });
+var sqFilled = ctx.backfillCodes_();
+check(sqFilled >= 1 && /^ZN-\d{4}$/.test(ctx.getById_(ctx.SHEETS.ZONES, 'legacy-zone-sq').code), 'records saved before numbering get theirs');
+check(ctx.backfillCodes_() === 0 && ctx.getById_(ctx.SHEETS.LOCATIONS, sqLoc.id).code === sqLoc.code, 'running it again changes nothing, and never renumbers');
+check(ctx.readSheet(ctx.SHEETS.USERS).every(function (u) { return /^EMP-\d{4}$/.test(u.code); }), 'every user, old or new, carries an employee number');
+check(ctx.readSheet(ctx.SHEETS.CITIES).every(function (c) { return /^CT-\d{4}$/.test(c.code); }), 'every city on the seeded list is numbered');
+
 console.log('--- a branch can carry its map position ---');
 var geoLoc = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', id: location.entity.id, data: { lat: 24.7136, lng: 46.6753 } });
 check(geoLoc.ok && geoLoc.entity.lat === 24.7136 && geoLoc.entity.lng === 46.6753, 'a branch saves its latitude and longitude');

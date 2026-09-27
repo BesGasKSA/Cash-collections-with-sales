@@ -96,6 +96,9 @@ function actionAdminCreateUser_(req, user) {
     createdAt: new Date().toISOString()
   };
   var token = issueInvite_(newUser, user);
+  // the employee number and the write under one lock (writeRow releases it)
+  LockService.getScriptLock().waitLock(30000);
+  newUser.code = nextCode_('user');
   writeRow(SHEETS.USERS, newUser);
   var base = inviteAppUrl_(req);
   var sent = sendInvitation_(newUser, token, user, base);
@@ -582,7 +585,6 @@ function inFlightError_(kind, before, after) {
 
 function actionAdminSaveEntity_(req, user) {
   requireAdmin_(user);
-  if (req.kind !== 'customer') return saveEntity_(req, user);
   // the duplicate check and the new number must see the same file: hold the
   // lock from the check to the write (writeRow releases it)
   var lock = LockService.getScriptLock();
@@ -595,8 +597,8 @@ function saveEntity_(req, user) {
   var sheetName = hasOwn_(ENTITY_SHEET, kind) ? ENTITY_SHEET[kind] : null;
   if (!sheetName) return { ok: false, error: 'invalid_kind' };
   var d = req.data || {};
-  // a customer's number is the system's, never the form's
-  if (kind === 'customer') { var dc = {}; safeOwnKeys_(d).forEach(function (k2) { if (k2 !== 'code') dc[k2] = d[k2]; }); d = dc; }
+  // a record's number is the system's, never the form's
+  var dc = {}; safeOwnKeys_(d).forEach(function (k2) { if (k2 !== 'code') dc[k2] = d[k2]; }); d = dc;
   if (kind === 'location' && d.lat != null && d.lat !== '' && d.lng != null && d.lng !== '') { d.lat = Number(d.lat); d.lng = Number(d.lng); }
 
   var obj = req.id ? getById_(sheetName, req.id) : null;
@@ -623,7 +625,7 @@ function saveEntity_(req, user) {
   safeOwnKeys_(d).forEach(function (k) { obj[k] = d[k]; });
   if (obj.active === undefined) obj.active = true;
   if ((kind === 'customer' || kind === 'city') && obj.name) obj.name = String(obj.name).replace(/\s+/g, ' ').trim();
-  if (kind === 'customer' && !obj.code) obj.code = nextCustomerCode_();
+  if (hasOwn_(CODE_PREFIX_, kind) && !obj.code) obj.code = nextCode_(kind);
 
   var saved = writeRow(sheetName, obj);
   logAudit_('admin_save_' + kind, user.id, saved.id);
@@ -850,20 +852,66 @@ function cityDuplicateOf_(name, selfId) {
   })[0] || null;
 }
 
-// The next internal number, CUS-0001 onward. The counter lives in a script
-// property, so a deleted customer's number is never handed out again. Call it
-// while holding the script lock.
-function nextCustomerCode_() {
-  var max = Number(scriptProps_().CUSTOMER_SEQ || 0);
-  readSheet(SHEETS.CUSTOMERS).forEach(function (c) {
-    var m = /^CUS-(\d+)$/.exec(String(c.code || ''));
+// Every record the system keeps gets a number of its own, with a prefix that
+// says what it is: BR-0001 a branch, AR-0001 an area, and so on. The counter
+// for each kind lives in a script property (SEQ_<kind>), so a deleted
+// record's number is never handed out again. Call it while holding the
+// script lock.
+var CODE_PREFIX_ = {
+  location: 'BR', cluster: 'AR', city: 'CT', zone: 'ZN', store: 'ST', car: 'CR', pos: 'POS',
+  product: 'PR', income_item: 'INC', expense_item: 'EXP', customer: 'CUS', user: 'EMP'
+};
+function codeSheet_(kind) { return kind === 'user' ? SHEETS.USERS : ENTITY_SHEET[kind]; }
+function nextCode_(kind) {
+  var prefix = CODE_PREFIX_[kind];
+  var key = 'SEQ_' + kind;
+  var max = Number(scriptProps_()[key] || 0);
+  var re = new RegExp('^' + prefix + '-(\\d+)$');
+  readSheet(codeSheet_(kind)).forEach(function (r) {
+    var m = re.exec(String(r.code || ''));
     if (m && Number(m[1]) > max) max = Number(m[1]);
   });
   max += 1;
-  setScriptProp_('CUSTOMER_SEQ', String(max));
+  setScriptProp_(key, String(max));
   var n = String(max);
   while (n.length < 4) n = '0' + n;
-  return 'CUS-' + n;
+  return prefix + '-' + n;
+}
+
+// Numbers every record saved before numbering existed, in the order the
+// rows were written. Never renumbers. Returns how many it numbered.
+function backfillCodes_() {
+  var done = 0;
+  var lock = LockService.getScriptLock();
+  Object.keys(CODE_PREFIX_).forEach(function (kind) {
+    readSheet(codeSheet_(kind)).forEach(function (r) {
+      if (r.code) return;
+      lock.waitLock(30000);
+      try {
+        r.code = nextCode_(kind);
+        writeRow(codeSheet_(kind), r);
+        done++;
+      } finally {
+        try { lock.releaseLock(); } catch (e) {}
+      }
+    });
+  });
+  return done;
+}
+
+function backfillCodesOnce_() {
+  if (scriptProps_().CODES_BACKFILLED) return;
+  backfillCodes_();
+  setScriptProp_('CODES_BACKFILLED', new Date().toISOString());
+}
+
+// The data jobs that run once after an update. Each keeps its own flag, so
+// calling this on every request costs one read of the script properties.
+function runOneTimeMigrations_() {
+  migrateBranchCollectorsOnce_();
+  seedCitiesOnce_();
+  seedCustomersOnce_();
+  backfillCodesOnce_();
 }
 
 // A customer by internal number (any letter case) or by name (normalised).
@@ -891,7 +939,7 @@ function importCustomers_(rows) {
     try {
       var dup = customerDuplicateOf_(name, null);
       if (dup) { skipped.push({ row: i, name: name, code: dup.code, reason: 'duplicate' }); continue; }
-      var c = { id: Utilities.getUuid(), code: nextCustomerCode_(), name: name, active: true };
+      var c = { id: Utilities.getUuid(), code: nextCode_('customer'), name: name, active: true };
       if (r.city) c.city = String(r.city).trim();
       if (r.phone) c.phone = String(r.phone).trim();
       created.push(writeRow(SHEETS.CUSTOMERS, c));
@@ -937,7 +985,7 @@ function seedCities_() {
     var k = normalizeName_(n);
     if (!k || have[k]) return;
     have[k] = true;
-    writeRow(SHEETS.CITIES, { id: Utilities.getUuid(), name: n, active: true });
+    writeRow(SHEETS.CITIES, { id: Utilities.getUuid(), code: nextCode_('city'), name: n, active: true });
     added++;
   });
   return added;
@@ -967,7 +1015,7 @@ function actionMeta_(req, user) {
     // non-admins get every row (ids needed for pickers/labels) but only the
     // safe columns per the reference app's rule: restrict fields, not rows.
     users = users.map(function (u) {
-      return { id: u.id, name: u.name, role: u.role, locationId: u.locationId, clusterId: u.clusterId };
+      return { id: u.id, code: u.code || null, name: u.name, role: u.role, locationId: u.locationId, clusterId: u.clusterId };
     });
   }
 

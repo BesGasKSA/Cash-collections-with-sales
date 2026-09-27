@@ -88,3 +88,20 @@
 ### Task 7: Docs, seeds, suite, publish
 
 - [ ] CLAUDE.md sections; mock server seeds customers, cities and coordinates; full suite; stamp, obfuscate, push; create `CustomerSeed.js` in the clasp folder only (62 names), clasp push + deploy; live ping; local CSV copy for the user.
+
+### Task 8: Sorting everywhere, area manager on branches, counts that follow filters (added 2026-09-28)
+
+**Spec:** the user's follow-up of 2026-09-28: "sorting function in all reports and screens", "for branches screen i need to see the area manager name", "the filters and numbers of results reflect with the filter".
+
+- [ ] One shared sorter for every table the app draws (tap a header: ascending, again: descending; numbers, dates and Arabic text each compare correctly; the arrow shows the direction). Card lists get a sort picker.
+- [ ] Branches list: an area-manager column (from the branch's area).
+- [ ] Every list with a search or filter shows "N of M" that updates as the filter changes; report tables show their row count for the current filters.
+- [ ] Verify in the browser: every admin tab, the report screen, the entries list, at 375px.
+
+### Task 1b: A system number with a prefix on every record (added 2026-09-28)
+
+BR branch, AR area, CT city, ZN zone, ST store, CR car, POS machine, PR product, INC collection item, EXP expense item, CUS customer, EMP user. Assigned on save, never editable, never reused (SEQ_<kind> counters); records saved before numbering are numbered once (`backfillCodesOnce_`). The one-time data jobs also run on the unauthenticated GET ping, so the deploy's own check finishes them.
+
+### Task 9: Invitation redesign, mobile first (added 2026-09-28)
+
+The invitation email and the page it opens (set your password) redesigned for a phone, using the design skills.
