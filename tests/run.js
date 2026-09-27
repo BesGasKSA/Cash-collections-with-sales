@@ -1932,6 +1932,63 @@ check(!archAfterLive.ok && archAfterLive.error === 'live_locked', 'once live, st
 var unlock = call({ action: 'adminSetConfig', token: adminTok, data: { liveLocked: false } });
 check(!unlock.ok && unlock.error === 'live_locked', 'and the switch cannot be turned back off from the app');
 
+console.log('--- credit customers: numbered by the system, one record per customer ---');
+function saveCustomer(data, id) { return call({ action: 'adminSaveEntity', token: adminTok, kind: 'customer', id: id, data: data }); }
+var cu1 = saveCustomer({ name: 'Zeta Trading Co' });
+var cu2 = saveCustomer({ name: 'Omega Foods' });
+check(cu1.ok && /^CUS-\d{4}$/.test(cu1.entity.code) && cu2.ok && Number(cu2.entity.code.slice(4)) === Number(cu1.entity.code.slice(4)) + 1,
+  'each new customer gets the next internal number, CUS-0001 style');
+var cuEdit = saveCustomer({ name: 'Zeta Trading Co', code: 'CUS-9999', phone: '0501234567' }, cu1.entity.id);
+check(cuEdit.ok && cuEdit.entity.code === cu1.entity.code && cuEdit.entity.phone === '0501234567', 'the number cannot be changed by an edit');
+var cuDup = saveCustomer({ name: '  zeta   trading co ' });
+check(!cuDup.ok && cuDup.error === 'duplicate_customer' && cuDup.code === cu1.entity.code, 'the same name typed differently is refused, and names the customer already on file');
+var cuAr = saveCustomer({ name: 'مؤسسة واحة الملامة للمقاولات' });
+var cuArDup = saveCustomer({ name: 'موسسة  واحه الملامه للمقاولات' });
+check(cuAr.ok && !cuArDup.ok && cuArDup.error === 'duplicate_customer', 'Arabic spellings with a different alef, ta marbuta or spacing count as the same customer');
+check(!saveCustomer({ name: '   ' }).ok, 'a customer needs a name');
+var cuImport = call({ action: 'adminImportCustomers', token: adminTok, rows: [{ name: 'Delta Bakery' }, { name: 'delta  bakery' }, { name: 'Omega Foods' }, { name: 'Sigma Cafe', phone: '0550000000' }] });
+check(cuImport.ok && cuImport.created.length === 2 && cuImport.skipped.length === 2 &&
+  cuImport.skipped.some(function (k) { return k.reason === 'duplicate' && k.code === cu2.entity.code; }),
+  'an imported list creates the new names and skips repeats — within the list and against the file');
+check(call({ action: 'adminImportCustomers', token: aliTok, rows: [{ name: 'X' }] }).ok !== true, 'only the admin imports customers');
+var cuMeta = call({ action: 'listMeta', token: aliTok });
+check(Array.isArray(cuMeta.customers) && cuMeta.customers.some(function (c) { return c.id === cu1.entity.id; }), 'everyone who enters data gets the customer list');
+check(ctx.findCustomer_(cu1.entity.code.toLowerCase()).id === cu1.entity.id && ctx.findCustomer_('ZETA trading co').id === cu1.entity.id && !ctx.findCustomer_('nobody'),
+  'a customer is found by number or by name');
+var cuDel = call({ action: 'adminDeleteEntity', token: adminTok, kind: 'customer', id: cuImport.created[1].id });
+check(cuDel.ok, 'a customer with no history can be deleted');
+var cuNext = saveCustomer({ name: 'Tau Kitchen' });
+check(Number(cuNext.entity.code.slice(4)) > Number(cuImport.created[1].code.slice(4)), 'and its number is never handed out again');
+
+console.log('--- cities: one list, picked, never typed ---');
+var ciMeta = call({ action: 'listMeta', token: adminTok });
+check(Array.isArray(ciMeta.cities) && ciMeta.cities.some(function (c) { return c.name === 'الرياض'; }), 'the city list starts with the Saudi cities');
+var ciAdded = ctx.seedCities_();
+var ciNames = ctx.readSheet(ctx.SHEETS.CITIES).map(function (c) { return c.name; });
+check(ciAdded >= 1 && ciNames.indexOf('Jeddah') >= 0 && ciNames.indexOf('Riyadh') >= 0, 'and takes in every city the branches already use');
+check(ctx.seedCities_() === 0, 'running it again adds nothing');
+var ciNew = call({ action: 'adminSaveEntity', token: adminTok, kind: 'city', data: { name: 'Umluj' } });
+check(ciNew.ok && call({ action: 'adminSaveEntity', token: adminTok, kind: 'city', data: { name: ' umluj ' } }).error === 'duplicate_city', 'a city is on the list once');
+check(call({ action: 'adminDeleteEntity', token: adminTok, kind: 'city', id: ctx.readSheet(ctx.SHEETS.CITIES).filter(function (c) { return c.name === 'Jeddah'; })[0].id }).error === 'has_children',
+  'a city a branch uses cannot be deleted');
+check(call({ action: 'adminDeleteEntity', token: adminTok, kind: 'city', id: ciNew.entity.id }).ok, 'an unused one can');
+
+console.log('--- the customer list ships once, from the Apps Script project only ---');
+var seedBefore = ctx.readSheet(ctx.SHEETS.CUSTOMERS).length;
+ctx.CUSTOMER_SEED_ = ['Seed Customer One', 'Seed Customer Two', 'seed customer one', 'Zeta Trading Co'];
+call({ action: 'listMeta', token: adminTok });
+var seedAfter = ctx.readSheet(ctx.SHEETS.CUSTOMERS).length;
+check(seedAfter === seedBefore + 2, 'the seed adds each new name once and skips the ones already on file');
+call({ action: 'listMeta', token: adminTok });
+check(ctx.readSheet(ctx.SHEETS.CUSTOMERS).length === seedAfter, 'and never runs twice');
+delete ctx.CUSTOMER_SEED_;
+
+console.log('--- a branch can carry its map position ---');
+var geoLoc = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', id: location.entity.id, data: { lat: 24.7136, lng: 46.6753 } });
+check(geoLoc.ok && geoLoc.entity.lat === 24.7136 && geoLoc.entity.lng === 46.6753, 'a branch saves its latitude and longitude');
+check(call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', id: location.entity.id, data: { lat: 95, lng: 46 } }).error === 'invalid_coordinates', 'a latitude past 90 is refused');
+check(call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', id: location.entity.id, data: { lat: 24.7, lng: '' } }).error === 'invalid_coordinates', 'and so is half a position');
+
 console.log('--- an area\'s collector moves onto its branches, once ---');
 var mgCol = mk('Mg Area Collector', 'mgcol.fx@bestgas.sa', 'collector');
 var mgCol2 = mk('Mg Branch Collector', 'mgcol2.fx@bestgas.sa', 'collector');

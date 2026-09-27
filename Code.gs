@@ -14,6 +14,9 @@ var SHEETS = {
   CARS: 'cars',
   POS: 'pos_machines',
   CLUSTERS: 'clusters',
+  // credit customers (auto-numbered CUS-0001…) and the city list pickers draw from
+  CUSTOMERS: 'customers',
+  CITIES: 'cities',
   // Pure geography (Country[KSA, implicit]/City/Zone), independent of
   // Cluster — Cluster is an employee's management assignment (cluster
   // manager + collector) and can cut across zones; Zone is just a label
@@ -582,6 +585,8 @@ function route_(req) {
   var session = requireAuth_(req);
   var user = session.user;
   migrateBranchCollectorsOnce_();
+  seedCitiesOnce_();
+  seedCustomersOnce_();
   var newToken = renewToken_(user.id, session.hardExp);
 
   var handlers = {
@@ -664,6 +669,7 @@ function route_(req) {
     // through the same reviewed path.
     adminSaveEntity: function () { return withMeta_(actionAdminSaveEntity_(req, user), req, user); },
     adminDeleteEntity: function () { return withMeta_(actionAdminDeleteEntity_(req, user), req, user); },
+    adminImportCustomers: function () { return withMeta_(actionAdminImportCustomers_(req, user), req, user); },
     adminSetConfig: function () { return withMeta_(actionAdminSetConfig_(req, user), req, user); },
     // starts a fresh round of testing by archiving the movement tabs —
     // renames, never deletes (see Admin.gs)
