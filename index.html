@@ -352,12 +352,13 @@
   .breakdown .bi{font-size:11.5px;color:var(--muted);}
   .breakdown .bi b{display:block;font-size:13.5px;color:var(--text);font-weight:700;margin-top:1px;}
   .breakdown .bi.out b{color:var(--danger);}
-  .breakdown .bi.sub,.breakdown .bi.net{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 12px;border-radius:10px;
-    background:var(--bg);font-size:12.5px;font-weight:700;color:var(--text);}
-  .breakdown .bi.sub b,.breakdown .bi.net b{margin:0;font-size:14.5px;font-weight:800;}
-  .breakdown .bi.sub.out b{color:var(--danger);}
-  .breakdown .bi.net{background:color-mix(in srgb, var(--green) 10%, #fff);border:1px solid color-mix(in srgb, var(--green) 22%, #fff);}
-  .breakdown .bi.net b{color:var(--green-dark);font-size:16px;}
+  .breakdown .bi.sub,.breakdown .bi.net{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 12px;border-radius:10px;
+    font-size:13.5px;font-weight:800;}
+  .breakdown .bi.sub{background:color-mix(in srgb,var(--green) 16%,#fff);border:2px solid color-mix(in srgb,var(--green) 55%,#fff);color:var(--green-deep);}
+  .breakdown .bi.sub b,.breakdown .bi.net b{margin:0;font-size:16.5px;font-weight:900;color:inherit;}
+  .breakdown .bi.sub.out{background:color-mix(in srgb,var(--c-danger) 11%,#fff);border-color:color-mix(in srgb,var(--c-danger) 55%,#fff);color:var(--c-danger);}
+  .breakdown .bi.net{background:color-mix(in srgb, var(--green) 10%, #fff);border:2px solid color-mix(in srgb, var(--green) 45%, #fff);color:var(--text);}
+  .breakdown .bi.net b{color:var(--green-dark);font-size:17px;}
   .details-toggle{background:none;border:none;color:var(--green);font-size:12px;font-weight:700;cursor:pointer;padding:0;margin-top:8px;font-family:inherit;}
   .details-toggle:hover{text-decoration:underline;}
   /* sortable / searchable table component */
@@ -560,10 +561,16 @@
   .st-row .chev svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;display:block;}
   html[dir="rtl"] .st-row .chev svg{transform:scaleX(-1);}
   .st-row.click:hover .chev{opacity:1;}
-  .st-row.sub{border-top:1.5px solid var(--border) !important;margin-top:4px;}
-  .st-row.sub .lb,.st-row.sub .amt{font-weight:800;}
-  .st-row.sub.out .amt{color:var(--danger);}
-  .st-row.final{background:color-mix(in srgb,var(--c,var(--green)) 10%,#fff);border:1px solid color-mix(in srgb,var(--c,var(--green)) 22%,#fff) !important;margin-top:8px;}
+  /* the two subtotals stand out: collected in green, deductions in red */
+  .st-row.sub{margin:8px 0 6px;border:2px solid color-mix(in srgb,var(--green) 55%,#fff) !important;background:color-mix(in srgb,var(--green) 16%,#fff);}
+  .st-row.sub .sw{width:12px;height:12px;background:var(--green);}
+  .st-row.sub .lb{font-size:14.5px;font-weight:800;color:var(--green-deep);}
+  .st-row.sub .amt{font-size:18px;font-weight:900;color:var(--green-deep);}
+  .st-row.sub.out{border-color:color-mix(in srgb,var(--c-danger) 55%,#fff) !important;background:color-mix(in srgb,var(--c-danger) 11%,#fff);}
+  .st-row.sub.out .sw{background:var(--c-danger);}
+  .st-row.sub.out .lb,.st-row.sub.out .amt{color:var(--c-danger);}
+  .st-row.sub + .st-row{border-top:0;}
+  .st-row.final{background:color-mix(in srgb,var(--c,var(--green)) 10%,#fff);border:2px solid color-mix(in srgb,var(--c,var(--green)) 45%,#fff) !important;margin-top:8px;}
   .st-row.final .lb{font-weight:800;font-size:14.5px;}
   .st-row.final .amt{font-size:19px;color:var(--green-deep);}
   @media (max-width:700px){ .st-head{padding:16px 16px 14px;} .st-head .v{font-size:26px;} .st-rows{padding:6px 6px 10px;} .st-row{gap:9px;padding:10px 8px;} .st-row .amt{font-size:14px;} }
@@ -1061,6 +1068,13 @@
   .ac-bst{grid-column:1/-1;}
   .ac-bst:empty{display:none;}
   .ho-place{display:flex;align-items:center;gap:5px;margin-top:2px;}
+  .ho-route{display:flex;flex-wrap:wrap;align-items:stretch;gap:6px;margin:8px 0 2px;padding:6px;border-radius:12px;
+    background:color-mix(in srgb, var(--green) 8%, #fff);border:1px solid color-mix(in srgb, var(--green) 22%, #fff);}
+  .hr-seg{display:flex;flex-direction:column;gap:1px;min-width:0;flex:1 1 80px;padding:5px 9px;border-radius:9px;background:var(--card);}
+  .hr-seg i{font-style:normal;font-size:10.5px;color:var(--muted);font-weight:600;}
+  .hr-seg b{font-size:14px;font-weight:800;color:var(--text);overflow-wrap:anywhere;line-height:1.35;}
+  .hr-seg.to b,.hr-to{color:var(--green-dark);}
+  .hr-arrow{align-self:center;color:var(--green);font-weight:800;font-size:15px;}
   .ho-place svg.ic2{width:13px;height:13px;}
   @media (max-width:520px){ .ac-br{grid-template-columns:minmax(0,1fr) auto;} .ac-br .ac-bsend{grid-column:1/-1;justify-content:center;} }
   /* ---- the entries list ---- */
@@ -6455,7 +6469,7 @@ function renderDeputyReview(body){
     res.batches.forEach(function(b){
       var card = el('<div class="card">' +
         '<div class="row" style="justify-content:space-between;flex-wrap:wrap;">' +
-          '<div><strong>'+esc(clusterName(b.clusterId))+'</strong> · '+esc(t('deputy_uploadedBy'))+': '+esc(userName(b.uploadedBy))+'</div>' +
+          '<div><span class="muted" style="font-size:12px;">'+esc(t('pf_kindCluster'))+'</span> <strong style="font-size:16px;">'+esc(clusterName(b.clusterId))+'</strong> · '+esc(t('deputy_uploadedBy'))+': <b>'+esc(userName(b.uploadedBy))+'</b></div>' +
           '<div class="muted">'+esc(fmtStamp_(b.createdAt))+'</div>' +
         '</div>' +
         '<div style="font-size:22px;font-weight:800;margin-top:6px;">'+money(b.breakdown.netCashOwed)+'</div>' +
@@ -6531,7 +6545,7 @@ function handoffDetailRows(h, withCollector){
       h.perLocation.map(function(p){
         var col = withCollector ? branchCollectorOf_(byId(state.meta && state.meta.locations, p.locationId)) : null;
         return '<div class="row" style="justify-content:space-between;font-size:12.5px;padding:4px 0;border-top:1px dashed var(--border-soft);">' +
-          '<span>'+esc(locationName(p.locationId))+(withCollector ? ' <span class="muted">← '+esc(col ? userName(col) : t('ac_brNoCollector'))+'</span>' : '')+'</span><span><strong>'+money(p.amount)+'</strong></span></div>';
+          '<span>'+(withCollector ? '<b>'+esc(locationName(p.locationId))+'</b> <span class="muted">←</span> <b class="hr-to">'+esc(col ? userName(col) : t('ac_brNoCollector'))+'</b>' : esc(locationName(p.locationId)))+'</span><span><strong>'+money(p.amount)+'</strong></span></div>';
       }).join('');
   }
   if (h.perCluster && h.perCluster.length) {
@@ -6576,6 +6590,27 @@ function handoffAuditTrail_(h){
   }).join('');
 }
 
+// Where a handover's cash comes from and who it goes to, in bold, so the
+// deputy (and the receiver) see the branch, the area and the person at a
+// glance: branch → area → collector for an area request, branch → area
+// manager for a branch handover. Other kinds keep the one-line place.
+function handoffRoute_(h){
+  function seg(label, value, to){ return '<span class="hr-seg'+(to?' to':'')+'"><i>'+esc(label)+'</i><b>'+esc(value)+'</b></span>'; }
+  var arrow = '<span class="hr-arrow" aria-hidden="true">←</span>';
+  var loc = byId(state.meta && state.meta.locations, h.locationId);
+  if (h.kind === 'cluster_to_collector'){
+    var parts = [];
+    if (loc) parts.push(seg(t('pf_kindLocation'), loc.name));
+    if (h.clusterId) parts.push(seg(t('pf_kindCluster'), clusterName(h.clusterId)));
+    parts.push(seg(t('admin_collector'), userName(h.toUserId), true));
+    return '<div class="ho-route">' + parts.join(arrow) + '</div>';
+  }
+  if (h.kind === 'location_to_cluster' && loc){
+    return '<div class="ho-route">' + seg(t('pf_kindLocation'), loc.name) + arrow +
+      seg(t('admin_clusterManager'), userName(h.toUserId), true) + '</div>';
+  }
+  return h.locationId && h.kind !== 'deposit' ? '<div class="muted ho-place">'+icon_('pin')+'<span>'+esc(locationName(h.locationId))+'</span></div>' : '';
+}
 function handoffItem(h, showConfirm, showResolve){
   // The receiving step is exactly where "what am I actually confirming?"
   // matters most — default the breakdown open there instead of behind an
@@ -6586,8 +6621,9 @@ function handoffItem(h, showConfirm, showResolve){
       '<div><strong>'+esc(t('kind_'+h.kind))+'</strong> ' + statusBadge(h.status) + '</div>' +
       '<div class="amount">'+money(h.amount)+'</div>' +
     '</div>' +
+    // the route first, where a collapsed card still shows it
+    handoffRoute_(h) +
     '<div class="muted">'+esc(t('handoff_from'))+': '+esc(userName(h.fromUserId))+' · '+esc(t('handoff_to'))+': '+esc(h.toUserId?userName(h.toUserId):t('entity_bank'))+' · '+esc(fmtStamp_(h.createdAt))+'</div>' +
-    (h.locationId && h.kind !== 'deposit' ? '<div class="muted ho-place">'+icon_('pin')+'<span>'+esc(locationName(h.locationId) + (h.kind === 'cluster_to_collector' && h.clusterId ? ' · ' + clusterName(h.clusterId) : ''))+'</span></div>' : '') +
     (h.disputeNote ? '<div class="muted">📝 '+esc(h.disputeNote)+'</div>' : '') +
     varianceLine(h) +
     (h.requiresSecondApproval ? '<div class="msg '+(h.secondApprovedBy?'ok':'err')+'" style="margin-top:8px;">'+esc(t(h.secondApprovedBy?'handoff_secondApproved':'handoff_needsSecondApproval'))+'</div>' : '') +
