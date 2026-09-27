@@ -351,6 +351,13 @@
   .breakdown{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-top:10px;padding-top:10px;border-top:1px dashed var(--border);}
   .breakdown .bi{font-size:11.5px;color:var(--muted);}
   .breakdown .bi b{display:block;font-size:13.5px;color:var(--text);font-weight:700;margin-top:1px;}
+  .breakdown .bi.out b{color:var(--danger);}
+  .breakdown .bi.sub,.breakdown .bi.net{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 12px;border-radius:10px;
+    background:var(--bg);font-size:12.5px;font-weight:700;color:var(--text);}
+  .breakdown .bi.sub b,.breakdown .bi.net b{margin:0;font-size:14.5px;font-weight:800;}
+  .breakdown .bi.sub.out b{color:var(--danger);}
+  .breakdown .bi.net{background:color-mix(in srgb, var(--green) 10%, #fff);border:1px solid color-mix(in srgb, var(--green) 22%, #fff);}
+  .breakdown .bi.net b{color:var(--green-dark);font-size:16px;}
   .details-toggle{background:none;border:none;color:var(--green);font-size:12px;font-weight:700;cursor:pointer;padding:0;margin-top:8px;font-family:inherit;}
   .details-toggle:hover{text-decoration:underline;}
   /* sortable / searchable table component */
@@ -555,6 +562,7 @@
   .st-row.click:hover .chev{opacity:1;}
   .st-row.sub{border-top:1.5px solid var(--border) !important;margin-top:4px;}
   .st-row.sub .lb,.st-row.sub .amt{font-weight:800;}
+  .st-row.sub.out .amt{color:var(--danger);}
   .st-row.final{background:color-mix(in srgb,var(--c,var(--green)) 10%,#fff);border:1px solid color-mix(in srgb,var(--c,var(--green)) 22%,#fff) !important;margin-top:8px;}
   .st-row.final .lb{font-weight:800;font-size:14.5px;}
   .st-row.final .amt{font-size:19px;color:var(--green-deep);}
@@ -1153,6 +1161,21 @@
   .cu-imp-list li.st-rep .cu-imp-chip{background:color-mix(in srgb, var(--danger) 12%, transparent);color:var(--danger);}
   .cu-imp-list li:not(.st-new) .cu-imp-n{color:var(--muted);}
   .cu-hist{list-style:none;margin:10px 0 0;padding:0;}
+  .cr-mode{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;border-radius:12px;background:var(--bg);border:1px solid var(--border-soft);margin:2px 0 10px;}
+  .cr-seg{min-height:44px;border:0;border-radius:9px;background:transparent;font:inherit;font-weight:700;font-size:13.5px;color:var(--muted);
+    display:inline-flex;align-items:center;justify-content:center;gap:7px;cursor:pointer;transition:background .15s ease,color .15s ease;}
+  .cr-seg svg{width:17px;height:17px;}
+  .cr-seg.on{background:var(--card);color:var(--green-dark);box-shadow:0 1px 3px rgba(40,50,40,.12);}
+  .cr-seg:active{transform:scale(.98);}
+  .cr-seg:focus-visible{outline:2px solid var(--green);outline-offset:1px;}
+  .crItem{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;gap:8px 10px;align-items:end;padding:10px 12px;border:1px solid var(--border-soft);border-radius:12px;background:var(--card);margin-bottom:8px;}
+  .crItem .ciP{grid-column:1/-1;}
+  .crItem .field{margin:0;}
+  .crItem .ciDel{margin-bottom:2px;}
+  .cr-items-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;}
+  .cr-items-foot .btn{min-height:44px;}
+  .cr-items-total{font-size:13px;color:var(--muted);font-weight:600;}
+  .cr-items-total b{color:var(--green-dark);font-size:17px;font-weight:800;margin-inline-start:4px;}
   .cu-hist li{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;border-top:1px solid var(--border-soft);}
   .cu-hist li div{display:flex;flex-direction:column;gap:2px;min-width:0;}
   .cu-hist li span{font-size:12px;color:var(--muted);overflow-wrap:anywhere;}
@@ -1690,7 +1713,7 @@ var L = {
     err_wrongCurrentPassword:'كلمة المرور الحالية غير صحيحة', err_network:'تعذّر الاتصال بالخادم — تحقق من الإنترنت',
     err_noSourceSelected:'الرجاء اختيار مصدر أولاً', err_titleRequired:'الرجاء إدخال عنوان',
     noData:'لا توجد بيانات', loading:'جارِ التحميل...', total:'الإجمالي', kind_location_to_cluster:'مدير الفرع ← مدير المنطقة',
-    kind_cluster_to_collector:'مدير المنطقة ← مُحصّل', kind_deposit:'إيداع بنكي', filter:'تصفية', all:'الكل', entity_bank:'البنك', rec_code:'الرقم', rec_codeAuto:'يُمنح الرقم تلقائياً عند الحفظ', admin_customers:'العملاء', admin_cities:'المدن', admin_addCustomer:'إضافة عميل', admin_addCity:'إضافة مدينة', cu_code:'رقم العميل', cu_codeAuto:'يُمنح رقم العميل تلقائياً عند الحفظ', cu_name:'اسم العميل', cu_phone:'الجوال', ci_name:'اسم المدينة', ci_uses:'الفروع', cu_import:'استيراد قائمة', cu_importTitle:'استيراد العملاء', cu_importHint:'الصق الأسماء، اسماً في كل سطر (ويمكن إضافة المدينة والجوال بعده مفصولين بفاصلة)، أو اختر ملف Excel أو CSV. يُمنح كل عميل جديد رقماً، ويُتخطى كل اسم مسجّل مسبقاً.', cu_importPh:'مثال: شركة الغذاء النوعي للتجارة - الرمال، الرياض', cu_importFile:'اختيار ملف Excel أو CSV', cu_importCheck:'مراجعة القائمة', cu_impNew:'جديد', cu_impOnFile:'مسجّل مسبقاً', cu_impRepeat:'مكرر في القائمة', cu_impAdd:'إضافة {n} عميل', cu_impNothing:'لا يوجد اسم جديد لإضافته', cu_impDone:'أُضيف {n} عميل، وتُخطي {s}', cu_impEmpty:'لم يُعثر على أسماء في القائمة', cu_impLoadFail:'تعذّرت قراءة الملف — جرّب حفظه بصيغة CSV', pf_kindCustomer:'عميل', pf_kindCity:'مدينة', err_duplicateCustomer:'هذا العميل مسجّل مسبقاً برقم {code}', err_duplicateCity:'هذه المدينة موجودة في القائمة', err_unknownCustomer:'العميل غير مسجّل — اختره من القائمة أو اطلب من مدير النظام إضافته', err_invalidCustomer:'حساب هذا العميل موقوف، فلا يُسجَّل عليه بيع آجل جديد', err_creditItemsMismatch:'مبلغ البيع الآجل لا يطابق مجموع الأصناف', err_priceLocked:'سعر هذا المنتج ثابت ولا يُغيَّر', err_invalidProduct:'المنتج غير موجود أو موقوف', err_invalidCoordinates:'إحداثيات الموقع غير صحيحة'
+    kind_cluster_to_collector:'مدير المنطقة ← مُحصّل', kind_deposit:'إيداع بنكي', filter:'تصفية', all:'الكل', entity_bank:'البنك', calc_totalIn:'إجمالي التحصيلات', calc_totalOut:'إجمالي الخصومات', entry_pickCustomer:'اختر العميل…', entry_creditHow:'طريقة التسجيل', entry_creditByAmount:'مبلغ', entry_creditByItems:'أصناف', entry_creditAddItem:'+ صنف', entry_creditItemsTotal:'مجموع الأصناف', err_creditItemsIncomplete:'أكمل كل صنف: المنتج والكمية', rec_code:'الرقم', rec_codeAuto:'يُمنح الرقم تلقائياً عند الحفظ', admin_customers:'العملاء', admin_cities:'المدن', admin_addCustomer:'إضافة عميل', admin_addCity:'إضافة مدينة', cu_code:'رقم العميل', cu_codeAuto:'يُمنح رقم العميل تلقائياً عند الحفظ', cu_name:'اسم العميل', cu_phone:'الجوال', ci_name:'اسم المدينة', ci_uses:'الفروع', cu_import:'استيراد قائمة', cu_importTitle:'استيراد العملاء', cu_importHint:'الصق الأسماء، اسماً في كل سطر (ويمكن إضافة المدينة والجوال بعده مفصولين بفاصلة)، أو اختر ملف Excel أو CSV. يُمنح كل عميل جديد رقماً، ويُتخطى كل اسم مسجّل مسبقاً.', cu_importPh:'مثال: شركة الغذاء النوعي للتجارة - الرمال، الرياض', cu_importFile:'اختيار ملف Excel أو CSV', cu_importCheck:'مراجعة القائمة', cu_impNew:'جديد', cu_impOnFile:'مسجّل مسبقاً', cu_impRepeat:'مكرر في القائمة', cu_impAdd:'إضافة {n} عميل', cu_impNothing:'لا يوجد اسم جديد لإضافته', cu_impDone:'أُضيف {n} عميل، وتُخطي {s}', cu_impEmpty:'لم يُعثر على أسماء في القائمة', cu_impLoadFail:'تعذّرت قراءة الملف — جرّب حفظه بصيغة CSV', pf_kindCustomer:'عميل', pf_kindCity:'مدينة', err_duplicateCustomer:'هذا العميل مسجّل مسبقاً برقم {code}', err_duplicateCity:'هذه المدينة موجودة في القائمة', err_unknownCustomer:'العميل غير مسجّل — اختره من القائمة أو اطلب من مدير النظام إضافته', err_invalidCustomer:'حساب هذا العميل موقوف، فلا يُسجَّل عليه بيع آجل جديد', err_creditItemsMismatch:'مبلغ البيع الآجل لا يطابق مجموع الأصناف', err_priceLocked:'سعر هذا المنتج ثابت ولا يُغيَّر', err_invalidProduct:'المنتج غير موجود أو موقوف', err_invalidCoordinates:'إحداثيات الموقع غير صحيحة'
   },
   en: {
     appName:'Best Gas — Cash Collection', login:'Sign In', email:'Email', password:'Password',
@@ -1858,7 +1881,7 @@ var L = {
     err_wrongCurrentPassword:'Current password is incorrect', err_network:"Couldn't reach the server — check your connection",
     err_noSourceSelected:'Please pick a source first', err_titleRequired:'Please enter a title',
     noData:'No data', loading:'Loading...', total:'Total', kind_location_to_cluster:'Branch → Area',
-    kind_cluster_to_collector:'Area → Collector', kind_deposit:'Bank deposit', filter:'Filter', all:'All', entity_bank:'Bank', rec_code:'No.', rec_codeAuto:'The number is assigned when you save', admin_customers:'Customers', admin_cities:'Cities', admin_addCustomer:'Add customer', admin_addCity:'Add city', cu_code:'Customer no.', cu_codeAuto:'The customer number is assigned when you save', cu_name:'Customer name', cu_phone:'Mobile', ci_name:'City name', ci_uses:'Branches', cu_import:'Import a list', cu_importTitle:'Import customers', cu_importHint:'Paste the names, one per line (city and mobile may follow, separated by commas), or choose an Excel or CSV file. Each new customer gets a number; names already on file are skipped.', cu_importPh:'e.g. Quality Food Trading Co - Al Rimal, Riyadh', cu_importFile:'Choose an Excel or CSV file', cu_importCheck:'Check the list', cu_impNew:'New', cu_impOnFile:'Already on file', cu_impRepeat:'Repeated in the list', cu_impAdd:'Add {n} customers', cu_impNothing:'No new name to add', cu_impDone:'Added {n} customers, skipped {s}', cu_impEmpty:'No names found in the list', cu_impLoadFail:'Could not read the file — try saving it as CSV', pf_kindCustomer:'Customer', pf_kindCity:'City', err_duplicateCustomer:'This customer is already on file as {code}', err_duplicateCity:'This city is already on the list', err_unknownCustomer:'Customer not on file — pick one from the list or ask the administrator to add it', err_invalidCustomer:'This customer\'s account is closed to new credit', err_creditItemsMismatch:'The credit amount does not match its items', err_priceLocked:'This product has a fixed price', err_invalidProduct:'Product not found or inactive', err_invalidCoordinates:'The map position is not valid'
+    kind_cluster_to_collector:'Area → Collector', kind_deposit:'Bank deposit', filter:'Filter', all:'All', entity_bank:'Bank', calc_totalIn:'Total collected', calc_totalOut:'Total deductions', entry_pickCustomer:'Choose the customer…', entry_creditHow:'Record as', entry_creditByAmount:'Amount', entry_creditByItems:'Products', entry_creditAddItem:'+ Product', entry_creditItemsTotal:'Products total', err_creditItemsIncomplete:'Complete every product line: product and quantity', rec_code:'No.', rec_codeAuto:'The number is assigned when you save', admin_customers:'Customers', admin_cities:'Cities', admin_addCustomer:'Add customer', admin_addCity:'Add city', cu_code:'Customer no.', cu_codeAuto:'The customer number is assigned when you save', cu_name:'Customer name', cu_phone:'Mobile', ci_name:'City name', ci_uses:'Branches', cu_import:'Import a list', cu_importTitle:'Import customers', cu_importHint:'Paste the names, one per line (city and mobile may follow, separated by commas), or choose an Excel or CSV file. Each new customer gets a number; names already on file are skipped.', cu_importPh:'e.g. Quality Food Trading Co - Al Rimal, Riyadh', cu_importFile:'Choose an Excel or CSV file', cu_importCheck:'Check the list', cu_impNew:'New', cu_impOnFile:'Already on file', cu_impRepeat:'Repeated in the list', cu_impAdd:'Add {n} customers', cu_impNothing:'No new name to add', cu_impDone:'Added {n} customers, skipped {s}', cu_impEmpty:'No names found in the list', cu_impLoadFail:'Could not read the file — try saving it as CSV', pf_kindCustomer:'Customer', pf_kindCity:'City', err_duplicateCustomer:'This customer is already on file as {code}', err_duplicateCity:'This city is already on the list', err_unknownCustomer:'Customer not on file — pick one from the list or ask the administrator to add it', err_invalidCustomer:'This customer\'s account is closed to new credit', err_creditItemsMismatch:'The credit amount does not match its items', err_priceLocked:'This product has a fixed price', err_invalidProduct:'Product not found or inactive', err_invalidCoordinates:'The map position is not valid'
   },
   ur: {
     appName:'بیسٹ گیس — نقد وصولی نظام', login:'لاگ ان', email:'ای میل', password:'پاس ورڈ',
@@ -2026,7 +2049,7 @@ var L = {
     err_wrongCurrentPassword:'موجودہ پاس ورڈ غلط ہے', err_network:'سرور سے رابطہ نہیں ہو سکا — انٹرنیٹ چیک کریں',
     err_noSourceSelected:'پہلے ایک ذریعہ منتخب کریں', err_titleRequired:'براہ کرم عنوان درج کریں',
     noData:'کوئی ڈیٹا نہیں', loading:'لوڈ ہو رہا ہے...', total:'کل', kind_location_to_cluster:'برانچ ← علاقہ',
-    kind_cluster_to_collector:'علاقہ ← کلکٹر', kind_deposit:'بینک جمع', filter:'فلٹر', all:'تمام', entity_bank:'بینک', rec_code:'نمبر', rec_codeAuto:'محفوظ کرنے پر نمبر خود ملے گا', admin_customers:'گاہک', admin_cities:'شہر', admin_addCustomer:'گاہک شامل کریں', admin_addCity:'شہر شامل کریں', cu_code:'گاہک نمبر', cu_codeAuto:'محفوظ کرنے پر نمبر خود ملے گا', cu_name:'گاہک کا نام', cu_phone:'موبائل', ci_name:'شہر کا نام', ci_uses:'برانچیں', cu_import:'فہرست درآمد کریں', cu_importTitle:'گاہک درآمد کریں', cu_importHint:'نام چسپاں کریں، ہر سطر میں ایک، یا Excel/CSV فائل منتخب کریں۔ ہر نئے گاہک کو نمبر ملے گا، موجود نام چھوڑ دیے جائیں گے۔', cu_importPh:'مثال: کمپنی کا نام، شہر', cu_importFile:'Excel یا CSV فائل', cu_importCheck:'فہرست جانچیں', cu_impNew:'نیا', cu_impOnFile:'پہلے سے موجود', cu_impRepeat:'فہرست میں دہرایا گیا', cu_impAdd:'{n} گاہک شامل کریں', cu_impNothing:'کوئی نیا نام نہیں', cu_impDone:'{n} گاہک شامل، {s} چھوڑ دیے', cu_impEmpty:'فہرست میں کوئی نام نہیں ملا', cu_impLoadFail:'فائل نہیں پڑھی جا سکی', pf_kindCustomer:'گاہک', pf_kindCity:'شہر', err_duplicateCustomer:'یہ گاہک پہلے سے {code} پر موجود ہے', err_duplicateCity:'یہ شہر فہرست میں موجود ہے', err_unknownCustomer:'گاہک رجسٹرڈ نہیں', err_invalidCustomer:'اس گاہک کا کھاتہ بند ہے', err_creditItemsMismatch:'ادھار رقم اشیاء کے مجموعے سے مختلف ہے', err_priceLocked:'اس پروڈکٹ کی قیمت مقرر ہے', err_invalidProduct:'پروڈکٹ موجود نہیں', err_invalidCoordinates:'مقام درست نہیں'
+    kind_cluster_to_collector:'علاقہ ← کلکٹر', kind_deposit:'بینک جمع', filter:'فلٹر', all:'تمام', entity_bank:'بینک', calc_totalIn:'کل وصولی', calc_totalOut:'کل کٹوتیاں', entry_pickCustomer:'گاہک منتخب کریں…', entry_creditHow:'درج کرنے کا طریقہ', entry_creditByAmount:'رقم', entry_creditByItems:'اشیاء', entry_creditAddItem:'+ شے', entry_creditItemsTotal:'اشیاء کا مجموعہ', err_creditItemsIncomplete:'ہر شے مکمل کریں: پروڈکٹ اور مقدار', rec_code:'نمبر', rec_codeAuto:'محفوظ کرنے پر نمبر خود ملے گا', admin_customers:'گاہک', admin_cities:'شہر', admin_addCustomer:'گاہک شامل کریں', admin_addCity:'شہر شامل کریں', cu_code:'گاہک نمبر', cu_codeAuto:'محفوظ کرنے پر نمبر خود ملے گا', cu_name:'گاہک کا نام', cu_phone:'موبائل', ci_name:'شہر کا نام', ci_uses:'برانچیں', cu_import:'فہرست درآمد کریں', cu_importTitle:'گاہک درآمد کریں', cu_importHint:'نام چسپاں کریں، ہر سطر میں ایک، یا Excel/CSV فائل منتخب کریں۔ ہر نئے گاہک کو نمبر ملے گا، موجود نام چھوڑ دیے جائیں گے۔', cu_importPh:'مثال: کمپنی کا نام، شہر', cu_importFile:'Excel یا CSV فائل', cu_importCheck:'فہرست جانچیں', cu_impNew:'نیا', cu_impOnFile:'پہلے سے موجود', cu_impRepeat:'فہرست میں دہرایا گیا', cu_impAdd:'{n} گاہک شامل کریں', cu_impNothing:'کوئی نیا نام نہیں', cu_impDone:'{n} گاہک شامل، {s} چھوڑ دیے', cu_impEmpty:'فہرست میں کوئی نام نہیں ملا', cu_impLoadFail:'فائل نہیں پڑھی جا سکی', pf_kindCustomer:'گاہک', pf_kindCity:'شہر', err_duplicateCustomer:'یہ گاہک پہلے سے {code} پر موجود ہے', err_duplicateCity:'یہ شہر فہرست میں موجود ہے', err_unknownCustomer:'گاہک رجسٹرڈ نہیں', err_invalidCustomer:'اس گاہک کا کھاتہ بند ہے', err_creditItemsMismatch:'ادھار رقم اشیاء کے مجموعے سے مختلف ہے', err_priceLocked:'اس پروڈکٹ کی قیمت مقرر ہے', err_invalidProduct:'پروڈکٹ موجود نہیں', err_invalidCoordinates:'مقام درست نہیں'
   }
 };
 function t(k){ var l=L[state.lang]||L.ar; return l[k]!==undefined ? l[k] : (L.en[k]!==undefined?L.en[k]:k); }
@@ -3212,6 +3235,28 @@ function vatRateClient_(){
 }
 // Per-entry amounts, mirroring computeNet_ on the server exactly so a
 // breakdown's rows always add up to the number that was clicked.
+// The cash calculation, laid out the same way everywhere: what came in and
+// its subtotal, what comes off and its subtotal, then what is owed. o holds
+// either one cash figure (cash) or its split by source (storeCash, carCash,
+// posCash), plus other, delivery, vat, credit, expense, banked and net.
+function cashCalcRows_(o){
+  var ins = [], outs = [];
+  if (o.storeCash != null || o.carCash != null || o.posCash != null){
+    if (Number(o.storeCash||0)) ins.push({ label: t('report_storeCash'), amount: Number(o.storeCash), color: 'var(--c-cash)' });
+    if (Number(o.carCash||0)) ins.push({ label: t('report_carCash'), amount: Number(o.carCash), color: 'var(--c-cash)' });
+    if (Number(o.posCash||0)) ins.push({ label: t('report_posCash'), amount: Number(o.posCash), color: 'var(--c-cash)' });
+  } else if (Number(o.cash||0)) ins.push({ label: t('dash_cashSales'), amount: Number(o.cash), color: 'var(--c-cash)' });
+  if (Number(o.other||0)) ins.push({ label: t('entry_otherTitle'), amount: Number(o.other), color: 'var(--c-credit)' });
+  if (Number(o.delivery||0)) outs.push({ label: t('dash_deliveryFeeBeforeVat'), hint: t('report_vat') + ': ' + money(o.vat||0), amount: Number(o.delivery) - Number(o.vat||0), kind: 'deduct', color: 'var(--c-delivery)' });
+  if (Number(o.credit||0)) outs.push({ label: t('report_credit'), hint: t('handoff_creditNote'), amount: Number(o.credit), kind: 'deduct', color: 'var(--c-credit)' });
+  if (Number(o.expense||0)) outs.push({ label: t('entry_expenseTitle'), amount: Number(o.expense), kind: 'deduct', color: 'var(--c-danger)' });
+  if (Number(o.banked||0)) outs.push({ label: t('entry_depositTitle'), amount: Number(o.banked), kind: 'deduct', color: 'var(--c-deposit)' });
+  var sum = function(list){ return list.reduce(function(a, r){ return a + r.amount; }, 0); };
+  var rows = ins.concat([{ label: t('calc_totalIn'), amount: sum(ins), kind: 'sub' }]);
+  if (outs.length) rows = rows.concat(outs, [{ label: t('calc_totalOut'), amount: sum(outs), kind: 'sub out' }]);
+  rows.push({ label: t('report_net'), amount: Number(o.net||0), kind: 'final' });
+  return rows;
+}
 function entryAmt_(e){
   var cash = Number(e.cashSales||0), pos = Number(e.posSales||0), credit = Number(e.creditSales||0);
   var delivery = Number(e.deliveryFeeBankAmount||0);
@@ -3547,16 +3592,9 @@ function entryDocView_(e){
           [t('doc_note'), e.note || '']
         ]) + '</div>'));
 
-        var rows = [];
-        if (a.cash) rows.push({ label: t('dash_cashSales'), amount: a.cash, color: 'var(--c-cash)' });
-        if (a.pos) rows.push({ label: t('report_pos'), amount: a.pos, color: 'var(--c-pos)', hint: t('handoff_posNote') });
-        if (a.credit) rows.push({ label: t('report_credit'), amount: a.credit, color: 'var(--c-credit)', hint: t('handoff_creditNote') });
-        if (a.delivery) {
-          rows.push({ label: t('report_delivery'), amount: a.delivery, color: 'var(--c-delivery)' });
-          rows.push({ label: t('dash_deliveryFeeBeforeVat'), amount: a.deliveryBase, kind: 'deduct', color: 'var(--c-danger)' });
-          rows.push({ label: t('report_vat'), amount: a.vat, color: 'var(--c-vat)' });
-        }
-        rows.push({ label: t('report_net'), amount: a.net, kind: 'final' });
+        var rows = cashCalcRows_({ cash: a.cash, other: a.other, delivery: a.delivery, vat: a.vat, credit: a.credit, expense: a.expense, banked: a.banked, net: a.net });
+        // card sales are not cash: shown for the record, outside the sums
+        if (a.pos) rows.splice(rows.length - 1, 0, { label: t('report_pos'), amount: a.pos, color: 'var(--c-pos)', hint: t('handoff_posNote') });
         var amtSec = el('<div class="doc-sec" style="padding:8px 6px;"><h3 style="padding:6px 10px 0;">'+icon_('cash')+esc(t('doc_amounts'))+'</h3></div>');
         var stNode = statement_({ title: '', value: 0, rows: rows });
         amtSec.appendChild(qs('.st-rows', stNode));
@@ -3627,14 +3665,10 @@ function handoffDocView_(h){
         if (h.breakdown) {
           var b = h.breakdown;
           var brk = el('<div class="doc-sec" style="padding:8px 6px;"><h3 style="padding:6px 10px 0;">'+icon_('cash')+esc(t('doc_amounts'))+'</h3></div>');
-          var rows = [];
-          if (b.storeCash) rows.push({ label: t('report_storeCash'), amount: b.storeCash, color: 'var(--c-cash)' });
-          if (b.carCash) rows.push({ label: t('report_carCash'), amount: b.carCash, color: 'var(--c-cash)' });
-          if (b.posCash) rows.push({ label: t('report_posCash'), amount: b.posCash, color: 'var(--c-cash)' });
-          if (b.deliveryFee) {
-            rows.push({ label: t('dash_deliveryFeeBeforeVat'), amount: b.deliveryFee - (b.vatOnDelivery||0), kind: 'deduct', color: 'var(--c-danger)' });
-          }
-          rows.push({ label: t('report_net'), amount: b.netCashOwed, kind: 'final' });
+          // every line the net is made of — credit, collections, expenses and
+          // bank deposits included — with both subtotals
+          var rows = cashCalcRows_({ storeCash: b.storeCash||0, carCash: b.carCash||0, posCash: b.posCash||0, other: b.otherCash, delivery: b.deliveryFee,
+            vat: b.vatOnDelivery, credit: b.creditSales, expense: b.expenses, banked: b.directDeposit, net: b.netCashOwed });
           brk.appendChild(qs('.st-rows', statement_({ title:'', value:0, rows: rows })));
           if (b.posSales) brk.appendChild(el('<div class="muted" style="font-size:11.5px;padding:0 10px 6px;">'+esc(t('report_pos'))+': '+esc(money(b.posSales))+' — '+esc(t('handoff_posNote'))+'</div>'));
           if (b.creditSales) brk.appendChild(el('<div class="muted" style="font-size:11.5px;padding:0 10px 6px;">'+esc(t('report_credit'))+': '+esc(money(b.creditSales))+' — '+esc(t('handoff_creditNote'))+'</div>'));
@@ -4659,6 +4693,22 @@ function loadCss_(url){
   var l = document.createElement('link'); l.rel = 'stylesheet'; l.href = url; document.head.appendChild(l);
 }
 var XLSX_URL_ = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+// A customer by number or by name, the way the server resolves a file row.
+function findCustomerLocal_(text){
+  var v = String(text == null ? '' : text).trim();
+  if (!v) return null;
+  var list = (state.meta && state.meta.customers) || [];
+  var up = v.toUpperCase(), key = normName_(v);
+  return list.filter(function(c){ return String(c.code || '').toUpperCase() === up; })[0] ||
+    list.filter(function(c){ return normName_(c.name) === key; })[0] || null;
+}
+// Who owes a credit row, and what they took: "CUS-0007 · name — product × 3".
+function creditNote_(e){
+  var c = byId(state.meta && state.meta.customers, e.creditCustomerId);
+  var who = c ? (c.code ? c.code + ' · ' : '') + c.name : (e.creditCustomer || '');
+  var items = (e.creditItems || []).map(function(it){ return productName_(it.productId) + ' × ' + it.qty; }).join('، ');
+  return who + (items ? ' — ' + items : '');
+}
 // One customer per line: the name, then optionally the city and the mobile,
 // separated by a comma, semicolon or tab. A header line is dropped.
 function customerRowsFromCells_(lines){
@@ -5117,7 +5167,134 @@ function renderEntries(body){
   // delivery fees and credit sales: no master-data item, just what the line
   // was for — and for a credit sale, who owes it
   var deliveryLines = moneyLines_('eDeliveryLines', 'eDelivery', null, { amount: 'entry_deliveryAmount', reason: 'entry_deliveryNote', reasonPh: 'entry_deliveryNotePh' });
-  var creditLines = moneyLines_('eCreditLines', 'eCredit', null, { amount: 'entry_creditAmount', reason: 'entry_creditCustomer', reasonPh: 'entry_creditCustomerPh' });
+  // A credit line names a customer from the list (searchable) and is either
+  // one amount or the products the customer took; with products, the amount
+  // is their total. The sales figure above still includes it, as before.
+  function creditLines_(){
+    var list = qs('#eCreditLines', form), totalInput = qs('#eCredit', form);
+    var custs = (meta.customers||[]).filter(function(c){ return c.active !== false; })
+      .sort(function(a, b){ return String(a.code||'').localeCompare(String(b.code||'')); });
+    var custOpts = '<option value="">'+esc(t('entry_pickCustomer'))+'</option>' + custs.map(function(c){
+      return '<option value="'+esc(c.id)+'">'+esc((c.code ? c.code + ' · ' : '') + c.name)+'</option>';
+    }).join('');
+    function mode_(row){ return row.dataset.mode || 'amount'; }
+    function items_(row){
+      return qsa('.crItem', row).map(function(it){
+        return { productId: qs('.ciProduct', it).value || null, qty: numFromInput_(qs('.ciQty', it)), unitPrice: numFromInput_(qs('.ciPrice', it)) };
+      });
+    }
+    function itemsTotal_(row){
+      return Math.round(items_(row).reduce(function(a, x){ return a + (x.productId ? x.qty * x.unitPrice : 0); }, 0) * 100) / 100;
+    }
+    function rows(){
+      return qsa('.mline', list).map(function(row){
+        var byItems = mode_(row) === 'items';
+        var items = byItems ? items_(row).filter(function(x){ return x.productId && x.qty > 0; }) : null;
+        return {
+          amount: byItems ? itemsTotal_(row) : numFromInput_(qs('.mlAmount', row)),
+          customerId: qs('.crCustomer', row).value || null,
+          items: items && items.length ? items : null
+        };
+      }).filter(function(r){ return r.amount > 0; });
+    }
+    function recompute(){
+      qsa('.mline', list).forEach(function(row, i){
+        if (mode_(row) === 'items'){
+          var tot = itemsTotal_(row);
+          qs('.mlAmount', row).value = tot ? money(tot) : '0';
+          qs('.crItemsSum', row).textContent = money(tot);
+        }
+        var del = qs('.mlDel', row);
+        if (del) del.hidden = qsa('.mline', list).length < 2;
+        var n = qs('.mlNo', row);
+        if (n) n.textContent = (i + 1);
+      });
+      var total = rows().reduce(function(a, r){ return a + r.amount; }, 0);
+      totalInput.value = total ? money(total) : '0';
+      totalInput.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+    function addItem_(row){
+      var it = el('<div class="crItem">' +
+        '<div class="field ciP"><label>'+esc(t('entry_lineProduct'))+'</label><select class="ciProduct">'+lineProductOptionsHtml_('cash')+'</select></div>' +
+        '<div class="field"><label>'+esc(t('entry_qty'))+'</label><input class="ciQty" type="text" inputmode="decimal" value="1"></div>' +
+        '<div class="field"><label>'+esc(t('entry_unitPrice'))+'</label><input class="ciPrice" type="text" inputmode="decimal" value="0"></div>' +
+        '<button type="button" class="ico-btn danger ciDel" title="'+esc(t('entry_removeLine'))+'" aria-label="'+esc(t('entry_removeLine'))+'">'+icon_('close')+'</button>' +
+      '</div>');
+      qs('.crItems', row).appendChild(it);
+      wireCommaInput_(qs('.ciQty', it), true);
+      wireCommaInput_(qs('.ciPrice', it), true);
+      // same rule as a sales line: a fixed price fills in read-only
+      function price_(){
+        var prod = byId(meta.products, qs('.ciProduct', it).value), p = qs('.ciPrice', it);
+        var locked = !!(prod && prod.priceLocked && Number(prod.unitPrice) > 0);
+        if (prod && Number(prod.unitPrice) > 0 && (locked || !numFromInput_(p))) p.value = String(prod.unitPrice);
+        p.readOnly = locked;
+        p.classList.toggle('locked', locked);
+        p.title = locked ? t('entry_priceFixed') : '';
+        recompute();
+      }
+      qs('.ciProduct', it).addEventListener('change', price_);
+      ['input','blur'].forEach(function(ev){
+        qs('.ciQty', it).addEventListener(ev, recompute);
+        qs('.ciPrice', it).addEventListener(ev, recompute);
+      });
+      qs('.ciDel', it).addEventListener('click', function(){
+        it.remove();
+        if (!qsa('.crItem', row).length) addItem_(row);
+        recompute();
+      });
+      return it;
+    }
+    function setMode_(row, m){
+      row.dataset.mode = m;
+      qsa('.cr-seg', row).forEach(function(b){ var on = b.dataset.mode === m; b.classList.toggle('on', on); b.setAttribute('aria-checked', on ? 'true' : 'false'); });
+      qs('.crAmountWrap', row).hidden = m === 'items';
+      qs('.crItemsWrap', row).hidden = m !== 'items';
+      if (m === 'items' && !qsa('.crItem', row).length) addItem_(row);
+      if (m === 'amount') qs('.mlAmount', row).value = '0';
+      recompute();
+    }
+    function add(){
+      var row = el('<div class="mline crLine" data-mode="amount">' +
+        '<div class="ml-head"><span class="mlNo">1</span>' +
+          '<button type="button" class="ico-btn danger mlDel" title="'+esc(t('admin_delete'))+'">'+icon_('close')+'</button></div>' +
+        '<div class="field"><label>'+esc(t('entry_creditCustomer'))+'<span class="req">*</span></label><select class="crCustomer">'+custOpts+'</select></div>' +
+        '<div class="cr-mode" role="radiogroup" aria-label="'+esc(t('entry_creditHow'))+'">' +
+          '<button type="button" class="cr-seg on" data-mode="amount" role="radio" aria-checked="true">'+icon_('cash')+'<span>'+esc(t('entry_creditByAmount'))+'</span></button>' +
+          '<button type="button" class="cr-seg" data-mode="items" role="radio" aria-checked="false">'+icon_('box')+'<span>'+esc(t('entry_creditByItems'))+'</span></button>' +
+        '</div>' +
+        '<div class="field crAmountWrap"><label>'+esc(t('entry_creditAmount'))+'</label><input class="mlAmount" type="text" inputmode="decimal" value="0"></div>' +
+        '<div class="crItemsWrap" hidden><div class="crItems"></div>' +
+          '<div class="cr-items-foot"><button type="button" class="btn secondary crAddItem">'+esc(t('entry_creditAddItem'))+'</button>' +
+          '<span class="cr-items-total">'+esc(t('entry_creditItemsTotal'))+' <b class="crItemsSum num">0.00</b></span></div>' +
+        '</div>' +
+      '</div>');
+      list.appendChild(row);
+      wireCommaInput_(qs('.mlAmount', row), true);
+      ['input','blur'].forEach(function(ev){ qs('.mlAmount', row).addEventListener(ev, recompute); });
+      qs('.crCustomer', row).addEventListener('change', recompute);
+      qsa('.cr-seg', row).forEach(function(b){ b.addEventListener('click', function(){ setMode_(row, b.dataset.mode); }); });
+      qs('.crAddItem', row).addEventListener('click', function(){ var it = addItem_(row); var f = qs('select', it); if (f && f._dd) f._dd.focus(); });
+      qs('.mlDel', row).addEventListener('click', function(){ row.remove(); recompute(); });
+      recompute();
+      return row;
+    }
+    function reset(){ list.innerHTML = ''; add(); }
+    // what stops the section from being confirmed, if anything
+    function problem(){
+      var p = null;
+      qsa('.mline', list).forEach(function(row){
+        if (p) return;
+        var byItems = mode_(row) === 'items';
+        if (byItems && items_(row).some(function(x){ return (x.productId && !(x.qty > 0)) || (!x.productId && x.qty > 0 && x.unitPrice > 0); })) { p = 'err_creditItemsIncomplete'; return; }
+        var amt = byItems ? itemsTotal_(row) : numFromInput_(qs('.mlAmount', row));
+        if (amt > 0 && !qs('.crCustomer', row).value) p = 'err_customerRequired';
+      });
+      return p;
+    }
+    return { add: add, rows: rows, reset: reset, recompute: recompute, problem: problem };
+  }
+  var creditLines = creditLines_();
   otherLines.add();
   expenseLines.add();
   deliveryLines.add();
@@ -5144,7 +5321,7 @@ function renderEntries(body){
       if (others[i]) { row.otherCash = others[i].amount; row.otherCashItemId = others[i].itemId; row.otherCashReason = others[i].reason; }
       if (expenses[i]) { row.expenseAmount = expenses[i].amount; row.expenseItemId = expenses[i].itemId; row.expenseReason = expenses[i].reason; }
       if (deliveries[i]) { row.deliveryFeeBankAmount = deliveries[i].amount; row.deliveryNote = deliveries[i].reason; }
-      if (credits[i]) { row.creditSales = credits[i].amount; row.creditCustomer = credits[i].reason; }
+      if (credits[i]) { row.creditSales = credits[i].amount; row.creditCustomerId = credits[i].customerId; if (credits[i].items) row.creditItems = credits[i].items; }
       extra.push(row);
     }
     return extra;
@@ -5156,7 +5333,7 @@ function renderEntries(body){
       otherCash: o ? o.amount : 0, otherCashItemId: o ? o.itemId : null, otherCashReason: o ? o.reason : '',
       expenseAmount: x ? x.amount : 0, expenseItemId: x ? x.itemId : null, expenseReason: x ? x.reason : '',
       deliveryFeeBankAmount: d ? d.amount : 0, deliveryNote: d ? d.reason : '',
-      creditSales: c ? c.amount : 0, creditCustomer: c ? c.reason : ''
+      creditSales: c ? c.amount : 0, creditCustomerId: c ? c.customerId : null, creditItems: c && c.items ? c.items : null
     };
   }
 
@@ -5191,13 +5368,13 @@ function renderEntries(body){
     var msgEl = qs('.me-msg', section);
     qs('.me-confirm', section).addEventListener('click', function(){
       var problem = null;
-      qsa('.mline', section).forEach(function(row){
+      if (section === qs('#eCreditWrap', form)) problem = creditLines.problem();
+      else qsa('.mline', section).forEach(function(row){
         if (problem) return;
         var amt = numFromInput_(qs('.mlAmount', row));
         if (!(amt > 0)) return;
         var itemSel = qs('.mlItem', row), reason = qs('.mlReason', row).value.trim();
         if (itemSel && !itemSel.value) problem = section === qs('#eExpenseWrap', form) ? 'err_invalidExpenseItem' : 'err_invalidIncomeItem';
-        else if (section === qs('#eCreditWrap', form)) { if (!reason) problem = 'err_customerRequired'; }
         else if (itemSel && !reason) problem = 'err_reasonRequired';
       });
       if (!problem && section === qs('#eDepositWrap', form) && numFromInput_(input) > 0 && !qs('#eDepositRef', form).value.trim()) {
@@ -5231,13 +5408,8 @@ function renderEntries(body){
     var box = qs('#eNetPreview', form);
     box.innerHTML = '';
     if (!cash && !other && !expense && !deposited && !delivery && !credit) return;
-    var rows = [{ label: t('entry_cash'), amount: cash, color: 'var(--c-cash)' }];
-    if (other) rows.push({ label: t('entry_otherTitle'), amount: other, color: 'var(--c-credit)' });
-    if (delivery) rows.push({ label: t('entry_delivery'), hint: t('report_vat') + ': ' + money(vatBack), amount: delivery - vatBack, kind: 'deduct', color: 'var(--c-delivery)' });
-    if (expense) rows.push({ label: t('entry_expenseTitle'), amount: expense, kind: 'deduct', color: 'var(--c-danger)' });
-    if (credit) rows.push({ label: t('report_credit'), hint: t('dash_creditHint'), amount: credit, kind: 'deduct', color: 'var(--c-credit)' });
-    if (deposited) rows.push({ label: t('entry_depositTitle'), amount: deposited, kind: 'deduct', color: 'var(--c-deposit)' });
-    rows.push({ label: t('entry_netOwed'), amount: net, kind: 'final' });
+    var rows = cashCalcRows_({ cash: cash, other: other, delivery: delivery, vat: vatBack, credit: credit, expense: expense, banked: deposited, net: net });
+    rows[rows.length - 1].label = t('entry_netOwed');
     box.appendChild(statement_({ title: t('entry_netOwed'), value: net, caption: t('entry_netHint'), rows: rows }));
   }
   ['#eCash','#eDelivery','#eOther','#eExpense','#eDeposit','#eCredit'].forEach(function(sel){
@@ -5752,6 +5924,7 @@ function renderEntries(body){
           if (row.status === 'ok' && row.expenseAmount > 0 && (!row.expenseItemId || !row.expenseReason)) row.status = 'missing';
           if (row.status === 'ok' && row.directDepositAmount > 0 && !row.directDepositRef) row.status = 'missing';
           if (row.status === 'ok' && row.creditSales > 0 && !row.creditCustomer) row.status = 'missing';
+          if (row.status === 'ok' && row.creditSales > 0 && !findCustomerLocal_(row.creditCustomer)) row.status = 'nocustomer';
           return row;
         });
 
@@ -5766,6 +5939,7 @@ function renderEntries(body){
       var rows = pendingImportRows.map(function(r, i){
         var statusLabel = r.status==='ok' ? '<span class="badge confirmed">'+esc(t('entry_importValid'))+'</span>'
           : r.status==='notfound' ? '<span class="badge disputed">'+esc(t('entry_importErr_notfound'))+'</span>'
+          : r.status==='nocustomer' ? '<span class="badge disputed">'+esc(t('err_unknownCustomer'))+'</span>'
           : '<span class="badge rejected">'+esc(t('entry_importErr_missing'))+'</span>';
         return '<tr><td>'+(i+1)+'</td><td>'+esc(r.date)+'</td><td>'+esc(r.sourceType)+'</td><td>'+esc(r.sourceName)+'</td><td>'+statusLabel+'</td></tr>';
       }).join('');
@@ -5855,7 +6029,7 @@ function renderEntries(body){
       lines += line(t('entry_cash'), Number(e.cashSales||0), 1);
       lines += line(t('entry_pos'), Number(e.posSales||0), 1);
       lines += line(t('entry_otherTitle'), Number(e.otherCash||0), 1, [itemName_('incomeItems', e.otherCashItemId), e.otherCashReason].filter(Boolean).join(' — '));
-      lines += line(t('entry_creditTitle'), Number(e.creditSales||0), -1, e.creditCustomer);
+      lines += line(t('entry_creditTitle'), Number(e.creditSales||0), -1, creditNote_(e));
       lines += line(t('entry_deliveryTitle'), Number(e.deliveryFeeBankAmount||0), -1, e.deliveryNote);
       lines += line(t('entry_expenseTitle'), Number(e.expenseAmount||0), -1, [itemName_('expenseItems', e.expenseItemId), e.expenseReason].filter(Boolean).join(' — '));
       lines += line(t('entry_depositTitle'), Number(e.directDepositAmount||0), -1, [e.directDepositRef, e.directDepositNote].filter(Boolean).join(' — '));
@@ -6030,6 +6204,7 @@ function renderAreaBulk(body){
         if (status === 'ok' && extraCols.expenseAmount > 0 && (!extraCols.expenseItemId || !extraCols.expenseReason)) status = 'missing';
         if (status === 'ok' && extraCols.directDepositAmount > 0 && !extraCols.directDepositRef) status = 'missing';
         if (status === 'ok' && creditAmt > 0 && !extraCols.creditCustomer) status = 'missing';
+        if (status === 'ok' && creditAmt > 0 && !findCustomerLocal_(extraCols.creditCustomer)) status = 'customer_notfound';
         var subtotal = qty * unitPrice;
         return {
           date: date, locationName: locationName, sourceType: sourceType, sourceId: sourceId, sourceName: sourceName,
@@ -6064,7 +6239,8 @@ function renderAreaBulk(body){
       invalid_price: '<span class="badge rejected">'+esc(t('areaBulk_err_invalid_price'))+'</span>',
       invalid_payment: '<span class="badge rejected">'+esc(t('areaBulk_err_invalid_payment'))+'</span>',
       delivery_not_allowed_store: '<span class="badge rejected">'+esc(t('areaBulk_err_delivery_not_allowed_store'))+'</span>',
-      delivery_needs_services: '<span class="badge rejected">'+esc(t('areaBulk_err_delivery_needs_services'))+'</span>'
+      delivery_needs_services: '<span class="badge rejected">'+esc(t('areaBulk_err_delivery_needs_services'))+'</span>',
+      customer_notfound: '<span class="badge disputed">'+esc(t('err_unknownCustomer'))+'</span>'
     };
     var paymentLabels = { cash: t('entry_payment_cash'), pos: t('entry_payment_pos') };
     var rows = pendingRows.map(function(r, i){
@@ -6324,23 +6500,24 @@ function statusBadge(s){
 
 function breakdownGrid(b){
   if (!b) return '';
-  var items = [
-    ['report_storeCash', b.storeCash],
-    ['report_carCash', b.carCash],
-    ['report_posCash', b.posCash],
-    ['report_delivery', b.deliveryFee],
-    ['report_vat', b.vatOnDelivery]
-  ];
-  // only shown when they actually happened, so an ordinary day's breakdown
-  // keeps the shape people already know
-  if (Number(b.creditSales||0)) items.push(['report_credit', b.creditSales]);
-  if (Number(b.otherCash||0)) items.push(['report_otherCash', b.otherCash]);
-  if (Number(b.expenses||0)) items.push(['report_expenses', b.expenses]);
-  if (Number(b.directDeposit||0)) items.push(['report_directDeposit', b.directDeposit]);
-  items.push(['report_net', b.netCashOwed]);
-  var grid = '<div class="breakdown">' + items.map(function(it){
-    return '<div class="bi">'+esc(t(it[0]))+'<b>'+money(it[1])+'</b></div>';
-  }).join('') + '</div>';
+  // what came in, its subtotal; what comes off, its subtotal; the net
+  var ins = [['report_storeCash', b.storeCash], ['report_carCash', b.carCash]];
+  if (Number(b.posCash||0)) ins.push(['report_posCash', b.posCash]);
+  if (Number(b.otherCash||0)) ins.push(['report_otherCash', b.otherCash]);
+  var outs = [];
+  if (Number(b.deliveryFee||0)) outs.push(['dash_deliveryFeeBeforeVat', Number(b.deliveryFee) - Number(b.vatOnDelivery||0)]);
+  if (Number(b.creditSales||0)) outs.push(['report_credit', b.creditSales]);
+  if (Number(b.expenses||0)) outs.push(['report_expenses', b.expenses]);
+  if (Number(b.directDeposit||0)) outs.push(['report_directDeposit', b.directDeposit]);
+  var sum = function(list){ return list.reduce(function(a, it){ return a + Number(it[1]||0); }, 0); };
+  function cell(it, cls){ return '<div class="bi'+(cls?' '+cls:'')+'">'+esc(t(it[0]))+'<b>'+(cls === 'out' ? '<bdi dir="ltr">− '+money(it[1])+'</bdi>' : money(it[1]))+'</b></div>'; }
+  var grid = '<div class="breakdown">' +
+    ins.map(function(it){ return cell(it); }).join('') +
+    '<div class="bi sub">'+esc(t('calc_totalIn'))+'<b>'+money(sum(ins))+'</b></div>' +
+    outs.map(function(it){ return cell(it, 'out'); }).join('') +
+    (outs.length ? '<div class="bi sub out">'+esc(t('calc_totalOut'))+'<b><bdi dir="ltr">− '+money(sum(outs))+'</bdi></b></div>' : '') +
+    '<div class="bi net">'+esc(t('report_net'))+'<b>'+money(b.netCashOwed)+'</b></div>' +
+  '</div>';
   if (Number(b.posSales||0) > 0) {
     grid += '<div class="muted" style="margin-top:8px;font-size:11.5px;">'+esc(t('report_pos'))+': '+money(b.posSales)+' — '+esc(t('handoff_posNote'))+'</div>';
   }
