@@ -14,7 +14,9 @@ var ENTITY_SHEET = {
   zone: SHEETS.ZONES,
   product: SHEETS.PRODUCTS,
   income_item: SHEETS.INCOME_ITEMS,
-  expense_item: SHEETS.EXPENSE_ITEMS
+  expense_item: SHEETS.EXPENSE_ITEMS,
+  customer: SHEETS.CUSTOMERS,
+  city: SHEETS.CITIES
 };
 
 // child sheet + the field on the child that points at the parent, used to
@@ -33,7 +35,11 @@ var ENTITY_CHILDREN = {
   // same reasoning as product: an item already used by an entry stays
   // selectable history, so deactivate rather than delete.
   income_item: [{ sheet: SHEETS.ENTRIES, field: 'otherCashItemId' }],
-  expense_item: [{ sheet: SHEETS.ENTRIES, field: 'expenseItemId' }]
+  expense_item: [{ sheet: SHEETS.ENTRIES, field: 'expenseItemId' }],
+  // a customer with credit history stays on file (deactivate instead)
+  customer: [{ sheet: SHEETS.ENTRIES, field: 'creditCustomerId' }],
+  // a city is referenced by name, not id — see actionAdminDeleteEntity_
+  city: []
 };
 
 function requireAdmin_(user) {
@@ -425,8 +431,24 @@ function userHasRole_(userId, role) {
 }
 
 function validateEntity_(kind, d) {
+  if (kind === 'customer') {
+    if (!String(d.name || '').trim()) return 'invalid_input';
+    if (customerDuplicateOf_(d.name, d.id)) return 'duplicate_customer';
+    return null;
+  }
+  if (kind === 'city') {
+    if (!String(d.name || '').trim()) return 'invalid_input';
+    if (cityDuplicateOf_(d.name, d.id)) return 'duplicate_city';
+    return null;
+  }
   if (kind === 'location') {
     if (!d.city || !d.name) return 'invalid_input';
+    // a map position is both numbers, in range, or neither
+    var hasLat = d.lat != null && d.lat !== '', hasLng = d.lng != null && d.lng !== '';
+    if (hasLat || hasLng) {
+      var la = Number(d.lat), ln = Number(d.lng);
+      if (!hasLat || !hasLng || !isFinite(la) || !isFinite(ln) || la < -90 || la > 90 || ln < -180 || ln > 180) return 'invalid_coordinates';
+    }
     // Every branch hands its cash to one collector: its own, or (a branch
     // saved before collectors moved to branches) its area's.
     var locCluster = d.clusterId ? getById_(SHEETS.CLUSTERS, d.clusterId) : null;
@@ -560,10 +582,22 @@ function inFlightError_(kind, before, after) {
 
 function actionAdminSaveEntity_(req, user) {
   requireAdmin_(user);
+  if (req.kind !== 'customer') return saveEntity_(req, user);
+  // the duplicate check and the new number must see the same file: hold the
+  // lock from the check to the write (writeRow releases it)
+  var lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  try { return saveEntity_(req, user); } finally { try { lock.releaseLock(); } catch (e) {} }
+}
+
+function saveEntity_(req, user) {
   var kind = req.kind;
   var sheetName = hasOwn_(ENTITY_SHEET, kind) ? ENTITY_SHEET[kind] : null;
   if (!sheetName) return { ok: false, error: 'invalid_kind' };
   var d = req.data || {};
+  // a customer's number is the system's, never the form's
+  if (kind === 'customer') { var dc = {}; safeOwnKeys_(d).forEach(function (k2) { if (k2 !== 'code') dc[k2] = d[k2]; }); d = dc; }
+  if (kind === 'location' && d.lat != null && d.lat !== '' && d.lng != null && d.lng !== '') { d.lat = Number(d.lat); d.lng = Number(d.lng); }
 
   var obj = req.id ? getById_(sheetName, req.id) : null;
   if (req.id && !obj) return { ok: false, error: 'not_found' };
@@ -579,6 +613,7 @@ function actionAdminSaveEntity_(req, user) {
   safeOwnKeys_(obj).forEach(function (k0) { merged[k0] = obj[k0]; });
   safeOwnKeys_(d).forEach(function (k1) { merged[k1] = d[k1]; });
   var err = validateEntity_(kind, merged);
+  if (err === 'duplicate_customer') return { ok: false, error: err, code: customerDuplicateOf_(merged.name, merged.id).code };
   if (err) return { ok: false, error: err };
   if (req.id) {
     var flightErr = inFlightError_(kind, obj, merged);
@@ -587,6 +622,8 @@ function actionAdminSaveEntity_(req, user) {
 
   safeOwnKeys_(d).forEach(function (k) { obj[k] = d[k]; });
   if (obj.active === undefined) obj.active = true;
+  if ((kind === 'customer' || kind === 'city') && obj.name) obj.name = String(obj.name).replace(/\s+/g, ' ').trim();
+  if (kind === 'customer' && !obj.code) obj.code = nextCustomerCode_();
 
   var saved = writeRow(sheetName, obj);
   logAudit_('admin_save_' + kind, user.id, saved.id);
@@ -598,7 +635,13 @@ function actionAdminDeleteEntity_(req, user) {
   var kind = req.kind;
   var sheetName = hasOwn_(ENTITY_SHEET, kind) ? ENTITY_SHEET[kind] : null;
   if (!sheetName) return { ok: false, error: 'invalid_kind' };
-  if (!getById_(sheetName, req.id)) return { ok: false, error: 'not_found' };
+  var target = getById_(sheetName, req.id);
+  if (!target) return { ok: false, error: 'not_found' };
+  if (kind === 'city') {
+    var ck = normalizeName_(target.name);
+    var used = readSheet(SHEETS.LOCATIONS).concat(readSheet(SHEETS.ZONES), readSheet(SHEETS.CUSTOMERS)).some(function (r) { return r.city && normalizeName_(r.city) === ck; });
+    if (used) return { ok: false, error: 'has_children' };
+  }
 
   var children = hasOwn_(ENTITY_CHILDREN, kind) ? ENTITY_CHILDREN[kind] : [];
   for (var i = 0; i < children.length; i++) {
@@ -761,6 +804,151 @@ function migrateBranchCollectorsOnce_() {
   setScriptProp_('MIGRATED_BRANCH_COLLECTORS', new Date().toISOString());
 }
 
+// ---------- Credit customers and the city list ----------
+// One spelling for comparing names: the same customer typed with a different
+// alef, ta marbuta, hamza seat, diacritics, tatweel, spacing or letter case
+// must be caught as the same customer, or the list fills with near-twins and
+// credit owed by one customer is split across several records.
+function normalizeName_(s) {
+  return String(s == null ? '' : s)
+    .replace(/[ً-ٰٟـ]/g, '')
+    .replace(/[أإآٱ]/g, 'ا')
+    .replace(/ى/g, 'ي')
+    .replace(/ة/g, 'ه')
+    .replace(/ؤ/g, 'و')
+    .replace(/ئ/g, 'ي')
+    .replace(/\s*-\s*/g, '-')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
+}
+
+// Main Saudi cities, so a new system starts with a list to pick from.
+var DEFAULT_CITIES_ = [
+  'الرياض', 'جدة', 'مكة المكرمة', 'المدينة المنورة', 'الدمام', 'الخبر', 'الظهران',
+  'الأحساء', 'الهفوف', 'القطيف', 'الجبيل', 'الخفجي', 'رأس تنورة', 'بقيق', 'النعيرية',
+  'حفر الباطن', 'الطائف', 'تبوك', 'بريدة', 'عنيزة', 'الرس', 'حائل', 'أبها',
+  'خميس مشيط', 'محايل عسير', 'بيشة', 'النماص', 'جازان', 'صبيا', 'أبو عريش', 'نجران',
+  'الباحة', 'الخرج', 'الدوادمي', 'المجمعة', 'الزلفي', 'شقراء', 'وادي الدواسر', 'ينبع',
+  'رابغ', 'القنفذة', 'الليث', 'سكاكا', 'عرعر', 'القريات', 'رفحاء', 'طريف', 'الوجه', 'ضباء'
+];
+
+// The customer already on file under this name, other than `selfId`.
+function customerDuplicateOf_(name, selfId) {
+  var key = normalizeName_(name);
+  if (!key) return null;
+  return readSheet(SHEETS.CUSTOMERS).filter(function (c) {
+    return c.id !== selfId && normalizeName_(c.name) === key;
+  })[0] || null;
+}
+
+function cityDuplicateOf_(name, selfId) {
+  var key = normalizeName_(name);
+  if (!key) return null;
+  return readSheet(SHEETS.CITIES).filter(function (c) {
+    return c.id !== selfId && normalizeName_(c.name) === key;
+  })[0] || null;
+}
+
+// The next internal number, CUS-0001 onward. The counter lives in a script
+// property, so a deleted customer's number is never handed out again. Call it
+// while holding the script lock.
+function nextCustomerCode_() {
+  var max = Number(scriptProps_().CUSTOMER_SEQ || 0);
+  readSheet(SHEETS.CUSTOMERS).forEach(function (c) {
+    var m = /^CUS-(\d+)$/.exec(String(c.code || ''));
+    if (m && Number(m[1]) > max) max = Number(m[1]);
+  });
+  max += 1;
+  setScriptProp_('CUSTOMER_SEQ', String(max));
+  var n = String(max);
+  while (n.length < 4) n = '0' + n;
+  return 'CUS-' + n;
+}
+
+// A customer by internal number (any letter case) or by name (normalised).
+function findCustomer_(text) {
+  var t = String(text == null ? '' : text).trim();
+  if (!t) return null;
+  var up = t.toUpperCase(), key = normalizeName_(t);
+  var rows = readSheet(SHEETS.CUSTOMERS);
+  for (var i = 0; i < rows.length; i++) if (String(rows[i].code || '').toUpperCase() === up) return rows[i];
+  for (var j = 0; j < rows.length; j++) if (normalizeName_(rows[j].name) === key) return rows[j];
+  return null;
+}
+
+// Adds each new name once. A name already on file, or repeated earlier in the
+// same list, is skipped and reported with the number it already has.
+function importCustomers_(rows) {
+  var created = [], skipped = [];
+  var lock = LockService.getScriptLock();
+  for (var i = 0; i < rows.length; i++) {
+    var r = typeof rows[i] === 'string' ? { name: rows[i] } : (rows[i] || {});
+    var name = String(r.name || '').replace(/\s+/g, ' ').trim();
+    if (!name) { skipped.push({ row: i, name: '', code: null, reason: 'invalid_input' }); continue; }
+    // writeRow releases the lock when it finishes, so take it again per row
+    lock.waitLock(30000);
+    try {
+      var dup = customerDuplicateOf_(name, null);
+      if (dup) { skipped.push({ row: i, name: name, code: dup.code, reason: 'duplicate' }); continue; }
+      var c = { id: Utilities.getUuid(), code: nextCustomerCode_(), name: name, active: true };
+      if (r.city) c.city = String(r.city).trim();
+      if (r.phone) c.phone = String(r.phone).trim();
+      created.push(writeRow(SHEETS.CUSTOMERS, c));
+    } finally {
+      try { lock.releaseLock(); } catch (e) {}
+    }
+  }
+  return { created: created, skipped: skipped };
+}
+
+function actionAdminImportCustomers_(req, user) {
+  requireAdmin_(user);
+  var rows = Array.isArray(req.rows) ? req.rows : [];
+  if (!rows.length) return { ok: false, error: 'invalid_input' };
+  if (rows.length > 2000) return { ok: false, error: 'too_many_rows' };
+  var res = importCustomers_(rows);
+  logAudit_('admin_import_customers', user.id, res.created.length + ' created, ' + res.skipped.length + ' skipped');
+  return { ok: true, created: res.created, skipped: res.skipped };
+}
+
+// The company's customer list ships in CustomerSeed.js, a file that exists in
+// the Apps Script project only — never in this repo, which is public. When
+// that file defines CUSTOMER_SEED_, the first request imports it once.
+function seedCustomersOnce_() {
+  if (typeof CUSTOMER_SEED_ === 'undefined' || !CUSTOMER_SEED_ || !CUSTOMER_SEED_.length) return;
+  if (scriptProps_().SEEDED_CUSTOMERS) return;
+  var res = importCustomers_(CUSTOMER_SEED_);
+  setScriptProp_('SEEDED_CUSTOMERS', new Date().toISOString());
+  logAudit_('seed_customers', 'system', res.created.length + ' created, ' + res.skipped.length + ' skipped');
+}
+
+// The city list: the default cities plus every city a branch or a zone
+// already names, each once. Returns how many it added.
+function seedCities_() {
+  var have = {};
+  readSheet(SHEETS.CITIES).forEach(function (c) { have[normalizeName_(c.name)] = true; });
+  var names = DEFAULT_CITIES_.slice();
+  readSheet(SHEETS.LOCATIONS).concat(readSheet(SHEETS.ZONES)).forEach(function (r) {
+    if (r.city) names.push(String(r.city).trim());
+  });
+  var added = 0;
+  names.forEach(function (n) {
+    var k = normalizeName_(n);
+    if (!k || have[k]) return;
+    have[k] = true;
+    writeRow(SHEETS.CITIES, { id: Utilities.getUuid(), name: n, active: true });
+    added++;
+  });
+  return added;
+}
+
+function seedCitiesOnce_() {
+  if (scriptProps_().SEEDED_CITIES) return;
+  seedCities_();
+  setScriptProp_('SEEDED_CITIES', new Date().toISOString());
+}
+
 function actionMeta_(req, user) {
   var locations = readSheet(SHEETS.LOCATIONS);
   var stores = readSheet(SHEETS.STORES);
@@ -771,6 +959,8 @@ function actionMeta_(req, user) {
   var products = readSheet(SHEETS.PRODUCTS);
   var incomeItems = readSheet(SHEETS.INCOME_ITEMS);
   var expenseItems = readSheet(SHEETS.EXPENSE_ITEMS);
+  var customers = readSheet(SHEETS.CUSTOMERS);
+  var cities = readSheet(SHEETS.CITIES);
   var users = readSheet(SHEETS.USERS).map(publicUser_);
 
   if (!isCompanyWide_(user.role)) {
@@ -785,7 +975,7 @@ function actionMeta_(req, user) {
     ok: true,
     locations: locations, stores: stores, cars: cars, pos: pos,
     clusters: clusters, zones: zones, products: products, users: users,
-    incomeItems: incomeItems, expenseItems: expenseItems,
+    incomeItems: incomeItems, expenseItems: expenseItems, customers: customers, cities: cities,
     config: { vatRate: vatRate_(), staleThresholdHours: staleThresholdHours_(), heldThresholdHours: heldThresholdHours_(), secondApprovalThreshold: secondApprovalThreshold_(), areaManagerBulkUploadEnabled: areaManagerBulkUploadEnabled_(), posSalesEnabled: posSalesEnabled_(), liveLocked: config_().liveLocked === true, liveLockedAt: config_().liveLockedAt || null }
   };
 }
