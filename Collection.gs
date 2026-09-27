@@ -148,7 +148,56 @@ function deliveryNeedsSale_(sourceType, sourceId, date, cashSales, posSales, sib
 // the thing the approval chain exists to prevent. The item comes from admin
 // master data (income_items / expense_items) so the report can group it; the
 // note says what actually happened.
+// A credit line names a customer from the list, and may list what was
+// taken. Settles the row in place, for both the form and the file import:
+// items are checked and their total becomes creditSales (a different amount
+// sent alongside is refused), and the customer — by id from the picker, or
+// by number or name from a file — is resolved to the record, with a copy of
+// its name kept on the row. The cash formula is unchanged: the items only say
+// what the credit amount was made of.
+function settleCredit_(r) {
+  var items = r.creditItems;
+  var clean = [];
+  if (items != null && items !== '') {
+    if (!Array.isArray(items) || items.length > 50) return 'invalid_input';
+    var total = 0;
+    for (var i = 0; i < items.length; i++) {
+      var it = items[i] || {};
+      var p = it.productId ? getById_(SHEETS.PRODUCTS, it.productId) : null;
+      if (!p || p.active === false) return 'invalid_product';
+      var q = Number(it.qty), up = Number(it.unitPrice);
+      if (!isFinite(q) || q <= 0 || !isFinite(up) || up < 0) return 'invalid_input';
+      if (p.priceLocked && p.unitPrice != null && p.unitPrice !== '' && Math.abs(up - Number(p.unitPrice)) > 0.005) return 'price_locked';
+      var amt = Math.round(q * up * 100) / 100;
+      clean.push({ productId: p.id, qty: q, unitPrice: up, amount: amt });
+      total += amt;
+    }
+    total = Math.round(total * 100) / 100;
+    if (clean.length) {
+      if (r.creditSales != null && r.creditSales !== '' && Number(r.creditSales) !== 0 && Math.abs(Number(r.creditSales) - total) > 0.01) return 'credit_items_mismatch';
+      r.creditSales = total;
+    }
+  }
+  r.creditItems = clean.length ? clean : null;
+  if (!(Number(r.creditSales || 0) > 0)) { r.creditCustomerId = null; return null; }
+  var c;
+  if (r.creditCustomerId) {
+    c = getById_(SHEETS.CUSTOMERS, r.creditCustomerId);
+    if (!c) return 'invalid_customer';
+  } else {
+    if (!String(r.creditCustomer || '').trim()) return 'customer_required';
+    c = findCustomer_(r.creditCustomer);
+    if (!c) return 'unknown_customer';
+  }
+  if (c.active === false) return 'invalid_customer';
+  r.creditCustomerId = c.id;
+  r.creditCustomer = c.name;
+  return null;
+}
+
 function checkNonSalesFields_(r, siblingCash) {
+  var creditErr = settleCredit_(r);
+  if (creditErr) return creditErr;
   var other = Number(r.otherCash || 0);
   if (other < 0 || Number(r.expenseAmount || 0) < 0 || Number(r.directDepositAmount || 0) < 0) return 'invalid_input';
   if (other > 0) {
@@ -171,7 +220,6 @@ function checkNonSalesFields_(r, siblingCash) {
     var nv = Number(nums[ni]);
     if (!isFinite(nv) || nv < 0) return 'invalid_input';
   }
-  if (Number(r.creditSales || 0) > 0 && !String(r.creditCustomer || '').trim()) return 'customer_required';
   var dep = Number(r.directDepositAmount || 0);
   if (dep > 0) {
     if (!String(r.directDepositRef || '').trim()) return 'deposit_needs_reference';
@@ -219,7 +267,9 @@ function nonSalesFields_(r) {
     directDepositNote: Number(r.directDepositAmount || 0) > 0 ? String(r.directDepositNote || '').trim() : '',
     // what a delivery-fee line was for, and who owes a credit sale
     deliveryNote: Number(r.deliveryFeeBankAmount || 0) > 0 ? String(r.deliveryNote || '').trim() : '',
-    creditCustomer: Number(r.creditSales || 0) > 0 ? String(r.creditCustomer || '').trim() : ''
+    creditCustomer: Number(r.creditSales || 0) > 0 ? String(r.creditCustomer || '').trim() : '',
+    creditCustomerId: Number(r.creditSales || 0) > 0 ? (r.creditCustomerId || null) : null,
+    creditItems: Number(r.creditSales || 0) > 0 && r.creditItems && r.creditItems.length ? r.creditItems : null
   };
 }
 
@@ -1865,6 +1915,7 @@ function actionSalesReport_(req, user) {
   if (req.zoneId) entries = entries.filter(function (e) { var l = locById[e.locationId]; return l && l.zoneId === req.zoneId; });
   if (req.sourceType) entries = entries.filter(function (e) { return e.sourceType === req.sourceType; });
   if (req.sourceId) entries = entries.filter(function (e) { return e.sourceId === req.sourceId; });
+  if (req.customerId) entries = entries.filter(function (e) { return e.creditCustomerId === req.customerId; });
   if (req.productId) entries = entries.filter(function (e) { return e.productId === req.productId; });
   if (req.enteredBy) entries = entries.filter(function (e) { return e.enteredBy === req.enteredBy; });
   if (req.amountMin != null && req.amountMin !== '') {
@@ -1955,9 +2006,28 @@ function actionSalesReport_(req, user) {
   });
   var dateRows = Object.keys(byDateMap).sort().map(function (d) { return { date: d, total: byDateMap[d] }; });
 
+  // credit owed per registered customer
+  var custById = {};
+  readSheet(SHEETS.CUSTOMERS).forEach(function (c) { custById[c.id] = c; });
+  var byCustMap = {};
+  entries.forEach(function (e) {
+    if (!e.creditCustomerId || !(Number(e.creditSales || 0) > 0)) return;
+    var row = byCustMap[e.creditCustomerId] || (byCustMap[e.creditCustomerId] = { customerId: e.creditCustomerId, creditSales: 0, count: 0 });
+    row.creditSales += Number(e.creditSales || 0);
+    row.count++;
+  });
+  var customerRows = Object.keys(byCustMap).map(function (id) {
+    var c = custById[id] || {};
+    var row = byCustMap[id];
+    row.creditSales = Math.round(row.creditSales * 100) / 100;
+    row.code = c.code || null;
+    row.name = c.name || null;
+    return row;
+  }).sort(function (a, b) { return b.creditSales - a.creditSales; });
+
   return {
     ok: true, totals: totals, outstanding: outstanding,
-    byLocation: locationRows, byProduct: productRows, byDate: dateRows,
+    byLocation: locationRows, byProduct: productRows, byDate: dateRows, byCustomer: customerRows,
     cylinderByLocation: cylinderByLocation,
     entries: entries
   };
