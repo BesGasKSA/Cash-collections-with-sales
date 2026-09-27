@@ -473,7 +473,7 @@ function userByEmail_(email) {
 
 function publicUser_(u) {
   return {
-    id: u.id, name: u.name, email: u.email, role: u.role,
+    id: u.id, code: u.code || null, name: u.name, email: u.email, role: u.role,
     active: u.active !== false, language: u.language || 'ar',
     locationId: u.locationId || null, clusterId: u.clusterId || null,
     mustChangePw: !!u.mustChangePw, iqamaId: u.iqamaId || null,
@@ -499,6 +499,9 @@ function userStatus_(u) {
 // ---------- Web app entry points ----------
 
 function doGet(e) {
+  // The warm-up ping also runs the one-time data jobs, so they finish on the
+  // deploy's own check rather than on a person's first tap.
+  try { resetExecMemo_(); runOneTimeMigrations_(); } catch (err) {}
   return json_({ ok: true, service: 'bestgas-cash-collection' });
 }
 
@@ -584,9 +587,7 @@ function route_(req) {
   // every other action requires a session
   var session = requireAuth_(req);
   var user = session.user;
-  migrateBranchCollectorsOnce_();
-  seedCitiesOnce_();
-  seedCustomersOnce_();
+  runOneTimeMigrations_();
   var newToken = renewToken_(user.id, session.hardExp);
 
   var handlers = {
