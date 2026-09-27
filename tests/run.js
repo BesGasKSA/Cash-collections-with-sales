@@ -1718,6 +1718,14 @@ var twNew2 = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'T
 var offNorth = call({ action: 'adminSaveEntity', token: adminTok, kind: 'cluster', id: twNorth.id, data: { clusterManagerUserId: twNew2.id } });
 check(!offNorth.ok && offNorth.error === 'person_holds_cash', 'but not off the northern area while his open day there is in flight');
 
+console.log('--- POS sales in the entry screen are off until the admin switches them on ---');
+check(call({ action: 'listMeta', token: aliTok }).config.posSalesEnabled === false, 'by default the entry screen offers cash sales only');
+var posOn = call({ action: 'adminSetConfig', token: adminTok, data: { posSalesEnabled: true } });
+check(posOn.ok && call({ action: 'listMeta', token: aliTok }).config.posSalesEnabled === true, 'the admin can switch POS sales back on');
+check(ctx.readSheet(SHEETS.AUDIT).some(function (a) { return a.action === 'admin_set_config' && /posSalesEnabled/.test(a.detail || ''); }), 'and the switch is audited');
+call({ action: 'adminSetConfig', token: adminTok, data: { posSalesEnabled: false } });
+check(call({ action: 'listMeta', token: aliTok }).config.posSalesEnabled === false, 'and off again');
+
 console.log('--- starting a fresh test round archives movement, and keeps the org ---');
 check(call({ action: 'adminArchiveTransactions', token: adminTok }).error === 'confirm_required',
   'archiving needs the confirmation word, so it can never be one stray tap');

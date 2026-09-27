@@ -141,7 +141,7 @@ source type, make sure the entry form, the CSV templates/parsers, and
 
 ### Credit sales and delivery fees are deductions, not payment methods (2026-09-24)
 
-A product line is paid in **cash or POS only**. Credit sales and delivery
+A product line is paid in **cash or POS only**. **POS (card) sales are switched off by default (2026-09-27, `posSalesEnabled` in Settings):** while off, product lines show no payment picker (every line is cash), direct entry hides the POS box, and an area CSV row with `paymentMethod: pos` is refused. The server still accepts `posSales` for history and imports. POS *machines as a source* are a separate thing and are unaffected. Credit sales and delivery
 fees each have their own lines section on the entry screen, as expenses do.
 A delivery line carries `deliveryNote`. A credit line carries
 `creditCustomer`, which the server requires (`customer_required`). The first
