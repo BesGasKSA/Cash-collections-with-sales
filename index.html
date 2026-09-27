@@ -1175,6 +1175,23 @@
   .cu-imp-list li.st-rep .cu-imp-chip{background:color-mix(in srgb, var(--danger) 12%, transparent);color:var(--danger);}
   .cu-imp-list li:not(.st-new) .cu-imp-n{color:var(--muted);}
   .cu-hist{list-style:none;margin:10px 0 0;padding:0;}
+  th.th-sort{cursor:pointer;user-select:none;white-space:nowrap;}
+  th.th-sort::after{content:'↕';margin-inline-start:5px;font-size:10px;opacity:.35;}
+  th.th-sort[aria-sort="ascending"]::after{content:'▲';opacity:.85;color:var(--green);}
+  th.th-sort[aria-sort="descending"]::after{content:'▼';opacity:.85;color:var(--green);}
+  th.th-sort:hover{color:var(--green-dark);}
+  th.th-sort:focus-visible{outline:2px solid var(--green);outline-offset:-2px;}
+  .lf-results{font-size:12px;font-weight:700;color:var(--green-dark);background:var(--green-pale);border-radius:999px;padding:3px 10px;white-space:nowrap;}
+  .lf-results:empty{display:none;}
+  .lf-sort,.ent-sort{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);font-weight:600;}
+  .lf-sort select,.ent-sort select{min-width:0;}
+  .tx-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;}
+  .tx-head h2{margin:0;}
+  @media (max-width:600px){
+    .lf-head{flex-wrap:wrap;}
+    .lf-sort,.ent-tools .ent-sort{flex:1 1 100%;}
+    .lf-sort .dd-btn,.ent-sort .dd-btn,.lf-sort select,.ent-sort select{flex:1;}
+  }
   .bm-hint{font-size:12.5px;margin:-4px 0 10px;line-height:1.6;}
   .bm-canvas{direction:ltr;height:300px;border-radius:14px;overflow:hidden;border:1px solid var(--border-soft);background:var(--bg);position:relative;z-index:0;}
   @media (min-width:900px){ .bm-canvas{height:380px;} }
@@ -1750,7 +1767,7 @@ var L = {
     err_wrongCurrentPassword:'كلمة المرور الحالية غير صحيحة', err_network:'تعذّر الاتصال بالخادم — تحقق من الإنترنت',
     err_noSourceSelected:'الرجاء اختيار مصدر أولاً', err_titleRequired:'الرجاء إدخال عنوان',
     noData:'لا توجد بيانات', loading:'جارِ التحميل...', total:'الإجمالي', kind_location_to_cluster:'مدير الفرع ← مدير المنطقة',
-    kind_cluster_to_collector:'مدير المنطقة ← مُحصّل', kind_deposit:'إيداع بنكي', filter:'تصفية', all:'الكل', entity_bank:'البنك', bm_title:'موقع الفرع على الخريطة', bm_hint:'اضغط على الخريطة لتثبيت موقع الفرع أو اسحب الدبوس، أو استخدم موقعك الحالي وأنت داخل الفرع، أو الصق رابط الموقع من خرائط Google.', bm_here:'موقعي الحالي', bm_pastePh:'رابط خرائط Google أو 24.7136, 46.6753', bm_go:'تحديد', bm_none:'لم يُحدَّد موقع الفرع بعد', bm_openGoogle:'فتح في خرائط Google', bm_noZone:'بلا نطاق', bm_suggest:'أقرب فرع: {branch} ({dist}) — النطاق المقترح:', bm_m:'م', bm_km:'كم', bm_applyZone:'اعتماد هذا النطاق', bm_zoneMatches:'يطابق نطاق الفرع', bm_save:'حفظ الموقع', bm_clear:'إزالة الموقع', bm_noGeo:'المتصفح لا يدعم تحديد الموقع', bm_geoDenied:'تعذّر الحصول على موقعك — اسمح للمتصفح بالوصول إلى الموقع ثم أعد المحاولة', bm_badPaste:'لم نجد إحداثيات في النص — الصق رابطاً كاملاً من خرائط Google أو إحداثيات مثل 24.7136, 46.6753', bm_loadFail:'تعذّر تحميل الخريطة — تحقق من الاتصال', calc_totalIn:'إجمالي التحصيلات', calc_totalOut:'إجمالي الخصومات', entry_pickCustomer:'اختر العميل…', entry_creditHow:'طريقة التسجيل', entry_creditByAmount:'مبلغ', entry_creditByItems:'أصناف', entry_creditAddItem:'+ صنف', entry_creditItemsTotal:'مجموع الأصناف', err_creditItemsIncomplete:'أكمل كل صنف: المنتج والكمية', rec_code:'الرقم', rec_codeAuto:'يُمنح الرقم تلقائياً عند الحفظ', admin_customers:'العملاء', admin_cities:'المدن', admin_addCustomer:'إضافة عميل', admin_addCity:'إضافة مدينة', cu_code:'رقم العميل', cu_codeAuto:'يُمنح رقم العميل تلقائياً عند الحفظ', cu_name:'اسم العميل', cu_phone:'الجوال', ci_name:'اسم المدينة', ci_uses:'الفروع', cu_import:'استيراد قائمة', cu_importTitle:'استيراد العملاء', cu_importHint:'الصق الأسماء، اسماً في كل سطر (ويمكن إضافة المدينة والجوال بعده مفصولين بفاصلة)، أو اختر ملف Excel أو CSV. يُمنح كل عميل جديد رقماً، ويُتخطى كل اسم مسجّل مسبقاً.', cu_importPh:'مثال: شركة الغذاء النوعي للتجارة - الرمال، الرياض', cu_importFile:'اختيار ملف Excel أو CSV', cu_importCheck:'مراجعة القائمة', cu_impNew:'جديد', cu_impOnFile:'مسجّل مسبقاً', cu_impRepeat:'مكرر في القائمة', cu_impAdd:'إضافة {n} عميل', cu_impNothing:'لا يوجد اسم جديد لإضافته', cu_impDone:'أُضيف {n} عميل، وتُخطي {s}', cu_impEmpty:'لم يُعثر على أسماء في القائمة', cu_impLoadFail:'تعذّرت قراءة الملف — جرّب حفظه بصيغة CSV', pf_kindCustomer:'عميل', pf_kindCity:'مدينة', err_duplicateCustomer:'هذا العميل مسجّل مسبقاً برقم {code}', err_duplicateCity:'هذه المدينة موجودة في القائمة', err_unknownCustomer:'العميل غير مسجّل — اختره من القائمة أو اطلب من مدير النظام إضافته', err_invalidCustomer:'حساب هذا العميل موقوف، فلا يُسجَّل عليه بيع آجل جديد', err_creditItemsMismatch:'مبلغ البيع الآجل لا يطابق مجموع الأصناف', err_priceLocked:'سعر هذا المنتج ثابت ولا يُغيَّر', err_invalidProduct:'المنتج غير موجود أو موقوف', err_invalidCoordinates:'إحداثيات الموقع غير صحيحة'
+    kind_cluster_to_collector:'مدير المنطقة ← مُحصّل', kind_deposit:'إيداع بنكي', filter:'تصفية', all:'الكل', entity_bank:'البنك', sort_by:'الترتيب', sort_default:'حسب الإدخال', sort_new:'الأحدث أولاً', sort_old:'الأقدم أولاً', sort_high:'المبلغ: الأعلى أولاً', sort_low:'المبلغ: الأقل أولاً', bm_title:'موقع الفرع على الخريطة', bm_hint:'اضغط على الخريطة لتثبيت موقع الفرع أو اسحب الدبوس، أو استخدم موقعك الحالي وأنت داخل الفرع، أو الصق رابط الموقع من خرائط Google.', bm_here:'موقعي الحالي', bm_pastePh:'رابط خرائط Google أو 24.7136, 46.6753', bm_go:'تحديد', bm_none:'لم يُحدَّد موقع الفرع بعد', bm_openGoogle:'فتح في خرائط Google', bm_noZone:'بلا نطاق', bm_suggest:'أقرب فرع: {branch} ({dist}) — النطاق المقترح:', bm_m:'م', bm_km:'كم', bm_applyZone:'اعتماد هذا النطاق', bm_zoneMatches:'يطابق نطاق الفرع', bm_save:'حفظ الموقع', bm_clear:'إزالة الموقع', bm_noGeo:'المتصفح لا يدعم تحديد الموقع', bm_geoDenied:'تعذّر الحصول على موقعك — اسمح للمتصفح بالوصول إلى الموقع ثم أعد المحاولة', bm_badPaste:'لم نجد إحداثيات في النص — الصق رابطاً كاملاً من خرائط Google أو إحداثيات مثل 24.7136, 46.6753', bm_loadFail:'تعذّر تحميل الخريطة — تحقق من الاتصال', calc_totalIn:'إجمالي التحصيلات', calc_totalOut:'إجمالي الخصومات', entry_pickCustomer:'اختر العميل…', entry_creditHow:'طريقة التسجيل', entry_creditByAmount:'مبلغ', entry_creditByItems:'أصناف', entry_creditAddItem:'+ صنف', entry_creditItemsTotal:'مجموع الأصناف', err_creditItemsIncomplete:'أكمل كل صنف: المنتج والكمية', rec_code:'الرقم', rec_codeAuto:'يُمنح الرقم تلقائياً عند الحفظ', admin_customers:'العملاء', admin_cities:'المدن', admin_addCustomer:'إضافة عميل', admin_addCity:'إضافة مدينة', cu_code:'رقم العميل', cu_codeAuto:'يُمنح رقم العميل تلقائياً عند الحفظ', cu_name:'اسم العميل', cu_phone:'الجوال', ci_name:'اسم المدينة', ci_uses:'الفروع', cu_import:'استيراد قائمة', cu_importTitle:'استيراد العملاء', cu_importHint:'الصق الأسماء، اسماً في كل سطر (ويمكن إضافة المدينة والجوال بعده مفصولين بفاصلة)، أو اختر ملف Excel أو CSV. يُمنح كل عميل جديد رقماً، ويُتخطى كل اسم مسجّل مسبقاً.', cu_importPh:'مثال: شركة الغذاء النوعي للتجارة - الرمال، الرياض', cu_importFile:'اختيار ملف Excel أو CSV', cu_importCheck:'مراجعة القائمة', cu_impNew:'جديد', cu_impOnFile:'مسجّل مسبقاً', cu_impRepeat:'مكرر في القائمة', cu_impAdd:'إضافة {n} عميل', cu_impNothing:'لا يوجد اسم جديد لإضافته', cu_impDone:'أُضيف {n} عميل، وتُخطي {s}', cu_impEmpty:'لم يُعثر على أسماء في القائمة', cu_impLoadFail:'تعذّرت قراءة الملف — جرّب حفظه بصيغة CSV', pf_kindCustomer:'عميل', pf_kindCity:'مدينة', err_duplicateCustomer:'هذا العميل مسجّل مسبقاً برقم {code}', err_duplicateCity:'هذه المدينة موجودة في القائمة', err_unknownCustomer:'العميل غير مسجّل — اختره من القائمة أو اطلب من مدير النظام إضافته', err_invalidCustomer:'حساب هذا العميل موقوف، فلا يُسجَّل عليه بيع آجل جديد', err_creditItemsMismatch:'مبلغ البيع الآجل لا يطابق مجموع الأصناف', err_priceLocked:'سعر هذا المنتج ثابت ولا يُغيَّر', err_invalidProduct:'المنتج غير موجود أو موقوف', err_invalidCoordinates:'إحداثيات الموقع غير صحيحة'
   },
   en: {
     appName:'Best Gas — Cash Collection', login:'Sign In', email:'Email', password:'Password',
@@ -1918,7 +1935,7 @@ var L = {
     err_wrongCurrentPassword:'Current password is incorrect', err_network:"Couldn't reach the server — check your connection",
     err_noSourceSelected:'Please pick a source first', err_titleRequired:'Please enter a title',
     noData:'No data', loading:'Loading...', total:'Total', kind_location_to_cluster:'Branch → Area',
-    kind_cluster_to_collector:'Area → Collector', kind_deposit:'Bank deposit', filter:'Filter', all:'All', entity_bank:'Bank', bm_title:'Branch on the map', bm_hint:'Tap the map to pin the branch or drag the pin, use your current location while inside the branch, or paste its Google Maps link.', bm_here:'My current location', bm_pastePh:'Google Maps link or 24.7136, 46.6753', bm_go:'Locate', bm_none:'The branch has no position yet', bm_openGoogle:'Open in Google Maps', bm_noZone:'No zone', bm_suggest:'Nearest branch: {branch} ({dist}) — suggested zone:', bm_m:'m', bm_km:'km', bm_applyZone:'Use this zone', bm_zoneMatches:'Matches the branch zone', bm_save:'Save position', bm_clear:'Remove position', bm_noGeo:'This browser cannot share your location', bm_geoDenied:'Could not get your location — allow location access and try again', bm_badPaste:'No coordinates found — paste a full Google Maps link or coordinates like 24.7136, 46.6753', bm_loadFail:'The map could not load — check the connection', calc_totalIn:'Total collected', calc_totalOut:'Total deductions', entry_pickCustomer:'Choose the customer…', entry_creditHow:'Record as', entry_creditByAmount:'Amount', entry_creditByItems:'Products', entry_creditAddItem:'+ Product', entry_creditItemsTotal:'Products total', err_creditItemsIncomplete:'Complete every product line: product and quantity', rec_code:'No.', rec_codeAuto:'The number is assigned when you save', admin_customers:'Customers', admin_cities:'Cities', admin_addCustomer:'Add customer', admin_addCity:'Add city', cu_code:'Customer no.', cu_codeAuto:'The customer number is assigned when you save', cu_name:'Customer name', cu_phone:'Mobile', ci_name:'City name', ci_uses:'Branches', cu_import:'Import a list', cu_importTitle:'Import customers', cu_importHint:'Paste the names, one per line (city and mobile may follow, separated by commas), or choose an Excel or CSV file. Each new customer gets a number; names already on file are skipped.', cu_importPh:'e.g. Quality Food Trading Co - Al Rimal, Riyadh', cu_importFile:'Choose an Excel or CSV file', cu_importCheck:'Check the list', cu_impNew:'New', cu_impOnFile:'Already on file', cu_impRepeat:'Repeated in the list', cu_impAdd:'Add {n} customers', cu_impNothing:'No new name to add', cu_impDone:'Added {n} customers, skipped {s}', cu_impEmpty:'No names found in the list', cu_impLoadFail:'Could not read the file — try saving it as CSV', pf_kindCustomer:'Customer', pf_kindCity:'City', err_duplicateCustomer:'This customer is already on file as {code}', err_duplicateCity:'This city is already on the list', err_unknownCustomer:'Customer not on file — pick one from the list or ask the administrator to add it', err_invalidCustomer:'This customer\'s account is closed to new credit', err_creditItemsMismatch:'The credit amount does not match its items', err_priceLocked:'This product has a fixed price', err_invalidProduct:'Product not found or inactive', err_invalidCoordinates:'The map position is not valid'
+    kind_cluster_to_collector:'Area → Collector', kind_deposit:'Bank deposit', filter:'Filter', all:'All', entity_bank:'Bank', sort_by:'Sort', sort_default:'As entered', sort_new:'Newest first', sort_old:'Oldest first', sort_high:'Amount: highest first', sort_low:'Amount: lowest first', bm_title:'Branch on the map', bm_hint:'Tap the map to pin the branch or drag the pin, use your current location while inside the branch, or paste its Google Maps link.', bm_here:'My current location', bm_pastePh:'Google Maps link or 24.7136, 46.6753', bm_go:'Locate', bm_none:'The branch has no position yet', bm_openGoogle:'Open in Google Maps', bm_noZone:'No zone', bm_suggest:'Nearest branch: {branch} ({dist}) — suggested zone:', bm_m:'m', bm_km:'km', bm_applyZone:'Use this zone', bm_zoneMatches:'Matches the branch zone', bm_save:'Save position', bm_clear:'Remove position', bm_noGeo:'This browser cannot share your location', bm_geoDenied:'Could not get your location — allow location access and try again', bm_badPaste:'No coordinates found — paste a full Google Maps link or coordinates like 24.7136, 46.6753', bm_loadFail:'The map could not load — check the connection', calc_totalIn:'Total collected', calc_totalOut:'Total deductions', entry_pickCustomer:'Choose the customer…', entry_creditHow:'Record as', entry_creditByAmount:'Amount', entry_creditByItems:'Products', entry_creditAddItem:'+ Product', entry_creditItemsTotal:'Products total', err_creditItemsIncomplete:'Complete every product line: product and quantity', rec_code:'No.', rec_codeAuto:'The number is assigned when you save', admin_customers:'Customers', admin_cities:'Cities', admin_addCustomer:'Add customer', admin_addCity:'Add city', cu_code:'Customer no.', cu_codeAuto:'The customer number is assigned when you save', cu_name:'Customer name', cu_phone:'Mobile', ci_name:'City name', ci_uses:'Branches', cu_import:'Import a list', cu_importTitle:'Import customers', cu_importHint:'Paste the names, one per line (city and mobile may follow, separated by commas), or choose an Excel or CSV file. Each new customer gets a number; names already on file are skipped.', cu_importPh:'e.g. Quality Food Trading Co - Al Rimal, Riyadh', cu_importFile:'Choose an Excel or CSV file', cu_importCheck:'Check the list', cu_impNew:'New', cu_impOnFile:'Already on file', cu_impRepeat:'Repeated in the list', cu_impAdd:'Add {n} customers', cu_impNothing:'No new name to add', cu_impDone:'Added {n} customers, skipped {s}', cu_impEmpty:'No names found in the list', cu_impLoadFail:'Could not read the file — try saving it as CSV', pf_kindCustomer:'Customer', pf_kindCity:'City', err_duplicateCustomer:'This customer is already on file as {code}', err_duplicateCity:'This city is already on the list', err_unknownCustomer:'Customer not on file — pick one from the list or ask the administrator to add it', err_invalidCustomer:'This customer\'s account is closed to new credit', err_creditItemsMismatch:'The credit amount does not match its items', err_priceLocked:'This product has a fixed price', err_invalidProduct:'Product not found or inactive', err_invalidCoordinates:'The map position is not valid'
   },
   ur: {
     appName:'بیسٹ گیس — نقد وصولی نظام', login:'لاگ ان', email:'ای میل', password:'پاس ورڈ',
@@ -2086,7 +2103,7 @@ var L = {
     err_wrongCurrentPassword:'موجودہ پاس ورڈ غلط ہے', err_network:'سرور سے رابطہ نہیں ہو سکا — انٹرنیٹ چیک کریں',
     err_noSourceSelected:'پہلے ایک ذریعہ منتخب کریں', err_titleRequired:'براہ کرم عنوان درج کریں',
     noData:'کوئی ڈیٹا نہیں', loading:'لوڈ ہو رہا ہے...', total:'کل', kind_location_to_cluster:'برانچ ← علاقہ',
-    kind_cluster_to_collector:'علاقہ ← کلکٹر', kind_deposit:'بینک جمع', filter:'فلٹر', all:'تمام', entity_bank:'بینک', bm_title:'نقشے پر برانچ', bm_hint:'نقشے پر ٹیپ کریں یا پن گھسیٹیں، برانچ میں ہوں تو اپنا موجودہ مقام استعمال کریں، یا Google Maps کا لنک چسپاں کریں۔', bm_here:'میرا موجودہ مقام', bm_pastePh:'Google Maps لنک یا 24.7136, 46.6753', bm_go:'تلاش', bm_none:'برانچ کا مقام ابھی طے نہیں', bm_openGoogle:'Google Maps میں کھولیں', bm_noZone:'کوئی زون نہیں', bm_suggest:'قریب ترین برانچ: {branch} ({dist}) — تجویز کردہ زون:', bm_m:'م', bm_km:'کلومیٹر', bm_applyZone:'یہ زون لگائیں', bm_zoneMatches:'برانچ کے زون سے مطابق', bm_save:'مقام محفوظ کریں', bm_clear:'مقام ہٹائیں', bm_noGeo:'براؤزر مقام نہیں دے سکتا', bm_geoDenied:'آپ کا مقام نہیں ملا — اجازت دیں اور دوبارہ کوشش کریں', bm_badPaste:'کوئی مقام نہیں ملا — پورا لنک یا 24.7136, 46.6753 چسپاں کریں', bm_loadFail:'نقشہ لوڈ نہیں ہوا', calc_totalIn:'کل وصولی', calc_totalOut:'کل کٹوتیاں', entry_pickCustomer:'گاہک منتخب کریں…', entry_creditHow:'درج کرنے کا طریقہ', entry_creditByAmount:'رقم', entry_creditByItems:'اشیاء', entry_creditAddItem:'+ شے', entry_creditItemsTotal:'اشیاء کا مجموعہ', err_creditItemsIncomplete:'ہر شے مکمل کریں: پروڈکٹ اور مقدار', rec_code:'نمبر', rec_codeAuto:'محفوظ کرنے پر نمبر خود ملے گا', admin_customers:'گاہک', admin_cities:'شہر', admin_addCustomer:'گاہک شامل کریں', admin_addCity:'شہر شامل کریں', cu_code:'گاہک نمبر', cu_codeAuto:'محفوظ کرنے پر نمبر خود ملے گا', cu_name:'گاہک کا نام', cu_phone:'موبائل', ci_name:'شہر کا نام', ci_uses:'برانچیں', cu_import:'فہرست درآمد کریں', cu_importTitle:'گاہک درآمد کریں', cu_importHint:'نام چسپاں کریں، ہر سطر میں ایک، یا Excel/CSV فائل منتخب کریں۔ ہر نئے گاہک کو نمبر ملے گا، موجود نام چھوڑ دیے جائیں گے۔', cu_importPh:'مثال: کمپنی کا نام، شہر', cu_importFile:'Excel یا CSV فائل', cu_importCheck:'فہرست جانچیں', cu_impNew:'نیا', cu_impOnFile:'پہلے سے موجود', cu_impRepeat:'فہرست میں دہرایا گیا', cu_impAdd:'{n} گاہک شامل کریں', cu_impNothing:'کوئی نیا نام نہیں', cu_impDone:'{n} گاہک شامل، {s} چھوڑ دیے', cu_impEmpty:'فہرست میں کوئی نام نہیں ملا', cu_impLoadFail:'فائل نہیں پڑھی جا سکی', pf_kindCustomer:'گاہک', pf_kindCity:'شہر', err_duplicateCustomer:'یہ گاہک پہلے سے {code} پر موجود ہے', err_duplicateCity:'یہ شہر فہرست میں موجود ہے', err_unknownCustomer:'گاہک رجسٹرڈ نہیں', err_invalidCustomer:'اس گاہک کا کھاتہ بند ہے', err_creditItemsMismatch:'ادھار رقم اشیاء کے مجموعے سے مختلف ہے', err_priceLocked:'اس پروڈکٹ کی قیمت مقرر ہے', err_invalidProduct:'پروڈکٹ موجود نہیں', err_invalidCoordinates:'مقام درست نہیں'
+    kind_cluster_to_collector:'علاقہ ← کلکٹر', kind_deposit:'بینک جمع', filter:'فلٹر', all:'تمام', entity_bank:'بینک', sort_by:'ترتیب', sort_default:'اندراج کے مطابق', sort_new:'نئے پہلے', sort_old:'پرانے پہلے', sort_high:'رقم: زیادہ پہلے', sort_low:'رقم: کم پہلے', bm_title:'نقشے پر برانچ', bm_hint:'نقشے پر ٹیپ کریں یا پن گھسیٹیں، برانچ میں ہوں تو اپنا موجودہ مقام استعمال کریں، یا Google Maps کا لنک چسپاں کریں۔', bm_here:'میرا موجودہ مقام', bm_pastePh:'Google Maps لنک یا 24.7136, 46.6753', bm_go:'تلاش', bm_none:'برانچ کا مقام ابھی طے نہیں', bm_openGoogle:'Google Maps میں کھولیں', bm_noZone:'کوئی زون نہیں', bm_suggest:'قریب ترین برانچ: {branch} ({dist}) — تجویز کردہ زون:', bm_m:'م', bm_km:'کلومیٹر', bm_applyZone:'یہ زون لگائیں', bm_zoneMatches:'برانچ کے زون سے مطابق', bm_save:'مقام محفوظ کریں', bm_clear:'مقام ہٹائیں', bm_noGeo:'براؤزر مقام نہیں دے سکتا', bm_geoDenied:'آپ کا مقام نہیں ملا — اجازت دیں اور دوبارہ کوشش کریں', bm_badPaste:'کوئی مقام نہیں ملا — پورا لنک یا 24.7136, 46.6753 چسپاں کریں', bm_loadFail:'نقشہ لوڈ نہیں ہوا', calc_totalIn:'کل وصولی', calc_totalOut:'کل کٹوتیاں', entry_pickCustomer:'گاہک منتخب کریں…', entry_creditHow:'درج کرنے کا طریقہ', entry_creditByAmount:'رقم', entry_creditByItems:'اشیاء', entry_creditAddItem:'+ شے', entry_creditItemsTotal:'اشیاء کا مجموعہ', err_creditItemsIncomplete:'ہر شے مکمل کریں: پروڈکٹ اور مقدار', rec_code:'نمبر', rec_codeAuto:'محفوظ کرنے پر نمبر خود ملے گا', admin_customers:'گاہک', admin_cities:'شہر', admin_addCustomer:'گاہک شامل کریں', admin_addCity:'شہر شامل کریں', cu_code:'گاہک نمبر', cu_codeAuto:'محفوظ کرنے پر نمبر خود ملے گا', cu_name:'گاہک کا نام', cu_phone:'موبائل', ci_name:'شہر کا نام', ci_uses:'برانچیں', cu_import:'فہرست درآمد کریں', cu_importTitle:'گاہک درآمد کریں', cu_importHint:'نام چسپاں کریں، ہر سطر میں ایک، یا Excel/CSV فائل منتخب کریں۔ ہر نئے گاہک کو نمبر ملے گا، موجود نام چھوڑ دیے جائیں گے۔', cu_importPh:'مثال: کمپنی کا نام، شہر', cu_importFile:'Excel یا CSV فائل', cu_importCheck:'فہرست جانچیں', cu_impNew:'نیا', cu_impOnFile:'پہلے سے موجود', cu_impRepeat:'فہرست میں دہرایا گیا', cu_impAdd:'{n} گاہک شامل کریں', cu_impNothing:'کوئی نیا نام نہیں', cu_impDone:'{n} گاہک شامل، {s} چھوڑ دیے', cu_impEmpty:'فہرست میں کوئی نام نہیں ملا', cu_impLoadFail:'فائل نہیں پڑھی جا سکی', pf_kindCustomer:'گاہک', pf_kindCity:'شہر', err_duplicateCustomer:'یہ گاہک پہلے سے {code} پر موجود ہے', err_duplicateCity:'یہ شہر فہرست میں موجود ہے', err_unknownCustomer:'گاہک رجسٹرڈ نہیں', err_invalidCustomer:'اس گاہک کا کھاتہ بند ہے', err_creditItemsMismatch:'ادھار رقم اشیاء کے مجموعے سے مختلف ہے', err_priceLocked:'اس پروڈکٹ کی قیمت مقرر ہے', err_invalidProduct:'پروڈکٹ موجود نہیں', err_invalidCoordinates:'مقام درست نہیں'
   }
 };
 function t(k){ var l=L[state.lang]||L.ar; return l[k]!==undefined ? l[k] : (L.en[k]!==undefined?L.en[k]:k); }
@@ -4948,6 +4965,69 @@ function ddClose_(refocus){
   if (document.body) start(); else document.addEventListener('DOMContentLoaded', start);
 })();
 
+// ---------------- sortable tables ----------------
+// Every table the app draws sorts by tapping a column header (again for the
+// other direction): numbers as numbers, dates as dates, text in Arabic order
+// with digits compared as numbers (BR-0002 before BR-0010); empty cells last.
+// Tables that sort themselves (sortableTable's th[data-key]) are left alone,
+// and a table drawn again keeps the sort it had.
+var TSORT_ = {};
+function tsSig_(table){ return [].map.call(table.tHead.rows[0].cells, function(th){ return th.textContent.trim(); }).join('|'); }
+function tsVal_(td){
+  var s = (td ? td.textContent : '').replace(/\s+/g, ' ').trim();
+  if (!s || s === '—' || s === '-') return { t: 'e', v: '' };
+  if (/^\d{4}-\d{2}-\d{2}/.test(s)) return { t: 'd', v: s };
+  var n = s.replace(/[٬,\s]/g, '').replace(/^−/, '-');
+  if (/^-?\d+(\.\d+)?%?$/.test(n)) return { t: 'n', v: parseFloat(n) };
+  return { t: 's', v: s };
+}
+function tableSortBy_(table, col, dir){
+  var head = table.tHead && table.tHead.rows[0], tb = table.tBodies[0];
+  if (!head || !tb) return;
+  var width = head.cells.length, rows = [].slice.call(tb.rows);
+  var keyed = rows.filter(function(r){ return r.cells.length === width; }).map(function(r, i){ return { r: r, i: i, k: tsVal_(r.cells[col]) }; });
+  var rest = rows.filter(function(r){ return r.cells.length !== width; });
+  keyed.sort(function(x, y){
+    if (x.k.t === 'e' || y.k.t === 'e') return x.k.t === y.k.t ? x.i - y.i : (x.k.t === 'e' ? 1 : -1);
+    var c = x.k.t === 'n' && y.k.t === 'n' ? x.k.v - y.k.v : String(x.k.v).localeCompare(String(y.k.v), 'ar', { numeric: true, sensitivity: 'base' });
+    if (!c) return x.i - y.i;
+    return dir === 'desc' ? -c : c;
+  });
+  keyed.forEach(function(x){ tb.appendChild(x.r); });
+  rest.forEach(function(r){ tb.appendChild(r); });
+  [].forEach.call(head.cells, function(th, i){ if (th.classList.contains('th-sort')) th.setAttribute('aria-sort', i === col ? (dir === 'desc' ? 'descending' : 'ascending') : 'none'); });
+  TSORT_[tsSig_(table)] = { col: col, dir: dir };
+}
+function tsEnhance_(table){
+  if (table._ts || !table.tHead || !table.tHead.rows.length || !table.tBodies.length) return;
+  if (table.querySelector('th[data-key]')) return;
+  table._ts = true;
+  [].forEach.call(table.tHead.rows[0].cells, function(th, i){
+    if (!th.textContent.trim() || th.classList.contains('col-actions')) return;
+    th.classList.add('th-sort');
+    th.tabIndex = 0;
+    th.setAttribute('role', 'button');
+    th.setAttribute('aria-sort', 'none');
+    function go(){ tableSortBy_(table, i, th.getAttribute('aria-sort') === 'ascending' ? 'desc' : 'asc'); }
+    th.addEventListener('click', go);
+    th.addEventListener('keydown', function(e){ if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); go(); } });
+  });
+  // rows are often appended right after the table itself
+  setTimeout(function(){ var memo = TSORT_[tsSig_(table)]; if (memo) tableSortBy_(table, memo.col, memo.dir); }, 0);
+}
+(function(){
+  function scan(root){
+    if (!root || root.nodeType !== 1) return;
+    if (root.tagName === 'TABLE') tsEnhance_(root); else [].forEach.call(root.querySelectorAll('table'), tsEnhance_);
+  }
+  function start(){
+    scan(document.body);
+    new MutationObserver(function(ms){ ms.forEach(function(m){ [].forEach.call(m.addedNodes, scan); }); })
+      .observe(document.body, { childList: true, subtree: true });
+  }
+  if (document.body) start(); else document.addEventListener('DOMContentLoaded', start);
+})();
+
 function listFilters_(opts){
   opts = opts || {};
   var fields = opts.fields || ['text'];
@@ -4980,8 +5060,12 @@ function listFilters_(opts){
   if (has('amount')) parts.push('<div class="field"><label>'+esc(t('report_amountMin'))+'</label><input class="lfMin" type="number" step="0.01" min="0"></div>' +
     '<div class="field"><label>'+esc(t('report_amountMax'))+'</label><input class="lfMax" type="number" step="0.01" min="0"></div>');
 
+  // how the list is ordered: by date always, by amount where rows carry one
+  var sorts = [['new', 'sort_new'], ['old', 'sort_old']].concat(opts.sortAmount === false ? [] : [['high', 'sort_high'], ['low', 'sort_low']]);
   var node = el('<section class="card lf">' +
     '<div class="lf-head"><button type="button" class="lf-toggle">'+icon_('search')+'<span>'+esc(t('lf_title'))+'</span><span class="lf-count"></span>'+icon_('chevron')+'</button>' +
+      '<span class="lf-results" aria-live="polite"></span>' +
+      '<label class="lf-sort"><span>'+esc(t('sort_by'))+'</span><select class="lfSort">' + sorts.map(function(o){ return '<option value="'+o[0]+'">'+esc(t(o[1]))+'</option>'; }).join('') + '</select></label>' +
       '<button type="button" class="lf-clear" hidden>'+esc(t('lf_clear'))+'</button></div>' +
     '<div class="lf-body" hidden><div class="grid">'+parts.join('')+'</div></div>' +
   '</section>');
@@ -4995,6 +5079,7 @@ function listFilters_(opts){
   }
   function activeCount(){
     var v = values(), n = 0;
+    delete v.sort;
     Object.keys(v).forEach(function(k){ if (v[k]) n++; });
     return n;
   }
@@ -5008,12 +5093,28 @@ function listFilters_(opts){
     inp.addEventListener('input', changed);
     inp.addEventListener('change', changed);
   });
+  // A list in the chosen order. norm(item) gives {date, amount}; equal keys
+  // keep the order the list came in.
+  function sort(list, norm){
+    var mode = val('.lfSort') || 'new';
+    return list.map(function(x, i){ return { x: x, i: i, n: norm ? norm(x) : x }; }).sort(function(a, b){
+      var c;
+      if (mode === 'high' || mode === 'low') c = Number(a.n.amount || 0) - Number(b.n.amount || 0);
+      else c = String(a.n.date || '').localeCompare(String(b.n.date || ''));
+      if (mode === 'new' || mode === 'high') c = -c;
+      return c || a.i - b.i;
+    }).map(function(o){ return o.x; });
+  }
+  // how many rows the filters leave, out of how many
+  function count(n, total){
+    qs('.lf-results', node).textContent = t('lf_showing').replace('{n}', n).replace('{total}', total);
+  }
   toggle.addEventListener('click', function(){
     body.hidden = !body.hidden;
     node.classList.toggle('open', !body.hidden);
   });
   clear.addEventListener('click', function(){
-    qsa('input, select', node).forEach(function(inp){ inp.value = ''; });
+    qsa('input, select', node).forEach(function(inp){ if (!inp.classList.contains('lfSort')) inp.value = ''; });
     changed();
   });
 
@@ -5040,7 +5141,7 @@ function listFilters_(opts){
     return true;
   }
   refreshHead();
-  return { node: node, match: match, values: values, active: activeCount };
+  return { node: node, match: match, values: values, active: activeCount, sort: sort, count: count };
 }
 
 // Today's date on this device, for the date pickers (the server checks the
@@ -6016,6 +6117,7 @@ function renderEntries(body){
     if (!wrap) return;
     if (!entryRows.length){ wrap.innerHTML = '<div class="el-empty">'+esc(t('el_empty'))+'</div>'; return; }
     var shown = entryFilter ? entryRows.filter(function(r){ return entryFilter.match(r.norm); }) : entryRows;
+    if (entryFilter){ shown = entryFilter.sort(shown, function(r){ return r.norm; }); entryFilter.count(shown.length, entryRows.length); }
     if (!shown.length){ wrap.innerHTML = '<div class="lf-empty">'+esc(t('lf_noMatch'))+'</div>'; return; }
     wrap.innerHTML = '<div class="el-head"><span>'+esc(t('el_place'))+'</span><span>'+esc(t('el_dateBy'))+'</span>' +
       '<span>'+esc(t('el_sales'))+'</span><span>'+esc(t('el_deduct'))+'</span><span>'+esc(t('el_net'))+'</span><span>'+esc(t('us_status'))+'</span><span></span></div>';
@@ -6137,7 +6239,7 @@ function renderEntries(body){
               other: has('otherCash'), expense: has('expenseAmount'), deposit: has('directDepositAmount') },
             // everything a person might type into the search box
             text: rows.map(function(e){ return [e.date, t('entry_source_'+e.sourceType), sourceName_(e), locationName(e.locationId),
-              userName(e.enteredBy), productName_(e.productId), e.note, e.otherCashReason, e.expenseReason, e.creditCustomer, e.deliveryNote,
+              userName(e.enteredBy), productName_(e.productId), e.note, e.otherCashReason, e.expenseReason, creditNote_(e), e.deliveryNote,
               e.directDepositRef, e.directDepositNote, e.voidReason, itemName_('incomeItems', e.otherCashItemId), itemName_('expenseItems', e.expenseItemId)].join(' '); }).join(' ') + ' ' + money(sales)
           }
         };
@@ -6999,7 +7101,8 @@ function renderHandoffs(body){
           locationName(h.locationId), h.bankReference, h.note, money(h.amount)].join(' ')
       };
     }
-    var visible = res.handoffs.filter(function(h){ return hFilter.match(hNorm(h)); });
+    var visible = hFilter.sort(res.handoffs.filter(function(h){ return hFilter.match(hNorm(h)); }), hNorm);
+    hFilter.count(visible.length, res.handoffs.length);
     var pending = visible.filter(function(h){
       if (h.status==='pending' && (h.toUserId===state.user.id || role==='admin')) return true;
       return h.status==='pending_deputy' && (role==='deputy_operations_manager' || role==='admin');
@@ -7439,11 +7542,24 @@ function renderReport(body){
         { label: t('report_vat'), value: money(t1.vatOnDelivery), icon: 'percent', color: 'var(--c-vat)', onClick: rOpen('vat') }
       ]));
 
-      var txCard = el('<div class="card"><h2>'+esc(t('report_transactions2'))+' ('+rEntries.length+')</h2></div>');
-      txCard.appendChild(barRows_(rEntries.slice().sort(function(a,b){ return String(b.date).localeCompare(String(a.date)); }).slice(0, 300).map(function(e){
-        var d = entryRowData_(e, entryAmt_(e).gross);
-        return { label: d.title, sub: d.sub, amount: d.amount, icon: d.icon, color: d.color, onClick: function(){ drawerOpen_(entryDocView_(e)); } };
-      }), { bars: false }));
+      var txCard = el('<div class="card"><div class="tx-head"><h2>'+esc(t('report_transactions2'))+' ('+rEntries.length+')</h2>' +
+        '<label class="lf-sort"><span>'+esc(t('sort_by'))+'</span><select class="txSort">' +
+          [['new','sort_new'],['old','sort_old'],['high','sort_high'],['low','sort_low']].map(function(o){ return '<option value="'+o[0]+'">'+esc(t(o[1]))+'</option>'; }).join('') +
+        '</select></label></div><div class="tx-list"></div></div>');
+      function drawTx_(mode){
+        var sorted = rEntries.slice().sort(function(a, b){
+          var c = mode === 'high' || mode === 'low' ? entryAmt_(a).gross - entryAmt_(b).gross : String(a.date).localeCompare(String(b.date));
+          return mode === 'new' || mode === 'high' ? -c : c;
+        });
+        var box = qs('.tx-list', txCard);
+        box.innerHTML = '';
+        box.appendChild(barRows_(sorted.slice(0, 300).map(function(e){
+          var d = entryRowData_(e, entryAmt_(e).gross);
+          return { label: d.title, sub: d.sub, amount: d.amount, icon: d.icon, color: d.color, onClick: function(){ drawerOpen_(entryDocView_(e)); } };
+        }), { bars: false }));
+      }
+      drawTx_('new');
+      qs('.txSort', txCard).addEventListener('change', function(){ drawTx_(this.value); });
       if (rEntries.length > 300) {
         var allBtn = el('<button type="button" class="cx-more" style="pointer-events:auto;">'+esc(t('ui_showMore'))+' ('+rEntries.length+')</button>');
         allBtn.addEventListener('click', rOpen('gross'));
@@ -7671,6 +7787,7 @@ function renderRisk(body){
     status: [['open', t('risk_status_open')], ['in_progress', t('risk_status_in_progress')], ['resolved', t('risk_status_resolved')]],
     people: (state.meta.users||[]).map(function(u){ return [u.id, u.name]; }),
     labels: { person: 'risk_reportedBy' },
+    sortAmount: false,
     onChange: function(){ loadRiskList(); }
   });
   body.appendChild(riskFilter.node);
@@ -7692,6 +7809,8 @@ function renderRisk(body){
             t('risk_severity_'+it.severity), it.resolutionNote].join(' ')
         });
       });
+      riskShown = riskFilter.sort(riskShown, function(it){ return { date: it.createdAt || '' }; });
+      riskFilter.count(riskShown.length, res.items.length);
       if (!riskShown.length){ wrap.innerHTML = '<div class="lf-empty">'+esc(t('lf_noMatch'))+'</div>'; return; }
       riskShown.forEach(function(it){
         var row = el('<div class="list-item">' +
@@ -8080,7 +8199,7 @@ var ENTITY_FIELDS = {
     // the collector this branch's cash goes to (collectors belong to branches)
     {k:'collectorUserId', l:'admin_collector', pick:'users', pickLabel:function(x){return x.name;}, pickFilter:function(x){return x.role==='collector';}},
     {k:'zoneId', l:'admin_zone', pick:'zones', pickLabel:function(x){return x.city+' — '+x.name;}}
-  ], cols:['name','city','clusterId','collectorUserId','zoneId'] },
+  ], cols:['name','city','clusterId','areaManager','collectorUserId','zoneId'] },
   store: { addKey:'admin_addStore', fields:[
     {k:'locationId', l:'admin_location', pick:'locations', pickLabel:function(x){return x.city+' — '+x.name;}},
     {k:'name', l:'admin_storeName'},
@@ -8311,6 +8430,7 @@ function fieldDisplay_(kind, item, c){
   var spec = ENTITY_FIELDS[kind], meta = state.meta || {};
   if (kind === 'pos' && c === 'owner') return posOwnerName_(item) + ' — ' + locationName(posOwnerLocationId_(item));
   if (kind === 'pos' && c === 'locationId') return locationName(posOwnerLocationId_(item));
+  if (kind === 'location' && c === 'areaManager'){ var am = byId(meta.clusters, item.clusterId); return am && am.clusterManagerUserId ? userName(am.clusterManagerUserId) : '—'; }
   if (kind === 'location' && c === 'collectorUserId'){ var bc = branchCollectorOf_(item); return bc ? userName(bc) : '—'; }
   if (c === 'collectors'){ var cs = areaCollectors_(item.id); return cs.length ? cs.map(userName).join(' · ') : '—'; }
   if (c === 'branches') return String((meta.locations||[]).filter(function(l){ return l.clusterId === item.id; }).length);
@@ -8336,6 +8456,7 @@ function fieldLabel_(kind, c){
   if (kind === 'pos' && c === 'owner') return t('admin_owner');
   if (c === 'branches') return t('chain_branches');
   if (c === 'collectors') return t('pf_collectors');
+  if (c === 'areaManager') return t('admin_clusterManager');
   if (c === 'code') return t(kind === 'customer' ? 'cu_code' : 'rec_code');
   if (c === 'cityUses') return t('ci_uses');
   if (c === 'active') return t('us_status');
@@ -8578,9 +8699,14 @@ function renderAdminEntity(content, kind){
 
   var head = el('<div class="ent-head">' +
     '<div class="ent-ht"><span class="ent-ic">'+icon_(KIND_ICON_[kind])+'</span>' +
-      '<div><b>'+esc(title)+'</b><span>'+esc(t('pf_count').replace('{n}', list.length))+'</span></div></div>' +
+      '<div><b>'+esc(title)+'</b><span class="ent-count" aria-live="polite">'+esc(t('pf_count').replace('{n}', list.length))+'</span></div></div>' +
     '<div class="ent-tools">' +
       '<label class="ent-search">'+icon_('search')+'<input type="search" placeholder="'+esc(t('lf_searchHint'))+'"></label>' +
+      '<label class="ent-sort"><span>'+esc(t('sort_by'))+'</span><select class="entSort"><option value="">'+esc(t('sort_default'))+'</option>' +
+        ['code'].concat(spec.cols).map(function(c, i){
+          var lb = fieldLabel_(kind, c);
+          return '<option value="'+i+':asc">'+esc(lb)+' ↑</option><option value="'+i+':desc">'+esc(lb)+' ↓</option>';
+        }).join('') + '</select></label>' +
       (kind === 'customer' ? '<button type="button" class="btn secondary ent-impBtn">'+icon_('doc')+esc(t('cu_import'))+'</button>' : '') +
       '<button type="button" class="btn ent-addBtn">'+esc(t(spec.addKey))+'</button>' +
     '</div></div>');
@@ -8657,6 +8783,12 @@ function renderAdminEntity(content, kind){
       tr.hidden = !hit; if (hit) shown++;
     });
     empty.hidden = shown > 0;
+    qs('.ent-count', head).textContent = q ? t('lf_showing').replace('{n}', shown).replace('{total}', list.length) : t('pf_count').replace('{n}', list.length);
+  });
+  qs('.entSort', head).addEventListener('change', function(){
+    var v = this.value, table = qs('table', listCard);
+    if (!v){ renderAdmin(qs('#screenBody')); return; }
+    tableSortBy_(table, Number(v.split(':')[0]), v.split(':')[1]);
   });
 }
 
@@ -9003,6 +9135,7 @@ function renderAdminAudit(content){
       fields: ['text','date','person'],
       people: (state.meta.users||[]).map(function(u){ return [u.id, u.name]; }),
       labels: { person: 'admin_name' },
+      sortAmount: false,
       onChange: draw
     });
     content.appendChild(auditFilter.node);
@@ -9015,6 +9148,8 @@ function renderAdminAudit(content){
           text: [a.action, userName(a.userId), a.detail, (a.at||'').slice(0,19)].join(' ')
         });
       });
+      shown = auditFilter.sort(shown, function(a){ return { date: a.at || '' }; });
+      auditFilter.count(shown.length, res.audit.length);
       var body2 = qs('#auditBody', card);
       if (!shown.length){ body2.innerHTML = '<div class="lf-empty">'+esc(t('lf_noMatch'))+'</div>'; return; }
       body2.innerHTML = '<table><thead><tr><th>'+esc(t('handoff_created'))+'</th><th>action</th><th>'+esc(t('admin_name'))+'</th><th></th></tr></thead><tbody>' +
