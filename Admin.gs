@@ -319,6 +319,7 @@ function inviteEmailHtml_(u, link, who, role, expTxt, appUrl) {
 function userAssignments_(userId) {
   var out = [];
   readSheet(SHEETS.CLUSTERS).forEach(function (c) { if (c.clusterManagerUserId === userId || c.collectorUserId === userId) out.push(c.id); });
+  readSheet(SHEETS.LOCATIONS).forEach(function (l) { if (l.collectorUserId === userId) out.push(l.id); });
   readSheet(SHEETS.STORES).forEach(function (s) { if (s.storeManagerUserId === userId) out.push(s.id); });
   readSheet(SHEETS.CARS).forEach(function (c) { if (c.driverUserId === userId) out.push(c.id); });
   readSheet(SHEETS.POS).forEach(function (p) { if (p.assignedUserId === userId) out.push(p.id); });
@@ -426,6 +427,23 @@ function userHasRole_(userId, role) {
 function validateEntity_(kind, d) {
   if (kind === 'location') {
     if (!d.city || !d.name) return 'invalid_input';
+    // Every branch hands its cash to one collector: its own, or (a branch
+    // saved before collectors moved to branches) its area's.
+    var locCluster = d.clusterId ? getById_(SHEETS.CLUSTERS, d.clusterId) : null;
+    if (d.clusterId && !locCluster) return 'invalid_cluster';
+    if (!d.collectorUserId && !(locCluster && locCluster.collectorUserId)) return 'collector_required';
+    if (d.collectorUserId) {
+      if (!userHasRole_(d.collectorUserId, 'collector')) return 'wrong_role';
+      if (locCluster && locCluster.clusterManagerUserId === d.collectorUserId) return 'conflict_of_interest';
+      // one person, one area: a collector's branches all sit in one area,
+      // and nobody collects in one area while managing another
+      var elsewhere = readSheet(SHEETS.LOCATIONS).some(function (l) {
+        return l.id !== d.id && l.collectorUserId === d.collectorUserId && String(l.clusterId || '') !== String(d.clusterId || '');
+      }) || readSheet(SHEETS.CLUSTERS).some(function (c) {
+        return c.clusterManagerUserId === d.collectorUserId || (c.collectorUserId === d.collectorUserId && c.id !== d.clusterId);
+      });
+      if (elsewhere) return 'user_in_other_area';
+    }
   } else if (kind === 'store') {
     if (!d.locationId || !d.name) return 'invalid_input';
     // A branch with no manager has nobody to hand its cash to.
@@ -434,7 +452,7 @@ function validateEntity_(kind, d) {
     if (!loc) return 'invalid_location';
     if (d.storeManagerUserId && loc.clusterId) {
       var storeCluster = getById_(SHEETS.CLUSTERS, loc.clusterId);
-      if (storeCluster && (d.storeManagerUserId === storeCluster.clusterManagerUserId || d.storeManagerUserId === storeCluster.collectorUserId)) {
+      if (storeCluster && (d.storeManagerUserId === storeCluster.clusterManagerUserId || d.storeManagerUserId === branchCollector_(d.locationId))) {
         return 'conflict_of_interest';
       }
     }
@@ -454,21 +472,23 @@ function validateEntity_(kind, d) {
     if (!getById_(ownerSheet, d.ownerId)) return 'invalid_owner';
   } else if (kind === 'cluster') {
     if (!d.name) return 'invalid_input';
-    // Both ends of the area's hop: who collects from its branches, and who
-    // takes it to the bank.
+    // An area needs its manager. Collectors belong to its branches now; a
+    // collector still set on the area (saved before that change) keeps
+    // serving the branches that have none of their own.
     if (!d.clusterManagerUserId) return 'manager_required';
-    if (!d.collectorUserId) return 'collector_required';
-    if (d.clusterManagerUserId === d.collectorUserId) {
+    if (d.collectorUserId && d.clusterManagerUserId === d.collectorUserId) {
       return 'conflict_of_interest';
     }
     if (!userHasRole_(d.clusterManagerUserId, 'cluster_manager')) return 'wrong_role';
-    if (!userHasRole_(d.collectorUserId, 'collector')) return 'wrong_role';
+    if (d.collectorUserId && !userHasRole_(d.collectorUserId, 'collector')) return 'wrong_role';
     // One person, one area: nobody manages or collects for two areas at
     // once, admins standing in included. The same person as manager here and
-    // collector there counts too.
-    var mine = [d.clusterManagerUserId, d.collectorUserId];
+    // collector there counts too — a branch collector included.
+    var mine = [d.clusterManagerUserId].concat(d.collectorUserId ? [d.collectorUserId] : []);
     var taken = readSheet(SHEETS.CLUSTERS).some(function (c) {
-      return c.id !== d.id && (mine.indexOf(c.clusterManagerUserId) >= 0 || mine.indexOf(c.collectorUserId) >= 0);
+      return c.id !== d.id && (mine.indexOf(c.clusterManagerUserId) >= 0 || (c.collectorUserId && mine.indexOf(c.collectorUserId) >= 0));
+    }) || readSheet(SHEETS.LOCATIONS).some(function (l) {
+      return l.collectorUserId && (l.collectorUserId === d.clusterManagerUserId || (l.collectorUserId === d.collectorUserId && l.clusterId !== d.id));
     });
     if (taken) return 'user_in_other_area';
   } else if (kind === 'zone') {
@@ -510,6 +530,15 @@ function areaPersonBusy_(clusterId, userId) {
   });
 }
 
+// A branch's handovers to its collector still open, or received and not yet banked.
+function branchCollectorBusy_(locationId, userId) {
+  if (!userId) return false;
+  return readSheet(SHEETS.HANDOFFS).some(function (h) {
+    if (h.kind !== 'cluster_to_collector' || h.locationId !== locationId || h.toUserId !== userId) return false;
+    return h.status === 'pending' || h.status === 'pending_deputy' || h.status === 'disputed' || (h.status === 'confirmed' && !h.consumedBy);
+  });
+}
+
 function inFlightError_(kind, before, after) {
   function changed(k) { return String(before[k] || '') !== String(after[k] || ''); }
   var people = { store: ['storeManagerUserId'], car: ['driverUserId'], pos: ['assignedUserId'], cluster: ['clusterManagerUserId', 'collectorUserId'] }[kind] || [];
@@ -522,6 +551,8 @@ function inFlightError_(kind, before, after) {
     if (busy) return 'person_holds_cash';
   }
   if (kind === 'location' && changed('clusterId') && placeBusy_('location', before.id)) return 'cash_in_flight';
+  // a branch's collector is not replaced while its cash is on the way to them
+  if (kind === 'location' && changed('collectorUserId') && branchCollectorBusy_(before.id, before.collectorUserId || branchCollector_(before.id))) return 'person_holds_cash';
   if ((kind === 'store' || kind === 'car') && changed('locationId') && placeBusy_(kind, before.id)) return 'cash_in_flight';
   if (kind === 'pos' && (changed('ownerId') || changed('ownerType')) && placeBusy_('pos', before.id)) return 'cash_in_flight';
   return null;

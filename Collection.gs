@@ -37,6 +37,16 @@ function clusterManagerOwnsCluster_(userId, clusterId) {
   return !!c && c.clusterManagerUserId === userId;
 }
 
+// Who collects a branch's cash: its own collector, or — for a branch saved
+// before collectors moved from areas to branches — its area's collector.
+function branchCollector_(locationId) {
+  var loc = getById_(SHEETS.LOCATIONS, locationId);
+  if (!loc) return null;
+  if (loc.collectorUserId) return loc.collectorUserId;
+  var c = loc.clusterId ? getById_(SHEETS.CLUSTERS, loc.clusterId) : null;
+  return c && c.collectorUserId ? c.collectorUserId : null;
+}
+
 function collectorClusterIds_(userId) {
   return readSheet(SHEETS.CLUSTERS)
     .filter(function (c) { return c.collectorUserId === userId; })
