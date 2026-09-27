@@ -607,10 +607,11 @@ function actionAdminSetConfig_(req, user) {
   if (d.heldThresholdHours != null) cfg.heldThresholdHours = Number(d.heldThresholdHours);
   if (d.secondApprovalThreshold != null) cfg.secondApprovalThreshold = Number(d.secondApprovalThreshold);
   if (d.areaManagerBulkUploadEnabled != null) cfg.areaManagerBulkUploadEnabled = !!d.areaManagerBulkUploadEnabled;
+  if (d.posSalesEnabled != null) cfg.posSalesEnabled = !!d.posSalesEnabled;
   writeRow(SHEETS.CONFIG, cfg);
   // what changed, from what to what — a settings change moves money too
   var was = JSON.parse(before), diff = [];
-  ['vatRate', 'staleThresholdHours', 'heldThresholdHours', 'secondApprovalThreshold', 'areaManagerBulkUploadEnabled', 'liveLocked', 'senderName'].forEach(function (k) {
+  ['vatRate', 'staleThresholdHours', 'heldThresholdHours', 'secondApprovalThreshold', 'areaManagerBulkUploadEnabled', 'posSalesEnabled', 'liveLocked', 'senderName'].forEach(function (k) {
     if (String(was[k]) !== String(cfg[k])) diff.push(k + ': ' + was[k] + ' → ' + cfg[k]);
   });
   logAudit_('admin_set_config', user.id, diff.join('; ') || 'no change');
@@ -719,6 +720,6 @@ function actionMeta_(req, user) {
     locations: locations, stores: stores, cars: cars, pos: pos,
     clusters: clusters, zones: zones, products: products, users: users,
     incomeItems: incomeItems, expenseItems: expenseItems,
-    config: { vatRate: vatRate_(), staleThresholdHours: staleThresholdHours_(), heldThresholdHours: heldThresholdHours_(), secondApprovalThreshold: secondApprovalThreshold_(), areaManagerBulkUploadEnabled: areaManagerBulkUploadEnabled_(), liveLocked: config_().liveLocked === true, liveLockedAt: config_().liveLockedAt || null }
+    config: { vatRate: vatRate_(), staleThresholdHours: staleThresholdHours_(), heldThresholdHours: heldThresholdHours_(), secondApprovalThreshold: secondApprovalThreshold_(), areaManagerBulkUploadEnabled: areaManagerBulkUploadEnabled_(), posSalesEnabled: posSalesEnabled_(), liveLocked: config_().liveLocked === true, liveLockedAt: config_().liveLockedAt || null }
   };
 }

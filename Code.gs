@@ -350,6 +350,12 @@ function secondApprovalThreshold_() {
 // by default — this is a deliberate exception to the normal driver/store-
 // manager chain and must never turn itself on for a cluster that hasn't
 // asked for it. See CLAUDE.md.
+// Whether the entry screen offers POS (card) sales at all. Off until the
+// company starts taking card payments at the branches; the admin turns it on.
+function posSalesEnabled_() {
+  return config_().posSalesEnabled === true;
+}
+
 function areaManagerBulkUploadEnabled_() {
   var c = config_();
   return c.areaManagerBulkUploadEnabled === true;
