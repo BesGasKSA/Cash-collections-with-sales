@@ -726,6 +726,41 @@ function actionAdminArchiveTransactions_(req, user) {
 
 // ---------- Reference data (used by every role to render forms/pickers) ----------
 
+// Collectors used to belong to areas; they belong to branches now. This
+// writes each area's collector onto its branches that have none of their
+// own, then clears it from the area — every branch keeps exactly the
+// collector it already had, and no hidden area-level link is left behind
+// to trip the one-area rule when that collector is moved later.
+// Returns how many branches it wrote.
+function migrateBranchCollectors_() {
+  var legacy = readSheet(SHEETS.CLUSTERS).filter(function (c) { return c.collectorUserId; });
+  if (!legacy.length) return 0;
+  var moved = 0;
+  readSheet(SHEETS.LOCATIONS).forEach(function (l) {
+    if (l.collectorUserId) return;
+    var c = legacy.filter(function (x) { return x.id === l.clusterId; })[0];
+    if (!c) return;
+    l.collectorUserId = c.collectorUserId;
+    writeRow(SHEETS.LOCATIONS, l);
+    logAudit_('migrate_branch_collector', 'system', l.id + ' <- ' + c.collectorUserId + ' (area ' + c.id + ')');
+    moved++;
+  });
+  legacy.forEach(function (c) {
+    var was = c.collectorUserId;
+    c.collectorUserId = '';
+    writeRow(SHEETS.CLUSTERS, c);
+    logAudit_('migrate_area_collector_cleared', 'system', c.id + ' (was ' + was + ')');
+  });
+  return moved;
+}
+
+// Runs the move above on the first request after the update, then never again.
+function migrateBranchCollectorsOnce_() {
+  if (scriptProps_().MIGRATED_BRANCH_COLLECTORS) return;
+  migrateBranchCollectors_();
+  setScriptProp_('MIGRATED_BRANCH_COLLECTORS', new Date().toISOString());
+}
+
 function actionMeta_(req, user) {
   var locations = readSheet(SHEETS.LOCATIONS);
   var stores = readSheet(SHEETS.STORES);
