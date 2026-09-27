@@ -43,6 +43,11 @@ function lastInviteFor(email) {
 }
 
 console.log('Seeding scenario...');
+// Stand-in for CustomerSeed.js, which on the live system exists only in the
+// Apps Script project. Made-up names: this repo is public.
+ctx.CUSTOMER_SEED_ = ['مطعم الواحة التجريبي - العليا', 'مخبز الفجر التجريبي', 'شركة الضيافة التجريبية - النسيم', 'شركة الضيافة التجريبية - السليمانية',
+  'مؤسسة البناء التجريبية', 'كافيه المساء التجريبي', 'مطعم البحر التجريبي - جدة', 'شركة التموين التجريبية', 'مطبخ الأسرة التجريبي',
+  'مطعم السنبلة التجريبي', 'حلويات الندى التجريبية', 'مؤسسة البناء التجريبية'];
 var admin = bootstrapAdmin('admin@bestgas.sa', 'Bootstrap#1');
 var adminLogin = call({ action: 'login', email: 'admin@bestgas.sa', password: 'Bootstrap#1' });
 var adminTok = adminLogin.token;
@@ -85,9 +90,17 @@ var multiLocations = [
   ['Jeddah', 'Hamra', southArea.id, rami.id]
 ];
 var branchStore = {};
+// map positions and zones, so the branch map has something to show and to
+// suggest from; Sulaimaniyah is left without a zone on purpose
+var zoneNorth = call({ action: 'adminSaveEntity', token: adminTok, kind: 'zone', data: { city: 'Riyadh', name: 'شمال الرياض' } }).entity;
+var zoneEast = call({ action: 'adminSaveEntity', token: adminTok, kind: 'zone', data: { city: 'Riyadh', name: 'شرق الرياض' } }).entity;
+var zoneJeddah = call({ action: 'adminSaveEntity', token: adminTok, kind: 'zone', data: { city: 'Jeddah', name: 'وسط جدة' } }).entity;
+var GEO = { Olaya: [24.6950, 46.6850, zoneNorth.id], Naseem: [24.7420, 46.8130, zoneEast.id], Sulaimaniyah: [24.7030, 46.7020, null],
+  Rawdah: [21.5610, 39.1500, zoneJeddah.id], Salamah: [21.5920, 39.1480, zoneJeddah.id], Hamra: [21.5230, 39.1590, zoneJeddah.id] };
 multiLocations.forEach(function (row) {
   var city = row[0], name = row[1], clusterId = row[2];
-  var loc = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: city, name: name, clusterId: clusterId, collectorUserId: row[3] } }).entity;
+  var g = GEO[name] || [];
+  var loc = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: city, name: name, clusterId: clusterId, collectorUserId: row[3], lat: g[0], lng: g[1], zoneId: g[2] || '' } }).entity;
   // every link needs its person now, so each branch gets a manager and a driver
   var slug = name.toLowerCase();
   var bm = call({ action: 'adminCreateUser', token: adminTok, data: { name: name + ' Branch Manager', email: slug + '.bm@bestgas.sa', role: 'store_manager' } }).user;

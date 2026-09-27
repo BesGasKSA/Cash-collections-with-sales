@@ -1126,6 +1126,52 @@
   .ent-search svg{width:16px;height:16px;stroke:var(--muted);fill:none;stroke-width:2.2;flex:none;}
   .ent-search input{border:0 !important;box-shadow:none !important;background:transparent !important;padding:10px 0 !important;min-height:0 !important;}
   .ent-add .ent-addGrid{margin-bottom:6px;}
+  .ent-tools .btn{display:inline-flex;align-items:center;gap:6px;}
+  .ent-tools .btn svg{width:16px;height:16px;}
+  .cu-code{min-height:44px;display:flex;align-items:center;padding:0 12px;border-radius:12px;background:var(--green-pale);color:var(--green-dark);font-weight:800;letter-spacing:.02em;}
+  .cu-code.auto{background:var(--bg);color:var(--muted);font-weight:600;font-size:12.5px;letter-spacing:0;}
+  .cu-imp textarea{width:100%;min-height:120px;resize:vertical;}
+  .cu-imp-hint{font-size:12.5px;margin:0 0 10px;line-height:1.6;}
+  .cu-imp-row{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0;}
+  .cu-imp-row .btn{min-height:44px;display:inline-flex;align-items:center;gap:6px;cursor:pointer;}
+  .cu-imp-row .btn svg{width:16px;height:16px;}
+  label.cu-imp-file{background:#fff;color:var(--green);border:1.5px solid var(--border);border-radius:12px;padding:0 16px;font-weight:700;}
+  label.cu-imp-file:active{transform:translateY(1px);}
+  td.ent-code{width:1%;white-space:nowrap;color:var(--muted);font-size:12px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:.02em;}
+  .pf-code{font-weight:800;color:var(--green-dark);letter-spacing:.02em;}
+  .cu-imp-sum{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:6px 0 10px;}
+  .cu-imp-sum span{display:flex;flex-direction:column;align-items:center;gap:2px;padding:10px 6px;border-radius:12px;background:var(--bg);font-size:12px;color:var(--muted);font-weight:600;}
+  .cu-imp-sum b{font-size:20px;font-weight:800;color:var(--text);}
+  .cu-imp-sum .st-new b{color:var(--green-dark);}
+  .cu-imp-list{list-style:none;margin:0 0 12px;padding:0;max-height:320px;overflow-y:auto;border:1px solid var(--border-soft);border-radius:12px;}
+  .cu-imp-list li{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 12px;border-top:1px solid var(--border-soft);font-size:13px;}
+  .cu-imp-list li:first-child{border-top:0;}
+  .cu-imp-n{min-width:0;overflow-wrap:anywhere;}
+  .cu-imp-n i{font-style:normal;color:var(--muted);font-size:11.5px;margin-inline-start:6px;}
+  .cu-imp-chip{flex:none;font-size:11.5px;font-weight:700;padding:3px 9px;border-radius:999px;background:var(--green-pale);color:var(--green-dark);}
+  .cu-imp-list li.st-file .cu-imp-chip{background:var(--bg);color:var(--muted);}
+  .cu-imp-list li.st-rep .cu-imp-chip{background:color-mix(in srgb, var(--danger) 12%, transparent);color:var(--danger);}
+  .cu-imp-list li:not(.st-new) .cu-imp-n{color:var(--muted);}
+  .cu-hist{list-style:none;margin:10px 0 0;padding:0;}
+  .cu-hist li{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;border-top:1px solid var(--border-soft);}
+  .cu-hist li div{display:flex;flex-direction:column;gap:2px;min-width:0;}
+  .cu-hist li span{font-size:12px;color:var(--muted);overflow-wrap:anywhere;}
+  /* master-data lists: a card per row on a phone, not a table to scroll sideways */
+  @media (max-width:600px){
+    .ent-list .tbl-scroll{overflow:visible;}
+    .ent-list table, .ent-list tbody, .ent-list tr, .ent-list td{display:block;width:auto;}
+    .ent-list thead{display:none;}
+    .ent-list tr.pf-row{position:relative;padding:12px 14px;border:1px solid var(--border-soft);border-radius:14px;margin-bottom:8px;background:var(--card);}
+    .ent-list tr.pf-row:hover{background:var(--card);}
+    .ent-list td{border:0 !important;padding:3px 0 !important;display:flex;align-items:baseline;gap:10px;font-size:13px;}
+    .ent-list td[data-label]:not(.ent-name)::before{content:attr(data-label);flex:0 0 92px;color:var(--muted);font-size:12px;font-weight:600;}
+    .ent-list td.ent-name{font-size:15px;padding-inline-end:92px !important;margin-bottom:4px;}
+    .ent-list td.ent-code{display:inline-block;width:auto;padding:2px 8px !important;margin-bottom:6px;border-radius:999px;background:var(--bg);font-size:11px;}
+    .ent-list td.col-actions{position:absolute;top:8px;inset-inline-end:8px;width:auto;padding:0 !important;}
+    .ent-tools .ent-search{min-width:0;flex:1 1 100%;}
+    .ent-tools{width:100%;}
+    .ent-tools .btn{flex:1;justify-content:center;min-height:44px;}
+  }
   .ent-list{padding-top:6px;}
   .ent-empty{padding:22px 10px;text-align:center;color:var(--muted);}
   tr.pf-row{cursor:pointer;}
@@ -1644,7 +1690,7 @@ var L = {
     err_wrongCurrentPassword:'كلمة المرور الحالية غير صحيحة', err_network:'تعذّر الاتصال بالخادم — تحقق من الإنترنت',
     err_noSourceSelected:'الرجاء اختيار مصدر أولاً', err_titleRequired:'الرجاء إدخال عنوان',
     noData:'لا توجد بيانات', loading:'جارِ التحميل...', total:'الإجمالي', kind_location_to_cluster:'مدير الفرع ← مدير المنطقة',
-    kind_cluster_to_collector:'مدير المنطقة ← مُحصّل', kind_deposit:'إيداع بنكي', filter:'تصفية', all:'الكل', entity_bank:'البنك'
+    kind_cluster_to_collector:'مدير المنطقة ← مُحصّل', kind_deposit:'إيداع بنكي', filter:'تصفية', all:'الكل', entity_bank:'البنك', rec_code:'الرقم', rec_codeAuto:'يُمنح الرقم تلقائياً عند الحفظ', admin_customers:'العملاء', admin_cities:'المدن', admin_addCustomer:'إضافة عميل', admin_addCity:'إضافة مدينة', cu_code:'رقم العميل', cu_codeAuto:'يُمنح رقم العميل تلقائياً عند الحفظ', cu_name:'اسم العميل', cu_phone:'الجوال', ci_name:'اسم المدينة', ci_uses:'الفروع', cu_import:'استيراد قائمة', cu_importTitle:'استيراد العملاء', cu_importHint:'الصق الأسماء، اسماً في كل سطر (ويمكن إضافة المدينة والجوال بعده مفصولين بفاصلة)، أو اختر ملف Excel أو CSV. يُمنح كل عميل جديد رقماً، ويُتخطى كل اسم مسجّل مسبقاً.', cu_importPh:'مثال: شركة الغذاء النوعي للتجارة - الرمال، الرياض', cu_importFile:'اختيار ملف Excel أو CSV', cu_importCheck:'مراجعة القائمة', cu_impNew:'جديد', cu_impOnFile:'مسجّل مسبقاً', cu_impRepeat:'مكرر في القائمة', cu_impAdd:'إضافة {n} عميل', cu_impNothing:'لا يوجد اسم جديد لإضافته', cu_impDone:'أُضيف {n} عميل، وتُخطي {s}', cu_impEmpty:'لم يُعثر على أسماء في القائمة', cu_impLoadFail:'تعذّرت قراءة الملف — جرّب حفظه بصيغة CSV', pf_kindCustomer:'عميل', pf_kindCity:'مدينة', err_duplicateCustomer:'هذا العميل مسجّل مسبقاً برقم {code}', err_duplicateCity:'هذه المدينة موجودة في القائمة', err_unknownCustomer:'العميل غير مسجّل — اختره من القائمة أو اطلب من مدير النظام إضافته', err_invalidCustomer:'حساب هذا العميل موقوف، فلا يُسجَّل عليه بيع آجل جديد', err_creditItemsMismatch:'مبلغ البيع الآجل لا يطابق مجموع الأصناف', err_priceLocked:'سعر هذا المنتج ثابت ولا يُغيَّر', err_invalidProduct:'المنتج غير موجود أو موقوف', err_invalidCoordinates:'إحداثيات الموقع غير صحيحة'
   },
   en: {
     appName:'Best Gas — Cash Collection', login:'Sign In', email:'Email', password:'Password',
@@ -1812,7 +1858,7 @@ var L = {
     err_wrongCurrentPassword:'Current password is incorrect', err_network:"Couldn't reach the server — check your connection",
     err_noSourceSelected:'Please pick a source first', err_titleRequired:'Please enter a title',
     noData:'No data', loading:'Loading...', total:'Total', kind_location_to_cluster:'Branch → Area',
-    kind_cluster_to_collector:'Area → Collector', kind_deposit:'Bank deposit', filter:'Filter', all:'All', entity_bank:'Bank'
+    kind_cluster_to_collector:'Area → Collector', kind_deposit:'Bank deposit', filter:'Filter', all:'All', entity_bank:'Bank', rec_code:'No.', rec_codeAuto:'The number is assigned when you save', admin_customers:'Customers', admin_cities:'Cities', admin_addCustomer:'Add customer', admin_addCity:'Add city', cu_code:'Customer no.', cu_codeAuto:'The customer number is assigned when you save', cu_name:'Customer name', cu_phone:'Mobile', ci_name:'City name', ci_uses:'Branches', cu_import:'Import a list', cu_importTitle:'Import customers', cu_importHint:'Paste the names, one per line (city and mobile may follow, separated by commas), or choose an Excel or CSV file. Each new customer gets a number; names already on file are skipped.', cu_importPh:'e.g. Quality Food Trading Co - Al Rimal, Riyadh', cu_importFile:'Choose an Excel or CSV file', cu_importCheck:'Check the list', cu_impNew:'New', cu_impOnFile:'Already on file', cu_impRepeat:'Repeated in the list', cu_impAdd:'Add {n} customers', cu_impNothing:'No new name to add', cu_impDone:'Added {n} customers, skipped {s}', cu_impEmpty:'No names found in the list', cu_impLoadFail:'Could not read the file — try saving it as CSV', pf_kindCustomer:'Customer', pf_kindCity:'City', err_duplicateCustomer:'This customer is already on file as {code}', err_duplicateCity:'This city is already on the list', err_unknownCustomer:'Customer not on file — pick one from the list or ask the administrator to add it', err_invalidCustomer:'This customer\'s account is closed to new credit', err_creditItemsMismatch:'The credit amount does not match its items', err_priceLocked:'This product has a fixed price', err_invalidProduct:'Product not found or inactive', err_invalidCoordinates:'The map position is not valid'
   },
   ur: {
     appName:'بیسٹ گیس — نقد وصولی نظام', login:'لاگ ان', email:'ای میل', password:'پاس ورڈ',
@@ -1980,7 +2026,7 @@ var L = {
     err_wrongCurrentPassword:'موجودہ پاس ورڈ غلط ہے', err_network:'سرور سے رابطہ نہیں ہو سکا — انٹرنیٹ چیک کریں',
     err_noSourceSelected:'پہلے ایک ذریعہ منتخب کریں', err_titleRequired:'براہ کرم عنوان درج کریں',
     noData:'کوئی ڈیٹا نہیں', loading:'لوڈ ہو رہا ہے...', total:'کل', kind_location_to_cluster:'برانچ ← علاقہ',
-    kind_cluster_to_collector:'علاقہ ← کلکٹر', kind_deposit:'بینک جمع', filter:'فلٹر', all:'تمام', entity_bank:'بینک'
+    kind_cluster_to_collector:'علاقہ ← کلکٹر', kind_deposit:'بینک جمع', filter:'فلٹر', all:'تمام', entity_bank:'بینک', rec_code:'نمبر', rec_codeAuto:'محفوظ کرنے پر نمبر خود ملے گا', admin_customers:'گاہک', admin_cities:'شہر', admin_addCustomer:'گاہک شامل کریں', admin_addCity:'شہر شامل کریں', cu_code:'گاہک نمبر', cu_codeAuto:'محفوظ کرنے پر نمبر خود ملے گا', cu_name:'گاہک کا نام', cu_phone:'موبائل', ci_name:'شہر کا نام', ci_uses:'برانچیں', cu_import:'فہرست درآمد کریں', cu_importTitle:'گاہک درآمد کریں', cu_importHint:'نام چسپاں کریں، ہر سطر میں ایک، یا Excel/CSV فائل منتخب کریں۔ ہر نئے گاہک کو نمبر ملے گا، موجود نام چھوڑ دیے جائیں گے۔', cu_importPh:'مثال: کمپنی کا نام، شہر', cu_importFile:'Excel یا CSV فائل', cu_importCheck:'فہرست جانچیں', cu_impNew:'نیا', cu_impOnFile:'پہلے سے موجود', cu_impRepeat:'فہرست میں دہرایا گیا', cu_impAdd:'{n} گاہک شامل کریں', cu_impNothing:'کوئی نیا نام نہیں', cu_impDone:'{n} گاہک شامل، {s} چھوڑ دیے', cu_impEmpty:'فہرست میں کوئی نام نہیں ملا', cu_impLoadFail:'فائل نہیں پڑھی جا سکی', pf_kindCustomer:'گاہک', pf_kindCity:'شہر', err_duplicateCustomer:'یہ گاہک پہلے سے {code} پر موجود ہے', err_duplicateCity:'یہ شہر فہرست میں موجود ہے', err_unknownCustomer:'گاہک رجسٹرڈ نہیں', err_invalidCustomer:'اس گاہک کا کھاتہ بند ہے', err_creditItemsMismatch:'ادھار رقم اشیاء کے مجموعے سے مختلف ہے', err_priceLocked:'اس پروڈکٹ کی قیمت مقرر ہے', err_invalidProduct:'پروڈکٹ موجود نہیں', err_invalidCoordinates:'مقام درست نہیں'
   }
 };
 function t(k){ var l=L[state.lang]||L.ar; return l[k]!==undefined ? l[k] : (L.en[k]!==undefined?L.en[k]:k); }
@@ -2279,6 +2325,9 @@ function toastRaw_(text, type){
 // parentheses, so the real reason is never fully hidden even for a code
 // this table hasn't been taught yet.
 var ERROR_KEYS_ = {
+  duplicate_customer:'err_duplicateCustomer', duplicate_city:'err_duplicateCity', unknown_customer:'err_unknownCustomer',
+  invalid_customer:'err_invalidCustomer', credit_items_mismatch:'err_creditItemsMismatch', price_locked:'err_priceLocked',
+  invalid_product:'err_invalidProduct', invalid_coordinates:'err_invalidCoordinates',
   already_acknowledged:'err_alreadyAcknowledged', auth_required:'err_authRequired', bad_request:'err_badRequest',
   conflict_of_interest:'err_conflictOfInterest', deposit_not_eligible:'err_depositNotEligible', email_exists:'err_emailExists',
   forbidden:'err_forbidden', has_children:'admin_hasChildren', invalid_input:'err_invalidInput', invalid_kind:'err_invalidKind',
@@ -2307,7 +2356,7 @@ function errMsg_(res){
   var code = res && res.error;
   if (!code) return t('err_generic');
   var key = ERROR_KEYS_[code];
-  if (key) return t(key);
+  if (key) return t(key).replace('{code}', res.code || '');
   return t('err_generic') + ' (' + code + ')';
 }
 
@@ -4574,8 +4623,63 @@ function ddScan_(root){
 function ddEsc_(x){ return String(x).replace(/[&<>"]/g, function(c){ return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]; }); }
 function ddNorm_(x){
   // match Arabic regardless of hamza forms and taa marbuta
-  return String(x || '').toLowerCase().replace(/[إأآ]/g, 'ا').replace(/ة/g, 'ه').replace(/ى/g, 'ي').trim();
+  return String(x || '').toLowerCase().replace(/[إأآ]/g, 'ا').replace(/ة/g, 'ه').replace(/ى/g, 'ي').replace(/ؤ/g, 'و').replace(/ئ/g, 'ي').trim();
 }
+// Mirrors normalizeName_ on the server: how two customer or city names are
+// compared, so the import preview flags exactly what the server will skip.
+function normName_(s){
+  return String(s == null ? '' : s)
+    .replace(/[ً-ٰٟـ]/g, '')
+    .replace(/[أإآٱ]/g, 'ا')
+    .replace(/ى/g, 'ي')
+    .replace(/ة/g, 'ه')
+    .replace(/ؤ/g, 'و')
+    .replace(/ئ/g, 'ي')
+    .replace(/\s*-\s*/g, '-')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
+}
+// Third-party code is loaded only on the screen that needs it (Excel reading,
+// the branch map), once, from cdnjs.
+var LIBS_ = {};
+function loadLib_(url){
+  if (LIBS_[url]) return LIBS_[url];
+  LIBS_[url] = new Promise(function(resolve, reject){
+    var sc = document.createElement('script');
+    sc.src = url; sc.async = true;
+    sc.onload = function(){ resolve(); };
+    sc.onerror = function(){ delete LIBS_[url]; reject(new Error('load_failed')); };
+    document.head.appendChild(sc);
+  });
+  return LIBS_[url];
+}
+function loadCss_(url){
+  if (document.querySelector('link[href="'+url+'"]')) return;
+  var l = document.createElement('link'); l.rel = 'stylesheet'; l.href = url; document.head.appendChild(l);
+}
+var XLSX_URL_ = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+// One customer per line: the name, then optionally the city and the mobile,
+// separated by a comma, semicolon or tab. A header line is dropped.
+function customerRowsFromCells_(lines){
+  return lines.map(function(c){ return c.filter(Boolean); })
+    .filter(function(c){ return c.length; })
+    .map(function(c){ return { name: c[0], city: c[1] || '', phone: c[2] || '' }; })
+    .filter(function(r, i){ return !(i === 0 && /^(name|customer|الاسم|اسم العميل|العميل)$/i.test(r.name)); });
+}
+function customerRowsFromText_(text){
+  return customerRowsFromCells_(String(text || '').replace(/^﻿/, '').split(/\r?\n/).map(function(line){
+    return line.split(/[\t;,]/).map(function(c){ return c.replace(/^"|"$/g, '').trim(); });
+  }));
+}
+// An Excel sheet's rows: the first filled cell of each row is the name, so a
+// list that starts in column C (as the company's own file does) still reads.
+function customerRowsFromSheet_(rows){
+  return customerRowsFromCells_((rows || []).map(function(row){
+    return (row || []).map(function(c){ return c == null ? '' : String(c).trim(); });
+  }));
+}
+
 function ddOpen_(sel){
   ddClose_(false);
   var btn = sel._dd;
@@ -7478,8 +7582,8 @@ function renderAdmin(body){
   var groups = [
     { key:'system', label:'admin_groupSystem', tabs:[['users','admin_users'],['permissions','admin_permissions']] },
     { key:'master', label:'admin_groupMaster', tabs:[['chain','admin_chain'],['locations','admin_locations'],['stores','admin_stores'],
-        ['cars','admin_cars'],['pos','admin_pos'],['clusters','admin_clusters'],['zones','admin_zones'],['products','admin_products'],
-        ['incomeItems','admin_incomeItems'],['expenseItems','admin_expenseItems']] },
+        ['cars','admin_cars'],['pos','admin_pos'],['clusters','admin_clusters'],['zones','admin_zones'],['cities','admin_cities'],['products','admin_products'],
+        ['incomeItems','admin_incomeItems'],['expenseItems','admin_expenseItems'],['customers','admin_customers']] },
     { key:'other', label:'admin_groupOther', tabs:[['config','admin_config'],['audit','admin_audit']] }
   ];
   body.innerHTML = '';
@@ -7509,6 +7613,8 @@ function renderAdmin(body){
     products: function(c){ renderAdminEntity(c,'product'); },
     incomeItems: function(c){ renderAdminEntity(c,'income_item'); },
     expenseItems: function(c){ renderAdminEntity(c,'expense_item'); },
+    customers: function(c){ renderAdminEntity(c,'customer'); },
+    cities: function(c){ renderAdminEntity(c,'city'); },
     config: renderAdminConfig, audit: renderAdminAudit
   };
   (renderers[adminTab]||renderAdminUsers)(content);
@@ -7733,7 +7839,7 @@ function renderAdminUsers(content){
 
 var ENTITY_FIELDS = {
   location: { addKey:'admin_addLocation', fields:[
-    {k:'city', l:'admin_city'}, {k:'name', l:'admin_locName'},
+    {k:'city', l:'admin_city', cityPick:true}, {k:'name', l:'admin_locName'},
     {k:'clusterId', l:'admin_cluster', pick:'clusters', pickLabel:function(x){return x.name;}},
     // the collector this branch's cash goes to (collectors belong to branches)
     {k:'collectorUserId', l:'admin_collector', pick:'users', pickLabel:function(x){return x.name;}, pickFilter:function(x){return x.role==='collector';}},
@@ -7774,7 +7880,7 @@ var ENTITY_FIELDS = {
   // employee-based management assignment above). A location can optionally
   // point at a zone for the Country > City > Zone > Location filtering view.
   zone: { addKey:'admin_addZone', fields:[
-    {k:'city', l:'admin_city'}, {k:'name', l:'admin_zoneName'}
+    {k:'city', l:'admin_city', cityPick:true}, {k:'name', l:'admin_zoneName'}
   ], cols:['city','name'] },
   product: { addKey:'admin_addProduct', fields:[
     {k:'name', l:'admin_productName'},
@@ -7788,13 +7894,22 @@ var ENTITY_FIELDS = {
     {k:'active', l:'admin_active', type:'check'}
   ], cols:['name','type','unitPrice','active'] },
   income_item: { addKey:'admin_addIncomeItem', fields:[{k:'name', l:'admin_itemName'}, {k:'active', l:'admin_active', type:'check'}], cols:['name','active'] },
-  expense_item: { addKey:'admin_addExpenseItem', fields:[{k:'name', l:'admin_itemName'}, {k:'active', l:'admin_active', type:'check'}], cols:['name','active'] }
+  expense_item: { addKey:'admin_addExpenseItem', fields:[{k:'name', l:'admin_itemName'}, {k:'active', l:'admin_active', type:'check'}], cols:['name','active'] },
+  // a credit customer: the number (code) is the server's, shown, never typed
+  customer: { addKey:'admin_addCustomer', fields:[
+    {k:'name', l:'cu_name'},
+    {k:'city', l:'admin_city', cityPick:true},
+    {k:'phone', l:'cu_phone', type:'tel'},
+    {k:'active', l:'admin_active', type:'check'}
+  ], cols:['name','city','phone','active'] },
+  // the list every city field picks from
+  city: { addKey:'admin_addCity', fields:[{k:'name', l:'ci_name'}], cols:['name','cityUses'] }
 };
 
 function metaListFor_(kind){
   var m = state.meta||{};
   var map = { location:'locations', store:'stores', car:'cars', pos:'pos', cluster:'clusters', zone:'zones', product:'products',
-    income_item:'incomeItems', expense_item:'expenseItems' };
+    income_item:'incomeItems', expense_item:'expenseItems', customer:'customers', city:'cities' };
   return m[map[kind]]||[];
 }
 
@@ -7802,6 +7917,19 @@ function metaListFor_(kind){
 // the profile build their fields from the same spec through this.
 function entityFieldInput_(f, value, meta, kind){
   var input;
+  // a city is picked from the list, never typed; a value saved before the
+  // list existed stays selectable
+  if (f.cityPick){
+    var names = (meta.cities||[]).filter(function(c){ return c.active !== false; }).map(function(c){ return c.name; })
+      .sort(function(a, b){ return a.localeCompare(b, 'ar'); });
+    if (value && !names.some(function(n){ return normName_(n) === normName_(value); })) names.unshift(value);
+    return el('<select data-k="'+f.k+'"><option value="">—</option>' + names.map(function(n){
+      return '<option value="'+esc(n)+'"'+(normName_(n) === normName_(value) ? ' selected' : '')+'>'+esc(n)+'</option>';
+    }).join('') + '</select>');
+  }
+  if (f.type === 'tel'){
+    return el('<input type="tel" inputmode="tel" dir="ltr" data-k="'+f.k+'" value="'+esc(value != null ? value : '')+'">');
+  }
   if (f.pick){
     var options = (meta[f.pick]||[]).filter(function(x){ return !f.pickFilter || f.pickFilter(x); });
     // one person, one area: someone already on another area is not offered
@@ -7842,7 +7970,7 @@ var REQUIRED_ASSIGNMENTS_ = {
   car: ['locationId', 'label', 'driverUserId'],
   pos: ['ownerType', 'ownerId', 'label', 'assignedUserId'],
   zone: ['city', 'name'],
-  product: ['name'], income_item: ['name'], expense_item: ['name']
+  product: ['name'], income_item: ['name'], expense_item: ['name'], customer: ['name'], city: ['name']
 };
 function isRequiredField_(kind, key){
   return (REQUIRED_ASSIGNMENTS_[kind] || []).indexOf(key) >= 0;
@@ -7850,11 +7978,12 @@ function isRequiredField_(kind, key){
 
 // Which admin tab lists each kind, and the icon it goes by.
 var KIND_TAB_ = { location:'locations', store:'stores', car:'cars', pos:'pos', cluster:'clusters', zone:'zones',
-  product:'products', income_item:'incomeItems', expense_item:'expenseItems', user:'users' };
+  product:'products', income_item:'incomeItems', expense_item:'expenseItems', user:'users', customer:'customers', city:'cities' };
 var KIND_ICON_ = { location:'home', store:'box', car:'truck', pos:'card', cluster:'pin', zone:'layers',
-  product:'box', income_item:'wallet', expense_item:'cash', user:'user' };
+  product:'box', income_item:'wallet', expense_item:'cash', user:'user', customer:'credit', city:'pin' };
 var KIND_LABEL_ = { location:'pf_kindLocation', store:'pf_kindStore', car:'pf_kindCar', pos:'pf_kindPos', cluster:'pf_kindCluster',
-  zone:'pf_kindZone', product:'pf_kindProduct', income_item:'pf_kindIncome', expense_item:'pf_kindExpense', user:'pf_kindUser' };
+  zone:'pf_kindZone', product:'pf_kindProduct', income_item:'pf_kindIncome', expense_item:'pf_kindExpense', user:'pf_kindUser',
+  customer:'pf_kindCustomer', city:'pf_kindCity' };
 var adminProfile = null;
 function recordOf_(kind, id){
   var meta = state.meta || {};
@@ -7919,6 +8048,11 @@ function wireBranchCollector_(grid, item){
 function entityForm_(kind, item){
   var spec = ENTITY_FIELDS[kind], meta = state.meta || {};
   var grid = el('<div class="grid"></div>');
+  // the record's system number: shown once it exists, promised before
+  var codeLabel = t(kind === 'customer' ? 'cu_code' : 'rec_code');
+  grid.appendChild(el(item && item.code
+    ? '<div class="field"><label>'+esc(codeLabel)+'</label><div class="cu-code"><bdi dir="ltr">'+esc(item.code)+'</bdi></div></div>'
+    : '<div class="field"><label>'+esc(codeLabel)+'</label><div class="cu-code auto">'+esc(t('rec_codeAuto'))+'</div></div>'));
   spec.fields.forEach(function(f){
     var wrap = el('<div class="field'+(f.type==='check'?' field-check':'')+'"><label>'+esc(t(f.l))+(isRequiredField_(kind, f.k) ? '<span class="req">*</span>' : '')+'</label></div>');
     var v = item ? item[f.k] : (f.k === 'active' ? true : '');
@@ -7944,6 +8078,8 @@ function fieldDisplay_(kind, item, c){
   if (kind === 'location' && c === 'collectorUserId'){ var bc = branchCollectorOf_(item); return bc ? userName(bc) : '—'; }
   if (c === 'collectors'){ var cs = areaCollectors_(item.id); return cs.length ? cs.map(userName).join(' · ') : '—'; }
   if (c === 'branches') return String((meta.locations||[]).filter(function(l){ return l.clusterId === item.id; }).length);
+  if (c === 'code') return item.code || '—';
+  if (c === 'cityUses') return String((meta.locations||[]).filter(function(l){ return normName_(l.city) === normName_(item.name); }).length);
   if (c === 'active') return item.active === false ? t('org_disabled') : t('admin_active');
   var v = item[c];
   if (c === 'locationId') return v ? locationName(v) : '—';
@@ -7964,10 +8100,84 @@ function fieldLabel_(kind, c){
   if (kind === 'pos' && c === 'owner') return t('admin_owner');
   if (c === 'branches') return t('chain_branches');
   if (c === 'collectors') return t('pf_collectors');
+  if (c === 'code') return t(kind === 'customer' ? 'cu_code' : 'rec_code');
+  if (c === 'cityUses') return t('ci_uses');
   if (c === 'active') return t('us_status');
   if (kind === 'pos' && c === 'locationId') return t('admin_location');
   var f = ENTITY_FIELDS[kind].fields.filter(function(x){ return x.k===c; })[0];
   return f ? t(f.l) : c;
+}
+
+// Import a customer list — pasted, or from an Excel/CSV file. The preview
+// marks each name new, already on file (with its number) or repeated in the
+// list, the way the server will judge it, before anything is sent.
+function customerImportCard_(){
+  var card = el('<div class="card cu-imp" hidden><h2>'+esc(t('cu_importTitle'))+'</h2>' +
+    '<p class="muted cu-imp-hint">'+esc(t('cu_importHint'))+'</p>' +
+    '<textarea rows="5" placeholder="'+esc(t('cu_importPh'))+'"></textarea>' +
+    '<div class="cu-imp-row">' +
+      '<label class="btn secondary cu-imp-file">'+icon_('doc')+'<span>'+esc(t('cu_importFile'))+'</span><input type="file" accept=".xlsx,.xls,.csv,.txt" hidden></label>' +
+      '<button type="button" class="btn cu-imp-check">'+esc(t('cu_importCheck'))+'</button>' +
+    '</div><div class="cu-imp-prev"></div><div class="cu-imp-msg"></div></div>');
+  var prev = qs('.cu-imp-prev', card), msg = qs('.cu-imp-msg', card), ta = qs('textarea', card);
+  var fresh = [];
+  function preview(list){
+    msg.innerHTML = '';
+    if (!list.length){ prev.innerHTML = '<div class="msg err">'+esc(t('cu_impEmpty'))+'</div>'; return; }
+    var have = {};
+    (state.meta.customers||[]).forEach(function(c){ have[normName_(c.name)] = c; });
+    var seen = {}, counts = { new: 0, file: 0, rep: 0 };
+    fresh = [];
+    var items = list.map(function(r){
+      var k = normName_(r.name), st;
+      if (have[k]) st = 'file'; else if (seen[k]) st = 'rep'; else { st = 'new'; fresh.push(r); }
+      seen[k] = true;
+      counts[st]++;
+      return { r: r, st: st, code: have[k] ? have[k].code : '' };
+    });
+    var chip = { new: t('cu_impNew'), file: t('cu_impOnFile'), rep: t('cu_impRepeat') };
+    prev.innerHTML = '<div class="cu-imp-sum">' +
+        '<span class="st-new"><b class="num">'+counts.new+'</b>'+esc(t('cu_impNew'))+'</span>' +
+        '<span class="st-file"><b class="num">'+counts.file+'</b>'+esc(t('cu_impOnFile'))+'</span>' +
+        '<span class="st-rep"><b class="num">'+counts.rep+'</b>'+esc(t('cu_impRepeat'))+'</span>' +
+      '</div>' +
+      '<ol class="cu-imp-list">' + items.map(function(x){
+        return '<li class="st-'+x.st+'"><span class="cu-imp-n">'+esc(x.r.name)+(x.r.city ? '<i>'+esc(x.r.city)+'</i>' : '')+'</span>' +
+          '<span class="cu-imp-chip">'+esc(chip[x.st])+(x.code ? ' <bdi dir="ltr">'+esc(x.code)+'</bdi>' : '')+'</span></li>';
+      }).join('') + '</ol>' +
+      '<button type="button" class="btn cu-imp-go"'+(fresh.length ? '' : ' disabled')+'>'+esc(fresh.length ? t('cu_impAdd').replace('{n}', fresh.length) : t('cu_impNothing'))+'</button>';
+    var go = qs('.cu-imp-go', prev);
+    go.addEventListener('click', function(){
+      go.disabled = true;
+      api('adminImportCustomers', { rows: fresh }).then(function(res){
+        if (!res.ok){ go.disabled = false; msg.innerHTML = '<div class="msg err">'+esc(errMsg_(res))+'</div>'; return; }
+        toastRaw_(t('cu_impDone').replace('{n}', res.created.length).replace('{s}', res.skipped.length), 'ok');
+        refreshMetaThen(function(){ renderAdmin(qs('#screenBody')); }, res);
+      });
+    });
+  }
+  qs('.cu-imp-check', card).addEventListener('click', function(){ preview(customerRowsFromText_(ta.value)); });
+  qs('input[type=file]', card).addEventListener('change', function(){
+    var f = this.files && this.files[0];
+    this.value = '';
+    if (!f) return;
+    var reader = new FileReader();
+    if (/\.(xlsx|xls)$/i.test(f.name)){
+      prev.innerHTML = '<div class="muted">'+esc(t('loading'))+'</div>';
+      reader.onload = function(){
+        loadLib_(XLSX_URL_).then(function(){
+          var wb = XLSX.read(new Uint8Array(reader.result), { type: 'array' });
+          var ws = wb.Sheets[wb.SheetNames[0]];
+          preview(customerRowsFromSheet_(XLSX.utils.sheet_to_json(ws, { header: 1, blankrows: false, defval: '' })));
+        }).catch(function(){ prev.innerHTML = '<div class="msg err">'+esc(t('cu_impLoadFail'))+'</div>'; });
+      };
+      reader.readAsArrayBuffer(f);
+    } else {
+      reader.onload = function(){ ta.value = String(reader.result || ''); preview(customerRowsFromText_(ta.value)); };
+      reader.readAsText(f, 'utf-8');
+    }
+  });
+  return card;
 }
 
 function renderAdminEntity(content, kind){
@@ -7981,9 +8191,15 @@ function renderAdminEntity(content, kind){
       '<div><b>'+esc(title)+'</b><span>'+esc(t('pf_count').replace('{n}', list.length))+'</span></div></div>' +
     '<div class="ent-tools">' +
       '<label class="ent-search">'+icon_('search')+'<input type="search" placeholder="'+esc(t('lf_searchHint'))+'"></label>' +
+      (kind === 'customer' ? '<button type="button" class="btn secondary ent-impBtn">'+icon_('doc')+esc(t('cu_import'))+'</button>' : '') +
       '<button type="button" class="btn ent-addBtn">'+esc(t(spec.addKey))+'</button>' +
     '</div></div>');
   content.appendChild(head);
+  if (kind === 'customer'){
+    var imp = customerImportCard_();
+    content.appendChild(imp);
+    qs('.ent-impBtn', head).addEventListener('click', function(){ imp.hidden = !imp.hidden; if (!imp.hidden) qs('textarea', imp).focus(); });
+  }
 
   // the add form stays shut until it is asked for
   var addCard = el('<div class="card ent-add" hidden><h2>'+esc(t(spec.addKey))+'</h2><div class="ent-addGrid"></div>' +
@@ -8007,20 +8223,22 @@ function renderAdminEntity(content, kind){
     });
   });
 
+  var cols = ['code'].concat(spec.cols);
   var listCard = el('<div class="card ent-list"><div class="tbl-scroll"><table><thead><tr>' +
-    spec.cols.map(function(c){ return '<th>'+esc(fieldLabel_(kind, c))+'</th>'; }).join('') +
+    cols.map(function(c){ return '<th>'+esc(fieldLabel_(kind, c))+'</th>'; }).join('') +
     '<th class="col-actions"></th></tr></thead><tbody></tbody></table></div>' +
     '<div class="ent-empty" hidden>'+esc(t(list.length ? 'lf_noMatch' : 'pf_emptyList'))+'</div></div>');
   content.appendChild(listCard);
   var tbody = qs('tbody', listCard);
   list.forEach(function(item){
-    var cells = spec.cols.map(function(c, i){
+    var cells = cols.map(function(c, i){
       var v = fieldDisplay_(kind, item, c);
       var off = c === 'active' && item.active === false;
-      return '<td'+(i===0?' class="ent-name"':'')+'>'+(off ? '<span class="us-badge disabled">'+esc(v)+'</span>' : esc(v))+'</td>';
+      if (c === 'code') return '<td class="ent-code"><bdi dir="ltr">'+esc(v)+'</bdi></td>';
+      return '<td data-label="'+esc(fieldLabel_(kind, c))+'"'+(i===1?' class="ent-name"':'')+'>'+(off ? '<span class="us-badge disabled">'+esc(v)+'</span>' : esc(v))+'</td>';
     }).join('');
     var tr = el('<tr class="pf-row" tabindex="0">'+cells+'<td class="col-actions"></td></tr>');
-    tr.dataset.text = spec.cols.map(function(c){ return fieldDisplay_(kind, item, c); }).join(' ').toLowerCase();
+    tr.dataset.text = cols.map(function(c){ return fieldDisplay_(kind, item, c); }).join(' ').toLowerCase();
     var acts = el('<div class="us-acts"></div>');
     var openBtn = el('<button type="button" class="ico-btn" title="'+esc(t('pf_open'))+'" aria-label="'+esc(t('pf_open'))+'">'+icon_('pencilEdit')+'</button>');
     var delBtn = el('<button type="button" class="ico-btn danger" title="'+esc(t('admin_delete'))+'" aria-label="'+esc(t('admin_delete'))+'">'+icon_('close')+'</button>');
@@ -8106,6 +8324,7 @@ function activityFilter_(kind, r){
   if (kind === 'zone') return { zoneId: r.id };
   if (kind === 'store' || kind === 'car' || kind === 'pos') return { sourceType: kind, sourceId: r.id };
   if (kind === 'product') return { productId: r.id };
+  if (kind === 'customer') return { customerId: r.id };
   if (kind === 'user') return r.role === 'driver' ? { driverUserId: r.id } : { enteredBy: r.id };
   if (kind === 'income_item' || kind === 'expense_item') return {};
   return null;
@@ -8138,7 +8357,7 @@ function renderAdminProfile(content, kind, id){
   var st = kind === 'user' ? (r.status || (r.active ? 'active' : 'disabled')) : null;
   var hero = el('<div class="pf-hero">' +
     '<span class="pf-ic">'+(kind === 'user' ? esc(initials_(r.name)) : icon_(KIND_ICON_[kind]))+'</span>' +
-    '<div class="pf-ht"><span class="pf-kind">'+esc(t(KIND_LABEL_[kind]))+'</span><b>'+esc(recordTitle_(kind, r))+'</b>' +
+    '<div class="pf-ht"><span class="pf-kind">'+esc(t(KIND_LABEL_[kind]))+(r.code ? ' · <bdi dir="ltr" class="pf-code">'+esc(r.code)+'</bdi>' : '')+'</span><b>'+esc(recordTitle_(kind, r))+'</b>' +
       '<span class="pf-sub">'+esc(sub.filter(Boolean).join(' · '))+'</span></div>' +
     '<div class="pf-badges">' +
       (st ? '<span class="us-badge '+st+'">'+esc(t('us_'+st))+'</span>' : '<span class="us-badge '+(off?'disabled':'active')+'">'+esc(off ? t('org_disabled') : t('admin_active'))+'</span>') +
@@ -8235,6 +8454,19 @@ function renderAdminProfile(content, kind, id){
       if (!res.ok){ box.innerHTML = '<div class="msg err">'+esc(errMsg_(res))+'</div>'; return; }
       var entries = res.entries || [];
       var tiles;
+      if (kind === 'customer'){
+        var owed = entries.reduce(function(a2, e){ return a2 + Number(e.creditSales||0); }, 0);
+        var unbanked = entries.filter(function(e){ return !e.consumedBy; }).length;
+        tiles = [[t('pf_entries'), entries.length], [t('entry_creditTitle'), money(owed)], [t('pf_open'), unbanked]];
+        var recentC = entries.slice().sort(function(x, y){ return String(y.date).localeCompare(String(x.date)); }).slice(0, 10);
+        box.innerHTML = '<div class="pf-tiles">' + tiles.map(function(x){ return '<div class="pf-tile"><span>'+esc(x[0])+'</span><b class="num">'+esc(String(x[1]))+'</b></div>'; }).join('') + '</div>' +
+          (recentC.length ? '<ul class="cu-hist">' + recentC.map(function(e){
+            return '<li><div><b>'+esc(locationName(e.locationId))+'</b><span><bdi dir="ltr">'+esc(e.date)+'</bdi>' +
+              (e.creditItems && e.creditItems.length ? ' · ' + esc(e.creditItems.map(function(it){ return productName_(it.productId) + ' × ' + it.qty; }).join('، ')) : '') + '</span></div>' +
+              '<b class="num">'+money(e.creditSales||0)+'</b></li>';
+          }).join('') + '</ul>' : '<div class="muted pf-none">'+esc(t('pf_noActivity'))+'</div>');
+        return;
+      }
       if (kind === 'income_item' || kind === 'expense_item'){
         var amtKey = kind === 'income_item' ? 'otherCash' : 'expenseAmount', idKey = kind === 'income_item' ? 'otherCashItemId' : 'expenseItemId';
         entries = entries.filter(function(e){ return e[idKey] === r.id && Number(e[amtKey]||0) > 0; });
