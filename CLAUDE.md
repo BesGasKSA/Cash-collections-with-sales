@@ -397,7 +397,7 @@ Permissions screen shows them (`PERM_ROWS` plus the `rule_*` list), and the
   new role while they have unhanded entries, an open (`pending`,
   `pending_deputy`, `disputed`) handoff, or confirmed cash not passed on. No
   branch, store, car or POS can be moved while cash sits there. The errors
-  are `person_holds_cash` and `cash_in_flight`. Changing someone's role
+  are `person_holds_cash` and `cash_in_flight`. For an **area** the check is scoped to that area alone (`areaPersonBusy_`), so a person still on two areas from before the one-area rule can be taken off the one where nothing of theirs is in flight. Changing someone's role
   also needs them off every link first (`user_has_assignments`). The
   deposit action no longer requires a *current* collector assignment:
   whoever holds confirmed collector cash can bank it.

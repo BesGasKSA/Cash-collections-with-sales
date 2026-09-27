@@ -1695,6 +1695,29 @@ check(listed(mDay.entry.id).canVoid === false && listed(mDay.entry.id).voidBlock
 var mVoid = call({ action: 'voidEntries', token: ctlBmTok, ids: [mDay.entry.id], reason: 'x' });
 check(!mVoid.ok && mVoid.error === 'deposit_reconciled', 'the bank has confirmed it, so it cannot be cancelled');
 
+console.log('--- taking a legacy two-area manager off the area that has nothing in flight ---');
+// Rows saved before the one-person-one-area rule: one manager on two areas.
+var twMgr = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Tw Two-Area Manager', email: 'twmgr.fx@bestgas.sa', role: 'cluster_manager' } }).user;
+var twColN = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Tw North Collector', email: 'twcoln.fx@bestgas.sa', role: 'collector' } }).user;
+var twColS = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Tw South Collector', email: 'twcols.fx@bestgas.sa', role: 'collector' } }).user;
+var twNew = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Tw New South Manager', email: 'twnew.fx@bestgas.sa', role: 'cluster_manager' } }).user;
+var twMgrTok = acceptInvite('twmgr.fx@bestgas.sa');
+var twNorth = call({ action: 'adminSaveEntity', token: adminTok, kind: 'cluster', data: { name: 'Tw North', clusterManagerUserId: twMgr.id, collectorUserId: twColN.id } }).entity;
+var twSouth = ctx.writeRow(SHEETS.CLUSTERS, { id: 'tw-south-legacy', name: 'Tw South', clusterManagerUserId: twMgr.id, collectorUserId: twColS.id, active: true });
+ctx.bumpVersion_(SHEETS.CLUSTERS);
+var twLoc = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: 'Riyadh', name: 'Tw North Branch', clusterId: twNorth.id } }).entity;
+var twBm = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Tw Branch Manager', email: 'twbm.fx@bestgas.sa', role: 'store_manager' } }).user;
+var twStore = call({ action: 'adminSaveEntity', token: adminTok, kind: 'store', data: { locationId: twLoc.id, name: 'Tw North Store', storeManagerUserId: twBm.id } }).entity;
+// he has an open day in the NORTH area
+check(call({ action: 'createDailyEntry', token: twMgrTok, date: ctx.todayRiyadh_(), sourceType: 'store', sourceId: twStore.id, cashSales: 700 }).ok,
+  'the two-area manager has an open day in his northern area');
+var offSouth = call({ action: 'adminSaveEntity', token: adminTok, kind: 'cluster', id: 'tw-south-legacy', data: { clusterManagerUserId: twNew.id } });
+check(offSouth.ok && offSouth.entity.clusterManagerUserId === twNew.id,
+  'he can be taken off the southern area, where nothing of his is in flight');
+var twNew2 = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Tw New North Manager', email: 'twnew2.fx@bestgas.sa', role: 'cluster_manager' } }).user;
+var offNorth = call({ action: 'adminSaveEntity', token: adminTok, kind: 'cluster', id: twNorth.id, data: { clusterManagerUserId: twNew2.id } });
+check(!offNorth.ok && offNorth.error === 'person_holds_cash', 'but not off the northern area while his open day there is in flight');
+
 console.log('--- starting a fresh test round archives movement, and keeps the org ---');
 check(call({ action: 'adminArchiveTransactions', token: adminTok }).error === 'confirm_required',
   'archiving needs the confirmation word, so it can never be one stray tap');
