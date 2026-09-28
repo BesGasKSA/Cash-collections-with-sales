@@ -507,6 +507,20 @@ function validateEntity_(kind, d) {
   if (kind === 'customer') {
     if (!String(d.name || '').trim()) return 'invalid_input';
     if (customerDuplicateOf_(d.name, d.id)) return 'duplicate_customer';
+    // the customer's own prices, product by product; they replace the
+    // product's price on this customer's credit, fixed price or not
+    if (d.prices != null) {
+      if (typeof d.prices !== 'object' || Array.isArray(d.prices)) return 'invalid_input';
+      var pk = safeOwnKeys_(d.prices);
+      if (pk.length > 300) return 'invalid_input';
+      for (var pi = 0; pi < pk.length; pi++) {
+        var pv = d.prices[pk[pi]];
+        if (pv === '' || pv == null) { delete d.prices[pk[pi]]; continue; }
+        if (!getById_(SHEETS.PRODUCTS, pk[pi])) return 'invalid_product';
+        if (!isFinite(Number(pv)) || Number(pv) < 0) return 'invalid_input';
+        d.prices[pk[pi]] = Math.round(Number(pv) * 100) / 100;
+      }
+    }
     return null;
   }
   if (kind === 'city') {
@@ -1125,7 +1139,7 @@ function actionMeta_(req, user) {
   var users = readSheet(SHEETS.USERS).map(publicUser_);
 
   if (!isCompanyWide_(user.role)) {
-    customers = customers.map(function (c) { return { id: c.id, code: c.code, name: c.name, city: c.city, active: c.active }; });
+    customers = customers.map(function (c) { return { id: c.id, code: c.code, name: c.name, city: c.city, active: c.active, prices: c.prices || null }; });
     // non-admins get every row (ids needed for pickers/labels) but only the
     // safe columns per the reference app's rule: restrict fields, not rows.
     users = users.map(function (u) {

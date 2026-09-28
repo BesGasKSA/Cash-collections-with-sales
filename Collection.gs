@@ -158,6 +158,10 @@ function deliveryNeedsSale_(sourceType, sourceId, date, cashSales, posSales, sib
 function settleCredit_(r) {
   var items = r.creditItems;
   var clean = [];
+  // the customer's own prices win over the product's, fixed or not
+  var buyer = r.creditCustomerId ? getById_(SHEETS.CUSTOMERS, r.creditCustomerId)
+    : (String(r.creditCustomer || '').trim() ? findCustomer_(r.creditCustomer) : null);
+  var ownPrices = (buyer && buyer.prices) || {};
   if (items != null && items !== '') {
     if (!Array.isArray(items) || items.length > 50) return 'invalid_input';
     var total = 0;
@@ -167,7 +171,9 @@ function settleCredit_(r) {
       if (!p || p.active === false) return 'invalid_product';
       var q = Number(it.qty), up = Number(it.unitPrice);
       if (!isFinite(q) || q <= 0 || !isFinite(up) || up < 0) return 'invalid_input';
-      if (p.priceLocked && p.unitPrice != null && p.unitPrice !== '' && Math.abs(up - Number(p.unitPrice)) > 0.005) return 'price_locked';
+      var own = hasOwn_(ownPrices, p.id) ? ownPrices[p.id] : null;
+      if (own != null && own !== '') { if (Math.abs(up - Number(own)) > 0.005) return 'price_locked'; }
+      else if (p.priceLocked && p.unitPrice != null && p.unitPrice !== '' && Math.abs(up - Number(p.unitPrice)) > 0.005) return 'price_locked';
       var amt = Math.round(q * up * 100) / 100;
       clean.push({ productId: p.id, qty: q, unitPrice: up, amount: amt });
       total += amt;
@@ -200,6 +206,10 @@ function checkNonSalesFields_(r, siblingCash) {
   if (creditErr) return creditErr;
   var other = Number(r.otherCash || 0);
   if (other < 0 || Number(r.expenseAmount || 0) < 0 || Number(r.directDepositAmount || 0) < 0) return 'invalid_input';
+  // a customer's transfer straight into the company account: in the sales
+  // figure, but never cash in hand
+  var transfer = Number(r.bankTransferAmount || 0);
+  if (!isFinite(transfer) || transfer < 0) return 'invalid_input';
   if (other > 0) {
     var inc = r.otherCashItemId ? getById_(SHEETS.INCOME_ITEMS, r.otherCashItemId) : null;
     if (!inc || inc.active === false) return 'invalid_income_item';
@@ -230,25 +240,66 @@ function checkNonSalesFields_(r, siblingCash) {
     // `siblingCash` is the cash on the OTHER rows of the same submission for
     // the same source and date: one real day gets split across several rows
     // in product mode, and the deposit rides on the first of them.
-    var inHand = Number(r.cashSales || 0) - Number(r.creditSales || 0) + Number(siblingCash || 0) + other
+    var inHand = Number(r.cashSales || 0) - Number(r.creditSales || 0) - transfer + Number(siblingCash || 0) + other
       - delivery + (delivery > 0 ? (delivery / (1 + vat)) * vat : 0) - exp;
     if (dep > inHand + 0.005) return 'deposit_exceeds_cash';
   }
   return null;
 }
 
-// Cash on the other rows of this submission for the same source and date.
+// Cash the other rows of this submission leave in hand, for the same source
+// and date: what they bring in, less what they take out, including the
+// الموازنات they bank themselves (so two lines cannot bank the same cash).
 function siblingCash_(rows, index) {
   var me = rows[index] || {};
   var sum = 0;
+  var vat = vatRate_();
   for (var i = 0; i < rows.length; i++) {
     if (i === index) continue;
     var o = rows[i] || {};
     if (o.sourceType === me.sourceType && o.sourceId === me.sourceId && o.date === me.date) {
-      sum += Number(o.cashSales || 0) - Number(o.creditSales || 0);
+      var dl = Number(o.deliveryFeeBankAmount || 0);
+      sum += Number(o.cashSales || 0) - Number(o.creditSales || 0) - Number(o.bankTransferAmount || 0)
+        + Number(o.otherCash || 0) - Number(o.expenseAmount || 0) - dl + (dl > 0 ? (dl / (1 + vat)) * vat : 0)
+        - Number(o.directDepositAmount || 0);
     }
   }
   return sum;
+}
+
+// A الموازنة names the branch's POS device (when it has one) and carries a
+// photo its author uploaded. Checked where the branch is known. An admin's
+// file import may carry neither: those rows come from paper, after the fact.
+function checkDepositSlip_(r, user, locationId) {
+  if (!(Number(r.directDepositAmount || 0) > 0)) return null;
+  if (user.role === 'admin' && !r.directDepositPhotoId) return null;
+  if (!r.directDepositPhotoId) return 'deposit_needs_photo';
+  var ph = getById_(SHEETS.ENTRY_PHOTOS, r.directDepositPhotoId);
+  if (!ph || ph.uploadedBy !== user.id || ph.usedBy) return 'invalid_photo';
+  var devices = readSheet(SHEETS.POS).filter(function (m) {
+    return m.active !== false && resolveSourceLocation_('pos', m.id) === locationId;
+  });
+  if (r.directDepositPosId) {
+    if (!devices.some(function (m) { return m.id === r.directDepositPosId; })) return 'invalid_pos';
+  } else if (devices.length) return 'deposit_needs_pos';
+  return null;
+}
+function claimPhoto_(photoId, entryId) {
+  if (!photoId) return;
+  var ph = getById_(SHEETS.ENTRY_PHOTOS, photoId);
+  if (!ph) return;
+  ph.usedBy = entryId;
+  writeRow(SHEETS.ENTRY_PHOTOS, ph);
+}
+// The photo goes up before the entry, so the entry request stays small.
+var ENTRY_PHOTO_ROLES_ = ['admin', 'store_manager', 'driver', 'cluster_manager'];
+function actionUploadEntryPhoto_(req, user) {
+  if (ENTRY_PHOTO_ROLES_.indexOf(user.role) < 0) return { ok: false, error: 'forbidden' };
+  var b64 = String(req.fileBase64 || '');
+  if (!b64 || b64.length > 8000000) return { ok: false, error: 'invalid_input' };
+  var fileId = saveDepositSlip_(b64, req.fileName, req.fileMime);
+  writeRow(SHEETS.ENTRY_PHOTOS, { id: fileId, uploadedBy: user.id, createdAt: new Date().toISOString(), usedBy: null });
+  return { ok: true, fileId: fileId };
 }
 
 // The non-sales columns every entry row carries, whichever path created it.
@@ -265,6 +316,9 @@ function nonSalesFields_(r) {
     // What the deposit was for, in the depositor's own words. The company
     // calls these deposits "الموازنات", which is what the form suggests.
     directDepositNote: Number(r.directDepositAmount || 0) > 0 ? String(r.directDepositNote || '').trim() : '',
+    directDepositPosId: Number(r.directDepositAmount || 0) > 0 ? (r.directDepositPosId || null) : null,
+    directDepositPhotoId: Number(r.directDepositAmount || 0) > 0 ? (r.directDepositPhotoId || null) : null,
+    bankTransferAmount: Number(r.bankTransferAmount || 0),
     // what a delivery-fee line was for, and who owes a credit sale
     deliveryNote: Number(r.deliveryFeeBankAmount || 0) > 0 ? String(r.deliveryNote || '').trim() : '',
     creditCustomer: Number(r.creditSales || 0) > 0 ? String(r.creditCustomer || '').trim() : '',
@@ -290,7 +344,8 @@ function recordDirectDeposit_(entry, user) {
       otherCash: 0, expenses: 0, directDeposit: 0, netCashOwed: Number(entry.directDepositAmount || 0) },
     bankReference: entry.directDepositRef || '',
     note: entry.directDepositNote || '',
-    attachmentId: null,
+    attachmentId: entry.directDepositPhotoId || null,
+    posId: entry.directDepositPosId || null,
     sourceEntryIds: [entry.id],
     sourceHandoffIds: [],
     consumedBy: null,
@@ -385,7 +440,7 @@ function actionCreateEntry_(req, user) {
     !deliveryNeedsSale_(req.sourceType, req.sourceId, req.date, req.cashSales, req.posSales, false, req.creditSales)) {
     return { ok: false, error: 'delivery_without_sale' };
   }
-  var nonSalesErr = checkNonSalesFields_(req);
+  var nonSalesErr = checkNonSalesFields_(req) || checkDepositSlip_(req, user, scope.locationId);
   if (nonSalesErr) return { ok: false, error: nonSalesErr };
 
   var entry = {
@@ -427,6 +482,7 @@ function actionCreateEntry_(req, user) {
   var extra = nonSalesFields_(req);
   safeOwnKeys_(extra).forEach(function (k) { entry[k] = extra[k]; });
   writeRow(SHEETS.ENTRIES, entry);
+  claimPhoto_(entry.directDepositPhotoId, entry.id);
   var directDeposit = entry.directDepositAmount > 0 ? recordDirectDeposit_(entry, user) : null;
   logAudit_('create_entry', user.id, entry.id);
   return { ok: true, entry: entry, deposit: directDeposit };
@@ -474,7 +530,7 @@ function actionImportEntries_(req, user) {
       results.push({ row: i, ok: false, error: 'delivery_without_sale' });
       continue;
     }
-    var rowErr = checkNonSalesFields_(r, siblingCash_(rows, i));
+    var rowErr = checkNonSalesFields_(r, siblingCash_(rows, i)) || checkDepositSlip_(r, user, scope.locationId);
     if (rowErr) {
       results.push({ row: i, ok: false, error: rowErr });
       continue;
@@ -502,6 +558,7 @@ function actionImportEntries_(req, user) {
     var rowExtra = nonSalesFields_(r);
     safeOwnKeys_(rowExtra).forEach(function (k) { entry[k] = rowExtra[k]; });
     writeRow(SHEETS.ENTRIES, entry);
+    claimPhoto_(entry.directDepositPhotoId, entry.id);
     if (entry.directDepositAmount > 0) recordDirectDeposit_(entry, user);
     created++;
     results.push({ row: i, ok: true, id: entry.id });
@@ -636,8 +693,9 @@ function entrySalesTotal_(e) {
 //               - expenses - directDeposit - creditSales
 function computeNet_(entries) {
   var storeCash = 0, carCash = 0, posCash = 0, deliveryFee = 0, posSales = 0, creditSales = 0;
-  var otherCash = 0, expenses = 0, directDeposit = 0;
+  var otherCash = 0, expenses = 0, directDeposit = 0, bankTransfers = 0;
   entries.forEach(function (e) {
+    bankTransfers += Number(e.bankTransferAmount || 0);
     // A sale on credit is part of the day's takings figure the branch
     // enters, but no money came in for it — so it is DEDUCTED below,
     // exactly like an expense or a موازنة. (Until 2026-09-23 it was simply
@@ -655,11 +713,13 @@ function computeNet_(entries) {
   });
   var vat = vatRate_();
   var vatOnDelivery = deliveryFee > 0 ? (deliveryFee / (1 + vat)) * vat : 0;
-  var netCashOwed = storeCash + carCash + posCash + otherCash - deliveryFee + vatOnDelivery - expenses - directDeposit - creditSales;
+  // a customer's bank transfer is inside the sales figure like a credit
+  // sale, but the money went straight to the bank: it comes off too
+  var netCashOwed = storeCash + carCash + posCash + otherCash - deliveryFee + vatOnDelivery - expenses - directDeposit - creditSales - bankTransfers;
   return {
     storeCash: storeCash, carCash: carCash, posCash: posCash, deliveryFee: deliveryFee,
     posSales: posSales, creditSales: creditSales, vatOnDelivery: vatOnDelivery,
-    otherCash: otherCash, expenses: expenses, directDeposit: directDeposit,
+    otherCash: otherCash, expenses: expenses, directDeposit: directDeposit, bankTransfers: bankTransfers,
     netCashOwed: netCashOwed
   };
 }
@@ -672,9 +732,10 @@ function computeNet_(entries) {
 // way to see what it was made of.
 function sumBreakdowns_(breakdowns) {
   var out = { storeCash: 0, carCash: 0, posCash: 0, deliveryFee: 0, posSales: 0, creditSales: 0, vatOnDelivery: 0,
-    otherCash: 0, expenses: 0, directDeposit: 0, netCashOwed: 0 };
+    otherCash: 0, expenses: 0, directDeposit: 0, bankTransfers: 0, netCashOwed: 0 };
   breakdowns.forEach(function (b) {
     if (!b) return;
+    out.bankTransfers += Number(b.bankTransfers || 0);
     out.storeCash += Number(b.storeCash || 0);
     out.carCash += Number(b.carCash || 0);
     out.posCash += Number(b.posCash || 0);

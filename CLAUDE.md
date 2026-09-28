@@ -179,6 +179,30 @@ collectors.
   highlighted. The deputy's cards open with a bold branch → area → collector strip
   (`handoffRoute_`).
 
+**Transfers, الموازنات per device, customer prices, security (2026-09-28, evening).**
+- **Customer bank transfers** (`bankTransferAmount`, one entry row per transfer, the form's
+  amount-only lines): inside the typed sales figure like credit, so `computeNet_` deducts
+  them (`bankTransfers` in every breakdown) and the الموازنة cash check subtracts them.
+- **A الموازنة is one line per POS device with a photo.** The photo goes up first
+  (`uploadEntryPhoto` → `entry_photos` sheet, one use, only by its uploader); the entry
+  carries `directDepositPosId`/`directDepositPhotoId`, and the direct-deposit handoff gets
+  `attachmentId` + `posId`. `checkDepositSlip_` runs after the other checks (reference,
+  cash) and needs the device only where the branch has one. An admin's file import may skip
+  the photo. `siblingCash_` now nets the other rows' deductions and الموازنات, so two
+  lines cannot bank the same cash. "الموازنات" is the company's own word: do not rename it.
+- **Credit is items only** in the form; files and the area batch may still send an amount.
+- **Customer prices**: `customer.prices {productId: price}` beats the product's price,
+  fixed or not, in `settleCredit_` (`price_locked` if different). Sent in meta to all roles.
+- **Total sales = typed sales + card sales.** Credit is already inside the typed figure;
+  `entrySalesTotal_` and the client's `entryAmt_().gross` used to add it a second time.
+- **Security:** `forgotPassword` ignores the caller's `appUrl` (an invitation link could be
+  sent to another site and the account taken); `inviteAppUrl_` accepts only the live app or
+  localhost. A reset keeps the old password working; the temporary one lasts an hour
+  (`resetPass`/`resetSalt`/`resetExpires`), 40 reset emails an hour at most. Slip types
+  are limited to photos and PDF (`slipMime_`).
+- **Testing trap:** the mock server loads the .gs files when it starts. Restart it after a
+  backend change, or new actions answer "unknown".
+
 **Sorting, counts, invitation (2026-09-28).**
 
 - **Every table sorts by its headers** (`tsEnhance_` / `tableSortBy_`, attached by a

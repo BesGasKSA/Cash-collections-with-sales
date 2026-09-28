@@ -17,6 +17,9 @@ var SHEETS = {
   // credit customers (auto-numbered CUS-0001…) and the city list pickers draw from
   CUSTOMERS: 'customers',
   CITIES: 'cities',
+  // photos of الموازنات, uploaded before the entry that uses them; one photo
+  // serves one line, and only its uploader can use it
+  ENTRY_PHOTOS: 'entry_photos',
   // Pure geography (Country[KSA, implicit]/City/Zone), independent of
   // Cluster — Cluster is an employee's management assignment (cluster
   // manager + collector) and can cut across zones; Zone is just a label
@@ -633,6 +636,7 @@ function route_(req) {
     disputeHandoff: function () { return actionDisputeHandoff_(req, user); },
     resolveDispute: function () { return actionResolveDispute_(req, user); },
     recordDeposit: function () { return actionRecordDeposit_(req, user); },
+    uploadEntryPhoto: function () { return actionUploadEntryPhoto_(req, user); },
     listHandoffs: function () { return actionListHandoffs_(req, user); },
 
     // reporting

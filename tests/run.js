@@ -102,6 +102,16 @@ var car = call({ action: 'adminSaveEntity', token: adminTok, kind: 'car', data: 
 check(car.ok, 'create car');
 var pos = call({ action: 'adminSaveEntity', token: adminTok, kind: 'pos', data: { ownerType: 'car', ownerId: car.entity.id, label: 'POS-1', assignedUserId: hassan.id } });
 check(pos.ok, 'create pos machine on car');
+// A الموازنة line names the branch's POS device (when it has one) and carries
+// a photo uploaded first by the person entering it.
+function slip(tok, row) {
+  var up = call({ action: 'uploadEntryPhoto', token: tok, fileBase64: 'iVBORw0KGgo=', fileName: 'slip.png', fileMime: 'image/png' });
+  row.directDepositPhotoId = up.fileId;
+  var loc = ctx.resolveSourceLocation_(row.sourceType, row.sourceId);
+  var dev = ctx.readSheet(ctx.SHEETS.POS).filter(function (m) { return m.active !== false && ctx.resolveSourceLocation_('pos', m.id) === loc; })[0];
+  if (dev) row.directDepositPosId = dev.id;
+  return row;
+}
 
 console.log('--- xlsx formula check: store cash 7000 + car cash 5000 - delivery 5000 + vat-on-delivery ---');
 var e1 = call({ action: 'createDailyEntry', token: aliTok, date: '2026-09-01', sourceType: 'store', sourceId: store.entity.id, cashSales: 7000 });
@@ -1362,11 +1372,11 @@ check(call({ action: 'createDailyEntry', token: aliTok, date: '2026-07-02', sour
 check(call({ action: 'createDailyEntry', token: aliTok, date: '2026-07-02', sourceType: 'store', sourceId: store.entity.id, cashSales: 100, directDepositAmount: 500, directDepositRef: 'REF-1' }).error === 'deposit_exceeds_cash', 'and can never exceed the cash that entry actually produced');
 
 var depositsBefore = ctx.readSheet(SHEETS.HANDOFFS).filter(function (h) { return h.kind === 'deposit'; }).length;
-var mixed = call({ action: 'createDailyEntry', token: aliTok, date: '2026-07-03', sourceType: 'store', sourceId: store.entity.id,
+var mixed = call(slip(aliTok, { action: 'createDailyEntry', token: aliTok, date: '2026-07-03', sourceType: 'store', sourceId: store.entity.id,
   cashSales: 1000, deliveryFeeBankAmount: 115,
   otherCash: 200, otherCashItemId: incomeId, otherCashReason: 'سداد فاتورة آجلة لعميل',
   expenseAmount: 50, expenseItemId: expenseId, expenseReason: 'تعبئة وقود السيارة',
-  directDepositAmount: 300, directDepositRef: 'BANK-99' });
+  directDepositAmount: 300, directDepositRef: 'BANK-99' }));
 check(mixed.ok, 'one entry can carry a sale, a collection, an expense and a direct deposit');
 var mixedNet = ctx.computeNet_([mixed.entry]);
 close(mixedNet.otherCash, 200, 'the collection is tracked on its own');
@@ -1423,7 +1433,7 @@ console.log('--- a deposit is checked against the whole submission, not one row 
 // The same real day split across two product lines, with the deposit riding
 // on the first one -- exactly what the Entries screen's product mode sends.
 var splitRows = call({ action: 'importDailyEntries', token: aliTok, rows: [
-  { date: '2026-08-05', sourceType: 'store', sourceId: store.entity.id, cashSales: 200, directDepositAmount: 500, directDepositRef: 'SPLIT-1' },
+  slip(aliTok, { date: '2026-08-05', sourceType: 'store', sourceId: store.entity.id, cashSales: 200, directDepositAmount: 500, directDepositRef: 'SPLIT-1' }),
   { date: '2026-08-05', sourceType: 'store', sourceId: store.entity.id, cashSales: 400 }
 ] });
 check(splitRows.ok && splitRows.created === 2, 'a deposit larger than its own row but covered by the day is accepted');
@@ -1439,8 +1449,8 @@ var otherDay = call({ action: 'importDailyEntries', token: aliTok, rows: [
 check(otherDay.results[0].error === 'deposit_exceeds_cash', 'and cash from a different day never counts towards it');
 
 console.log('--- a direct deposit (موازنة) carries its own description ---');
-var mawazana = call({ action: 'createDailyEntry', token: aliTok, date: '2026-08-12', sourceType: 'store', sourceId: store.entity.id,
-  cashSales: 900, directDepositAmount: 400, directDepositRef: 'MZN-55', directDepositNote: 'موازنة مبيعات يوم الخميس' });
+var mawazana = call(slip(aliTok, { action: 'createDailyEntry', token: aliTok, date: '2026-08-12', sourceType: 'store', sourceId: store.entity.id,
+  cashSales: 900, directDepositAmount: 400, directDepositRef: 'MZN-55', directDepositNote: 'موازنة مبيعات يوم الخميس' }));
 check(mawazana.ok && mawazana.entry.directDepositNote === 'موازنة مبيعات يوم الخميس', 'the description is stored on the entry');
 check(mawazana.deposit && mawazana.deposit.note === 'موازنة مبيعات يوم الخميس', 'and travels onto the deposit record itself, next to the bank reference');
 var noAmount = call({ action: 'createDailyEntry', token: aliTok, date: '2026-08-12', sourceType: 'store', sourceId: store.entity.id,
@@ -1476,10 +1486,10 @@ var asManager = call({ action: 'getSalesReport', token: aliTok, sourceType: 'sto
 check(asManager.ok && asManager.entries.length <= afterWrite.entries.length, 'the cache is per user — a branch manager never receives the admin\'s cached copy');
 
 console.log('--- credit sales deduct like an expense or a موازنة ---');
-var creditDay = call({ action: 'createDailyEntry', token: aliTok, date: '2026-08-25', sourceType: 'store', sourceId: store.entity.id,
+var creditDay = call(slip(aliTok, { action: 'createDailyEntry', token: aliTok, date: '2026-08-25', sourceType: 'store', sourceId: store.entity.id,
   cashSales: 5000, creditSales: 1200, creditCustomer: 'Al-Rashid Trading',
   expenseAmount: 300, expenseItemId: expenseId, expenseReason: 'وقود',
-  directDepositAmount: 1000, directDepositRef: 'MZN-CR-1', directDepositNote: 'موازنة' });
+  directDepositAmount: 1000, directDepositRef: 'MZN-CR-1', directDepositNote: 'موازنة' }));
 check(creditDay.ok, 'a day with cash, credit, an expense and a موازنة saves');
 var creditNet = ctx.computeNet_([creditDay.entry]);
 // 5,000 takings − 1,200 sold on credit − 300 spent − 1,000 already banked
@@ -1692,8 +1702,8 @@ function depOf(entryId) {
   return ctx.readSheet(SHEETS.HANDOFFS).filter(function (h) { return h.kind === 'deposit' && h.direct && (h.sourceEntryIds || []).indexOf(entryId) >= 0; })[0];
 }
 function listed(id) { return call({ action: 'listEntries', token: ctlBmTok }).entries.filter(function (e) { return e.id === id; })[0]; }
-var dDay = call({ action: 'createDailyEntry', token: ctlBmTok, date: ctx.todayRiyadh_(), sourceType: 'store', sourceId: ctlStore.id,
-  cashSales: 900, directDepositAmount: 400, directDepositRef: 'DD-VOID-1', directDepositNote: 'typed in error' });
+var dDay = call(slip(ctlBmTok, { action: 'createDailyEntry', token: ctlBmTok, date: ctx.todayRiyadh_(), sourceType: 'store', sourceId: ctlStore.id,
+  cashSales: 900, directDepositAmount: 400, directDepositRef: 'DD-VOID-1', directDepositNote: 'typed in error' }));
 check(dDay.ok && depOf(dDay.entry.id) && depOf(dDay.entry.id).status === 'completed', 'a day with a الموازنة records its bank deposit');
 check(listed(dDay.entry.id).canVoid === true, 'while open, its author is offered the cancel');
 var dVoid = call({ action: 'voidEntries', token: ctlBmTok, ids: [dDay.entry.id], reason: 'wrong branch' });
@@ -1702,8 +1712,8 @@ check(depOf(dDay.entry.id).status === 'voided' && depOf(dDay.entry.id).voidReaso
 check(!call({ action: 'getReconciliation', token: financeTok }).unmatchedDeposits.some(function (d) { return d.id === depOf(dDay.entry.id).id; }),
   'a cancelled الموازنة no longer waits for a bank match');
 
-var mDay = call({ action: 'createDailyEntry', token: ctlBmTok, date: ctx.todayRiyadh_(), sourceType: 'store', sourceId: ctlStore.id,
-  cashSales: 800, directDepositAmount: 333, directDepositRef: 'DD-MATCH-333' });
+var mDay = call(slip(ctlBmTok, { action: 'createDailyEntry', token: ctlBmTok, date: ctx.todayRiyadh_(), sourceType: 'store', sourceId: ctlStore.id,
+  cashSales: 800, directDepositAmount: 333, directDepositRef: 'DD-MATCH-333' }));
 var mDep = depOf(mDay.entry.id);
 var mImport = call({ action: 'importBankStatement', token: financeTok, rows: [{ date: ctx.todayRiyadh_(), amount: 333, reference: 'DD-MATCH-333' }] });
 if (!depOf(mDay.entry.id).reconciled) {
@@ -2242,6 +2252,65 @@ check(!('resetPass' in fpViaTemp.user) && !('resetSalt' in fpViaTemp.user), 'the
 console.log('--- a slip photo keeps a plain file type ---');
 check(ctx.slipMime_('image/png') === 'image/png' && ctx.slipMime_('application/pdf') === 'application/pdf', 'photos and PDFs keep their type');
 check(ctx.slipMime_('image/png" onerror="alert(1)') === 'image/jpeg' && ctx.slipMime_('text/html') === 'image/jpeg', 'anything else is stored as a JPEG photo, never as page markup');
+
+console.log('--- customers\' bank transfers come off the cash, one transfer per line ---');
+var btNet = ctx.computeNet_([{ sourceType: 'store', cashSales: 1000, bankTransferAmount: 250 }]);
+close(btNet.netCashOwed, 750, 'a 250 transfer from a customer comes off a 1,000 day');
+close(btNet.bankTransfers, 250, 'and is shown on its own line');
+close(ctx.sumBreakdowns_([btNet, btNet]).bankTransfers, 500, 'transfers add up when handoffs are combined');
+check(call({ action: 'createDailyEntry', token: aliTok, date: '2026-09-01', sourceType: 'store', sourceId: store.entity.id, cashSales: 100, bankTransferAmount: -5 }).error === 'invalid_input', 'a negative transfer is refused');
+var btRows = call({ action: 'importDailyEntries', token: aliTok, rows: [
+  { date: '2026-09-01', sourceType: 'store', sourceId: store.entity.id, cashSales: 1000, bankTransferAmount: 300 },
+  { date: '2026-09-01', sourceType: 'store', sourceId: store.entity.id, bankTransferAmount: 200 }
+] });
+check(btRows.ok && btRows.created === 2, 'two transfers on one day save as two lines');
+var btDay = ctx.readSheet(ctx.SHEETS.ENTRIES).filter(function (e) { return btRows.results.some(function (r) { return r.id === e.id; }); });
+close(ctx.computeNet_(btDay).netCashOwed, 500, 'and the day owes 1,000 less 500 transferred');
+var btOver = call({ action: 'importDailyEntries', token: aliTok, rows: [
+  slip(aliTok, { date: '2026-09-02', sourceType: 'store', sourceId: store.entity.id, cashSales: 1000, bankTransferAmount: 700, directDepositAmount: 400, directDepositRef: 'BT-X' })
+] });
+check(btOver.results[0].error === 'deposit_exceeds_cash', 'a الموازنة cannot bank cash that a customer transferred instead');
+
+console.log('--- الموازنات: one line per POS device, each with its photo ---');
+var ph = call({ action: 'uploadEntryPhoto', token: aliTok, fileBase64: 'iVBORw0KGgo=', fileName: 'mz.png', fileMime: 'image/png' });
+check(ph.ok && !!ph.fileId, 'the person entering uploads the photo first');
+check(call({ action: 'uploadEntryPhoto', fileBase64: 'iVBORw0KGgo=' }).ok === false, 'nobody signed out can upload');
+var mzBase = { action: 'createDailyEntry', token: aliTok, date: '2026-09-03', sourceType: 'store', sourceId: store.entity.id, cashSales: 800, directDepositAmount: 300, directDepositRef: 'MZ-1' };
+function mz(extra) { var o = {}; Object.keys(mzBase).forEach(function (k) { o[k] = mzBase[k]; }); Object.keys(extra).forEach(function (k) { o[k] = extra[k]; }); return o; }
+check(call(mz({ directDepositPosId: pos.entity.id })).error === 'deposit_needs_photo', 'a الموازنة without its photo is refused');
+check(call(mz({ directDepositPhotoId: ph.fileId })).error === 'deposit_needs_pos', 'and one that does not say which POS device, where the branch has one');
+var otherBranchPos = call({ action: 'adminSaveEntity', token: adminTok, kind: 'pos', data: { ownerType: 'store', ownerId: filterStore.id, label: 'Jeddah POS', assignedUserId: mgr8.id } }).entity;
+check(call(mz({ directDepositPhotoId: ph.fileId, directDepositPosId: otherBranchPos.id })).error === 'invalid_pos', 'a POS device from another branch is refused');
+var phOther = call({ action: 'uploadEntryPhoto', token: adminTok, fileBase64: 'iVBORw0KGgo=', fileName: 'x.png', fileMime: 'image/png' });
+check(call(mz({ directDepositPhotoId: phOther.fileId, directDepositPosId: pos.entity.id })).error === 'invalid_photo', 'a photo someone else uploaded cannot be used');
+var mzOk = call(mz({ directDepositPhotoId: ph.fileId, directDepositPosId: pos.entity.id }));
+check(mzOk.ok && mzOk.entry.directDepositPosId === pos.entity.id, 'with its device and photo it saves');
+check(mzOk.deposit && mzOk.deposit.attachmentId === ph.fileId && mzOk.deposit.posId === pos.entity.id, 'and the bank deposit it records carries the photo and the device');
+check(call(mz({ directDepositPhotoId: ph.fileId, directDepositPosId: pos.entity.id, directDepositRef: 'MZ-2' })).error === 'invalid_photo', 'one photo serves one الموازنة only');
+check(call({ action: 'getFile', token: financeTok, fileId: ph.fileId }).ok, 'finance can open the photo');
+var mzLines = call({ action: 'importDailyEntries', token: aliTok, rows: [
+  slip(aliTok, { date: '2026-09-04', sourceType: 'store', sourceId: store.entity.id, cashSales: 1000, directDepositAmount: 600, directDepositRef: 'MZ-A' }),
+  slip(aliTok, { date: '2026-09-04', sourceType: 'store', sourceId: store.entity.id, directDepositAmount: 600, directDepositRef: 'MZ-B' })
+] });
+check(mzLines.results[0].ok !== mzLines.results[1].ok || !mzLines.results[0].ok, 'two الموازنات on one day cannot bank more than the day\'s cash between them');
+
+console.log('--- a customer can have their own prices, even for a fixed-price product ---');
+var cpCust = call({ action: 'adminSaveEntity', token: adminTok, kind: 'customer', data: { name: 'Special Price Customer', city: 'Riyadh', prices: {} } }).entity;
+var cpSaved = call({ action: 'adminSaveEntity', token: adminTok, kind: 'customer', id: cpCust.id, data: { prices: (function () { var p = {}; p[fixedProduct.entity.id] = 42; return p; })() } });
+check(cpSaved.ok && cpSaved.entity.prices[fixedProduct.entity.id] === 42, 'the admin sets a customer\'s own price for a product');
+check(call({ action: 'adminSaveEntity', token: adminTok, kind: 'customer', id: cpCust.id, data: { prices: { nope: 5 } } }).error === 'invalid_product', 'only for products that exist');
+check(call({ action: 'adminSaveEntity', token: adminTok, kind: 'customer', id: cpCust.id, data: { prices: (function () { var p = {}; p[fixedProduct.entity.id] = -1; return p; })() } }).error === 'invalid_input', 'and never below zero');
+function cpLine(custId, price) {
+  return call({ action: 'createDailyEntry', token: aliTok, date: '2026-09-05', sourceType: 'store', sourceId: store.entity.id, cashSales: 500,
+    creditCustomerId: custId, creditItems: [{ productId: fixedProduct.entity.id, qty: 2, unitPrice: price }] });
+}
+var cpOk = cpLine(cpCust.id, 42);
+check(cpOk.ok && cpOk.entry.creditSales === 84, 'the customer\'s own price replaces the fixed price on their credit');
+check(cpLine(cpCust.id, 45).error === 'price_locked', 'and binds: the product\'s usual price is refused for them');
+var cpPlain = call({ action: 'adminSaveEntity', token: adminTok, kind: 'customer', data: { name: 'Plain Price Customer', city: 'Riyadh' } }).entity;
+check(cpLine(cpPlain.id, 45).ok && cpLine(cpPlain.id, 42).error === 'price_locked', 'a customer without their own price still pays the fixed price');
+var cpMeta = call({ action: 'listMeta', token: aliTok }).customers.filter(function (c) { return c.id === cpCust.id; })[0];
+check(cpMeta && cpMeta.prices && cpMeta.prices[fixedProduct.entity.id] === 42, 'the branch sees the customer\'s prices, so the form can fill them in');
 
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);
