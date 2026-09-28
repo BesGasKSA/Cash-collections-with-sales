@@ -1253,22 +1253,38 @@ check(v1 !== v2, 'every write changes the sheet version, so no two writers can l
 
 console.log('--- invitations: invited -> accepted -> active, with last login ---');
 var invMailBefore = ctx._debug.mailLog.length;
-var inv = call({ action: 'adminCreateUser', token: adminTok, appUrl: 'https://besgasksa.github.io/Cash-collections-with-sales/', data: { name: 'Invitee', email: 'invitee@bestgas.sa', role: 'store_manager' } });
+var inv = call({ action: 'adminCreateUser', token: adminTok, appUrl: 'https://besgasksa.github.io/Cash-collections-with-sales/', data: { name: 'Invitee Person', email: 'invitee@bestgas.sa', role: 'store_manager' } });
 check(inv.ok && inv.inviteSent === true, 'creating a user sends an invitation');
 check(inv.user.status === 'invited' && !!inv.user.invitedAt && !!inv.user.inviteExpiresAt, 'a new user starts as "invited", with the send time and expiry recorded');
 check(inv.user.lastLoginAt === null, 'and has no last login yet');
 var invMail = ctx._debug.mailLog.slice(invMailBefore).filter(function (m) { return m.to === 'invitee@bestgas.sa'; }).pop();
 check(!!invMail && !!invMail.html, 'the invitation is a formatted (HTML) email');
-check(invMail.html.indexOf('قبول الدعوة') >= 0 && invMail.html.indexOf('Accept invitation') >= 0, 'with Accept invitation buttons in Arabic and English');
+check(invMail.html.indexOf('قبول الدعوة') >= 0 && invMail.html.indexOf('dir="rtl"') >= 0 && invMail.html.indexOf('Accept invitation') < 0,
+  'an Arabic user gets the invitation in Arabic, once, not every line twice');
+check(invMail.html.indexOf('أهلاً Invitee') >= 0 && invMail.html.indexOf('مدير فرع') >= 0 && invMail.html.indexOf(String(inv.user.inviteExpiresAt).slice(0, 10)) >= 0,
+  'it greets them by first name and says their role and the last day the link works');
+check(invMail.html.indexOf('width="600"') < 0 && invMail.html.indexOf('max-width:560px') >= 0, 'the email is fluid: nothing is cut off on a phone');
+check(!/letter-spacing:\s*[1-9]/.test(invMail.html), 'no letter-spacing that would break the Arabic letters apart');
+check(invMail.html.indexOf('\u2014') < 0, 'and no em dashes in the copy');
+var invEn = call({ action: 'adminCreateUser', token: adminTok, appUrl: 'https://besgasksa.github.io/Cash-collections-with-sales/', data: { name: 'Nadia Karim', email: 'invitee.en@bestgas.sa', role: 'collector', language: 'en' } });
+var invEnMail = ctx._debug.mailLog.filter(function (m) { return m.to === 'invitee.en@bestgas.sa'; }).pop();
+check(invEn.ok && invEnMail && invEnMail.html.indexOf('Accept invitation') >= 0 && invEnMail.html.indexOf('dir="ltr"') >= 0 && /invited/i.test(invEnMail.subject) && invEnMail.html.indexOf('Hello Nadia') >= 0,
+  'an English user gets it in English');
+var invUr = call({ action: 'adminCreateUser', token: adminTok, appUrl: 'https://besgasksa.github.io/Cash-collections-with-sales/', data: { name: 'Imran Shah', email: 'invitee.ur@bestgas.sa', role: 'driver', language: 'ur' } });
+var invUrMail = ctx._debug.mailLog.filter(function (m) { return m.to === 'invitee.ur@bestgas.sa'; }).pop();
+check(invUr.ok && invUrMail && invUrMail.html.indexOf('دعوت قبول کریں') >= 0 && invUrMail.html.indexOf('ڈرائیور') >= 0, 'an Urdu user gets it in Urdu, with the role in Urdu');
+check(/[?&]invite=/.test(invEnMail.body) && /[?&]invite=/.test(invUrMail.body), 'every plain-text version carries the link too');
 check(invMail.html.indexOf('href="https://besgasksa.github.io/Cash-collections-with-sales/?invite=') >= 0, 'and the button links back to the app the admin is using');
 check(!/Temporary password/.test(invMail.body), 'no temporary password is emailed any more');
 var invToken = lastInviteFor('invitee@bestgas.sa');
+var invInfo = call({ action: 'inviteInfo', inviteToken: invToken });
+check(invInfo.ok && invInfo.status === 'valid' && invInfo.inviterName === 'Admin', 'the invitation page can say who invited them');
 var storedInvitee = ctx.userByEmail_('invitee@bestgas.sa');
 check(storedInvitee.inviteTokenHash && storedInvitee.inviteTokenHash.indexOf(invToken) < 0, 'only a keyed hash of the invitation token is stored, never the token itself');
 
 check(login('invitee@bestgas.sa', 'anything').error === 'invite_pending', 'signing in before accepting says the invitation is still pending');
 var info = call({ action: 'inviteInfo', inviteToken: invToken });
-check(info.ok && info.status === 'valid' && info.name === 'Invitee' && info.role === 'store_manager', 'the accept page can greet the invitee without a session');
+check(info.ok && info.status === 'valid' && info.name === 'Invitee Person' && info.role === 'store_manager', 'the accept page can greet the invitee without a session');
 check(call({ action: 'inviteInfo', inviteToken: 'x'.repeat(40) }).status === 'invalid', 'a made-up token is reported as invalid');
 check(call({ action: 'acceptInvite', inviteToken: invToken, password: 'short' }).error === 'weak_password', 'accepting needs a password of at least 8 characters');
 
