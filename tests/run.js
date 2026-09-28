@@ -2159,6 +2159,17 @@ var fxMeta = call({ action: 'listMeta', token: aliTok });
 check(fxMeta.customers.length > 0 && fxMeta.customers.every(function (c) { return c.phone === undefined && c.code && c.name; }), 'a branch manager gets customers\' numbers and names, not their phones');
 check(call({ action: 'adminImportCustomers', token: adminTok, rows: new Array(501).join('x,').split(',') }).error === 'too_many_rows', 'an import is capped where it can finish in one run');
 
+console.log('--- the app is called Best Gas Collections ---');
+ctx.resetExecMemo_();
+var rnCfg = ctx.config_(); rnCfg.senderName = 'Best Gas Cash Collection'; ctx.writeRow(ctx.SHEETS.CONFIG, rnCfg);
+ctx.setScriptProp_('SENDER_RENAMED', ''); ctx.setScriptProp_('SENDER_RENAMED_CLAIM', '');
+ctx.resetExecMemo_(); ctx.runOneTimeMigrations_(); ctx.resetExecMemo_();
+check(ctx.config_().senderName === 'Best Gas Collections', 'emails that still carried the old default sender name now say Best Gas Collections');
+rnCfg = ctx.config_(); rnCfg.senderName = 'Best Gas Finance'; ctx.writeRow(ctx.SHEETS.CONFIG, rnCfg);
+ctx.setScriptProp_('SENDER_RENAMED', ''); ctx.setScriptProp_('SENDER_RENAMED_CLAIM', '');
+ctx.resetExecMemo_(); ctx.runOneTimeMigrations_(); ctx.resetExecMemo_();
+check(ctx.config_().senderName === 'Best Gas Finance', 'a sender name someone chose is left alone');
+
 console.log('--- an area\'s collector moves onto its branches, once ---');
 var mgCol = mk('Mg Area Collector', 'mgcol.fx@bestgas.sa', 'collector');
 var mgCol2 = mk('Mg Branch Collector', 'mgcol2.fx@bestgas.sa', 'collector');

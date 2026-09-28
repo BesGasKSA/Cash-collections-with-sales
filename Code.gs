@@ -299,7 +299,7 @@ function config_() {
   if (!row) {
     row = writeRow(SHEETS.CONFIG, {
       vatRate: 0.15,
-      senderName: 'Best Gas Cash Collection',
+      senderName: 'Best Gas Collections',
       idleMs: IDLE_MS,
       hardMs: HARD_MS
     });
@@ -330,7 +330,7 @@ function sendMail_(to, subject, body, html) {
       }
     }
   }
-  if (html) MailApp.sendEmail(to, subject, body, { htmlBody: html, name: config_().senderName || 'Best Gas Cash Collection' });
+  if (html) MailApp.sendEmail(to, subject, body, { htmlBody: html, name: config_().senderName || 'Best Gas Collections' });
   else MailApp.sendEmail(to, subject, body);
   return 'mailapp';
 }
