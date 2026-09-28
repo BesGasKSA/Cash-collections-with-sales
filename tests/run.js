@@ -1328,7 +1328,7 @@ check(call({ action: 'adminResendInvite', token: adminTok, id: inv2.id }).error 
 check(call({ action: 'adminResendInvite', token: aliTok, id: inv2.id }).error === 'forbidden', 'only admin can resend invitations');
 var visibleToManager = call({ action: 'listMeta', token: aliTok }).users.filter(function (u) { return u.id === inv.user.id; })[0];
 check(visibleToManager && visibleToManager.lastLoginAt === undefined && visibleToManager.status === undefined, 'non-company-wide users do not see anyone\'s status or last login');
-check(ctx.inviteAppUrl_({ appUrl: 'javascript:alert(1)' }) === ctx.DEFAULT_APP_URL && ctx.inviteAppUrl_({ appUrl: 'https://x.example/app/index.html?y=1' }) === 'https://x.example/app/', 'the link base only accepts a clean https app address');
+check(ctx.inviteAppUrl_({ appUrl: 'javascript:alert(1)' }) === ctx.DEFAULT_APP_URL && ctx.inviteAppUrl_({ appUrl: 'https://besgasksa.github.io/Cash-collections-with-sales/index.html?y=1' }) === 'https://besgasksa.github.io/Cash-collections-with-sales/', 'the link base only accepts a clean app address');
 
 console.log('--- master data: non-sales collection items and expense items ---');
 var incomeItem = call({ action: 'adminSaveEntity', token: adminTok, kind: 'income_item', data: { name: 'تحصيل مبيعات آجلة' } });
@@ -2187,6 +2187,61 @@ check(mgL2After.collectorUserId === mgCol2.id, 'a branch with its own collector 
 check(!ctx.getById_(ctx.SHEETS.CLUSTERS, mgArea.id).collectorUserId, 'and the area no longer holds a collector of its own');
 check(ctx.branchCollector_(mgL1.id) === mgCol.id && ctx.branchCollector_(mgL2.id) === mgCol2.id, 'nobody\'s cash changes hands: every branch still goes to the same collector');
 check(ctx.migrateBranchCollectors_() === 0, 'running it again changes nothing');
+
+console.log('--- total sales counts a credit sale once: it is already inside the typed sales figure ---');
+var stLoc = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: 'Jeddah', name: 'Sales Total Branch', clusterId: cluster.entity.id, collectorUserId: musa.id } }).entity;
+var stMgr = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Sales Total Manager', email: 'stmgr.fx@bestgas.sa', role: 'store_manager' } }).user;
+var stStore = call({ action: 'adminSaveEntity', token: adminTok, kind: 'store', data: { locationId: stLoc.id, name: 'Sales Total Store', storeManagerUserId: stMgr.id } }).entity;
+var stCust = call({ action: 'adminSaveEntity', token: adminTok, kind: 'customer', data: { name: 'Sales Total Customer', city: 'Jeddah' } }).entity;
+var stEntry = call({ action: 'createDailyEntry', token: adminTok, date: '2026-08-02', sourceType: 'store', sourceId: stStore.id, productId: prodA.id, cashSales: 900, creditSales: 300, creditCustomerId: stCust.id });
+check(stEntry.ok, 'a day of 900 sold, 300 of it on credit, is saved');
+var stDay = call({ action: 'getSalesReport', token: adminTok, dateFrom: '2026-08-02', dateTo: '2026-08-02' });
+var stTrend = (stDay.byDate || []).filter(function (d) { return d.date === '2026-08-02'; })[0];
+close(stTrend ? Number(stTrend.gross != null ? stTrend.gross : stTrend.total != null ? stTrend.total : stTrend.amount) : NaN, 900, 'the daily sales trend shows 900 for that day, not 1,200');
+var stMax = call({ action: 'getSalesReport', token: adminTok, amountMin: 900, amountMax: 900 });
+check(stMax.ok && stMax.entries.some(function (e) { return e.sourceId === stStore.id; }), 'the amount filter sees the entry as a 900 sale');
+close(stDay.totals.netCashOwed, 600, 'and the cash owed is still 900 less the 300 on credit');
+
+console.log('--- forgot password cannot be turned against someone ---');
+var fpInv = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Fp Invitee', email: 'fpvictim.fx@bestgas.sa', role: 'finance' } }).user;
+check(!!fpInv, 'set up: someone invited who has not accepted yet');
+var fpBefore = ctx._debug.mailLog.length;
+call({ action: 'forgotPassword', email: 'fpvictim.fx@bestgas.sa', appUrl: 'https://attacker.example/' });
+var fpMail2 = ctx._debug.mailLog.slice(fpBefore).pop();
+var fpAll = fpMail2 ? String(fpMail2.body) + String(fpMail2.html || '') : '';
+check(fpMail2 && fpAll.indexOf('attacker.example') < 0, 'a stranger cannot point the invitation email at their own site');
+check(fpMail2 && fpAll.indexOf(ctx.DEFAULT_APP_URL) >= 0, 'the invitation links to the live app');
+check(ctx.inviteAppUrl_({ appUrl: 'https://x.example/app/' }) === ctx.DEFAULT_APP_URL, 'another https site is not accepted as a link base');
+check(ctx.inviteAppUrl_({ appUrl: 'http://localhost:8905/' }) === 'http://localhost:8905/', 'a local preview still is');
+
+var fpAct = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Fp Active', email: 'fpactive.fx@bestgas.sa', role: 'accountant' } }).user;
+call({ action: 'acceptInvite', inviteToken: lastInviteFor('fpactive.fx@bestgas.sa'), password: 'Original#123' });
+check(call({ action: 'login', email: 'fpactive.fx@bestgas.sa', password: 'Original#123' }).ok, 'set up: the person signs in with their own password');
+function fpTemp() {
+  var log = ctx._debug.mailLog;
+  for (var i = log.length - 1; i >= 0; i--) {
+    var m = log[i].to === 'fpactive.fx@bestgas.sa' && /Temporary password: (\S+)/.exec(log[i].body);
+    if (m) return m[1];
+  }
+  return null;
+}
+function fpAsk() { delete ctx._debug.cache['fpwait_fpactive.fx@bestgas.sa']; call({ action: 'forgotPassword', email: 'fpactive.fx@bestgas.sa' }); return fpTemp(); }
+var fpT1 = fpAsk();
+check(!!fpT1, 'asking for a reset emails a temporary password');
+check(call({ action: 'login', email: 'fpactive.fx@bestgas.sa', password: 'Original#123' }).ok, 'someone else asking for a reset does not lock the person out: their own password still works');
+check(!call({ action: 'login', email: 'fpactive.fx@bestgas.sa', password: fpT1 }).ok, 'and once they sign in with it, the unused temporary password stops working');
+var fpT2 = fpAsk();
+var fpViaTemp = call({ action: 'login', email: 'fpactive.fx@bestgas.sa', password: fpT2 });
+check(fpViaTemp.ok && fpViaTemp.user.mustChangePw === true, 'the temporary password signs in, and asks for a new password');
+check(!call({ action: 'login', email: 'fpactive.fx@bestgas.sa', password: 'Original#123' }).ok, 'after a reset is used, the old password is gone');
+var fpT3 = fpAsk();
+var fpU = ctx.getById_(ctx.SHEETS.USERS, fpAct.id); fpU.resetExpires = Date.now() - 1000; ctx.writeRow(ctx.SHEETS.USERS, fpU);
+check(!call({ action: 'login', email: 'fpactive.fx@bestgas.sa', password: fpT3 }).ok, 'a temporary password expires after an hour');
+check(!('resetPass' in fpViaTemp.user) && !('resetSalt' in fpViaTemp.user), 'the reset secret never leaves the server');
+
+console.log('--- a slip photo keeps a plain file type ---');
+check(ctx.slipMime_('image/png') === 'image/png' && ctx.slipMime_('application/pdf') === 'application/pdf', 'photos and PDFs keep their type');
+check(ctx.slipMime_('image/png" onerror="alert(1)') === 'image/jpeg' && ctx.slipMime_('text/html') === 'image/jpeg', 'anything else is stored as a JPEG photo, never as page markup');
 
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);

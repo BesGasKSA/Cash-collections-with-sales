@@ -601,8 +601,11 @@ function unconsumedEntriesForLocation_(locationId) {
 // Gross "total sales" for one entry — cash + POS + credit, regardless of
 // cash-collection risk. Used for report filtering/aggregation only; never
 // for computeNet_'s cash-owed formula, which credit sales stay out of.
+// A day's sales: the typed sales figure plus card sales. What was sold on
+// credit is already inside the typed figure (see computeNet_), so adding
+// creditSales again counted it twice (fixed 2026-09-28).
 function entrySalesTotal_(e) {
-  return Number(e.cashSales || 0) + Number(e.posSales || 0) + Number(e.creditSales || 0);
+  return Number(e.cashSales || 0) + Number(e.posSales || 0);
 }
 
 // mirrors the xlsx formula, extended to POS: a POS machine can also take cash
@@ -1584,9 +1587,15 @@ function depositsFolder_() {
   return folder;
 }
 
+// Only photo and PDF types are stored: the type comes back to every viewer
+// inside a data: address, so a crafted one must never reach the page.
+function slipMime_(mime) {
+  var m = String(mime || '').toLowerCase();
+  return /^(image\/(jpeg|png|webp|gif|heic|heif)|application\/pdf)$/.test(m) ? m : 'image/jpeg';
+}
 function saveDepositSlip_(base64, fileName, mime) {
   var bytes = Utilities.base64Decode(base64);
-  var blob = Utilities.newBlob(bytes, mime || 'image/jpeg', fileName || 'slip.jpg');
+  var blob = Utilities.newBlob(bytes, slipMime_(mime), String(fileName || 'slip.jpg').replace(/[^\w.\-\u0600-\u06FF ]/g, '_').slice(0, 80));
   var file = depositsFolder_().createFile(blob);
   file.setSharing(DriveApp.Access.PRIVATE, DriveApp.Permission.NONE);
   return file.getId();
