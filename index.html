@@ -1354,6 +1354,135 @@
   .bm-pin{background:none;border:0;}
   .bm-pin svg{width:34px;height:44px;filter:drop-shadow(0 2px 3px rgba(0,0,0,.28));}
   .bm-actions{gap:10px;flex-wrap:wrap;}
+  /* the net cash equation */
+  .eq-wrap{margin:0 0 18px;}
+  .eq-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:2px 2px 10px;}
+  .eq-head h2{margin:0;font-size:17px;font-weight:800;}
+  .eq-head p{margin:0;font-size:12.5px;color:var(--muted);}
+  .eq-row{display:grid;grid-template-columns:1fr;gap:10px;}
+  .eq-op{justify-self:center;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-size:20px;font-weight:800;
+    color:var(--green-dark);background:var(--card);border:1px solid var(--border-soft);box-shadow:0 1px 2px rgba(40,50,40,.06);}
+  .eq-card{background:var(--card);border:1px solid var(--border-soft);border-radius:18px;padding:4px;box-shadow:0 1px 3px rgba(40,50,40,.05);
+    animation:eqIn .45s cubic-bezier(.2,.8,.2,1) both;}
+  .eq-row > .eq-card:nth-of-type(2){animation-delay:.06s;} .eq-row > .eq-card:nth-of-type(3){animation-delay:.12s;} .eq-row > .eq-card:nth-of-type(4){animation-delay:.18s;}
+  @keyframes eqIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+  .eq-main{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"l go" "v go";gap:2px 10px;width:100%;text-align:start;
+    padding:12px 14px;border:0;background:none;font:inherit;color:inherit;cursor:pointer;border-radius:14px;align-items:center;}
+  .eq-main:hover{background:var(--bg);} .eq-main:active{transform:scale(.99);}
+  .eq-main:focus-visible,.eq-line:focus-visible,.lv-row:focus-visible,.lv-chip:focus-visible,.lv-part:focus-visible{outline:2px solid var(--green);outline-offset:2px;}
+  .eq-l{grid-area:l;font-size:13px;font-weight:700;color:var(--muted);}
+  .eq-v{grid-area:v;font-size:26px;font-weight:800;letter-spacing:-.01em;line-height:1.15;}
+  .eq-v small{font-size:12px;font-weight:700;color:var(--muted);margin-inline-start:4px;}
+  .eq-go{grid-area:go;color:var(--muted);} .eq-go svg{width:18px;height:18px;transform:scaleX(-1);}
+  html[dir="ltr"] .eq-go svg{transform:none;}
+  .eq-lines{border-top:1px dashed var(--border-soft);margin:0 10px;padding:6px 0 8px;display:flex;flex-direction:column;}
+  .eq-line{display:flex;justify-content:space-between;align-items:center;gap:10px;min-height:40px;padding:6px 4px;border:0;background:none;
+    font:inherit;font-size:13.5px;color:var(--text);cursor:pointer;border-radius:10px;text-align:start;}
+  .eq-line:hover{background:var(--bg);}
+  .eq-line b{font-weight:700;white-space:nowrap;}
+  .eq-none{font-size:12.5px;color:var(--muted);padding:6px 4px;}
+  .eq-card.ded .eq-v{color:#7a3b1d;}
+  .eq-card.net{background:var(--green-dark);border-color:var(--green-dark);color:#fff;box-shadow:0 10px 26px rgba(40,70,45,.25);}
+  .eq-card.net .eq-l,.eq-card.net .eq-v small,.eq-card.net .eq-go{color:rgba(255,255,255,.8);}
+  .eq-card.net .eq-main:hover{background:rgba(255,255,255,.08);}
+  .eq-card.net .eq-lines{border-top-color:rgba(255,255,255,.25);}
+  .eq-line.on-dark{color:#fff;} .eq-line.on-dark:hover{background:rgba(255,255,255,.1);}
+  .eq-prog{display:flex;flex-direction:column;gap:2px;}
+  .eq-bar{height:8px;border-radius:999px;background:rgba(255,255,255,.22);overflow:hidden;margin:6px 4px 4px;}
+  .eq-bar span{display:block;height:100%;border-radius:999px;background:#F2EEE4;transition:width .6s ease;}
+  @media (min-width:900px){
+    .eq-row{grid-template-columns:repeat(3,minmax(0,1fr)) minmax(0,1.15fr);align-items:start;gap:12px;}
+  }
+  @media (prefers-reduced-motion:reduce){ .eq-card{animation:none;} .eq-bar span{transition:none;} }
+  /* level by level */
+  .lv-head{padding:4px 2px 12px;}
+  .lv-k{font-size:13px;font-weight:700;color:var(--muted);}
+  .lv-v{font-size:30px;font-weight:800;letter-spacing:-.01em;}
+  .lv-v small{font-size:12px;color:var(--muted);margin-inline-start:4px;}
+  .lv-def{margin:6px 0 0;font-size:13px;line-height:1.7;color:var(--text);}
+  .lv-eq{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:10px;border-radius:14px;background:var(--bg);margin-bottom:10px;}
+  .lv-op{font-weight:800;color:var(--muted);}
+  .lv-chip{display:flex;flex-direction:column;align-items:flex-start;gap:0;min-height:44px;padding:6px 10px;border-radius:10px;border:1px solid var(--border-soft);
+    background:var(--card);font:inherit;font-size:11.5px;color:var(--muted);cursor:pointer;}
+  .lv-chip b{font-size:13.5px;color:var(--text);}
+  .lv-chip.on{border-color:var(--green);box-shadow:0 0 0 1px var(--green) inset;color:var(--green-dark);}
+  .lv-parts{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;}
+  .lv-part{display:inline-flex;align-items:center;gap:8px;min-height:40px;padding:6px 12px;border-radius:999px;border:1px solid var(--border-soft);background:var(--card);
+    font:inherit;font-size:12.5px;cursor:pointer;}
+  .lv-part.on{background:var(--green-pale);border-color:var(--green);color:var(--green-dark);font-weight:700;}
+  .lv-by{font-size:14px;font-weight:800;margin:6px 2px 8px;}
+  .lv-list{display:flex;flex-direction:column;gap:6px;}
+  .lv-row{display:grid;grid-template-columns:minmax(0,1fr) auto 18px;grid-template-areas:"n a g" "b b b";gap:6px 10px;align-items:center;width:100%;
+    padding:12px;border:1px solid var(--border-soft);border-radius:14px;background:var(--card);font:inherit;color:inherit;text-align:start;cursor:pointer;}
+  .lv-row:hover{border-color:color-mix(in srgb,var(--green) 45%,transparent);}
+  .lv-row:active{transform:scale(.995);}
+  .lv-name{grid-area:n;display:flex;flex-direction:column;min-width:0;}
+  .lv-name b{font-size:14px;overflow-wrap:anywhere;} .lv-name small{font-size:12px;color:var(--muted);}
+  .lv-amt{grid-area:a;font-weight:800;font-size:15px;white-space:nowrap;}
+  .lv-go{grid-area:g;color:var(--muted);} .lv-go svg{width:16px;height:16px;transform:scaleX(-1);}
+  html[dir="ltr"] .lv-go svg{transform:none;}
+  .lv-bar{grid-area:b;height:6px;border-radius:999px;background:var(--bg);overflow:hidden;}
+  .lv-bar i{display:block;height:100%;border-radius:999px;background:var(--green);}
+  .lv-all{margin-top:12px;display:inline-flex;align-items:center;gap:6px;min-height:44px;}
+  .lv-all svg{width:16px;height:16px;}
+  .lv-empty{padding:10px;}
+  /* report tabs and tables */
+  .rp-tabs-head{display:flex;align-items:center;gap:10px;margin:0 0 10px;}
+  .rp-tabs{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;flex:1;padding:2px;}
+  .rp-tabs::-webkit-scrollbar{display:none;}
+  .rp-tab{flex:none;min-height:40px;padding:0 14px;border-radius:999px;border:1px solid var(--border-soft);background:var(--card);font:inherit;font-size:13px;font-weight:700;
+    color:var(--muted);cursor:pointer;white-space:nowrap;}
+  .rp-tab.on{background:var(--green-dark);border-color:var(--green-dark);color:#fff;}
+  .rp-tab:focus-visible{outline:2px solid var(--green);outline-offset:2px;}
+  .rp-all{flex:none;display:inline-flex;align-items:center;gap:6px;min-height:40px;}
+  .rp-all svg{width:16px;height:16px;}
+  .rp-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px;}
+  .rp-head h2{margin:0;}
+  .rp-n{font-size:12px;font-weight:800;background:var(--green-pale);color:var(--green-dark);border-radius:999px;padding:1px 9px;margin-inline-start:6px;}
+  .ex-btn{display:inline-flex;align-items:center;gap:6px;min-height:40px;padding:0 12px;border-radius:10px;border:1px solid var(--border-soft);background:var(--card);
+    font:inherit;font-size:12.5px;font-weight:700;color:var(--green-dark);cursor:pointer;white-space:nowrap;}
+  .ex-btn:hover{border-color:var(--green);} .ex-btn:active{transform:scale(.98);}
+  .ex-btn svg{width:16px;height:16px;}
+  .tbl-tools{display:flex;justify-content:flex-end;margin:0 0 6px;}
+  .rp-table th.n,.rp-table td.n{text-align:end;white-space:nowrap;font-variant-numeric:tabular-nums;}
+  .rp-table tfoot td{font-weight:800;background:var(--bg);border-top:2px solid var(--border);}
+  .rp-table th:first-child,.rp-table td:first-child{position:sticky;inset-inline-start:0;background:var(--card);z-index:1;box-shadow:-1px 0 0 var(--border-soft) inset;}
+  .rp-table tfoot td:first-child{background:var(--bg);}
+  .rp-table tr.pf-row{cursor:pointer;}
+  .rp-empty{padding:12px;}
+  .pv-acts{display:flex;gap:6px;flex-wrap:wrap;}
+  .pv-path{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:0 0 10px;font-size:12.5px;color:var(--muted);}
+  .pv-path span{background:var(--bg);border-radius:999px;padding:2px 10px;font-weight:700;color:var(--text);}
+  .pv-path i{font-style:normal;}
+  html[dir="rtl"] .pv-path i{transform:scaleX(-1);display:inline-block;}
+  .pv-row{cursor:pointer;}
+  .pv-row:hover td{background:color-mix(in srgb,var(--green) 5%,var(--card));}
+  .pv-row:focus-visible{outline:2px solid var(--green);outline-offset:-2px;}
+  .pv-name{padding-inline-start:calc(10px + var(--d) * 18px) !important;}
+  .pv-name,.pv-name *{white-space:nowrap;}
+  .pv-tog{display:inline-grid;place-items:center;flex:none;width:22px;height:22px;margin-top:1px;border-radius:6px;background:var(--bg);color:var(--green-dark);font-weight:800;vertical-align:middle;}
+  .pv-in{display:inline-flex;align-items:flex-start;gap:6px;}
+  .pv-row[aria-expanded="false"] .pv-tog:empty::before{content:'◂';}
+  html[dir="ltr"] .pv-row[aria-expanded="false"] .pv-tog:empty::before{content:'▸';}
+  .pv-row[aria-expanded="true"] .pv-tog:empty::before{content:'▾';}
+  .pv-txt{display:inline-flex;flex-direction:column;vertical-align:middle;line-height:1.3;}
+  .pv-txt small{font-size:11.5px;color:var(--muted);font-weight:600;}
+  .pv-d0 td{font-weight:800;background:color-mix(in srgb,var(--green) 7%,var(--card));}
+  .pv-d0 .pv-txt b{font-size:14.5px;}
+  .pv-d1 td{font-weight:700;}
+  .pv-d4 td{font-weight:500;}
+  .pv-table td.pv-net{color:var(--green-dark);font-weight:800;}
+  .pv-mini{display:none;}
+  @media (max-width:600px){
+    .pv-head{flex-wrap:wrap;} .pv-acts{width:100%;} .pv-acts .ex-btn{flex:1;justify-content:center;}
+    .pv-table .pv-wide{display:none;}
+    .pv-table th:first-child,.pv-table td:first-child{position:static;box-shadow:none;}
+    .pv-name{padding-inline-start:calc(6px + var(--d) * 10px) !important;}
+    .pv-name,.pv-name *{white-space:normal;}
+    .pv-mini{display:block;margin-top:2px;font-weight:600;}
+    .pv-table{min-width:0;width:100%;}
+  }
+  @media (max-width:600px){ .rp-tabs-head{flex-wrap:wrap;} .rp-all{width:100%;justify-content:center;} }
   .toast2{position:fixed;left:50%;bottom:calc(88px + env(safe-area-inset-bottom));z-index:9999;transform:translate(-50%,16px);opacity:0;
     display:flex;align-items:center;gap:8px;max-width:min(520px,calc(100vw - 32px));padding:12px 16px;border-radius:14px;
     font-weight:700;font-size:14px;box-shadow:0 10px 30px rgba(20,30,20,.22);transition:opacity .2s ease,transform .2s ease;pointer-events:none;}
@@ -1715,7 +1844,7 @@ var ICON_B64 = 'iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAYAAAA9zQYyAAAcG0lEQVR42u2dd1cU
 // Stamped by tools/stamp-build.js at publish time so the running app can
 // say which build it is — a cached page is the usual reason a shipped change
 // seems missing.
-var BUILD_ID = '2026-09-28 21:32 · 86ce333';
+var BUILD_ID = '2026-09-28 21:43 · 65021a1';
 var LOGO_SRC = 'data:image/png;base64,' + LOGO_B64;
 var ICON_SRC = LOGO_SRC; // same asset — see the comment above LOGO_B64
 
@@ -1918,7 +2047,7 @@ var L = {
     err_wrongCurrentPassword:'كلمة المرور الحالية غير صحيحة', err_network:'تعذّر الاتصال بالخادم — تحقق من الإنترنت',
     err_noSourceSelected:'الرجاء اختيار مصدر أولاً', err_titleRequired:'الرجاء إدخال عنوان',
     noData:'لا توجد بيانات', loading:'جارِ التحميل...', total:'الإجمالي', kind_location_to_cluster:'مدير الفرع ← مدير المنطقة',
-    kind_cluster_to_collector:'مدير المنطقة ← مُحصّل', kind_deposit:'إيداع بنكي', filter:'تصفية', all:'الكل', entity_bank:'البنك', entry_transferTitle:'تحويلات العملاء البنكية', entry_transferHint:'ما حوّله العملاء مباشرة إلى حساب الشركة. يُخصم من النقدية الواجب تسليمها، لأنه ضمن المبيعات ولم يُستلم نقداً.', entry_transferAmount:'مبلغ التحويل', entry_addTransfer:'+ إضافة تحويل', entry_addDeposit:'+ إضافة موازنة', entry_depositDevice:'جهاز نقطة البيع', entry_pickDevice:'اختر الجهاز…', entry_noDevices:'لا توجد أجهزة لهذا الفرع', entry_depositPhoto:'صورة الإيصال', entry_photoUploading:'جارٍ رفع الصورة…', entry_photoReady:'رُفعت الصورة', entry_photoFailed:'تعذّر رفع الصورة. حاول مرة أخرى.', err_depositNeedsPhoto:'أرفق صورة إيصال كل موازنة.', err_depositNeedsPos:'اختر جهاز نقطة البيع لكل موازنة.', err_photoUploading:'انتظر حتى يكتمل رفع الصورة.', err_invalidPhoto:'الصورة غير صالحة لهذه الموازنة. التقط صورة جديدة.', err_invalidPos:'هذا الجهاز لا يتبع هذا الفرع.', entry_priceCustomer:'سعر خاص بهذا العميل', entry_priceCustomerTag:'سعر العميل', us_searchHint:'ابحث بالاسم أو البريد أو الرقم', us_allRoles:'كل الصلاحيات', us_disable:'إيقاف الحساب', us_enable:'تفعيل الحساب', us_confirmDisable:'إيقاف حساب {name}؟ لن يستطيع الدخول حتى يُفعَّل من جديد، ولا يُحذف شيء من سجلاته.', us_confirmEnable:'تفعيل حساب {name} من جديد؟', us_disabledNow:'أُوقف حساب {name}', us_enabledNow:'فُعِّل حساب {name}', bc2_title:'المُحصّلون', bc2_hint:'مُحصّل هذا الفرع يستلم نقديته بعد اعتماد نائب مدير العمليات. اختر من كل المُحصّلين؛ من يعمل في منطقة أخرى لا يُختار، لأن لكل شخص منطقة واحدة.', bc2_current:'المُحصّل الحالي', bc2_otherArea:'يعمل في منطقة {area}. لكل شخص منطقة واحدة', bc2_disabled:'حساب موقوف', bc2_none:'لا يحصّل لأي فرع بعد', bc2_inFlight:'لا يُغيَّر المُحصّل الآن: نقدية هذا الفرع في الطريق إلى {who}.', bc2_confirm:'تعيين {who} مُحصّلاً لفرع {branch}؟', bc2_saved:'أصبح {who} مُحصّل فرع {branch}', bc2_search:'ابحث باسم المُحصّل أو رقمه', bc2_empty:'لا يوجد مُحصّلون بعد. أضف مستخدماً بصلاحية مُحصّل من شاشة المستخدمين.', inv2_doneTitle:'تم تفعيل حسابك', inv2_doneBody:'ادخل الآن ببريدك وكلمة المرور الجديدة.', inv2_signIn:'تسجيل الدخول', inv2_org:'الناقل الأفضل للغاز', inv2_app:'نظام تحصيل النقدية', inv2_youCan:'ستتمكن في النظام من:', inv2_hi:'أهلاً {name}', inv2_lead:'أنت {role} في نظام تحصيل النقدية. اختر كلمة مرور لتفعيل حسابك.', inv2_leadBy:'{who} أضافك بصفتك {role}. اختر كلمة مرور لتفعيل حسابك.', inv2_s1:'قبول الدعوة', inv2_s2:'كلمة المرور', inv2_s3:'الدخول', inv2_pw:'كلمة المرور الجديدة', inv2_pw2:'أعد كتابة كلمة المرور', inv2_ckLen:'8 أحرف على الأقل', inv2_ckMix:'أحرف وأرقام معاً', inv2_ckSame:'كلمتا المرور متطابقتان', inv2_go:'تفعيل الحساب', inv2_going:'جارٍ تفعيل الحساب…', inv2_valid:'الدعوة صالحة حتى {date}', inv2_does_store_manager:'تسجيل مبيعات فرعك ومصروفاته يومياً|تسليم نقدية الفرع لمدير المنطقة|متابعة كل تسليم حتى اعتماده', inv2_does_driver:'تسجيل مبيعات سيارتك يومياً|تسليم نقدية السيارة لمدير الفرع|متابعة ما سلّمته وما اعتُمد', inv2_does_cluster_manager:'استلام نقدية فروع منطقتك وتأكيدها|إرسال نقدية كل فرع إلى مُحصّله|متابعة فروعك ومُحصّليها من شاشة واحدة', inv2_does_collector:'استلام نقدية الفروع المسندة إليك|إيداعها في البنك مع مرجع الإيداع|متابعة ما استلمته وما أودعته', inv2_does_deputy_operations_manager:'مراجعة طلبات مديري المناطق واعتمادها|إعادة أي طلب مع سبب للتصحيح|متابعة التحصيل في كل الفروع', inv2_does_operations_manager:'متابعة التحصيل والتسليمات في كل الفروع|مراجعة التقارير والمؤشرات|متابعة المخاطر والشكاوى', inv2_does_finance:'متابعة النقدية من الفرع حتى البنك|مطابقة الإيداعات مع كشف البنك|مراجعة الفروقات والتقارير', inv2_does_accountant:'مراجعة الإدخالات والتسليمات|مطابقة الإيداعات مع كشف البنك|استخراج التقارير', inv2_does_admin:'إدارة المستخدمين والصلاحيات|إدارة الفروع والمناطق والبيانات الأساسية|متابعة كل ما يجري في النظام', sort_by:'الترتيب', sort_default:'حسب الإدخال', sort_new:'الأحدث أولاً', sort_old:'الأقدم أولاً', sort_high:'المبلغ: الأعلى أولاً', sort_low:'المبلغ: الأقل أولاً', bm_title:'موقع الفرع على الخريطة', bm_hint:'اضغط على الخريطة لتثبيت موقع الفرع أو اسحب الدبوس، أو استخدم موقعك الحالي وأنت داخل الفرع، أو الصق رابط الموقع من خرائط Google.', bm_here:'موقعي الحالي', bm_pastePh:'رابط خرائط Google أو 24.7136, 46.6753', bm_go:'تحديد', bm_none:'لم يُحدَّد موقع الفرع بعد', bm_openGoogle:'فتح في خرائط Google', bm_noZone:'بلا نطاق', bm_suggest:'أقرب فرع: {branch} ({dist}) — النطاق المقترح:', bm_m:'م', bm_km:'كم', bm_applyZone:'اعتماد هذا النطاق', bm_zoneMatches:'يطابق نطاق الفرع', bm_save:'حفظ الموقع', bm_clear:'إزالة الموقع', bm_noGeo:'المتصفح لا يدعم تحديد الموقع', bm_geoDenied:'تعذّر الحصول على موقعك — اسمح للمتصفح بالوصول إلى الموقع ثم أعد المحاولة', bm_badPaste:'لم نجد إحداثيات في النص — الصق رابطاً كاملاً من خرائط Google أو إحداثيات مثل 24.7136, 46.6753', bm_loadFail:'تعذّر تحميل الخريطة — تحقق من الاتصال', calc_totalIn:'إجمالي التحصيلات', calc_totalOut:'إجمالي الخصومات', entry_pickCustomer:'اختر العميل…', entry_creditAddItem:'+ صنف', entry_creditItemsTotal:'مجموع الأصناف', err_creditItemsIncomplete:'أكمل كل صنف: المنتج والكمية', rec_code:'الرقم', rec_codeAuto:'يُمنح الرقم تلقائياً عند الحفظ', admin_customers:'العملاء', admin_cities:'المدن', admin_addCustomer:'إضافة عميل', admin_addCity:'إضافة مدينة', cu_code:'رقم العميل', cu_codeAuto:'يُمنح رقم العميل تلقائياً عند الحفظ', cu_name:'اسم العميل', cu_phone:'الجوال', ci_name:'اسم المدينة', ci_uses:'الفروع', cu_import:'استيراد قائمة', cu_importTitle:'استيراد العملاء', cu_importHint:'الصق الأسماء، اسماً في كل سطر، أو اختر ملف Excel أو CSV. لإضافة المدينة والجوال انسخ أعمدتها من Excel كما هي، أو افصل بينها بفاصلة. يُمنح كل عميل جديد رقماً، ويُتخطى كل اسم مسجّل مسبقاً.', cu_importPh:'مثال: شركة الغذاء النوعي للتجارة - الرمال', cu_importFile:'اختيار ملف Excel أو CSV', cu_importCheck:'مراجعة القائمة', cu_impNew:'جديد', cu_impOnFile:'مسجّل مسبقاً', cu_impRepeat:'مكرر في القائمة', cu_impAdd:'إضافة {n} عميل', cu_impNothing:'لا يوجد اسم جديد لإضافته', cu_impDone:'أُضيف {n} عميل، وتُخطي {s}', cu_impEmpty:'لم يُعثر على أسماء في القائمة', cu_impLoadFail:'تعذّرت قراءة الملف — جرّب حفظه بصيغة CSV', pf_kindCustomer:'عميل', pf_kindCity:'مدينة', err_duplicateCustomer:'هذا العميل مسجّل مسبقاً برقم {code}', err_duplicateCity:'هذه المدينة موجودة في القائمة', err_unknownCustomer:'العميل غير مسجّل — اختره من القائمة أو اطلب من مدير النظام إضافته', err_invalidCustomer:'حساب هذا العميل موقوف، فلا يُسجَّل عليه بيع آجل جديد', err_creditItemsMismatch:'مبلغ البيع الآجل لا يطابق مجموع الأصناف', err_priceLocked:'سعر هذا المنتج ثابت ولا يُغيَّر', err_invalidProduct:'المنتج غير موجود أو موقوف', err_invalidCoordinates:'إحداثيات الموقع غير صحيحة'
+    kind_cluster_to_collector:'مدير المنطقة ← مُحصّل', kind_deposit:'إيداع بنكي', filter:'تصفية', all:'الكل', entity_bank:'البنك', pv_tab:'الجدول المحوري', pv_title:'الجدول المحوري: المدينة ثم المنطقة ثم الفرع ثم المصدر ثم المنتج', pv_level:'المستوى', pv_openAll:'فتح الكل', pv_closeAll:'طي الكل', lv_city:'المدينة', lv_area:'المنطقة', lv_branch:'الفرع', lv_source:'المصدر', lv_product:'المنتج', lv_by_city:'حسب المدينة', lv_by_product:'حسب المنتج', lv_noProduct:'بدون منتج محدد', eq_title:'معادلة صافي النقدية', eq_hint:'اضغط أي رقم لتنزل مستوى بمستوى: المدينة ← المنطقة ← الفرع ← المصدر ← المنتج', rp_eqTitle:'معادلة صافي النقدية للفترة المختارة', eq_sales:'إجمالي المبيعات', eq_cashSales:'المبيعات المسجّلة', eq_posSales:'مبيعات الشبكة (مدى)', eq_additions:'الإضافات (تحصيلات أخرى)', eq_deductions:'الخصومات', eq_dPos:'مبيعات الشبكة (تذهب للبنك)', eq_dCredit:'المبيعات الآجلة', eq_dTransfer:'تحويلات العملاء البنكية', eq_dDelivery:'رسوم التوصيل قبل الضريبة', eq_dExpense:'المصروفات', eq_dBanked:'الموازنات', eq_net:'صافي النقدية', eq_opPlus:'زائد', eq_opMinus:'ناقص', eq_opEquals:'يساوي', eq_noDeductions:'لا خصومات', eq_noAdditions:'لا إضافات', eq_collected:'أودعه المحصّلون', eq_remaining:'المتبقي للإيداع', eq_allCompany:'الشركة كلها', eq_nothingHere:'لا شيء هنا', eq_def_sales:'كل ما بيع: المبيعات المسجّلة (وتشمل الآجل والمحوَّل) ومبيعات الشبكة.', eq_def_cashSales:'رقم المبيعات الذي يسجّله الفرع أو السائق، ويشمل ما بيع آجلاً أو دُفع بتحويل.', eq_def_posSales:'ما دُفع بالبطاقة، ويصل إلى البنك مباشرة.', eq_def_additions:'نقدية دخلت اليد وليست من مبيعات اليوم، مثل سداد دين قديم.', eq_def_deductions:'ما في المبيعات لكنه لم يصل نقداً إلى اليد، أو خرج منها قبل التسليم.', eq_def_dPos:'مبيعات الشبكة تُسوّى في البنك، فلا يسلّمها أحد.', eq_def_dCredit:'بيع على الحساب: ضمن المبيعات ولم يُقبض بعد.', eq_def_dTransfer:'حوّله العملاء مباشرة إلى حساب الشركة.', eq_def_dDelivery:'رسوم التوصيل تُدفع للبنك؛ يُخصم أصلها قبل الضريبة.', eq_def_dExpense:'دُفع من النقدية قبل تسليمها.', eq_def_dBanked:'أودعه حامل النقدية في البنك مباشرة عبر أجهزة الشبكة.', eq_def_net:'النقدية الواجب تسليمها: إجمالي المبيعات مع الإضافات، بعد طرح الخصومات.', lv_by_area:'حسب المنطقة', lv_by_branch:'حسب الفرع', lv_by_source:'حسب المصدر (متجر، سيارة، نقطة بيع)', lv_count:'الحركات: {n}', lv_allTx:'كل الحركات ({n})', rp_tabBranches:'الفروع', rp_tabAreas:'المناطق', rp_tabSources:'المصادر', rp_tabDays:'الأيام', rp_tabProducts:'المنتجات', rp_tabCustomers:'العملاء (الآجل)', rp_tabTx:'الحركات', rp_total:'الإجمالي', rp_count:'الحركات', rp_source:'المصدر', rp_date:'التاريخ', rp_qty:'الكمية', rp_creditOfIt:'منها آجل', rp_customer:'العميل', rp_lastDate:'آخر حركة', rp_status:'الحالة', ex_button:'تصدير Excel', ex_all:'تصدير التقرير كاملاً', ex_preparing:'جارٍ تجهيز ملف Excel…', ex_failed:'تعذّر تجهيز الملف. تحقق من الاتصال وحاول مرة أخرى.', entry_transferTitle:'تحويلات العملاء البنكية', entry_transferHint:'ما حوّله العملاء مباشرة إلى حساب الشركة. يُخصم من النقدية الواجب تسليمها، لأنه ضمن المبيعات ولم يُستلم نقداً.', entry_transferAmount:'مبلغ التحويل', entry_addTransfer:'+ إضافة تحويل', entry_addDeposit:'+ إضافة موازنة', entry_depositDevice:'جهاز نقطة البيع', entry_pickDevice:'اختر الجهاز…', entry_noDevices:'لا توجد أجهزة لهذا الفرع', entry_depositPhoto:'صورة الإيصال', entry_photoUploading:'جارٍ رفع الصورة…', entry_photoReady:'رُفعت الصورة', entry_photoFailed:'تعذّر رفع الصورة. حاول مرة أخرى.', err_depositNeedsPhoto:'أرفق صورة إيصال كل موازنة.', err_depositNeedsPos:'اختر جهاز نقطة البيع لكل موازنة.', err_photoUploading:'انتظر حتى يكتمل رفع الصورة.', err_invalidPhoto:'الصورة غير صالحة لهذه الموازنة. التقط صورة جديدة.', err_invalidPos:'هذا الجهاز لا يتبع هذا الفرع.', entry_priceCustomer:'سعر خاص بهذا العميل', entry_priceCustomerTag:'سعر العميل', us_searchHint:'ابحث بالاسم أو البريد أو الرقم', us_allRoles:'كل الصلاحيات', us_disable:'إيقاف الحساب', us_enable:'تفعيل الحساب', us_confirmDisable:'إيقاف حساب {name}؟ لن يستطيع الدخول حتى يُفعَّل من جديد، ولا يُحذف شيء من سجلاته.', us_confirmEnable:'تفعيل حساب {name} من جديد؟', us_disabledNow:'أُوقف حساب {name}', us_enabledNow:'فُعِّل حساب {name}', bc2_title:'المُحصّلون', bc2_hint:'مُحصّل هذا الفرع يستلم نقديته بعد اعتماد نائب مدير العمليات. اختر من كل المُحصّلين؛ من يعمل في منطقة أخرى لا يُختار، لأن لكل شخص منطقة واحدة.', bc2_current:'المُحصّل الحالي', bc2_otherArea:'يعمل في منطقة {area}. لكل شخص منطقة واحدة', bc2_disabled:'حساب موقوف', bc2_none:'لا يحصّل لأي فرع بعد', bc2_inFlight:'لا يُغيَّر المُحصّل الآن: نقدية هذا الفرع في الطريق إلى {who}.', bc2_confirm:'تعيين {who} مُحصّلاً لفرع {branch}؟', bc2_saved:'أصبح {who} مُحصّل فرع {branch}', bc2_search:'ابحث باسم المُحصّل أو رقمه', bc2_empty:'لا يوجد مُحصّلون بعد. أضف مستخدماً بصلاحية مُحصّل من شاشة المستخدمين.', inv2_doneTitle:'تم تفعيل حسابك', inv2_doneBody:'ادخل الآن ببريدك وكلمة المرور الجديدة.', inv2_signIn:'تسجيل الدخول', inv2_org:'الناقل الأفضل للغاز', inv2_app:'نظام تحصيل النقدية', inv2_youCan:'ستتمكن في النظام من:', inv2_hi:'أهلاً {name}', inv2_lead:'أنت {role} في نظام تحصيل النقدية. اختر كلمة مرور لتفعيل حسابك.', inv2_leadBy:'{who} أضافك بصفتك {role}. اختر كلمة مرور لتفعيل حسابك.', inv2_s1:'قبول الدعوة', inv2_s2:'كلمة المرور', inv2_s3:'الدخول', inv2_pw:'كلمة المرور الجديدة', inv2_pw2:'أعد كتابة كلمة المرور', inv2_ckLen:'8 أحرف على الأقل', inv2_ckMix:'أحرف وأرقام معاً', inv2_ckSame:'كلمتا المرور متطابقتان', inv2_go:'تفعيل الحساب', inv2_going:'جارٍ تفعيل الحساب…', inv2_valid:'الدعوة صالحة حتى {date}', inv2_does_store_manager:'تسجيل مبيعات فرعك ومصروفاته يومياً|تسليم نقدية الفرع لمدير المنطقة|متابعة كل تسليم حتى اعتماده', inv2_does_driver:'تسجيل مبيعات سيارتك يومياً|تسليم نقدية السيارة لمدير الفرع|متابعة ما سلّمته وما اعتُمد', inv2_does_cluster_manager:'استلام نقدية فروع منطقتك وتأكيدها|إرسال نقدية كل فرع إلى مُحصّله|متابعة فروعك ومُحصّليها من شاشة واحدة', inv2_does_collector:'استلام نقدية الفروع المسندة إليك|إيداعها في البنك مع مرجع الإيداع|متابعة ما استلمته وما أودعته', inv2_does_deputy_operations_manager:'مراجعة طلبات مديري المناطق واعتمادها|إعادة أي طلب مع سبب للتصحيح|متابعة التحصيل في كل الفروع', inv2_does_operations_manager:'متابعة التحصيل والتسليمات في كل الفروع|مراجعة التقارير والمؤشرات|متابعة المخاطر والشكاوى', inv2_does_finance:'متابعة النقدية من الفرع حتى البنك|مطابقة الإيداعات مع كشف البنك|مراجعة الفروقات والتقارير', inv2_does_accountant:'مراجعة الإدخالات والتسليمات|مطابقة الإيداعات مع كشف البنك|استخراج التقارير', inv2_does_admin:'إدارة المستخدمين والصلاحيات|إدارة الفروع والمناطق والبيانات الأساسية|متابعة كل ما يجري في النظام', sort_by:'الترتيب', sort_default:'حسب الإدخال', sort_new:'الأحدث أولاً', sort_old:'الأقدم أولاً', sort_high:'المبلغ: الأعلى أولاً', sort_low:'المبلغ: الأقل أولاً', bm_title:'موقع الفرع على الخريطة', bm_hint:'اضغط على الخريطة لتثبيت موقع الفرع أو اسحب الدبوس، أو استخدم موقعك الحالي وأنت داخل الفرع، أو الصق رابط الموقع من خرائط Google.', bm_here:'موقعي الحالي', bm_pastePh:'رابط خرائط Google أو 24.7136, 46.6753', bm_go:'تحديد', bm_none:'لم يُحدَّد موقع الفرع بعد', bm_openGoogle:'فتح في خرائط Google', bm_noZone:'بلا نطاق', bm_suggest:'أقرب فرع: {branch} ({dist}) — النطاق المقترح:', bm_m:'م', bm_km:'كم', bm_applyZone:'اعتماد هذا النطاق', bm_zoneMatches:'يطابق نطاق الفرع', bm_save:'حفظ الموقع', bm_clear:'إزالة الموقع', bm_noGeo:'المتصفح لا يدعم تحديد الموقع', bm_geoDenied:'تعذّر الحصول على موقعك — اسمح للمتصفح بالوصول إلى الموقع ثم أعد المحاولة', bm_badPaste:'لم نجد إحداثيات في النص — الصق رابطاً كاملاً من خرائط Google أو إحداثيات مثل 24.7136, 46.6753', bm_loadFail:'تعذّر تحميل الخريطة — تحقق من الاتصال', calc_totalIn:'إجمالي التحصيلات', calc_totalOut:'إجمالي الخصومات', entry_pickCustomer:'اختر العميل…', entry_creditAddItem:'+ صنف', entry_creditItemsTotal:'مجموع الأصناف', err_creditItemsIncomplete:'أكمل كل صنف: المنتج والكمية', rec_code:'الرقم', rec_codeAuto:'يُمنح الرقم تلقائياً عند الحفظ', admin_customers:'العملاء', admin_cities:'المدن', admin_addCustomer:'إضافة عميل', admin_addCity:'إضافة مدينة', cu_code:'رقم العميل', cu_codeAuto:'يُمنح رقم العميل تلقائياً عند الحفظ', cu_name:'اسم العميل', cu_phone:'الجوال', ci_name:'اسم المدينة', ci_uses:'الفروع', cu_import:'استيراد قائمة', cu_importTitle:'استيراد العملاء', cu_importHint:'الصق الأسماء، اسماً في كل سطر، أو اختر ملف Excel أو CSV. لإضافة المدينة والجوال انسخ أعمدتها من Excel كما هي، أو افصل بينها بفاصلة. يُمنح كل عميل جديد رقماً، ويُتخطى كل اسم مسجّل مسبقاً.', cu_importPh:'مثال: شركة الغذاء النوعي للتجارة - الرمال', cu_importFile:'اختيار ملف Excel أو CSV', cu_importCheck:'مراجعة القائمة', cu_impNew:'جديد', cu_impOnFile:'مسجّل مسبقاً', cu_impRepeat:'مكرر في القائمة', cu_impAdd:'إضافة {n} عميل', cu_impNothing:'لا يوجد اسم جديد لإضافته', cu_impDone:'أُضيف {n} عميل، وتُخطي {s}', cu_impEmpty:'لم يُعثر على أسماء في القائمة', cu_impLoadFail:'تعذّرت قراءة الملف — جرّب حفظه بصيغة CSV', pf_kindCustomer:'عميل', pf_kindCity:'مدينة', err_duplicateCustomer:'هذا العميل مسجّل مسبقاً برقم {code}', err_duplicateCity:'هذه المدينة موجودة في القائمة', err_unknownCustomer:'العميل غير مسجّل — اختره من القائمة أو اطلب من مدير النظام إضافته', err_invalidCustomer:'حساب هذا العميل موقوف، فلا يُسجَّل عليه بيع آجل جديد', err_creditItemsMismatch:'مبلغ البيع الآجل لا يطابق مجموع الأصناف', err_priceLocked:'سعر هذا المنتج ثابت ولا يُغيَّر', err_invalidProduct:'المنتج غير موجود أو موقوف', err_invalidCoordinates:'إحداثيات الموقع غير صحيحة'
   },
   en: {
     appName:'Best Gas Collections', login:'Sign In', email:'Email', password:'Password',
@@ -2086,7 +2215,7 @@ var L = {
     err_wrongCurrentPassword:'Current password is incorrect', err_network:"Couldn't reach the server — check your connection",
     err_noSourceSelected:'Please pick a source first', err_titleRequired:'Please enter a title',
     noData:'No data', loading:'Loading...', total:'Total', kind_location_to_cluster:'Branch → Area',
-    kind_cluster_to_collector:'Area → Collector', kind_deposit:'Bank deposit', filter:'Filter', all:'All', entity_bank:'Bank', entry_transferTitle:'Customer bank transfers', entry_transferHint:'What customers transferred straight to the company account. It comes off the cash to hand over: it is in the sales, but never arrived as cash.', entry_transferAmount:'Transfer amount', entry_addTransfer:'+ Add a transfer', entry_addDeposit:'+ Add a الموازنة', entry_depositDevice:'POS device', entry_pickDevice:'Choose the device…', entry_noDevices:'No devices for this branch', entry_depositPhoto:'Slip photo', entry_photoUploading:'Uploading the photo…', entry_photoReady:'Photo uploaded', entry_photoFailed:'The photo did not upload. Try again.', err_depositNeedsPhoto:'Attach the slip photo for each الموازنة.', err_depositNeedsPos:'Choose the POS device for each الموازنة.', err_photoUploading:'Wait for the photo to finish uploading.', err_invalidPhoto:'This photo cannot be used for this الموازنة. Take a new one.', err_invalidPos:'This device does not belong to this branch.', entry_priceCustomer:'This customer\'s own price', entry_priceCustomerTag:'Customer price', us_searchHint:'Search by name, email or number', us_allRoles:'All roles', us_disable:'Stop account', us_enable:'Turn account on', us_confirmDisable:'Stop {name}\'s account? They cannot sign in until it is turned back on. None of their records are deleted.', us_confirmEnable:'Turn {name}\'s account back on?', us_disabledNow:'{name}\'s account is stopped', us_enabledNow:'{name}\'s account is on', bc2_title:'Collectors', bc2_hint:'This branch\'s collector receives its cash after the Deputy Operations Manager validates it. Choose from every collector; one who works in another area cannot be chosen, since each person serves one area.', bc2_current:'Current collector', bc2_otherArea:'Works in {area}. Each person serves one area', bc2_disabled:'Account stopped', bc2_none:'Not collecting for any branch yet', bc2_inFlight:'The collector cannot change now: this branch\'s cash is on its way to {who}.', bc2_confirm:'Make {who} the collector for {branch}?', bc2_saved:'{who} now collects for {branch}', bc2_search:'Search by collector name or number', bc2_empty:'No collectors yet. Add a user with the Collector role on the Users screen.', inv2_doneTitle:'Your account is active', inv2_doneBody:'Sign in now with your email and new password.', inv2_signIn:'Sign in', inv2_org:'Best Gas Carrier Co.', inv2_app:'Best Gas Collections', inv2_youCan:'In the system you will:', inv2_hi:'Hello {name}', inv2_lead:'You are {role} in the Cash Collection System. Choose a password to activate your account.', inv2_leadBy:'{who} added you as {role}. Choose a password to activate your account.', inv2_s1:'Accept invitation', inv2_s2:'Password', inv2_s3:'Sign in', inv2_pw:'New password', inv2_pw2:'Type the password again', inv2_ckLen:'At least 8 characters', inv2_ckMix:'Letters and numbers', inv2_ckSame:'Both passwords match', inv2_go:'Activate account', inv2_going:'Activating your account…', inv2_valid:'Invitation valid until {date}', inv2_does_store_manager:'Record your branch sales and expenses every day|Hand the branch cash to the area manager|Follow each handover until it is approved', inv2_does_driver:'Record your vehicle sales every day|Hand the vehicle cash to the branch manager|See what you handed over and what was approved', inv2_does_cluster_manager:'Receive and confirm cash from your branches|Send each branch\'s cash to its collector|Follow your branches and collectors on one screen', inv2_does_collector:'Receive cash from the branches assigned to you|Deposit it at the bank with the reference|See what you received and deposited', inv2_does_deputy_operations_manager:'Review and approve area managers\' requests|Send any request back with a reason|Follow collection across every branch', inv2_does_operations_manager:'Follow collection and handovers in every branch|Review reports and indicators|Follow risks and complaints', inv2_does_finance:'Follow cash from branch to bank|Match deposits with the bank statement|Review differences and reports', inv2_does_accountant:'Review entries and handovers|Match deposits with the bank statement|Export reports', inv2_does_admin:'Manage users and permissions|Manage branches, areas and master data|See everything happening in the system', sort_by:'Sort', sort_default:'As entered', sort_new:'Newest first', sort_old:'Oldest first', sort_high:'Amount: highest first', sort_low:'Amount: lowest first', bm_title:'Branch on the map', bm_hint:'Tap the map to pin the branch or drag the pin, use your current location while inside the branch, or paste its Google Maps link.', bm_here:'My current location', bm_pastePh:'Google Maps link or 24.7136, 46.6753', bm_go:'Locate', bm_none:'The branch has no position yet', bm_openGoogle:'Open in Google Maps', bm_noZone:'No zone', bm_suggest:'Nearest branch: {branch} ({dist}) — suggested zone:', bm_m:'m', bm_km:'km', bm_applyZone:'Use this zone', bm_zoneMatches:'Matches the branch zone', bm_save:'Save position', bm_clear:'Remove position', bm_noGeo:'This browser cannot share your location', bm_geoDenied:'Could not get your location — allow location access and try again', bm_badPaste:'No coordinates found — paste a full Google Maps link or coordinates like 24.7136, 46.6753', bm_loadFail:'The map could not load — check the connection', calc_totalIn:'Total collected', calc_totalOut:'Total deductions', entry_pickCustomer:'Choose the customer…', entry_creditAddItem:'+ Product', entry_creditItemsTotal:'Products total', err_creditItemsIncomplete:'Complete every product line: product and quantity', rec_code:'No.', rec_codeAuto:'The number is assigned when you save', admin_customers:'Customers', admin_cities:'Cities', admin_addCustomer:'Add customer', admin_addCity:'Add city', cu_code:'Customer no.', cu_codeAuto:'The customer number is assigned when you save', cu_name:'Customer name', cu_phone:'Mobile', ci_name:'City name', ci_uses:'Branches', cu_import:'Import a list', cu_importTitle:'Import customers', cu_importHint:'Paste the names, one per line, or choose an Excel or CSV file. To add city and mobile, copy their columns straight from Excel or separate them with commas (quote a name that contains a comma). Each new customer gets a number; names already on file are skipped.', cu_importPh:'e.g. Quality Food Trading Co - Al Rimal', cu_importFile:'Choose an Excel or CSV file', cu_importCheck:'Check the list', cu_impNew:'New', cu_impOnFile:'Already on file', cu_impRepeat:'Repeated in the list', cu_impAdd:'Add {n} customers', cu_impNothing:'No new name to add', cu_impDone:'Added {n} customers, skipped {s}', cu_impEmpty:'No names found in the list', cu_impLoadFail:'Could not read the file — try saving it as CSV', pf_kindCustomer:'Customer', pf_kindCity:'City', err_duplicateCustomer:'This customer is already on file as {code}', err_duplicateCity:'This city is already on the list', err_unknownCustomer:'Customer not on file — pick one from the list or ask the administrator to add it', err_invalidCustomer:'This customer\'s account is closed to new credit', err_creditItemsMismatch:'The credit amount does not match its items', err_priceLocked:'This product has a fixed price', err_invalidProduct:'Product not found or inactive', err_invalidCoordinates:'The map position is not valid'
+    kind_cluster_to_collector:'Area → Collector', kind_deposit:'Bank deposit', filter:'Filter', all:'All', entity_bank:'Bank', pv_tab:'Pivot table', pv_title:'Pivot table: city, then area, branch, source and product', pv_level:'Level', pv_openAll:'Open all', pv_closeAll:'Close all', lv_city:'City', lv_area:'Area', lv_branch:'Branch', lv_source:'Source', lv_product:'Product', lv_by_city:'By city', lv_by_product:'By product', lv_noProduct:'No product named', eq_title:'Net cash equation', eq_hint:'Tap any figure to go down level by level: city, area, branch, source, product', rp_eqTitle:'Net cash equation for the chosen period', eq_sales:'Total sales', eq_cashSales:'Recorded sales', eq_posSales:'Card sales (mada)', eq_additions:'Additions (other collections)', eq_deductions:'Deductions', eq_dPos:'Card sales (go to the bank)', eq_dCredit:'Credit sales', eq_dTransfer:'Customer bank transfers', eq_dDelivery:'Delivery fees before VAT', eq_dExpense:'Expenses', eq_dBanked:'الموازنات', eq_net:'Net cash', eq_opPlus:'plus', eq_opMinus:'minus', eq_opEquals:'equals', eq_noDeductions:'No deductions', eq_noAdditions:'No additions', eq_collected:'Banked by collectors', eq_remaining:'Still to bank', eq_allCompany:'The whole company', eq_nothingHere:'Nothing here', eq_def_sales:'Everything sold: the recorded sales (credit and transfers included) and card sales.', eq_def_cashSales:'The sales figure the branch or driver records, including what was sold on credit or paid by transfer.', eq_def_posSales:'Paid by card; it reaches the bank on its own.', eq_def_additions:'Cash that came in without being today\'s sales, such as an old debt paid.', eq_def_deductions:'In the sales, but never arrived as cash, or left the hand before the handover.', eq_def_dPos:'Card sales settle at the bank, so nobody hands them over.', eq_def_dCredit:'Sold on account: in the sales, not paid yet.', eq_def_dTransfer:'Customers transferred it straight to the company account.', eq_def_dDelivery:'Delivery fees are paid to the bank; their amount before VAT comes off.', eq_def_dExpense:'Paid out of the cash before the handover.', eq_def_dBanked:'Banked directly by whoever held the cash, through the POS devices.', eq_def_net:'Cash to hand over: total sales with the additions, after the deductions come off.', lv_by_area:'By area', lv_by_branch:'By branch', lv_by_source:'By source (store, car, POS)', lv_count:'{n} transactions', lv_allTx:'All transactions ({n})', rp_tabBranches:'Branches', rp_tabAreas:'Areas', rp_tabSources:'Sources', rp_tabDays:'Days', rp_tabProducts:'Products', rp_tabCustomers:'Customers (credit)', rp_tabTx:'Transactions', rp_total:'Total', rp_count:'Transactions', rp_source:'Source', rp_date:'Date', rp_qty:'Quantity', rp_creditOfIt:'Of it on credit', rp_customer:'Customer', rp_lastDate:'Last activity', rp_status:'Status', ex_button:'Export to Excel', ex_all:'Export the whole report', ex_preparing:'Preparing the Excel file…', ex_failed:'The file could not be prepared. Check the connection and try again.', entry_transferTitle:'Customer bank transfers', entry_transferHint:'What customers transferred straight to the company account. It comes off the cash to hand over: it is in the sales, but never arrived as cash.', entry_transferAmount:'Transfer amount', entry_addTransfer:'+ Add a transfer', entry_addDeposit:'+ Add a الموازنة', entry_depositDevice:'POS device', entry_pickDevice:'Choose the device…', entry_noDevices:'No devices for this branch', entry_depositPhoto:'Slip photo', entry_photoUploading:'Uploading the photo…', entry_photoReady:'Photo uploaded', entry_photoFailed:'The photo did not upload. Try again.', err_depositNeedsPhoto:'Attach the slip photo for each الموازنة.', err_depositNeedsPos:'Choose the POS device for each الموازنة.', err_photoUploading:'Wait for the photo to finish uploading.', err_invalidPhoto:'This photo cannot be used for this الموازنة. Take a new one.', err_invalidPos:'This device does not belong to this branch.', entry_priceCustomer:'This customer\'s own price', entry_priceCustomerTag:'Customer price', us_searchHint:'Search by name, email or number', us_allRoles:'All roles', us_disable:'Stop account', us_enable:'Turn account on', us_confirmDisable:'Stop {name}\'s account? They cannot sign in until it is turned back on. None of their records are deleted.', us_confirmEnable:'Turn {name}\'s account back on?', us_disabledNow:'{name}\'s account is stopped', us_enabledNow:'{name}\'s account is on', bc2_title:'Collectors', bc2_hint:'This branch\'s collector receives its cash after the Deputy Operations Manager validates it. Choose from every collector; one who works in another area cannot be chosen, since each person serves one area.', bc2_current:'Current collector', bc2_otherArea:'Works in {area}. Each person serves one area', bc2_disabled:'Account stopped', bc2_none:'Not collecting for any branch yet', bc2_inFlight:'The collector cannot change now: this branch\'s cash is on its way to {who}.', bc2_confirm:'Make {who} the collector for {branch}?', bc2_saved:'{who} now collects for {branch}', bc2_search:'Search by collector name or number', bc2_empty:'No collectors yet. Add a user with the Collector role on the Users screen.', inv2_doneTitle:'Your account is active', inv2_doneBody:'Sign in now with your email and new password.', inv2_signIn:'Sign in', inv2_org:'Best Gas Carrier Co.', inv2_app:'Best Gas Collections', inv2_youCan:'In the system you will:', inv2_hi:'Hello {name}', inv2_lead:'You are {role} in the Cash Collection System. Choose a password to activate your account.', inv2_leadBy:'{who} added you as {role}. Choose a password to activate your account.', inv2_s1:'Accept invitation', inv2_s2:'Password', inv2_s3:'Sign in', inv2_pw:'New password', inv2_pw2:'Type the password again', inv2_ckLen:'At least 8 characters', inv2_ckMix:'Letters and numbers', inv2_ckSame:'Both passwords match', inv2_go:'Activate account', inv2_going:'Activating your account…', inv2_valid:'Invitation valid until {date}', inv2_does_store_manager:'Record your branch sales and expenses every day|Hand the branch cash to the area manager|Follow each handover until it is approved', inv2_does_driver:'Record your vehicle sales every day|Hand the vehicle cash to the branch manager|See what you handed over and what was approved', inv2_does_cluster_manager:'Receive and confirm cash from your branches|Send each branch\'s cash to its collector|Follow your branches and collectors on one screen', inv2_does_collector:'Receive cash from the branches assigned to you|Deposit it at the bank with the reference|See what you received and deposited', inv2_does_deputy_operations_manager:'Review and approve area managers\' requests|Send any request back with a reason|Follow collection across every branch', inv2_does_operations_manager:'Follow collection and handovers in every branch|Review reports and indicators|Follow risks and complaints', inv2_does_finance:'Follow cash from branch to bank|Match deposits with the bank statement|Review differences and reports', inv2_does_accountant:'Review entries and handovers|Match deposits with the bank statement|Export reports', inv2_does_admin:'Manage users and permissions|Manage branches, areas and master data|See everything happening in the system', sort_by:'Sort', sort_default:'As entered', sort_new:'Newest first', sort_old:'Oldest first', sort_high:'Amount: highest first', sort_low:'Amount: lowest first', bm_title:'Branch on the map', bm_hint:'Tap the map to pin the branch or drag the pin, use your current location while inside the branch, or paste its Google Maps link.', bm_here:'My current location', bm_pastePh:'Google Maps link or 24.7136, 46.6753', bm_go:'Locate', bm_none:'The branch has no position yet', bm_openGoogle:'Open in Google Maps', bm_noZone:'No zone', bm_suggest:'Nearest branch: {branch} ({dist}) — suggested zone:', bm_m:'m', bm_km:'km', bm_applyZone:'Use this zone', bm_zoneMatches:'Matches the branch zone', bm_save:'Save position', bm_clear:'Remove position', bm_noGeo:'This browser cannot share your location', bm_geoDenied:'Could not get your location — allow location access and try again', bm_badPaste:'No coordinates found — paste a full Google Maps link or coordinates like 24.7136, 46.6753', bm_loadFail:'The map could not load — check the connection', calc_totalIn:'Total collected', calc_totalOut:'Total deductions', entry_pickCustomer:'Choose the customer…', entry_creditAddItem:'+ Product', entry_creditItemsTotal:'Products total', err_creditItemsIncomplete:'Complete every product line: product and quantity', rec_code:'No.', rec_codeAuto:'The number is assigned when you save', admin_customers:'Customers', admin_cities:'Cities', admin_addCustomer:'Add customer', admin_addCity:'Add city', cu_code:'Customer no.', cu_codeAuto:'The customer number is assigned when you save', cu_name:'Customer name', cu_phone:'Mobile', ci_name:'City name', ci_uses:'Branches', cu_import:'Import a list', cu_importTitle:'Import customers', cu_importHint:'Paste the names, one per line, or choose an Excel or CSV file. To add city and mobile, copy their columns straight from Excel or separate them with commas (quote a name that contains a comma). Each new customer gets a number; names already on file are skipped.', cu_importPh:'e.g. Quality Food Trading Co - Al Rimal', cu_importFile:'Choose an Excel or CSV file', cu_importCheck:'Check the list', cu_impNew:'New', cu_impOnFile:'Already on file', cu_impRepeat:'Repeated in the list', cu_impAdd:'Add {n} customers', cu_impNothing:'No new name to add', cu_impDone:'Added {n} customers, skipped {s}', cu_impEmpty:'No names found in the list', cu_impLoadFail:'Could not read the file — try saving it as CSV', pf_kindCustomer:'Customer', pf_kindCity:'City', err_duplicateCustomer:'This customer is already on file as {code}', err_duplicateCity:'This city is already on the list', err_unknownCustomer:'Customer not on file — pick one from the list or ask the administrator to add it', err_invalidCustomer:'This customer\'s account is closed to new credit', err_creditItemsMismatch:'The credit amount does not match its items', err_priceLocked:'This product has a fixed price', err_invalidProduct:'Product not found or inactive', err_invalidCoordinates:'The map position is not valid'
   },
   ur: {
     appName:'بیسٹ گیس — نقد وصولی نظام', login:'لاگ ان', email:'ای میل', password:'پاس ورڈ',
@@ -2254,7 +2383,7 @@ var L = {
     err_wrongCurrentPassword:'موجودہ پاس ورڈ غلط ہے', err_network:'سرور سے رابطہ نہیں ہو سکا — انٹرنیٹ چیک کریں',
     err_noSourceSelected:'پہلے ایک ذریعہ منتخب کریں', err_titleRequired:'براہ کرم عنوان درج کریں',
     noData:'کوئی ڈیٹا نہیں', loading:'لوڈ ہو رہا ہے...', total:'کل', kind_location_to_cluster:'برانچ ← علاقہ',
-    kind_cluster_to_collector:'علاقہ ← کلکٹر', kind_deposit:'بینک جمع', filter:'فلٹر', all:'تمام', entity_bank:'بینک', entry_transferTitle:'گاہکوں کی بینک ٹرانسفر', entry_transferHint:'جو گاہکوں نے براہِ راست کمپنی کے اکاؤنٹ میں بھیجا۔ یہ نقدی سے منہا ہوتا ہے، کیونکہ یہ فروخت میں شامل ہے مگر نقد نہیں ملا۔', entry_transferAmount:'ٹرانسفر کی رقم', entry_addTransfer:'+ ٹرانسفر شامل کریں', entry_addDeposit:'+ موازنہ شامل کریں', entry_depositDevice:'POS مشین', entry_pickDevice:'مشین منتخب کریں…', entry_noDevices:'اس برانچ کی کوئی مشین نہیں', entry_depositPhoto:'رسید کی تصویر', entry_photoUploading:'تصویر اپ لوڈ ہو رہی ہے…', entry_photoReady:'تصویر اپ لوڈ ہو گئی', entry_photoFailed:'تصویر اپ لوڈ نہیں ہوئی۔ دوبارہ کوشش کریں۔', err_depositNeedsPhoto:'ہر موازنہ کی رسید کی تصویر لگائیں۔', err_depositNeedsPos:'ہر موازنہ کے لیے POS مشین منتخب کریں۔', err_photoUploading:'تصویر اپ لوڈ مکمل ہونے کا انتظار کریں۔', err_invalidPhoto:'یہ تصویر اس موازنہ کے لیے قابلِ استعمال نہیں۔ نئی تصویر لیں۔', err_invalidPos:'یہ مشین اس برانچ کی نہیں۔', entry_priceCustomer:'اس گاہک کی اپنی قیمت', entry_priceCustomerTag:'گاہک کی قیمت', us_searchHint:'نام، ای میل یا نمبر سے تلاش کریں', us_allRoles:'تمام کردار', us_disable:'اکاؤنٹ بند کریں', us_enable:'اکاؤنٹ چالو کریں', us_confirmDisable:'{name} کا اکاؤنٹ بند کریں؟ دوبارہ چالو ہونے تک لاگ ان نہیں ہو سکے گا، کوئی ریکارڈ حذف نہیں ہوگا۔', us_confirmEnable:'{name} کا اکاؤنٹ دوبارہ چالو کریں؟', us_disabledNow:'{name} کا اکاؤنٹ بند ہو گیا', us_enabledNow:'{name} کا اکاؤنٹ چالو ہو گیا', bc2_title:'کلکٹرز', bc2_hint:'اس برانچ کا کلکٹر نائب کی منظوری کے بعد نقدی وصول کرتا ہے۔ تمام کلکٹرز میں سے منتخب کریں؛ دوسرے علاقے والا منتخب نہیں ہو سکتا، ہر شخص کا ایک علاقہ۔', bc2_current:'موجودہ کلکٹر', bc2_otherArea:'{area} میں کام کرتا ہے۔ ہر شخص کا ایک علاقہ', bc2_disabled:'اکاؤنٹ بند', bc2_none:'ابھی کسی برانچ کا کلکٹر نہیں', bc2_inFlight:'ابھی کلکٹر نہیں بدلا جا سکتا: اس برانچ کی نقدی {who} کے پاس جا رہی ہے۔', bc2_confirm:'{who} کو {branch} کا کلکٹر بنائیں؟', bc2_saved:'{who} اب {branch} کا کلکٹر ہے', bc2_search:'کلکٹر کا نام یا نمبر تلاش کریں', bc2_empty:'ابھی کوئی کلکٹر نہیں۔ صارفین کی اسکرین سے کلکٹر شامل کریں۔', inv2_doneTitle:'آپ کا اکاؤنٹ فعال ہو گیا', inv2_doneBody:'اب اپنی ای میل اور نئے پاس ورڈ سے لاگ اِن کریں۔', inv2_signIn:'لاگ اِن', inv2_org:'بیسٹ گیس', inv2_app:'نقد وصولی نظام', inv2_youCan:'سسٹم میں آپ یہ کریں گے:', inv2_hi:'السلام علیکم {name}', inv2_lead:'آپ نقد وصولی نظام میں {role} ہیں۔ اکاؤنٹ فعال کرنے کے لیے پاس ورڈ منتخب کریں۔', inv2_leadBy:'{who} نے آپ کو بطور {role} شامل کیا ہے۔ اکاؤنٹ فعال کرنے کے لیے پاس ورڈ منتخب کریں۔', inv2_s1:'دعوت قبول', inv2_s2:'پاس ورڈ', inv2_s3:'لاگ اِن', inv2_pw:'نیا پاس ورڈ', inv2_pw2:'پاس ورڈ دوبارہ لکھیں', inv2_ckLen:'کم از کم 8 حروف', inv2_ckMix:'حروف اور نمبر', inv2_ckSame:'دونوں پاس ورڈ ایک جیسے', inv2_go:'اکاؤنٹ فعال کریں', inv2_going:'اکاؤنٹ فعال ہو رہا ہے…', inv2_valid:'دعوت {date} تک درست ہے', inv2_does_store_manager:'اپنی برانچ کی روزانہ فروخت اور اخراجات درج کریں|برانچ کی نقدی علاقہ منیجر کو دیں|ہر حوالگی کی منظوری تک پیروی کریں', inv2_does_driver:'اپنی گاڑی کی روزانہ فروخت درج کریں|گاڑی کی نقدی برانچ منیجر کو دیں|دیکھیں کیا دیا اور کیا منظور ہوا', inv2_does_cluster_manager:'اپنی برانچوں کی نقدی وصول اور تصدیق کریں|ہر برانچ کی نقدی اس کے کلکٹر کو بھیجیں|برانچیں اور کلکٹر ایک اسکرین پر دیکھیں', inv2_does_collector:'اپنی برانچوں کی نقدی وصول کریں|حوالہ نمبر کے ساتھ بینک میں جمع کریں|وصولی اور جمع شدہ رقم دیکھیں', inv2_does_deputy_operations_manager:'علاقہ منیجرز کی درخواستیں منظور کریں|کسی بھی درخواست کو وجہ کے ساتھ واپس کریں|تمام برانچوں کی وصولی دیکھیں', inv2_does_operations_manager:'تمام برانچوں کی وصولی اور حوالگیاں دیکھیں|رپورٹس دیکھیں|خطرات اور شکایات دیکھیں', inv2_does_finance:'برانچ سے بینک تک نقدی دیکھیں|جمع شدہ رقم کو بینک اسٹیٹمنٹ سے ملائیں|فرق اور رپورٹس دیکھیں', inv2_does_accountant:'اندراجات اور حوالگیاں دیکھیں|بینک اسٹیٹمنٹ سے ملائیں|رپورٹس نکالیں', inv2_does_admin:'صارفین اور اجازتیں سنبھالیں|برانچیں، علاقے اور بنیادی ڈیٹا سنبھالیں|سسٹم میں سب کچھ دیکھیں', sort_by:'ترتیب', sort_default:'اندراج کے مطابق', sort_new:'نئے پہلے', sort_old:'پرانے پہلے', sort_high:'رقم: زیادہ پہلے', sort_low:'رقم: کم پہلے', bm_title:'نقشے پر برانچ', bm_hint:'نقشے پر ٹیپ کریں یا پن گھسیٹیں، برانچ میں ہوں تو اپنا موجودہ مقام استعمال کریں، یا Google Maps کا لنک چسپاں کریں۔', bm_here:'میرا موجودہ مقام', bm_pastePh:'Google Maps لنک یا 24.7136, 46.6753', bm_go:'تلاش', bm_none:'برانچ کا مقام ابھی طے نہیں', bm_openGoogle:'Google Maps میں کھولیں', bm_noZone:'کوئی زون نہیں', bm_suggest:'قریب ترین برانچ: {branch} ({dist}) — تجویز کردہ زون:', bm_m:'م', bm_km:'کلومیٹر', bm_applyZone:'یہ زون لگائیں', bm_zoneMatches:'برانچ کے زون سے مطابق', bm_save:'مقام محفوظ کریں', bm_clear:'مقام ہٹائیں', bm_noGeo:'براؤزر مقام نہیں دے سکتا', bm_geoDenied:'آپ کا مقام نہیں ملا — اجازت دیں اور دوبارہ کوشش کریں', bm_badPaste:'کوئی مقام نہیں ملا — پورا لنک یا 24.7136, 46.6753 چسپاں کریں', bm_loadFail:'نقشہ لوڈ نہیں ہوا', calc_totalIn:'کل وصولی', calc_totalOut:'کل کٹوتیاں', entry_pickCustomer:'گاہک منتخب کریں…', entry_creditAddItem:'+ شے', entry_creditItemsTotal:'اشیاء کا مجموعہ', err_creditItemsIncomplete:'ہر شے مکمل کریں: پروڈکٹ اور مقدار', rec_code:'نمبر', rec_codeAuto:'محفوظ کرنے پر نمبر خود ملے گا', admin_customers:'گاہک', admin_cities:'شہر', admin_addCustomer:'گاہک شامل کریں', admin_addCity:'شہر شامل کریں', cu_code:'گاہک نمبر', cu_codeAuto:'محفوظ کرنے پر نمبر خود ملے گا', cu_name:'گاہک کا نام', cu_phone:'موبائل', ci_name:'شہر کا نام', ci_uses:'برانچیں', cu_import:'فہرست درآمد کریں', cu_importTitle:'گاہک درآمد کریں', cu_importHint:'نام چسپاں کریں، ہر سطر میں ایک، یا Excel/CSV فائل منتخب کریں۔ ہر نئے گاہک کو نمبر ملے گا، موجود نام چھوڑ دیے جائیں گے۔', cu_importPh:'مثال: کمپنی کا نام، شہر', cu_importFile:'Excel یا CSV فائل', cu_importCheck:'فہرست جانچیں', cu_impNew:'نیا', cu_impOnFile:'پہلے سے موجود', cu_impRepeat:'فہرست میں دہرایا گیا', cu_impAdd:'{n} گاہک شامل کریں', cu_impNothing:'کوئی نیا نام نہیں', cu_impDone:'{n} گاہک شامل، {s} چھوڑ دیے', cu_impEmpty:'فہرست میں کوئی نام نہیں ملا', cu_impLoadFail:'فائل نہیں پڑھی جا سکی', pf_kindCustomer:'گاہک', pf_kindCity:'شہر', err_duplicateCustomer:'یہ گاہک پہلے سے {code} پر موجود ہے', err_duplicateCity:'یہ شہر فہرست میں موجود ہے', err_unknownCustomer:'گاہک رجسٹرڈ نہیں', err_invalidCustomer:'اس گاہک کا کھاتہ بند ہے', err_creditItemsMismatch:'ادھار رقم اشیاء کے مجموعے سے مختلف ہے', err_priceLocked:'اس پروڈکٹ کی قیمت مقرر ہے', err_invalidProduct:'پروڈکٹ موجود نہیں', err_invalidCoordinates:'مقام درست نہیں'
+    kind_cluster_to_collector:'علاقہ ← کلکٹر', kind_deposit:'بینک جمع', filter:'فلٹر', all:'تمام', entity_bank:'بینک', pv_tab:'پیوٹ ٹیبل', pv_title:'پیوٹ ٹیبل: شہر، پھر علاقہ، برانچ، ذریعہ اور پروڈکٹ', pv_level:'سطح', pv_openAll:'سب کھولیں', pv_closeAll:'سب بند کریں', lv_city:'شہر', lv_area:'علاقہ', lv_branch:'برانچ', lv_source:'ذریعہ', lv_product:'پروڈکٹ', lv_by_city:'شہر کے لحاظ سے', lv_by_product:'پروڈکٹ کے لحاظ سے', lv_noProduct:'کوئی پروڈکٹ نہیں', eq_title:'خالص نقدی کی مساوات', eq_hint:'کسی بھی رقم پر ٹیپ کریں: شہر، علاقہ، برانچ، ذریعہ، پروڈکٹ', rp_eqTitle:'منتخب مدت کی خالص نقدی مساوات', eq_sales:'کل فروخت', eq_cashSales:'درج شدہ فروخت', eq_posSales:'کارڈ فروخت (مدى)', eq_additions:'اضافے (دیگر وصولیاں)', eq_deductions:'کٹوتیاں', eq_dPos:'کارڈ فروخت (بینک جاتی ہے)', eq_dCredit:'ادھار فروخت', eq_dTransfer:'گاہکوں کی بینک ٹرانسفر', eq_dDelivery:'ڈلیوری فیس ٹیکس سے پہلے', eq_dExpense:'اخراجات', eq_dBanked:'موازنات', eq_net:'خالص نقدی', eq_opPlus:'جمع', eq_opMinus:'منفی', eq_opEquals:'برابر', eq_noDeductions:'کوئی کٹوتی نہیں', eq_noAdditions:'کوئی اضافہ نہیں', eq_collected:'کلکٹرز نے جمع کرایا', eq_remaining:'جمع کرانا باقی', eq_allCompany:'پوری کمپنی', eq_nothingHere:'یہاں کچھ نہیں', eq_def_sales:'جو کچھ بیچا گیا: درج شدہ فروخت (ادھار اور ٹرانسفر سمیت) اور کارڈ فروخت۔', eq_def_cashSales:'برانچ یا ڈرائیور کی درج کردہ فروخت، ادھار اور ٹرانسفر سمیت۔', eq_def_posSales:'کارڈ سے ادا، خود بینک پہنچتی ہے۔', eq_def_additions:'ہاتھ میں آئی نقدی جو آج کی فروخت نہیں، جیسے پرانا قرض۔', eq_def_deductions:'فروخت میں شامل مگر نقد نہیں آیا، یا حوالگی سے پہلے خرچ ہوا۔', eq_def_dPos:'کارڈ فروخت بینک میں طے ہوتی ہے۔', eq_def_dCredit:'ادھار پر بیچا: فروخت میں شامل، ابھی ادا نہیں ہوا۔', eq_def_dTransfer:'گاہکوں نے براہِ راست کمپنی کے اکاؤنٹ میں بھیجا۔', eq_def_dDelivery:'ڈلیوری فیس بینک کو جاتی ہے؛ ٹیکس سے پہلے کی رقم منہا ہوتی ہے۔', eq_def_dExpense:'حوالگی سے پہلے نقدی سے ادا کیا گیا۔', eq_def_dBanked:'نقدی رکھنے والے نے POS مشینوں کے ذریعے براہِ راست بینک میں جمع کرایا۔', eq_def_net:'حوالے کرنے والی نقدی: کل فروخت اور اضافے، کٹوتیوں کے بعد۔', lv_by_area:'علاقے کے لحاظ سے', lv_by_branch:'برانچ کے لحاظ سے', lv_by_source:'ذریعے کے لحاظ سے (اسٹور، گاڑی، POS)', lv_count:'{n} لین دین', lv_allTx:'تمام لین دین ({n})', rp_tabBranches:'برانچیں', rp_tabAreas:'علاقے', rp_tabSources:'ذرائع', rp_tabDays:'دن', rp_tabProducts:'مصنوعات', rp_tabCustomers:'گاہک (ادھار)', rp_tabTx:'لین دین', rp_total:'کل', rp_count:'لین دین', rp_source:'ذریعہ', rp_date:'تاریخ', rp_qty:'مقدار', rp_creditOfIt:'اس میں ادھار', rp_customer:'گاہک', rp_lastDate:'آخری سرگرمی', rp_status:'حالت', ex_button:'Excel میں برآمد', ex_all:'پوری رپورٹ برآمد کریں', ex_preparing:'Excel فائل تیار ہو رہی ہے…', ex_failed:'فائل تیار نہیں ہو سکی۔ کنکشن چیک کر کے دوبارہ کوشش کریں۔', entry_transferTitle:'گاہکوں کی بینک ٹرانسفر', entry_transferHint:'جو گاہکوں نے براہِ راست کمپنی کے اکاؤنٹ میں بھیجا۔ یہ نقدی سے منہا ہوتا ہے، کیونکہ یہ فروخت میں شامل ہے مگر نقد نہیں ملا۔', entry_transferAmount:'ٹرانسفر کی رقم', entry_addTransfer:'+ ٹرانسفر شامل کریں', entry_addDeposit:'+ موازنہ شامل کریں', entry_depositDevice:'POS مشین', entry_pickDevice:'مشین منتخب کریں…', entry_noDevices:'اس برانچ کی کوئی مشین نہیں', entry_depositPhoto:'رسید کی تصویر', entry_photoUploading:'تصویر اپ لوڈ ہو رہی ہے…', entry_photoReady:'تصویر اپ لوڈ ہو گئی', entry_photoFailed:'تصویر اپ لوڈ نہیں ہوئی۔ دوبارہ کوشش کریں۔', err_depositNeedsPhoto:'ہر موازنہ کی رسید کی تصویر لگائیں۔', err_depositNeedsPos:'ہر موازنہ کے لیے POS مشین منتخب کریں۔', err_photoUploading:'تصویر اپ لوڈ مکمل ہونے کا انتظار کریں۔', err_invalidPhoto:'یہ تصویر اس موازنہ کے لیے قابلِ استعمال نہیں۔ نئی تصویر لیں۔', err_invalidPos:'یہ مشین اس برانچ کی نہیں۔', entry_priceCustomer:'اس گاہک کی اپنی قیمت', entry_priceCustomerTag:'گاہک کی قیمت', us_searchHint:'نام، ای میل یا نمبر سے تلاش کریں', us_allRoles:'تمام کردار', us_disable:'اکاؤنٹ بند کریں', us_enable:'اکاؤنٹ چالو کریں', us_confirmDisable:'{name} کا اکاؤنٹ بند کریں؟ دوبارہ چالو ہونے تک لاگ ان نہیں ہو سکے گا، کوئی ریکارڈ حذف نہیں ہوگا۔', us_confirmEnable:'{name} کا اکاؤنٹ دوبارہ چالو کریں؟', us_disabledNow:'{name} کا اکاؤنٹ بند ہو گیا', us_enabledNow:'{name} کا اکاؤنٹ چالو ہو گیا', bc2_title:'کلکٹرز', bc2_hint:'اس برانچ کا کلکٹر نائب کی منظوری کے بعد نقدی وصول کرتا ہے۔ تمام کلکٹرز میں سے منتخب کریں؛ دوسرے علاقے والا منتخب نہیں ہو سکتا، ہر شخص کا ایک علاقہ۔', bc2_current:'موجودہ کلکٹر', bc2_otherArea:'{area} میں کام کرتا ہے۔ ہر شخص کا ایک علاقہ', bc2_disabled:'اکاؤنٹ بند', bc2_none:'ابھی کسی برانچ کا کلکٹر نہیں', bc2_inFlight:'ابھی کلکٹر نہیں بدلا جا سکتا: اس برانچ کی نقدی {who} کے پاس جا رہی ہے۔', bc2_confirm:'{who} کو {branch} کا کلکٹر بنائیں؟', bc2_saved:'{who} اب {branch} کا کلکٹر ہے', bc2_search:'کلکٹر کا نام یا نمبر تلاش کریں', bc2_empty:'ابھی کوئی کلکٹر نہیں۔ صارفین کی اسکرین سے کلکٹر شامل کریں۔', inv2_doneTitle:'آپ کا اکاؤنٹ فعال ہو گیا', inv2_doneBody:'اب اپنی ای میل اور نئے پاس ورڈ سے لاگ اِن کریں۔', inv2_signIn:'لاگ اِن', inv2_org:'بیسٹ گیس', inv2_app:'نقد وصولی نظام', inv2_youCan:'سسٹم میں آپ یہ کریں گے:', inv2_hi:'السلام علیکم {name}', inv2_lead:'آپ نقد وصولی نظام میں {role} ہیں۔ اکاؤنٹ فعال کرنے کے لیے پاس ورڈ منتخب کریں۔', inv2_leadBy:'{who} نے آپ کو بطور {role} شامل کیا ہے۔ اکاؤنٹ فعال کرنے کے لیے پاس ورڈ منتخب کریں۔', inv2_s1:'دعوت قبول', inv2_s2:'پاس ورڈ', inv2_s3:'لاگ اِن', inv2_pw:'نیا پاس ورڈ', inv2_pw2:'پاس ورڈ دوبارہ لکھیں', inv2_ckLen:'کم از کم 8 حروف', inv2_ckMix:'حروف اور نمبر', inv2_ckSame:'دونوں پاس ورڈ ایک جیسے', inv2_go:'اکاؤنٹ فعال کریں', inv2_going:'اکاؤنٹ فعال ہو رہا ہے…', inv2_valid:'دعوت {date} تک درست ہے', inv2_does_store_manager:'اپنی برانچ کی روزانہ فروخت اور اخراجات درج کریں|برانچ کی نقدی علاقہ منیجر کو دیں|ہر حوالگی کی منظوری تک پیروی کریں', inv2_does_driver:'اپنی گاڑی کی روزانہ فروخت درج کریں|گاڑی کی نقدی برانچ منیجر کو دیں|دیکھیں کیا دیا اور کیا منظور ہوا', inv2_does_cluster_manager:'اپنی برانچوں کی نقدی وصول اور تصدیق کریں|ہر برانچ کی نقدی اس کے کلکٹر کو بھیجیں|برانچیں اور کلکٹر ایک اسکرین پر دیکھیں', inv2_does_collector:'اپنی برانچوں کی نقدی وصول کریں|حوالہ نمبر کے ساتھ بینک میں جمع کریں|وصولی اور جمع شدہ رقم دیکھیں', inv2_does_deputy_operations_manager:'علاقہ منیجرز کی درخواستیں منظور کریں|کسی بھی درخواست کو وجہ کے ساتھ واپس کریں|تمام برانچوں کی وصولی دیکھیں', inv2_does_operations_manager:'تمام برانچوں کی وصولی اور حوالگیاں دیکھیں|رپورٹس دیکھیں|خطرات اور شکایات دیکھیں', inv2_does_finance:'برانچ سے بینک تک نقدی دیکھیں|جمع شدہ رقم کو بینک اسٹیٹمنٹ سے ملائیں|فرق اور رپورٹس دیکھیں', inv2_does_accountant:'اندراجات اور حوالگیاں دیکھیں|بینک اسٹیٹمنٹ سے ملائیں|رپورٹس نکالیں', inv2_does_admin:'صارفین اور اجازتیں سنبھالیں|برانچیں، علاقے اور بنیادی ڈیٹا سنبھالیں|سسٹم میں سب کچھ دیکھیں', sort_by:'ترتیب', sort_default:'اندراج کے مطابق', sort_new:'نئے پہلے', sort_old:'پرانے پہلے', sort_high:'رقم: زیادہ پہلے', sort_low:'رقم: کم پہلے', bm_title:'نقشے پر برانچ', bm_hint:'نقشے پر ٹیپ کریں یا پن گھسیٹیں، برانچ میں ہوں تو اپنا موجودہ مقام استعمال کریں، یا Google Maps کا لنک چسپاں کریں۔', bm_here:'میرا موجودہ مقام', bm_pastePh:'Google Maps لنک یا 24.7136, 46.6753', bm_go:'تلاش', bm_none:'برانچ کا مقام ابھی طے نہیں', bm_openGoogle:'Google Maps میں کھولیں', bm_noZone:'کوئی زون نہیں', bm_suggest:'قریب ترین برانچ: {branch} ({dist}) — تجویز کردہ زون:', bm_m:'م', bm_km:'کلومیٹر', bm_applyZone:'یہ زون لگائیں', bm_zoneMatches:'برانچ کے زون سے مطابق', bm_save:'مقام محفوظ کریں', bm_clear:'مقام ہٹائیں', bm_noGeo:'براؤزر مقام نہیں دے سکتا', bm_geoDenied:'آپ کا مقام نہیں ملا — اجازت دیں اور دوبارہ کوشش کریں', bm_badPaste:'کوئی مقام نہیں ملا — پورا لنک یا 24.7136, 46.6753 چسپاں کریں', bm_loadFail:'نقشہ لوڈ نہیں ہوا', calc_totalIn:'کل وصولی', calc_totalOut:'کل کٹوتیاں', entry_pickCustomer:'گاہک منتخب کریں…', entry_creditAddItem:'+ شے', entry_creditItemsTotal:'اشیاء کا مجموعہ', err_creditItemsIncomplete:'ہر شے مکمل کریں: پروڈکٹ اور مقدار', rec_code:'نمبر', rec_codeAuto:'محفوظ کرنے پر نمبر خود ملے گا', admin_customers:'گاہک', admin_cities:'شہر', admin_addCustomer:'گاہک شامل کریں', admin_addCity:'شہر شامل کریں', cu_code:'گاہک نمبر', cu_codeAuto:'محفوظ کرنے پر نمبر خود ملے گا', cu_name:'گاہک کا نام', cu_phone:'موبائل', ci_name:'شہر کا نام', ci_uses:'برانچیں', cu_import:'فہرست درآمد کریں', cu_importTitle:'گاہک درآمد کریں', cu_importHint:'نام چسپاں کریں، ہر سطر میں ایک، یا Excel/CSV فائل منتخب کریں۔ ہر نئے گاہک کو نمبر ملے گا، موجود نام چھوڑ دیے جائیں گے۔', cu_importPh:'مثال: کمپنی کا نام، شہر', cu_importFile:'Excel یا CSV فائل', cu_importCheck:'فہرست جانچیں', cu_impNew:'نیا', cu_impOnFile:'پہلے سے موجود', cu_impRepeat:'فہرست میں دہرایا گیا', cu_impAdd:'{n} گاہک شامل کریں', cu_impNothing:'کوئی نیا نام نہیں', cu_impDone:'{n} گاہک شامل، {s} چھوڑ دیے', cu_impEmpty:'فہرست میں کوئی نام نہیں ملا', cu_impLoadFail:'فائل نہیں پڑھی جا سکی', pf_kindCustomer:'گاہک', pf_kindCity:'شہر', err_duplicateCustomer:'یہ گاہک پہلے سے {code} پر موجود ہے', err_duplicateCity:'یہ شہر فہرست میں موجود ہے', err_unknownCustomer:'گاہک رجسٹرڈ نہیں', err_invalidCustomer:'اس گاہک کا کھاتہ بند ہے', err_creditItemsMismatch:'ادھار رقم اشیاء کے مجموعے سے مختلف ہے', err_priceLocked:'اس پروڈکٹ کی قیمت مقرر ہے', err_invalidProduct:'پروڈکٹ موجود نہیں', err_invalidCoordinates:'مقام درست نہیں'
   }
 };
 function t(k){ var l=L[state.lang]||L.ar; return l[k]!==undefined ? l[k] : (L.en[k]!==undefined?L.en[k]:k); }
@@ -3552,15 +3681,488 @@ function cashCalcRows_(o){
   rows.push({ label: t('report_net'), amount: Number(o.net||0), kind: 'final' });
   return rows;
 }
+// One entry's figures, the same arithmetic as computeNet_. The typed sales
+// figure already holds what was sold on credit or paid by bank transfer, so
+// total sales is that figure plus card sales, and both come off again as
+// deductions (credit used to be added to the sales a second time).
 function entryAmt_(e){
   var cash = Number(e.cashSales||0), pos = Number(e.posSales||0), credit = Number(e.creditSales||0);
-  var delivery = Number(e.deliveryFeeBankAmount||0);
+  var delivery = Number(e.deliveryFeeBankAmount||0), transfer = Number(e.bankTransferAmount||0);
   var other = Number(e.otherCash||0), expense = Number(e.expenseAmount||0), banked = Number(e.directDepositAmount||0);
   var v = vatRateClient_();
   var vat = delivery > 0 ? delivery / (1 + v) * v : 0;
-  return { cash: cash, pos: pos, credit: credit, gross: cash + pos + credit, delivery: delivery, vat: vat,
+  return { cash: cash, pos: pos, credit: credit, transfer: transfer, gross: cash + pos, delivery: delivery, vat: vat,
     deliveryBase: delivery - vat, other: other, expense: expense, banked: banked,
-    net: cash + other - delivery + vat - expense - banked - credit };
+    net: cash + other - delivery + vat - expense - banked - credit - transfer };
+}
+
+// ---------- the net cash equation ----------
+// Total sales + additions − deductions = net cash. Every part is a function
+// of one entry, so any figure can be split by area, branch and source, down
+// to the transactions that make it.
+var EQ_PARTS_ = {
+  sales:      { label: 'eq_sales',      of: function(a){ return a.cash + a.pos; } },
+  cashSales:  { label: 'eq_cashSales',  of: function(a){ return a.cash; } },
+  posSales:   { label: 'eq_posSales',   of: function(a){ return a.pos; } },
+  additions:  { label: 'eq_additions',  of: function(a){ return a.other; } },
+  deductions: { label: 'eq_deductions', of: function(a){ return a.pos + a.credit + a.transfer + a.deliveryBase + a.expense + a.banked; } },
+  dPos:       { label: 'eq_dPos',       of: function(a){ return a.pos; } },
+  dCredit:    { label: 'eq_dCredit',    of: function(a){ return a.credit; } },
+  dTransfer:  { label: 'eq_dTransfer',  of: function(a){ return a.transfer; } },
+  dDelivery:  { label: 'eq_dDelivery',  of: function(a){ return a.deliveryBase; } },
+  dExpense:   { label: 'eq_dExpense',   of: function(a){ return a.expense; } },
+  dBanked:    { label: 'eq_dBanked',    of: function(a){ return a.banked; } },
+  net:        { label: 'eq_net',        of: function(a){ return a.net; } }
+};
+var EQ_SALES_ = ['cashSales', 'posSales'];
+var EQ_DEDUCT_ = ['dPos', 'dCredit', 'dTransfer', 'dDelivery', 'dExpense', 'dBanked'];
+function eqTotals_(entries){
+  var keys = Object.keys(EQ_PARTS_), o = { count: 0 };
+  keys.forEach(function(k){ o[k] = 0; });
+  (entries || []).forEach(function(e){
+    var a = entryAmt_(e);
+    keys.forEach(function(k){ o[k] += EQ_PARTS_[k].of(a); });
+    o.count++;
+  });
+  return o;
+}
+function eqNonZero_(v){ return Math.abs(Number(v || 0)) > 0.004; }
+// opts: { entries, collected: what collectors already banked (optional),
+//         title, onPart(part) }
+function netEquation_(opts){
+  var T = eqTotals_(opts.entries);
+  function line(p, minus){
+    return '<button type="button" class="eq-line" data-part="'+p+'"><span>'+esc(t(EQ_PARTS_[p].label))+'</span>' +
+      '<b class="num">'+esc(money(T[p]))+'</b></button>';
+  }
+  function card(part, op, opLabel, lines, cls){
+    return '<div class="eq-card '+(cls||'')+'">' +
+        '<button type="button" class="eq-main" data-part="'+part+'">' +
+          '<span class="eq-l">'+esc(t(EQ_PARTS_[part].label))+'</span>' +
+          '<span class="eq-v num">'+esc(money(T[part]))+'<small>'+esc(t('ui_sar'))+'</small></span>' +
+          '<span class="eq-go">'+icon_('chevron')+'</span>' +
+        '</button>' +
+        (lines ? '<div class="eq-lines">'+lines+'</div>' : '') +
+      '</div>';
+  }
+  var salesLines = EQ_SALES_.filter(function(p){ return p === 'cashSales' || eqNonZero_(T[p]); }).map(function(p){ return line(p); }).join('');
+  var dedLines = EQ_DEDUCT_.filter(function(p){ return eqNonZero_(T[p]); }).map(function(p){ return line(p, true); }).join('') ||
+    '<div class="eq-none">'+esc(t('eq_noDeductions'))+'</div>';
+  var addLines = eqNonZero_(T.additions) ? '' : '<div class="eq-none">'+esc(t('eq_noAdditions'))+'</div>';
+  var collected = opts.collected != null ? Number(opts.collected) : null;
+  var remaining = collected != null ? T.net - collected : null;
+  var pct = collected != null && T.net > 0 ? Math.max(0, Math.min(100, collected / T.net * 100)) : 0;
+  var netLines = collected == null ? '' :
+    '<div class="eq-prog"><div class="eq-bar"><span style="width:'+pct.toFixed(1)+'%"></span></div>' +
+    '<button type="button" class="eq-line on-dark" data-part="_deposited"><span>'+esc(t('eq_collected'))+'</span><b class="num">'+esc(money(collected))+'</b></button>' +
+    '<button type="button" class="eq-line on-dark" data-part="_remaining"><span>'+esc(t('eq_remaining'))+'</span><b class="num">'+esc(money(remaining))+'</b></button></div>';
+  var node = el('<section class="eq-wrap" aria-label="'+esc(t('eq_title'))+'">' +
+    '<div class="eq-head"><h2>'+esc(opts.title || t('eq_title'))+'</h2><p>'+esc(t('eq_hint'))+'</p></div>' +
+    '<div class="eq-row">' +
+      card('sales', '', '', salesLines, 'sales') +
+      card('additions', '+', 'eq_opPlus', addLines, 'add') +
+      card('deductions', '−', 'eq_opMinus', dedLines, 'ded') +
+      card('net', '=', 'eq_opEquals', netLines, 'net') +
+    '</div></section>');
+  qsa('[data-part]', node).forEach(function(b){
+    b.addEventListener('click', function(ev){
+      ev.stopPropagation();
+      var p = b.getAttribute('data-part');
+      if (p.charAt(0) === '_') { if (opts.onSpecial) opts.onSpecial(p.slice(1)); return; }
+      if (opts.onPart) opts.onPart(p); else drawerOpen_(levelDrillView_(p, opts.entries, 0, null));
+    });
+  });
+  return { node: node, totals: T, remaining: remaining };
+}
+
+// ---------- level by level: area, branch, source, transactions ----------
+var LV_ = ['city', 'area', 'branch', 'source', 'product'];
+function lvKey_(level, e){
+  var l = byId(state.meta && state.meta.locations, e.locationId);
+  if (level === 'city') return (l && l.city) || '_';
+  if (level === 'area') return (l && l.clusterId) || '_';
+  if (level === 'branch') return e.locationId || '_';
+  if (level === 'product') return e.productId || '_';
+  return (e.sourceType || '') + ':' + (e.sourceId || '');
+}
+function lvName_(level, key, e){
+  if (key === '_') return t(level === 'product' ? 'lv_noProduct' : 'report_unspecified');
+  if (level === 'city') return key;
+  if (level === 'area') return clusterName(key);
+  if (level === 'branch') { var l = byId(state.meta && state.meta.locations, key); return l ? l.name : locationName(key); }
+  if (level === 'product') return productName_(key) || t('lv_noProduct');
+  var nm = sourceName_(e);
+  return t('entry_source_' + e.sourceType) + (nm ? ' — ' + nm : '');
+}
+function lvGroups_(level, entries, part){
+  var map = {}, order = [];
+  entries.forEach(function(e){
+    var k = lvKey_(level, e);
+    if (!map[k]) { map[k] = { key: k, name: lvName_(level, k, e), entries: [], amount: 0 }; order.push(k); }
+    map[k].entries.push(e);
+    map[k].amount += EQ_PARTS_[part].of(entryAmt_(e));
+  });
+  return order.map(function(k){ return map[k]; });
+}
+// part: an EQ_PARTS_ key; entries: the scope; depth: the level to split by;
+// scope: [{level, name}] from the top, for the breadcrumb
+function levelDrillView_(part, entries, depth, scope){
+  scope = scope || [];
+  // a level with a single group says nothing: step straight past it
+  while (depth < LV_.length && lvGroups_(LV_[depth], entries, part).length === 1) {
+    var only = lvGroups_(LV_[depth], entries, part)[0];
+    scope = scope.concat([{ level: LV_[depth], name: only.name }]);
+    depth++;
+  }
+  var label = t(EQ_PARTS_[part].label);
+  var where = scope.map(function(x){ return x.name; }).join(' › ') || t('eq_allCompany');
+  return {
+    title: label, sub: where, crumb: scope.length ? scope[scope.length - 1].name : label,
+    render: function(body, foot){
+      var T = eqTotals_(entries);
+      var total = T[part];
+      function chip(p, op){
+        return '<button type="button" class="lv-chip'+(p === part ? ' on' : '')+'" data-part="'+p+'"><span>'+esc(t(EQ_PARTS_[p].label))+'</span><b class="num">'+esc(money(T[p]))+'</b></button>';
+      }
+      var parts = part === 'sales' || EQ_SALES_.indexOf(part) >= 0 ? EQ_SALES_ : part === 'deductions' || EQ_DEDUCT_.indexOf(part) >= 0 ? EQ_DEDUCT_ : null;
+      var partsHtml = parts ? '<div class="lv-parts">' + parts.filter(function(p){ return eqNonZero_(T[p]) || p === part; }).map(function(p){
+        return '<button type="button" class="lv-part'+(p === part ? ' on' : '')+'" data-part="'+p+'"><span>'+esc(t(EQ_PARTS_[p].label))+'</span><b class="num">'+esc(money(T[p]))+'</b></button>';
+      }).join('') + '</div>' : '';
+      var level = LV_[depth];
+      var head = el('<div class="lv">' +
+        '<div class="lv-head"><div class="lv-k">'+esc(label)+'</div><div class="lv-v num">'+esc(money(total))+'<small>'+esc(t('ui_sar'))+'</small></div>' +
+          '<p class="lv-def">'+esc(t('eq_def_' + part))+'</p></div>' +
+        '<div class="lv-eq" role="group" aria-label="'+esc(t('eq_title'))+'">'+chip('sales')+chip('additions', '+')+chip('deductions', '−')+chip('net', '=')+'</div>' +
+        partsHtml +
+        (level ? '<h3 class="lv-by">'+esc(t('lv_by_' + level))+'</h3><div class="lv-list"></div>' : '') +
+        '<button type="button" class="btn secondary lv-all">'+icon_('layers')+esc(t('lv_allTx').replace('{n}', entries.length))+'</button>' +
+      '</div>');
+      body.appendChild(head);
+      // another figure, same place
+      qsa('[data-part]', head).forEach(function(b){
+        b.addEventListener('click', function(){
+          DRAWER.stack[DRAWER.stack.length - 1] = levelDrillView_(b.getAttribute('data-part'), entries, depth, scope);
+          drawerPaint_();
+        });
+      });
+      if (level) {
+        var groups = lvGroups_(level, entries, part).filter(function(g){ return eqNonZero_(g.amount); })
+          .sort(function(a, b){ return Math.abs(b.amount) - Math.abs(a.amount); });
+        var max = Math.max.apply(null, groups.map(function(g){ return Math.abs(g.amount); }).concat([1]));
+        var list = qs('.lv-list', head);
+        if (!groups.length) list.innerHTML = '<div class="muted lv-empty">'+esc(t('eq_nothingHere'))+'</div>';
+        groups.forEach(function(g){
+          var share = total ? Math.round(g.amount / total * 100) : 0;
+          var row = el('<button type="button" class="lv-row">' +
+            '<span class="lv-name"><b>'+esc(g.name)+'</b><small>'+esc(t('lv_count').replace('{n}', g.entries.length))+(total ? ' · <bdi dir="ltr">'+share+'%</bdi>' : '')+'</small></span>' +
+            '<span class="lv-amt num">'+esc(money(g.amount))+'</span>' +
+            '<span class="lv-bar" aria-hidden="true"><i style="width:'+(Math.abs(g.amount) / max * 100).toFixed(1)+'%"></i></span>' +
+            '<span class="lv-go">'+icon_('chevron')+'</span>' +
+          '</button>');
+          row.addEventListener('click', function(){
+            drawerPush_(levelDrillView_(part, g.entries, depth + 1, scope.concat([{ level: level, name: g.name }])));
+          });
+          list.appendChild(row);
+        });
+      }
+      qs('.lv-all', head).addEventListener('click', function(){
+        var f = EQ_PARTS_[part].of;
+        drawerPush_(txListView_({ title: label, sub: where, items: entries.filter(function(e){ return eqNonZero_(f(entryAmt_(e))); })
+          .map(function(e){ return entryRowData_(e, f(entryAmt_(e))); })
+          .sort(function(a, b){ return Math.abs(b.amount) - Math.abs(a.amount); }) }));
+      });
+      foot.hidden = false;
+      foot.innerHTML = '<span class="lb">'+esc(label)+'</span><span class="v num">'+esc(money(total))+'</span>';
+    }
+  };
+}
+
+// ---------- Excel ----------
+function exportXlsx_(fileName, sheets){
+  toast('ex_preparing', 'ok');
+  loadLib_(XLSX_URL_, XLSX_SRI_).then(function(){
+    var X = window.XLSX, wb = X.utils.book_new();
+    wb.Workbook = { Views: [{ RTL: state.lang !== 'en' }] };
+    var used = {};
+    sheets.forEach(function(sh){
+      var ws = X.utils.aoa_to_sheet(sh.rows);
+      ws['!cols'] = (sh.rows[0] || []).map(function(h, i){
+        var w = sh.rows.reduce(function(m, r){ return Math.max(m, String(r[i] == null ? '' : r[i]).length); }, 6);
+        return { wch: Math.min(48, w + 2) };
+      });
+      var name = String(sh.name || 'Sheet').replace(/[:\\\/?*\[\]]/g, ' ').slice(0, 31) || 'Sheet';
+      while (used[name]) name = name.slice(0, 28) + '_' + Object.keys(used).length;
+      used[name] = 1;
+      X.utils.book_append_sheet(wb, ws, name);
+    });
+    X.writeFile(wb, fileName.replace(/[\\\/:*?"<>|]/g, '-') + '.xlsx');
+  }).catch(function(){ toast('ex_failed', 'err'); });
+}
+function exStamp_(){ return new Date().toISOString().slice(0, 10); }
+// a table as rows: its headers, the rows showing, and its totals line
+function tableAoa_(table){
+  function cells(tr){ return [].map.call(tr.cells, function(c){
+    if (c.classList.contains('col-actions')) return null;
+    var txt = c.innerText.replace(/\s+/g, ' ').trim();
+    var n = txt.replace(/[,\s]|ر\.س|SAR/g, '');
+    return /^[−-]?\d+(\.\d+)?$/.test(n) ? Number(n.replace('−', '-')) : txt;
+  }).filter(function(v){ return v !== null; }); }
+  var out = [];
+  if (table.tHead) [].forEach.call(table.tHead.rows, function(r){ out.push(cells(r)); });
+  [].forEach.call(table.tBodies, function(tb){ [].forEach.call(tb.rows, function(r){ if (!r.hidden && r.offsetParent !== null) out.push(cells(r)); }); });
+  if (table.tFoot) [].forEach.call(table.tFoot.rows, function(r){ out.push(cells(r)); });
+  return out;
+}
+// Every table in the app gets an export button, unless it carries its own.
+function exEnhance_(table){
+  if (table._ex || !table.tHead || table.closest('[data-noexport]') || table.closest('.dr')) return;
+  table._ex = true;
+  var holder = table.closest('.tbl-scroll') || table;
+  if (!holder.parentNode) return;
+  var bar = el('<div class="tbl-tools"><button type="button" class="ex-btn">'+icon_('doc')+'<span>'+esc(t('ex_button'))+'</span></button></div>');
+  holder.parentNode.insertBefore(bar, holder);
+  qs('.ex-btn', bar).addEventListener('click', function(){
+    var card = table.closest('.card');
+    var h = card && qs('h2', card);
+    var title = (h ? h.textContent.trim() : t('appName')) || 'export';
+    exportXlsx_(title + ' ' + exStamp_(), [{ name: title, rows: tableAoa_(table) }]);
+  });
+}
+
+// ---------- the pivot: city › area › branch › source › product ----------
+function pivotTree_(entries, depth){
+  if (depth >= LV_.length) return [];
+  var level = LV_[depth];
+  return lvGroups_(level, entries, 'net').map(function(g){
+    return { level: level, depth: depth, name: g.name, entries: g.entries, T: eqTotals_(g.entries), children: null };
+  }).sort(function(a, b){ return b.T.sales - a.T.sales || String(a.name).localeCompare(String(b.name), 'ar'); });
+}
+function pivotCard_(entries){
+  var total = eqTotals_(entries);
+  var parts = ['sales', 'additions', 'deductions', 'net'].filter(function(p){ return p !== 'additions' || eqNonZero_(total.additions); });
+  var card = el('<div class="card rp-card pv-card" data-noexport="1">' +
+    '<div class="rp-head pv-head"><h2>'+esc(t('pv_tab'))+'</h2><div class="pv-acts">' +
+      '<button type="button" class="ex-btn pv-open">'+esc(t('pv_openAll'))+'</button>' +
+      '<button type="button" class="ex-btn pv-close">'+esc(t('pv_closeAll'))+'</button>' +
+      '<button type="button" class="ex-btn pv-ex">'+icon_('doc')+'<span>'+esc(t('ex_button'))+'</span></button></div></div>' +
+    '<p class="pv-path">' + LV_.map(function(l){ return '<span>'+esc(t('lv_' + l))+'</span>'; }).join('<i aria-hidden="true">›</i>') + '</p>' +
+    '<div class="tbl-scroll rp-scroll"><table class="rp-table pv-table"><thead><tr><th>'+esc(t('pv_level'))+'</th>' +
+      parts.map(function(p){ return '<th class="n'+(p === 'net' ? '' : ' pv-wide')+'">'+esc(t(EQ_PARTS_[p].label))+'</th>'; }).join('') +
+      '<th class="n pv-wide">'+esc(t('rp_count'))+'</th></tr></thead><tbody></tbody>' +
+    '<tfoot><tr><td>'+esc(t('rp_total'))+'</td>' + parts.map(function(p){ return '<td class="n num'+(p === 'net' ? '' : ' pv-wide')+'">'+esc(money(total[p]))+'</td>'; }).join('') +
+      '<td class="n num pv-wide">'+total.count.toLocaleString('en-US')+'</td></tr></tfoot></table></div></div>');
+  var tb = qs('tbody', card);
+  function rowOf(node, after){
+    var leaf = node.depth >= LV_.length - 1;
+    var tr = el('<tr class="pv-row pv-d'+node.depth+'" tabindex="0" aria-expanded="false">' +
+      '<td class="pv-name" style="--d:'+node.depth+'"><span class="pv-in"><span class="pv-tog" aria-hidden="true">'+(leaf ? '•' : '')+'</span>' +
+        '<span class="pv-txt"><b>'+esc(node.name)+'</b><small>'+esc(t('lv_' + node.level))+'</small>' +
+        // on a phone the other columns fold into this line under the name
+        '<small class="pv-mini">'+esc(t('eq_sales'))+' '+esc(money(node.T.sales))+' · '+esc(t('eq_deductions'))+' '+esc(money(node.T.deductions))+'</small></span></span></td>' +
+      parts.map(function(p){ return '<td class="n num'+(p === 'net' ? ' pv-net' : ' pv-wide')+'">'+esc(money(node.T[p]))+'</td>'; }).join('') +
+      '<td class="n num pv-wide">'+node.T.count.toLocaleString('en-US')+'</td></tr>');
+    tr._node = node; node.tr = tr;
+    if (after && after.nextSibling) tb.insertBefore(tr, after.nextSibling); else tb.appendChild(tr);
+    function act(){
+      if (leaf) { drawerOpen_(txListView_({ title: node.name, sub: t('lv_' + node.level), items: node.entries.map(function(e){ return entryRowData_(e, entryAmt_(e).net); }) })); return; }
+      toggle(node);
+    }
+    tr.addEventListener('click', act);
+    tr.addEventListener('keydown', function(e){ if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); act(); } });
+    return tr;
+  }
+  function close(node){
+    if (!node.open) return;
+    node.open = false; node.tr.setAttribute('aria-expanded', 'false');
+    (node.children || []).forEach(function(c){ close(c); if (c.tr) { c.tr.remove(); c.tr = null; } });
+  }
+  function open(node){
+    if (node.open || node.depth >= LV_.length - 1) return;
+    node.children = node.children || pivotTree_(node.entries, node.depth + 1);
+    node.open = true; node.tr.setAttribute('aria-expanded', 'true');
+    var last = node.tr;
+    node.children.forEach(function(c){ last = rowOf(c, last); });
+  }
+  function toggle(node){ if (node.open) close(node); else open(node); }
+  var roots = pivotTree_(entries, 0);
+  roots.forEach(function(n){ rowOf(n, null); });
+  // with one city, start one level open so the table is not a single line
+  if (roots.length === 1) open(roots[0]);
+  function walk(list, fn){ list.forEach(function(n){ fn(n); if (n.children) walk(n.children, fn); }); }
+  qs('.pv-open', card).addEventListener('click', function(){
+    var guard = 0;
+    (function openLevel(list){ list.forEach(function(n){ if (guard++ > 4000) return; open(n); if (n.children) openLevel(n.children); }); })(roots);
+  });
+  qs('.pv-close', card).addEventListener('click', function(){ roots.forEach(close); });
+  // Excel gets every level, each row with its full path, so it pivots again there
+  function aoa(){
+    var head = LV_.map(function(l){ return t('lv_' + l); }).concat([t('pv_level')], parts.map(function(p){ return t(EQ_PARTS_[p].label); }), [t('rp_count')]);
+    var out = [head];
+    (function add(list, path){
+      list.forEach(function(n){
+        var p2 = path.concat([n.name]);
+        var row = LV_.map(function(l, i){ return p2[i] || ''; }).concat([t('lv_' + n.level)], parts.map(function(p){ return Math.round(n.T[p] * 100) / 100; }), [n.T.count]);
+        out.push(row);
+        if (n.depth < LV_.length - 1) add(n.children || (n.children = pivotTree_(n.entries, n.depth + 1)), p2);
+      });
+    })(roots, []);
+    out.push([t('rp_total'), '', '', '', '', ''].concat(parts.map(function(p){ return Math.round(total[p] * 100) / 100; }), [total.count]));
+    return out;
+  }
+  qs('.pv-ex', card).addEventListener('click', function(){ exportXlsx_(t('pv_tab') + ' ' + exStamp_(), [{ name: t('pv_tab'), rows: aoa() }]); });
+  card._aoa = aoa; card._title = t('pv_tab');
+  return card;
+}
+
+// ---------- the report's tables ----------
+var RP_MONEY_ = ['sales', 'additions', 'dPos', 'dCredit', 'dTransfer', 'dDelivery', 'dExpense', 'dBanked', 'deductions', 'net'];
+function rpGroup_(entries, keyFn, nameFn){
+  var map = {}, order = [];
+  entries.forEach(function(e){
+    var k = keyFn(e);
+    if (!map[k]) { map[k] = { key: k, e0: e, entries: [] }; order.push(k); }
+    map[k].entries.push(e);
+  });
+  return order.map(function(k){ var g = map[k]; g.T = eqTotals_(g.entries); g.name = nameFn(k, g.e0); return g; });
+}
+// cols: [{ h, v(row), num }]; rows: objects; foot: row for the totals line
+function rpTableCard_(title, cols, rows, foot, onRow){
+  var card = el('<div class="card rp-card" data-noexport="1"><div class="rp-head"><h2>'+esc(title)+' <span class="rp-n">'+rows.length+'</span></h2>' +
+    '<button type="button" class="ex-btn">'+icon_('doc')+'<span>'+esc(t('ex_button'))+'</span></button></div>' +
+    '<div class="tbl-scroll rp-scroll"><table class="rp-table"><thead><tr>' + cols.map(function(c){ return '<th'+(c.num ? ' class="n"' : '')+'>'+esc(c.h)+'</th>'; }).join('') + '</tr></thead><tbody></tbody>' +
+    (foot ? '<tfoot><tr>' + cols.map(function(c, i){ var v = i === 0 ? t('rp_total') : c.num ? c.v(foot) : ''; return '<td'+(c.num ? ' class="n num"' : '')+'>'+esc(c.num && typeof v === 'number' ? (c.int ? Number(v).toLocaleString('en-US') : money(v)) : (v == null ? '' : v))+'</td>'; }).join('') + '</tr></tfoot>' : '') +
+    '</table></div>' + (rows.length ? '' : '<div class="muted rp-empty">'+esc(t('eq_nothingHere'))+'</div>') + '</div>');
+  var tb = qs('tbody', card);
+  rows.forEach(function(r){
+    var tr = el('<tr'+(onRow ? ' class="pf-row" tabindex="0"' : '')+'>' + cols.map(function(c){
+      var v = c.v(r);
+      return '<td'+(c.num ? ' class="n num"' : '')+'>'+esc(c.num && typeof v === 'number' ? (c.int ? Number(v).toLocaleString('en-US') : money(v)) : (v == null ? '' : v))+'</td>';
+    }).join('') + '</tr>');
+    if (onRow) {
+      tr.addEventListener('click', function(){ onRow(r); });
+      tr.addEventListener('keydown', function(e){ if (e.key === 'Enter') onRow(r); });
+    }
+    tb.appendChild(tr);
+  });
+  function aoa(){ return [cols.map(function(c){ return c.h; })].concat(rows.map(function(r){ return cols.map(function(c){ var v = c.v(r); return v == null ? '' : v; }); }))
+    .concat(foot ? [cols.map(function(c, i){ return i === 0 ? t('rp_total') : !c.num ? '' : (c.v(foot) == null ? '' : c.v(foot)); })] : []); }
+  qs('.ex-btn', card).addEventListener('click', function(){ exportXlsx_(title + ' ' + exStamp_(), [{ name: title, rows: aoa() }]); });
+  card._aoa = aoa;
+  card._title = title;
+  return card;
+}
+// the money columns a set of rows needs: none that are zero everywhere
+function rpMoneyCols_(total){
+  return RP_MONEY_.filter(function(p){ return p === 'sales' || p === 'net' || p === 'deductions' || eqNonZero_(total[p]); }).map(function(p){
+    return { h: t(EQ_PARTS_[p].label), num: true, v: function(r){ return Math.round(r.T[p] * 100) / 100; } };
+  });
+}
+function reportTabs_(entries, res){
+  var meta = state.meta || {};
+  var total = { T: eqTotals_(entries) };
+  var moneyCols = rpMoneyCols_(total.T);
+  var countCol = { h: t('rp_count'), num: true, int: true, v: function(r){ return r.T.count; } };
+  function drill(scopeName, list){ drawerOpen_(levelDrillView_('net', list, 0, [{ level: 'x', name: scopeName }])); }
+  var branches = rpGroup_(entries, function(e){ return e.locationId || '_'; }, function(k){ return k === '_' ? t('report_unspecified') : locationName(k); })
+    .sort(function(a, b){ return b.T.net - a.T.net; });
+  var areas = rpGroup_(entries, function(e){ var l = byId(meta.locations, e.locationId); return (l && l.clusterId) || '_'; }, function(k){ return k === '_' ? t('report_unspecified') : clusterName(k); })
+    .sort(function(a, b){ return b.T.net - a.T.net; });
+  var sources = rpGroup_(entries, function(e){ return (e.sourceType || '') + ':' + (e.sourceId || ''); }, function(k, e){ var nm = sourceName_(e); return t('entry_source_' + e.sourceType) + (nm ? ' — ' + nm : ''); })
+    .sort(function(a, b){ return b.T.net - a.T.net; });
+  var days = rpGroup_(entries, function(e){ return e.date || '_'; }, function(k){ return k; })
+    .sort(function(a, b){ return String(b.key).localeCompare(String(a.key)); });
+  // products: what was sold, from the lines that name one
+  var prodMap = {};
+  entries.forEach(function(e){
+    if (e.productId) {
+      var p = prodMap[e.productId] || (prodMap[e.productId] = { name: productName_(e.productId) || t('report_unspecified'), qty: 0, sales: 0, credit: 0, count: 0 });
+      p.qty += Number(e.qty || 0); p.sales += Number(e.cashSales || 0) + Number(e.posSales || 0); p.count++;
+    }
+    (e.creditItems || []).forEach(function(it){
+      var p2 = prodMap[it.productId] || (prodMap[it.productId] = { name: productName_(it.productId) || t('report_unspecified'), qty: 0, sales: 0, credit: 0, count: 0 });
+      p2.credit += Number(it.amount || (Number(it.qty || 0) * Number(it.unitPrice || 0)));
+    });
+  });
+  var products = Object.keys(prodMap).map(function(k){ return prodMap[k]; }).sort(function(a, b){ return b.sales - a.sales; });
+  // customers: the credit each one owes, from the credit lines
+  var custMap = {};
+  entries.forEach(function(e){
+    if (!(Number(e.creditSales || 0) > 0)) return;
+    var id = e.creditCustomerId || ('~' + (e.creditCustomer || ''));
+    var c = byId(meta.customers, e.creditCustomerId);
+    var r = custMap[id] || (custMap[id] = { code: c ? c.code : '', name: c ? c.name : (e.creditCustomer || t('report_unspecified')), city: c ? (c.city || '') : '', credit: 0, count: 0, last: '' });
+    r.credit += Number(e.creditSales || 0); r.count++; if (String(e.date) > r.last) r.last = e.date;
+  });
+  var customers = Object.keys(custMap).map(function(k){ return custMap[k]; }).sort(function(a, b){ return b.credit - a.credit; });
+
+  var tabs = [
+    { key: 'pivot', label: t('pv_tab'), card: function(){ return pivotCard_(entries); } },
+    { key: 'branches', label: t('rp_tabBranches'), card: function(){ return rpTableCard_(t('rp_tabBranches'),
+        [{ h: t('admin_location'), v: function(r){ return r.name; } }, { h: t('admin_cluster'), v: function(r){ var l = byId(meta.locations, r.key); return l ? clusterName(l.clusterId) : ''; } }].concat(moneyCols, [countCol]),
+        branches, total, function(r){ drill(r.name, r.entries); }); } },
+    { key: 'areas', label: t('rp_tabAreas'), card: function(){ return rpTableCard_(t('rp_tabAreas'),
+        [{ h: t('admin_cluster'), v: function(r){ return r.name; } }].concat(moneyCols, [countCol]), areas, total, function(r){ drill(r.name, r.entries); }); } },
+    { key: 'sources', label: t('rp_tabSources'), card: function(){ return rpTableCard_(t('rp_tabSources'),
+        [{ h: t('rp_source'), v: function(r){ return r.name; } }, { h: t('admin_location'), v: function(r){ return locationName(r.e0.locationId); } }].concat(moneyCols, [countCol]),
+        sources, total, function(r){ drill(r.name, r.entries); }); } },
+    { key: 'days', label: t('rp_tabDays'), card: function(){ return rpTableCard_(t('rp_tabDays'),
+        [{ h: t('rp_date'), v: function(r){ return r.name; } }].concat(moneyCols, [countCol]), days, total, function(r){ drill(r.name, r.entries); }); } },
+    { key: 'products', label: t('rp_tabProducts'), card: function(){
+        var ptot = { name: '', qty: products.reduce(function(a, p){ return a + p.qty; }, 0), sales: products.reduce(function(a, p){ return a + p.sales; }, 0), credit: products.reduce(function(a, p){ return a + p.credit; }, 0), count: products.reduce(function(a, p){ return a + p.count; }, 0) };
+        return rpTableCard_(t('rp_tabProducts'), [
+          { h: t('report_product'), v: function(r){ return r.name; } },
+          { h: t('rp_qty'), num: true, int: true, v: function(r){ return Math.round(r.qty * 100) / 100; } },
+          { h: t('eq_sales'), num: true, v: function(r){ return Math.round(r.sales * 100) / 100; } },
+          { h: t('rp_creditOfIt'), num: true, v: function(r){ return Math.round(r.credit * 100) / 100; } },
+          { h: t('rp_count'), num: true, int: true, v: function(r){ return r.count; } }
+        ], products, ptot); } },
+    { key: 'customers', label: t('rp_tabCustomers'), card: function(){
+        var ctot = { code: '', name: '', city: '', credit: customers.reduce(function(a, c){ return a + c.credit; }, 0), count: customers.reduce(function(a, c){ return a + c.count; }, 0), last: '' };
+        return rpTableCard_(t('rp_tabCustomers'), [
+          { h: t('cu_code'), v: function(r){ return r.code; } },
+          { h: t('rp_customer'), v: function(r){ return r.name; } },
+          { h: t('report_city'), v: function(r){ return r.city; } },
+          { h: t('eq_dCredit'), num: true, v: function(r){ return Math.round(r.credit * 100) / 100; } },
+          { h: t('rp_count'), num: true, int: true, v: function(r){ return r.count; } },
+          { h: t('rp_lastDate'), v: function(r){ return r.last; } }
+        ], customers, ctot); } },
+    { key: 'tx', label: t('rp_tabTx'), card: function(){
+        var rows = entries.slice().sort(function(a, b){ return String(b.date).localeCompare(String(a.date)); }).map(function(e){ return { e: e, T: eqTotals_([e]) }; });
+        return rpTableCard_(t('rp_tabTx'), [
+          { h: t('rp_date'), v: function(r){ return r.e.date; } },
+          { h: t('admin_location'), v: function(r){ return locationName(r.e.locationId); } },
+          { h: t('rp_source'), v: function(r){ var nm = sourceName_(r.e); return t('entry_source_' + r.e.sourceType) + (nm ? ' — ' + nm : ''); } },
+          { h: t('report_enteredBy'), v: function(r){ return userName(r.e.enteredBy); } }
+        ].concat(moneyCols, [{ h: t('rp_status'), v: function(r){ return entryStatus_(r.e).label; } }]), rows, total, function(r){ drawerOpen_(entryDocView_(r.e)); }); } }
+  ];
+  var wrap = el('<section class="rp-tabs-wrap"><div class="rp-tabs-head"><div class="rp-tabs" role="tablist"></div>' +
+    '<button type="button" class="btn secondary rp-all">'+icon_('doc')+esc(t('ex_all'))+'</button></div><div class="rp-tab-body"></div></section>');
+  var bar = qs('.rp-tabs', wrap), bodyEl = qs('.rp-tab-body', wrap);
+  var current = null;
+  try { current = sessionStorage.getItem('bgc_rpTab'); } catch (e) {}
+  if (!tabs.some(function(tb){ return tb.key === current; })) current = 'pivot';
+  function show(key){
+    current = key;
+    try { sessionStorage.setItem('bgc_rpTab', key); } catch (e) {}
+    qsa('.rp-tab', bar).forEach(function(b){ var on = b.dataset.k === key; b.classList.toggle('on', on); b.setAttribute('aria-selected', on ? 'true' : 'false'); });
+    bodyEl.innerHTML = '';
+    bodyEl.appendChild(tabs.filter(function(tb){ return tb.key === key; })[0].card());
+  }
+  tabs.forEach(function(tb){
+    var b = el('<button type="button" class="rp-tab" role="tab" data-k="'+tb.key+'">'+esc(tb.label)+'</button>');
+    b.addEventListener('click', function(){ show(tb.key); });
+    bar.appendChild(b);
+  });
+  qs('.rp-all', wrap).addEventListener('click', function(){
+    var T = total.T;
+    var summary = [[t('eq_title'), '']].concat(['sales','cashSales','posSales','additions','dPos','dCredit','dTransfer','dDelivery','dExpense','dBanked','deductions','net']
+      .filter(function(p){ return ['sales','additions','deductions','net','cashSales'].indexOf(p) >= 0 || eqNonZero_(T[p]); })
+      .map(function(p){ return [t(EQ_PARTS_[p].label), Math.round(T[p] * 100) / 100]; }));
+    var sheets = [{ name: t('eq_title'), rows: summary }].concat(tabs.map(function(tb){ var c = tb.card(); return { name: c._title, rows: c._aoa() }; }));
+    exportXlsx_(t('report_title') + ' ' + exStamp_(), sheets);
+  });
+  show(current);
+  return wrap;
 }
 // name of a master-data item (collection / expense), for search text
 function itemName_(listName, id){
@@ -4232,7 +4834,7 @@ function sumDeposits_(handoffs){
 function salesAndCollectionStatements_(report, handoffs, open){
   var T = report.totals;
   var cashSales = T.storeCash + T.carCash + T.posCash;
-  var gross = cashSales + T.posSales + T.creditSales;
+  var gross = cashSales + T.posSales;
   var deliveryBase = T.deliveryFee - T.vatOnDelivery;
   var otherCash = Number(T.otherCash||0), expenses = Number(T.expenses||0);
   var totalToCollect = cashSales + otherCash - deliveryBase - expenses - T.creditSales;
@@ -4277,6 +4879,16 @@ function salesAndCollectionStatements_(report, handoffs, open){
     ])
   }));
   return { node: g, remaining: remaining, totalToCollect: totalToCollect, gross: gross, deposited: deposited };
+}
+// The equation with what the collectors have banked under the net figure.
+function eqForScreen_(entries, handoffs, report, open){
+  var T = report.totals || {};
+  // deposits include the الموازنات banked at the source, which the net has
+  // already taken off; what the collectors banked is the rest
+  var collected = sumDeposits_(handoffs) - Number(T.directDeposit || 0);
+  return netEquation_({ entries: entries, collected: collected, onSpecial: function(which){
+    if (which === 'deposited') open('deposited')(); else open('remaining')();
+  } }).node;
 }
 // "Where is the remaining cash right now?" — person by person.
 function whereIsCashPanel_(entries, dash, open){
@@ -4345,10 +4957,9 @@ function renderDashboard(body){
     body.innerHTML = '';
     var T = report.totals;
 
-    // ---- headline statements ----
-    body.appendChild(secTitle_(t('dash_overview'), t('ui_tapForDetails')));
+    // ---- the equation: sales + additions − deductions = net cash ----
     var st = salesAndCollectionStatements_(report, handoffs, open);
-    body.appendChild(st.node);
+    body.appendChild(eqForScreen_(entries, handoffs, report, open));
 
     // ---- key figures ----
     var byStatus = { pending:0, confirmed:0, disputed:0, rejected:0 }, pendingAmt = 0, disputedAmt = 0;
@@ -4363,14 +4974,12 @@ function renderDashboard(body){
     var locCount = Object.keys(locsReporting).length;
     body.appendChild(secTitle_(t('dash_keyFigures')));
     body.appendChild(tiles_([
-      { label: t('report_delivery'), value: money(T.deliveryFee), icon: 'truck', color: 'var(--c-delivery)', foot: esc(t('dash_vatInclusiveNote')), onClick: open('delivery') },
-      { label: t('report_vat'), value: money(T.vatOnDelivery), icon: 'percent', color: 'var(--c-vat)', foot: esc(t('dash_vatOnDeliveryFoot')), onClick: open('vat') },
       { label: t('report_outstanding'), value: money(report.outstanding.netCashOwed), icon: 'clock', color: 'var(--c-hold)', foot: esc(t('dash_notYetHandedOff')), onClick: open('outstanding') },
-      { label: t('home_companyOutstanding'), value: dash.companyOutstanding != null ? money(dash.companyOutstanding) : '—', icon: 'wallet', color: 'var(--c-deposit)', foot: esc(t('dash_heldConfirmedNotDeposited')), onClick: open('held') },
+      { label: t('home_companyOutstanding'), value: dash.companyOutstanding != null ? money(dash.companyOutstanding) : '—', icon: 'wallet', color: 'var(--green)', foot: esc(t('dash_heldConfirmedNotDeposited')), onClick: open('held') },
       { label: t('handoff_pending'), value: byStatus.pending, icon: 'handoffs', color: 'var(--c-hold)', foot: '<span class="num">'+esc(money(pendingAmt))+'</span>', onClick: open('pending') },
-      { label: t('handoff_disputed'), value: byStatus.disputed, icon: 'alert', color: 'var(--c-danger)', foot: '<span class="num">'+esc(money(disputedAmt))+'</span>', onClick: open('disputed') },
-      { label: t('dash_deposits'), value: depositList.length, icon: 'bank', color: 'var(--c-deposit)', foot: '<span class="num">'+esc(money(st.deposited))+'</span>', onClick: open('deposited') },
-      { label: t('dash_locationsReporting'), value: locCount, icon: 'pin', color: 'var(--c-cash)', foot: esc(t('dash_avgPerLocation'))+': <span class="num">'+esc(money(locCount ? st.gross/locCount : 0))+'</span>', onClick: function(){ locationsView_(report, open); } }
+      { label: t('handoff_disputed'), value: byStatus.disputed, icon: 'alert', color: byStatus.disputed ? 'var(--c-danger)' : 'var(--green)', foot: '<span class="num">'+esc(money(disputedAmt))+'</span>', onClick: open('disputed') },
+      { label: t('dash_deposits'), value: depositList.length, icon: 'bank', color: 'var(--green)', foot: '<span class="num">'+esc(money(st.deposited))+'</span>', onClick: open('deposited') },
+      { label: t('dash_locationsReporting'), value: locCount, icon: 'pin', color: 'var(--green)', foot: esc(t('dash_avgPerLocation'))+': <span class="num">'+esc(money(locCount ? st.gross/locCount : 0))+'</span>', onClick: function(){ locationsView_(report, open); } }
     ]));
 
     // ---- where the cash is ----
@@ -4673,7 +5282,7 @@ function renderHome(body){
     // ---- company-wide overview ----
     if (report){
       body.appendChild(secTitle_(t('dash_overview')));
-      body.appendChild(salesAndCollectionStatements_(report, handoffs || [], open).node);
+      body.appendChild(eqForScreen_(report.entries || [], handoffs || [], report, open));
       var g = el('<div class="g2" style="margin-bottom:18px;"></div>');
       if (report.byDate && report.byDate.length) g.appendChild(trendPanel_(report.byDate, open));
       g.appendChild(whereIsCashPanel_(entries, res, open));
@@ -5304,7 +5913,8 @@ function tsEnhance_(table){
 (function(){
   function scan(root){
     if (!root || root.nodeType !== 1) return;
-    if (root.tagName === 'TABLE') tsEnhance_(root); else [].forEach.call(root.querySelectorAll('table'), tsEnhance_);
+    if (root.tagName === 'TABLE') { tsEnhance_(root); exEnhance_(root); }
+    else [].forEach.call(root.querySelectorAll('table'), function(tb){ tsEnhance_(tb); exEnhance_(tb); });
   }
   function start(){
     scan(document.body);
@@ -7092,12 +7702,12 @@ function breakdownGrid(b){
   if (Number(b.expenses||0)) outs.push(['report_expenses', b.expenses]);
   if (Number(b.directDeposit||0)) outs.push(['report_directDeposit', b.directDeposit]);
   var sum = function(list){ return list.reduce(function(a, it){ return a + Number(it[1]||0); }, 0); };
-  function cell(it, cls){ return '<div class="bi'+(cls?' '+cls:'')+'">'+esc(t(it[0]))+'<b>'+(cls === 'out' ? '<bdi dir="ltr">− '+money(it[1])+'</bdi>' : money(it[1]))+'</b>'+(it[2] ? '<small>'+esc(it[2])+'</small>' : '')+'</div>'; }
+  function cell(it, cls){ return '<div class="bi'+(cls?' '+cls:'')+'">'+esc(t(it[0]))+'<b>'+money(it[1])+'</b>'+(it[2] ? '<small>'+esc(it[2])+'</small>' : '')+'</div>'; }
   var grid = '<div class="breakdown">' +
     ins.map(function(it){ return cell(it); }).join('') +
     '<div class="bi sub">'+esc(t('calc_totalIn'))+'<b>'+money(sum(ins))+'</b></div>' +
     outs.map(function(it){ return cell(it, 'out'); }).join('') +
-    (outs.length ? '<div class="bi sub out">'+esc(t('calc_totalOut'))+'<b><bdi dir="ltr">− '+money(sum(outs))+'</bdi></b></div>' : '') +
+    (outs.length ? '<div class="bi sub out">'+esc(t('calc_totalOut'))+'<b>'+money(sum(outs))+'</b></div>' : '') +
     '<div class="bi net">'+esc(t('report_net'))+'<b>'+money(b.netCashOwed)+'</b></div>' +
   '</div>';
   if (Number(b.posSales||0) > 0) {
@@ -7975,7 +8585,11 @@ function renderReport(body){
       drillSetData_(rEntries, null);
       var rCtx = { entries: rEntries, handoffs: DRILL.handoffs || [] };
       function rOpen(key){ return function(){ openMetric_(key, rCtx); }; }
-      out.appendChild(tiles_([
+      // the report reads as the equation, then the detail behind it, level
+      // by level, with every table ready for Excel
+      out.appendChild(netEquation_({ entries: rEntries, title: t('rp_eqTitle') }).node);
+      out.appendChild(reportTabs_(rEntries, res));
+      if (false) out.appendChild(tiles_([
         { label: t('report_net'), value: money(t1.netCashOwed), icon: 'wallet', color: 'var(--green)', onClick: rOpen('net') },
         { label: t('report_outstanding'), value: money(t2.netCashOwed), icon: 'clock', color: 'var(--c-hold)', onClick: rOpen('outstanding') },
         { label: t('dash_cashSales'), value: money(t1.storeCash + t1.carCash + t1.posCash), icon: 'cash', color: 'var(--c-cash)', foot: esc(t('report_storeCash'))+' <span class="num">'+esc(money(t1.storeCash))+'</span> · '+esc(t('report_carCash'))+' <span class="num">'+esc(money(t1.carCash))+'</span>', onClick: rOpen('cash') },
@@ -7985,7 +8599,7 @@ function renderReport(body){
         { label: t('report_vat'), value: money(t1.vatOnDelivery), icon: 'percent', color: 'var(--c-vat)', onClick: rOpen('vat') }
       ]));
 
-      var txCard = el('<div class="card"><div class="tx-head"><h2>'+esc(t('report_transactions2'))+' ('+rEntries.length+')</h2>' +
+      if (false) { var txCard = el('<div class="card"><div class="tx-head"><h2>'+esc(t('report_transactions2'))+' ('+rEntries.length+')</h2>' +
         '<label class="lf-sort"><span>'+esc(t('sort_by'))+'</span><select class="txSort">' +
           [['new','sort_new'],['old','sort_old'],['high','sort_high'],['low','sort_low']].map(function(o){ return '<option value="'+o[0]+'">'+esc(t(o[1]))+'</option>'; }).join('') +
         '</select></label></div><div class="tx-list"></div></div>');
@@ -8008,7 +8622,7 @@ function renderReport(body){
         allBtn.addEventListener('click', rOpen('gross'));
         txCard.appendChild(allBtn);
       }
-      out.appendChild(txCard);
+      out.appendChild(txCard); }
 
       // Daily trend — the shape of the dashboard, not just a number.
       if (res.byDate && res.byDate.length){
@@ -8017,8 +8631,8 @@ function renderReport(body){
         out.appendChild(trendCard);
       }
 
-      // By product — cash vs POS, sortable, with a proportional bar per row
-      // so the biggest sellers are visible at a glance, not just numbers.
+      // (the product and branch tables now live in the report's tabs)
+      if (false) {
       var productCard = el('<div class="card"><h2>'+esc(t('report_byProduct'))+'</h2></div>');
       if (res.byProduct && res.byProduct.length){
         productCard.appendChild(barList(res.byProduct.slice(0,8),
@@ -8052,6 +8666,7 @@ function renderReport(body){
         { key:'net', label: t('report_net'), render: function(r){ return '<strong>'+money(r.net)+'</strong>'; } }
       ], { sortKey:'city', sortDir:'asc' }));
       out.appendChild(locationCard);
+      }
 
       // Who a repeated shortfall traces back to — company-wide visibility
       // only (isCompanyWide_ on the client mirrors requireCompanyWide_ on
