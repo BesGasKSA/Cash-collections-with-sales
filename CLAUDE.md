@@ -179,6 +179,29 @@ collectors.
   highlighted. The deputy's cards open with a bold branch → area → collector strip
   (`handoffRoute_`).
 
+**Sorting, counts, invitation (2026-09-28).**
+
+- **Every table sorts by its headers** (`tsEnhance_` / `tableSortBy_`, attached by a
+  MutationObserver like the designed dropdown): numbers, dates, Arabic text with numeric
+  runs, empties last; rows whose cell count differs from the header (colspan totals)
+  stay at the end; a redrawn table keeps its sort (`TSORT_` keyed by its header text).
+  Tables that sort themselves (`sortableTable`, `th[data-key]`) are skipped. Card lists
+  sort through `listFilters_`'s picker (`.sort(list, norm)`, newest/oldest/highest/lowest)
+  and show "N of M" (`.count`); master-data lists have a sort picker (the only sort a
+  phone card list has) and a live count while searching. Branches list the area manager.
+- **Invitation email** (`sendInvitation_`, `inviteEmailHtml_`, `INVITE_COPY_`): written
+  in the invitee's own language (ar/en/ur; `ROLE_NAMES_` has a third, Urdu, name), one
+  button, the three steps, fluid (100% up to 560px, a fixed table only inside an Outlook
+  conditional), no letter-spacing on Arabic, no em dashes. `inviteInfo` also returns
+  `inviterName`.
+- **Invitation page** (`renderAcceptInvite`, classes `inv2-*`): phone = brand band + card
+  with the button in the first screen; desktop (>= 900px) = split screen with three
+  role-specific lines (`inv2_does_<role>`). Step rail, live password checks, drawn tick on
+  success, skeleton while loading; all motion off under `prefers-reduced-motion`.
+  **Testing trap:** after the mock server restarts, a browser tab may have lost
+  `bgc_apiUrl`; the page then silently asks the *live* backend, which answers "invalid"
+  for a mock invitation token. Set `localStorage.bgc_apiUrl` before judging the page.
+
 **Every master-data type is a screen, and every record has a profile
 (2026-09-24).** `renderAdminEntity` is a type screen: count, search, an add
 form that stays shut until asked for, and columns that resolve ids to names
