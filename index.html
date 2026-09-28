@@ -1192,6 +1192,106 @@
     .lf-sort,.ent-tools .ent-sort{flex:1 1 100%;}
     .lf-sort .dd-btn,.ent-sort .dd-btn,.lf-sort select,.ent-sort select{flex:1;}
   }
+  /* ---- invitation page ---- */
+  .inv2.brand-page{justify-content:flex-start;gap:0;padding:0;min-height:100vh;min-height:100dvh;}
+  .inv2.brand-page > *{animation:none;}
+  .inv2-brand{display:flex;flex-direction:column;align-items:center;text-align:center;width:100%;padding:30px 20px 66px;}
+  .inv2 .inv2-logo{width:120px;max-width:none;}
+  .inv2-org{color:#fff;font-weight:800;font-size:18px;margin-top:10px;text-shadow:0 2px 18px rgba(0,0,0,.35);animation:bgcSignIn .7s .1s cubic-bezier(.2,.8,.2,1) both;}
+  .inv2-app{color:#fff;font-size:16px;font-weight:800;margin-top:10px;text-shadow:0 2px 18px rgba(0,0,0,.35);animation:bgcSignIn .7s .16s cubic-bezier(.2,.8,.2,1) both;}
+  .inv2-does{display:none;}
+  .inv2-main{width:100%;display:flex;flex-direction:column;align-items:center;padding:0 14px 26px;margin-top:-46px;}
+  .inv2-card{width:100%;max-width:440px;background:rgba(255,255,255,.97);border-radius:22px;padding:22px 20px 20px;
+    box-shadow:0 30px 70px -28px rgba(0,0,0,.62),0 2px 8px rgba(0,0,0,.18);-webkit-backdrop-filter:blur(18px) saturate(1.3);backdrop-filter:blur(18px) saturate(1.3);
+    animation:inv2Rise .6s .22s cubic-bezier(.2,.8,.2,1) both;}
+  .inv2-who{display:flex;align-items:center;gap:14px;}
+  .inv2-av{width:54px;height:54px;border-radius:17px;flex:none;display:grid;place-items:center;font-weight:800;font-size:19px;color:#fff;
+    background:linear-gradient(145deg,var(--green),var(--green-deep));box-shadow:0 8px 20px -8px rgba(35,55,42,.6);}
+  .inv2-hi{margin:0;font-size:24px;font-weight:800;line-height:1.25;color:var(--text);}
+  .inv2-lead{margin:4px 0 0;font-size:14px;line-height:1.8;color:var(--muted);}
+  .inv2-role{display:inline-flex;align-items:center;gap:5px;padding:0 9px;border-radius:999px;background:var(--green-pale);color:var(--green-dark);font-weight:800;white-space:nowrap;}
+  .inv2-role svg{width:14px;height:14px;}
+  .inv2-rail{list-style:none;margin:18px 0 14px;padding:0;display:grid;grid-template-columns:repeat(3,1fr);position:relative;}
+  .inv2-rail::before,.inv2-rail::after{content:'';position:absolute;top:13px;height:2px;inset-inline-start:16.66%;}
+  .inv2-rail::before{inset-inline-end:16.66%;background:var(--border);}
+  .inv2-rail::after{width:33.33%;background:var(--green);transform-origin:left;animation:inv2Fill .6s .5s ease-out both;}
+  html[dir="rtl"] .inv2-rail::after{transform-origin:right;}
+  .inv2-rail li{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:6px;font-size:11.5px;font-weight:700;color:var(--muted);text-align:center;}
+  .inv2-rail i{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-size:12.5px;font-weight:800;background:var(--card);border:2px solid var(--border);color:var(--muted);}
+  .inv2-rail li.done i{background:var(--green);border-color:var(--green);color:#fff;}
+  .inv2-rail li.done i svg{width:14px;height:14px;stroke-width:3;}
+  .inv2-rail li.now{color:var(--green-dark);}
+  .inv2-rail li.now i{border-color:var(--green);color:var(--green-dark);box-shadow:0 0 0 5px color-mix(in srgb,var(--green) 16%,transparent);animation:inv2Pop .5s .7s cubic-bezier(.22,1.4,.36,1) both;}
+  .inv2-email{display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:12px;background:var(--bg);font-size:14px;font-weight:700;color:var(--text);margin-bottom:12px;overflow-wrap:anywhere;}
+  .inv2-email svg{width:17px;height:17px;color:var(--green);flex:none;}
+  .inv2-card .field{margin-bottom:6px;}
+  .inv2-card .field label{display:block;font-size:12.5px;font-weight:700;color:var(--muted);margin-bottom:6px;}
+  .inv2-card .field input{height:50px;font-size:16px;border-radius:12px;background:#f7f6f1;border-color:#e6e2d7;transition:border-color .15s ease,box-shadow .15s ease,background .15s ease;}
+  .inv2-card .field input:focus{background:#fff;border-color:var(--green);box-shadow:0 0 0 3px color-mix(in srgb,var(--green) 20%,transparent);}
+  .inv2-ck{list-style:none;margin:2px 0 12px;padding:0;display:flex;flex-wrap:wrap;gap:6px 16px;}
+  .inv2-ck li{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;color:var(--muted);transition:color .2s ease;}
+  .inv2-ck i{width:18px;height:18px;border-radius:50%;display:grid;place-items:center;border:1.5px solid var(--border);transition:background .2s ease,border-color .2s ease;}
+  .inv2-ck i svg{width:11px;height:11px;stroke:#fff;stroke-width:3.2;transform:scale(0);transition:transform .24s cubic-bezier(.22,1.5,.36,1);}
+  .inv2-ck li.ok{color:var(--green-dark);}
+  .inv2-ck li.ok i{background:var(--green);border-color:var(--green);}
+  .inv2-ck li.ok i svg{transform:scale(1);}
+  .inv2-ck li.miss:not(.ok){color:var(--danger);animation:inv2Shake .35s ease;}
+  .inv2-go{width:100%;height:54px;border-radius:14px;font-size:16px;font-weight:800;margin-top:6px;position:relative;overflow:hidden;
+    transition:transform .12s ease,box-shadow .2s ease;}
+  .inv2-go:active{transform:translateY(1px) scale(.99);}
+  .inv2-go.ready{box-shadow:0 14px 28px -14px rgba(35,55,42,.8);}
+  .inv2-go.ready::after{content:'';position:absolute;top:0;bottom:0;width:38%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.3),transparent);
+    transform:translateX(-160%);animation:bgcSheen 3.6s ease-in-out .4s infinite;}
+  .inv2-go.busy .inv2-goT::before{content:'';display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,.45);border-top-color:#fff;border-radius:50%;
+    margin-inline-end:8px;vertical-align:-3px;animation:inv2Spin .8s linear infinite;}
+  .inv2-note{display:flex;align-items:center;justify-content:center;gap:6px;margin:12px 0 0;font-size:12px;color:var(--muted);}
+  .inv2-note svg{width:14px;height:14px;}
+  .inv2-foot{margin-top:14px;animation:bgcSignIn .6s .5s both;}
+  .inv2-foot .login-lang{display:flex;gap:4px;justify-content:center;background:rgba(255,255,255,.12);border:0;border-radius:999px;padding:4px;margin:0;}
+  .inv2-foot .login-lang button{background:transparent;border:0;color:rgba(255,255,255,.8);font:inherit;font-size:12.5px;font-weight:700;padding:6px 14px;border-radius:999px;cursor:pointer;min-height:34px;box-shadow:none;}
+  .inv2-foot .login-lang button.active{background:rgba(255,255,255,.96);color:var(--green-deep);}
+  .inv2-state{text-align:center;padding:10px 4px 4px;}
+  .inv2-state .inv2-hi{margin-top:14px;}
+  .inv2-state .inv2-lead{margin:8px auto 18px;max-width:34ch;}
+  .inv2-ic{width:64px;height:64px;border-radius:20px;display:grid;place-items:center;margin:0 auto;background:var(--green-pale);color:var(--green-dark);}
+  .inv2-ic svg{width:30px;height:30px;}
+  .inv2-state.warn .inv2-ic{background:#fbf1dc;color:#9a6b0b;}
+  .inv2-state.bad .inv2-ic{background:var(--danger-bg);color:var(--danger);}
+  .inv2-tick{width:86px;height:86px;display:block;margin:0 auto;}
+  .inv2-tick circle{fill:var(--green-pale);stroke:var(--green);stroke-width:3;stroke-dasharray:183;stroke-dashoffset:183;animation:inv2Draw .6s .1s ease-out forwards;}
+  .inv2-tick path{fill:none;stroke:var(--green-dark);stroke-width:5;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:42;stroke-dashoffset:42;animation:inv2Draw .4s .65s ease-out forwards;}
+  .inv2-state.done .inv2-hi,.inv2-state.done .inv2-lead,.inv2-state.done .inv2-go{animation:bgcSignIn .5s .85s both;}
+  .inv2-wait{display:flex;flex-direction:column;gap:10px;}
+  .inv2-sk{height:14px;border-radius:8px;background:linear-gradient(90deg,#eeebe3 25%,#f8f6f0 50%,#eeebe3 75%);background-size:200% 100%;animation:inv2Shim 1.2s linear infinite;}
+  .inv2-sk.av{width:54px;height:54px;border-radius:17px;}
+  .inv2-waitT{font-size:12.5px;text-align:center;margin-top:6px;}
+  @keyframes inv2Rise{from{opacity:0;transform:translateY(22px) scale(.985);}to{opacity:1;transform:none;}}
+  @keyframes inv2Pop{0%{transform:scale(.6);}100%{transform:scale(1);}}
+  @keyframes inv2Fill{from{transform:scaleX(0);}to{transform:scaleX(1);}}
+  @keyframes inv2Draw{to{stroke-dashoffset:0;}}
+  @keyframes inv2Shim{from{background-position:200% 0;}to{background-position:-200% 0;}}
+  @keyframes inv2Spin{to{transform:rotate(360deg);}}
+  @keyframes inv2Shake{0%,100%{transform:none;}25%{transform:translateX(-4px);}75%{transform:translateX(4px);}}
+  /* desktop: the brand and what this person will do on one side, the card on the other */
+  @media (min-width:900px){
+    .inv2.brand-page{flex-direction:row;align-items:stretch;}
+    .inv2-brand{flex:1 1 46%;justify-content:center;align-items:flex-start;text-align:start;padding:64px 6vw;}
+    .inv2 .inv2-logo{width:170px;}
+    .inv2-org{font-size:30px;margin-top:22px;}
+    .inv2-app{font-size:26px;margin-top:18px;}
+    .inv2-does{display:block;margin-top:36px;}
+    .inv2-doesT{color:rgba(255,255,255,.72);font-size:13.5px;font-weight:700;margin-bottom:14px;animation:bgcSignIn .6s .35s both;}
+    .inv2-does ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:14px;}
+    .inv2-does li{display:flex;align-items:center;gap:12px;color:#fff;font-size:16.5px;font-weight:600;line-height:1.5;animation:bgcSignIn .6s calc(.45s + var(--i) * .12s) both;}
+    .inv2-dI{width:32px;height:32px;border-radius:10px;display:grid;place-items:center;background:rgba(255,255,255,.14);flex:none;}
+    .inv2-dI svg{width:16px;height:16px;}
+    .inv2-main{flex:1 1 54%;margin:0;justify-content:center;padding:48px 5vw;}
+    .inv2-card{max-width:460px;padding:32px 32px 26px;}
+  }
+  @media (prefers-reduced-motion: reduce){
+    .inv2 *, .inv2 *::before, .inv2 *::after{animation:none !important;transition:none !important;}
+    .inv2-tick circle,.inv2-tick path{stroke-dashoffset:0;}
+  }
   .bm-hint{font-size:12.5px;margin:-4px 0 10px;line-height:1.6;}
   .bm-canvas{direction:ltr;height:300px;border-radius:14px;overflow:hidden;border:1px solid var(--border-soft);background:var(--bg);position:relative;z-index:0;}
   @media (min-width:900px){ .bm-canvas{height:380px;} }
@@ -1767,7 +1867,7 @@ var L = {
     err_wrongCurrentPassword:'كلمة المرور الحالية غير صحيحة', err_network:'تعذّر الاتصال بالخادم — تحقق من الإنترنت',
     err_noSourceSelected:'الرجاء اختيار مصدر أولاً', err_titleRequired:'الرجاء إدخال عنوان',
     noData:'لا توجد بيانات', loading:'جارِ التحميل...', total:'الإجمالي', kind_location_to_cluster:'مدير الفرع ← مدير المنطقة',
-    kind_cluster_to_collector:'مدير المنطقة ← مُحصّل', kind_deposit:'إيداع بنكي', filter:'تصفية', all:'الكل', entity_bank:'البنك', sort_by:'الترتيب', sort_default:'حسب الإدخال', sort_new:'الأحدث أولاً', sort_old:'الأقدم أولاً', sort_high:'المبلغ: الأعلى أولاً', sort_low:'المبلغ: الأقل أولاً', bm_title:'موقع الفرع على الخريطة', bm_hint:'اضغط على الخريطة لتثبيت موقع الفرع أو اسحب الدبوس، أو استخدم موقعك الحالي وأنت داخل الفرع، أو الصق رابط الموقع من خرائط Google.', bm_here:'موقعي الحالي', bm_pastePh:'رابط خرائط Google أو 24.7136, 46.6753', bm_go:'تحديد', bm_none:'لم يُحدَّد موقع الفرع بعد', bm_openGoogle:'فتح في خرائط Google', bm_noZone:'بلا نطاق', bm_suggest:'أقرب فرع: {branch} ({dist}) — النطاق المقترح:', bm_m:'م', bm_km:'كم', bm_applyZone:'اعتماد هذا النطاق', bm_zoneMatches:'يطابق نطاق الفرع', bm_save:'حفظ الموقع', bm_clear:'إزالة الموقع', bm_noGeo:'المتصفح لا يدعم تحديد الموقع', bm_geoDenied:'تعذّر الحصول على موقعك — اسمح للمتصفح بالوصول إلى الموقع ثم أعد المحاولة', bm_badPaste:'لم نجد إحداثيات في النص — الصق رابطاً كاملاً من خرائط Google أو إحداثيات مثل 24.7136, 46.6753', bm_loadFail:'تعذّر تحميل الخريطة — تحقق من الاتصال', calc_totalIn:'إجمالي التحصيلات', calc_totalOut:'إجمالي الخصومات', entry_pickCustomer:'اختر العميل…', entry_creditHow:'طريقة التسجيل', entry_creditByAmount:'مبلغ', entry_creditByItems:'أصناف', entry_creditAddItem:'+ صنف', entry_creditItemsTotal:'مجموع الأصناف', err_creditItemsIncomplete:'أكمل كل صنف: المنتج والكمية', rec_code:'الرقم', rec_codeAuto:'يُمنح الرقم تلقائياً عند الحفظ', admin_customers:'العملاء', admin_cities:'المدن', admin_addCustomer:'إضافة عميل', admin_addCity:'إضافة مدينة', cu_code:'رقم العميل', cu_codeAuto:'يُمنح رقم العميل تلقائياً عند الحفظ', cu_name:'اسم العميل', cu_phone:'الجوال', ci_name:'اسم المدينة', ci_uses:'الفروع', cu_import:'استيراد قائمة', cu_importTitle:'استيراد العملاء', cu_importHint:'الصق الأسماء، اسماً في كل سطر (ويمكن إضافة المدينة والجوال بعده مفصولين بفاصلة)، أو اختر ملف Excel أو CSV. يُمنح كل عميل جديد رقماً، ويُتخطى كل اسم مسجّل مسبقاً.', cu_importPh:'مثال: شركة الغذاء النوعي للتجارة - الرمال، الرياض', cu_importFile:'اختيار ملف Excel أو CSV', cu_importCheck:'مراجعة القائمة', cu_impNew:'جديد', cu_impOnFile:'مسجّل مسبقاً', cu_impRepeat:'مكرر في القائمة', cu_impAdd:'إضافة {n} عميل', cu_impNothing:'لا يوجد اسم جديد لإضافته', cu_impDone:'أُضيف {n} عميل، وتُخطي {s}', cu_impEmpty:'لم يُعثر على أسماء في القائمة', cu_impLoadFail:'تعذّرت قراءة الملف — جرّب حفظه بصيغة CSV', pf_kindCustomer:'عميل', pf_kindCity:'مدينة', err_duplicateCustomer:'هذا العميل مسجّل مسبقاً برقم {code}', err_duplicateCity:'هذه المدينة موجودة في القائمة', err_unknownCustomer:'العميل غير مسجّل — اختره من القائمة أو اطلب من مدير النظام إضافته', err_invalidCustomer:'حساب هذا العميل موقوف، فلا يُسجَّل عليه بيع آجل جديد', err_creditItemsMismatch:'مبلغ البيع الآجل لا يطابق مجموع الأصناف', err_priceLocked:'سعر هذا المنتج ثابت ولا يُغيَّر', err_invalidProduct:'المنتج غير موجود أو موقوف', err_invalidCoordinates:'إحداثيات الموقع غير صحيحة'
+    kind_cluster_to_collector:'مدير المنطقة ← مُحصّل', kind_deposit:'إيداع بنكي', filter:'تصفية', all:'الكل', entity_bank:'البنك', inv2_doneTitle:'تم تفعيل حسابك', inv2_doneBody:'ادخل الآن ببريدك وكلمة المرور الجديدة.', inv2_signIn:'تسجيل الدخول', inv2_org:'الناقل الأفضل للغاز', inv2_app:'نظام تحصيل النقدية', inv2_youCan:'ستتمكن في النظام من:', inv2_hi:'أهلاً {name}', inv2_lead:'أنت {role} في نظام تحصيل النقدية. اختر كلمة مرور لتفعيل حسابك.', inv2_leadBy:'{who} أضافك بصفتك {role}. اختر كلمة مرور لتفعيل حسابك.', inv2_s1:'قبول الدعوة', inv2_s2:'كلمة المرور', inv2_s3:'الدخول', inv2_pw:'كلمة المرور الجديدة', inv2_pw2:'أعد كتابة كلمة المرور', inv2_ckLen:'8 أحرف على الأقل', inv2_ckMix:'أحرف وأرقام معاً', inv2_ckSame:'كلمتا المرور متطابقتان', inv2_go:'تفعيل الحساب', inv2_going:'جارٍ تفعيل الحساب…', inv2_valid:'الدعوة صالحة حتى {date}', inv2_does_store_manager:'تسجيل مبيعات فرعك ومصروفاته يومياً|تسليم نقدية الفرع لمدير المنطقة|متابعة كل تسليم حتى اعتماده', inv2_does_driver:'تسجيل مبيعات سيارتك يومياً|تسليم نقدية السيارة لمدير الفرع|متابعة ما سلّمته وما اعتُمد', inv2_does_cluster_manager:'استلام نقدية فروع منطقتك وتأكيدها|إرسال نقدية كل فرع إلى مُحصّله|متابعة فروعك ومُحصّليها من شاشة واحدة', inv2_does_collector:'استلام نقدية الفروع المسندة إليك|إيداعها في البنك مع مرجع الإيداع|متابعة ما استلمته وما أودعته', inv2_does_deputy_operations_manager:'مراجعة طلبات مديري المناطق واعتمادها|إعادة أي طلب مع سبب للتصحيح|متابعة التحصيل في كل الفروع', inv2_does_operations_manager:'متابعة التحصيل والتسليمات في كل الفروع|مراجعة التقارير والمؤشرات|متابعة المخاطر والشكاوى', inv2_does_finance:'متابعة النقدية من الفرع حتى البنك|مطابقة الإيداعات مع كشف البنك|مراجعة الفروقات والتقارير', inv2_does_accountant:'مراجعة الإدخالات والتسليمات|مطابقة الإيداعات مع كشف البنك|استخراج التقارير', inv2_does_admin:'إدارة المستخدمين والصلاحيات|إدارة الفروع والمناطق والبيانات الأساسية|متابعة كل ما يجري في النظام', sort_by:'الترتيب', sort_default:'حسب الإدخال', sort_new:'الأحدث أولاً', sort_old:'الأقدم أولاً', sort_high:'المبلغ: الأعلى أولاً', sort_low:'المبلغ: الأقل أولاً', bm_title:'موقع الفرع على الخريطة', bm_hint:'اضغط على الخريطة لتثبيت موقع الفرع أو اسحب الدبوس، أو استخدم موقعك الحالي وأنت داخل الفرع، أو الصق رابط الموقع من خرائط Google.', bm_here:'موقعي الحالي', bm_pastePh:'رابط خرائط Google أو 24.7136, 46.6753', bm_go:'تحديد', bm_none:'لم يُحدَّد موقع الفرع بعد', bm_openGoogle:'فتح في خرائط Google', bm_noZone:'بلا نطاق', bm_suggest:'أقرب فرع: {branch} ({dist}) — النطاق المقترح:', bm_m:'م', bm_km:'كم', bm_applyZone:'اعتماد هذا النطاق', bm_zoneMatches:'يطابق نطاق الفرع', bm_save:'حفظ الموقع', bm_clear:'إزالة الموقع', bm_noGeo:'المتصفح لا يدعم تحديد الموقع', bm_geoDenied:'تعذّر الحصول على موقعك — اسمح للمتصفح بالوصول إلى الموقع ثم أعد المحاولة', bm_badPaste:'لم نجد إحداثيات في النص — الصق رابطاً كاملاً من خرائط Google أو إحداثيات مثل 24.7136, 46.6753', bm_loadFail:'تعذّر تحميل الخريطة — تحقق من الاتصال', calc_totalIn:'إجمالي التحصيلات', calc_totalOut:'إجمالي الخصومات', entry_pickCustomer:'اختر العميل…', entry_creditHow:'طريقة التسجيل', entry_creditByAmount:'مبلغ', entry_creditByItems:'أصناف', entry_creditAddItem:'+ صنف', entry_creditItemsTotal:'مجموع الأصناف', err_creditItemsIncomplete:'أكمل كل صنف: المنتج والكمية', rec_code:'الرقم', rec_codeAuto:'يُمنح الرقم تلقائياً عند الحفظ', admin_customers:'العملاء', admin_cities:'المدن', admin_addCustomer:'إضافة عميل', admin_addCity:'إضافة مدينة', cu_code:'رقم العميل', cu_codeAuto:'يُمنح رقم العميل تلقائياً عند الحفظ', cu_name:'اسم العميل', cu_phone:'الجوال', ci_name:'اسم المدينة', ci_uses:'الفروع', cu_import:'استيراد قائمة', cu_importTitle:'استيراد العملاء', cu_importHint:'الصق الأسماء، اسماً في كل سطر (ويمكن إضافة المدينة والجوال بعده مفصولين بفاصلة)، أو اختر ملف Excel أو CSV. يُمنح كل عميل جديد رقماً، ويُتخطى كل اسم مسجّل مسبقاً.', cu_importPh:'مثال: شركة الغذاء النوعي للتجارة - الرمال، الرياض', cu_importFile:'اختيار ملف Excel أو CSV', cu_importCheck:'مراجعة القائمة', cu_impNew:'جديد', cu_impOnFile:'مسجّل مسبقاً', cu_impRepeat:'مكرر في القائمة', cu_impAdd:'إضافة {n} عميل', cu_impNothing:'لا يوجد اسم جديد لإضافته', cu_impDone:'أُضيف {n} عميل، وتُخطي {s}', cu_impEmpty:'لم يُعثر على أسماء في القائمة', cu_impLoadFail:'تعذّرت قراءة الملف — جرّب حفظه بصيغة CSV', pf_kindCustomer:'عميل', pf_kindCity:'مدينة', err_duplicateCustomer:'هذا العميل مسجّل مسبقاً برقم {code}', err_duplicateCity:'هذه المدينة موجودة في القائمة', err_unknownCustomer:'العميل غير مسجّل — اختره من القائمة أو اطلب من مدير النظام إضافته', err_invalidCustomer:'حساب هذا العميل موقوف، فلا يُسجَّل عليه بيع آجل جديد', err_creditItemsMismatch:'مبلغ البيع الآجل لا يطابق مجموع الأصناف', err_priceLocked:'سعر هذا المنتج ثابت ولا يُغيَّر', err_invalidProduct:'المنتج غير موجود أو موقوف', err_invalidCoordinates:'إحداثيات الموقع غير صحيحة'
   },
   en: {
     appName:'Best Gas — Cash Collection', login:'Sign In', email:'Email', password:'Password',
@@ -1935,7 +2035,7 @@ var L = {
     err_wrongCurrentPassword:'Current password is incorrect', err_network:"Couldn't reach the server — check your connection",
     err_noSourceSelected:'Please pick a source first', err_titleRequired:'Please enter a title',
     noData:'No data', loading:'Loading...', total:'Total', kind_location_to_cluster:'Branch → Area',
-    kind_cluster_to_collector:'Area → Collector', kind_deposit:'Bank deposit', filter:'Filter', all:'All', entity_bank:'Bank', sort_by:'Sort', sort_default:'As entered', sort_new:'Newest first', sort_old:'Oldest first', sort_high:'Amount: highest first', sort_low:'Amount: lowest first', bm_title:'Branch on the map', bm_hint:'Tap the map to pin the branch or drag the pin, use your current location while inside the branch, or paste its Google Maps link.', bm_here:'My current location', bm_pastePh:'Google Maps link or 24.7136, 46.6753', bm_go:'Locate', bm_none:'The branch has no position yet', bm_openGoogle:'Open in Google Maps', bm_noZone:'No zone', bm_suggest:'Nearest branch: {branch} ({dist}) — suggested zone:', bm_m:'m', bm_km:'km', bm_applyZone:'Use this zone', bm_zoneMatches:'Matches the branch zone', bm_save:'Save position', bm_clear:'Remove position', bm_noGeo:'This browser cannot share your location', bm_geoDenied:'Could not get your location — allow location access and try again', bm_badPaste:'No coordinates found — paste a full Google Maps link or coordinates like 24.7136, 46.6753', bm_loadFail:'The map could not load — check the connection', calc_totalIn:'Total collected', calc_totalOut:'Total deductions', entry_pickCustomer:'Choose the customer…', entry_creditHow:'Record as', entry_creditByAmount:'Amount', entry_creditByItems:'Products', entry_creditAddItem:'+ Product', entry_creditItemsTotal:'Products total', err_creditItemsIncomplete:'Complete every product line: product and quantity', rec_code:'No.', rec_codeAuto:'The number is assigned when you save', admin_customers:'Customers', admin_cities:'Cities', admin_addCustomer:'Add customer', admin_addCity:'Add city', cu_code:'Customer no.', cu_codeAuto:'The customer number is assigned when you save', cu_name:'Customer name', cu_phone:'Mobile', ci_name:'City name', ci_uses:'Branches', cu_import:'Import a list', cu_importTitle:'Import customers', cu_importHint:'Paste the names, one per line (city and mobile may follow, separated by commas), or choose an Excel or CSV file. Each new customer gets a number; names already on file are skipped.', cu_importPh:'e.g. Quality Food Trading Co - Al Rimal, Riyadh', cu_importFile:'Choose an Excel or CSV file', cu_importCheck:'Check the list', cu_impNew:'New', cu_impOnFile:'Already on file', cu_impRepeat:'Repeated in the list', cu_impAdd:'Add {n} customers', cu_impNothing:'No new name to add', cu_impDone:'Added {n} customers, skipped {s}', cu_impEmpty:'No names found in the list', cu_impLoadFail:'Could not read the file — try saving it as CSV', pf_kindCustomer:'Customer', pf_kindCity:'City', err_duplicateCustomer:'This customer is already on file as {code}', err_duplicateCity:'This city is already on the list', err_unknownCustomer:'Customer not on file — pick one from the list or ask the administrator to add it', err_invalidCustomer:'This customer\'s account is closed to new credit', err_creditItemsMismatch:'The credit amount does not match its items', err_priceLocked:'This product has a fixed price', err_invalidProduct:'Product not found or inactive', err_invalidCoordinates:'The map position is not valid'
+    kind_cluster_to_collector:'Area → Collector', kind_deposit:'Bank deposit', filter:'Filter', all:'All', entity_bank:'Bank', inv2_doneTitle:'Your account is active', inv2_doneBody:'Sign in now with your email and new password.', inv2_signIn:'Sign in', inv2_org:'Best Gas Carrier Co.', inv2_app:'Cash Collection System', inv2_youCan:'In the system you will:', inv2_hi:'Hello {name}', inv2_lead:'You are {role} in the Cash Collection System. Choose a password to activate your account.', inv2_leadBy:'{who} added you as {role}. Choose a password to activate your account.', inv2_s1:'Accept invitation', inv2_s2:'Password', inv2_s3:'Sign in', inv2_pw:'New password', inv2_pw2:'Type the password again', inv2_ckLen:'At least 8 characters', inv2_ckMix:'Letters and numbers', inv2_ckSame:'Both passwords match', inv2_go:'Activate account', inv2_going:'Activating your account…', inv2_valid:'Invitation valid until {date}', inv2_does_store_manager:'Record your branch sales and expenses every day|Hand the branch cash to the area manager|Follow each handover until it is approved', inv2_does_driver:'Record your vehicle sales every day|Hand the vehicle cash to the branch manager|See what you handed over and what was approved', inv2_does_cluster_manager:'Receive and confirm cash from your branches|Send each branch\'s cash to its collector|Follow your branches and collectors on one screen', inv2_does_collector:'Receive cash from the branches assigned to you|Deposit it at the bank with the reference|See what you received and deposited', inv2_does_deputy_operations_manager:'Review and approve area managers\' requests|Send any request back with a reason|Follow collection across every branch', inv2_does_operations_manager:'Follow collection and handovers in every branch|Review reports and indicators|Follow risks and complaints', inv2_does_finance:'Follow cash from branch to bank|Match deposits with the bank statement|Review differences and reports', inv2_does_accountant:'Review entries and handovers|Match deposits with the bank statement|Export reports', inv2_does_admin:'Manage users and permissions|Manage branches, areas and master data|See everything happening in the system', sort_by:'Sort', sort_default:'As entered', sort_new:'Newest first', sort_old:'Oldest first', sort_high:'Amount: highest first', sort_low:'Amount: lowest first', bm_title:'Branch on the map', bm_hint:'Tap the map to pin the branch or drag the pin, use your current location while inside the branch, or paste its Google Maps link.', bm_here:'My current location', bm_pastePh:'Google Maps link or 24.7136, 46.6753', bm_go:'Locate', bm_none:'The branch has no position yet', bm_openGoogle:'Open in Google Maps', bm_noZone:'No zone', bm_suggest:'Nearest branch: {branch} ({dist}) — suggested zone:', bm_m:'m', bm_km:'km', bm_applyZone:'Use this zone', bm_zoneMatches:'Matches the branch zone', bm_save:'Save position', bm_clear:'Remove position', bm_noGeo:'This browser cannot share your location', bm_geoDenied:'Could not get your location — allow location access and try again', bm_badPaste:'No coordinates found — paste a full Google Maps link or coordinates like 24.7136, 46.6753', bm_loadFail:'The map could not load — check the connection', calc_totalIn:'Total collected', calc_totalOut:'Total deductions', entry_pickCustomer:'Choose the customer…', entry_creditHow:'Record as', entry_creditByAmount:'Amount', entry_creditByItems:'Products', entry_creditAddItem:'+ Product', entry_creditItemsTotal:'Products total', err_creditItemsIncomplete:'Complete every product line: product and quantity', rec_code:'No.', rec_codeAuto:'The number is assigned when you save', admin_customers:'Customers', admin_cities:'Cities', admin_addCustomer:'Add customer', admin_addCity:'Add city', cu_code:'Customer no.', cu_codeAuto:'The customer number is assigned when you save', cu_name:'Customer name', cu_phone:'Mobile', ci_name:'City name', ci_uses:'Branches', cu_import:'Import a list', cu_importTitle:'Import customers', cu_importHint:'Paste the names, one per line (city and mobile may follow, separated by commas), or choose an Excel or CSV file. Each new customer gets a number; names already on file are skipped.', cu_importPh:'e.g. Quality Food Trading Co - Al Rimal, Riyadh', cu_importFile:'Choose an Excel or CSV file', cu_importCheck:'Check the list', cu_impNew:'New', cu_impOnFile:'Already on file', cu_impRepeat:'Repeated in the list', cu_impAdd:'Add {n} customers', cu_impNothing:'No new name to add', cu_impDone:'Added {n} customers, skipped {s}', cu_impEmpty:'No names found in the list', cu_impLoadFail:'Could not read the file — try saving it as CSV', pf_kindCustomer:'Customer', pf_kindCity:'City', err_duplicateCustomer:'This customer is already on file as {code}', err_duplicateCity:'This city is already on the list', err_unknownCustomer:'Customer not on file — pick one from the list or ask the administrator to add it', err_invalidCustomer:'This customer\'s account is closed to new credit', err_creditItemsMismatch:'The credit amount does not match its items', err_priceLocked:'This product has a fixed price', err_invalidProduct:'Product not found or inactive', err_invalidCoordinates:'The map position is not valid'
   },
   ur: {
     appName:'بیسٹ گیس — نقد وصولی نظام', login:'لاگ ان', email:'ای میل', password:'پاس ورڈ',
@@ -2103,7 +2203,7 @@ var L = {
     err_wrongCurrentPassword:'موجودہ پاس ورڈ غلط ہے', err_network:'سرور سے رابطہ نہیں ہو سکا — انٹرنیٹ چیک کریں',
     err_noSourceSelected:'پہلے ایک ذریعہ منتخب کریں', err_titleRequired:'براہ کرم عنوان درج کریں',
     noData:'کوئی ڈیٹا نہیں', loading:'لوڈ ہو رہا ہے...', total:'کل', kind_location_to_cluster:'برانچ ← علاقہ',
-    kind_cluster_to_collector:'علاقہ ← کلکٹر', kind_deposit:'بینک جمع', filter:'فلٹر', all:'تمام', entity_bank:'بینک', sort_by:'ترتیب', sort_default:'اندراج کے مطابق', sort_new:'نئے پہلے', sort_old:'پرانے پہلے', sort_high:'رقم: زیادہ پہلے', sort_low:'رقم: کم پہلے', bm_title:'نقشے پر برانچ', bm_hint:'نقشے پر ٹیپ کریں یا پن گھسیٹیں، برانچ میں ہوں تو اپنا موجودہ مقام استعمال کریں، یا Google Maps کا لنک چسپاں کریں۔', bm_here:'میرا موجودہ مقام', bm_pastePh:'Google Maps لنک یا 24.7136, 46.6753', bm_go:'تلاش', bm_none:'برانچ کا مقام ابھی طے نہیں', bm_openGoogle:'Google Maps میں کھولیں', bm_noZone:'کوئی زون نہیں', bm_suggest:'قریب ترین برانچ: {branch} ({dist}) — تجویز کردہ زون:', bm_m:'م', bm_km:'کلومیٹر', bm_applyZone:'یہ زون لگائیں', bm_zoneMatches:'برانچ کے زون سے مطابق', bm_save:'مقام محفوظ کریں', bm_clear:'مقام ہٹائیں', bm_noGeo:'براؤزر مقام نہیں دے سکتا', bm_geoDenied:'آپ کا مقام نہیں ملا — اجازت دیں اور دوبارہ کوشش کریں', bm_badPaste:'کوئی مقام نہیں ملا — پورا لنک یا 24.7136, 46.6753 چسپاں کریں', bm_loadFail:'نقشہ لوڈ نہیں ہوا', calc_totalIn:'کل وصولی', calc_totalOut:'کل کٹوتیاں', entry_pickCustomer:'گاہک منتخب کریں…', entry_creditHow:'درج کرنے کا طریقہ', entry_creditByAmount:'رقم', entry_creditByItems:'اشیاء', entry_creditAddItem:'+ شے', entry_creditItemsTotal:'اشیاء کا مجموعہ', err_creditItemsIncomplete:'ہر شے مکمل کریں: پروڈکٹ اور مقدار', rec_code:'نمبر', rec_codeAuto:'محفوظ کرنے پر نمبر خود ملے گا', admin_customers:'گاہک', admin_cities:'شہر', admin_addCustomer:'گاہک شامل کریں', admin_addCity:'شہر شامل کریں', cu_code:'گاہک نمبر', cu_codeAuto:'محفوظ کرنے پر نمبر خود ملے گا', cu_name:'گاہک کا نام', cu_phone:'موبائل', ci_name:'شہر کا نام', ci_uses:'برانچیں', cu_import:'فہرست درآمد کریں', cu_importTitle:'گاہک درآمد کریں', cu_importHint:'نام چسپاں کریں، ہر سطر میں ایک، یا Excel/CSV فائل منتخب کریں۔ ہر نئے گاہک کو نمبر ملے گا، موجود نام چھوڑ دیے جائیں گے۔', cu_importPh:'مثال: کمپنی کا نام، شہر', cu_importFile:'Excel یا CSV فائل', cu_importCheck:'فہرست جانچیں', cu_impNew:'نیا', cu_impOnFile:'پہلے سے موجود', cu_impRepeat:'فہرست میں دہرایا گیا', cu_impAdd:'{n} گاہک شامل کریں', cu_impNothing:'کوئی نیا نام نہیں', cu_impDone:'{n} گاہک شامل، {s} چھوڑ دیے', cu_impEmpty:'فہرست میں کوئی نام نہیں ملا', cu_impLoadFail:'فائل نہیں پڑھی جا سکی', pf_kindCustomer:'گاہک', pf_kindCity:'شہر', err_duplicateCustomer:'یہ گاہک پہلے سے {code} پر موجود ہے', err_duplicateCity:'یہ شہر فہرست میں موجود ہے', err_unknownCustomer:'گاہک رجسٹرڈ نہیں', err_invalidCustomer:'اس گاہک کا کھاتہ بند ہے', err_creditItemsMismatch:'ادھار رقم اشیاء کے مجموعے سے مختلف ہے', err_priceLocked:'اس پروڈکٹ کی قیمت مقرر ہے', err_invalidProduct:'پروڈکٹ موجود نہیں', err_invalidCoordinates:'مقام درست نہیں'
+    kind_cluster_to_collector:'علاقہ ← کلکٹر', kind_deposit:'بینک جمع', filter:'فلٹر', all:'تمام', entity_bank:'بینک', inv2_doneTitle:'آپ کا اکاؤنٹ فعال ہو گیا', inv2_doneBody:'اب اپنی ای میل اور نئے پاس ورڈ سے لاگ اِن کریں۔', inv2_signIn:'لاگ اِن', inv2_org:'بیسٹ گیس', inv2_app:'نقد وصولی نظام', inv2_youCan:'سسٹم میں آپ یہ کریں گے:', inv2_hi:'السلام علیکم {name}', inv2_lead:'آپ نقد وصولی نظام میں {role} ہیں۔ اکاؤنٹ فعال کرنے کے لیے پاس ورڈ منتخب کریں۔', inv2_leadBy:'{who} نے آپ کو بطور {role} شامل کیا ہے۔ اکاؤنٹ فعال کرنے کے لیے پاس ورڈ منتخب کریں۔', inv2_s1:'دعوت قبول', inv2_s2:'پاس ورڈ', inv2_s3:'لاگ اِن', inv2_pw:'نیا پاس ورڈ', inv2_pw2:'پاس ورڈ دوبارہ لکھیں', inv2_ckLen:'کم از کم 8 حروف', inv2_ckMix:'حروف اور نمبر', inv2_ckSame:'دونوں پاس ورڈ ایک جیسے', inv2_go:'اکاؤنٹ فعال کریں', inv2_going:'اکاؤنٹ فعال ہو رہا ہے…', inv2_valid:'دعوت {date} تک درست ہے', inv2_does_store_manager:'اپنی برانچ کی روزانہ فروخت اور اخراجات درج کریں|برانچ کی نقدی علاقہ منیجر کو دیں|ہر حوالگی کی منظوری تک پیروی کریں', inv2_does_driver:'اپنی گاڑی کی روزانہ فروخت درج کریں|گاڑی کی نقدی برانچ منیجر کو دیں|دیکھیں کیا دیا اور کیا منظور ہوا', inv2_does_cluster_manager:'اپنی برانچوں کی نقدی وصول اور تصدیق کریں|ہر برانچ کی نقدی اس کے کلکٹر کو بھیجیں|برانچیں اور کلکٹر ایک اسکرین پر دیکھیں', inv2_does_collector:'اپنی برانچوں کی نقدی وصول کریں|حوالہ نمبر کے ساتھ بینک میں جمع کریں|وصولی اور جمع شدہ رقم دیکھیں', inv2_does_deputy_operations_manager:'علاقہ منیجرز کی درخواستیں منظور کریں|کسی بھی درخواست کو وجہ کے ساتھ واپس کریں|تمام برانچوں کی وصولی دیکھیں', inv2_does_operations_manager:'تمام برانچوں کی وصولی اور حوالگیاں دیکھیں|رپورٹس دیکھیں|خطرات اور شکایات دیکھیں', inv2_does_finance:'برانچ سے بینک تک نقدی دیکھیں|جمع شدہ رقم کو بینک اسٹیٹمنٹ سے ملائیں|فرق اور رپورٹس دیکھیں', inv2_does_accountant:'اندراجات اور حوالگیاں دیکھیں|بینک اسٹیٹمنٹ سے ملائیں|رپورٹس نکالیں', inv2_does_admin:'صارفین اور اجازتیں سنبھالیں|برانچیں، علاقے اور بنیادی ڈیٹا سنبھالیں|سسٹم میں سب کچھ دیکھیں', sort_by:'ترتیب', sort_default:'اندراج کے مطابق', sort_new:'نئے پہلے', sort_old:'پرانے پہلے', sort_high:'رقم: زیادہ پہلے', sort_low:'رقم: کم پہلے', bm_title:'نقشے پر برانچ', bm_hint:'نقشے پر ٹیپ کریں یا پن گھسیٹیں، برانچ میں ہوں تو اپنا موجودہ مقام استعمال کریں، یا Google Maps کا لنک چسپاں کریں۔', bm_here:'میرا موجودہ مقام', bm_pastePh:'Google Maps لنک یا 24.7136, 46.6753', bm_go:'تلاش', bm_none:'برانچ کا مقام ابھی طے نہیں', bm_openGoogle:'Google Maps میں کھولیں', bm_noZone:'کوئی زون نہیں', bm_suggest:'قریب ترین برانچ: {branch} ({dist}) — تجویز کردہ زون:', bm_m:'م', bm_km:'کلومیٹر', bm_applyZone:'یہ زون لگائیں', bm_zoneMatches:'برانچ کے زون سے مطابق', bm_save:'مقام محفوظ کریں', bm_clear:'مقام ہٹائیں', bm_noGeo:'براؤزر مقام نہیں دے سکتا', bm_geoDenied:'آپ کا مقام نہیں ملا — اجازت دیں اور دوبارہ کوشش کریں', bm_badPaste:'کوئی مقام نہیں ملا — پورا لنک یا 24.7136, 46.6753 چسپاں کریں', bm_loadFail:'نقشہ لوڈ نہیں ہوا', calc_totalIn:'کل وصولی', calc_totalOut:'کل کٹوتیاں', entry_pickCustomer:'گاہک منتخب کریں…', entry_creditHow:'درج کرنے کا طریقہ', entry_creditByAmount:'رقم', entry_creditByItems:'اشیاء', entry_creditAddItem:'+ شے', entry_creditItemsTotal:'اشیاء کا مجموعہ', err_creditItemsIncomplete:'ہر شے مکمل کریں: پروڈکٹ اور مقدار', rec_code:'نمبر', rec_codeAuto:'محفوظ کرنے پر نمبر خود ملے گا', admin_customers:'گاہک', admin_cities:'شہر', admin_addCustomer:'گاہک شامل کریں', admin_addCity:'شہر شامل کریں', cu_code:'گاہک نمبر', cu_codeAuto:'محفوظ کرنے پر نمبر خود ملے گا', cu_name:'گاہک کا نام', cu_phone:'موبائل', ci_name:'شہر کا نام', ci_uses:'برانچیں', cu_import:'فہرست درآمد کریں', cu_importTitle:'گاہک درآمد کریں', cu_importHint:'نام چسپاں کریں، ہر سطر میں ایک، یا Excel/CSV فائل منتخب کریں۔ ہر نئے گاہک کو نمبر ملے گا، موجود نام چھوڑ دیے جائیں گے۔', cu_importPh:'مثال: کمپنی کا نام، شہر', cu_importFile:'Excel یا CSV فائل', cu_importCheck:'فہرست جانچیں', cu_impNew:'نیا', cu_impOnFile:'پہلے سے موجود', cu_impRepeat:'فہرست میں دہرایا گیا', cu_impAdd:'{n} گاہک شامل کریں', cu_impNothing:'کوئی نیا نام نہیں', cu_impDone:'{n} گاہک شامل، {s} چھوڑ دیے', cu_impEmpty:'فہرست میں کوئی نام نہیں ملا', cu_impLoadFail:'فائل نہیں پڑھی جا سکی', pf_kindCustomer:'گاہک', pf_kindCity:'شہر', err_duplicateCustomer:'یہ گاہک پہلے سے {code} پر موجود ہے', err_duplicateCity:'یہ شہر فہرست میں موجود ہے', err_unknownCustomer:'گاہک رجسٹرڈ نہیں', err_invalidCustomer:'اس گاہک کا کھاتہ بند ہے', err_creditItemsMismatch:'ادھار رقم اشیاء کے مجموعے سے مختلف ہے', err_priceLocked:'اس پروڈکٹ کی قیمت مقرر ہے', err_invalidProduct:'پروڈکٹ موجود نہیں', err_invalidCoordinates:'مقام درست نہیں'
   }
 };
 function t(k){ var l=L[state.lang]||L.ar; return l[k]!==undefined ? l[k] : (L.en[k]!==undefined?L.en[k]:k); }
@@ -2621,26 +2721,42 @@ function pwScore_(pw){
   if (sc && pw.length >= 12) sc++;
   return Math.max(pw.length ? 1 : 0, sc);
 }
+// The invitation page. Phone: the brand band on the moving green, the card
+// rising over it, the one button within the first screen. Desktop: a split
+// screen, the brand and what this person will do in the system on one side,
+// the card on the other. The rail says where they are (accepted, password,
+// sign in); the checks tick as the password meets them; the finish draws a
+// check mark. Motion stops for people who ask the system for less of it.
+var INV_ROLE_ICON_ = { store_manager:'box', driver:'truck', cluster_manager:'pin', collector:'wallet', deputy_operations_manager:'deputyReview',
+  operations_manager:'dashboard', finance:'bank', accountant:'report', admin:'admin' };
 function renderAcceptInvite(){
-  var root = qs('#app'); root.innerHTML='';
-  var box = el('<div class="brand-page">' +
-    '<img class="brand-logo" src="'+LOGO_SRC+'" alt="Best Gas Carrier Co.">' +
-    '<div class="brand-title">'+esc(t('appName'))+'</div>' +
-    '<div class="card login-card inv-card" id="invCard"></div>' +
-    '<div class="login-footer">Best Gas Carrier Co.</div>' +
-    '</div>');
-  root.appendChild(box);
-  var card = qs('#invCard', box);
+  var root = qs('#app'); root.innerHTML = '';
   var info = state.inviteInfo;
+  var role = info && info.role;
+  var does = role && t('inv2_does_' + role) !== 'inv2_does_' + role ? t('inv2_does_' + role).split('|') : [];
+  var page = el('<div class="brand-page inv2">' +
+    '<aside class="inv2-brand">' +
+      '<img class="brand-logo inv2-logo" src="'+LOGO_SRC+'" alt="'+esc(t('inv2_org'))+'">' +
+      '<div class="inv2-app">'+esc(t('inv2_app'))+'</div>' +
+      (does.length ? '<div class="inv2-does"><div class="inv2-doesT">'+esc(t('inv2_youCan'))+'</div><ul>' +
+        does.map(function(d, i){ return '<li style="--i:'+i+'"><span class="inv2-dI">'+icon_('check')+'</span><span>'+esc(d)+'</span></li>'; }).join('') +
+      '</ul></div>' : '') +
+    '</aside>' +
+    '<main class="inv2-main"><div class="inv2-card" id="invCard"></div><div class="inv2-foot">'+langPills()+'</div></main>' +
+  '</div>');
+  root.appendChild(page);
+  wireLangPills(renderAcceptInvite);
+  var card = qs('#invCard', page);
 
   if (!info) {
-    card.innerHTML = '<div class="inv-ico">'+icon_('envelope')+'</div><div class="muted" style="font-size:13.5px;">'+esc(t('inv_checking'))+'</div>' +
-      '<div class="inv-skel" style="width:70%"></div><div class="inv-skel" style="width:50%"></div>';
+    card.innerHTML = '<div class="inv2-wait"><div class="inv2-sk av"></div><div class="inv2-sk" style="width:62%"></div><div class="inv2-sk" style="width:84%"></div>' +
+      '<div class="inv2-sk" style="width:100%;height:48px;margin-top:18px"></div><div class="inv2-sk" style="width:100%;height:48px"></div>' +
+      '<div class="muted inv2-waitT">'+esc(t('inv_checking'))+'</div></div>';
     api('inviteInfo', { inviteToken: state.inviteToken }, { silent: true }).then(function(res){
       if (!state.inviteToken) return;
       if (!res.ok) {
-        card.innerHTML = '<div class="inv-ico bad">'+icon_('linkOff')+'</div><div class="msg err">'+esc(errMsg_(res))+'</div>' +
-          '<button class="btn" id="invRetry">'+esc(t('inv_retry'))+'</button>';
+        card.innerHTML = '<div class="inv2-state bad"><div class="inv2-ic">'+icon_('linkOff')+'</div><p class="inv2-lead">'+esc(errMsg_(res))+'</p>' +
+          '<button class="btn inv2-go" id="invRetry">'+esc(t('inv_retry'))+'</button></div>';
         qs('#invRetry', card).addEventListener('click', renderAcceptInvite);
         return;
       }
@@ -2651,49 +2767,68 @@ function renderAcceptInvite(){
     return;
   }
 
-  if (info.status === 'done' || info.status !== 'valid') {
+  if (info.status !== 'valid') {
     var kinds = {
-      done:    { cls:'done', ic:'checkBig', title:'inv_doneTitle', body:'inv_doneBody', btn:'inv_signIn' },
+      done:    { cls:'done', title:'inv2_doneTitle', body:'inv2_doneBody', btn:'inv2_signIn' },
       used:    { cls:'', ic:'check', title:'inv_usedTitle', body:'inv_usedBody', btn:'inv_goLogin' },
       expired: { cls:'warn', ic:'hourglass', title:'inv_expiredTitle', body:'inv_expiredBody', btn:'inv_goLogin' },
       invalid: { cls:'bad', ic:'linkOff', title:'inv_invalidTitle', body:'inv_invalidBody', btn:'inv_goLogin' }
     };
     var k = kinds[info.status] || kinds.invalid;
-    card.innerHTML = langPills() +
-      '<div class="inv-ico '+k.cls+'">'+icon_(k.ic)+'</div>' +
-      '<h2 class="inv-hi">'+esc(t(k.title))+'</h2>' +
-      '<p class="inv-lead">'+esc(t(k.body))+'</p>' +
-      '<button class="btn" id="invGo">'+esc(t(k.btn))+'</button>';
-    wireLangPills(renderAcceptInvite);
+    card.innerHTML = '<div class="inv2-state '+k.cls+'">' +
+      (info.status === 'done'
+        ? '<svg class="inv2-tick" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="29"/><path d="M19 33.5l9 9 17-19"/></svg>'
+        : '<div class="inv2-ic">'+icon_(k.ic)+'</div>') +
+      '<h1 class="inv2-hi">'+esc(t(k.title))+'</h1>' +
+      '<p class="inv2-lead">'+esc(t(k.body))+'</p>' +
+      '<button class="btn inv2-go" id="invGo">'+esc(t(k.btn))+'</button></div>';
     qs('#invGo', card).addEventListener('click', function(){ leaveInvite_(info.email || ''); });
     return;
   }
 
+  var first = String(info.name || '').trim().split(/\s+/)[0] || '';
   var until = info.expiresAt ? fmtStamp_(info.expiresAt).slice(0, 10) : '';
-  card.innerHTML = langPills() +
-    '<div class="inv-chip">'+icon_('envelope')+esc(t('inv_chip'))+'</div>' +
-    '<h2 class="inv-hi">'+esc(t('inv_hi').replace('{name}', info.name || ''))+'</h2>' +
-    '<p class="inv-lead">'+esc(t('inv_lead')).replace('&lt;b&gt;{role}&lt;/b&gt;', '<b>'+esc(roleLabel(info.role))+'</b>')+'</p>' +
+  var lead = info.inviterName
+    ? t('inv2_leadBy').replace('{who}', info.inviterName)
+    : t('inv2_lead');
+  card.innerHTML =
+    '<div class="inv2-who"><span class="inv2-av" aria-hidden="true">'+esc(initials_(info.name))+'</span>' +
+      '<div><h1 class="inv2-hi">'+esc(t('inv2_hi').replace('{name}', first))+'</h1>' +
+      '<p class="inv2-lead">'+esc(lead).replace('{role}', '<b class="inv2-role">'+icon_(INV_ROLE_ICON_[role] || 'user')+esc(roleLabel(role))+'</b>')+'</p></div></div>' +
+    '<ol class="inv2-rail" aria-label="'+esc(t('inv2_s2'))+'">' +
+      '<li class="done"><i>'+icon_('check')+'</i><span>'+esc(t('inv2_s1'))+'</span></li>' +
+      '<li class="now" aria-current="step"><i>2</i><span>'+esc(t('inv2_s2'))+'</span></li>' +
+      '<li><i>3</i><span>'+esc(t('inv2_s3'))+'</span></li>' +
+    '</ol>' +
+    '<div class="inv2-email">'+icon_('envelope')+'<bdi dir="ltr">'+esc(info.email || '')+'</bdi></div>' +
     '<div id="invMsg"></div>' +
-    '<div class="field"><label>'+esc(t('email'))+'</label><input type="email" value="'+esc(info.email||'')+'" readonly dir="ltr" autocomplete="username"></div>' +
-    '<div class="field"><label>'+esc(t('inv_pw'))+'</label><input id="invPw" type="password" autocomplete="new-password"></div>' +
-    '<div class="pw-meter" id="invMeter" data-s="0"><i></i><i></i><i></i><i></i></div>' +
-    '<p class="pw-rules" id="invRules">'+esc(t('inv_rules'))+'</p>' +
-    '<div class="field"><label>'+esc(t('inv_pw2'))+'</label><input id="invPw2" type="password" autocomplete="new-password"></div>' +
-    '<button class="btn" id="invBtn">'+esc(t('inv_accept'))+'</button>' +
-    (until ? '<div class="inv-note">'+esc(t('inv_validUntil').replace('{date}', until))+'</div>' : '');
+    '<div class="field"><label for="invPw">'+esc(t('inv2_pw'))+'</label><input id="invPw" type="password" autocomplete="new-password"></div>' +
+    '<ul class="inv2-ck" aria-live="polite"><li data-c="len"><i>'+icon_('check')+'</i>'+esc(t('inv2_ckLen'))+'</li><li data-c="mix"><i>'+icon_('check')+'</i>'+esc(t('inv2_ckMix'))+'</li></ul>' +
+    '<div class="field"><label for="invPw2">'+esc(t('inv2_pw2'))+'</label><input id="invPw2" type="password" autocomplete="new-password"></div>' +
+    '<ul class="inv2-ck"><li data-c="same"><i>'+icon_('check')+'</i>'+esc(t('inv2_ckSame'))+'</li></ul>' +
+    '<button class="btn inv2-go" id="invBtn"><span class="inv2-goT">'+esc(t('inv2_go'))+'</span></button>' +
+    (until ? '<p class="inv2-note">'+icon_('clock')+esc(t('inv2_valid').replace('{date}', until))+'</p>' : '');
   wirePasswordEye_(card);
-  wireLangPills(renderAcceptInvite);
-  var pw = qs('#invPw', card), pw2 = qs('#invPw2', card), meter = qs('#invMeter', card), rules = qs('#invRules', card);
-  pw.addEventListener('input', function(){ meter.setAttribute('data-s', pwScore_(pw.value.trim())); rules.classList.remove('bad'); });
+  var pw = qs('#invPw', card), pw2 = qs('#invPw2', card), btn = qs('#invBtn', card);
+  function checks(){
+    var a = pw.value.trim(), b = pw2.value.trim();
+    var ok = { len: a.length >= 8, mix: /[A-Za-z؀-ۿ]/.test(a) && /\d/.test(a), same: !!b && a === b };
+    qsa('.inv2-ck li', card).forEach(function(li){ li.classList.toggle('ok', !!ok[li.getAttribute('data-c')]); });
+    btn.classList.toggle('ready', ok.len && ok.same);
+    return ok;
+  }
+  pw.addEventListener('input', checks);
+  pw2.addEventListener('input', checks);
   function submit(){
-    var a = pw.value.trim(), b = pw2.value.trim(), msg = qs('#invMsg', card);
+    var a = pw.value.trim(), b = pw2.value.trim(), msg = qs('#invMsg', card), ok = checks();
     msg.innerHTML = '';
-    if (a.length < 8) { rules.classList.add('bad'); pw.focus(); return; }
+    if (!ok.len) { qs('.inv2-ck li[data-c="len"]', card).classList.add('miss'); pw.focus(); return; }
     if (a !== b) { msg.innerHTML = '<div class="msg err">'+esc(t('inv_mismatch'))+'</div>'; pw2.focus(); return; }
-    var btn = qs('#invBtn', card); btn.disabled = true;
+    btn.disabled = true; btn.classList.add('busy');
+    qs('.inv2-goT', btn).textContent = t('inv2_going');
     api('acceptInvite', { inviteToken: state.inviteToken, password: a }).then(function(res){
-      btn.disabled = false;
+      btn.disabled = false; btn.classList.remove('busy');
+      qs('.inv2-goT', btn).textContent = t('inv2_go');
       if (!res.ok) {
         if (res.error === 'invite_used' || res.error === 'invite_expired' || res.error === 'invite_invalid') {
           state.inviteInfo = { status: res.error.replace('invite_', ''), email: info.email };
@@ -2701,11 +2836,11 @@ function renderAcceptInvite(){
         }
         msg.innerHTML = '<div class="msg err">'+esc(errMsg_(res))+'</div>'; return;
       }
-      state.inviteInfo = { status: 'done', email: res.email || info.email };
+      state.inviteInfo = { status: 'done', email: res.email || info.email, role: role };
       renderAcceptInvite();
     });
   }
-  qs('#invBtn', card).addEventListener('click', submit);
+  btn.addEventListener('click', submit);
   pw2.addEventListener('keydown', function(e){ if (e.key === 'Enter') submit(); });
 }
 
