@@ -244,15 +244,15 @@ var INVITE_COPY_ = {
     steps: ['اضغط «قبول الدعوة».', 'اختر كلمة مرور من 8 أحرف أو أكثر.', 'ادخل إلى النظام ببريدك وكلمة المرور الجديدة.'],
     fallback: 'إذا لم يعمل الزر، انسخ هذا الرابط وافتحه في المتصفح:',
     foot: 'هذا الرابط لك وحدك، ويعمل مرة واحدة حتى {date}. إذا لم تكن تنتظر هذه الدعوة فتجاهل هذه الرسالة.',
-    other: 'You are invited to Best Gas Cash Collection. Tap the green button to accept.',
+    other: 'You are invited to Best Gas Collections. Tap the green button to accept.',
     otherDir: 'ltr', org: 'الناقل الأفضل للغاز'
   },
   en: {
     dir: 'ltr', align: 'left',
-    subject: 'You\'re invited to Best Gas Cash Collection',
+    subject: 'You\'re invited to Best Gas Collections',
     pre: '{who} added you as {role}. Tap Accept invitation and choose your password.',
     hi: 'Hello {name},',
-    lead: '{who} added you to the Best Gas Cash Collection system as {role}.',
+    lead: '{who} added you to Best Gas Collections as {role}.',
     email: 'Email', role: 'Role', until: 'Invitation valid until',
     button: 'Accept invitation',
     steps: ['Tap Accept invitation.', 'Choose a password of 8 or more characters.', 'Sign in with your email and new password.'],
@@ -272,7 +272,7 @@ var INVITE_COPY_ = {
     steps: ['«دعوت قبول کریں» پر ٹیپ کریں۔', 'کم از کم 8 حروف کا پاس ورڈ منتخب کریں۔', 'اپنی ای میل اور نئے پاس ورڈ سے لاگ اِن کریں۔'],
     fallback: 'اگر بٹن کام نہ کرے تو یہ لنک کاپی کر کے براؤزر میں کھولیں:',
     foot: 'یہ لنک صرف آپ کے لیے ہے اور {date} تک ایک بار کام کرتا ہے۔ اگر آپ کو اس کی توقع نہیں تھی تو اس ای میل کو نظر انداز کریں۔',
-    other: 'You are invited to Best Gas Cash Collection. Tap the green button to accept.',
+    other: 'You are invited to Best Gas Collections. Tap the green button to accept.',
     otherDir: 'ltr', org: 'بیسٹ گیس'
   }
 };
@@ -466,7 +466,7 @@ function actionAdminResetPassword_(req, user) {
 
 function sendInvite_(u, tempPassword) {
   var cfg = config_();
-  var subject = (cfg.senderName || 'Best Gas Cash Collection') + ' — بيانات الدخول / Login details';
+  var subject = (cfg.senderName || 'Best Gas Collections') + ' — بيانات الدخول / Login details';
   var body = [
     'مرحباً ' + u.name + ' / Hello ' + u.name,
     '',
@@ -1008,6 +1008,12 @@ function runOneTimeMigrations_() {
   seedCitiesOnce_();
   seedCustomersOnce_();
   backfillCodesOnce_();
+  // the app became Best Gas Collections; the sender name saved at setup still
+  // said the old default (a name someone chose is kept)
+  runOnce_('SENDER_RENAMED', function () {
+    var c = config_();
+    if (!c.senderName || c.senderName === 'Best Gas Cash Collection') { c.senderName = 'Best Gas Collections'; writeRow(SHEETS.CONFIG, c); }
+  });
 }
 
 // A customer by internal number (any letter case) or by name (normalised).
