@@ -107,8 +107,18 @@ function buildContext() {
     }
   };
 
+  // One script lock, as in Apps Script: waitLock does nothing while this
+  // execution already holds it, releaseLock frees it, hasLock reports it.
+  var LOCK_ = { held: false, acquired: 0 };
   var LockService = {
-    getScriptLock: function () { return { waitLock: function () {}, releaseLock: function () {} }; }
+    getScriptLock: function () {
+      return {
+        waitLock: function () { if (!LOCK_.held) { LOCK_.held = true; LOCK_.acquired++; } },
+        tryLock: function () { if (!LOCK_.held) { LOCK_.held = true; LOCK_.acquired++; } return true; },
+        hasLock: function () { return LOCK_.held; },
+        releaseLock: function () { LOCK_.held = false; }
+      };
+    }
   };
 
   function toBuf(x) { return Buffer.isBuffer(x) ? x : Buffer.from(x); }
@@ -240,7 +250,7 @@ function buildContext() {
   var context = vm.createContext(sandbox);
   vm.runInContext(src, context, { filename: 'apps-script-bundle.js' });
 
-  context._debug = { sheets: sheets, scriptProps: scriptProps, cache: cache, mailLog: mailLog, urlFetch: urlFetch, svcCalls: svcCalls };
+  context._debug = { sheets: sheets, scriptProps: scriptProps, cache: cache, mailLog: mailLog, urlFetch: urlFetch, svcCalls: svcCalls, lock: LOCK_ };
   return context;
 }
 

@@ -352,6 +352,7 @@
   .breakdown .bi{font-size:11.5px;color:var(--muted);}
   .breakdown .bi b{display:block;font-size:13.5px;color:var(--text);font-weight:700;margin-top:1px;}
   .breakdown .bi.out b{color:var(--danger);}
+  .breakdown .bi small{display:block;font-size:10.5px;font-weight:600;color:var(--muted);margin-top:1px;}
   .breakdown .bi.sub,.breakdown .bi.net{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 12px;border-radius:10px;
     font-size:13.5px;font-weight:800;}
   .breakdown .bi.sub{background:color-mix(in srgb,var(--green) 16%,#fff);border:2px solid color-mix(in srgb,var(--green) 55%,#fff);color:var(--green-deep);}
@@ -1867,7 +1868,7 @@ var L = {
     err_wrongCurrentPassword:'كلمة المرور الحالية غير صحيحة', err_network:'تعذّر الاتصال بالخادم — تحقق من الإنترنت',
     err_noSourceSelected:'الرجاء اختيار مصدر أولاً', err_titleRequired:'الرجاء إدخال عنوان',
     noData:'لا توجد بيانات', loading:'جارِ التحميل...', total:'الإجمالي', kind_location_to_cluster:'مدير الفرع ← مدير المنطقة',
-    kind_cluster_to_collector:'مدير المنطقة ← مُحصّل', kind_deposit:'إيداع بنكي', filter:'تصفية', all:'الكل', entity_bank:'البنك', inv2_doneTitle:'تم تفعيل حسابك', inv2_doneBody:'ادخل الآن ببريدك وكلمة المرور الجديدة.', inv2_signIn:'تسجيل الدخول', inv2_org:'الناقل الأفضل للغاز', inv2_app:'نظام تحصيل النقدية', inv2_youCan:'ستتمكن في النظام من:', inv2_hi:'أهلاً {name}', inv2_lead:'أنت {role} في نظام تحصيل النقدية. اختر كلمة مرور لتفعيل حسابك.', inv2_leadBy:'{who} أضافك بصفتك {role}. اختر كلمة مرور لتفعيل حسابك.', inv2_s1:'قبول الدعوة', inv2_s2:'كلمة المرور', inv2_s3:'الدخول', inv2_pw:'كلمة المرور الجديدة', inv2_pw2:'أعد كتابة كلمة المرور', inv2_ckLen:'8 أحرف على الأقل', inv2_ckMix:'أحرف وأرقام معاً', inv2_ckSame:'كلمتا المرور متطابقتان', inv2_go:'تفعيل الحساب', inv2_going:'جارٍ تفعيل الحساب…', inv2_valid:'الدعوة صالحة حتى {date}', inv2_does_store_manager:'تسجيل مبيعات فرعك ومصروفاته يومياً|تسليم نقدية الفرع لمدير المنطقة|متابعة كل تسليم حتى اعتماده', inv2_does_driver:'تسجيل مبيعات سيارتك يومياً|تسليم نقدية السيارة لمدير الفرع|متابعة ما سلّمته وما اعتُمد', inv2_does_cluster_manager:'استلام نقدية فروع منطقتك وتأكيدها|إرسال نقدية كل فرع إلى مُحصّله|متابعة فروعك ومُحصّليها من شاشة واحدة', inv2_does_collector:'استلام نقدية الفروع المسندة إليك|إيداعها في البنك مع مرجع الإيداع|متابعة ما استلمته وما أودعته', inv2_does_deputy_operations_manager:'مراجعة طلبات مديري المناطق واعتمادها|إعادة أي طلب مع سبب للتصحيح|متابعة التحصيل في كل الفروع', inv2_does_operations_manager:'متابعة التحصيل والتسليمات في كل الفروع|مراجعة التقارير والمؤشرات|متابعة المخاطر والشكاوى', inv2_does_finance:'متابعة النقدية من الفرع حتى البنك|مطابقة الإيداعات مع كشف البنك|مراجعة الفروقات والتقارير', inv2_does_accountant:'مراجعة الإدخالات والتسليمات|مطابقة الإيداعات مع كشف البنك|استخراج التقارير', inv2_does_admin:'إدارة المستخدمين والصلاحيات|إدارة الفروع والمناطق والبيانات الأساسية|متابعة كل ما يجري في النظام', sort_by:'الترتيب', sort_default:'حسب الإدخال', sort_new:'الأحدث أولاً', sort_old:'الأقدم أولاً', sort_high:'المبلغ: الأعلى أولاً', sort_low:'المبلغ: الأقل أولاً', bm_title:'موقع الفرع على الخريطة', bm_hint:'اضغط على الخريطة لتثبيت موقع الفرع أو اسحب الدبوس، أو استخدم موقعك الحالي وأنت داخل الفرع، أو الصق رابط الموقع من خرائط Google.', bm_here:'موقعي الحالي', bm_pastePh:'رابط خرائط Google أو 24.7136, 46.6753', bm_go:'تحديد', bm_none:'لم يُحدَّد موقع الفرع بعد', bm_openGoogle:'فتح في خرائط Google', bm_noZone:'بلا نطاق', bm_suggest:'أقرب فرع: {branch} ({dist}) — النطاق المقترح:', bm_m:'م', bm_km:'كم', bm_applyZone:'اعتماد هذا النطاق', bm_zoneMatches:'يطابق نطاق الفرع', bm_save:'حفظ الموقع', bm_clear:'إزالة الموقع', bm_noGeo:'المتصفح لا يدعم تحديد الموقع', bm_geoDenied:'تعذّر الحصول على موقعك — اسمح للمتصفح بالوصول إلى الموقع ثم أعد المحاولة', bm_badPaste:'لم نجد إحداثيات في النص — الصق رابطاً كاملاً من خرائط Google أو إحداثيات مثل 24.7136, 46.6753', bm_loadFail:'تعذّر تحميل الخريطة — تحقق من الاتصال', calc_totalIn:'إجمالي التحصيلات', calc_totalOut:'إجمالي الخصومات', entry_pickCustomer:'اختر العميل…', entry_creditHow:'طريقة التسجيل', entry_creditByAmount:'مبلغ', entry_creditByItems:'أصناف', entry_creditAddItem:'+ صنف', entry_creditItemsTotal:'مجموع الأصناف', err_creditItemsIncomplete:'أكمل كل صنف: المنتج والكمية', rec_code:'الرقم', rec_codeAuto:'يُمنح الرقم تلقائياً عند الحفظ', admin_customers:'العملاء', admin_cities:'المدن', admin_addCustomer:'إضافة عميل', admin_addCity:'إضافة مدينة', cu_code:'رقم العميل', cu_codeAuto:'يُمنح رقم العميل تلقائياً عند الحفظ', cu_name:'اسم العميل', cu_phone:'الجوال', ci_name:'اسم المدينة', ci_uses:'الفروع', cu_import:'استيراد قائمة', cu_importTitle:'استيراد العملاء', cu_importHint:'الصق الأسماء، اسماً في كل سطر (ويمكن إضافة المدينة والجوال بعده مفصولين بفاصلة)، أو اختر ملف Excel أو CSV. يُمنح كل عميل جديد رقماً، ويُتخطى كل اسم مسجّل مسبقاً.', cu_importPh:'مثال: شركة الغذاء النوعي للتجارة - الرمال، الرياض', cu_importFile:'اختيار ملف Excel أو CSV', cu_importCheck:'مراجعة القائمة', cu_impNew:'جديد', cu_impOnFile:'مسجّل مسبقاً', cu_impRepeat:'مكرر في القائمة', cu_impAdd:'إضافة {n} عميل', cu_impNothing:'لا يوجد اسم جديد لإضافته', cu_impDone:'أُضيف {n} عميل، وتُخطي {s}', cu_impEmpty:'لم يُعثر على أسماء في القائمة', cu_impLoadFail:'تعذّرت قراءة الملف — جرّب حفظه بصيغة CSV', pf_kindCustomer:'عميل', pf_kindCity:'مدينة', err_duplicateCustomer:'هذا العميل مسجّل مسبقاً برقم {code}', err_duplicateCity:'هذه المدينة موجودة في القائمة', err_unknownCustomer:'العميل غير مسجّل — اختره من القائمة أو اطلب من مدير النظام إضافته', err_invalidCustomer:'حساب هذا العميل موقوف، فلا يُسجَّل عليه بيع آجل جديد', err_creditItemsMismatch:'مبلغ البيع الآجل لا يطابق مجموع الأصناف', err_priceLocked:'سعر هذا المنتج ثابت ولا يُغيَّر', err_invalidProduct:'المنتج غير موجود أو موقوف', err_invalidCoordinates:'إحداثيات الموقع غير صحيحة'
+    kind_cluster_to_collector:'مدير المنطقة ← مُحصّل', kind_deposit:'إيداع بنكي', filter:'تصفية', all:'الكل', entity_bank:'البنك', inv2_doneTitle:'تم تفعيل حسابك', inv2_doneBody:'ادخل الآن ببريدك وكلمة المرور الجديدة.', inv2_signIn:'تسجيل الدخول', inv2_org:'الناقل الأفضل للغاز', inv2_app:'نظام تحصيل النقدية', inv2_youCan:'ستتمكن في النظام من:', inv2_hi:'أهلاً {name}', inv2_lead:'أنت {role} في نظام تحصيل النقدية. اختر كلمة مرور لتفعيل حسابك.', inv2_leadBy:'{who} أضافك بصفتك {role}. اختر كلمة مرور لتفعيل حسابك.', inv2_s1:'قبول الدعوة', inv2_s2:'كلمة المرور', inv2_s3:'الدخول', inv2_pw:'كلمة المرور الجديدة', inv2_pw2:'أعد كتابة كلمة المرور', inv2_ckLen:'8 أحرف على الأقل', inv2_ckMix:'أحرف وأرقام معاً', inv2_ckSame:'كلمتا المرور متطابقتان', inv2_go:'تفعيل الحساب', inv2_going:'جارٍ تفعيل الحساب…', inv2_valid:'الدعوة صالحة حتى {date}', inv2_does_store_manager:'تسجيل مبيعات فرعك ومصروفاته يومياً|تسليم نقدية الفرع لمدير المنطقة|متابعة كل تسليم حتى اعتماده', inv2_does_driver:'تسجيل مبيعات سيارتك يومياً|تسليم نقدية السيارة لمدير الفرع|متابعة ما سلّمته وما اعتُمد', inv2_does_cluster_manager:'استلام نقدية فروع منطقتك وتأكيدها|إرسال نقدية كل فرع إلى مُحصّله|متابعة فروعك ومُحصّليها من شاشة واحدة', inv2_does_collector:'استلام نقدية الفروع المسندة إليك|إيداعها في البنك مع مرجع الإيداع|متابعة ما استلمته وما أودعته', inv2_does_deputy_operations_manager:'مراجعة طلبات مديري المناطق واعتمادها|إعادة أي طلب مع سبب للتصحيح|متابعة التحصيل في كل الفروع', inv2_does_operations_manager:'متابعة التحصيل والتسليمات في كل الفروع|مراجعة التقارير والمؤشرات|متابعة المخاطر والشكاوى', inv2_does_finance:'متابعة النقدية من الفرع حتى البنك|مطابقة الإيداعات مع كشف البنك|مراجعة الفروقات والتقارير', inv2_does_accountant:'مراجعة الإدخالات والتسليمات|مطابقة الإيداعات مع كشف البنك|استخراج التقارير', inv2_does_admin:'إدارة المستخدمين والصلاحيات|إدارة الفروع والمناطق والبيانات الأساسية|متابعة كل ما يجري في النظام', sort_by:'الترتيب', sort_default:'حسب الإدخال', sort_new:'الأحدث أولاً', sort_old:'الأقدم أولاً', sort_high:'المبلغ: الأعلى أولاً', sort_low:'المبلغ: الأقل أولاً', bm_title:'موقع الفرع على الخريطة', bm_hint:'اضغط على الخريطة لتثبيت موقع الفرع أو اسحب الدبوس، أو استخدم موقعك الحالي وأنت داخل الفرع، أو الصق رابط الموقع من خرائط Google.', bm_here:'موقعي الحالي', bm_pastePh:'رابط خرائط Google أو 24.7136, 46.6753', bm_go:'تحديد', bm_none:'لم يُحدَّد موقع الفرع بعد', bm_openGoogle:'فتح في خرائط Google', bm_noZone:'بلا نطاق', bm_suggest:'أقرب فرع: {branch} ({dist}) — النطاق المقترح:', bm_m:'م', bm_km:'كم', bm_applyZone:'اعتماد هذا النطاق', bm_zoneMatches:'يطابق نطاق الفرع', bm_save:'حفظ الموقع', bm_clear:'إزالة الموقع', bm_noGeo:'المتصفح لا يدعم تحديد الموقع', bm_geoDenied:'تعذّر الحصول على موقعك — اسمح للمتصفح بالوصول إلى الموقع ثم أعد المحاولة', bm_badPaste:'لم نجد إحداثيات في النص — الصق رابطاً كاملاً من خرائط Google أو إحداثيات مثل 24.7136, 46.6753', bm_loadFail:'تعذّر تحميل الخريطة — تحقق من الاتصال', calc_totalIn:'إجمالي التحصيلات', calc_totalOut:'إجمالي الخصومات', entry_pickCustomer:'اختر العميل…', entry_creditHow:'طريقة التسجيل', entry_creditByAmount:'مبلغ', entry_creditByItems:'أصناف', entry_creditAddItem:'+ صنف', entry_creditItemsTotal:'مجموع الأصناف', err_creditItemsIncomplete:'أكمل كل صنف: المنتج والكمية', rec_code:'الرقم', rec_codeAuto:'يُمنح الرقم تلقائياً عند الحفظ', admin_customers:'العملاء', admin_cities:'المدن', admin_addCustomer:'إضافة عميل', admin_addCity:'إضافة مدينة', cu_code:'رقم العميل', cu_codeAuto:'يُمنح رقم العميل تلقائياً عند الحفظ', cu_name:'اسم العميل', cu_phone:'الجوال', ci_name:'اسم المدينة', ci_uses:'الفروع', cu_import:'استيراد قائمة', cu_importTitle:'استيراد العملاء', cu_importHint:'الصق الأسماء، اسماً في كل سطر، أو اختر ملف Excel أو CSV. لإضافة المدينة والجوال انسخ أعمدتها من Excel كما هي، أو افصل بينها بفاصلة. يُمنح كل عميل جديد رقماً، ويُتخطى كل اسم مسجّل مسبقاً.', cu_importPh:'مثال: شركة الغذاء النوعي للتجارة - الرمال', cu_importFile:'اختيار ملف Excel أو CSV', cu_importCheck:'مراجعة القائمة', cu_impNew:'جديد', cu_impOnFile:'مسجّل مسبقاً', cu_impRepeat:'مكرر في القائمة', cu_impAdd:'إضافة {n} عميل', cu_impNothing:'لا يوجد اسم جديد لإضافته', cu_impDone:'أُضيف {n} عميل، وتُخطي {s}', cu_impEmpty:'لم يُعثر على أسماء في القائمة', cu_impLoadFail:'تعذّرت قراءة الملف — جرّب حفظه بصيغة CSV', pf_kindCustomer:'عميل', pf_kindCity:'مدينة', err_duplicateCustomer:'هذا العميل مسجّل مسبقاً برقم {code}', err_duplicateCity:'هذه المدينة موجودة في القائمة', err_unknownCustomer:'العميل غير مسجّل — اختره من القائمة أو اطلب من مدير النظام إضافته', err_invalidCustomer:'حساب هذا العميل موقوف، فلا يُسجَّل عليه بيع آجل جديد', err_creditItemsMismatch:'مبلغ البيع الآجل لا يطابق مجموع الأصناف', err_priceLocked:'سعر هذا المنتج ثابت ولا يُغيَّر', err_invalidProduct:'المنتج غير موجود أو موقوف', err_invalidCoordinates:'إحداثيات الموقع غير صحيحة'
   },
   en: {
     appName:'Best Gas — Cash Collection', login:'Sign In', email:'Email', password:'Password',
@@ -2035,7 +2036,7 @@ var L = {
     err_wrongCurrentPassword:'Current password is incorrect', err_network:"Couldn't reach the server — check your connection",
     err_noSourceSelected:'Please pick a source first', err_titleRequired:'Please enter a title',
     noData:'No data', loading:'Loading...', total:'Total', kind_location_to_cluster:'Branch → Area',
-    kind_cluster_to_collector:'Area → Collector', kind_deposit:'Bank deposit', filter:'Filter', all:'All', entity_bank:'Bank', inv2_doneTitle:'Your account is active', inv2_doneBody:'Sign in now with your email and new password.', inv2_signIn:'Sign in', inv2_org:'Best Gas Carrier Co.', inv2_app:'Cash Collection System', inv2_youCan:'In the system you will:', inv2_hi:'Hello {name}', inv2_lead:'You are {role} in the Cash Collection System. Choose a password to activate your account.', inv2_leadBy:'{who} added you as {role}. Choose a password to activate your account.', inv2_s1:'Accept invitation', inv2_s2:'Password', inv2_s3:'Sign in', inv2_pw:'New password', inv2_pw2:'Type the password again', inv2_ckLen:'At least 8 characters', inv2_ckMix:'Letters and numbers', inv2_ckSame:'Both passwords match', inv2_go:'Activate account', inv2_going:'Activating your account…', inv2_valid:'Invitation valid until {date}', inv2_does_store_manager:'Record your branch sales and expenses every day|Hand the branch cash to the area manager|Follow each handover until it is approved', inv2_does_driver:'Record your vehicle sales every day|Hand the vehicle cash to the branch manager|See what you handed over and what was approved', inv2_does_cluster_manager:'Receive and confirm cash from your branches|Send each branch\'s cash to its collector|Follow your branches and collectors on one screen', inv2_does_collector:'Receive cash from the branches assigned to you|Deposit it at the bank with the reference|See what you received and deposited', inv2_does_deputy_operations_manager:'Review and approve area managers\' requests|Send any request back with a reason|Follow collection across every branch', inv2_does_operations_manager:'Follow collection and handovers in every branch|Review reports and indicators|Follow risks and complaints', inv2_does_finance:'Follow cash from branch to bank|Match deposits with the bank statement|Review differences and reports', inv2_does_accountant:'Review entries and handovers|Match deposits with the bank statement|Export reports', inv2_does_admin:'Manage users and permissions|Manage branches, areas and master data|See everything happening in the system', sort_by:'Sort', sort_default:'As entered', sort_new:'Newest first', sort_old:'Oldest first', sort_high:'Amount: highest first', sort_low:'Amount: lowest first', bm_title:'Branch on the map', bm_hint:'Tap the map to pin the branch or drag the pin, use your current location while inside the branch, or paste its Google Maps link.', bm_here:'My current location', bm_pastePh:'Google Maps link or 24.7136, 46.6753', bm_go:'Locate', bm_none:'The branch has no position yet', bm_openGoogle:'Open in Google Maps', bm_noZone:'No zone', bm_suggest:'Nearest branch: {branch} ({dist}) — suggested zone:', bm_m:'m', bm_km:'km', bm_applyZone:'Use this zone', bm_zoneMatches:'Matches the branch zone', bm_save:'Save position', bm_clear:'Remove position', bm_noGeo:'This browser cannot share your location', bm_geoDenied:'Could not get your location — allow location access and try again', bm_badPaste:'No coordinates found — paste a full Google Maps link or coordinates like 24.7136, 46.6753', bm_loadFail:'The map could not load — check the connection', calc_totalIn:'Total collected', calc_totalOut:'Total deductions', entry_pickCustomer:'Choose the customer…', entry_creditHow:'Record as', entry_creditByAmount:'Amount', entry_creditByItems:'Products', entry_creditAddItem:'+ Product', entry_creditItemsTotal:'Products total', err_creditItemsIncomplete:'Complete every product line: product and quantity', rec_code:'No.', rec_codeAuto:'The number is assigned when you save', admin_customers:'Customers', admin_cities:'Cities', admin_addCustomer:'Add customer', admin_addCity:'Add city', cu_code:'Customer no.', cu_codeAuto:'The customer number is assigned when you save', cu_name:'Customer name', cu_phone:'Mobile', ci_name:'City name', ci_uses:'Branches', cu_import:'Import a list', cu_importTitle:'Import customers', cu_importHint:'Paste the names, one per line (city and mobile may follow, separated by commas), or choose an Excel or CSV file. Each new customer gets a number; names already on file are skipped.', cu_importPh:'e.g. Quality Food Trading Co - Al Rimal, Riyadh', cu_importFile:'Choose an Excel or CSV file', cu_importCheck:'Check the list', cu_impNew:'New', cu_impOnFile:'Already on file', cu_impRepeat:'Repeated in the list', cu_impAdd:'Add {n} customers', cu_impNothing:'No new name to add', cu_impDone:'Added {n} customers, skipped {s}', cu_impEmpty:'No names found in the list', cu_impLoadFail:'Could not read the file — try saving it as CSV', pf_kindCustomer:'Customer', pf_kindCity:'City', err_duplicateCustomer:'This customer is already on file as {code}', err_duplicateCity:'This city is already on the list', err_unknownCustomer:'Customer not on file — pick one from the list or ask the administrator to add it', err_invalidCustomer:'This customer\'s account is closed to new credit', err_creditItemsMismatch:'The credit amount does not match its items', err_priceLocked:'This product has a fixed price', err_invalidProduct:'Product not found or inactive', err_invalidCoordinates:'The map position is not valid'
+    kind_cluster_to_collector:'Area → Collector', kind_deposit:'Bank deposit', filter:'Filter', all:'All', entity_bank:'Bank', inv2_doneTitle:'Your account is active', inv2_doneBody:'Sign in now with your email and new password.', inv2_signIn:'Sign in', inv2_org:'Best Gas Carrier Co.', inv2_app:'Cash Collection System', inv2_youCan:'In the system you will:', inv2_hi:'Hello {name}', inv2_lead:'You are {role} in the Cash Collection System. Choose a password to activate your account.', inv2_leadBy:'{who} added you as {role}. Choose a password to activate your account.', inv2_s1:'Accept invitation', inv2_s2:'Password', inv2_s3:'Sign in', inv2_pw:'New password', inv2_pw2:'Type the password again', inv2_ckLen:'At least 8 characters', inv2_ckMix:'Letters and numbers', inv2_ckSame:'Both passwords match', inv2_go:'Activate account', inv2_going:'Activating your account…', inv2_valid:'Invitation valid until {date}', inv2_does_store_manager:'Record your branch sales and expenses every day|Hand the branch cash to the area manager|Follow each handover until it is approved', inv2_does_driver:'Record your vehicle sales every day|Hand the vehicle cash to the branch manager|See what you handed over and what was approved', inv2_does_cluster_manager:'Receive and confirm cash from your branches|Send each branch\'s cash to its collector|Follow your branches and collectors on one screen', inv2_does_collector:'Receive cash from the branches assigned to you|Deposit it at the bank with the reference|See what you received and deposited', inv2_does_deputy_operations_manager:'Review and approve area managers\' requests|Send any request back with a reason|Follow collection across every branch', inv2_does_operations_manager:'Follow collection and handovers in every branch|Review reports and indicators|Follow risks and complaints', inv2_does_finance:'Follow cash from branch to bank|Match deposits with the bank statement|Review differences and reports', inv2_does_accountant:'Review entries and handovers|Match deposits with the bank statement|Export reports', inv2_does_admin:'Manage users and permissions|Manage branches, areas and master data|See everything happening in the system', sort_by:'Sort', sort_default:'As entered', sort_new:'Newest first', sort_old:'Oldest first', sort_high:'Amount: highest first', sort_low:'Amount: lowest first', bm_title:'Branch on the map', bm_hint:'Tap the map to pin the branch or drag the pin, use your current location while inside the branch, or paste its Google Maps link.', bm_here:'My current location', bm_pastePh:'Google Maps link or 24.7136, 46.6753', bm_go:'Locate', bm_none:'The branch has no position yet', bm_openGoogle:'Open in Google Maps', bm_noZone:'No zone', bm_suggest:'Nearest branch: {branch} ({dist}) — suggested zone:', bm_m:'m', bm_km:'km', bm_applyZone:'Use this zone', bm_zoneMatches:'Matches the branch zone', bm_save:'Save position', bm_clear:'Remove position', bm_noGeo:'This browser cannot share your location', bm_geoDenied:'Could not get your location — allow location access and try again', bm_badPaste:'No coordinates found — paste a full Google Maps link or coordinates like 24.7136, 46.6753', bm_loadFail:'The map could not load — check the connection', calc_totalIn:'Total collected', calc_totalOut:'Total deductions', entry_pickCustomer:'Choose the customer…', entry_creditHow:'Record as', entry_creditByAmount:'Amount', entry_creditByItems:'Products', entry_creditAddItem:'+ Product', entry_creditItemsTotal:'Products total', err_creditItemsIncomplete:'Complete every product line: product and quantity', rec_code:'No.', rec_codeAuto:'The number is assigned when you save', admin_customers:'Customers', admin_cities:'Cities', admin_addCustomer:'Add customer', admin_addCity:'Add city', cu_code:'Customer no.', cu_codeAuto:'The customer number is assigned when you save', cu_name:'Customer name', cu_phone:'Mobile', ci_name:'City name', ci_uses:'Branches', cu_import:'Import a list', cu_importTitle:'Import customers', cu_importHint:'Paste the names, one per line, or choose an Excel or CSV file. To add city and mobile, copy their columns straight from Excel or separate them with commas (quote a name that contains a comma). Each new customer gets a number; names already on file are skipped.', cu_importPh:'e.g. Quality Food Trading Co - Al Rimal', cu_importFile:'Choose an Excel or CSV file', cu_importCheck:'Check the list', cu_impNew:'New', cu_impOnFile:'Already on file', cu_impRepeat:'Repeated in the list', cu_impAdd:'Add {n} customers', cu_impNothing:'No new name to add', cu_impDone:'Added {n} customers, skipped {s}', cu_impEmpty:'No names found in the list', cu_impLoadFail:'Could not read the file — try saving it as CSV', pf_kindCustomer:'Customer', pf_kindCity:'City', err_duplicateCustomer:'This customer is already on file as {code}', err_duplicateCity:'This city is already on the list', err_unknownCustomer:'Customer not on file — pick one from the list or ask the administrator to add it', err_invalidCustomer:'This customer\'s account is closed to new credit', err_creditItemsMismatch:'The credit amount does not match its items', err_priceLocked:'This product has a fixed price', err_invalidProduct:'Product not found or inactive', err_invalidCoordinates:'The map position is not valid'
   },
   ur: {
     appName:'بیسٹ گیس — نقد وصولی نظام', login:'لاگ ان', email:'ای میل', password:'پاس ورڈ',
@@ -2727,6 +2728,13 @@ function pwScore_(pw){
 // the card on the other. The rail says where they are (accepted, password,
 // sign in); the checks tick as the password meets them; the finish draws a
 // check mark. Motion stops for people who ask the system for less of it.
+// The name to greet someone by: the first word, kept together with the next
+// when it is عبد, أبو, أم, بن and the like (same rule as the invitation email).
+function firstName_(name){
+  var p = String(name || '').trim().split(/\s+/);
+  if (p.length > 1 && /^(عبد|أبو|ابو|أم|ام|بن|ابن|بنت|آل)$/.test(p[0])) return p[0] + ' ' + p[1];
+  return p[0] || '';
+}
 var INV_ROLE_ICON_ = { store_manager:'box', driver:'truck', cluster_manager:'pin', collector:'wallet', deputy_operations_manager:'deputyReview',
   operations_manager:'dashboard', finance:'bank', accountant:'report', admin:'admin' };
 function renderAcceptInvite(){
@@ -2786,7 +2794,7 @@ function renderAcceptInvite(){
     return;
   }
 
-  var first = String(info.name || '').trim().split(/\s+/)[0] || '';
+  var first = firstName_(info.name);
   var until = info.expiresAt ? fmtStamp_(info.expiresAt).slice(0, 10) : '';
   var lead = info.inviterName
     ? t('inv2_leadBy').replace('{who}', info.inviterName)
@@ -3783,7 +3791,7 @@ function entryDocView_(e){
 
         var rows = cashCalcRows_({ cash: a.cash, other: a.other, delivery: a.delivery, vat: a.vat, credit: a.credit, expense: a.expense, banked: a.banked, net: a.net });
         // card sales are not cash: shown for the record, outside the sums
-        if (a.pos) rows.splice(rows.length - 1, 0, { label: t('report_pos'), amount: a.pos, color: 'var(--c-pos)', hint: t('handoff_posNote') });
+        if (a.pos) rows.push({ label: t('report_pos'), amount: a.pos, color: 'var(--c-pos)', hint: t('handoff_posNote') });
         var amtSec = el('<div class="doc-sec" style="padding:8px 6px;"><h3 style="padding:6px 10px 0;">'+icon_('cash')+esc(t('doc_amounts'))+'</h3></div>');
         var stNode = statement_({ title: '', value: 0, rows: rows });
         amtSec.appendChild(qs('.st-rows', stNode));
@@ -4852,12 +4860,13 @@ function ddNorm_(x){
 // compared, so the import preview flags exactly what the server will skip.
 function normName_(s){
   return String(s == null ? '' : s)
-    .replace(/[ً-ٰٟـ]/g, '')
-    .replace(/[أإآٱ]/g, 'ا')
-    .replace(/ى/g, 'ي')
-    .replace(/ة/g, 'ه')
-    .replace(/ؤ/g, 'و')
-    .replace(/ئ/g, 'ي')
+    .replace(/[\u064B-\u065F\u0670\u0640\u200B-\u200F\u202A-\u202E\u061C\uFEFF]/g, '')
+    .replace(/[\u0623\u0625\u0622\u0671]/g, '\u0627')
+    .replace(/[\u0649\u06CC]/g, '\u064A')
+    .replace(/\u06A9/g, '\u0643')
+    .replace(/[\u0629\u06C1\u06C3\u06D5]/g, '\u0647')
+    .replace(/\u0624/g, '\u0648')
+    .replace(/\u0626/g, '\u064A')
     .replace(/\s*-\s*/g, '-')
     .replace(/\s+/g, ' ')
     .trim()
@@ -4866,22 +4875,28 @@ function normName_(s){
 // Third-party code is loaded only on the screen that needs it (Excel reading,
 // the branch map), once, from cdnjs.
 var LIBS_ = {};
-function loadLib_(url){
+function loadLib_(url, integrity){
   if (LIBS_[url]) return LIBS_[url];
   LIBS_[url] = new Promise(function(resolve, reject){
     var sc = document.createElement('script');
     sc.src = url; sc.async = true;
+    if (integrity){ sc.integrity = integrity; sc.crossOrigin = 'anonymous'; }
     sc.onload = function(){ resolve(); };
     sc.onerror = function(){ delete LIBS_[url]; reject(new Error('load_failed')); };
     document.head.appendChild(sc);
   });
   return LIBS_[url];
 }
-function loadCss_(url){
+function loadCss_(url, integrity){
   if (document.querySelector('link[href="'+url+'"]')) return;
-  var l = document.createElement('link'); l.rel = 'stylesheet'; l.href = url; document.head.appendChild(l);
+  var l = document.createElement('link'); l.rel = 'stylesheet'; l.href = url;
+  if (integrity){ l.integrity = integrity; l.crossOrigin = 'anonymous'; }
+  document.head.appendChild(l);
 }
-var XLSX_URL_ = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+// SheetJS 0.20.3 from SheetJS's own CDN: the 0.18.5 build on cdnjs carries a
+// prototype-pollution flaw for crafted files (CVE-2023-30533).
+var XLSX_URL_ = 'https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js';
+var XLSX_SRI_ = 'sha384-EnyY0/GSHQGSxSgMwaIPzSESbqoOLSexfnSMN2AP+39Ckmn92stwABZynq1JyzdT';
 // A customer by number or by name, the way the server resolves a file row.
 function findCustomerLocal_(text){
   var v = String(text == null ? '' : text).trim();
@@ -4898,26 +4913,42 @@ function creditNote_(e){
   var items = (e.creditItems || []).map(function(it){ return productName_(it.productId) + ' × ' + it.qty; }).join('، ');
   return who + (items ? ' — ' + items : '');
 }
-// One customer per line: the name, then optionally the city and the mobile,
-// separated by a comma, semicolon or tab. A header line is dropped.
+// One customer per row: the name, then optionally the city and the mobile.
+// The name column is the first column whose filled cells are mostly text, so
+// an empty column A, or a serial-number column, is stepped over; city and
+// mobile follow it by position. A header row is dropped.
 function customerRowsFromCells_(lines){
-  return lines.map(function(c){ return c.filter(Boolean); })
-    .filter(function(c){ return c.length; })
-    .map(function(c){ return { name: c[0], city: c[1] || '', phone: c[2] || '' }; })
-    .filter(function(r, i){ return !(i === 0 && /^(name|customer|الاسم|اسم العميل|العميل)$/i.test(r.name)); });
+  var rows = lines.map(function(c){ return c.map(function(x){ return String(x == null ? '' : x).trim(); }); })
+    .filter(function(c){ return c.some(Boolean); });
+  if (!rows.length) return [];
+  var width = Math.max.apply(null, rows.map(function(r){ return r.length; }));
+  var start = 0;
+  for (var col = 0; col < width; col++){
+    var filled = rows.filter(function(r){ return r[col]; });
+    var texty = filled.filter(function(r){ return !/^[0-9٠-٩\s.,\-]+$/.test(r[col]); });
+    if (filled.length && texty.length * 2 >= filled.length){ start = col; break; }
+  }
+  return rows.map(function(r){ return { name: r[start] || '', city: r[start + 1] || '', phone: r[start + 2] || '' }; })
+    .filter(function(r, i){ return r.name && !(i === 0 && /^(name|customer|الاسم|اسم العميل|العميل)$/i.test(r.name)); });
+}
+// Cells copied from Excel arrive tab-separated; otherwise a comma (Latin or
+// Arabic) or a semicolon separates, and double quotes keep a comma inside.
+function splitLine_(line){
+  if (line.indexOf('\t') >= 0) return line.split('\t');
+  var out = [], cur = '', inQ = false;
+  for (var i = 0; i < line.length; i++){
+    var ch = line.charAt(i);
+    if (ch === '"'){ if (inQ && line.charAt(i + 1) === '"'){ cur += '"'; i++; } else inQ = !inQ; continue; }
+    if (!inQ && (ch === ',' || ch === '،' || ch === ';')){ out.push(cur); cur = ''; continue; }
+    cur += ch;
+  }
+  out.push(cur);
+  return out;
 }
 function customerRowsFromText_(text){
-  return customerRowsFromCells_(String(text || '').replace(/^﻿/, '').split(/\r?\n/).map(function(line){
-    return line.split(/[\t;,]/).map(function(c){ return c.replace(/^"|"$/g, '').trim(); });
-  }));
+  return customerRowsFromCells_(String(text || '').replace(/^\uFEFF/, '').split(/\r?\n/).map(splitLine_));
 }
-// An Excel sheet's rows: the first filled cell of each row is the name, so a
-// list that starts in column C (as the company's own file does) still reads.
-function customerRowsFromSheet_(rows){
-  return customerRowsFromCells_((rows || []).map(function(row){
-    return (row || []).map(function(c){ return c == null ? '' : String(c).trim(); });
-  }));
-}
+function customerRowsFromSheet_(rows){ return customerRowsFromCells_(rows || []); }
 
 function ddOpen_(sel){
   ddClose_(false);
@@ -5224,6 +5255,8 @@ function listFilters_(opts){
     clear.hidden = !n;
   }
   function changed(){ refreshHead(); if (opts.onChange) opts.onChange(); }
+  // the list's own order wins over a header sort remembered from before
+  qs('.lfSort', node).addEventListener('change', function(){ TSORT_ = {}; });
   qsa('input, select', node).forEach(function(inp){
     inp.addEventListener('input', changed);
     inp.addEventListener('change', changed);
@@ -5457,7 +5490,7 @@ function renderEntries(body){
       });
     }
     function itemsTotal_(row){
-      return Math.round(items_(row).reduce(function(a, x){ return a + (x.productId ? x.qty * x.unitPrice : 0); }, 0) * 100) / 100;
+      return Math.round(items_(row).reduce(function(a, x){ return a + (x.productId ? Math.round(x.qty * x.unitPrice * 100) / 100 : 0); }, 0) * 100) / 100;
     }
     function rows(){
       return qsa('.mline', list).map(function(row){
@@ -6779,12 +6812,12 @@ function breakdownGrid(b){
   if (Number(b.posCash||0)) ins.push(['report_posCash', b.posCash]);
   if (Number(b.otherCash||0)) ins.push(['report_otherCash', b.otherCash]);
   var outs = [];
-  if (Number(b.deliveryFee||0)) outs.push(['dash_deliveryFeeBeforeVat', Number(b.deliveryFee) - Number(b.vatOnDelivery||0)]);
+  if (Number(b.deliveryFee||0)) outs.push(['dash_deliveryFeeBeforeVat', Number(b.deliveryFee) - Number(b.vatOnDelivery||0), t('report_delivery') + ' ' + money(b.deliveryFee) + ' · ' + t('report_vat') + ' ' + money(b.vatOnDelivery||0)]);
   if (Number(b.creditSales||0)) outs.push(['report_credit', b.creditSales]);
   if (Number(b.expenses||0)) outs.push(['report_expenses', b.expenses]);
   if (Number(b.directDeposit||0)) outs.push(['report_directDeposit', b.directDeposit]);
   var sum = function(list){ return list.reduce(function(a, it){ return a + Number(it[1]||0); }, 0); };
-  function cell(it, cls){ return '<div class="bi'+(cls?' '+cls:'')+'">'+esc(t(it[0]))+'<b>'+(cls === 'out' ? '<bdi dir="ltr">− '+money(it[1])+'</bdi>' : money(it[1]))+'</b></div>'; }
+  function cell(it, cls){ return '<div class="bi'+(cls?' '+cls:'')+'">'+esc(t(it[0]))+'<b>'+(cls === 'out' ? '<bdi dir="ltr">− '+money(it[1])+'</bdi>' : money(it[1]))+'</b>'+(it[2] ? '<small>'+esc(it[2])+'</small>' : '')+'</div>'; }
   var grid = '<div class="breakdown">' +
     ins.map(function(it){ return cell(it); }).join('') +
     '<div class="bi sub">'+esc(t('calc_totalIn'))+'<b>'+money(sum(ins))+'</b></div>' +
@@ -6856,7 +6889,7 @@ function handoffAuditTrail_(h){
 // manager for a branch handover. Other kinds keep the one-line place.
 function handoffRoute_(h){
   function seg(label, value, to){ return '<span class="hr-seg'+(to?' to':'')+'"><i>'+esc(label)+'</i><b>'+esc(value)+'</b></span>'; }
-  var arrow = '<span class="hr-arrow" aria-hidden="true">←</span>';
+  var arrow = '<span class="hr-arrow" aria-hidden="true">' + (document.documentElement.dir === 'rtl' ? '←' : '→') + '</span>';
   var loc = byId(state.meta && state.meta.locations, h.locationId);
   if (h.kind === 'cluster_to_collector'){
     var parts = [];
@@ -8657,7 +8690,7 @@ function customerImportCard_(){
     if (/\.(xlsx|xls)$/i.test(f.name)){
       prev.innerHTML = '<div class="muted">'+esc(t('loading'))+'</div>';
       reader.onload = function(){
-        loadLib_(XLSX_URL_).then(function(){
+        loadLib_(XLSX_URL_, XLSX_SRI_).then(function(){
           var wb = XLSX.read(new Uint8Array(reader.result), { type: 'array' });
           var ws = wb.Sheets[wb.SheetNames[0]];
           preview(customerRowsFromSheet_(XLSX.utils.sheet_to_json(ws, { header: 1, blankrows: false, defval: '' })));
@@ -8675,6 +8708,8 @@ function customerImportCard_(){
 // ---------------- branch map ----------------
 var LEAFLET_JS_ = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js';
 var LEAFLET_CSS_ = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css';
+var LEAFLET_JS_SRI_ = 'sha384-NElt3Op+9NBMCYaef5HxeJmU4Xeard/Lku8ek6hoPTvYkQPh3zLIrJP7KiRocsxO';
+var LEAFLET_CSS_SRI_ = 'sha384-c6Rcwz4e4CITMbu/NBmnNS8yN2sC3cUElMEMfP3vqqKFp7GOYaaBBCqmaWBjmkjb';
 // A position from what people actually paste: a Google Maps link (the
 // place's own pin !3d..!4d first, then @lat,lng or ?q=lat,lng) or plain
 // "lat, lng" — Arabic digits and the Arabic comma accepted. null when the
@@ -8801,8 +8836,8 @@ function branchMapCard_(r){
   qs('.bm-paste input', card).addEventListener('keydown', function(e){ if (e.key === 'Enter'){ e.preventDefault(); go(); } });
   paintInfo();
   // Leaflet and the map tiles load only here
-  loadCss_(LEAFLET_CSS_);
-  loadLib_(LEAFLET_JS_).then(function(){
+  loadCss_(LEAFLET_CSS_, LEAFLET_CSS_SRI_);
+  loadLib_(LEAFLET_JS_, LEAFLET_JS_SRI_).then(function(){
     var LF = window.L;
     var canvas = qs('.bm-canvas', card);
     canvas.innerHTML = '';
@@ -8818,7 +8853,7 @@ function branchMapCard_(r){
       var same = !!(r.zoneId && l.zoneId === r.zoneId);
       var zn = l.zoneId ? (byId(meta.zones, l.zoneId) || {}).name : '';
       LF.circleMarker([Number(l.lat), Number(l.lng)], { radius: same ? 8 : 6, color: same ? '#34503a' : '#8a8f86', weight: 2,
-        fillColor: same ? '#4D6D51' : '#c9ccc4', fillOpacity: 0.9 }).addTo(map).bindTooltip(l.name + (zn ? ' · ' + zn : ''), { direction: 'top' });
+        fillColor: same ? '#4D6D51' : '#c9ccc4', fillOpacity: 0.9 }).addTo(map).bindTooltip(esc(l.name + (zn ? ' · ' + zn : '')), { direction: 'top' });
     });
     map.on('click', function(e){ setPos({ lat: e.latlng.lat, lng: e.latlng.lng }, false); });
     if (pos) setPos(pos, false);
@@ -8922,7 +8957,7 @@ function renderAdminEntity(content, kind){
   });
   qs('.entSort', head).addEventListener('change', function(){
     var v = this.value, table = qs('table', listCard);
-    if (!v){ renderAdmin(qs('#screenBody')); return; }
+    if (!v){ if (table && table.tHead) delete TSORT_[tsSig_(table)]; renderAdmin(qs('#screenBody')); return; }
     tableSortBy_(table, Number(v.split(':')[0]), v.split(':')[1]);
   });
 }

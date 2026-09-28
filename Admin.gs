@@ -96,10 +96,16 @@ function actionAdminCreateUser_(req, user) {
     createdAt: new Date().toISOString()
   };
   var token = issueInvite_(newUser, user);
-  // the employee number and the write under one lock (writeRow releases it)
-  LockService.getScriptLock().waitLock(30000);
-  newUser.code = nextCode_('user');
-  writeRow(SHEETS.USERS, newUser);
+  // the employee number and the write under one lock
+  var userLock = LockService.getScriptLock();
+  userLock.waitLock(30000);
+  try {
+    freshenExec_();
+    newUser.code = nextCode_('user');
+    writeRow(SHEETS.USERS, newUser);
+  } finally {
+    try { userLock.releaseLock(); } catch (e) {}
+  }
   var base = inviteAppUrl_(req);
   var sent = sendInvitation_(newUser, token, user, base);
   logAudit_('admin_invite_user', user.id, newUser.id);
@@ -275,6 +281,13 @@ function roleNameIn_(role, lang) {
   var r = ROLE_NAMES_[role] || [role, role, role];
   return lang === 'en' ? r[1] : lang === 'ur' ? (r[2] || r[1]) : r[0];
 }
+// The name to greet someone by: the first word, kept together with the word
+// after it when that first word is عبد, أبو, أم, بن and the like.
+function firstName_(name) {
+  var p = String(name || '').trim().split(/\s+/);
+  if (p.length > 1 && /^(\u0639\u0628\u062F|\u0623\u0628\u0648|\u0627\u0628\u0648|\u0623\u0645|\u0627\u0645|\u0628\u0646|\u0627\u0628\u0646|\u0628\u0646\u062A|\u0622\u0644)$/.test(p[0])) return p[0] + ' ' + p[1];
+  return p[0] || '';
+}
 function fill_(s, vars) {
   return String(s).replace(/\{(\w+)\}/g, function (m, k) { return vars[k] != null ? vars[k] : m; });
 }
@@ -285,7 +298,7 @@ function sendInvitation_(u, token, inviter, appUrl) {
   var c = inviteCopy_(lang);
   var who = inviter && inviter.name ? inviter.name : 'Best Gas';
   var expTxt = String(u.inviteExpiresAt || '').slice(0, 10);
-  var vars = { who: who, role: roleNameIn_(u.role, lang), name: String(u.name || '').trim().split(/\s+/)[0], date: expTxt };
+  var vars = { who: who, role: roleNameIn_(u.role, lang), name: firstName_(u.name), date: expTxt };
   var text = [
     fill_(c.hi, vars), '',
     fill_(c.lead, vars), '',
@@ -643,7 +656,7 @@ function actionAdminSaveEntity_(req, user) {
   // lock from the check to the write (writeRow releases it)
   var lock = LockService.getScriptLock();
   lock.waitLock(30000);
-  try { return saveEntity_(req, user); } finally { try { lock.releaseLock(); } catch (e) {} }
+  try { freshenExec_(); return saveEntity_(req, user); } finally { try { lock.releaseLock(); } catch (e) {} }
 }
 
 function saveEntity_(req, user) {
@@ -855,9 +868,7 @@ function migrateBranchCollectors_() {
 
 // Runs the move above on the first request after the update, then never again.
 function migrateBranchCollectorsOnce_() {
-  if (scriptProps_().MIGRATED_BRANCH_COLLECTORS) return;
-  migrateBranchCollectors_();
-  setScriptProp_('MIGRATED_BRANCH_COLLECTORS', new Date().toISOString());
+  runOnce_('MIGRATED_BRANCH_COLLECTORS', migrateBranchCollectors_);
 }
 
 // ---------- Credit customers and the city list ----------
@@ -867,12 +878,13 @@ function migrateBranchCollectorsOnce_() {
 // credit owed by one customer is split across several records.
 function normalizeName_(s) {
   return String(s == null ? '' : s)
-    .replace(/[ً-ٰٟـ]/g, '')
-    .replace(/[أإآٱ]/g, 'ا')
-    .replace(/ى/g, 'ي')
-    .replace(/ة/g, 'ه')
-    .replace(/ؤ/g, 'و')
-    .replace(/ئ/g, 'ي')
+    .replace(/[\u064B-\u065F\u0670\u0640\u200B-\u200F\u202A-\u202E\u061C\uFEFF]/g, '')
+    .replace(/[\u0623\u0625\u0622\u0671]/g, '\u0627')
+    .replace(/[\u0649\u06CC]/g, '\u064A')
+    .replace(/\u06A9/g, '\u0643')
+    .replace(/[\u0629\u06C1\u06C3\u06D5]/g, '\u0647')
+    .replace(/\u0624/g, '\u0648')
+    .replace(/\u0626/g, '\u064A')
     .replace(/\s*-\s*/g, '-')
     .replace(/\s+/g, ' ')
     .trim()
@@ -916,10 +928,13 @@ var CODE_PREFIX_ = {
   product: 'PR', income_item: 'INC', expense_item: 'EXP', customer: 'CUS', user: 'EMP'
 };
 function codeSheet_(kind) { return kind === 'user' ? SHEETS.USERS : ENTITY_SHEET[kind]; }
+function isCodedSheet_(name) {
+  return Object.keys(CODE_PREFIX_).some(function (k) { return codeSheet_(k) === name; });
+}
 function nextCode_(kind) {
   var prefix = CODE_PREFIX_[kind];
   var key = 'SEQ_' + kind;
-  var max = Number(scriptProps_()[key] || 0);
+  var max = Number(PropertiesService.getScriptProperties().getProperty(key) || 0);
   var re = new RegExp('^' + prefix + '-(\\d+)$');
   readSheet(codeSheet_(kind)).forEach(function (r) {
     var m = re.exec(String(r.code || ''));
@@ -942,8 +957,11 @@ function backfillCodes_() {
       if (r.code) return;
       lock.waitLock(30000);
       try {
-        r.code = nextCode_(kind);
-        writeRow(codeSheet_(kind), r);
+        freshenExec_();
+        var cur = getById_(codeSheet_(kind), r.id);
+        if (!cur || cur.code) return;
+        cur.code = nextCode_(kind);
+        writeRow(codeSheet_(kind), cur);
         done++;
       } finally {
         try { lock.releaseLock(); } catch (e) {}
@@ -954,9 +972,33 @@ function backfillCodes_() {
 }
 
 function backfillCodesOnce_() {
-  if (scriptProps_().CODES_BACKFILLED) return;
-  backfillCodes_();
-  setScriptProp_('CODES_BACKFILLED', new Date().toISOString());
+  runOnce_('CODES_BACKFILLED', backfillCodes_);
+  // a second pass catches any number a request erased by writing back a copy
+  // it had read before the first pass (fixed in writeRow since)
+  runOnce_('CODES_BACKFILLED_2', backfillCodes_);
+}
+
+// Runs fn once across every execution: the job is claimed under the lock on a
+// fresh read of the script properties, run outside it (its writes take the
+// lock row by row), then marked done. A claim older than ten minutes belongs
+// to a run that died (Apps Script stops at six) and is taken over.
+function runOnce_(flag, fn) {
+  if (scriptProps_()[flag]) return false;
+  var props = PropertiesService.getScriptProperties();
+  var lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  try {
+    freshenExec_();
+    if (props.getProperty(flag)) return false;
+    var claim = props.getProperty(flag + '_CLAIM');
+    if (claim && Date.now() - new Date(claim).getTime() < 10 * 60000) return false;
+    setScriptProp_(flag + '_CLAIM', new Date().toISOString());
+  } finally {
+    lock.releaseLock();
+  }
+  fn();
+  setScriptProp_(flag, new Date().toISOString());
+  return true;
 }
 
 // The data jobs that run once after an update. Each keeps its own flag, so
@@ -988,9 +1030,10 @@ function importCustomers_(rows) {
     var r = typeof rows[i] === 'string' ? { name: rows[i] } : (rows[i] || {});
     var name = String(r.name || '').replace(/\s+/g, ' ').trim();
     if (!name) { skipped.push({ row: i, name: '', code: null, reason: 'invalid_input' }); continue; }
-    // writeRow releases the lock when it finishes, so take it again per row
+    // one lock per row: the duplicate check, the number and the write together
     lock.waitLock(30000);
     try {
+      freshenExec_();
       var dup = customerDuplicateOf_(name, null);
       if (dup) { skipped.push({ row: i, name: name, code: dup.code, reason: 'duplicate' }); continue; }
       var c = { id: Utilities.getUuid(), code: nextCode_('customer'), name: name, active: true };
@@ -1008,7 +1051,8 @@ function actionAdminImportCustomers_(req, user) {
   requireAdmin_(user);
   var rows = Array.isArray(req.rows) ? req.rows : [];
   if (!rows.length) return { ok: false, error: 'invalid_input' };
-  if (rows.length > 2000) return { ok: false, error: 'too_many_rows' };
+  // each row takes the lock and re-reads the list: 500 finish well inside one run
+  if (rows.length > 500) return { ok: false, error: 'too_many_rows' };
   var res = importCustomers_(rows);
   logAudit_('admin_import_customers', user.id, res.created.length + ' created, ' + res.skipped.length + ' skipped');
   return { ok: true, created: res.created, skipped: res.skipped };
@@ -1019,10 +1063,10 @@ function actionAdminImportCustomers_(req, user) {
 // that file defines CUSTOMER_SEED_, the first request imports it once.
 function seedCustomersOnce_() {
   if (typeof CUSTOMER_SEED_ === 'undefined' || !CUSTOMER_SEED_ || !CUSTOMER_SEED_.length) return;
-  if (scriptProps_().SEEDED_CUSTOMERS) return;
-  var res = importCustomers_(CUSTOMER_SEED_);
-  setScriptProp_('SEEDED_CUSTOMERS', new Date().toISOString());
-  logAudit_('seed_customers', 'system', res.created.length + ' created, ' + res.skipped.length + ' skipped');
+  runOnce_('SEEDED_CUSTOMERS', function () {
+    var res = importCustomers_(CUSTOMER_SEED_);
+    logAudit_('seed_customers', 'system', res.created.length + ' created, ' + res.skipped.length + ' skipped');
+  });
 }
 
 // The city list: the default cities plus every city a branch or a zone
@@ -1035,20 +1079,26 @@ function seedCities_() {
     if (r.city) names.push(String(r.city).trim());
   });
   var added = 0;
+  var lock = LockService.getScriptLock();
   names.forEach(function (n) {
     var k = normalizeName_(n);
     if (!k || have[k]) return;
     have[k] = true;
-    writeRow(SHEETS.CITIES, { id: Utilities.getUuid(), code: nextCode_('city'), name: n, active: true });
-    added++;
+    lock.waitLock(30000);
+    try {
+      freshenExec_();
+      if (cityDuplicateOf_(n, null)) return;
+      writeRow(SHEETS.CITIES, { id: Utilities.getUuid(), code: nextCode_('city'), name: n, active: true });
+      added++;
+    } finally {
+      try { lock.releaseLock(); } catch (e) {}
+    }
   });
   return added;
 }
 
 function seedCitiesOnce_() {
-  if (scriptProps_().SEEDED_CITIES) return;
-  seedCities_();
-  setScriptProp_('SEEDED_CITIES', new Date().toISOString());
+  runOnce_('SEEDED_CITIES', seedCities_);
 }
 
 function actionMeta_(req, user) {
@@ -1066,6 +1116,7 @@ function actionMeta_(req, user) {
   var users = readSheet(SHEETS.USERS).map(publicUser_);
 
   if (!isCompanyWide_(user.role)) {
+    customers = customers.map(function (c) { return { id: c.id, code: c.code, name: c.name, city: c.city, active: c.active }; });
     // non-admins get every row (ids needed for pickers/labels) but only the
     // safe columns per the reference app's rule: restrict fields, not rows.
     users = users.map(function (u) {

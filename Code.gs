@@ -68,6 +68,10 @@ function exec_() {
   return EXEC_;
 }
 function resetExecMemo_() { EXEC_ = null; }
+// After waiting for the script lock, forget what this request read before:
+// another execution may have written in the meantime, and a check made on
+// those older reads (a duplicate name, the next number) would be wrong.
+function freshenExec_() { var ex = exec_(); ex.props = null; ex.rows = {}; }
 
 function scriptProps_() {
   var ex = exec_();
@@ -196,8 +200,11 @@ function findRow_(sh, id) {
 }
 
 function writeRow(name, obj) {
+  // A caller that already holds the lock (a check-then-write that must stay
+  // atomic) keeps it: writeRow only releases a lock it took itself.
   var lock = LockService.getScriptLock();
-  lock.waitLock(30000);
+  var held = lock.hasLock ? lock.hasLock() : false;
+  if (!held) lock.waitLock(30000);
   try {
     var sh = sheet_(name);
     // An id we just generated can't already exist, so skip scanning the whole
@@ -211,6 +218,13 @@ function writeRow(name, obj) {
     toStore.updatedAt = now;
     var json = JSON.stringify(toStore);
     var rowIndex = isNew ? -1 : findRow_(sh, obj.id);
+    // a copy read before this record was numbered never erases its number
+    if (rowIndex > 0 && !toStore.code && isCodedSheet_(name)) {
+      try {
+        var prev = JSON.parse(sh.getRange(rowIndex, 2, 1, 1).getValues()[0][0] || '{}');
+        if (prev.code) { toStore.code = prev.code; json = JSON.stringify(toStore); }
+      } catch (e) {}
+    }
     if (rowIndex > 0) {
       sh.getRange(rowIndex, 1, 1, 3).setValues([[obj.id, json, now]]);
     } else {
@@ -219,7 +233,7 @@ function writeRow(name, obj) {
     bumpVersion_(name);
     return toStore;
   } finally {
-    lock.releaseLock();
+    if (!held) lock.releaseLock();
   }
 }
 
@@ -501,7 +515,8 @@ function userStatus_(u) {
 function doGet(e) {
   // The warm-up ping also runs the one-time data jobs, so they finish on the
   // deploy's own check rather than on a person's first tap.
-  try { resetExecMemo_(); runOneTimeMigrations_(); } catch (err) {}
+  try { resetExecMemo_(); runOneTimeMigrations_(); }
+  catch (err) { try { logAudit_('migration_failed', 'system', String(err && err.message || err)); } catch (e2) {} }
   return json_({ ok: true, service: 'bestgas-cash-collection' });
 }
 
