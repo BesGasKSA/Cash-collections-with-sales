@@ -676,6 +676,32 @@ function actionAdminSaveEntity_(req, user) {
   try { freshenExec_(); return saveEntity_(req, user); } finally { try { lock.releaseLock(); } catch (e) {} }
 }
 
+// Master data from an Excel sheet: each row goes through saveEntity_, the
+// same checks and numbering as the form, under the lock one row at a time.
+// A row with an id updates that record. The client resolves names and
+// numbers to ids and shows every row's problem before sending.
+function actionAdminImportEntities_(req, user) {
+  requireAdmin_(user);
+  if (!hasOwn_(ENTITY_SHEET, req.kind)) return { ok: false, error: 'invalid_kind' };
+  var rows = Array.isArray(req.rows) ? req.rows : [];
+  if (!rows.length) return { ok: false, error: 'invalid_input' };
+  if (rows.length > 300) return { ok: false, error: 'too_many_rows' };
+  var results = [], created = 0, updated = 0;
+  rows.forEach(function (r, i) {
+    r = r || {};
+    var lock = LockService.getScriptLock();
+    lock.waitLock(30000);
+    var res;
+    try { freshenExec_(); res = saveEntity_({ kind: req.kind, id: r.id || null, data: r.data || {} }, user); }
+    catch (e) { res = { ok: false, error: String((e && e.message) || e) }; }
+    finally { try { lock.releaseLock(); } catch (e2) {} }
+    if (res.ok) { if (r.id) updated++; else created++; }
+    results.push({ row: i, ok: !!res.ok, error: res.error || null, id: res.entity ? res.entity.id : null, code: res.entity ? (res.entity.code || null) : (res.code || null) });
+  });
+  logAudit_('admin_import_' + req.kind, user.id, (created + updated) + '/' + rows.length);
+  return { ok: true, created: created, updated: updated, total: rows.length, results: results };
+}
+
 function saveEntity_(req, user) {
   var kind = req.kind;
   var sheetName = hasOwn_(ENTITY_SHEET, kind) ? ENTITY_SHEET[kind] : null;
