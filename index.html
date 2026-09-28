@@ -1354,6 +1354,17 @@
   .bm-pin{background:none;border:0;}
   .bm-pin svg{width:34px;height:44px;filter:drop-shadow(0 2px 3px rgba(0,0,0,.28));}
   .bm-actions{gap:10px;flex-wrap:wrap;}
+  .dp-photo{margin-top:6px;padding:10px 12px;border:1px dashed var(--border);border-radius:12px;background:var(--card);}
+  .dp-photo-l{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:700;margin-bottom:8px;}
+  .dp-photo-l svg{width:16px;height:16px;}
+  .dp-photo-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+  .dp-photo-row .btn{min-height:44px;}
+  .dpThumb{width:56px;height:56px;object-fit:cover;border-radius:10px;border:1px solid var(--border-soft);}
+  .dpPhotoState{font-size:12.5px;font-weight:700;}
+  .dpPhotoState.busy{color:var(--muted);} .dpPhotoState.ok{color:var(--green-dark);} .dpPhotoState.err{color:var(--c-danger);}
+  .ciOwn{font-size:11.5px;font-weight:800;color:var(--green-dark);background:var(--green-pale);border-radius:999px;padding:1px 8px;margin-inline-start:4px;}
+  .eLine.bad{outline:2px solid var(--c-danger);outline-offset:2px;border-radius:12px;}
+  #eSubmit.busy{opacity:.7;pointer-events:none;}
   .crItem{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;gap:8px 10px;align-items:end;padding:10px 12px;border:1px solid var(--border-soft);border-radius:12px;background:var(--card);margin-bottom:8px;}
   .crItem .ciP{grid-column:1/-1;}
   .crItem .field{margin:0;}
@@ -1696,7 +1707,7 @@ var ICON_B64 = 'iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAYAAAA9zQYyAAAcG0lEQVR42u2dd1cU
 // Stamped by tools/stamp-build.js at publish time so the running app can
 // say which build it is — a cached page is the usual reason a shipped change
 // seems missing.
-var BUILD_ID = '2026-09-28 21:15 · 57e788e';
+var BUILD_ID = '2026-09-28 21:27 · 67fd5a5';
 var LOGO_SRC = 'data:image/png;base64,' + LOGO_B64;
 var ICON_SRC = LOGO_SRC; // same asset — see the comment above LOGO_B64
 
@@ -1899,7 +1910,7 @@ var L = {
     err_wrongCurrentPassword:'كلمة المرور الحالية غير صحيحة', err_network:'تعذّر الاتصال بالخادم — تحقق من الإنترنت',
     err_noSourceSelected:'الرجاء اختيار مصدر أولاً', err_titleRequired:'الرجاء إدخال عنوان',
     noData:'لا توجد بيانات', loading:'جارِ التحميل...', total:'الإجمالي', kind_location_to_cluster:'مدير الفرع ← مدير المنطقة',
-    kind_cluster_to_collector:'مدير المنطقة ← مُحصّل', kind_deposit:'إيداع بنكي', filter:'تصفية', all:'الكل', entity_bank:'البنك', us_searchHint:'ابحث بالاسم أو البريد أو الرقم', us_allRoles:'كل الصلاحيات', us_disable:'إيقاف الحساب', us_enable:'تفعيل الحساب', us_confirmDisable:'إيقاف حساب {name}؟ لن يستطيع الدخول حتى يُفعَّل من جديد، ولا يُحذف شيء من سجلاته.', us_confirmEnable:'تفعيل حساب {name} من جديد؟', us_disabledNow:'أُوقف حساب {name}', us_enabledNow:'فُعِّل حساب {name}', bc2_title:'المُحصّلون', bc2_hint:'مُحصّل هذا الفرع يستلم نقديته بعد اعتماد نائب مدير العمليات. اختر من كل المُحصّلين؛ من يعمل في منطقة أخرى لا يُختار، لأن لكل شخص منطقة واحدة.', bc2_current:'المُحصّل الحالي', bc2_otherArea:'يعمل في منطقة {area}. لكل شخص منطقة واحدة', bc2_disabled:'حساب موقوف', bc2_none:'لا يحصّل لأي فرع بعد', bc2_inFlight:'لا يُغيَّر المُحصّل الآن: نقدية هذا الفرع في الطريق إلى {who}.', bc2_confirm:'تعيين {who} مُحصّلاً لفرع {branch}؟', bc2_saved:'أصبح {who} مُحصّل فرع {branch}', bc2_search:'ابحث باسم المُحصّل أو رقمه', bc2_empty:'لا يوجد مُحصّلون بعد. أضف مستخدماً بصلاحية مُحصّل من شاشة المستخدمين.', inv2_doneTitle:'تم تفعيل حسابك', inv2_doneBody:'ادخل الآن ببريدك وكلمة المرور الجديدة.', inv2_signIn:'تسجيل الدخول', inv2_org:'الناقل الأفضل للغاز', inv2_app:'نظام تحصيل النقدية', inv2_youCan:'ستتمكن في النظام من:', inv2_hi:'أهلاً {name}', inv2_lead:'أنت {role} في نظام تحصيل النقدية. اختر كلمة مرور لتفعيل حسابك.', inv2_leadBy:'{who} أضافك بصفتك {role}. اختر كلمة مرور لتفعيل حسابك.', inv2_s1:'قبول الدعوة', inv2_s2:'كلمة المرور', inv2_s3:'الدخول', inv2_pw:'كلمة المرور الجديدة', inv2_pw2:'أعد كتابة كلمة المرور', inv2_ckLen:'8 أحرف على الأقل', inv2_ckMix:'أحرف وأرقام معاً', inv2_ckSame:'كلمتا المرور متطابقتان', inv2_go:'تفعيل الحساب', inv2_going:'جارٍ تفعيل الحساب…', inv2_valid:'الدعوة صالحة حتى {date}', inv2_does_store_manager:'تسجيل مبيعات فرعك ومصروفاته يومياً|تسليم نقدية الفرع لمدير المنطقة|متابعة كل تسليم حتى اعتماده', inv2_does_driver:'تسجيل مبيعات سيارتك يومياً|تسليم نقدية السيارة لمدير الفرع|متابعة ما سلّمته وما اعتُمد', inv2_does_cluster_manager:'استلام نقدية فروع منطقتك وتأكيدها|إرسال نقدية كل فرع إلى مُحصّله|متابعة فروعك ومُحصّليها من شاشة واحدة', inv2_does_collector:'استلام نقدية الفروع المسندة إليك|إيداعها في البنك مع مرجع الإيداع|متابعة ما استلمته وما أودعته', inv2_does_deputy_operations_manager:'مراجعة طلبات مديري المناطق واعتمادها|إعادة أي طلب مع سبب للتصحيح|متابعة التحصيل في كل الفروع', inv2_does_operations_manager:'متابعة التحصيل والتسليمات في كل الفروع|مراجعة التقارير والمؤشرات|متابعة المخاطر والشكاوى', inv2_does_finance:'متابعة النقدية من الفرع حتى البنك|مطابقة الإيداعات مع كشف البنك|مراجعة الفروقات والتقارير', inv2_does_accountant:'مراجعة الإدخالات والتسليمات|مطابقة الإيداعات مع كشف البنك|استخراج التقارير', inv2_does_admin:'إدارة المستخدمين والصلاحيات|إدارة الفروع والمناطق والبيانات الأساسية|متابعة كل ما يجري في النظام', sort_by:'الترتيب', sort_default:'حسب الإدخال', sort_new:'الأحدث أولاً', sort_old:'الأقدم أولاً', sort_high:'المبلغ: الأعلى أولاً', sort_low:'المبلغ: الأقل أولاً', bm_title:'موقع الفرع على الخريطة', bm_hint:'اضغط على الخريطة لتثبيت موقع الفرع أو اسحب الدبوس، أو استخدم موقعك الحالي وأنت داخل الفرع، أو الصق رابط الموقع من خرائط Google.', bm_here:'موقعي الحالي', bm_pastePh:'رابط خرائط Google أو 24.7136, 46.6753', bm_go:'تحديد', bm_none:'لم يُحدَّد موقع الفرع بعد', bm_openGoogle:'فتح في خرائط Google', bm_noZone:'بلا نطاق', bm_suggest:'أقرب فرع: {branch} ({dist}) — النطاق المقترح:', bm_m:'م', bm_km:'كم', bm_applyZone:'اعتماد هذا النطاق', bm_zoneMatches:'يطابق نطاق الفرع', bm_save:'حفظ الموقع', bm_clear:'إزالة الموقع', bm_noGeo:'المتصفح لا يدعم تحديد الموقع', bm_geoDenied:'تعذّر الحصول على موقعك — اسمح للمتصفح بالوصول إلى الموقع ثم أعد المحاولة', bm_badPaste:'لم نجد إحداثيات في النص — الصق رابطاً كاملاً من خرائط Google أو إحداثيات مثل 24.7136, 46.6753', bm_loadFail:'تعذّر تحميل الخريطة — تحقق من الاتصال', calc_totalIn:'إجمالي التحصيلات', calc_totalOut:'إجمالي الخصومات', entry_pickCustomer:'اختر العميل…', entry_creditAddItem:'+ صنف', entry_creditItemsTotal:'مجموع الأصناف', err_creditItemsIncomplete:'أكمل كل صنف: المنتج والكمية', rec_code:'الرقم', rec_codeAuto:'يُمنح الرقم تلقائياً عند الحفظ', admin_customers:'العملاء', admin_cities:'المدن', admin_addCustomer:'إضافة عميل', admin_addCity:'إضافة مدينة', cu_code:'رقم العميل', cu_codeAuto:'يُمنح رقم العميل تلقائياً عند الحفظ', cu_name:'اسم العميل', cu_phone:'الجوال', ci_name:'اسم المدينة', ci_uses:'الفروع', cu_import:'استيراد قائمة', cu_importTitle:'استيراد العملاء', cu_importHint:'الصق الأسماء، اسماً في كل سطر، أو اختر ملف Excel أو CSV. لإضافة المدينة والجوال انسخ أعمدتها من Excel كما هي، أو افصل بينها بفاصلة. يُمنح كل عميل جديد رقماً، ويُتخطى كل اسم مسجّل مسبقاً.', cu_importPh:'مثال: شركة الغذاء النوعي للتجارة - الرمال', cu_importFile:'اختيار ملف Excel أو CSV', cu_importCheck:'مراجعة القائمة', cu_impNew:'جديد', cu_impOnFile:'مسجّل مسبقاً', cu_impRepeat:'مكرر في القائمة', cu_impAdd:'إضافة {n} عميل', cu_impNothing:'لا يوجد اسم جديد لإضافته', cu_impDone:'أُضيف {n} عميل، وتُخطي {s}', cu_impEmpty:'لم يُعثر على أسماء في القائمة', cu_impLoadFail:'تعذّرت قراءة الملف — جرّب حفظه بصيغة CSV', pf_kindCustomer:'عميل', pf_kindCity:'مدينة', err_duplicateCustomer:'هذا العميل مسجّل مسبقاً برقم {code}', err_duplicateCity:'هذه المدينة موجودة في القائمة', err_unknownCustomer:'العميل غير مسجّل — اختره من القائمة أو اطلب من مدير النظام إضافته', err_invalidCustomer:'حساب هذا العميل موقوف، فلا يُسجَّل عليه بيع آجل جديد', err_creditItemsMismatch:'مبلغ البيع الآجل لا يطابق مجموع الأصناف', err_priceLocked:'سعر هذا المنتج ثابت ولا يُغيَّر', err_invalidProduct:'المنتج غير موجود أو موقوف', err_invalidCoordinates:'إحداثيات الموقع غير صحيحة'
+    kind_cluster_to_collector:'مدير المنطقة ← مُحصّل', kind_deposit:'إيداع بنكي', filter:'تصفية', all:'الكل', entity_bank:'البنك', entry_transferTitle:'تحويلات العملاء البنكية', entry_transferHint:'ما حوّله العملاء مباشرة إلى حساب الشركة. يُخصم من النقدية الواجب تسليمها، لأنه ضمن المبيعات ولم يُستلم نقداً.', entry_transferAmount:'مبلغ التحويل', entry_addTransfer:'+ إضافة تحويل', entry_addDeposit:'+ إضافة موازنة', entry_depositDevice:'جهاز نقطة البيع', entry_pickDevice:'اختر الجهاز…', entry_noDevices:'لا توجد أجهزة لهذا الفرع', entry_depositPhoto:'صورة الإيصال', entry_photoUploading:'جارٍ رفع الصورة…', entry_photoReady:'رُفعت الصورة', entry_photoFailed:'تعذّر رفع الصورة. حاول مرة أخرى.', err_depositNeedsPhoto:'أرفق صورة إيصال كل موازنة.', err_depositNeedsPos:'اختر جهاز نقطة البيع لكل موازنة.', err_photoUploading:'انتظر حتى يكتمل رفع الصورة.', err_invalidPhoto:'الصورة غير صالحة لهذه الموازنة. التقط صورة جديدة.', err_invalidPos:'هذا الجهاز لا يتبع هذا الفرع.', entry_priceCustomer:'سعر خاص بهذا العميل', entry_priceCustomerTag:'سعر العميل', us_searchHint:'ابحث بالاسم أو البريد أو الرقم', us_allRoles:'كل الصلاحيات', us_disable:'إيقاف الحساب', us_enable:'تفعيل الحساب', us_confirmDisable:'إيقاف حساب {name}؟ لن يستطيع الدخول حتى يُفعَّل من جديد، ولا يُحذف شيء من سجلاته.', us_confirmEnable:'تفعيل حساب {name} من جديد؟', us_disabledNow:'أُوقف حساب {name}', us_enabledNow:'فُعِّل حساب {name}', bc2_title:'المُحصّلون', bc2_hint:'مُحصّل هذا الفرع يستلم نقديته بعد اعتماد نائب مدير العمليات. اختر من كل المُحصّلين؛ من يعمل في منطقة أخرى لا يُختار، لأن لكل شخص منطقة واحدة.', bc2_current:'المُحصّل الحالي', bc2_otherArea:'يعمل في منطقة {area}. لكل شخص منطقة واحدة', bc2_disabled:'حساب موقوف', bc2_none:'لا يحصّل لأي فرع بعد', bc2_inFlight:'لا يُغيَّر المُحصّل الآن: نقدية هذا الفرع في الطريق إلى {who}.', bc2_confirm:'تعيين {who} مُحصّلاً لفرع {branch}؟', bc2_saved:'أصبح {who} مُحصّل فرع {branch}', bc2_search:'ابحث باسم المُحصّل أو رقمه', bc2_empty:'لا يوجد مُحصّلون بعد. أضف مستخدماً بصلاحية مُحصّل من شاشة المستخدمين.', inv2_doneTitle:'تم تفعيل حسابك', inv2_doneBody:'ادخل الآن ببريدك وكلمة المرور الجديدة.', inv2_signIn:'تسجيل الدخول', inv2_org:'الناقل الأفضل للغاز', inv2_app:'نظام تحصيل النقدية', inv2_youCan:'ستتمكن في النظام من:', inv2_hi:'أهلاً {name}', inv2_lead:'أنت {role} في نظام تحصيل النقدية. اختر كلمة مرور لتفعيل حسابك.', inv2_leadBy:'{who} أضافك بصفتك {role}. اختر كلمة مرور لتفعيل حسابك.', inv2_s1:'قبول الدعوة', inv2_s2:'كلمة المرور', inv2_s3:'الدخول', inv2_pw:'كلمة المرور الجديدة', inv2_pw2:'أعد كتابة كلمة المرور', inv2_ckLen:'8 أحرف على الأقل', inv2_ckMix:'أحرف وأرقام معاً', inv2_ckSame:'كلمتا المرور متطابقتان', inv2_go:'تفعيل الحساب', inv2_going:'جارٍ تفعيل الحساب…', inv2_valid:'الدعوة صالحة حتى {date}', inv2_does_store_manager:'تسجيل مبيعات فرعك ومصروفاته يومياً|تسليم نقدية الفرع لمدير المنطقة|متابعة كل تسليم حتى اعتماده', inv2_does_driver:'تسجيل مبيعات سيارتك يومياً|تسليم نقدية السيارة لمدير الفرع|متابعة ما سلّمته وما اعتُمد', inv2_does_cluster_manager:'استلام نقدية فروع منطقتك وتأكيدها|إرسال نقدية كل فرع إلى مُحصّله|متابعة فروعك ومُحصّليها من شاشة واحدة', inv2_does_collector:'استلام نقدية الفروع المسندة إليك|إيداعها في البنك مع مرجع الإيداع|متابعة ما استلمته وما أودعته', inv2_does_deputy_operations_manager:'مراجعة طلبات مديري المناطق واعتمادها|إعادة أي طلب مع سبب للتصحيح|متابعة التحصيل في كل الفروع', inv2_does_operations_manager:'متابعة التحصيل والتسليمات في كل الفروع|مراجعة التقارير والمؤشرات|متابعة المخاطر والشكاوى', inv2_does_finance:'متابعة النقدية من الفرع حتى البنك|مطابقة الإيداعات مع كشف البنك|مراجعة الفروقات والتقارير', inv2_does_accountant:'مراجعة الإدخالات والتسليمات|مطابقة الإيداعات مع كشف البنك|استخراج التقارير', inv2_does_admin:'إدارة المستخدمين والصلاحيات|إدارة الفروع والمناطق والبيانات الأساسية|متابعة كل ما يجري في النظام', sort_by:'الترتيب', sort_default:'حسب الإدخال', sort_new:'الأحدث أولاً', sort_old:'الأقدم أولاً', sort_high:'المبلغ: الأعلى أولاً', sort_low:'المبلغ: الأقل أولاً', bm_title:'موقع الفرع على الخريطة', bm_hint:'اضغط على الخريطة لتثبيت موقع الفرع أو اسحب الدبوس، أو استخدم موقعك الحالي وأنت داخل الفرع، أو الصق رابط الموقع من خرائط Google.', bm_here:'موقعي الحالي', bm_pastePh:'رابط خرائط Google أو 24.7136, 46.6753', bm_go:'تحديد', bm_none:'لم يُحدَّد موقع الفرع بعد', bm_openGoogle:'فتح في خرائط Google', bm_noZone:'بلا نطاق', bm_suggest:'أقرب فرع: {branch} ({dist}) — النطاق المقترح:', bm_m:'م', bm_km:'كم', bm_applyZone:'اعتماد هذا النطاق', bm_zoneMatches:'يطابق نطاق الفرع', bm_save:'حفظ الموقع', bm_clear:'إزالة الموقع', bm_noGeo:'المتصفح لا يدعم تحديد الموقع', bm_geoDenied:'تعذّر الحصول على موقعك — اسمح للمتصفح بالوصول إلى الموقع ثم أعد المحاولة', bm_badPaste:'لم نجد إحداثيات في النص — الصق رابطاً كاملاً من خرائط Google أو إحداثيات مثل 24.7136, 46.6753', bm_loadFail:'تعذّر تحميل الخريطة — تحقق من الاتصال', calc_totalIn:'إجمالي التحصيلات', calc_totalOut:'إجمالي الخصومات', entry_pickCustomer:'اختر العميل…', entry_creditAddItem:'+ صنف', entry_creditItemsTotal:'مجموع الأصناف', err_creditItemsIncomplete:'أكمل كل صنف: المنتج والكمية', rec_code:'الرقم', rec_codeAuto:'يُمنح الرقم تلقائياً عند الحفظ', admin_customers:'العملاء', admin_cities:'المدن', admin_addCustomer:'إضافة عميل', admin_addCity:'إضافة مدينة', cu_code:'رقم العميل', cu_codeAuto:'يُمنح رقم العميل تلقائياً عند الحفظ', cu_name:'اسم العميل', cu_phone:'الجوال', ci_name:'اسم المدينة', ci_uses:'الفروع', cu_import:'استيراد قائمة', cu_importTitle:'استيراد العملاء', cu_importHint:'الصق الأسماء، اسماً في كل سطر، أو اختر ملف Excel أو CSV. لإضافة المدينة والجوال انسخ أعمدتها من Excel كما هي، أو افصل بينها بفاصلة. يُمنح كل عميل جديد رقماً، ويُتخطى كل اسم مسجّل مسبقاً.', cu_importPh:'مثال: شركة الغذاء النوعي للتجارة - الرمال', cu_importFile:'اختيار ملف Excel أو CSV', cu_importCheck:'مراجعة القائمة', cu_impNew:'جديد', cu_impOnFile:'مسجّل مسبقاً', cu_impRepeat:'مكرر في القائمة', cu_impAdd:'إضافة {n} عميل', cu_impNothing:'لا يوجد اسم جديد لإضافته', cu_impDone:'أُضيف {n} عميل، وتُخطي {s}', cu_impEmpty:'لم يُعثر على أسماء في القائمة', cu_impLoadFail:'تعذّرت قراءة الملف — جرّب حفظه بصيغة CSV', pf_kindCustomer:'عميل', pf_kindCity:'مدينة', err_duplicateCustomer:'هذا العميل مسجّل مسبقاً برقم {code}', err_duplicateCity:'هذه المدينة موجودة في القائمة', err_unknownCustomer:'العميل غير مسجّل — اختره من القائمة أو اطلب من مدير النظام إضافته', err_invalidCustomer:'حساب هذا العميل موقوف، فلا يُسجَّل عليه بيع آجل جديد', err_creditItemsMismatch:'مبلغ البيع الآجل لا يطابق مجموع الأصناف', err_priceLocked:'سعر هذا المنتج ثابت ولا يُغيَّر', err_invalidProduct:'المنتج غير موجود أو موقوف', err_invalidCoordinates:'إحداثيات الموقع غير صحيحة'
   },
   en: {
     appName:'Best Gas Collections', login:'Sign In', email:'Email', password:'Password',
@@ -2067,7 +2078,7 @@ var L = {
     err_wrongCurrentPassword:'Current password is incorrect', err_network:"Couldn't reach the server — check your connection",
     err_noSourceSelected:'Please pick a source first', err_titleRequired:'Please enter a title',
     noData:'No data', loading:'Loading...', total:'Total', kind_location_to_cluster:'Branch → Area',
-    kind_cluster_to_collector:'Area → Collector', kind_deposit:'Bank deposit', filter:'Filter', all:'All', entity_bank:'Bank', us_searchHint:'Search by name, email or number', us_allRoles:'All roles', us_disable:'Stop account', us_enable:'Turn account on', us_confirmDisable:'Stop {name}\'s account? They cannot sign in until it is turned back on. None of their records are deleted.', us_confirmEnable:'Turn {name}\'s account back on?', us_disabledNow:'{name}\'s account is stopped', us_enabledNow:'{name}\'s account is on', bc2_title:'Collectors', bc2_hint:'This branch\'s collector receives its cash after the Deputy Operations Manager validates it. Choose from every collector; one who works in another area cannot be chosen, since each person serves one area.', bc2_current:'Current collector', bc2_otherArea:'Works in {area}. Each person serves one area', bc2_disabled:'Account stopped', bc2_none:'Not collecting for any branch yet', bc2_inFlight:'The collector cannot change now: this branch\'s cash is on its way to {who}.', bc2_confirm:'Make {who} the collector for {branch}?', bc2_saved:'{who} now collects for {branch}', bc2_search:'Search by collector name or number', bc2_empty:'No collectors yet. Add a user with the Collector role on the Users screen.', inv2_doneTitle:'Your account is active', inv2_doneBody:'Sign in now with your email and new password.', inv2_signIn:'Sign in', inv2_org:'Best Gas Carrier Co.', inv2_app:'Best Gas Collections', inv2_youCan:'In the system you will:', inv2_hi:'Hello {name}', inv2_lead:'You are {role} in the Cash Collection System. Choose a password to activate your account.', inv2_leadBy:'{who} added you as {role}. Choose a password to activate your account.', inv2_s1:'Accept invitation', inv2_s2:'Password', inv2_s3:'Sign in', inv2_pw:'New password', inv2_pw2:'Type the password again', inv2_ckLen:'At least 8 characters', inv2_ckMix:'Letters and numbers', inv2_ckSame:'Both passwords match', inv2_go:'Activate account', inv2_going:'Activating your account…', inv2_valid:'Invitation valid until {date}', inv2_does_store_manager:'Record your branch sales and expenses every day|Hand the branch cash to the area manager|Follow each handover until it is approved', inv2_does_driver:'Record your vehicle sales every day|Hand the vehicle cash to the branch manager|See what you handed over and what was approved', inv2_does_cluster_manager:'Receive and confirm cash from your branches|Send each branch\'s cash to its collector|Follow your branches and collectors on one screen', inv2_does_collector:'Receive cash from the branches assigned to you|Deposit it at the bank with the reference|See what you received and deposited', inv2_does_deputy_operations_manager:'Review and approve area managers\' requests|Send any request back with a reason|Follow collection across every branch', inv2_does_operations_manager:'Follow collection and handovers in every branch|Review reports and indicators|Follow risks and complaints', inv2_does_finance:'Follow cash from branch to bank|Match deposits with the bank statement|Review differences and reports', inv2_does_accountant:'Review entries and handovers|Match deposits with the bank statement|Export reports', inv2_does_admin:'Manage users and permissions|Manage branches, areas and master data|See everything happening in the system', sort_by:'Sort', sort_default:'As entered', sort_new:'Newest first', sort_old:'Oldest first', sort_high:'Amount: highest first', sort_low:'Amount: lowest first', bm_title:'Branch on the map', bm_hint:'Tap the map to pin the branch or drag the pin, use your current location while inside the branch, or paste its Google Maps link.', bm_here:'My current location', bm_pastePh:'Google Maps link or 24.7136, 46.6753', bm_go:'Locate', bm_none:'The branch has no position yet', bm_openGoogle:'Open in Google Maps', bm_noZone:'No zone', bm_suggest:'Nearest branch: {branch} ({dist}) — suggested zone:', bm_m:'m', bm_km:'km', bm_applyZone:'Use this zone', bm_zoneMatches:'Matches the branch zone', bm_save:'Save position', bm_clear:'Remove position', bm_noGeo:'This browser cannot share your location', bm_geoDenied:'Could not get your location — allow location access and try again', bm_badPaste:'No coordinates found — paste a full Google Maps link or coordinates like 24.7136, 46.6753', bm_loadFail:'The map could not load — check the connection', calc_totalIn:'Total collected', calc_totalOut:'Total deductions', entry_pickCustomer:'Choose the customer…', entry_creditAddItem:'+ Product', entry_creditItemsTotal:'Products total', err_creditItemsIncomplete:'Complete every product line: product and quantity', rec_code:'No.', rec_codeAuto:'The number is assigned when you save', admin_customers:'Customers', admin_cities:'Cities', admin_addCustomer:'Add customer', admin_addCity:'Add city', cu_code:'Customer no.', cu_codeAuto:'The customer number is assigned when you save', cu_name:'Customer name', cu_phone:'Mobile', ci_name:'City name', ci_uses:'Branches', cu_import:'Import a list', cu_importTitle:'Import customers', cu_importHint:'Paste the names, one per line, or choose an Excel or CSV file. To add city and mobile, copy their columns straight from Excel or separate them with commas (quote a name that contains a comma). Each new customer gets a number; names already on file are skipped.', cu_importPh:'e.g. Quality Food Trading Co - Al Rimal', cu_importFile:'Choose an Excel or CSV file', cu_importCheck:'Check the list', cu_impNew:'New', cu_impOnFile:'Already on file', cu_impRepeat:'Repeated in the list', cu_impAdd:'Add {n} customers', cu_impNothing:'No new name to add', cu_impDone:'Added {n} customers, skipped {s}', cu_impEmpty:'No names found in the list', cu_impLoadFail:'Could not read the file — try saving it as CSV', pf_kindCustomer:'Customer', pf_kindCity:'City', err_duplicateCustomer:'This customer is already on file as {code}', err_duplicateCity:'This city is already on the list', err_unknownCustomer:'Customer not on file — pick one from the list or ask the administrator to add it', err_invalidCustomer:'This customer\'s account is closed to new credit', err_creditItemsMismatch:'The credit amount does not match its items', err_priceLocked:'This product has a fixed price', err_invalidProduct:'Product not found or inactive', err_invalidCoordinates:'The map position is not valid'
+    kind_cluster_to_collector:'Area → Collector', kind_deposit:'Bank deposit', filter:'Filter', all:'All', entity_bank:'Bank', entry_transferTitle:'Customer bank transfers', entry_transferHint:'What customers transferred straight to the company account. It comes off the cash to hand over: it is in the sales, but never arrived as cash.', entry_transferAmount:'Transfer amount', entry_addTransfer:'+ Add a transfer', entry_addDeposit:'+ Add a الموازنة', entry_depositDevice:'POS device', entry_pickDevice:'Choose the device…', entry_noDevices:'No devices for this branch', entry_depositPhoto:'Slip photo', entry_photoUploading:'Uploading the photo…', entry_photoReady:'Photo uploaded', entry_photoFailed:'The photo did not upload. Try again.', err_depositNeedsPhoto:'Attach the slip photo for each الموازنة.', err_depositNeedsPos:'Choose the POS device for each الموازنة.', err_photoUploading:'Wait for the photo to finish uploading.', err_invalidPhoto:'This photo cannot be used for this الموازنة. Take a new one.', err_invalidPos:'This device does not belong to this branch.', entry_priceCustomer:'This customer\'s own price', entry_priceCustomerTag:'Customer price', us_searchHint:'Search by name, email or number', us_allRoles:'All roles', us_disable:'Stop account', us_enable:'Turn account on', us_confirmDisable:'Stop {name}\'s account? They cannot sign in until it is turned back on. None of their records are deleted.', us_confirmEnable:'Turn {name}\'s account back on?', us_disabledNow:'{name}\'s account is stopped', us_enabledNow:'{name}\'s account is on', bc2_title:'Collectors', bc2_hint:'This branch\'s collector receives its cash after the Deputy Operations Manager validates it. Choose from every collector; one who works in another area cannot be chosen, since each person serves one area.', bc2_current:'Current collector', bc2_otherArea:'Works in {area}. Each person serves one area', bc2_disabled:'Account stopped', bc2_none:'Not collecting for any branch yet', bc2_inFlight:'The collector cannot change now: this branch\'s cash is on its way to {who}.', bc2_confirm:'Make {who} the collector for {branch}?', bc2_saved:'{who} now collects for {branch}', bc2_search:'Search by collector name or number', bc2_empty:'No collectors yet. Add a user with the Collector role on the Users screen.', inv2_doneTitle:'Your account is active', inv2_doneBody:'Sign in now with your email and new password.', inv2_signIn:'Sign in', inv2_org:'Best Gas Carrier Co.', inv2_app:'Best Gas Collections', inv2_youCan:'In the system you will:', inv2_hi:'Hello {name}', inv2_lead:'You are {role} in the Cash Collection System. Choose a password to activate your account.', inv2_leadBy:'{who} added you as {role}. Choose a password to activate your account.', inv2_s1:'Accept invitation', inv2_s2:'Password', inv2_s3:'Sign in', inv2_pw:'New password', inv2_pw2:'Type the password again', inv2_ckLen:'At least 8 characters', inv2_ckMix:'Letters and numbers', inv2_ckSame:'Both passwords match', inv2_go:'Activate account', inv2_going:'Activating your account…', inv2_valid:'Invitation valid until {date}', inv2_does_store_manager:'Record your branch sales and expenses every day|Hand the branch cash to the area manager|Follow each handover until it is approved', inv2_does_driver:'Record your vehicle sales every day|Hand the vehicle cash to the branch manager|See what you handed over and what was approved', inv2_does_cluster_manager:'Receive and confirm cash from your branches|Send each branch\'s cash to its collector|Follow your branches and collectors on one screen', inv2_does_collector:'Receive cash from the branches assigned to you|Deposit it at the bank with the reference|See what you received and deposited', inv2_does_deputy_operations_manager:'Review and approve area managers\' requests|Send any request back with a reason|Follow collection across every branch', inv2_does_operations_manager:'Follow collection and handovers in every branch|Review reports and indicators|Follow risks and complaints', inv2_does_finance:'Follow cash from branch to bank|Match deposits with the bank statement|Review differences and reports', inv2_does_accountant:'Review entries and handovers|Match deposits with the bank statement|Export reports', inv2_does_admin:'Manage users and permissions|Manage branches, areas and master data|See everything happening in the system', sort_by:'Sort', sort_default:'As entered', sort_new:'Newest first', sort_old:'Oldest first', sort_high:'Amount: highest first', sort_low:'Amount: lowest first', bm_title:'Branch on the map', bm_hint:'Tap the map to pin the branch or drag the pin, use your current location while inside the branch, or paste its Google Maps link.', bm_here:'My current location', bm_pastePh:'Google Maps link or 24.7136, 46.6753', bm_go:'Locate', bm_none:'The branch has no position yet', bm_openGoogle:'Open in Google Maps', bm_noZone:'No zone', bm_suggest:'Nearest branch: {branch} ({dist}) — suggested zone:', bm_m:'m', bm_km:'km', bm_applyZone:'Use this zone', bm_zoneMatches:'Matches the branch zone', bm_save:'Save position', bm_clear:'Remove position', bm_noGeo:'This browser cannot share your location', bm_geoDenied:'Could not get your location — allow location access and try again', bm_badPaste:'No coordinates found — paste a full Google Maps link or coordinates like 24.7136, 46.6753', bm_loadFail:'The map could not load — check the connection', calc_totalIn:'Total collected', calc_totalOut:'Total deductions', entry_pickCustomer:'Choose the customer…', entry_creditAddItem:'+ Product', entry_creditItemsTotal:'Products total', err_creditItemsIncomplete:'Complete every product line: product and quantity', rec_code:'No.', rec_codeAuto:'The number is assigned when you save', admin_customers:'Customers', admin_cities:'Cities', admin_addCustomer:'Add customer', admin_addCity:'Add city', cu_code:'Customer no.', cu_codeAuto:'The customer number is assigned when you save', cu_name:'Customer name', cu_phone:'Mobile', ci_name:'City name', ci_uses:'Branches', cu_import:'Import a list', cu_importTitle:'Import customers', cu_importHint:'Paste the names, one per line, or choose an Excel or CSV file. To add city and mobile, copy their columns straight from Excel or separate them with commas (quote a name that contains a comma). Each new customer gets a number; names already on file are skipped.', cu_importPh:'e.g. Quality Food Trading Co - Al Rimal', cu_importFile:'Choose an Excel or CSV file', cu_importCheck:'Check the list', cu_impNew:'New', cu_impOnFile:'Already on file', cu_impRepeat:'Repeated in the list', cu_impAdd:'Add {n} customers', cu_impNothing:'No new name to add', cu_impDone:'Added {n} customers, skipped {s}', cu_impEmpty:'No names found in the list', cu_impLoadFail:'Could not read the file — try saving it as CSV', pf_kindCustomer:'Customer', pf_kindCity:'City', err_duplicateCustomer:'This customer is already on file as {code}', err_duplicateCity:'This city is already on the list', err_unknownCustomer:'Customer not on file — pick one from the list or ask the administrator to add it', err_invalidCustomer:'This customer\'s account is closed to new credit', err_creditItemsMismatch:'The credit amount does not match its items', err_priceLocked:'This product has a fixed price', err_invalidProduct:'Product not found or inactive', err_invalidCoordinates:'The map position is not valid'
   },
   ur: {
     appName:'بیسٹ گیس — نقد وصولی نظام', login:'لاگ ان', email:'ای میل', password:'پاس ورڈ',
@@ -2235,7 +2246,7 @@ var L = {
     err_wrongCurrentPassword:'موجودہ پاس ورڈ غلط ہے', err_network:'سرور سے رابطہ نہیں ہو سکا — انٹرنیٹ چیک کریں',
     err_noSourceSelected:'پہلے ایک ذریعہ منتخب کریں', err_titleRequired:'براہ کرم عنوان درج کریں',
     noData:'کوئی ڈیٹا نہیں', loading:'لوڈ ہو رہا ہے...', total:'کل', kind_location_to_cluster:'برانچ ← علاقہ',
-    kind_cluster_to_collector:'علاقہ ← کلکٹر', kind_deposit:'بینک جمع', filter:'فلٹر', all:'تمام', entity_bank:'بینک', us_searchHint:'نام، ای میل یا نمبر سے تلاش کریں', us_allRoles:'تمام کردار', us_disable:'اکاؤنٹ بند کریں', us_enable:'اکاؤنٹ چالو کریں', us_confirmDisable:'{name} کا اکاؤنٹ بند کریں؟ دوبارہ چالو ہونے تک لاگ ان نہیں ہو سکے گا، کوئی ریکارڈ حذف نہیں ہوگا۔', us_confirmEnable:'{name} کا اکاؤنٹ دوبارہ چالو کریں؟', us_disabledNow:'{name} کا اکاؤنٹ بند ہو گیا', us_enabledNow:'{name} کا اکاؤنٹ چالو ہو گیا', bc2_title:'کلکٹرز', bc2_hint:'اس برانچ کا کلکٹر نائب کی منظوری کے بعد نقدی وصول کرتا ہے۔ تمام کلکٹرز میں سے منتخب کریں؛ دوسرے علاقے والا منتخب نہیں ہو سکتا، ہر شخص کا ایک علاقہ۔', bc2_current:'موجودہ کلکٹر', bc2_otherArea:'{area} میں کام کرتا ہے۔ ہر شخص کا ایک علاقہ', bc2_disabled:'اکاؤنٹ بند', bc2_none:'ابھی کسی برانچ کا کلکٹر نہیں', bc2_inFlight:'ابھی کلکٹر نہیں بدلا جا سکتا: اس برانچ کی نقدی {who} کے پاس جا رہی ہے۔', bc2_confirm:'{who} کو {branch} کا کلکٹر بنائیں؟', bc2_saved:'{who} اب {branch} کا کلکٹر ہے', bc2_search:'کلکٹر کا نام یا نمبر تلاش کریں', bc2_empty:'ابھی کوئی کلکٹر نہیں۔ صارفین کی اسکرین سے کلکٹر شامل کریں۔', inv2_doneTitle:'آپ کا اکاؤنٹ فعال ہو گیا', inv2_doneBody:'اب اپنی ای میل اور نئے پاس ورڈ سے لاگ اِن کریں۔', inv2_signIn:'لاگ اِن', inv2_org:'بیسٹ گیس', inv2_app:'نقد وصولی نظام', inv2_youCan:'سسٹم میں آپ یہ کریں گے:', inv2_hi:'السلام علیکم {name}', inv2_lead:'آپ نقد وصولی نظام میں {role} ہیں۔ اکاؤنٹ فعال کرنے کے لیے پاس ورڈ منتخب کریں۔', inv2_leadBy:'{who} نے آپ کو بطور {role} شامل کیا ہے۔ اکاؤنٹ فعال کرنے کے لیے پاس ورڈ منتخب کریں۔', inv2_s1:'دعوت قبول', inv2_s2:'پاس ورڈ', inv2_s3:'لاگ اِن', inv2_pw:'نیا پاس ورڈ', inv2_pw2:'پاس ورڈ دوبارہ لکھیں', inv2_ckLen:'کم از کم 8 حروف', inv2_ckMix:'حروف اور نمبر', inv2_ckSame:'دونوں پاس ورڈ ایک جیسے', inv2_go:'اکاؤنٹ فعال کریں', inv2_going:'اکاؤنٹ فعال ہو رہا ہے…', inv2_valid:'دعوت {date} تک درست ہے', inv2_does_store_manager:'اپنی برانچ کی روزانہ فروخت اور اخراجات درج کریں|برانچ کی نقدی علاقہ منیجر کو دیں|ہر حوالگی کی منظوری تک پیروی کریں', inv2_does_driver:'اپنی گاڑی کی روزانہ فروخت درج کریں|گاڑی کی نقدی برانچ منیجر کو دیں|دیکھیں کیا دیا اور کیا منظور ہوا', inv2_does_cluster_manager:'اپنی برانچوں کی نقدی وصول اور تصدیق کریں|ہر برانچ کی نقدی اس کے کلکٹر کو بھیجیں|برانچیں اور کلکٹر ایک اسکرین پر دیکھیں', inv2_does_collector:'اپنی برانچوں کی نقدی وصول کریں|حوالہ نمبر کے ساتھ بینک میں جمع کریں|وصولی اور جمع شدہ رقم دیکھیں', inv2_does_deputy_operations_manager:'علاقہ منیجرز کی درخواستیں منظور کریں|کسی بھی درخواست کو وجہ کے ساتھ واپس کریں|تمام برانچوں کی وصولی دیکھیں', inv2_does_operations_manager:'تمام برانچوں کی وصولی اور حوالگیاں دیکھیں|رپورٹس دیکھیں|خطرات اور شکایات دیکھیں', inv2_does_finance:'برانچ سے بینک تک نقدی دیکھیں|جمع شدہ رقم کو بینک اسٹیٹمنٹ سے ملائیں|فرق اور رپورٹس دیکھیں', inv2_does_accountant:'اندراجات اور حوالگیاں دیکھیں|بینک اسٹیٹمنٹ سے ملائیں|رپورٹس نکالیں', inv2_does_admin:'صارفین اور اجازتیں سنبھالیں|برانچیں، علاقے اور بنیادی ڈیٹا سنبھالیں|سسٹم میں سب کچھ دیکھیں', sort_by:'ترتیب', sort_default:'اندراج کے مطابق', sort_new:'نئے پہلے', sort_old:'پرانے پہلے', sort_high:'رقم: زیادہ پہلے', sort_low:'رقم: کم پہلے', bm_title:'نقشے پر برانچ', bm_hint:'نقشے پر ٹیپ کریں یا پن گھسیٹیں، برانچ میں ہوں تو اپنا موجودہ مقام استعمال کریں، یا Google Maps کا لنک چسپاں کریں۔', bm_here:'میرا موجودہ مقام', bm_pastePh:'Google Maps لنک یا 24.7136, 46.6753', bm_go:'تلاش', bm_none:'برانچ کا مقام ابھی طے نہیں', bm_openGoogle:'Google Maps میں کھولیں', bm_noZone:'کوئی زون نہیں', bm_suggest:'قریب ترین برانچ: {branch} ({dist}) — تجویز کردہ زون:', bm_m:'م', bm_km:'کلومیٹر', bm_applyZone:'یہ زون لگائیں', bm_zoneMatches:'برانچ کے زون سے مطابق', bm_save:'مقام محفوظ کریں', bm_clear:'مقام ہٹائیں', bm_noGeo:'براؤزر مقام نہیں دے سکتا', bm_geoDenied:'آپ کا مقام نہیں ملا — اجازت دیں اور دوبارہ کوشش کریں', bm_badPaste:'کوئی مقام نہیں ملا — پورا لنک یا 24.7136, 46.6753 چسپاں کریں', bm_loadFail:'نقشہ لوڈ نہیں ہوا', calc_totalIn:'کل وصولی', calc_totalOut:'کل کٹوتیاں', entry_pickCustomer:'گاہک منتخب کریں…', entry_creditAddItem:'+ شے', entry_creditItemsTotal:'اشیاء کا مجموعہ', err_creditItemsIncomplete:'ہر شے مکمل کریں: پروڈکٹ اور مقدار', rec_code:'نمبر', rec_codeAuto:'محفوظ کرنے پر نمبر خود ملے گا', admin_customers:'گاہک', admin_cities:'شہر', admin_addCustomer:'گاہک شامل کریں', admin_addCity:'شہر شامل کریں', cu_code:'گاہک نمبر', cu_codeAuto:'محفوظ کرنے پر نمبر خود ملے گا', cu_name:'گاہک کا نام', cu_phone:'موبائل', ci_name:'شہر کا نام', ci_uses:'برانچیں', cu_import:'فہرست درآمد کریں', cu_importTitle:'گاہک درآمد کریں', cu_importHint:'نام چسپاں کریں، ہر سطر میں ایک، یا Excel/CSV فائل منتخب کریں۔ ہر نئے گاہک کو نمبر ملے گا، موجود نام چھوڑ دیے جائیں گے۔', cu_importPh:'مثال: کمپنی کا نام، شہر', cu_importFile:'Excel یا CSV فائل', cu_importCheck:'فہرست جانچیں', cu_impNew:'نیا', cu_impOnFile:'پہلے سے موجود', cu_impRepeat:'فہرست میں دہرایا گیا', cu_impAdd:'{n} گاہک شامل کریں', cu_impNothing:'کوئی نیا نام نہیں', cu_impDone:'{n} گاہک شامل، {s} چھوڑ دیے', cu_impEmpty:'فہرست میں کوئی نام نہیں ملا', cu_impLoadFail:'فائل نہیں پڑھی جا سکی', pf_kindCustomer:'گاہک', pf_kindCity:'شہر', err_duplicateCustomer:'یہ گاہک پہلے سے {code} پر موجود ہے', err_duplicateCity:'یہ شہر فہرست میں موجود ہے', err_unknownCustomer:'گاہک رجسٹرڈ نہیں', err_invalidCustomer:'اس گاہک کا کھاتہ بند ہے', err_creditItemsMismatch:'ادھار رقم اشیاء کے مجموعے سے مختلف ہے', err_priceLocked:'اس پروڈکٹ کی قیمت مقرر ہے', err_invalidProduct:'پروڈکٹ موجود نہیں', err_invalidCoordinates:'مقام درست نہیں'
+    kind_cluster_to_collector:'علاقہ ← کلکٹر', kind_deposit:'بینک جمع', filter:'فلٹر', all:'تمام', entity_bank:'بینک', entry_transferTitle:'گاہکوں کی بینک ٹرانسفر', entry_transferHint:'جو گاہکوں نے براہِ راست کمپنی کے اکاؤنٹ میں بھیجا۔ یہ نقدی سے منہا ہوتا ہے، کیونکہ یہ فروخت میں شامل ہے مگر نقد نہیں ملا۔', entry_transferAmount:'ٹرانسفر کی رقم', entry_addTransfer:'+ ٹرانسفر شامل کریں', entry_addDeposit:'+ موازنہ شامل کریں', entry_depositDevice:'POS مشین', entry_pickDevice:'مشین منتخب کریں…', entry_noDevices:'اس برانچ کی کوئی مشین نہیں', entry_depositPhoto:'رسید کی تصویر', entry_photoUploading:'تصویر اپ لوڈ ہو رہی ہے…', entry_photoReady:'تصویر اپ لوڈ ہو گئی', entry_photoFailed:'تصویر اپ لوڈ نہیں ہوئی۔ دوبارہ کوشش کریں۔', err_depositNeedsPhoto:'ہر موازنہ کی رسید کی تصویر لگائیں۔', err_depositNeedsPos:'ہر موازنہ کے لیے POS مشین منتخب کریں۔', err_photoUploading:'تصویر اپ لوڈ مکمل ہونے کا انتظار کریں۔', err_invalidPhoto:'یہ تصویر اس موازنہ کے لیے قابلِ استعمال نہیں۔ نئی تصویر لیں۔', err_invalidPos:'یہ مشین اس برانچ کی نہیں۔', entry_priceCustomer:'اس گاہک کی اپنی قیمت', entry_priceCustomerTag:'گاہک کی قیمت', us_searchHint:'نام، ای میل یا نمبر سے تلاش کریں', us_allRoles:'تمام کردار', us_disable:'اکاؤنٹ بند کریں', us_enable:'اکاؤنٹ چالو کریں', us_confirmDisable:'{name} کا اکاؤنٹ بند کریں؟ دوبارہ چالو ہونے تک لاگ ان نہیں ہو سکے گا، کوئی ریکارڈ حذف نہیں ہوگا۔', us_confirmEnable:'{name} کا اکاؤنٹ دوبارہ چالو کریں؟', us_disabledNow:'{name} کا اکاؤنٹ بند ہو گیا', us_enabledNow:'{name} کا اکاؤنٹ چالو ہو گیا', bc2_title:'کلکٹرز', bc2_hint:'اس برانچ کا کلکٹر نائب کی منظوری کے بعد نقدی وصول کرتا ہے۔ تمام کلکٹرز میں سے منتخب کریں؛ دوسرے علاقے والا منتخب نہیں ہو سکتا، ہر شخص کا ایک علاقہ۔', bc2_current:'موجودہ کلکٹر', bc2_otherArea:'{area} میں کام کرتا ہے۔ ہر شخص کا ایک علاقہ', bc2_disabled:'اکاؤنٹ بند', bc2_none:'ابھی کسی برانچ کا کلکٹر نہیں', bc2_inFlight:'ابھی کلکٹر نہیں بدلا جا سکتا: اس برانچ کی نقدی {who} کے پاس جا رہی ہے۔', bc2_confirm:'{who} کو {branch} کا کلکٹر بنائیں؟', bc2_saved:'{who} اب {branch} کا کلکٹر ہے', bc2_search:'کلکٹر کا نام یا نمبر تلاش کریں', bc2_empty:'ابھی کوئی کلکٹر نہیں۔ صارفین کی اسکرین سے کلکٹر شامل کریں۔', inv2_doneTitle:'آپ کا اکاؤنٹ فعال ہو گیا', inv2_doneBody:'اب اپنی ای میل اور نئے پاس ورڈ سے لاگ اِن کریں۔', inv2_signIn:'لاگ اِن', inv2_org:'بیسٹ گیس', inv2_app:'نقد وصولی نظام', inv2_youCan:'سسٹم میں آپ یہ کریں گے:', inv2_hi:'السلام علیکم {name}', inv2_lead:'آپ نقد وصولی نظام میں {role} ہیں۔ اکاؤنٹ فعال کرنے کے لیے پاس ورڈ منتخب کریں۔', inv2_leadBy:'{who} نے آپ کو بطور {role} شامل کیا ہے۔ اکاؤنٹ فعال کرنے کے لیے پاس ورڈ منتخب کریں۔', inv2_s1:'دعوت قبول', inv2_s2:'پاس ورڈ', inv2_s3:'لاگ اِن', inv2_pw:'نیا پاس ورڈ', inv2_pw2:'پاس ورڈ دوبارہ لکھیں', inv2_ckLen:'کم از کم 8 حروف', inv2_ckMix:'حروف اور نمبر', inv2_ckSame:'دونوں پاس ورڈ ایک جیسے', inv2_go:'اکاؤنٹ فعال کریں', inv2_going:'اکاؤنٹ فعال ہو رہا ہے…', inv2_valid:'دعوت {date} تک درست ہے', inv2_does_store_manager:'اپنی برانچ کی روزانہ فروخت اور اخراجات درج کریں|برانچ کی نقدی علاقہ منیجر کو دیں|ہر حوالگی کی منظوری تک پیروی کریں', inv2_does_driver:'اپنی گاڑی کی روزانہ فروخت درج کریں|گاڑی کی نقدی برانچ منیجر کو دیں|دیکھیں کیا دیا اور کیا منظور ہوا', inv2_does_cluster_manager:'اپنی برانچوں کی نقدی وصول اور تصدیق کریں|ہر برانچ کی نقدی اس کے کلکٹر کو بھیجیں|برانچیں اور کلکٹر ایک اسکرین پر دیکھیں', inv2_does_collector:'اپنی برانچوں کی نقدی وصول کریں|حوالہ نمبر کے ساتھ بینک میں جمع کریں|وصولی اور جمع شدہ رقم دیکھیں', inv2_does_deputy_operations_manager:'علاقہ منیجرز کی درخواستیں منظور کریں|کسی بھی درخواست کو وجہ کے ساتھ واپس کریں|تمام برانچوں کی وصولی دیکھیں', inv2_does_operations_manager:'تمام برانچوں کی وصولی اور حوالگیاں دیکھیں|رپورٹس دیکھیں|خطرات اور شکایات دیکھیں', inv2_does_finance:'برانچ سے بینک تک نقدی دیکھیں|جمع شدہ رقم کو بینک اسٹیٹمنٹ سے ملائیں|فرق اور رپورٹس دیکھیں', inv2_does_accountant:'اندراجات اور حوالگیاں دیکھیں|بینک اسٹیٹمنٹ سے ملائیں|رپورٹس نکالیں', inv2_does_admin:'صارفین اور اجازتیں سنبھالیں|برانچیں، علاقے اور بنیادی ڈیٹا سنبھالیں|سسٹم میں سب کچھ دیکھیں', sort_by:'ترتیب', sort_default:'اندراج کے مطابق', sort_new:'نئے پہلے', sort_old:'پرانے پہلے', sort_high:'رقم: زیادہ پہلے', sort_low:'رقم: کم پہلے', bm_title:'نقشے پر برانچ', bm_hint:'نقشے پر ٹیپ کریں یا پن گھسیٹیں، برانچ میں ہوں تو اپنا موجودہ مقام استعمال کریں، یا Google Maps کا لنک چسپاں کریں۔', bm_here:'میرا موجودہ مقام', bm_pastePh:'Google Maps لنک یا 24.7136, 46.6753', bm_go:'تلاش', bm_none:'برانچ کا مقام ابھی طے نہیں', bm_openGoogle:'Google Maps میں کھولیں', bm_noZone:'کوئی زون نہیں', bm_suggest:'قریب ترین برانچ: {branch} ({dist}) — تجویز کردہ زون:', bm_m:'م', bm_km:'کلومیٹر', bm_applyZone:'یہ زون لگائیں', bm_zoneMatches:'برانچ کے زون سے مطابق', bm_save:'مقام محفوظ کریں', bm_clear:'مقام ہٹائیں', bm_noGeo:'براؤزر مقام نہیں دے سکتا', bm_geoDenied:'آپ کا مقام نہیں ملا — اجازت دیں اور دوبارہ کوشش کریں', bm_badPaste:'کوئی مقام نہیں ملا — پورا لنک یا 24.7136, 46.6753 چسپاں کریں', bm_loadFail:'نقشہ لوڈ نہیں ہوا', calc_totalIn:'کل وصولی', calc_totalOut:'کل کٹوتیاں', entry_pickCustomer:'گاہک منتخب کریں…', entry_creditAddItem:'+ شے', entry_creditItemsTotal:'اشیاء کا مجموعہ', err_creditItemsIncomplete:'ہر شے مکمل کریں: پروڈکٹ اور مقدار', rec_code:'نمبر', rec_codeAuto:'محفوظ کرنے پر نمبر خود ملے گا', admin_customers:'گاہک', admin_cities:'شہر', admin_addCustomer:'گاہک شامل کریں', admin_addCity:'شہر شامل کریں', cu_code:'گاہک نمبر', cu_codeAuto:'محفوظ کرنے پر نمبر خود ملے گا', cu_name:'گاہک کا نام', cu_phone:'موبائل', ci_name:'شہر کا نام', ci_uses:'برانچیں', cu_import:'فہرست درآمد کریں', cu_importTitle:'گاہک درآمد کریں', cu_importHint:'نام چسپاں کریں، ہر سطر میں ایک، یا Excel/CSV فائل منتخب کریں۔ ہر نئے گاہک کو نمبر ملے گا، موجود نام چھوڑ دیے جائیں گے۔', cu_importPh:'مثال: کمپنی کا نام، شہر', cu_importFile:'Excel یا CSV فائل', cu_importCheck:'فہرست جانچیں', cu_impNew:'نیا', cu_impOnFile:'پہلے سے موجود', cu_impRepeat:'فہرست میں دہرایا گیا', cu_impAdd:'{n} گاہک شامل کریں', cu_impNothing:'کوئی نیا نام نہیں', cu_impDone:'{n} گاہک شامل، {s} چھوڑ دیے', cu_impEmpty:'فہرست میں کوئی نام نہیں ملا', cu_impLoadFail:'فائل نہیں پڑھی جا سکی', pf_kindCustomer:'گاہک', pf_kindCity:'شہر', err_duplicateCustomer:'یہ گاہک پہلے سے {code} پر موجود ہے', err_duplicateCity:'یہ شہر فہرست میں موجود ہے', err_unknownCustomer:'گاہک رجسٹرڈ نہیں', err_invalidCustomer:'اس گاہک کا کھاتہ بند ہے', err_creditItemsMismatch:'ادھار رقم اشیاء کے مجموعے سے مختلف ہے', err_priceLocked:'اس پروڈکٹ کی قیمت مقرر ہے', err_invalidProduct:'پروڈکٹ موجود نہیں', err_invalidCoordinates:'مقام درست نہیں'
   }
 };
 function t(k){ var l=L[state.lang]||L.ar; return l[k]!==undefined ? l[k] : (L.en[k]!==undefined?L.en[k]:k); }
@@ -2552,7 +2563,7 @@ var ERROR_KEYS_ = {
   entry_locked:'err_entryLocked', deposit_reconciled:'err_depositReconciled', has_direct_deposit:'err_hasDirectDeposit', already_voided:'err_alreadyVoided', receiver_only:'err_receiverOnly',
   person_holds_cash:'err_personHoldsCash', cash_in_flight:'err_cashInFlight', user_has_assignments:'err_userHasAssignments',
   cannot_change_self:'err_cannotChangeSelf', last_admin:'err_lastAdmin', live_locked:'err_liveLocked',
-  deposit_needs_reference:'err_depositNeedsReference', deposit_exceeds_cash:'err_depositExceedsCash',
+  deposit_needs_reference:'err_depositNeedsReference', deposit_needs_photo:'err_depositNeedsPhoto', deposit_needs_pos:'err_depositNeedsPos', invalid_photo:'err_invalidPhoto', invalid_pos:'err_invalidPos', deposit_exceeds_cash:'err_depositExceedsCash',
   confirm_required:'err_confirmRequired',
   manager_required:'err_managerRequired', collector_required:'err_collectorRequired',
   driver_required:'err_driverRequired', holder_required:'err_holderRequired', wrong_role:'err_wrongRole',
@@ -3477,6 +3488,7 @@ function cashCalcRows_(o){
   if (Number(o.other||0)) ins.push({ label: t('entry_otherTitle'), amount: Number(o.other), color: 'var(--c-credit)' });
   if (Number(o.delivery||0)) outs.push({ label: t('dash_deliveryFeeBeforeVat'), hint: t('report_vat') + ': ' + money(o.vat||0), amount: Number(o.delivery) - Number(o.vat||0), kind: 'deduct', color: 'var(--c-delivery)' });
   if (Number(o.credit||0)) outs.push({ label: t('report_credit'), hint: t('handoff_creditNote'), amount: Number(o.credit), kind: 'deduct', color: 'var(--c-credit)' });
+  if (Number(o.transfer||0)) outs.push({ label: t('entry_transferTitle'), amount: Number(o.transfer), kind: 'deduct', color: 'var(--c-pos)' });
   if (Number(o.expense||0)) outs.push({ label: t('entry_expenseTitle'), amount: Number(o.expense), kind: 'deduct', color: 'var(--c-danger)' });
   if (Number(o.banked||0)) outs.push({ label: t('entry_depositTitle'), amount: Number(o.banked), kind: 'deduct', color: 'var(--c-deposit)' });
   var sum = function(list){ return list.reduce(function(a, r){ return a + r.amount; }, 0); };
@@ -4808,6 +4820,27 @@ function branchIdsForEntry_(){
 // One collapsible money block for the entry screen. Colour comes from the
 // same category tokens the dashboard statements use, so "delivery", "banked"
 // and "expense" mean the same colour wherever they appear.
+// A picked photo, scaled to at most 1600px and sent as JPEG: a phone camera
+// shot is several MB, and the slip only needs to be readable.
+function photoToB64_(file, cb){
+  var reader = new FileReader();
+  reader.onerror = function(){ cb(null); };
+  reader.onload = function(){
+    var img = new Image();
+    img.onerror = function(){ cb(null); };
+    img.onload = function(){
+      try {
+        var scale = Math.min(1, 1600 / Math.max(img.width, img.height));
+        var c = document.createElement('canvas');
+        c.width = Math.round(img.width * scale); c.height = Math.round(img.height * scale);
+        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+        cb({ base64: c.toDataURL('image/jpeg', 0.82).split(',')[1], name: String(file.name || 'slip').replace(/\.[^.]+$/, '') + '.jpg' });
+      } catch (e) { cb(null); }
+    };
+    img.src = reader.result;
+  };
+  reader.readAsDataURL(file);
+}
 function moneyBlock_(id, colorKey, iconName, titleKey, hintKey, bodyHtml){
   return '<section class="me" id="'+id+'" data-state="closed" style="--c:var(--c-'+colorKey+')">' +
     '<button type="button" class="me-toggle">' +
@@ -5424,12 +5457,17 @@ function renderEntries(body){
       '<div class="mlines" id="eExpenseLines"></div>' +
       '<button type="button" class="btn secondary mline-add" id="eExpenseAdd">'+esc(t('entry_addExpense'))+'</button>' +
       '<input type="hidden" id="eExpense" value="0">') +
+    // customers who paid by transferring straight to the company account:
+    // one numbered line per transfer, the amount only
+    moneyBlock_('eTransferWrap', 'pos', 'paperPlane', 'entry_transferTitle', 'entry_transferHint',
+      '<div class="mlines" id="eTransferLines"></div>' +
+      '<button type="button" class="btn secondary mline-add" id="eTransferAdd">'+esc(t('entry_addTransfer'))+'</button>' +
+      '<input type="hidden" id="eTransfer" value="0">') +
+    // الموازنات: one line per POS device, each with the photo of its slip
     moneyBlock_('eDepositWrap', 'deposit', 'bank', 'entry_depositTitle', 'entry_depositHint',
-      '<div class="grid">' +
-        '<div class="field"><label>'+esc(t('entry_depositAmount'))+'</label><input id="eDeposit" type="text" inputmode="decimal" value="0"></div>' +
-        '<div class="field"><label>'+esc(t('entry_depositRef'))+'</label><input id="eDepositRef" dir="ltr"></div>' +
-      '</div>' +
-      '<div class="field"><label>'+esc(t('entry_depositNote'))+'</label><input id="eDepositNote" placeholder="'+esc(t('entry_depositNotePlaceholder'))+'"></div>') +
+      '<div class="mlines" id="eDepositLines"></div>' +
+      '<button type="button" class="btn secondary mline-add" id="eDepositAdd">'+esc(t('entry_addDeposit'))+'</button>' +
+      '<input type="hidden" id="eDeposit" value="0">') +
     '<div id="eNetPreview"></div>' +
     '<div class="field" style="margin-top:10px;"><label>'+esc(t('entry_note'))+'</label><input id="eNote"></div>' +
     '<button class="btn" id="eSubmit">'+esc(t('entry_submit'))+'</button>' +
@@ -5463,7 +5501,7 @@ function renderEntries(body){
         return {
           amount: numFromInput_(qs('.mlAmount', row)),
           itemId: qs('.mlItem', row) ? (qs('.mlItem', row).value || null) : null,
-          reason: qs('.mlReason', row).value.trim()
+          reason: qs('.mlReason', row) ? qs('.mlReason', row).value.trim() : ''
         };
       }).filter(function(r){ return r.amount > 0; });
     }
@@ -5484,7 +5522,7 @@ function renderEntries(body){
           '<button type="button" class="ico-btn danger mlDel" title="'+esc(t('admin_delete'))+'">'+icon_('close')+'</button></div>' +
         '<div class="grid">' +
           '<div class="field"><label>'+esc(t(labels.amount))+'</label><input class="mlAmount" type="text" inputmode="decimal" value="0"></div>' +
-          (items ? '<div class="field"><label>'+esc(t(labels.item))+'</label><select class="mlItem"></select></div>'
+          (labels.amountOnly ? '' : items ? '<div class="field"><label>'+esc(t(labels.item))+'</label><select class="mlItem"></select></div>'
                  : '<div class="field"><label>'+esc(t(labels.reason || 'entry_reason'))+'</label><input class="mlReason" placeholder="'+esc(t(labels.reasonPh || 'entry_reasonPlaceholder'))+'"></div>') +
         '</div>' +
         (items ? '<div class="field"><label>'+esc(t('entry_reason'))+'</label><input class="mlReason" placeholder="'+esc(t('entry_reasonPlaceholder'))+'"></div>' : '') +
@@ -5563,7 +5601,7 @@ function renderEntries(body){
       var it = el('<div class="crItem">' +
         '<div class="field ciP"><label>'+esc(t('entry_lineProduct'))+'</label><select class="ciProduct">'+creditProductOptions_()+'</select></div>' +
         '<div class="field"><label>'+esc(t('entry_qty'))+'</label><input class="ciQty" type="text" inputmode="decimal" value="1"></div>' +
-        '<div class="field"><label>'+esc(t('entry_unitPrice'))+'</label><input class="ciPrice" type="text" inputmode="decimal" value="0"></div>' +
+        '<div class="field"><label>'+esc(t('entry_unitPrice'))+' <span class="ciOwn" hidden>'+esc(t('entry_priceCustomerTag'))+'</span></label><input class="ciPrice" type="text" inputmode="decimal" value="0"></div>' +
         '<button type="button" class="ico-btn danger ciDel" title="'+esc(t('entry_removeLine'))+'" aria-label="'+esc(t('entry_removeLine'))+'">'+icon_('close')+'</button>' +
       '</div>');
       qs('.crItems', row).appendChild(it);
@@ -5572,13 +5610,20 @@ function renderEntries(body){
       // same rule as a sales line: a fixed price fills in read-only
       function price_(){
         var prod = byId(meta.products, qs('.ciProduct', it).value), p = qs('.ciPrice', it);
-        var locked = !!(prod && prod.priceLocked && Number(prod.unitPrice) > 0);
-        if (prod && Number(prod.unitPrice) > 0 && (locked || !numFromInput_(p))) p.value = String(prod.unitPrice);
+        // the customer's own price for this product wins, fixed price or not
+        var cust = byId(meta.customers, qs('.crCustomer', row).value);
+        var own = prod && cust && cust.prices && cust.prices[prod.id] != null && cust.prices[prod.id] !== '' ? Number(cust.prices[prod.id]) : null;
+        var locked = own != null || !!(prod && prod.priceLocked && Number(prod.unitPrice) > 0);
+        if (own != null) p.value = String(own);
+        else if (prod && Number(prod.unitPrice) > 0 && (locked || !numFromInput_(p) || it.dataset.own)) p.value = String(prod.unitPrice);
+        if (own != null) it.dataset.own = '1'; else delete it.dataset.own;
         p.readOnly = locked;
         p.classList.toggle('locked', locked);
-        p.title = locked ? t('entry_priceFixed') : '';
+        p.title = own != null ? t('entry_priceCustomer') : locked ? t('entry_priceFixed') : '';
+        var tag = qs('.ciOwn', it); if (tag) tag.hidden = own == null;
         recompute();
       }
+      it._price = price_;
       qs('.ciProduct', it).addEventListener('change', price_);
       ['input','blur'].forEach(function(ev){
         qs('.ciQty', it).addEventListener(ev, recompute);
@@ -5605,7 +5650,8 @@ function renderEntries(body){
       list.appendChild(row);
       wireCommaInput_(qs('.mlAmount', row), true);
       ['input','blur'].forEach(function(ev){ qs('.mlAmount', row).addEventListener(ev, recompute); });
-      qs('.crCustomer', row).addEventListener('change', recompute);
+      // a different customer may have their own prices
+      qs('.crCustomer', row).addEventListener('change', function(){ qsa('.crItem', row).forEach(function(it){ if (it._price) it._price(); }); recompute(); });
       qs('.crAddItem', row).addEventListener('click', function(){ var it = addItem_(row); var f = qs('select', it); if (f && f._dd) f._dd.focus(); });
       qs('.mlDel', row).addEventListener('click', function(){ row.remove(); recompute(); });
       addItem_(row);
@@ -5628,6 +5674,114 @@ function renderEntries(body){
     return { add: add, rows: rows, reset: reset, recompute: recompute, problem: problem };
   }
   var creditLines = creditLines_();
+  var transferLines = moneyLines_('eTransferLines', 'eTransfer', null, { amount: 'entry_transferAmount', amountOnly: true });
+  // A الموازنة line: the branch's POS device, the amount, the bank's
+  // reference and the photo of the slip. The photo goes up as soon as it is
+  // picked, so saving the day only sends its id.
+  function depositLines_(){
+    var list = qs('#eDepositLines', form), totalInput = qs('#eDeposit', form);
+    function devices_(){
+      var locId = resolveLocationIdForSource_(qs('#eType', form).value, qs('#eSource', form).value);
+      return (meta.pos || []).filter(function(p){ return p.active !== false && (!locId || posOwnerLocationId_(p) === locId); });
+    }
+    function deviceOpts_(){
+      var d = devices_();
+      if (!d.length) return '<option value="">'+esc(t('entry_noDevices'))+'</option>';
+      return '<option value="">'+esc(t('entry_pickDevice'))+'</option>' + d.map(function(p){
+        return '<option value="'+esc(p.id)+'">'+esc((p.code ? p.code + ' · ' : '') + (p.label || p.id))+'</option>';
+      }).join('');
+    }
+    function rows(){
+      return qsa('.mline', list).map(function(row){
+        return { amount: numFromInput_(qs('.mlAmount', row)), posId: qs('.dpDevice', row).value || null,
+          ref: qs('.dpRef', row).value.trim(), note: qs('.dpNote', row).value.trim(), photoId: row.dataset.photoId || null };
+      }).filter(function(r){ return r.amount > 0; });
+    }
+    function recompute(){
+      var total = rows().reduce(function(a, r){ return a + r.amount; }, 0);
+      totalInput.value = total ? money(total) : '0';
+      totalInput.dispatchEvent(new Event('input', { bubbles: true }));
+      qsa('.mline', list).forEach(function(row, i){
+        var del = qs('.mlDel', row); if (del) del.hidden = qsa('.mline', list).length < 2;
+        var n = qs('.mlNo', row); if (n) n.textContent = (i + 1);
+      });
+    }
+    function setPhoto_(row, stateName, text){
+      var st = qs('.dpPhotoState', row);
+      st.className = 'dpPhotoState ' + stateName;
+      st.textContent = text || '';
+    }
+    function pick_(row, input){
+      var f = input.files && input.files[0];
+      input.value = '';
+      if (!f) return;
+      delete row.dataset.photoId;
+      row.dataset.uploading = '1';
+      setPhoto_(row, 'busy', t('entry_photoUploading'));
+      photoToB64_(f, function(img){
+        if (!img) { delete row.dataset.uploading; setPhoto_(row, 'err', t('entry_photoFailed')); return; }
+        var th = qs('.dpThumb', row); th.src = 'data:image/jpeg;base64,' + img.base64; th.hidden = false;
+        api('uploadEntryPhoto', { fileBase64: img.base64, fileName: img.name, fileMime: 'image/jpeg' }, { silent: true }).then(function(res){
+          delete row.dataset.uploading;
+          if (!res.ok) { setPhoto_(row, 'err', t('entry_photoFailed')); return; }
+          row.dataset.photoId = res.fileId;
+          setPhoto_(row, 'ok', t('entry_photoReady'));
+        });
+      });
+    }
+    function add(){
+      var row = el('<div class="mline dpLine">' +
+        '<div class="ml-head"><span class="mlNo">1</span>' +
+          '<button type="button" class="ico-btn danger mlDel" title="'+esc(t('admin_delete'))+'" aria-label="'+esc(t('admin_delete'))+'">'+icon_('close')+'</button></div>' +
+        '<div class="grid">' +
+          '<div class="field"><label>'+esc(t('entry_depositDevice'))+'<span class="req">*</span></label><select class="dpDevice">'+deviceOpts_()+'</select></div>' +
+          '<div class="field"><label>'+esc(t('entry_depositAmount'))+'</label><input class="mlAmount" type="text" inputmode="decimal" value="0"></div>' +
+          '<div class="field"><label>'+esc(t('entry_depositRef'))+'<span class="req">*</span></label><input class="dpRef" dir="ltr"></div>' +
+          '<div class="field"><label>'+esc(t('entry_depositNote'))+'</label><input class="dpNote" placeholder="'+esc(t('entry_depositNotePlaceholder'))+'"></div>' +
+        '</div>' +
+        '<div class="dp-photo"><span class="dp-photo-l">'+icon_('doc')+esc(t('entry_depositPhoto'))+'<span class="req">*</span></span>' +
+          '<div class="dp-photo-row"><button type="button" class="btn secondary dpCam">'+esc(t('handoff_takePhoto'))+'</button>' +
+          '<button type="button" class="btn secondary dpFile">'+esc(t('handoff_chooseFile'))+'</button>' +
+          '<img class="dpThumb" hidden alt="'+esc(t('entry_depositPhoto'))+'"><span class="dpPhotoState" aria-live="polite"></span></div>' +
+          '<input class="dpCamIn" type="file" accept="image/*" capture="environment" hidden><input class="dpFileIn" type="file" accept="image/*" hidden></div>' +
+      '</div>');
+      list.appendChild(row);
+      wireCommaInput_(qs('.mlAmount', row), true);
+      ['input','blur'].forEach(function(ev){ qs('.mlAmount', row).addEventListener(ev, recompute); });
+      qs('.mlDel', row).addEventListener('click', function(){ row.remove(); recompute(); });
+      qs('.dpCam', row).addEventListener('click', function(){ qs('.dpCamIn', row).click(); });
+      qs('.dpFile', row).addEventListener('click', function(){ qs('.dpFileIn', row).click(); });
+      qs('.dpCamIn', row).addEventListener('change', function(){ pick_(row, this); });
+      qs('.dpFileIn', row).addEventListener('change', function(){ pick_(row, this); });
+      recompute();
+      return row;
+    }
+    function reset(){ list.innerHTML = ''; add(); }
+    // the branch changed: offer that branch's devices
+    function refreshDevices(){
+      qsa('.dpDevice', list).forEach(function(sel){
+        var cur = sel.value;
+        sel.innerHTML = deviceOpts_();
+        if (cur && qsa('option', sel).some(function(o){ return o.value === cur; })) sel.value = cur;
+        if (sel._dd && sel._dd.sync) sel._dd.sync();
+      });
+    }
+    function problem(){
+      var p = null, hasDevices = devices_().length > 0;
+      qsa('.mline', list).forEach(function(row){
+        if (p || !(numFromInput_(qs('.mlAmount', row)) > 0)) return;
+        if (hasDevices && !qs('.dpDevice', row).value) p = 'err_depositNeedsPos';
+        else if (!qs('.dpRef', row).value.trim()) p = 'err_depositNeedsReference';
+        else if (row.dataset.uploading) p = 'err_photoUploading';
+        else if (!row.dataset.photoId) p = 'err_depositNeedsPhoto';
+      });
+      return p;
+    }
+    return { add: add, rows: rows, reset: reset, recompute: recompute, problem: problem, refreshDevices: refreshDevices };
+  }
+  var depositLines = depositLines_();
+  transferLines.add();
+  depositLines.add();
   otherLines.add();
   expenseLines.add();
   deliveryLines.add();
@@ -5636,6 +5790,8 @@ function renderEntries(body){
   qs('#eExpenseAdd', form).addEventListener('click', function(){ expenseLines.add(); });
   qs('#eDeliveryAdd', form).addEventListener('click', function(){ deliveryLines.add(); });
   qs('#eCreditAdd', form).addEventListener('click', function(){ creditLines.add(); });
+  qs('#eTransferAdd', form).addEventListener('click', function(){ transferLines.add(); });
+  qs('#eDepositAdd', form).addEventListener('click', function(){ depositLines.add(); });
 
   // Every line beyond the first becomes its own entry row: one row can only
   // carry one collection and one expense, and each line has to keep its own
@@ -5644,7 +5800,8 @@ function renderEntries(body){
     var extra = [];
     var others = otherLines.rows(), expenses = expenseLines.rows();
     var deliveries = deliveryLines.rows(), credits = creditLines.rows();
-    var n = Math.max(others.length, expenses.length, deliveries.length, credits.length);
+    var transfers = transferLines.rows(), deposits = depositLines.rows();
+    var n = Math.max(others.length, expenses.length, deliveries.length, credits.length, transfers.length, deposits.length);
     for (var i = 1; i < n; i++) {
       var row = {
         date: baseRow.date, sourceType: baseRow.sourceType, sourceId: baseRow.sourceId,
@@ -5655,6 +5812,9 @@ function renderEntries(body){
       if (expenses[i]) { row.expenseAmount = expenses[i].amount; row.expenseItemId = expenses[i].itemId; row.expenseReason = expenses[i].reason; }
       if (deliveries[i]) { row.deliveryFeeBankAmount = deliveries[i].amount; row.deliveryNote = deliveries[i].reason; }
       if (credits[i]) { row.creditSales = credits[i].amount; row.creditCustomerId = credits[i].customerId; if (credits[i].items) row.creditItems = credits[i].items; }
+      if (transfers[i]) row.bankTransferAmount = transfers[i].amount;
+      if (deposits[i]) { row.directDepositAmount = deposits[i].amount; row.directDepositRef = deposits[i].ref; row.directDepositNote = deposits[i].note;
+        row.directDepositPosId = deposits[i].posId; row.directDepositPhotoId = deposits[i].photoId; }
       extra.push(row);
     }
     return extra;
@@ -5662,7 +5822,11 @@ function renderEntries(body){
   function firstMoneyFields_(){
     var o = otherLines.rows()[0], x = expenseLines.rows()[0];
     var d = deliveryLines.rows()[0], c = creditLines.rows()[0];
+    var tr = transferLines.rows()[0], dp = depositLines.rows()[0];
     return {
+      bankTransferAmount: tr ? tr.amount : 0,
+      directDepositAmount: dp ? dp.amount : 0, directDepositRef: dp ? dp.ref : '', directDepositNote: dp ? dp.note : '',
+      directDepositPosId: dp ? dp.posId : null, directDepositPhotoId: dp ? dp.photoId : null,
       otherCash: o ? o.amount : 0, otherCashItemId: o ? o.itemId : null, otherCashReason: o ? o.reason : '',
       expenseAmount: x ? x.amount : 0, expenseItemId: x ? x.itemId : null, expenseReason: x ? x.reason : '',
       deliveryFeeBankAmount: d ? d.amount : 0, deliveryNote: d ? d.reason : '',
@@ -5673,7 +5837,7 @@ function renderEntries(body){
   // Each money block opens on click and stays open while it holds an amount,
   // so a day with nothing unusual on it reads as three quiet lines.
   [['#eSalesWrap','#eSalesTotal'], ['#eOtherWrap','#eOther'], ['#eDeliveryWrap','#eDelivery'], ['#eCreditWrap','#eCredit'],
-   ['#eExpenseWrap','#eExpense'], ['#eDepositWrap','#eDeposit']].forEach(function(pair){
+   ['#eExpenseWrap','#eExpense'], ['#eTransferWrap','#eTransfer'], ['#eDepositWrap','#eDeposit']].forEach(function(pair){
     var section = qs(pair[0], form), input = qs(pair[1], form);
     var toggle = qs('.me-toggle', section), amtEl = qs('.me-amt', section);
     function lineCount_(){
@@ -5702,17 +5866,15 @@ function renderEntries(body){
     qs('.me-confirm', section).addEventListener('click', function(){
       var problem = null;
       if (section === qs('#eCreditWrap', form)) problem = creditLines.problem();
+      else if (section === qs('#eDepositWrap', form)) problem = depositLines.problem();
       else qsa('.mline', section).forEach(function(row){
         if (problem) return;
         var amt = numFromInput_(qs('.mlAmount', row));
         if (!(amt > 0)) return;
-        var itemSel = qs('.mlItem', row), reason = qs('.mlReason', row).value.trim();
+        var itemSel = qs('.mlItem', row), reason = qs('.mlReason', row) ? qs('.mlReason', row).value.trim() : '';
         if (itemSel && !itemSel.value) problem = section === qs('#eExpenseWrap', form) ? 'err_invalidExpenseItem' : 'err_invalidIncomeItem';
         else if (itemSel && !reason) problem = 'err_reasonRequired';
       });
-      if (!problem && section === qs('#eDepositWrap', form) && numFromInput_(input) > 0 && !qs('#eDepositRef', form).value.trim()) {
-        problem = 'err_depositNeedsReference';
-      }
       if (problem) { msgEl.innerHTML = '<div class="msg err">'+esc(t(problem))+'</div>'; return; }
       msgEl.innerHTML = '';
       section.dataset.done = numFromInput_(input) > 0 ? '1' : '';
@@ -5737,15 +5899,16 @@ function renderEntries(body){
     var vatRate = (state.meta && state.meta.config && state.meta.config.vatRate) || 0.15;
     var vatBack = delivery > 0 ? (delivery / (1 + vatRate)) * vatRate : 0;
     var credit = numFromInput_(qs('#eCredit', form));
-    var net = cash + other - delivery + vatBack - expense - deposited - credit;
+    var transfer = numFromInput_(qs('#eTransfer', form));
+    var net = cash + other - delivery + vatBack - expense - deposited - credit - transfer;
     var box = qs('#eNetPreview', form);
     box.innerHTML = '';
-    if (!cash && !other && !expense && !deposited && !delivery && !credit) return;
-    var rows = cashCalcRows_({ cash: cash, other: other, delivery: delivery, vat: vatBack, credit: credit, expense: expense, banked: deposited, net: net });
+    if (!cash && !other && !expense && !deposited && !delivery && !credit && !transfer) return;
+    var rows = cashCalcRows_({ cash: cash, other: other, delivery: delivery, vat: vatBack, credit: credit, transfer: transfer, expense: expense, banked: deposited, net: net });
     rows[rows.length - 1].label = t('entry_netOwed');
     box.appendChild(statement_({ title: t('entry_netOwed'), value: net, caption: t('entry_netHint'), rows: rows }));
   }
-  ['#eCash','#eDelivery','#eOther','#eExpense','#eDeposit','#eCredit'].forEach(function(sel){
+  ['#eCash','#eDelivery','#eOther','#eExpense','#eDeposit','#eCredit','#eTransfer'].forEach(function(sel){
     qs(sel, form).addEventListener('input', entryNetPreview_);
     qs(sel, form).addEventListener('blur', entryNetPreview_);
   });
@@ -6098,7 +6261,7 @@ function renderEntries(body){
   qs('#eMode', form).addEventListener('change', applyMode_);
 
   typeSel.addEventListener('change', populateSourceOptions);
-  qs('#eSource', form).addEventListener('change', updateLocationDisplay);
+  qs('#eSource', form).addEventListener('change', function(){ updateLocationDisplay(); depositLines.refreshDevices(); });
   populateSourceOptions();
   productSel.addEventListener('change', toggleCylFields);
   applyMode_();
@@ -6113,6 +6276,30 @@ function renderEntries(body){
     // as the one day's entry they are
     var submissionId = newSubmissionId_();
     if (!sourceId){ qs('#entryMsg',form).innerHTML='<div class="msg err">'+esc(t('err_noSourceSelected'))+'</div>'; return; }
+    // a section that is not complete says so next to itself
+    var blocking = [['#eCreditWrap', creditLines.problem()], ['#eDepositWrap', depositLines.problem()]].filter(function(p){ return p[1]; })[0];
+    if (blocking) {
+      var sec = qs(blocking[0], form);
+      sec.dataset.state = 'open';
+      qs('.me-msg', sec).innerHTML = '<div class="msg err">'+esc(t(blocking[1]))+'</div>';
+      sec.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      return;
+    }
+    var submitBtn = qs('#eSubmit', form);
+    if (submitBtn.disabled) return;
+    submitBtn.disabled = true;
+    submitBtn.classList.add('busy');
+    function done_(){ submitBtn.disabled = false; submitBtn.classList.remove('busy'); }
+    // after a save the form starts clean, so a second tap cannot save the
+    // same day twice
+    function clearForm_(){
+      ['#eCash','#ePos','#eCylOut','#eCylIn'].forEach(function(sel){ var x = qs(sel, form); if (x) x.value = '0'; });
+      qs('#eNote', form).value = '';
+      [otherLines, expenseLines, deliveryLines, creditLines, transferLines, depositLines].forEach(function(l){ l.reset(); });
+      qsa('.me', form).forEach(function(sec){ delete sec.dataset.done; sec.dataset.state = 'closed'; });
+      syncSalesTotal_();
+      entryNetPreview_();
+    }
 
     if (mode === 'direct') {
       var payload = {
@@ -6122,22 +6309,25 @@ function renderEntries(body){
         productId: productSel.value || null,
         cashSales: numFromInput_(qs('#eCash', form)),
         posSales: numFromInput_(qs('#ePos', form)),
-        directDepositAmount: numFromInput_(qs('#eDeposit', form)),
-        directDepositRef: qs('#eDepositRef', form).value,
-        directDepositNote: qs('#eDepositNote', form).value,
         note: note
       };
       var firstMoney = firstMoneyFields_();
       Object.keys(firstMoney).forEach(function(k){ payload[k] = firstMoney[k]; });
       var extraRows = extraMoneyRows_(payload);
       function afterSave(res){
-        if(!res.ok){ qs('#entryMsg',form).innerHTML='<div class="msg err">'+esc(errMsg_(res))+'</div>'; return; }
+        done_();
+        var msgBox = qs('#entryMsg',form);
+        if(!res.ok){ msgBox.innerHTML='<div class="msg err">'+esc(errMsg_(res))+'</div>'; msgBox.scrollIntoView({ block: 'center', behavior: 'smooth' }); return; }
         var failed = (res.results||[]).filter(function(r){ return !r.ok; });
         if (failed.length) {
-          qs('#entryMsg',form).innerHTML='<div class="msg err">'+esc(errMsg_({ error: failed[0].error }))+'</div>';
+          msgBox.innerHTML='<div class="msg err">'+esc(errMsg_({ error: failed[0].error }))+'</div>';
+          msgBox.scrollIntoView({ block: 'center', behavior: 'smooth' });
+          if (res.created > 0) { clearForm_(); loadEntryList(); }
           return;
         }
-        qs('#entryMsg',form).innerHTML='<div class="msg ok">'+esc(t('ok_saved'))+'</div>';
+        msgBox.innerHTML='<div class="msg ok">'+esc(t('ok_saved'))+'</div>';
+        toast('ok_saved', 'ok');
+        clearForm_();
         loadEntryList();
       }
       // One line each is one request, exactly as before; extra lines go as
@@ -6152,7 +6342,7 @@ function renderEntries(body){
     // exactly this per-row validation, so it's reused instead of adding a
     // second entry-creation code path on the server.
     var lineEls = qsa('.eLine', linesBody);
-    if (!lineEls.length){ qs('#entryMsg',form).innerHTML='<div class="msg err">'+esc(t('err_noProductLines'))+'</div>'; return; }
+    if (!lineEls.length){ done_(); qs('#entryMsg',form).innerHTML='<div class="msg err">'+esc(t('err_noProductLines'))+'</div>'; return; }
     var rows = [];
     for (var i=0;i<lineEls.length;i++){
       var lineEl = lineEls[i];
@@ -6161,9 +6351,13 @@ function renderEntries(body){
       var price = numFromInput_(qs('.lnPrice', lineEl));
       var payment = qs('.lnPayment', lineEl).value;
       if (!productId || !(qty > 0) || !(price > 0) || !payment){
+        done_();
+        lineEl.classList.add('bad');
+        lineEl.scrollIntoView({ block: 'center', behavior: 'smooth' });
         qs('#entryMsg',form).innerHTML='<div class="msg err">'+esc(t('err_lineIncomplete'))+'</div>';
         return;
       }
+      lineEl.classList.remove('bad');
       var subtotal = qty * price;
       rows.push({
         date: date, sourceType: sourceType, sourceId: sourceId, productId: productId, submissionId: submissionId,
@@ -6180,18 +6374,16 @@ function renderEntries(body){
     if (rows.length) {
       var firstMoney2 = firstMoneyFields_();
       Object.keys(firstMoney2).forEach(function(k){ rows[0][k] = firstMoney2[k]; });
-      rows[0].directDepositAmount = numFromInput_(qs('#eDeposit', form));
-      rows[0].directDepositRef = qs('#eDepositRef', form).value;
-      rows[0].directDepositNote = qs('#eDepositNote', form).value;
       rows = rows.concat(extraMoneyRows_(rows[0]));
     }
     api('importDailyEntries', { rows: rows }).then(function(res){
+      done_();
       if(!res.ok){ qs('#entryMsg',form).innerHTML='<div class="msg err">'+esc(errMsg_(res))+'</div>'; return; }
       var failed = (res.results||[]).filter(function(r){ return !r.ok; });
       qs('#entryMsg',form).innerHTML = failed.length
         ? '<div class="msg err">'+esc(t('entry_importResult').replace('{created}',res.created).replace('{total}',res.total))+'</div>'
         : '<div class="msg ok">'+esc(t('ok_saved'))+'</div>';
-      if (res.created > 0){ resetLines_(); [otherLines, expenseLines, deliveryLines, creditLines].forEach(function(l){ l.reset(); }); loadEntryList(); }
+      if (res.created > 0){ resetLines_(); clearForm_(); loadEntryList(); if (!failed.length) toast('ok_saved', 'ok'); }
     });
   });
 
@@ -6841,6 +7033,7 @@ function breakdownGrid(b){
   var outs = [];
   if (Number(b.deliveryFee||0)) outs.push(['dash_deliveryFeeBeforeVat', Number(b.deliveryFee) - Number(b.vatOnDelivery||0), t('report_delivery') + ' ' + money(b.deliveryFee) + ' · ' + t('report_vat') + ' ' + money(b.vatOnDelivery||0)]);
   if (Number(b.creditSales||0)) outs.push(['report_credit', b.creditSales]);
+  if (Number(b.bankTransfers||0)) outs.push(['entry_transferTitle', b.bankTransfers]);
   if (Number(b.expenses||0)) outs.push(['report_expenses', b.expenses]);
   if (Number(b.directDeposit||0)) outs.push(['report_directDeposit', b.directDeposit]);
   var sum = function(list){ return list.reduce(function(a, it){ return a + Number(it[1]||0); }, 0); };
