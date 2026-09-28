@@ -734,11 +734,21 @@ function actionLogin_(req) {
     noteFail_(login.toLowerCase());
     return { ok: false, error: 'invite_pending' };
   }
-  if (!user || user.active === false || !verifyPw_(pw, user.salt, user.pass)) {
+  // A temporary password from "forgot password" works alongside the real
+  // one for an hour; whichever is used first ends it.
+  var viaReset = !!(user && user.active !== false && user.resetPass && Number(user.resetExpires || 0) > Date.now() &&
+    !verifyPw_(pw, user.salt, user.pass) && verifyPw_(pw, user.resetSalt, user.resetPass));
+  if (!user || user.active === false || (!viaReset && !verifyPw_(pw, user.salt, user.pass))) {
     noteFail_(login.toLowerCase());
     return { ok: false, error: 'invalid_credentials' };
   }
   clearFail_(login.toLowerCase());
+  if (viaReset) {
+    user.salt = user.resetSalt;
+    user.pass = user.resetPass;
+    user.mustChangePw = true;
+  }
+  delete user.resetPass; delete user.resetSalt; delete user.resetExpires;
   if (user.inviteStatus !== 'active') {
     user.inviteStatus = 'active';
     if (!user.activatedAt) user.activatedAt = new Date().toISOString();
@@ -774,19 +784,29 @@ function actionForgotPassword_(req) {
   var throttleKey = 'fpwait_' + login.toLowerCase();
   if (cache.get(throttleKey)) return { ok: true, throttled: true };
   cache.put(throttleKey, '1', 30);
+  // Anyone can call this, so it has a ceiling of its own: cycling through
+  // staff addresses must not use up the day's email quota.
+  var hourKey = 'fp_hour_' + Math.floor(Date.now() / 3600000);
+  var sentThisHour = Number(cache.get(hourKey) || 0);
+  if (sentThisHour >= 40) return { ok: true, throttled: true };
+  cache.put(hourKey, String(sentThisHour + 1), 3600);
   var user = userByEmail_(login);
   if (user && user.active !== false && user.inviteStatus === 'invited') {
-    // never accepted: send the invitation again rather than a temp password
+    // never accepted: send the invitation again rather than a temp password.
+    // The link always points at the live app: this path needs no sign-in, so
+    // a caller-supplied address could send the fresh token anywhere.
     var inviteToken = issueInvite_(user, null);
     writeRow(SHEETS.USERS, user);
-    sendInvitation_(user, inviteToken, null, inviteAppUrl_(req));
+    sendInvitation_(user, inviteToken, null, DEFAULT_APP_URL);
     logAudit_('forgot_password_reinvite', user.id, user.id);
   } else if (user && user.active !== false) {
+    // The current password keeps working: a stranger asking for a reset
+    // must not lock the person out. The temporary one lasts an hour.
     var temp = randomPassword_();
     var salt = randomSalt_();
-    user.salt = salt;
-    user.pass = hashPw_(temp, salt);
-    user.mustChangePw = true;
+    user.resetSalt = salt;
+    user.resetPass = hashPw_(temp, salt);
+    user.resetExpires = Date.now() + 3600000;
     writeRow(SHEETS.USERS, user);
     sendInvite_(user, temp);
     logAudit_('forgot_password_reset', user.id, user.id);

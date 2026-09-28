@@ -142,10 +142,13 @@ function userByInviteToken_(token) {
 }
 
 // The accept link points back at whichever copy of the client the admin is
-// using (live site, or a local preview), falling back to the live site.
+// using: the live site or a local preview. Nothing else: an invitation email
+// is genuine company mail, and a link to someone else's site would hand them
+// the one-time token (2026-09-28).
 function inviteAppUrl_(req) {
   var u = String((req && req.appUrl) || '').split('#')[0].split('?')[0];
-  if (/^https:\/\/[^\s"'<>]+$/.test(u) || /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?\/[^\s"'<>]*$/.test(u)) {
+  if (u.indexOf(DEFAULT_APP_URL) === 0 && /^[^\s"'<>]+$/.test(u) ||
+      /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?\/[^\s"'<>]*$/.test(u)) {
     return /\/$/.test(u) ? u : u.replace(/[^\/]*$/, '');
   }
   return DEFAULT_APP_URL;
