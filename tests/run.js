@@ -2077,6 +2077,88 @@ check(geoLoc.ok && geoLoc.entity.lat === 24.7136 && geoLoc.entity.lng === 46.675
 check(call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', id: location.entity.id, data: { lat: 95, lng: 46 } }).error === 'invalid_coordinates', 'a latitude past 90 is refused');
 check(call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', id: location.entity.id, data: { lat: 24.7, lng: '' } }).error === 'invalid_coordinates', 'and so is half a position');
 
+console.log('--- review fixes: numbers and names under concurrent saves ---');
+var fxAdmin = ctx.userByEmail_('admin@bestgas.sa');
+// two saves whose requests both started before either took the lock
+ctx.resetExecMemo_();
+ctx.readSheet(ctx.SHEETS.CUSTOMERS);
+ctx.resetExecMemo_();
+ctx.scriptProps_(); ctx.readSheet(ctx.SHEETS.USERS); ctx.readSheet(ctx.SHEETS.CUSTOMERS);
+var fxMemoB = ctx.EXEC_;
+ctx.EXEC_ = null;
+var fxA = ctx.actionAdminSaveEntity_({ kind: 'customer', data: { name: 'مؤسسة النور للتجارة' } }, fxAdmin);
+ctx.EXEC_ = fxMemoB;
+var fxB = ctx.actionAdminSaveEntity_({ kind: 'customer', data: { name: 'موسسه النور للتجاره' } }, fxAdmin);
+check(fxA.ok && !fxB.ok && fxB.error === 'duplicate_customer', 'a save that waited for the lock still sees the customer the other admin just added');
+ctx.resetExecMemo_();
+ctx.scriptProps_(); ctx.readSheet(ctx.SHEETS.CUSTOMERS);
+var fxMemoD = ctx.EXEC_;
+ctx.EXEC_ = null;
+var fxC = ctx.actionAdminSaveEntity_({ kind: 'customer', data: { name: 'Race Customer One' } }, fxAdmin);
+ctx.EXEC_ = fxMemoD;
+var fxD = ctx.actionAdminSaveEntity_({ kind: 'customer', data: { name: 'Race Customer Two' } }, fxAdmin);
+check(fxC.ok && fxD.ok && fxC.entity.code !== fxD.entity.code, 'and two different customers saved at once get two different numbers');
+ctx.resetExecMemo_();
+check(ctx._debug.lock && ctx._debug.lock.held === false, 'a save leaves the lock free');
+var fxLock = ctx.LockService.getScriptLock(); fxLock.waitLock(1000);
+ctx.writeRow(ctx.SHEETS.CITIES, { id: 'fx-city', name: 'Fx City', active: true });
+check(ctx._debug.lock.held === true, 'writeRow does not release a lock its caller holds');
+fxLock.releaseLock();
+
+console.log('--- review fixes: one-time jobs run once even when two requests overlap ---');
+ctx.resetExecMemo_();
+ctx.setScriptProp_('SEEDED_CUSTOMERS', '');
+ctx.setScriptProp_('SEEDED_CUSTOMERS_CLAIM', '');
+var fxBefore = ctx.readSheet(ctx.SHEETS.CUSTOMERS).length;
+ctx.CUSTOMER_SEED_ = ['Overlap Seed One', 'Overlap Seed Two'];
+ctx.resetExecMemo_();
+ctx.scriptProps_(); ctx.readSheet(ctx.SHEETS.CUSTOMERS);
+var fxMemoR = ctx.EXEC_;
+ctx.EXEC_ = null;
+ctx.runOneTimeMigrations_();
+ctx.EXEC_ = fxMemoR;
+ctx.runOneTimeMigrations_();
+ctx.resetExecMemo_();
+check(ctx.readSheet(ctx.SHEETS.CUSTOMERS).length === fxBefore + 2, 'two overlapping first runs add the seed once, not twice');
+delete ctx.CUSTOMER_SEED_;
+ctx.resetExecMemo_();
+ctx.setScriptProp_('FX_JOB', '');
+ctx.setScriptProp_('FX_JOB_CLAIM', new Date().toISOString());
+var fxRan = 0;
+ctx.runOnce_('FX_JOB', function () { fxRan++; });
+check(fxRan === 0, 'a job another request has just claimed is not started again');
+ctx.setScriptProp_('FX_JOB_CLAIM', new Date(Date.now() - 20 * 60000).toISOString());
+ctx.resetExecMemo_();
+ctx.runOnce_('FX_JOB', function () { fxRan++; });
+ctx.runOnce_('FX_JOB', function () { fxRan++; });
+check(fxRan === 1, 'a claim left by a run that died is taken over, and the job then runs once');
+
+console.log('--- review fixes: a stale copy never erases a record number ---');
+ctx.resetExecMemo_();
+var fxStale = JSON.parse(JSON.stringify(ctx.getById_(ctx.SHEETS.CUSTOMERS, fxA.entity.id)));
+delete fxStale.code;
+fxStale.phone = '0500000001';
+ctx.writeRow(ctx.SHEETS.CUSTOMERS, fxStale);
+ctx.resetExecMemo_();
+var fxAfter = ctx.getById_(ctx.SHEETS.CUSTOMERS, fxA.entity.id);
+check(fxAfter.code === fxA.entity.code && fxAfter.phone === '0500000001', 'a write from a copy read before numbering keeps the number and still saves its change');
+
+console.log('--- review fixes: names ---');
+check(!saveCustomer({ name: 'مؤسسة النور للتجارة\u200f' }).ok, 'an invisible direction mark does not make a new customer');
+saveCustomer({ name: 'شركة الخليج المتحدة' });
+check(saveCustomer({ name: 'شرکة الخلیج المتحدة' }).error === 'duplicate_customer', 'nor does typing it on an Urdu or Persian keyboard');
+call({ action: 'adminCreateUser', token: adminTok, appUrl: 'https://x.test/', data: { name: 'عبد الله القحطاني', email: 'fx.abd@bestgas.sa', role: 'driver' } });
+var fxAbd = ctx._debug.mailLog.filter(function (m) { return m.to === 'fx.abd@bestgas.sa'; }).pop();
+check(fxAbd && fxAbd.html.indexOf('أهلاً عبد الله،') >= 0, 'the invitation greets عبد الله as عبد الله, not عبد');
+call({ action: 'adminCreateUser', token: adminTok, appUrl: 'https://x.test/', data: { name: 'أبو فهد', email: 'fx.abu@bestgas.sa', role: 'driver' } });
+var fxAbu = ctx._debug.mailLog.filter(function (m) { return m.to === 'fx.abu@bestgas.sa'; }).pop();
+check(fxAbu && fxAbu.html.indexOf('أهلاً أبو فهد،') >= 0, 'and a kunya stays whole');
+
+console.log('--- review fixes: what each role is sent ---');
+var fxMeta = call({ action: 'listMeta', token: aliTok });
+check(fxMeta.customers.length > 0 && fxMeta.customers.every(function (c) { return c.phone === undefined && c.code && c.name; }), 'a branch manager gets customers\' numbers and names, not their phones');
+check(call({ action: 'adminImportCustomers', token: adminTok, rows: new Array(501).join('x,').split(',') }).error === 'too_many_rows', 'an import is capped where it can finish in one run');
+
 console.log('--- an area\'s collector moves onto its branches, once ---');
 var mgCol = mk('Mg Area Collector', 'mgcol.fx@bestgas.sa', 'collector');
 var mgCol2 = mk('Mg Branch Collector', 'mgcol2.fx@bestgas.sa', 'collector');
