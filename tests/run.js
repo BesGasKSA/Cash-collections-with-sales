@@ -2312,5 +2312,19 @@ check(cpLine(cpPlain.id, 45).ok && cpLine(cpPlain.id, 42).error === 'price_locke
 var cpMeta = call({ action: 'listMeta', token: aliTok }).customers.filter(function (c) { return c.id === cpCust.id; })[0];
 check(cpMeta && cpMeta.prices && cpMeta.prices[fixedProduct.entity.id] === 42, 'the branch sees the customer\'s prices, so the form can fill them in');
 
+console.log('--- master data comes in from Excel, row by row, through the same checks as the form ---');
+var impRes = call({ action: 'adminImportEntities', token: adminTok, kind: 'product', rows: [
+  { data: { name: 'Imported Cylinder 11kg', type: 'goods', unitPrice: 30 } },
+  { data: { name: '', type: 'goods' } },
+  { data: { name: 'Imported Service', type: 'services', unitPrice: 15, priceLocked: true } }
+] });
+check(impRes.ok && impRes.created === 2 && impRes.total === 3, 'good rows are saved and a bad one is not');
+check(impRes.results[1].ok === false && impRes.results[1].error === 'invalid_input', 'the bad row says why');
+check(/^PR-\d+$/.test(impRes.results[0].code || ''), 'each saved row gets its system number');
+var impUpd = call({ action: 'adminImportEntities', token: adminTok, kind: 'product', rows: [{ id: impRes.results[0].id, data: { unitPrice: 32 } }] });
+check(impUpd.ok && impUpd.updated === 1 && ctx.getById_(ctx.SHEETS.PRODUCTS, impRes.results[0].id).unitPrice === 32, 'a row naming an existing record updates it');
+check(call({ action: 'adminImportEntities', token: aliTok, kind: 'product', rows: [{ data: { name: 'X' } }] }).error === 'forbidden', 'only an admin imports');
+check(call({ action: 'adminImportEntities', token: adminTok, kind: 'nope', rows: [{ data: { name: 'X' } }] }).error === 'invalid_kind', 'only known record types');
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);

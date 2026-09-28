@@ -690,6 +690,7 @@ function route_(req) {
     adminSaveEntity: function () { return withMeta_(actionAdminSaveEntity_(req, user), req, user); },
     adminDeleteEntity: function () { return withMeta_(actionAdminDeleteEntity_(req, user), req, user); },
     adminImportCustomers: function () { return withMeta_(actionAdminImportCustomers_(req, user), req, user); },
+    adminImportEntities: function () { return withMeta_(actionAdminImportEntities_(req, user), req, user); },
     adminSetConfig: function () { return withMeta_(actionAdminSetConfig_(req, user), req, user); },
     // starts a fresh round of testing by archiving the movement tabs —
     // renames, never deletes (see Admin.gs)
