@@ -17,6 +17,9 @@ var SHEETS = {
   // credit customers (auto-numbered CUS-0001…) and the city list pickers draw from
   CUSTOMERS: 'customers',
   CITIES: 'cities',
+  // sales channels such as the Souq Gas app, with their own delivery fee and
+  // driver commission per unit
+  CHANNELS: 'channels',
   // photos of الموازنات, uploaded before the entry that uses them; one photo
   // serves one line, and only its uploader can use it
   ENTRY_PHOTOS: 'entry_photos',

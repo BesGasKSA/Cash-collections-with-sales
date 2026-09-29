@@ -2336,6 +2336,25 @@ close(ctx.sumBreakdowns_([cdNet, cdNet]).creditDeliveryFees, 200, 'the fee adds 
 close(ctx.sumBreakdowns_([cdNet, cdNet]).creditCommissions, 100, 'and so does the commission');
 check(cdMeta.commissions && cdMeta.commissions[fixedProduct.entity.id] === 1, 'the branch sees the commissions too');
 
+console.log('--- a sales channel (Souq Gas) carries its own delivery fee and driver commission per unit ---');
+var chRates = function (v) { var p = {}; p[fixedProduct.entity.id] = v; return p; };
+var souq = call({ action: 'adminSaveEntity', token: adminTok, kind: 'channel', data: { name: 'Souq Gas', deliveryFees: chRates(4), commissions: chRates(1.5) } });
+check(souq.ok && /^CH-\d+$/.test(souq.entity.code || ''), 'the admin adds Souq Gas as a sales channel, with its own number');
+check(call({ action: 'adminSaveEntity', token: adminTok, kind: 'channel', data: { name: '' } }).error === 'invalid_input', 'a channel needs a name');
+var chDay = call({ action: 'createDailyEntry', token: aliTok, date: '2026-09-07', sourceType: 'store', sourceId: store.entity.id,
+  productId: fixedProduct.entity.id, qty: 30, unitPrice: 45, cashSales: 1350, channelId: souq.entity.id, channelDeliveryFee: 1 });
+check(chDay.ok && chDay.entry.channelId === souq.entity.id, 'a sale is recorded through the channel');
+check(chDay.ok && chDay.entry.channelDeliveryFee === 120 && chDay.entry.channelCommission === 45, 'the server works out the fee (30 x 4) and the commission (30 x 1.5); what the client sent is ignored');
+var chNet = ctx.computeNet_([chDay.entry]);
+close(chNet.channelDeliveryFees, 120, 'the channel fee shows on its own line');
+close(chNet.channelCommissions, 45, 'and so does the channel commission');
+close(chNet.netCashOwed, 1350 + 120 - 45, 'the fee is added and the commission comes off');
+close(ctx.sumBreakdowns_([chNet, chNet]).channelDeliveryFees, 240, 'channel figures add up across handoffs');
+check(call({ action: 'createDailyEntry', token: aliTok, date: '2026-09-07', sourceType: 'store', sourceId: store.entity.id, cashSales: 100, channelId: 'nope' }).error === 'invalid_channel', 'an unknown channel is refused');
+var plainDay = call({ action: 'createDailyEntry', token: aliTok, date: '2026-09-07', sourceType: 'store', sourceId: store.entity.id, productId: fixedProduct.entity.id, qty: 5, unitPrice: 45, cashSales: 225 });
+check(plainDay.ok && !plainDay.entry.channelDeliveryFee && !plainDay.entry.channelCommission, 'a normal sale carries no channel fee');
+check((call({ action: 'listMeta', token: aliTok }).channels || []).some(function (c) { return c.id === souq.entity.id && c.deliveryFees; }), 'every branch sees the channels and their rates');
+
 console.log('--- master data comes in from Excel, row by row, through the same checks as the form ---');
 var impRes = call({ action: 'adminImportEntities', token: adminTok, kind: 'product', rows: [
   { data: { name: 'Imported Cylinder 11kg', type: 'goods', unitPrice: 30 } },

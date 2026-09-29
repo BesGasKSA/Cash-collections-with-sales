@@ -16,7 +16,8 @@ var ENTITY_SHEET = {
   income_item: SHEETS.INCOME_ITEMS,
   expense_item: SHEETS.EXPENSE_ITEMS,
   customer: SHEETS.CUSTOMERS,
-  city: SHEETS.CITIES
+  city: SHEETS.CITIES,
+  channel: SHEETS.CHANNELS
 };
 
 // child sheet + the field on the child that points at the parent, used to
@@ -38,6 +39,8 @@ var ENTITY_CHILDREN = {
   expense_item: [{ sheet: SHEETS.ENTRIES, field: 'expenseItemId' }],
   // a customer with credit history stays on file (deactivate instead)
   customer: [{ sheet: SHEETS.ENTRIES, field: 'creditCustomerId' }],
+  // a channel with sales on it stays on file (deactivate instead)
+  channel: [{ sheet: SHEETS.ENTRIES, field: 'channelId' }],
   // a city is referenced by name, not id — see actionAdminDeleteEntity_
   city: []
 };
@@ -503,6 +506,27 @@ function userHasRole_(userId, role) {
   return u.role === role || u.role === 'admin';
 }
 
+// A delivery fee and a driver commission per unit of each product, for a
+// credit customer or a sales channel: products that exist, never negative.
+function perUnitRatesError_(d) {
+  var perUnit = ['deliveryFees', 'commissions'];
+  for (var mi = 0; mi < perUnit.length; mi++) {
+    var map = d[perUnit[mi]];
+    if (map == null) continue;
+    if (typeof map !== 'object' || Array.isArray(map)) return 'invalid_input';
+    var pk = safeOwnKeys_(map);
+    if (pk.length > 300) return 'invalid_input';
+    for (var pi = 0; pi < pk.length; pi++) {
+      var pv = map[pk[pi]];
+      if (pv === '' || pv == null) { delete map[pk[pi]]; continue; }
+      if (!getById_(SHEETS.PRODUCTS, pk[pi])) return 'invalid_product';
+      if (!isFinite(Number(pv)) || Number(pv) < 0) return 'invalid_input';
+      map[pk[pi]] = Math.round(Number(pv) * 100) / 100;
+    }
+  }
+  return null;
+}
+
 function validateEntity_(kind, d) {
   if (kind === 'customer') {
     if (!String(d.name || '').trim()) return 'invalid_input';
@@ -510,22 +534,11 @@ function validateEntity_(kind, d) {
     // the customer's delivery fee per unit, product by product; it is added
     // to their credit lines on its own (special prices were dropped 2026-09-29)
     // and the driver's commission per unit (2026-09-29)
-    var perUnit = ['deliveryFees', 'commissions'];
-    for (var mi = 0; mi < perUnit.length; mi++) {
-      var map = d[perUnit[mi]];
-      if (map == null) continue;
-      if (typeof map !== 'object' || Array.isArray(map)) return 'invalid_input';
-      var pk = safeOwnKeys_(map);
-      if (pk.length > 300) return 'invalid_input';
-      for (var pi = 0; pi < pk.length; pi++) {
-        var pv = map[pk[pi]];
-        if (pv === '' || pv == null) { delete map[pk[pi]]; continue; }
-        if (!getById_(SHEETS.PRODUCTS, pk[pi])) return 'invalid_product';
-        if (!isFinite(Number(pv)) || Number(pv) < 0) return 'invalid_input';
-        map[pk[pi]] = Math.round(Number(pv) * 100) / 100;
-      }
-    }
-    return null;
+    return perUnitRatesError_(d);
+  }
+  if (kind === 'channel') {
+    if (!String(d.name || '').trim()) return 'invalid_input';
+    return perUnitRatesError_(d);
   }
   if (kind === 'city') {
     if (!String(d.name || '').trim()) return 'invalid_input';
@@ -969,7 +982,7 @@ function cityDuplicateOf_(name, selfId) {
 // script lock.
 var CODE_PREFIX_ = {
   location: 'BR', cluster: 'AR', city: 'CT', zone: 'ZN', store: 'ST', car: 'CR', pos: 'POS',
-  product: 'PR', income_item: 'INC', expense_item: 'EXP', customer: 'CUS', user: 'EMP'
+  product: 'PR', income_item: 'INC', expense_item: 'EXP', customer: 'CUS', user: 'EMP', channel: 'CH'
 };
 function codeSheet_(kind) { return kind === 'user' ? SHEETS.USERS : ENTITY_SHEET[kind]; }
 function isCodedSheet_(name) {
@@ -1162,6 +1175,7 @@ function actionMeta_(req, user) {
   var incomeItems = readSheet(SHEETS.INCOME_ITEMS);
   var expenseItems = readSheet(SHEETS.EXPENSE_ITEMS);
   var customers = readSheet(SHEETS.CUSTOMERS);
+  var channels = readSheet(SHEETS.CHANNELS);
   var cities = readSheet(SHEETS.CITIES);
   var users = readSheet(SHEETS.USERS).map(publicUser_);
 
@@ -1178,7 +1192,7 @@ function actionMeta_(req, user) {
     ok: true,
     locations: locations, stores: stores, cars: cars, pos: pos,
     clusters: clusters, zones: zones, products: products, users: users,
-    incomeItems: incomeItems, expenseItems: expenseItems, customers: customers, cities: cities,
+    incomeItems: incomeItems, expenseItems: expenseItems, customers: customers, cities: cities, channels: channels,
     config: { vatRate: vatRate_(), staleThresholdHours: staleThresholdHours_(), heldThresholdHours: heldThresholdHours_(), secondApprovalThreshold: secondApprovalThreshold_(), areaManagerBulkUploadEnabled: areaManagerBulkUploadEnabled_(), posSalesEnabled: posSalesEnabled_(), liveLocked: config_().liveLocked === true, liveLockedAt: config_().liveLockedAt || null }
   };
 }
