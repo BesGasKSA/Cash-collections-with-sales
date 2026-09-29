@@ -6935,7 +6935,9 @@ function renderEntries(body){
   if (role==='store_manager' || role==='cluster_manager' || role==='admin') opts.push(['store', t('entry_source_store')]);
   if (role==='store_manager' || role==='cluster_manager' || role==='admin' || role==='driver') opts.push(['car', t('entry_source_car')]);
   opts.push(['pos', t('entry_source_pos')]);
-  typeSel.innerHTML = opts.map(function(o){ return '<option value="'+o[0]+'">'+esc(o[1])+'</option>'; }).join('');
+  // POS machine is the default source for now (2026-09-29): most days are
+  // entered per device
+  typeSel.innerHTML = opts.map(function(o){ return '<option value="'+o[0]+'"'+(o[0]==='pos'?' selected':'')+'>'+esc(o[1])+'</option>'; }).join('');
 
   // Needed by resetLines_/addLine_ below, so computed before the first
   // populateSourceOptions() call that triggers them.
