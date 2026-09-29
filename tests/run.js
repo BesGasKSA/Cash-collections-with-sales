@@ -2374,6 +2374,19 @@ var posNamed = call({ action: 'adminSaveEntity', token: adminTok, kind: 'pos', d
 check(posNamed.ok && posNamed.entity.holderName === 'Test Holder' && posNamed.entity.holderIqama === '2000000001', 'a device saves with its holder\'s name and iqama');
 check(call({ action: 'adminSaveEntity', token: adminTok, kind: 'pos', data: { ownerType: 'car', ownerId: car.entity.id, label: 'No holder' } }).error === 'holder_required', 'but it still needs a holder, by account or by name');
 
+console.log('--- the finance manager runs every module; user accounts stay with the admin ---');
+var finArea = call({ action: 'adminSaveEntity', token: financeTok, kind: 'zone', data: { city: 'Riyadh', name: 'Finance Zone' } });
+check(finArea.ok, 'finance adds master data');
+check(call({ action: 'adminImportEntities', token: financeTok, kind: 'product', rows: [{ data: { name: 'Finance Import', type: 'goods' } }] }).ok, 'finance imports master data from Excel');
+check(call({ action: 'adminDeleteEntity', token: financeTok, kind: 'zone', id: finArea.entity.id }).ok, 'finance deletes master data');
+check(call({ action: 'adminSetConfig', token: financeTok, data: { secondApprovalThreshold: call({ action: 'listMeta', token: adminTok }).config.secondApprovalThreshold } }).ok, 'finance changes the settings');
+check(call({ action: 'adminImportCustomers', token: financeTok, rows: [{ name: 'Finance Customer', city: 'Riyadh' }] }).ok, 'finance imports customers');
+check(call({ action: 'adminCreateUser', token: financeTok, data: { name: 'Nope', email: 'nope.fin@bestgas.sa', role: 'driver' } }).error === 'forbidden', 'but only the admin creates users');
+check(call({ action: 'adminUpdateUser', token: financeTok, id: ali.id, data: { name: 'Renamed' } }).error === 'forbidden', 'or changes them');
+check(call({ action: 'adminResetPassword', token: financeTok, id: ali.id }).error === 'forbidden', 'or resets their passwords');
+check(call({ action: 'adminResendInvite', token: financeTok, id: ali.id }).error === 'forbidden', 'or sends invitations');
+check(call({ action: 'adminSaveEntity', token: call({ action: 'login', email: 'ali@bestgas.sa', password: 'RealPass#1' }).token, kind: 'zone', data: { city: 'Riyadh', name: 'X' } }).error === 'forbidden', 'nobody else manages master data');
+
 console.log('--- master data comes in from Excel, row by row, through the same checks as the form ---');
 var impRes = call({ action: 'adminImportEntities', token: adminTok, kind: 'product', rows: [
   { data: { name: 'Imported Cylinder 11kg', type: 'goods', unitPrice: 30 } },

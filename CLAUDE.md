@@ -178,6 +178,8 @@ collectors.
   highlighted. The deputy's cards open with a bold branch → area → collector strip
   (`handoffRoute_`).
 
+**Finance runs every module; users are the admin's (2026-09-29).** `requireManager_` (admin or finance) guards master data, imports, settings, archive and the stale trigger; `requireAdmin_` still guards creating, changing, resetting and inviting users. The client splits the old admin screen: **الإدارة** (admin + finance: chain health, master data, settings, audit) and **المستخدمون والصلاحيات** (admin only: users, permission matrix). `openProfile_("user")` is a no-op for non-admins.
+
 **Transfers, الموازنات per device, customer prices, security (2026-09-28, evening).**
 - **Customer bank transfers** (`bankTransferAmount`, one entry row per transfer, the form's
   amount-only lines): inside the typed sales figure like credit, so `computeNet_` deducts
