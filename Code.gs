@@ -329,6 +329,9 @@ function vatRate_() {
 // `html` is optional; when given, clients that render HTML show it and the
 // plain `body` is the fallback.
 function sendMail_(to, subject, body, html) {
+  // accounts without email (drivers who sign in by iqama) simply get nothing
+  to = String(to || '').split(',').map(function (x) { return x.trim(); }).filter(function (x) { return x.indexOf('@') > 0; }).join(',');
+  if (!to) return 'none';
   if (typeof sendViaGraph_ === 'function') {
     var cfg = graphMailConfig_();
     if (cfg) {
@@ -489,10 +492,36 @@ function clearFail_(login) {
 function userByEmail_(email) {
   var rows = readSheet(SHEETS.USERS);
   var norm = String(email || '').trim().toLowerCase();
+  // an account without email must never match a blank address
+  if (!norm) return null;
   for (var i = 0; i < rows.length; i++) {
     if (String(rows[i].email || '').trim().toLowerCase() === norm) return rows[i];
   }
   return null;
+}
+
+// Drivers without email sign in with their iqama (or passport) number
+// (2026-09-29): Arabic digits become ASCII, spaces and dashes go, letters are
+// capitals, so "fk 7966 781" and "٢٥١٩٢١٥٠٠٤" match what the admin typed.
+function normIqama_(v) {
+  return String(v == null ? '' : v).replace(/[\u0660-\u0669]/g, function (c) { return String(c.charCodeAt(0) - 0x0660); })
+    .replace(/[\u06F0-\u06F9]/g, function (c) { return String(c.charCodeAt(0) - 0x06F0); })
+    .replace(/[\s\-]/g, '').toUpperCase();
+}
+function userByIqama_(iq) {
+  var norm = normIqama_(iq);
+  if (!norm) return null;
+  var rows = readSheet(SHEETS.USERS);
+  for (var i = 0; i < rows.length; i++) {
+    if (rows[i].iqamaId && normIqama_(rows[i].iqamaId) === norm) return rows[i];
+  }
+  return null;
+}
+// what the sign-in box holds: an email, or else an iqama number
+function userByLogin_(login) {
+  login = String(login || '').trim();
+  if (!login) return null;
+  return login.indexOf('@') >= 0 ? userByEmail_(login) : userByIqama_(login);
 }
 
 function publicUser_(u) {
@@ -689,6 +718,7 @@ function route_(req) {
     adminUpdateUser: function () { return withMeta_(actionAdminUpdateUser_(req, user), req, user); },
     adminResetPassword: function () { return withMeta_(actionAdminResetPassword_(req, user), req, user); },
     adminResendInvite: function () { return withMeta_(actionAdminResendInvite_(req, user), req, user); },
+    adminImportUsers: function () { return withMeta_(actionAdminImportUsers_(req, user), req, user); },
 
     // admin — full control over the hierarchy: location -> store/car -> pos,
     // plus clusters. One generic save/delete pair per entity kind so every
@@ -742,7 +772,7 @@ function actionLogin_(req) {
     return { ok: false, error: 'locked' };
   }
   var pw = String(req.password || '').trim();
-  var user = userByEmail_(login);
+  var user = userByLogin_(login);
   if (user && user.active !== false && user.inviteStatus === 'invited' && !user.pass) {
     // no password exists until the invitation is accepted
     noteFail_(login.toLowerCase());

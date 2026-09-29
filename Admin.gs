@@ -85,8 +85,11 @@ function validRole_(r) {
 function actionAdminCreateUser_(req, user) {
   requireAdmin_(user);
   var d = req.data || {};
-  if (!d.name || !d.email || !validRole_(d.role)) return { ok: false, error: 'invalid_input' };
-  if (userByEmail_(d.email)) return { ok: false, error: 'email_exists' };
+  var email = String(d.email || '').trim(), iq = normIqama_(d.iqamaId);
+  if (!String(d.name || '').trim() || (!email && !iq) || !validRole_(d.role)) return { ok: false, error: 'invalid_input' };
+  if (email && userByEmail_(email)) return { ok: false, error: 'email_exists' };
+  if (iq && userByIqama_(iq)) return { ok: false, error: 'iqama_exists' };
+  if (!email) return createIqamaUser_(d, iq, user);
 
   var newUser = {
     id: Utilities.getUuid(),
@@ -423,10 +426,17 @@ function actionAdminUpdateUser_(req, user) {
     if (!String(d.name).trim()) return { ok: false, error: 'invalid_input' };
     target.name = d.name;
   }
+  if (d.iqamaId !== undefined) {
+    var iqn = normIqama_(d.iqamaId);
+    var iqOwner = iqn ? userByIqama_(iqn) : null;
+    if (iqOwner && iqOwner.id !== target.id) return { ok: false, error: 'iqama_exists' };
+    d.iqamaId = iqn || null;
+  }
   if (d.email != null) {
     var email = String(d.email).trim();
-    if (!email) return { ok: false, error: 'invalid_input' };
-    var existing = userByEmail_(email);
+    // an account signing in by iqama may have no email
+    if (!email && !(d.iqamaId !== undefined ? d.iqamaId : target.iqamaId)) return { ok: false, error: 'invalid_input' };
+    var existing = email ? userByEmail_(email) : null;
     if (existing && existing.id !== target.id) return { ok: false, error: 'email_exists' };
     target.email = email;
   }
@@ -459,10 +469,64 @@ function actionAdminUpdateUser_(req, user) {
   return { ok: true, user: publicUser_(target) };
 }
 
+// An account with no email: no invitation can reach it, so it starts with a
+// temporary password the admin hands over, changed at the first sign-in.
+// easy to read out and type on a phone: no 0/o, 1/l/i
+function readablePassword_() {
+  var abc = 'abcdefghjkmnpqrstuvwxyz23456789', out = '';
+  for (var i = 0; i < 10; i++) out += abc.charAt(Math.floor(Math.random() * abc.length));
+  return out;
+}
+function createIqamaUser_(d, iq, user) {
+  var temp = readablePassword_(), salt = randomSalt_();
+  var newUser = {
+    id: Utilities.getUuid(), name: String(d.name).trim(), email: '', role: d.role, active: true,
+    language: d.language || 'ar', locationId: d.locationId || null, clusterId: d.clusterId || null,
+    iqamaId: iq, salt: salt, pass: hashPw_(temp, salt), mustChangePw: true,
+    inviteStatus: 'accepted', createdAt: new Date().toISOString()
+  };
+  var lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  try { freshenExec_(); newUser.code = nextCode_('user'); writeRow(SHEETS.USERS, newUser); }
+  finally { try { lock.releaseLock(); } catch (e) {} }
+  logAudit_('admin_create_user_iqama', user.id, newUser.id);
+  return { ok: true, user: publicUser_(newUser), tempPassword: temp };
+}
+
+// Drivers from a sheet: [{name, iqamaId, role, locationId, language}]. Each
+// row goes through the same checks as the form; every new account comes back
+// with its temporary password, and a refused row says why.
+function actionAdminImportUsers_(req, user) {
+  requireAdmin_(user);
+  var rows = Array.isArray(req.rows) ? req.rows : [];
+  if (!rows.length || rows.length > 300) return { ok: false, error: rows.length ? 'too_many_rows' : 'invalid_input' };
+  var created = 0, results = [];
+  rows.forEach(function (r, i) {
+    var res;
+    try { res = actionAdminCreateUser_({ data: r || {} }, user); }
+    catch (e) { res = { ok: false, error: String((e && e.message) || e) }; }
+    if (res.ok) created++;
+    results.push({ row: i, ok: !!res.ok, error: res.error || null, id: res.user ? res.user.id : null,
+      code: res.user ? res.user.code : null, tempPassword: res.tempPassword || null });
+  });
+  fillTranslations_([].concat.apply([], rows.map(function (r) { return translatableOf_({ name: r && r.name }); })));
+  logAudit_('admin_import_users', user.id, created + '/' + rows.length);
+  return { ok: true, created: created, total: rows.length, results: results };
+}
+
 function actionAdminResetPassword_(req, user) {
   requireAdmin_(user);
   var target = getById_(SHEETS.USERS, req.id);
   if (!target) return { ok: false, error: 'not_found' };
+  if (!String(target.email || '').trim()) {
+    // nothing to email: the admin reads the new password off the screen
+    var t2 = readablePassword_(), s2 = randomSalt_();
+    target.salt = s2; target.pass = hashPw_(t2, s2); target.mustChangePw = true;
+    delete target.resetPass; delete target.resetSalt; delete target.resetExpires;
+    writeRow(SHEETS.USERS, target);
+    logAudit_('admin_reset_password', user.id, target.id);
+    return { ok: true, tempPassword: t2 };
+  }
   // Someone who never accepted their invitation gets a fresh invitation,
   // not a temporary password that would skip the accept step.
   if (target.inviteStatus === 'invited') return actionAdminResendInvite_(req, user);
