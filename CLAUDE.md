@@ -904,6 +904,13 @@ deployment rather than creating a new one). Admin account: `aboumahdi04@gmail.co
 
 ### Redeploying a code change — use `clasp`, not the web editor
 
+**The deploy folder is `C:\Claude\bestgas-cash-collection\apps-script`** (moved out
+of `%TEMP%` on 2026-09-29, where Windows could have cleared it). It already has
+`.clasp.json` and the private `CustomerSeed.js`: `clasp pull`, copy `Code.gs` →
+`الرمز.js`, `Admin.gs` → `Admin.js`, `Collection.gs` → `Collection.js`, then
+`clasp push -f` and `clasp deploy -i …` as below. The steps below that create a
+fresh folder are only for rebuilding it.
+
 The Apps Script web editor's "Manage deployments" version dropdown is a
 Google Closure combobox that is extremely unreliable to drive by automation
 (and fiddly by hand) — it silently no-ops far more often than it works.

@@ -12,7 +12,7 @@
 
 ## Global Constraints
 
-- The GitHub repo is public: customer names never go into the repo. They ship in `CustomerSeed.js`, which exists only in the Apps Script project (clasp folder), plus a local CSV in `Downloads/BestGas-Customers/`.
+- The GitHub repo is public: customer names never go into the repo. They ship in `CustomerSeed.js`, which exists only in the Apps Script project (clasp folder), plus a local CSV in `bestgas-cash-collection/customers/`.
 - Customer code format `CUS-0001`, assigned by the server, never editable, never reused.
 - Duplicate test uses a normalised name: trim, collapse spaces, drop tatweel and diacritics, أ/إ/آ→ا, ى→ي, ة→ه, spaces around `-` removed, Latin lower-cased.
 - `computeNet_` and the credit-deduction rule stay exactly as they are (the sales figure includes credit sales; the credit section deducts them).
