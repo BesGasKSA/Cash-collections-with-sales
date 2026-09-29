@@ -48,6 +48,11 @@ var ENTITY_CHILDREN = {
 function requireAdmin_(user) {
   if (user.role !== 'admin') throw new Error('forbidden');
 }
+// Every module but the user accounts: the admin and the finance manager
+// (2026-09-29). Creating, changing and inviting users stays with the admin.
+function requireManager_(user) {
+  if (user.role !== 'admin' && user.role !== 'finance') throw new Error('forbidden');
+}
 function requireAdminOrFinance_(user) {
   if (user.role !== 'admin' && user.role !== 'finance') throw new Error('forbidden');
 }
@@ -683,7 +688,7 @@ function inFlightError_(kind, before, after) {
 }
 
 function actionAdminSaveEntity_(req, user) {
-  requireAdmin_(user);
+  requireManager_(user);
   // the duplicate check and the new number must see the same file: hold the
   // lock from the check to the write (writeRow releases it)
   var lock = LockService.getScriptLock();
@@ -696,7 +701,7 @@ function actionAdminSaveEntity_(req, user) {
 // A row with an id updates that record. The client resolves names and
 // numbers to ids and shows every row's problem before sending.
 function actionAdminImportEntities_(req, user) {
-  requireAdmin_(user);
+  requireManager_(user);
   if (!hasOwn_(ENTITY_SHEET, req.kind)) return { ok: false, error: 'invalid_kind' };
   var rows = Array.isArray(req.rows) ? req.rows : [];
   if (!rows.length) return { ok: false, error: 'invalid_input' };
@@ -758,7 +763,7 @@ function saveEntity_(req, user) {
 }
 
 function actionAdminDeleteEntity_(req, user) {
-  requireAdmin_(user);
+  requireManager_(user);
   var kind = req.kind;
   var sheetName = hasOwn_(ENTITY_SHEET, kind) ? ENTITY_SHEET[kind] : null;
   if (!sheetName) return { ok: false, error: 'invalid_kind' };
@@ -789,7 +794,7 @@ function actionAdminDeleteEntity_(req, user) {
 // ---------- Config ----------
 
 function actionAdminSetConfig_(req, user) {
-  requireAdmin_(user);
+  requireManager_(user);
   var cfg = config_();
   var d = req.data || {};
   var before = JSON.stringify(cfg);
@@ -864,7 +869,7 @@ var TRANSACTIONAL_SHEETS_ = [
 ];
 
 function actionAdminArchiveTransactions_(req, user) {
-  requireAdmin_(user);
+  requireManager_(user);
   // A word the caller has to type, so this can never be one stray tap.
   if (String(req.confirm || '') !== 'ARCHIVE') return { ok: false, error: 'confirm_required' };
   if (config_().liveLocked === true) return { ok: false, error: 'live_locked' };
@@ -1112,7 +1117,7 @@ function importCustomers_(rows) {
 }
 
 function actionAdminImportCustomers_(req, user) {
-  requireAdmin_(user);
+  requireManager_(user);
   var rows = Array.isArray(req.rows) ? req.rows : [];
   if (!rows.length) return { ok: false, error: 'invalid_input' };
   // each row takes the lock and re-reads the list: 500 finish well inside one run

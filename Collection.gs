@@ -1933,7 +1933,7 @@ function actionRunStaleCheck_(req, user) {
 }
 
 function actionAdminInstallStaleTrigger_(req, user) {
-  requireAdmin_(user);
+  requireManager_(user);
   var already = ScriptApp.getProjectTriggers().some(function (t) { return t.getHandlerFunction() === 'checkStaleHandoffs_'; });
   if (already) return { ok: true, alreadyInstalled: true };
   ScriptApp.newTrigger('checkStaleHandoffs_').timeBased().everyDays(1).atHour(6).create();
