@@ -590,7 +590,8 @@ function validateEntity_(kind, d) {
     if (!d.ownerType || !d.ownerId || !d.label) return 'invalid_input';
     // Somebody carries every machine, and their name is who the cash on it
     // is traced to.
-    if (!d.assignedUserId) return 'holder_required';
+    // a user account, or (for the many cashiers without one) a name and iqama
+    if (!d.assignedUserId && !String(d.holderName || '').trim()) return 'holder_required';
     if (d.ownerType !== 'store' && d.ownerType !== 'car') return 'invalid_owner_type';
     var ownerSheet = d.ownerType === 'store' ? SHEETS.STORES : SHEETS.CARS;
     if (!getById_(ownerSheet, d.ownerId)) return 'invalid_owner';
