@@ -545,13 +545,11 @@ function validateEntity_(kind, d) {
       if (!userHasRole_(d.collectorUserId, 'collector')) return 'wrong_role';
       if (locCluster && locCluster.clusterManagerUserId === d.collectorUserId) return 'conflict_of_interest';
       // one person, one area: a collector's branches all sit in one area,
-      // and nobody collects in one area while managing another
-      var elsewhere = readSheet(SHEETS.LOCATIONS).some(function (l) {
-        return l.id !== d.id && l.collectorUserId === d.collectorUserId && String(l.clusterId || '') !== String(d.clusterId || '');
-      }) || readSheet(SHEETS.CLUSTERS).some(function (c) {
-        return c.clusterManagerUserId === d.collectorUserId || (c.collectorUserId === d.collectorUserId && c.id !== d.clusterId);
-      });
-      if (elsewhere) return 'user_in_other_area';
+      // A collector may serve branches in any number of areas (changed
+      // 2026-09-29: one collector can cover every area). Nobody collects
+      // while managing an area, though.
+      var manages = readSheet(SHEETS.CLUSTERS).some(function (c) { return c.clusterManagerUserId === d.collectorUserId; });
+      if (manages) return 'user_in_other_area';
     }
   } else if (kind === 'store') {
     if (!d.locationId || !d.name) return 'invalid_input';
@@ -590,14 +588,13 @@ function validateEntity_(kind, d) {
     }
     if (!userHasRole_(d.clusterManagerUserId, 'cluster_manager')) return 'wrong_role';
     if (d.collectorUserId && !userHasRole_(d.collectorUserId, 'collector')) return 'wrong_role';
-    // One person, one area: nobody manages or collects for two areas at
-    // once, admins standing in included. The same person as manager here and
-    // collector there counts too — a branch collector included.
-    var mine = [d.clusterManagerUserId].concat(d.collectorUserId ? [d.collectorUserId] : []);
+    // An area manager runs one area and collects for none. A collector may
+    // serve any number of areas (changed 2026-09-29).
     var taken = readSheet(SHEETS.CLUSTERS).some(function (c) {
-      return c.id !== d.id && (mine.indexOf(c.clusterManagerUserId) >= 0 || (c.collectorUserId && mine.indexOf(c.collectorUserId) >= 0));
+      return c.id !== d.id && (c.clusterManagerUserId === d.clusterManagerUserId || c.clusterManagerUserId === d.collectorUserId ||
+        (c.collectorUserId && c.collectorUserId === d.clusterManagerUserId));
     }) || readSheet(SHEETS.LOCATIONS).some(function (l) {
-      return l.collectorUserId && (l.collectorUserId === d.clusterManagerUserId || (l.collectorUserId === d.collectorUserId && l.clusterId !== d.id));
+      return l.collectorUserId && l.collectorUserId === d.clusterManagerUserId;
     });
     if (taken) return 'user_in_other_area';
   } else if (kind === 'zone') {

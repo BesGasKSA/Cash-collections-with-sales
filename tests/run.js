@@ -1777,8 +1777,12 @@ check(ctx.branchCollector_(bcLocA.id) === bcColA.id, 'a branch resolves to its o
 check(ctx.branchCollector_(location.entity.id) === musa.id, 'a branch saved before this change still resolves to its area\'s collector');
 var bcWrongRole = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: 'Riyadh', name: 'Bc Wrong', clusterId: bcArea.id, collectorUserId: bcBmA.id } });
 check(!bcWrongRole.ok && bcWrongRole.error === 'wrong_role', 'the collector has to hold the collector role');
+// a collector may serve branches in any number of areas (2026-09-29)
 var bcCrossArea = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: 'Jeddah', name: 'Bc Elsewhere', clusterId: cluster2.id, collectorUserId: bcColA.id } });
-check(!bcCrossArea.ok && bcCrossArea.error === 'user_in_other_area', 'a collector\'s branches all sit in one area');
+check(bcCrossArea.ok, 'a collector can serve a branch in another area too');
+check(ctx.branchCollector_(bcCrossArea.entity.id) === bcColA.id && ctx.branchCollector_(bcLocA.id) === bcColA.id, 'and collects for both areas\' branches');
+var bcAreaMgrAsCol = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: 'Jeddah', name: 'Bc Mgr Col', clusterId: cluster2.id, collectorUserId: sara.id } });
+check(!bcAreaMgrAsCol.ok, 'an area manager still cannot be a branch\'s collector');
 var bcStoreA = call({ action: 'adminSaveEntity', token: adminTok, kind: 'store', data: { locationId: bcLocA.id, name: 'Bc Store A', storeManagerUserId: bcBmA.id } }).entity;
 var bcStoreB = call({ action: 'adminSaveEntity', token: adminTok, kind: 'store', data: { locationId: bcLocB.id, name: 'Bc Store B', storeManagerUserId: bcBmB.id } }).entity;
 check(bcStoreA && bcStoreB, 'each branch has its store and manager');
@@ -1944,7 +1948,8 @@ var dupMgr = call({ action: 'adminSaveEntity', token: adminTok, kind: 'cluster',
 check(!dupMgr.ok && dupMgr.error === 'user_in_other_area', 'an area manager already running an area cannot be given a second one');
 var soloMgr = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Solo Area Manager', email: 'solo.fx@bestgas.sa', role: 'cluster_manager' } }).user;
 var dupCol = call({ action: 'adminSaveEntity', token: adminTok, kind: 'cluster', data: { name: 'Twin Area', clusterManagerUserId: soloMgr.id, collectorUserId: musa.id } });
-check(!dupCol.ok && dupCol.error === 'user_in_other_area', 'nor can a collector who already collects for another area');
+check(dupCol.ok, 'a collector who already collects for another area can collect for this one too');
+if (dupCol.ok) call({ action: 'adminDeleteEntity', token: adminTok, kind: 'cluster', id: dupCol.entity.id });
 var soloCol = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Solo Collector', email: 'solocol.fx@bestgas.sa', role: 'collector' } }).user;
 var twin = call({ action: 'adminSaveEntity', token: adminTok, kind: 'cluster', data: { name: 'Twin Area', clusterManagerUserId: soloMgr.id, collectorUserId: soloCol.id } });
 check(twin.ok, 'two people nobody else uses make a valid area');
