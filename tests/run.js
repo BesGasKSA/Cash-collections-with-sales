@@ -2370,8 +2370,8 @@ check(call({ action: 'createDailyEntry', token: aliTok, date: '2026-09-08', sour
   productId: fixedProduct.entity.id, qty: 10, unitPrice: 45, cashSales: 450, channelQtys: badQ }).error === 'invalid_channel', 'only a channel that exists');
 
 console.log('--- a POS device can name its holder without a user account ---');
-var posNamed = call({ action: 'adminSaveEntity', token: adminTok, kind: 'pos', data: { ownerType: 'car', ownerId: car.entity.id, label: 'Nassem/2433 NXA', posId: '15547703', holderName: 'Muhammad Tayab', holderIqama: '2538993771' } });
-check(posNamed.ok && posNamed.entity.holderName === 'Muhammad Tayab' && posNamed.entity.holderIqama === '2538993771', 'a device saves with its holder\'s name and iqama');
+var posNamed = call({ action: 'adminSaveEntity', token: adminTok, kind: 'pos', data: { ownerType: 'car', ownerId: car.entity.id, label: 'Test/1234 ABC', posId: '10000001', holderName: 'Test Holder', holderIqama: '2000000001' } });
+check(posNamed.ok && posNamed.entity.holderName === 'Test Holder' && posNamed.entity.holderIqama === '2000000001', 'a device saves with its holder\'s name and iqama');
 check(call({ action: 'adminSaveEntity', token: adminTok, kind: 'pos', data: { ownerType: 'car', ownerId: car.entity.id, label: 'No holder' } }).error === 'holder_required', 'but it still needs a holder, by account or by name');
 
 console.log('--- master data comes in from Excel, row by row, through the same checks as the form ---');
