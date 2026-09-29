@@ -2355,6 +2355,20 @@ var plainDay = call({ action: 'createDailyEntry', token: aliTok, date: '2026-09-
 check(plainDay.ok && !plainDay.entry.channelDeliveryFee && !plainDay.entry.channelCommission, 'a normal sale carries no channel fee');
 check((call({ action: 'listMeta', token: aliTok }).channels || []).some(function (c) { return c.id === souq.entity.id && c.deliveryFees; }), 'every branch sees the channels and their rates');
 
+console.log('--- one line, part of it through Souq Gas: the fee and commission follow that part only ---');
+var mixQ = {}; mixQ[souq.entity.id] = 30;
+var mixDay = call({ action: 'createDailyEntry', token: aliTok, date: '2026-09-08', sourceType: 'store', sourceId: store.entity.id,
+  productId: fixedProduct.entity.id, qty: 100, unitPrice: 45, cashSales: 4500, channelQtys: mixQ });
+check(mixDay.ok && mixDay.entry.qty === 100 && mixDay.entry.channelQtys[souq.entity.id] === 30, 'a line of 100 records that 30 of them went through Souq Gas');
+check(mixDay.ok && mixDay.entry.channelDeliveryFee === 120 && mixDay.entry.channelCommission === 45, 'the fee and commission follow the 30 only (30 x 4, 30 x 1.5)');
+close(ctx.computeNet_([mixDay.entry]).netCashOwed, 4500 + 120 - 45, 'and the cash owed takes them in');
+var overQ = {}; overQ[souq.entity.id] = 101;
+check(call({ action: 'createDailyEntry', token: aliTok, date: '2026-09-08', sourceType: 'store', sourceId: store.entity.id,
+  productId: fixedProduct.entity.id, qty: 100, unitPrice: 45, cashSales: 4500, channelQtys: overQ }).error === 'channel_qty_exceeds', 'the Souq Gas part cannot be more than the line');
+var badQ = { nope: 3 };
+check(call({ action: 'createDailyEntry', token: aliTok, date: '2026-09-08', sourceType: 'store', sourceId: store.entity.id,
+  productId: fixedProduct.entity.id, qty: 10, unitPrice: 45, cashSales: 450, channelQtys: badQ }).error === 'invalid_channel', 'only a channel that exists');
+
 console.log('--- master data comes in from Excel, row by row, through the same checks as the form ---');
 var impRes = call({ action: 'adminImportEntities', token: adminTok, kind: 'product', rows: [
   { data: { name: 'Imported Cylinder 11kg', type: 'goods', unitPrice: 30 } },

@@ -215,6 +215,34 @@ function settleCredit_(r) {
 // out; whatever the client sent is replaced.
 function settleChannel_(r) {
   r.channelDeliveryFee = 0; r.channelCommission = 0;
+  // Part of a line through a channel (2026-09-29, the simpler way): the line
+  // keeps its whole quantity, and channelQtys says how much of it went
+  // through each channel; the fee and commission follow that part only.
+  var map = r.channelQtys;
+  if (map != null && map !== '') {
+    if (typeof map !== 'object' || Array.isArray(map)) return 'invalid_input';
+    var keys = safeOwnKeys_(map), clean = {}, part = 0, fee0 = 0, com0 = 0;
+    if (keys.length > 10) return 'invalid_input';
+    for (var i = 0; i < keys.length; i++) {
+      var cq = Number(map[keys[i]]);
+      if (!isFinite(cq) || cq < 0) return 'invalid_input';
+      if (!(cq > 0)) continue;
+      var c0 = getById_(SHEETS.CHANNELS, keys[i]);
+      if (!c0 || c0.active === false) return 'invalid_channel';
+      clean[keys[i]] = cq; part += cq;
+      if (r.productId) {
+        fee0 += Math.round(cq * Number((c0.deliveryFees || {})[r.productId] || 0) * 100) / 100;
+        com0 += Math.round(cq * Number((c0.commissions || {})[r.productId] || 0) * 100) / 100;
+      }
+    }
+    if (part > Number(r.qty || 0) + 1e-9) return 'channel_qty_exceeds';
+    r.channelQtys = Object.keys(clean).length ? clean : null;
+    r.channelDeliveryFee = Math.round(fee0 * 100) / 100;
+    r.channelCommission = Math.round(com0 * 100) / 100;
+    r.channelId = null;
+    return null;
+  }
+  r.channelQtys = null;
   if (!r.channelId) { r.channelId = null; return null; }
   var ch = getById_(SHEETS.CHANNELS, r.channelId);
   if (!ch || ch.active === false) return 'invalid_channel';
@@ -353,6 +381,7 @@ function nonSalesFields_(r) {
     creditDeliveryFee: Number(r.creditSales || 0) > 0 ? Number(r.creditDeliveryFee || 0) : 0,
     creditCommission: Number(r.creditSales || 0) > 0 ? Number(r.creditCommission || 0) : 0,
     channelId: r.channelId || null,
+    channelQtys: r.channelQtys || null,
     channelDeliveryFee: Number(r.channelDeliveryFee || 0),
     channelCommission: Number(r.channelCommission || 0)
   };
