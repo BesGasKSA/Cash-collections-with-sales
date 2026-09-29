@@ -2477,5 +2477,19 @@ check(bulkUsers.ok && bulkUsers.results[0].tempPassword && bulkUsers.results[0].
 check(bulkUsers.ok && call({ action: 'login', email: 'FK7966999', password: bulkUsers.results[3].tempPassword }).ok, 'a passport-style number is kept in capitals without spaces');
 check(call({ action: 'adminImportUsers', token: financeTok, rows: [{ name: 'X', iqamaId: '2999000444', role: 'driver' }] }).error === 'forbidden', 'only the admin creates accounts in bulk');
 
+console.log('--- a branch worker enters sales for the POS device they hold at the branch ---');
+var bw = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Test Branch Worker', iqamaId: '2888000111', role: 'branch_worker', locationId: location.entity.id } });
+check(bw.ok && bw.user.role === 'branch_worker', 'the branch worker role exists');
+var bwPos = call({ action: 'adminSaveEntity', token: adminTok, kind: 'pos', data: { ownerType: 'store', ownerId: store.entity.id, label: 'Counter POS', posId: '15500001', assignedUserId: bw.user.id } });
+check(bwPos.ok, 'a store POS device is linked to the branch worker');
+var bwTok = call({ action: 'login', email: '2888000111', password: bw.tempPassword }).token;
+var bwEntry = call({ action: 'createDailyEntry', token: bwTok, date: '2026-09-20', sourceType: 'pos', sourceId: bwPos.entity.id, cashSales: 120 });
+check(bwEntry.ok, 'the branch worker enters the day for their own device');
+check(call({ action: 'createDailyEntry', token: bwTok, date: '2026-09-20', sourceType: 'pos', sourceId: pos.entity.id, cashSales: 5 }).error === 'forbidden', 'but not for somebody else\'s device');
+check(call({ action: 'createDailyEntry', token: bwTok, date: '2026-09-20', sourceType: 'store', sourceId: store.entity.id, cashSales: 5 }).error === 'forbidden', 'nor for the branch store itself');
+var bwList = call({ action: 'listEntries', token: bwTok });
+check(bwList.ok && bwList.entries.length >= 1 && bwList.entries.every(function (e) { return e.enteredBy === bw.user.id; }), 'and sees only their own entries');
+check(call({ action: 'adminSaveEntity', token: bwTok, kind: 'zone', data: { city: 'Riyadh', name: 'X' } }).error === 'forbidden', 'a branch worker manages nothing');
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);

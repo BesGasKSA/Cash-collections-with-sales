@@ -104,6 +104,15 @@ function checkEntryScope_(user, sourceType, sourceId) {
     return { ok: true, locationId: locationId };
   }
 
+  // A branch worker (2026-09-29) enters the day for the POS device they hold
+  // at the counter, nothing else; the branch manager hands that cash over.
+  if (user.role === 'branch_worker') {
+    if (sourceType !== 'pos') return { ok: false, error: 'forbidden' };
+    var bwPos = getById_(SHEETS.POS, sourceId);
+    if (!bwPos || bwPos.assignedUserId !== user.id) return { ok: false, error: 'forbidden' };
+    return { ok: true, locationId: locationId };
+  }
+
   if (user.role === 'driver') {
     if (sourceType === 'car') {
       var car = getById_(SHEETS.CARS, sourceId);
@@ -346,7 +355,7 @@ function claimPhoto_(photoId, entryId) {
   writeRow(SHEETS.ENTRY_PHOTOS, ph);
 }
 // The photo goes up before the entry, so the entry request stays small.
-var ENTRY_PHOTO_ROLES_ = ['admin', 'store_manager', 'driver', 'cluster_manager'];
+var ENTRY_PHOTO_ROLES_ = ['admin', 'store_manager', 'driver', 'cluster_manager', 'branch_worker'];
 function actionUploadEntryPhoto_(req, user) {
   if (ENTRY_PHOTO_ROLES_.indexOf(user.role) < 0) return { ok: false, error: 'forbidden' };
   var b64 = String(req.fileBase64 || '');
@@ -640,7 +649,7 @@ function actionListEntries_(req, user) {
   } else if (user.role === 'store_manager') {
     var store = storeOfManager_(user.id);
     rows = rows.filter(function (e) { return store && e.locationId === store.locationId; });
-  } else if (user.role === 'driver') {
+  } else if (user.role === 'driver' || user.role === 'branch_worker') {
     rows = rows.filter(function (e) { return e.enteredBy === user.id; });
   } else {
     rows = [];
