@@ -2491,5 +2491,34 @@ var bwList = call({ action: 'listEntries', token: bwTok });
 check(bwList.ok && bwList.entries.length >= 1 && bwList.entries.every(function (e) { return e.enteredBy === bw.user.id; }), 'and sees only their own entries');
 check(call({ action: 'adminSaveEntity', token: bwTok, kind: 'zone', data: { city: 'Riyadh', name: 'X' } }).error === 'forbidden', 'a branch worker manages nothing');
 
+console.log('--- a driver\'s POS machine rides on his car: its cash goes through his own handover first ---');
+var noor = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Noor', email: 'noor@bestgas.sa', role: 'store_manager' } }).user;
+var noorTok = acceptInvite('noor@bestgas.sa');
+var dpLoc = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: 'Riyadh', name: 'Driver POS Test', clusterId: cluster.entity.id, collectorUserId: musa.id } }).entity;
+call({ action: 'adminSaveEntity', token: adminTok, kind: 'store', data: { locationId: dpLoc.id, name: 'Driver POS Store', storeManagerUserId: noor.id } });
+var dpDriver = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Driver With POS', iqamaId: '2666000111', role: 'driver' } });
+var dpTok = call({ action: 'login', email: '2666000111', password: dpDriver.tempPassword }).token;
+var dpCar = call({ action: 'adminSaveEntity', token: adminTok, kind: 'car', data: { locationId: dpLoc.id, label: 'Driver With POS', driverUserId: dpDriver.user.id } }).entity;
+var dpPos = call({ action: 'adminSaveEntity', token: adminTok, kind: 'pos', data: { ownerType: 'car', ownerId: dpCar.id, label: 'Car POS', posId: '15500002', assignedUserId: dpDriver.user.id } }).entity;
+var noorShop = call({ action: 'createDailyEntry', token: noorTok, date: '2026-09-22', sourceType: 'store', sourceId: call({ action: 'listMeta', token: adminTok }).stores.filter(function (s) { return s.locationId === dpLoc.id; })[0].id, cashSales: 200 });
+check(noorShop.ok, 'the branch manager enters the store\'s own day');
+check(call({ action: 'createDailyEntry', token: dpTok, date: '2026-09-22', sourceType: 'pos', sourceId: dpPos.id, cashSales: 1000 }).ok, 'the driver enters his day on the POS machine in his car');
+var dpEarly = call({ action: 'createHandoff', token: noorTok, kind: 'location_to_cluster', locationId: dpLoc.id });
+check(dpEarly.ok && Math.abs(dpEarly.handoff.amount - 200) < 0.005, 'the branch manager cannot hand over the driver\'s POS cash before receiving it (got ' + (dpEarly.handoff && dpEarly.handoff.amount) + ')');
+var dpCarHo = call({ action: 'createHandoff', token: dpTok, kind: 'car_to_location', carId: dpCar.id });
+check(dpCarHo.ok && Math.abs(dpCarHo.handoff.amount - 1000) < 0.005, 'the driver hands his POS machine\'s cash to the branch manager with his car');
+check(call({ action: 'confirmHandoff', token: noorTok, id: (dpCarHo.handoff || {}).id }).ok, 'the branch manager confirms receiving it');
+var dpLate = call({ action: 'createHandoff', token: noorTok, kind: 'location_to_cluster', locationId: dpLoc.id });
+check(dpLate.ok && Math.abs(dpLate.handoff.amount - 1000) < 0.005, 'and only then passes it on');
+
+console.log('--- a day entered for a POS machine banks its الموازنة on that same machine ---');
+var bwPh = call({ action: 'uploadEntryPhoto', token: bwTok, fileBase64: 'iVBORw0KGgo=', fileName: 'mz.png', fileMime: 'image/png' });
+var bwMz = { action: 'createDailyEntry', token: bwTok, date: '2026-09-21', sourceType: 'pos', sourceId: bwPos.entity.id, cashSales: 900, directDepositAmount: 400, directDepositRef: 'POS-MZ-1', directDepositPhotoId: bwPh.fileId };
+function bwm(extra) { var o = {}; Object.keys(bwMz).forEach(function (k) { o[k] = bwMz[k]; }); Object.keys(extra || {}).forEach(function (k) { o[k] = extra[k]; }); return o; }
+check(call(bwm({ directDepositPosId: pos.entity.id })).error === 'deposit_pos_mismatch', 'a الموازنة on another device than the one the day is for is refused');
+var bwMzOk = call(bwm({}));
+check(bwMzOk.ok && bwMzOk.entry.directDepositPosId === bwPos.entity.id, 'and one that names no device is put on the day\'s own device');
+check(bwMzOk.ok && bwMzOk.deposit && bwMzOk.deposit.posId === bwPos.entity.id, 'the bank deposit carries that device too');
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);
