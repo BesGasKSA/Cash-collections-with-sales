@@ -2299,23 +2299,41 @@ var mzLines = call({ action: 'importDailyEntries', token: aliTok, rows: [
 ] });
 check(mzLines.results[0].ok !== mzLines.results[1].ok || !mzLines.results[0].ok, 'two الموازنات on one day cannot bank more than the day\'s cash between them');
 
-console.log('--- a customer can have their own prices, even for a fixed-price product ---');
-var cpCust = call({ action: 'adminSaveEntity', token: adminTok, kind: 'customer', data: { name: 'Special Price Customer', city: 'Riyadh', prices: {} } }).entity;
-var cpSaved = call({ action: 'adminSaveEntity', token: adminTok, kind: 'customer', id: cpCust.id, data: { prices: (function () { var p = {}; p[fixedProduct.entity.id] = 42; return p; })() } });
-check(cpSaved.ok && cpSaved.entity.prices[fixedProduct.entity.id] === 42, 'the admin sets a customer\'s own price for a product');
-check(call({ action: 'adminSaveEntity', token: adminTok, kind: 'customer', id: cpCust.id, data: { prices: { nope: 5 } } }).error === 'invalid_product', 'only for products that exist');
-check(call({ action: 'adminSaveEntity', token: adminTok, kind: 'customer', id: cpCust.id, data: { prices: (function () { var p = {}; p[fixedProduct.entity.id] = -1; return p; })() } }).error === 'invalid_input', 'and never below zero');
-function cpLine(custId, price) {
-  return call({ action: 'createDailyEntry', token: aliTok, date: '2026-09-05', sourceType: 'store', sourceId: store.entity.id, cashSales: 500,
-    creditCustomerId: custId, creditItems: [{ productId: fixedProduct.entity.id, qty: 2, unitPrice: price }] });
+console.log('--- a credit customer carries a delivery fee per unit, worked out and deducted by itself ---');
+var cdCust = call({ action: 'adminSaveEntity', token: adminTok, kind: 'customer', data: { name: 'Delivery Fee Customer', city: 'Riyadh' } }).entity;
+var cdSaved = call({ action: 'adminSaveEntity', token: adminTok, kind: 'customer', id: cdCust.id, data: {
+  deliveryFees: (function () { var p = {}; p[fixedProduct.entity.id] = 2; return p; })(),
+  commissions: (function () { var p = {}; p[fixedProduct.entity.id] = 1; return p; })() } });
+check(cdSaved.ok && cdSaved.entity.commissions[fixedProduct.entity.id] === 1, 'and the driver\'s commission per unit');
+check(cdSaved.ok && cdSaved.entity.deliveryFees[fixedProduct.entity.id] === 2, 'the admin sets the customer\'s delivery fee per unit of a product');
+check(call({ action: 'adminSaveEntity', token: adminTok, kind: 'customer', id: cdCust.id, data: { deliveryFees: { nope: 5 } } }).error === 'invalid_product', 'only for products that exist');
+check(call({ action: 'adminSaveEntity', token: adminTok, kind: 'customer', id: cdCust.id, data: { deliveryFees: (function () { var p = {}; p[fixedProduct.entity.id] = -1; return p; })() } }).error === 'invalid_input', 'and never below zero');
+function cdLine(custId, qty, price, extra) {
+  var o = { action: 'createDailyEntry', token: aliTok, date: '2026-09-06', sourceType: 'store', sourceId: store.entity.id, cashSales: 5000,
+    creditCustomerId: custId, creditItems: [{ productId: fixedProduct.entity.id, qty: qty, unitPrice: price }] };
+  Object.keys(extra || {}).forEach(function (k) { o[k] = extra[k]; });
+  return call(o);
 }
-var cpOk = cpLine(cpCust.id, 42);
-check(cpOk.ok && cpOk.entry.creditSales === 84, 'the customer\'s own price replaces the fixed price on their credit');
-check(cpLine(cpCust.id, 45).error === 'price_locked', 'and binds: the product\'s usual price is refused for them');
-var cpPlain = call({ action: 'adminSaveEntity', token: adminTok, kind: 'customer', data: { name: 'Plain Price Customer', city: 'Riyadh' } }).entity;
-check(cpLine(cpPlain.id, 45).ok && cpLine(cpPlain.id, 42).error === 'price_locked', 'a customer without their own price still pays the fixed price');
-var cpMeta = call({ action: 'listMeta', token: aliTok }).customers.filter(function (c) { return c.id === cpCust.id; })[0];
-check(cpMeta && cpMeta.prices && cpMeta.prices[fixedProduct.entity.id] === 42, 'the branch sees the customer\'s prices, so the form can fill them in');
+var cdOk = cdLine(cdCust.id, 50, 45);
+check(cdOk.ok && cdOk.entry.creditSales === 2250, 'the credit is the items at their usual price: 50 x 45');
+check(cdOk.ok && cdOk.entry.creditDeliveryFee === 100, 'and the customer\'s delivery fee is worked out on its own: 50 x 2');
+check(cdLine(cdCust.id, 50, 45, { creditDeliveryFee: 1 }).entry.creditDeliveryFee === 100, 'a fee sent by the client is ignored: the server works it out');
+check(cdOk.ok && cdOk.entry.creditCommission === 50, 'the driver\'s commission is worked out too: 50 x 1');
+var cdNet = ctx.computeNet_([cdOk.entry]);
+close(cdNet.creditDeliveryFees, 100, 'the delivery fee is an addition, on its own line');
+close(cdNet.creditCommissions, 50, 'the commission is a deduction, on its own line');
+// the customer owes the fee on account with the goods, so the fee adds no
+// cash; the commission the driver keeps comes off
+close(cdNet.netCashOwed, 5000 - 2250 - 50, 'the cash to hand over: sales, less the credit, less the commission');
+check(cdLine(cdCust.id, 2, 42).error === 'price_locked', 'there are no special prices: a fixed price stays fixed for everyone');
+var cdPlain = call({ action: 'adminSaveEntity', token: adminTok, kind: 'customer', data: { name: 'No Fee Customer', city: 'Riyadh' } }).entity;
+var cdNone = cdLine(cdPlain.id, 10, 45);
+check(cdNone.ok && !cdNone.entry.creditDeliveryFee, 'a customer without a fee has none');
+var cdMeta = call({ action: 'listMeta', token: aliTok }).customers.filter(function (c) { return c.id === cdCust.id; })[0];
+check(cdMeta && cdMeta.deliveryFees && cdMeta.deliveryFees[fixedProduct.entity.id] === 2, 'the branch sees the fees, so the form can show them as it fills in');
+close(ctx.sumBreakdowns_([cdNet, cdNet]).creditDeliveryFees, 200, 'the fee adds up when handoffs are combined');
+close(ctx.sumBreakdowns_([cdNet, cdNet]).creditCommissions, 100, 'and so does the commission');
+check(cdMeta.commissions && cdMeta.commissions[fixedProduct.entity.id] === 1, 'the branch sees the commissions too');
 
 console.log('--- master data comes in from Excel, row by row, through the same checks as the form ---');
 var impRes = call({ action: 'adminImportEntities', token: adminTok, kind: 'product', rows: [
