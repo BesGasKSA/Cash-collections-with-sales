@@ -2446,5 +2446,36 @@ check(tr.log.length === 2, 'in one request per language, not one per row (got ' 
 call({ action: 'adminSaveEntity', token: adminTok, kind: 'zone', data: { city: 'مدينة المنطقة', name: 'Zone T' } });
 check(trOf('مدينة المنطقة'), 'a city typed on a record is translated along with its name');
 
+console.log('--- a driver with no email signs in with their iqama number ---');
+var mailsBeforeIq = mailLog.length;
+var iqUser = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Test Driver Iqama', iqamaId: '2999000111', role: 'driver', language: 'ur' } });
+check(iqUser.ok && iqUser.user && !iqUser.user.email, 'an account is created with an iqama number and no email');
+check(iqUser.ok && typeof iqUser.tempPassword === 'string' && iqUser.tempPassword.length >= 8, 'the admin gets a temporary password to hand over');
+check(mailLog.length === mailsBeforeIq, 'and no email is sent');
+var iqLogin = call({ action: 'login', email: '2999000111', password: iqUser.tempPassword });
+check(iqLogin.ok && iqLogin.user.mustChangePw === true, 'the driver signs in with the iqama number and must change the password');
+var iqLogin2 = call({ action: 'login', email: ' ٢٩٩٩٠٠٠١١١ ', password: iqUser.tempPassword });
+check(iqLogin2.ok, 'Arabic digits and stray spaces in the iqama number still sign in');
+check(call({ action: 'login', email: '2999000111', password: 'wrong-pass-1' }).error === 'invalid_credentials', 'a wrong password is refused');
+check(call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Dup', iqamaId: '2999000111', role: 'driver' } }).error === 'iqama_exists', 'an iqama number belongs to one account');
+check(call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Nothing', role: 'driver' } }).error === 'invalid_input', 'an account needs an email or an iqama number');
+check(call({ action: 'login', email: '', password: 'x' }).ok === false, 'a blank sign-in never matches an account without email');
+var iqReset = call({ action: 'adminResetPassword', token: adminTok, id: iqUser.user.id });
+check(iqReset.ok && typeof iqReset.tempPassword === 'string' && mailLog.length === mailsBeforeIq, 'a reset hands the admin a new temporary password instead of emailing');
+check(call({ action: 'login', email: '2999000111', password: iqReset.tempPassword }).ok, 'and the new one works');
+check(!ctx.sendMail_('', 'x', 'y') || mailLog.length === mailsBeforeIq, 'mail to an empty address goes nowhere');
+
+var bulkUsers = call({ action: 'adminImportUsers', token: adminTok, rows: [
+  { name: 'Bulk Driver A', iqamaId: '2999000222', role: 'driver' },
+  { name: 'Bulk Driver B', iqamaId: '2999000111', role: 'driver' },
+  { name: '', iqamaId: '2999000333', role: 'driver' },
+  { name: 'Bulk Driver C', iqamaId: 'fk 7966 999', role: 'driver' }
+] });
+check(bulkUsers.ok && bulkUsers.created === 2, 'drivers are created in bulk (got ' + (bulkUsers.created) + ')');
+check(bulkUsers.ok && bulkUsers.results[1].error === 'iqama_exists' && bulkUsers.results[2].error === 'invalid_input', 'each refused row says why');
+check(bulkUsers.ok && bulkUsers.results[0].tempPassword && bulkUsers.results[0].id, 'each new account comes back with its temporary password');
+check(bulkUsers.ok && call({ action: 'login', email: 'FK7966999', password: bulkUsers.results[3].tempPassword }).ok, 'a passport-style number is kept in capitals without spaces');
+check(call({ action: 'adminImportUsers', token: financeTok, rows: [{ name: 'X', iqamaId: '2999000444', role: 'driver' }] }).error === 'forbidden', 'only the admin creates accounts in bulk');
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);

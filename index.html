@@ -2107,7 +2107,7 @@ var L = {
     err_generic:'حدث خطأ، حاول مرة أخرى', ok_saved:'تم الحفظ بنجاح', confirm_delete:'هل أنت متأكد من الحذف؟',
     err_alreadyAcknowledged:'تم إقرار هذا مسبقاً', err_authRequired:'انتهت الجلسة، الرجاء تسجيل الدخول مجدداً',
     err_badRequest:'طلب غير صالح', err_conflictOfInterest:'لا يمكنك تنفيذ هذا الإجراء على معاملة أنت طرف فيها (تعارض مصالح)',
-    err_depositNotEligible:'هذا الإيداع غير مؤهل للمطابقة', err_emailExists:'هذا البريد الإلكتروني مسجَّل بالفعل',
+    err_depositNotEligible:'هذا الإيداع غير مؤهل للمطابقة', err_emailExists:'هذا البريد الإلكتروني مسجَّل بالفعل', err_iqamaExists:'رقم الإقامة هذا مسجَّل لحساب آخر', login_id:'البريد الإلكتروني أو رقم الإقامة', us_emailOptional:'البريد الإلكتروني (اختياري)', us_tempTitle:'كلمة المرور المؤقتة لـ {name}', us_tempHint:'سلّمها له مع رقم الإقامة {iq}. يدخل بهما، ثم يُطلب منه اختيار كلمة مرور جديدة. لن تظهر هذه الكلمة مرة أخرى.', us_copyPw:'نسخ كلمة المرور', us_copiedPw:'تم نسخ كلمة المرور',
     err_forbidden:'لا تملك صلاحية لتنفيذ هذا الإجراء', err_invalidInput:'بيانات ناقصة أو غير صحيحة',
     err_invalidKind:'نوع العنصر غير صالح', err_invalidResolution:'نوع الحل غير صالح', err_invalidStatus:'الحالة المطلوبة غير صالحة',
     err_invalidType:'النوع غير صالح', err_lineAlreadyMatched:'هذا السطر البنكي مطابَق مسبقاً',
@@ -2275,7 +2275,7 @@ var L = {
     err_generic:'Something went wrong, please try again', ok_saved:'Saved successfully', confirm_delete:'Are you sure you want to delete this?',
     err_alreadyAcknowledged:'Already acknowledged', err_authRequired:'Your session expired — please log in again',
     err_badRequest:'Invalid request', err_conflictOfInterest:"You can't act on a transaction you're a party to (conflict of interest)",
-    err_depositNotEligible:"This deposit isn't eligible for matching", err_emailExists:'This email is already registered',
+    err_depositNotEligible:"This deposit isn't eligible for matching", err_emailExists:'This email is already registered', err_iqamaExists:'This iqama number already belongs to another account', login_id:'Email or iqama number', us_emailOptional:'Email (optional)', us_tempTitle:'Temporary password for {name}', us_tempHint:'Hand it over with the iqama number {iq}. They sign in with both, then choose a new password. This password will not be shown again.', us_copyPw:'Copy password', us_copiedPw:'Password copied',
     err_forbidden:"You don't have permission for this", err_invalidInput:'Missing or invalid data',
     err_invalidKind:'Invalid item type', err_invalidResolution:'Invalid resolution type', err_invalidStatus:'Invalid status',
     err_invalidType:'Invalid type', err_lineAlreadyMatched:'This bank line is already matched',
@@ -2443,7 +2443,7 @@ var L = {
     err_generic:'کچھ غلط ہوگیا، دوبارہ کوشش کریں', ok_saved:'کامیابی سے محفوظ ہوگیا', confirm_delete:'کیا آپ واقعی حذف کرنا چاہتے ہیں؟',
     err_alreadyAcknowledged:'پہلے سے تصدیق شدہ', err_authRequired:'سیشن ختم ہوگیا — دوبارہ لاگ ان کریں',
     err_badRequest:'غلط درخواست', err_conflictOfInterest:'آپ اس لین دین پر کارروائی نہیں کر سکتے جس میں آپ خود شامل ہیں (مفادات کا تصادم)',
-    err_depositNotEligible:'یہ جمع رقم مطابقت کے لیے اہل نہیں', err_emailExists:'یہ ای میل پہلے سے رجسٹرڈ ہے',
+    err_depositNotEligible:'یہ جمع رقم مطابقت کے لیے اہل نہیں', err_emailExists:'یہ ای میل پہلے سے رجسٹرڈ ہے', err_iqamaExists:'یہ اقامہ نمبر پہلے سے کسی اور اکاؤنٹ کا ہے', login_id:'ای میل یا اقامہ نمبر', us_emailOptional:'ای میل (اختیاری)', us_tempTitle:'{name} کا عارضی پاس ورڈ', us_tempHint:'اسے اقامہ نمبر {iq} کے ساتھ دیں۔ وہ دونوں سے لاگ اِن کریں گے، پھر نیا پاس ورڈ منتخب کریں گے۔ یہ پاس ورڈ دوبارہ نظر نہیں آئے گا۔', us_copyPw:'پاس ورڈ کاپی کریں', us_copiedPw:'پاس ورڈ کاپی ہو گیا',
     err_forbidden:'آپ کو اس کی اجازت نہیں ہے', err_invalidInput:'نامکمل یا غلط ڈیٹا',
     err_invalidKind:'غلط آئٹم کی قسم', err_invalidResolution:'غلط حل کی قسم', err_invalidStatus:'غلط حالت',
     err_invalidType:'غلط قسم', err_lineAlreadyMatched:'یہ بینک لائن پہلے سے مماثل ہے',
@@ -2897,7 +2897,7 @@ var ERROR_KEYS_ = {
   invalid_customer:'err_invalidCustomer', credit_items_mismatch:'err_creditItemsMismatch', price_locked:'err_priceLocked',
   invalid_product:'err_invalidProduct', invalid_coordinates:'err_invalidCoordinates',
   already_acknowledged:'err_alreadyAcknowledged', auth_required:'err_authRequired', bad_request:'err_badRequest',
-  conflict_of_interest:'err_conflictOfInterest', deposit_not_eligible:'err_depositNotEligible', email_exists:'err_emailExists',
+  conflict_of_interest:'err_conflictOfInterest', deposit_not_eligible:'err_depositNotEligible', email_exists:'err_emailExists', iqama_exists:'err_iqamaExists',
   forbidden:'err_forbidden', has_children:'admin_hasChildren', invalid_input:'err_invalidInput', invalid_kind:'err_invalidKind',
   invalid_resolution:'err_invalidResolution', invalid_status:'err_invalidStatus', invalid_type:'err_invalidType',
   line_already_matched:'err_lineAlreadyMatched', missing_action:'err_missingAction', missing_email:'err_missingEmail',
@@ -2972,7 +2972,7 @@ function renderLogin(){
     '<div class="card login-card">' +
       langPills() +
     '<div id="loginMsg"></div>' +
-    '<div class="field"><label>'+esc(t('email'))+'</label><input id="loginEmail" type="email" autocomplete="username"></div>' +
+    '<div class="field"><label>'+esc(t('login_id'))+'</label><input id="loginEmail" type="text" inputmode="email" dir="ltr" autocapitalize="off" autocorrect="off" spellcheck="false" autocomplete="username"></div>' +
     '<div class="field"><label>'+esc(t('password'))+'</label><input id="loginPw" type="password" autocomplete="current-password"></div>' +
     '<button class="btn" id="loginBtn">'+esc(t('signIn'))+'</button>' +
     '<button type="button" class="login-forgot" id="forgotBtn">'+esc(t('forgotPassword'))+'</button>' +
@@ -9448,6 +9448,20 @@ function renderAdminPermissions(content){
   content.appendChild(rc2);
 }
 
+// A temporary password for an account without email, shown once to the
+// admin who hands it over with the iqama number.
+function tempPwBox_(info){
+  var box = el('<div class="invite-link" data-notr>' +
+    '<div class="il-t">'+esc(t('us_tempTitle').replace('{name}', info.name || ''))+'</div>' +
+    '<div class="il-u" style="font-size:20px;font-weight:700;letter-spacing:.06em;"><bdi dir="ltr">'+esc(info.pw)+'</bdi></div>' +
+    '<p class="muted" style="font-size:12.5px;line-height:1.8;margin:6px 0 10px;">'+esc(t('us_tempHint').replace('{iq}', info.iq || ''))+'</p>' +
+    '<button type="button" class="btn secondary">'+esc(t('us_copyPw'))+'</button></div>');
+  qs('button', box).addEventListener('click', function(){
+    try { navigator.clipboard.writeText(info.pw).then(function(){ toast('us_copiedPw', 'ok'); }); } catch (e) {}
+  });
+  return box;
+}
+
 function renderAdminUsers(content){
   var meta = state.meta || {};
   var roles = ['admin','finance','accountant','operations_manager','deputy_operations_manager','cluster_manager','store_manager','collector','driver'];
@@ -9455,7 +9469,7 @@ function renderAdminUsers(content){
     '<div class="inv-hint">'+icon_('envelope')+'<span>'+esc(t('us_inviteHint'))+'</span></div>' +
     '<div class="grid">' +
       '<div class="field"><label>'+esc(t('admin_name'))+'</label><input id="uName"></div>' +
-      '<div class="field"><label>'+esc(t('email'))+'</label><input id="uEmail" type="email" dir="ltr"></div>' +
+      '<div class="field"><label>'+esc(t('us_emailOptional'))+'</label><input id="uEmail" type="email" dir="ltr"></div>' +
       '<div class="field"><label>'+esc(t('admin_role'))+'</label><select id="uRole">'+roles.map(function(r){return '<option value="'+r+'">'+esc(roleLabel(r))+'</option>';}).join('')+'</select></div>' +
       '<div class="field"><label>'+esc(t('admin_iqamaId'))+'</label><input id="uIqamaId"></div>' +
     '</div>' +
@@ -9469,11 +9483,20 @@ function renderAdminUsers(content){
         btn.disabled = false;
         if (!res.ok) { qs('#uMsg',form).innerHTML = '<div class="msg err">'+esc(errMsg_(res))+'</div>'; return; }
         state.usNewId = res.user && res.user.id;
+        if (res.tempPassword) {
+          state.usTempPw = { name: res.user.name, iq: res.user.iqamaId, pw: res.tempPassword };
+          refreshMetaThen(function(){ renderAdmin(qs('#screenBody')); }, res);
+          return;
+        }
         state.usFlash = res.inviteSent === false ? { type:'err', text: t('us_notSent') } : { type:'ok', text: t('us_sentTo').replace('{email}', email) };
         state.usInviteUrl = res.inviteUrl || null;
         refreshMetaThen(function(){ renderAdmin(qs('#screenBody')); }, res);
       });
   });
+  if (state.usTempPw) {
+    form.appendChild(tempPwBox_(state.usTempPw));
+    state.usTempPw = null;
+  }
   if (state.usFlash) {
     qs('#uMsg', form).innerHTML = '<div class="msg '+state.usFlash.type+'">'+esc(state.usFlash.text)+'</div>';
     state.usFlash = null;
@@ -9555,7 +9578,7 @@ function renderAdminUsers(content){
     var areaNames = areaIds.map(clusterName).join('، ');
     var tr = el('<tr'+(u.id===state.usNewId?' class="us-new"':'')+'>' +
       '<td class="ent-code"><bdi dir="ltr">'+esc(u.code||'—')+'</bdi></td>' +
-      '<td class="us-name ent-name"><b>'+esc(u.name)+'</b><span>'+esc(u.email||'')+'</span></td>' +
+      '<td class="us-name ent-name"><b>'+esc(u.name)+'</b><span>'+esc(u.email || u.iqamaId || '')+'</span></td>' +
       '<td data-label="'+esc(t('admin_role'))+'">'+esc(roleLabel(u.role))+'</td>' +
       '<td data-label="'+esc(t('admin_cluster'))+'">'+esc(areaNames || '—')+'</td>' +
       '<td data-label="'+esc(t('us_status'))+'"><span class="us-badge '+st+'">'+esc(t('us_'+st))+'</span>'+(sub?'<span class="us-sub">'+esc(sub)+'</span>':'')+'</td>' +
@@ -9584,6 +9607,11 @@ function renderAdminUsers(content){
       api(pendingInvite ? 'adminResendInvite' : 'adminResetPassword', { id: u.id, appUrl: appUrl_() }).then(function(res){
         resetBtn.disabled = false;
         if (!res.ok) { toastRaw_(errMsg_(res), 'err'); return; }
+        if (res.tempPassword) {
+          state.usTempPw = { name: u.name, iq: u.iqamaId, pw: res.tempPassword };
+          renderAdmin(qs('#screenBody'));
+          return;
+        }
         if (pendingInvite) {
           state.usFlash = res.inviteSent === false ? { type:'err', text: t('us_notSent') } : { type:'ok', text: t('us_sentTo').replace('{email}', u.email) };
           state.usInviteUrl = res.inviteUrl || null;
@@ -10807,6 +10835,11 @@ function renderAdminProfile(content, kind, id){
       mailBtn.disabled = true;
       api(pending ? 'adminResendInvite' : 'adminResetPassword', { id: r.id, appUrl: appUrl_() }).then(function(res){
         mailBtn.disabled = false;
+        if (res.ok && res.tempPassword) {
+          qs('.pf-msg', details).innerHTML = '';
+          qs('.pf-msg', details).appendChild(tempPwBox_({ name: r.name, iq: r.iqamaId, pw: res.tempPassword }));
+          return;
+        }
         qs('.pf-msg', details).innerHTML = res.ok
           ? '<div class="msg ok">'+esc(pending ? t('us_resent') : t('ok_saved'))+'</div>' + (res.inviteUrl ? '<div class="il-u" style="margin-top:6px;"><bdi dir="ltr">'+esc(res.inviteUrl)+'</bdi></div>' : '')
           : '<div class="msg err">'+esc(errMsg_(res))+'</div>';
