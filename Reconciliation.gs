@@ -121,7 +121,7 @@ function actionManualMatchReconciliation_(req, user) {
   var deposit = getById_(SHEETS.HANDOFFS, req.handoffId);
   if (!line || !deposit) return { ok: false, error: 'not_found' };
   if (line.status !== 'unmatched') return { ok: false, error: 'line_already_matched' };
-  if (deposit.kind !== 'deposit' || deposit.reconciled) return { ok: false, error: 'deposit_not_eligible' };
+  if (deposit.kind !== 'deposit' || deposit.reconciled || deposit.status === 'voided') return { ok: false, error: 'deposit_not_eligible' };
   linkReconciliation_(line, deposit, user);
   logAudit_('manual_match_reconciliation', user.id, line.id + ' -> ' + deposit.id);
   return { ok: true };

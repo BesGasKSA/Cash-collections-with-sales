@@ -429,6 +429,8 @@ function actionAdminUpdateUser_(req, user) {
   }
   if (d.iqamaId !== undefined) {
     var iqn = normIqama_(d.iqamaId);
+    // without email the iqama number is how this person signs in
+    if (!iqn && !String(d.email != null ? d.email : target.email || '').trim()) return { ok: false, error: 'invalid_input' };
     var iqOwner = iqn ? userByIqama_(iqn) : null;
     if (iqOwner && iqOwner.id !== target.id) return { ok: false, error: 'iqama_exists' };
     d.iqamaId = iqn || null;
@@ -664,6 +666,8 @@ function validateEntity_(kind, d) {
     // is traced to.
     // a user account, or (for the many cashiers without one) a name and iqama
     if (!d.assignedUserId && !String(d.holderName || '').trim()) return 'holder_required';
+    // the person carrying the machine: a driver, a branch worker or the branch manager
+    if (d.assignedUserId && !userHasRole_(d.assignedUserId, 'driver') && !userHasRole_(d.assignedUserId, 'branch_worker') && !userHasRole_(d.assignedUserId, 'store_manager')) return 'wrong_role';
     if (d.ownerType !== 'store' && d.ownerType !== 'car') return 'invalid_owner_type';
     var ownerSheet = d.ownerType === 'store' ? SHEETS.STORES : SHEETS.CARS;
     if (!getById_(ownerSheet, d.ownerId)) return 'invalid_owner';
@@ -760,7 +764,11 @@ function actionAdminSaveEntity_(req, user) {
   // lock from the check to the write (writeRow releases it)
   var lock = LockService.getScriptLock();
   lock.waitLock(30000);
-  try { freshenExec_(); return saveEntity_(req, user); } finally { try { lock.releaseLock(); } catch (e) {} }
+  var res;
+  try { freshenExec_(); res = saveEntity_({ kind: req.kind, id: req.id, data: req.data, noTranslate: true }, user); } finally { try { lock.releaseLock(); } catch (e) {} }
+  // the translation call is slow; nothing else should wait on it
+  if (res && res.ok) fillTranslations_(translatableOf_(res.entity));
+  return res;
 }
 
 // Master data from an Excel sheet: each row goes through saveEntity_, the
@@ -1343,6 +1351,8 @@ function actionMeta_(req, user) {
   var users = readSheet(SHEETS.USERS).map(publicUser_);
 
   if (!isCompanyWide_(user.role)) {
+    // holders' iqama numbers are private, and they are sign-in names
+    pos = pos.map(function (p) { var o = {}; safeOwnKeys_(p).forEach(function (k) { if (k !== 'holderIqama') o[k] = p[k]; }); return o; });
     customers = customers.map(function (c) { return { id: c.id, code: c.code, name: c.name, city: c.city, active: c.active, deliveryFees: c.deliveryFees || null, commissions: c.commissions || null }; });
     // non-admins get every row (ids needed for pickers/labels) but only the
     // safe columns per the reference app's rule: restrict fields, not rows.

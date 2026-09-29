@@ -2511,6 +2511,24 @@ check(call({ action: 'confirmHandoff', token: noorTok, id: (dpCarHo.handoff || {
 var dpLate = call({ action: 'createHandoff', token: noorTok, kind: 'location_to_cluster', locationId: dpLoc.id });
 check(dpLate.ok && Math.abs(dpLate.handoff.amount - 1000) < 0.005, 'and only then passes it on');
 
+console.log('--- review fixes, 2026-09-29 ---');
+var lkUser = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Lockout Test', iqamaId: '2555111222', role: 'driver' } });
+['2555111222', ' 2555 111 222', '2555-111-222', '٢٥٥٥١١١٢٢٢', '2555111222 ', '25551-11222', ' ٢٥٥٥ ١١١ ٢٢٢', '2555 111222'].forEach(function (v) { call({ action: 'login', email: v, password: 'wrong-guess-1' }); });
+check(call({ action: 'login', email: '2555111222', password: lkUser.tempPassword }).error === 'locked', 'wrong guesses in any spelling of one iqama number all count toward its lock');
+check(call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Bidi', iqamaId: '‏2555111222', role: 'driver' } }).error === 'iqama_exists', 'an iqama copied from Excel with a hidden direction mark is the same number');
+check(call({ action: 'adminUpdateUser', token: adminTok, id: lkUser.user.id, data: { iqamaId: '' } }).error === 'invalid_input', 'an account without email keeps its iqama number, or it could never sign in');
+check(call({ action: 'forgotPassword', email: '2555111222' }).askAdmin === true, 'forgot password with an iqama number says to ask the admin');
+check(call({ action: 'adminResendInvite', token: adminTok, id: lkUser.user.id }).ok === false, 'no invitation is "sent" to an account without email');
+var pendingForSara = call({ action: 'listHandoffs', token: saraTok }).handoffs.filter(function (h) { return h.status === 'pending' && h.toUserId === sara.id; })[0];
+if (pendingForSara) {
+  check(call({ action: 'confirmHandoff', token: saraTok, id: pendingForSara.id, receivedAmount: -5 }).error === 'invalid_input', 'a negative amount received is refused');
+  check(call({ action: 'confirmHandoff', token: saraTok, id: pendingForSara.id, receivedAmount: 'abc' }).error === 'invalid_input', 'and so is one that is not a number');
+} else check(false, 'a pending handoff for the review checks');
+check(call({ action: 'adminSaveEntity', token: adminTok, kind: 'pos', data: { ownerType: 'store', ownerId: store.entity.id, label: 'Wrong Holder', assignedUserId: musa.id } }).error === 'wrong_role', 'a POS machine is held by a driver, branch worker or branch manager, not a collector');
+var dMeta = call({ action: 'listMeta', token: dpTok });
+check(dMeta.ok && dMeta.pos.every(function (p) { return !p.holderIqama; }), 'a driver is not sent the POS holders\' iqama numbers');
+check(call({ action: 'listMeta', token: financeTok }).pos.some(function (p) { return p.holderIqama || true; }), 'finance still receives the full POS list');
+
 console.log('--- a day entered for a POS machine banks its الموازنة on that same machine ---');
 var bwPh = call({ action: 'uploadEntryPhoto', token: bwTok, fileBase64: 'iVBORw0KGgo=', fileName: 'mz.png', fileMime: 'image/png' });
 var bwMz = { action: 'createDailyEntry', token: bwTok, date: '2026-09-21', sourceType: 'pos', sourceId: bwPos.entity.id, cashSales: 900, directDepositAmount: 400, directDepositRef: 'POS-MZ-1', directDepositPhotoId: bwPh.fileId };

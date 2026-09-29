@@ -506,7 +506,13 @@ function userByEmail_(email) {
 function normIqama_(v) {
   return String(v == null ? '' : v).replace(/[\u0660-\u0669]/g, function (c) { return String(c.charCodeAt(0) - 0x0660); })
     .replace(/[\u06F0-\u06F9]/g, function (c) { return String(c.charCodeAt(0) - 0x06F0); })
-    .replace(/[\s\-]/g, '').toUpperCase();
+    .toUpperCase().replace(/[^0-9A-Z]/g, '');
+}
+// the key a sign-in's failed attempts count against: one per account, however
+// the iqama number was typed
+function loginKey_(login) {
+  login = String(login || '').trim();
+  return login.indexOf('@') >= 0 ? login.toLowerCase() : 'iq:' + normIqama_(login);
 }
 function userByIqama_(iq) {
   var norm = normIqama_(iq);
@@ -620,6 +626,15 @@ function responseCacheKey_(action, req, user) {
 // Reference data rides back on a successful admin write. The sheets it
 // reads are already in this execution's memo, so it costs almost nothing
 // here and saves a whole round trip on the client.
+// Reads what is still unconsumed and marks it consumed as one step, under the
+// script lock and against a fresh read, so a double tap or two phones cannot
+// hand the same cash over twice. writeRow keeps a lock its caller holds.
+function withCashLock_(fn) {
+  var lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  try { freshenExec_(); return fn(); } finally { try { lock.releaseLock(); } catch (e) {} }
+}
+
 function withMeta_(result, req, user) {
   if (result && result.ok) {
     try { result.meta = actionMeta_(req, user); } catch (e) { /* the write still succeeded */ }
@@ -667,11 +682,11 @@ function route_(req) {
     listEntries: function () { return actionListEntries_(req, user); },
 
     // handoffs
-    createHandoff: function () { return actionCreateHandoff_(req, user); },
+    createHandoff: function () { return withCashLock_(function () { return actionCreateHandoff_(req, user); }); },
     confirmHandoff: function () { return actionConfirmHandoff_(req, user); },
     disputeHandoff: function () { return actionDisputeHandoff_(req, user); },
     resolveDispute: function () { return actionResolveDispute_(req, user); },
-    recordDeposit: function () { return actionRecordDeposit_(req, user); },
+    recordDeposit: function () { return withCashLock_(function () { return actionRecordDeposit_(req, user); }); },
     uploadEntryPhoto: function () { return actionUploadEntryPhoto_(req, user); },
     listHandoffs: function () { return actionListHandoffs_(req, user); },
 
@@ -768,14 +783,15 @@ function route_(req) {
 function actionLogin_(req) {
   var login = String(req.email || '').trim();
   if (!login) throw new Error('missing_email');
-  if (checkLock_(login.toLowerCase())) {
+  var lockKey = loginKey_(login);
+  if (checkLock_(lockKey)) {
     return { ok: false, error: 'locked' };
   }
   var pw = String(req.password || '').trim();
   var user = userByLogin_(login);
   if (user && user.active !== false && user.inviteStatus === 'invited' && !user.pass) {
     // no password exists until the invitation is accepted
-    noteFail_(login.toLowerCase());
+    noteFail_(lockKey);
     return { ok: false, error: 'invite_pending' };
   }
   // A temporary password from "forgot password" works alongside the real
@@ -783,10 +799,10 @@ function actionLogin_(req) {
   var viaReset = !!(user && user.active !== false && user.resetPass && Number(user.resetExpires || 0) > Date.now() &&
     !verifyPw_(pw, user.salt, user.pass) && verifyPw_(pw, user.resetSalt, user.resetPass));
   if (!user || user.active === false || (!viaReset && !verifyPw_(pw, user.salt, user.pass))) {
-    noteFail_(login.toLowerCase());
+    noteFail_(lockKey);
     return { ok: false, error: 'invalid_credentials' };
   }
-  clearFail_(login.toLowerCase());
+  clearFail_(lockKey);
   if (viaReset) {
     user.salt = user.resetSalt;
     user.pass = user.resetPass;
@@ -824,6 +840,8 @@ function actionLogin_(req) {
 function actionForgotPassword_(req) {
   var login = String(req.email || '').trim();
   if (!login) return { ok: true };
+  // an iqama sign-in has no mailbox: the admin gives a new password
+  if (login.indexOf('@') < 0) return { ok: true, askAdmin: true };
   var cache = CacheService.getScriptCache();
   var throttleKey = 'fpwait_' + login.toLowerCase();
   if (cache.get(throttleKey)) return { ok: true, throttled: true };
