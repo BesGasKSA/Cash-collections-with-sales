@@ -1454,6 +1454,7 @@ function actionConfirmHandoff_(req, user) {
   var declared = Number(h.amount);
   var received = req.receivedAmount === undefined || req.receivedAmount === null || req.receivedAmount === ''
     ? declared : Number(req.receivedAmount);
+  if (!isFinite(received) || received < 0) return { ok: false, error: 'invalid_input' };
   var shortfall = Math.round((declared - received) * 100) / 100;
 
   h.receivedAmount = received;
@@ -2321,6 +2322,7 @@ function actionHeldCashTrend_(req, user) {
   handoffs.forEach(function (h) { createdAtById[h.id] = h.createdAt; });
 
   var windows = handoffs.map(function (h) {
+    if (h.status !== 'confirmed') return null;
     var heldFromAt = h.resolvedAt || h.confirmedAt;
     if (!heldFromAt || !h.toUserId) return null;
     var untilAt = h.consumedBy ? createdAtById[h.consumedBy] : null;

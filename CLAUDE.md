@@ -1050,6 +1050,32 @@ on such an account returns a new `tempPassword` instead of emailing; the admin
 screen shows it once (`tempPwBox_`). A driver enters sales for any POS device
 whose `assignedUserId` is them, with or without a car.
 
+**Reports and exports (2026-09-29).** Every export goes through one sheet model
+`[{name, rows, outline?, note?}]` (rows[0] header, a first cell equal to
+`t('rp_total')` marks the totals line, `outline[k]` is the depth of data row k).
+`exportXlsx_` builds it with ExcelJS 4.4.0 from cdnjs (SRI pinned; falls back to
+plain SheetJS): title band + logo, subtitle "prepared by", green header, money as
+`#,##0.00` (whole numbers only for count/qty headers, `exColKinds_`), negatives red
+without a sign, totals row, frozen header, autofilter, RTL for ar/ur, A4 print
+setup, and Excel row grouping from `outline`. `exportPdf_` prints the same model
+in a new window (browser Save as PDF, which shapes Arabic; PDF libraries do not).
+`exButtons_` gives any view both buttons; `exEnhance_` and `rpTableCard_` use it.
+The pivot (`pivotCard_`) lets the viewer choose and order levels from
+`PV_DIMS_` (city, area, branch, owner = the store or car a POS sits on, source,
+product, day, entered by) and figures from `PV_MEASURES_` (saved in localStorage
+`bgc_pv`), open to level N, and search (opens the path to matches). Its Excel
+export is the whole tree with grouping; its PDF is what is open. The pivot table
+carries `data-nosort` so the automatic header sort (`tsEnhance_`) never
+scrambles the tree.
+
+**A driver's POS rides on his car (2026-09-29).** `entryCarId_` (Collection.gs):
+a `pos` entry whose machine has `ownerType:'car'` belongs to that car's
+`car_to_location` handover like a car entry, and the branch manager's
+`location_to_cluster` leaves it out until that handover is confirmed. A POS day's
+الموازنة is on that same POS (`deposit_pos_mismatch`; none named = the day's
+own). `createHandoff` and `recordDeposit` run under the script lock
+(`withCashLock_`) so a double tap cannot hand the same cash over twice.
+
 **Names in English and Urdu (2026-09-29).** Master data is typed in Arabic; the
 `translations` sheet (`{src, en, ur, auto}`, keyed by the Arabic text) holds each
 name's English and Urdu and ships in `listMeta` as `translations`. `saveEntity_`,

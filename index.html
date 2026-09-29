@@ -369,6 +369,8 @@
   .tbl-search::after{content:'';position:absolute;top:60%;inset-inline-start:23px;width:6px;height:2px;background:var(--muted-2);transform:rotate(45deg);pointer-events:none;}
   html[dir="rtl"] .tbl-search::after{inset-inline-start:auto;inset-inline-end:23px;transform:rotate(-45deg);}
   .tbl-scroll{overflow-x:auto;}
+  .ex-bar{display:inline-flex;gap:6px;flex-wrap:wrap;align-items:center;}
+  .rp-all-bar{display:flex;gap:8px;flex-wrap:wrap;}
   .trx-hint{font-size:13px;line-height:1.85;margin:0 0 12px;max-width:68ch;}
   .trx-bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px;}
   .trx-bar input[type=search]{flex:1 1 220px;min-width:0;}
@@ -1493,6 +1495,49 @@
   .pv-d4 td{font-weight:500;}
   .pv-table td.pv-net{color:var(--green-dark);font-weight:800;}
   .pv-mini{display:none;}
+  .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;}
+  .pv-head{align-items:flex-start;}
+  .pv-sub{display:flex;flex-wrap:wrap;align-items:center;gap:4px;margin:4px 0 0;font-size:12px;color:var(--muted);}
+  .pv-sub span{background:var(--bg);border-radius:6px;padding:1px 8px;font-weight:700;color:var(--text);}
+  .pv-sub i{font-style:normal;opacity:.6;}
+  .pv-cfg{border:1px solid var(--border-soft);border-radius:12px;margin:0 0 10px;background:var(--bg);}
+  .pv-cfg summary{display:flex;align-items:center;gap:8px;padding:9px 12px;cursor:pointer;font-weight:700;font-size:13px;list-style:none;}
+  .pv-cfg summary::-webkit-details-marker{display:none;}
+  .pv-cfg summary .bi{width:16px;height:16px;}
+  .pv-cfg-body{padding:4px 12px 12px;display:grid;gap:10px;}
+  .pv-cfg-row{display:grid;grid-template-columns:120px 1fr;gap:8px;align-items:start;}
+  .pv-cfg-l{font-size:12px;font-weight:700;color:var(--muted);padding-top:6px;}
+  .pv-dims,.pv-more,.pv-meas{display:flex;flex-wrap:wrap;gap:6px;}
+  .pv-chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border);background:var(--card);border-radius:999px;padding:4px 11px;font:inherit;font-size:12.5px;font-weight:600;color:var(--text);cursor:pointer;transition:background .15s ease,transform .1s ease;}
+  .pv-chip:active{transform:scale(.97);}
+  .pv-chip.on{background:var(--green);border-color:var(--green);color:#fff;}
+  .pv-chip b{display:inline-grid;place-items:center;width:18px;height:18px;border-radius:50%;background:rgba(255,255,255,.22);font-size:11px;}
+  .pv-chip button{border:0;background:rgba(255,255,255,.18);color:inherit;border-radius:50%;width:20px;height:20px;cursor:pointer;font:inherit;font-weight:800;line-height:1;}
+  .pv-reset{justify-self:start;border:0;background:none;color:var(--green-dark);font:inherit;font-size:12.5px;font-weight:700;text-decoration:underline;cursor:pointer;padding:0;}
+  .pv-tools{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;margin:0 0 10px;}
+  .pv-depth{display:flex;flex-wrap:wrap;align-items:center;gap:4px;}
+  .pv-depth-l{font-size:12px;font-weight:700;color:var(--muted);margin-inline-end:4px;}
+  .pv-depth button{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--border);background:var(--card);border-radius:8px;padding:4px 9px;font:inherit;font-size:12px;cursor:pointer;color:var(--text);transition:background .15s ease,transform .1s ease;}
+  .pv-depth button:active{transform:scale(.97);}
+  .pv-depth button b{color:var(--green-dark);}
+  .pv-depth button.on{background:var(--green-pale);border-color:var(--green);}
+  .pv-q{display:flex;align-items:center;gap:6px;border:1px solid var(--border);border-radius:10px;padding:0 10px;background:var(--card);flex:1 1 220px;max-width:340px;}
+  .pv-q .bi{width:16px;height:16px;color:var(--muted);}
+  .pv-q input{border:0;background:none;padding:8px 0;min-width:0;flex:1;box-shadow:none;margin:0;}
+  .pv-bar{display:block;height:3px;border-radius:2px;background:var(--border-soft);margin-top:4px;width:120px;max-width:100%;}
+  .pv-bar i{display:block;height:100%;border-radius:2px;background:var(--green);}
+  .pv-hit .pv-txt b{background:color-mix(in srgb,var(--green) 18%,transparent);border-radius:4px;padding:0 3px;}
+  .pv-card .rp-scroll{max-height:70vh;overflow:auto;}
+  .pv-table td{padding-block:8px;}
+  .pv-table tr.pv-d0 td:first-child{background:color-mix(in srgb,var(--green) 7%,var(--card));}
+  .pv-d0 .pv-tog{background:var(--green);color:#fff;}
+  .pv-d1 .pv-tog{background:var(--green-pale);color:var(--green-dark);}
+  .pv-d2 .pv-tog{background:color-mix(in srgb,var(--green) 12%,var(--card));}
+  .pv-row[aria-expanded="true"] td{border-bottom-color:transparent;}
+  .pv-card thead th{position:sticky;top:0;z-index:2;background:var(--card);}
+  .pv-card thead th:first-child{z-index:3;}
+  .pv-card tfoot td{position:sticky;bottom:0;z-index:2;}
+  @media (max-width:600px){ .pv-cfg-row{grid-template-columns:1fr;} .pv-cfg-l{padding-top:0;} .pv-depth button span{display:none;} .pv-q{max-width:none;} }
   @media (max-width:600px){
     .pv-head{flex-wrap:wrap;} .pv-acts{width:100%;} .pv-acts .ex-btn{flex:1;justify-content:center;}
     .pv-table .pv-wide{display:none;}
@@ -2107,7 +2152,7 @@ var L = {
     err_generic:'حدث خطأ، حاول مرة أخرى', ok_saved:'تم الحفظ بنجاح', confirm_delete:'هل أنت متأكد من الحذف؟',
     err_alreadyAcknowledged:'تم إقرار هذا مسبقاً', err_authRequired:'انتهت الجلسة، الرجاء تسجيل الدخول مجدداً',
     err_badRequest:'طلب غير صالح', err_conflictOfInterest:'لا يمكنك تنفيذ هذا الإجراء على معاملة أنت طرف فيها (تعارض مصالح)',
-    err_depositNotEligible:'هذا الإيداع غير مؤهل للمطابقة', err_emailExists:'هذا البريد الإلكتروني مسجَّل بالفعل', err_iqamaExists:'رقم الإقامة هذا مسجَّل لحساب آخر', login_id:'البريد الإلكتروني أو رقم الإقامة', us_emailOptional:'البريد الإلكتروني (اختياري)', us_tempTitle:'كلمة المرور المؤقتة لـ {name}', us_tempHint:'سلّمها له مع رقم الإقامة {iq}. يدخل بهما، ثم يُطلب منه اختيار كلمة مرور جديدة. لن تظهر هذه الكلمة مرة أخرى.', us_copyPw:'نسخ كلمة المرور', us_copiedPw:'تم نسخ كلمة المرور',
+    err_depositNotEligible:'هذا الإيداع غير مؤهل للمطابقة', err_emailExists:'هذا البريد الإلكتروني مسجَّل بالفعل', err_iqamaExists:'رقم الإقامة هذا مسجَّل لحساب آخر', fp_askAdmin:'رقم الإقامة لا يرتبط ببريد إلكتروني. اطلب من مدير النظام كلمة مرور مؤقتة جديدة.', ho_showMore:'عرض المزيد ({n} من {total})', login_id:'البريد الإلكتروني أو رقم الإقامة', us_emailOptional:'البريد الإلكتروني (اختياري)', us_tempTitle:'كلمة المرور المؤقتة لـ {name}', us_tempHint:'سلّمها له مع رقم الإقامة {iq}. يدخل بهما، ثم يُطلب منه اختيار كلمة مرور جديدة. لن تظهر هذه الكلمة مرة أخرى.', us_copyPw:'نسخ كلمة المرور', us_copiedPw:'تم نسخ كلمة المرور',
     err_forbidden:'لا تملك صلاحية لتنفيذ هذا الإجراء', err_invalidInput:'بيانات ناقصة أو غير صحيحة',
     err_invalidKind:'نوع العنصر غير صالح', err_invalidResolution:'نوع الحل غير صالح', err_invalidStatus:'الحالة المطلوبة غير صالحة',
     err_invalidType:'النوع غير صالح', err_lineAlreadyMatched:'هذا السطر البنكي مطابَق مسبقاً',
@@ -2121,7 +2166,7 @@ var L = {
     err_wrongCurrentPassword:'كلمة المرور الحالية غير صحيحة', err_network:'تعذّر الاتصال بالخادم — تحقق من الإنترنت',
     err_noSourceSelected:'الرجاء اختيار مصدر أولاً', err_titleRequired:'الرجاء إدخال عنوان',
     noData:'لا توجد بيانات', loading:'جارِ التحميل...', total:'الإجمالي', kind_location_to_cluster:'مدير الفرع ← مدير المنطقة',
-    kind_cluster_to_collector:'مدير المنطقة ← مُحصّل', kind_deposit:'إيداع بنكي', filter:'تصفية', all:'الكل', entity_bank:'البنك', pos_linkTo:'مرتبط بـ', pos_link_store:'المتجر', pos_link_driver:'السائق', pos_imp_driverNoCar:'جهاز سائق؛ لا توجد سيارة برقم {p} بعد، فبقي على متجر الفرع', perm_users:'إدارة المستخدمين والصلاحيات (المدير فقط)', nav_users:'المستخدمون والصلاحيات', pos_holderName:'اسم حامل الجهاز', pos_holderIqama:'رقم إقامة الحامل', pos_holder:'حامل الجهاز', pos_imp_branch:'الفرع «{v}» غير موجود في النظام', pos_imp_noStore:'لا يوجد متجر في فرع {v} ليُربط به الجهاز', pos_imp_noCar:'لا توجد سيارة برقم {p} في الفرع؛ رُبط بمتجر الفرع', pos_imp_noHolder:'اسم حامل الجهاز مطلوب', ch_ofWhich:'منها عبر {ch} (الكمية)', ch_qtyTotal:'الكمية الإجمالية', ch_qtyNormal:'بيع عادي', ch_qtyOf:'عبر {ch}', err_channelQtyExceeds:'كمية سوق غاز لا تكون أكبر من كمية البند.', err_invalidChannel:'قناة البيع غير موجودة أو موقوفة.', admin_channels:'قنوات البيع', admin_addChannel:'إضافة قناة بيع', ch_name:'اسم القناة', pf_kindChannel:'قناة بيع', ch_pick:'قناة البيع', ch_normal:'بيع عادي', ch_tab:'قنوات البيع', ch_ratesTitle:'رسوم التوصيل وعمولة السائق لهذه القناة (لكل وحدة)', ch_ratesHint:'لكل منتج: رسم توصيل لكل وحدة، وعمولة سائق لكل وحدة. عند اختيار هذه القناة في الإدخالات يُحسب الرسم من كميات الأصناف ويُضاف في قسم رسوم التوصيل، وتُحسب العمولة وتُخصم في قسم عمولة السائق.', ch_sumQty:'الكمية المباعة', ch_net:'الصافي بعد الرسوم والعمولة', ch_takenLine:'بيع {qty} وحدة · رسوم {fee} · عمولة {com}', eq_aChannelDelivery:'رسوم توصيل قنوات البيع', eq_dChannelCommission:'عمولة السائق — قنوات البيع', eq_def_aChannelDelivery:'رسم التوصيل لكل وحدة لقناة البيع (مثل سوق غاز)، يُحسب تلقائياً ويُضاف.', eq_def_dChannelCommission:'عمولة السائق لكل وحدة على مبيعات القناة، تُحسب تلقائياً وتُخصم.', cdc_secTitle:'عمولة السائق التلقائية (عملاء الآجل وقنوات البيع)', cdc_secHint:'تُحسب من كميات عملاء الآجل وقنوات البيع وعمولة السائق لكل وحدة، وتُخصم من النقدية المستحقة.', cdc_secEmpty:'تظهر هنا تلقائياً عند اختيار عميل آجل أو قناة بيع لها عمولة سائق.', cdf_secTitle:'رسوم التوصيل التلقائية (عملاء الآجل وقنوات البيع)', cdf_secHint:'تُحسب من كميات عملاء الآجل وقنوات البيع (مثل سوق غاز) ورسومهم لكل وحدة، وتُضاف إلى النقدية المستحقة.', cdf_secEmpty:'تظهر هنا تلقائياً عند اختيار عميل آجل أو قناة بيع لها رسوم توصيل.', cp_allTitle:'تعبئة كل المنتجات مرة واحدة', cp_allGo:'تطبيق على كل المنتجات', cp_allDone:'عُبّئت {n} منتجات. راجعها ثم اضغط حفظ.', eq_aOther:'تحصيلات أخرى', eq_aCreditDelivery:'رسوم توصيل الآجل', eq_dCommission:'عمولة السائق', cp_com:'عمولة السائق / وحدة', cdf_comTitle:'عمولة السائق التلقائية', cdf_autoCom:'عمولة السائق — {who}', eq_def_aOther:'نقدية دخلت اليد وليست من مبيعات اليوم، مثل سداد دين قديم.', eq_def_aCreditDelivery:'رسم التوصيل لكل وحدة على عميل الآجل، يُحسب تلقائياً ويُضاف إلى النقدية المستحقة.', eq_def_dCommission:'عمولة السائق لكل وحدة على مبيعات الآجل، تُخصم من النقدية.', eq_def_dCreditDelivery:'رسم توصيل لكل وحدة على العميل الآجل، يُحسب تلقائياً من الكمية ولم يُقبض نقداً.', eq_dCreditDelivery:'رسوم توصيل الآجل (على الحساب)', cdf_title:'رسوم التوصيل التلقائية', cdf_auto:'رسوم توصيل — {who}', cdf_qty:'الكمية: {qty}', cdf_line:'هذا العميل: {qty} وحدة · رسوم توصيل {fee} (تُضاف) · عمولة السائق {com} (تُخصم)', cdf_owed:'المستحق على العميل', cdf_sumQty:'الكمية المستلمة', cdf_takenLine:'استلم {qty} وحدة · رسوم {fee} · عمولة {com}', imp_button:'استيراد من Excel', imp_title:'استيراد من ملف Excel', imp_step1:'نزّل النموذج: فيه الأعمدة المطلوبة، وورقة ثانية بالقيم المتاحة (الفروع، الأشخاص، المدن).', imp_template:'تنزيل النموذج', imp_step2:'املأ صفاً لكل سجل ثم اختر الملف. صف فيه رقم سجل موجود يعدّل ذلك السجل.', imp_choose:'اختيار الملف', imp_step3:'راجع المعاينة: الصفوف السليمة تُستورد، وكل صف فيه خطأ يقول سببه.', imp_tplName:'نموذج استيراد', imp_lists:'القيم المتاحة', imp_field:'الحقل', imp_value:'القيمة', imp_reading:'جارٍ قراءة الملف…', imp_unreadable:'تعذّرت قراءة الملف. احفظه بصيغة xlsx وحاول مرة أخرى.', imp_noHeader:'لم نجد صف العناوين. استخدم النموذج، أو اجعل أول صف أسماء الأعمدة كما في النموذج.', imp_ready:'جاهز للاستيراد: {n}', imp_withErrors:'فيها أخطاء: {n}', imp_line:'السطر', imp_update:'تعديل سجل موجود', imp_new:'سجل جديد', imp_go:'استيراد {n} صف', imp_done:'تم: {c} جديد، {u} معدّل', imp_tooMany:'الحد 300 صف في المرة الواحدة. قسّم الملف.', imp_codeNotFound:'لا يوجد سجل بالرقم {v}', imp_badCity:'«{v}» ليست في قائمة المدن', imp_notFound:'«{v}» غير موجود', imp_ambiguous:'«{v}» يطابق أكثر من سجل؛ استخدم الرقم', imp_notNumber:'«{v}» ليس رقماً', imp_yesNo:'اكتب نعم أو لا', cp_title:'رسوم التوصيل وعمولة السائق لهذا العميل (لكل وحدة)', cp_hint:'لكل منتج: رسم توصيل لكل وحدة، وعمولة للسائق لكل وحدة. عند اختيار العميل في المبيعات الآجلة يُحسب الرسم تلقائياً ويُضاف إلى النقدية المستحقة، وتُحسب العمولة تلقائياً ضمن الخصومات.', cp_save:'حفظ الرسوم والعمولات', cp_saved:'حُفظت رسوم وعمولات العميل', cp_usual:'سعر المنتج', cp_noUsual:'بلا سعر', cp_fixed:'ثابت', cp_own:'رسم التوصيل / وحدة', cp_noProducts:'لا توجد منتجات بعد.', pv_tab:'الجدول المحوري', pv_title:'الجدول المحوري: المدينة ثم المنطقة ثم الفرع ثم المصدر ثم المنتج', pv_level:'المستوى', pv_openAll:'فتح الكل', pv_closeAll:'طي الكل', lv_city:'المدينة', lv_area:'المنطقة', lv_branch:'الفرع', lv_source:'المصدر', lv_product:'المنتج', lv_by_city:'حسب المدينة', lv_by_product:'حسب المنتج', lv_noProduct:'بدون منتج محدد', eq_title:'معادلة صافي النقدية', eq_hint:'اضغط أي رقم لتنزل مستوى بمستوى: المدينة ← المنطقة ← الفرع ← المصدر ← المنتج', rp_eqTitle:'معادلة صافي النقدية للفترة المختارة', eq_sales:'إجمالي المبيعات', eq_cashSales:'المبيعات المسجّلة', eq_posSales:'مبيعات الشبكة (مدى)', eq_additions:'الإضافات (تحصيلات أخرى)', eq_deductions:'الخصومات', eq_dPos:'مبيعات الشبكة (تذهب للبنك)', eq_dCredit:'المبيعات الآجلة', eq_dTransfer:'تحويلات العملاء البنكية', eq_dDelivery:'رسوم التوصيل قبل الضريبة', eq_dExpense:'المصروفات', eq_dBanked:'الموازنات', eq_net:'صافي النقدية', eq_opPlus:'زائد', eq_opMinus:'ناقص', eq_opEquals:'يساوي', eq_noDeductions:'لا خصومات', eq_noAdditions:'لا إضافات', eq_collected:'أودعه المحصّلون', eq_remaining:'المتبقي للإيداع', eq_allCompany:'الشركة كلها', eq_nothingHere:'لا شيء هنا', eq_def_sales:'كل ما بيع: المبيعات المسجّلة (وتشمل الآجل والمحوَّل) ومبيعات الشبكة.', eq_def_cashSales:'رقم المبيعات الذي يسجّله الفرع أو السائق، ويشمل ما بيع آجلاً أو دُفع بتحويل.', eq_def_posSales:'ما دُفع بالبطاقة، ويصل إلى البنك مباشرة.', eq_def_additions:'نقدية دخلت اليد وليست من مبيعات اليوم، مثل سداد دين قديم.', eq_def_deductions:'ما في المبيعات لكنه لم يصل نقداً إلى اليد، أو خرج منها قبل التسليم.', eq_def_dPos:'مبيعات الشبكة تُسوّى في البنك، فلا يسلّمها أحد.', eq_def_dCredit:'بيع على الحساب: ضمن المبيعات ولم يُقبض بعد.', eq_def_dTransfer:'حوّله العملاء مباشرة إلى حساب الشركة.', eq_def_dDelivery:'رسوم التوصيل تُدفع للبنك؛ يُخصم أصلها قبل الضريبة.', eq_def_dExpense:'دُفع من النقدية قبل تسليمها.', eq_def_dBanked:'أودعه حامل النقدية في البنك مباشرة عبر أجهزة الشبكة.', eq_def_net:'النقدية الواجب تسليمها: إجمالي المبيعات مع الإضافات، بعد طرح الخصومات.', lv_by_area:'حسب المنطقة', lv_by_branch:'حسب الفرع', lv_by_source:'حسب المصدر (متجر، سيارة، نقطة بيع)', lv_count:'الحركات: {n}', lv_allTx:'كل الحركات ({n})', rp_tabBranches:'الفروع', rp_tabAreas:'المناطق', rp_tabSources:'المصادر', rp_tabDays:'الأيام', rp_tabProducts:'المنتجات', rp_tabCustomers:'العملاء (الآجل)', rp_tabTx:'الحركات', rp_total:'الإجمالي', rp_count:'الحركات', rp_source:'المصدر', rp_date:'التاريخ', rp_qty:'الكمية', rp_creditOfIt:'منها آجل', rp_customer:'العميل', rp_lastDate:'آخر حركة', rp_status:'الحالة', ex_button:'تصدير Excel', ex_all:'تصدير التقرير كاملاً', ex_preparing:'جارٍ تجهيز ملف Excel…', ex_failed:'تعذّر تجهيز الملف. تحقق من الاتصال وحاول مرة أخرى.', entry_transferTitle:'تحويلات العملاء البنكية', entry_transferHint:'ما حوّله العملاء مباشرة إلى حساب الشركة. يُخصم من النقدية الواجب تسليمها، لأنه ضمن المبيعات ولم يُستلم نقداً.', entry_transferAmount:'مبلغ التحويل', entry_addTransfer:'+ إضافة تحويل', entry_addDeposit:'+ إضافة موازنة', entry_depositDevice:'جهاز نقطة البيع', entry_pickDevice:'اختر الجهاز…', entry_noDevices:'لا توجد أجهزة لهذا الفرع', entry_depositPhoto:'صورة الإيصال', entry_photoUploading:'جارٍ رفع الصورة…', entry_photoReady:'رُفعت الصورة', entry_photoFailed:'تعذّر رفع الصورة. حاول مرة أخرى.', err_depositNeedsPhoto:'أرفق صورة إيصال كل موازنة.', err_depositNeedsPos:'اختر جهاز نقطة البيع لكل موازنة.', err_photoUploading:'انتظر حتى يكتمل رفع الصورة.', err_invalidPhoto:'الصورة غير صالحة لهذه الموازنة. التقط صورة جديدة.', err_invalidPos:'هذا الجهاز لا يتبع هذا الفرع.', entry_priceCustomer:'سعر خاص بهذا العميل', entry_priceCustomerTag:'سعر العميل', us_searchHint:'ابحث بالاسم أو البريد أو الرقم', us_allRoles:'كل الصلاحيات', us_disable:'إيقاف الحساب', us_enable:'تفعيل الحساب', us_confirmDisable:'إيقاف حساب {name}؟ لن يستطيع الدخول حتى يُفعَّل من جديد، ولا يُحذف شيء من سجلاته.', us_confirmEnable:'تفعيل حساب {name} من جديد؟', us_disabledNow:'أُوقف حساب {name}', us_enabledNow:'فُعِّل حساب {name}', bc2_title:'المُحصّلون', bc2_hint:'مُحصّل هذا الفرع يستلم نقديته بعد اعتماد نائب مدير العمليات. يمكن للمُحصّل أن يخدم أكثر من منطقة، أو كل المناطق.', bc2_branchCount:'الفروع: {n}', bc2_current:'المُحصّل الحالي', bc2_otherArea:'يعمل في منطقة {area}. لكل شخص منطقة واحدة', bc2_disabled:'حساب موقوف', bc2_none:'لا يحصّل لأي فرع بعد', bc2_inFlight:'لا يُغيَّر المُحصّل الآن: نقدية هذا الفرع في الطريق إلى {who}.', bc2_confirm:'تعيين {who} مُحصّلاً لفرع {branch}؟', bc2_saved:'أصبح {who} مُحصّل فرع {branch}', bc2_search:'ابحث باسم المُحصّل أو رقمه', bc2_empty:'لا يوجد مُحصّلون بعد. أضف مستخدماً بصلاحية مُحصّل من شاشة المستخدمين.', inv2_doneTitle:'تم تفعيل حسابك', inv2_doneBody:'ادخل الآن ببريدك وكلمة المرور الجديدة.', inv2_signIn:'تسجيل الدخول', inv2_org:'الناقل الأفضل للغاز', inv2_app:'نظام تحصيل النقدية', inv2_youCan:'ستتمكن في النظام من:', inv2_hi:'أهلاً {name}', inv2_lead:'أنت {role} في نظام تحصيل النقدية. اختر كلمة مرور لتفعيل حسابك.', inv2_leadBy:'{who} أضافك بصفتك {role}. اختر كلمة مرور لتفعيل حسابك.', inv2_s1:'قبول الدعوة', inv2_s2:'كلمة المرور', inv2_s3:'الدخول', inv2_pw:'كلمة المرور الجديدة', inv2_pw2:'أعد كتابة كلمة المرور', inv2_ckLen:'8 أحرف على الأقل', inv2_ckMix:'أحرف وأرقام معاً', inv2_ckSame:'كلمتا المرور متطابقتان', inv2_go:'تفعيل الحساب', inv2_going:'جارٍ تفعيل الحساب…', inv2_valid:'الدعوة صالحة حتى {date}', inv2_does_store_manager:'تسجيل مبيعات فرعك ومصروفاته يومياً|تسليم نقدية الفرع لمدير المنطقة|متابعة كل تسليم حتى اعتماده', inv2_does_driver:'تسجيل مبيعات سيارتك يومياً|تسليم نقدية السيارة لمدير الفرع|متابعة ما سلّمته وما اعتُمد', inv2_does_cluster_manager:'استلام نقدية فروع منطقتك وتأكيدها|إرسال نقدية كل فرع إلى مُحصّله|متابعة فروعك ومُحصّليها من شاشة واحدة', inv2_does_collector:'استلام نقدية الفروع المسندة إليك|إيداعها في البنك مع مرجع الإيداع|متابعة ما استلمته وما أودعته', inv2_does_deputy_operations_manager:'مراجعة طلبات مديري المناطق واعتمادها|إعادة أي طلب مع سبب للتصحيح|متابعة التحصيل في كل الفروع', inv2_does_operations_manager:'متابعة التحصيل والتسليمات في كل الفروع|مراجعة التقارير والمؤشرات|متابعة المخاطر والشكاوى', inv2_does_finance:'متابعة النقدية من الفرع حتى البنك|مطابقة الإيداعات مع كشف البنك|مراجعة الفروقات والتقارير', inv2_does_accountant:'مراجعة الإدخالات والتسليمات|مطابقة الإيداعات مع كشف البنك|استخراج التقارير', inv2_does_admin:'إدارة المستخدمين والصلاحيات|إدارة الفروع والمناطق والبيانات الأساسية|متابعة كل ما يجري في النظام', sort_by:'الترتيب', sort_default:'حسب الإدخال', sort_new:'الأحدث أولاً', sort_old:'الأقدم أولاً', sort_high:'المبلغ: الأعلى أولاً', sort_low:'المبلغ: الأقل أولاً', bm_title:'موقع الفرع على الخريطة', bm_hint:'اضغط على الخريطة لتثبيت موقع الفرع أو اسحب الدبوس، أو استخدم موقعك الحالي وأنت داخل الفرع، أو الصق رابط الموقع من خرائط Google.', bm_here:'موقعي الحالي', bm_pastePh:'رابط خرائط Google أو 24.7136, 46.6753', bm_go:'تحديد', bm_none:'لم يُحدَّد موقع الفرع بعد', bm_openGoogle:'فتح في خرائط Google', bm_noZone:'بلا نطاق', bm_suggest:'أقرب فرع: {branch} ({dist}) — النطاق المقترح:', bm_m:'م', bm_km:'كم', bm_applyZone:'اعتماد هذا النطاق', bm_zoneMatches:'يطابق نطاق الفرع', bm_save:'حفظ الموقع', bm_clear:'إزالة الموقع', bm_noGeo:'المتصفح لا يدعم تحديد الموقع', bm_geoDenied:'تعذّر الحصول على موقعك — اسمح للمتصفح بالوصول إلى الموقع ثم أعد المحاولة', bm_badPaste:'لم نجد إحداثيات في النص — الصق رابطاً كاملاً من خرائط Google أو إحداثيات مثل 24.7136, 46.6753', bm_loadFail:'تعذّر تحميل الخريطة — تحقق من الاتصال', calc_totalIn:'إجمالي التحصيلات', calc_totalOut:'إجمالي الخصومات', entry_pickCustomer:'اختر العميل…', entry_creditAddItem:'+ صنف', entry_creditItemsTotal:'مجموع الأصناف', err_creditItemsIncomplete:'أكمل كل صنف: المنتج والكمية', rec_code:'الرقم', rec_codeAuto:'يُمنح الرقم تلقائياً عند الحفظ', admin_customers:'العملاء', admin_cities:'المدن', admin_addCustomer:'إضافة عميل', admin_addCity:'إضافة مدينة', cu_code:'رقم العميل', cu_codeAuto:'يُمنح رقم العميل تلقائياً عند الحفظ', cu_name:'اسم العميل', cu_phone:'الجوال', ci_name:'اسم المدينة', ci_uses:'الفروع', cu_import:'استيراد قائمة', cu_importTitle:'استيراد العملاء', cu_importHint:'الصق الأسماء، اسماً في كل سطر، أو اختر ملف Excel أو CSV. لإضافة المدينة والجوال انسخ أعمدتها من Excel كما هي، أو افصل بينها بفاصلة. يُمنح كل عميل جديد رقماً، ويُتخطى كل اسم مسجّل مسبقاً.', cu_importPh:'مثال: شركة الغذاء النوعي للتجارة - الرمال', cu_importFile:'اختيار ملف Excel أو CSV', cu_importCheck:'مراجعة القائمة', cu_impNew:'جديد', cu_impOnFile:'مسجّل مسبقاً', cu_impRepeat:'مكرر في القائمة', cu_impAdd:'إضافة {n} عميل', cu_impNothing:'لا يوجد اسم جديد لإضافته', cu_impDone:'أُضيف {n} عميل، وتُخطي {s}', cu_impEmpty:'لم يُعثر على أسماء في القائمة', cu_impLoadFail:'تعذّرت قراءة الملف — جرّب حفظه بصيغة CSV', pf_kindCustomer:'عميل', pf_kindCity:'مدينة', err_duplicateCustomer:'هذا العميل مسجّل مسبقاً برقم {code}', err_duplicateCity:'هذه المدينة موجودة في القائمة', err_unknownCustomer:'العميل غير مسجّل — اختره من القائمة أو اطلب من مدير النظام إضافته', err_invalidCustomer:'حساب هذا العميل موقوف، فلا يُسجَّل عليه بيع آجل جديد', err_creditItemsMismatch:'مبلغ البيع الآجل لا يطابق مجموع الأصناف', err_priceLocked:'سعر هذا المنتج ثابت ولا يُغيَّر', err_invalidProduct:'المنتج غير موجود أو موقوف', err_invalidCoordinates:'إحداثيات الموقع غير صحيحة'
+    kind_cluster_to_collector:'مدير المنطقة ← مُحصّل', kind_deposit:'إيداع بنكي', filter:'تصفية', all:'الكل', entity_bank:'البنك', pos_linkTo:'مرتبط بـ', pos_link_store:'المتجر', pos_link_driver:'السائق', pos_imp_driverNoCar:'جهاز سائق؛ لا توجد سيارة برقم {p} بعد، فبقي على متجر الفرع', perm_users:'إدارة المستخدمين والصلاحيات (المدير فقط)', nav_users:'المستخدمون والصلاحيات', pos_holderName:'اسم حامل الجهاز', pos_holderIqama:'رقم إقامة الحامل', pos_holder:'حامل الجهاز', pos_imp_branch:'الفرع «{v}» غير موجود في النظام', pos_imp_noStore:'لا يوجد متجر في فرع {v} ليُربط به الجهاز', pos_imp_noCar:'لا توجد سيارة برقم {p} في الفرع؛ رُبط بمتجر الفرع', pos_imp_noHolder:'اسم حامل الجهاز مطلوب', ch_ofWhich:'منها عبر {ch} (الكمية)', ch_qtyTotal:'الكمية الإجمالية', ch_qtyNormal:'بيع عادي', ch_qtyOf:'عبر {ch}', err_channelQtyExceeds:'كمية سوق غاز لا تكون أكبر من كمية البند.', err_invalidChannel:'قناة البيع غير موجودة أو موقوفة.', admin_channels:'قنوات البيع', admin_addChannel:'إضافة قناة بيع', ch_name:'اسم القناة', pf_kindChannel:'قناة بيع', ch_pick:'قناة البيع', ch_normal:'بيع عادي', ch_tab:'قنوات البيع', ch_ratesTitle:'رسوم التوصيل وعمولة السائق لهذه القناة (لكل وحدة)', ch_ratesHint:'لكل منتج: رسم توصيل لكل وحدة، وعمولة سائق لكل وحدة. عند اختيار هذه القناة في الإدخالات يُحسب الرسم من كميات الأصناف ويُضاف في قسم رسوم التوصيل، وتُحسب العمولة وتُخصم في قسم عمولة السائق.', ch_sumQty:'الكمية المباعة', ch_net:'الصافي بعد الرسوم والعمولة', ch_takenLine:'بيع {qty} وحدة · رسوم {fee} · عمولة {com}', eq_aChannelDelivery:'رسوم توصيل قنوات البيع', eq_dChannelCommission:'عمولة السائق — قنوات البيع', eq_def_aChannelDelivery:'رسم التوصيل لكل وحدة لقناة البيع (مثل سوق غاز)، يُحسب تلقائياً ويُضاف.', eq_def_dChannelCommission:'عمولة السائق لكل وحدة على مبيعات القناة، تُحسب تلقائياً وتُخصم.', cdc_secTitle:'عمولة السائق التلقائية (عملاء الآجل وقنوات البيع)', cdc_secHint:'تُحسب من كميات عملاء الآجل وقنوات البيع وعمولة السائق لكل وحدة، وتُخصم من النقدية المستحقة.', cdc_secEmpty:'تظهر هنا تلقائياً عند اختيار عميل آجل أو قناة بيع لها عمولة سائق.', cdf_secTitle:'رسوم التوصيل التلقائية (عملاء الآجل وقنوات البيع)', cdf_secHint:'تُحسب من كميات عملاء الآجل وقنوات البيع (مثل سوق غاز) ورسومهم لكل وحدة، وتُضاف إلى النقدية المستحقة.', cdf_secEmpty:'تظهر هنا تلقائياً عند اختيار عميل آجل أو قناة بيع لها رسوم توصيل.', cp_allTitle:'تعبئة كل المنتجات مرة واحدة', cp_allGo:'تطبيق على كل المنتجات', cp_allDone:'عُبّئت {n} منتجات. راجعها ثم اضغط حفظ.', eq_aOther:'تحصيلات أخرى', eq_aCreditDelivery:'رسوم توصيل الآجل', eq_dCommission:'عمولة السائق', cp_com:'عمولة السائق / وحدة', cdf_comTitle:'عمولة السائق التلقائية', cdf_autoCom:'عمولة السائق — {who}', eq_def_aOther:'نقدية دخلت اليد وليست من مبيعات اليوم، مثل سداد دين قديم.', eq_def_aCreditDelivery:'رسم التوصيل لكل وحدة على عميل الآجل، يُحسب تلقائياً ويُضاف إلى النقدية المستحقة.', eq_def_dCommission:'عمولة السائق لكل وحدة على مبيعات الآجل، تُخصم من النقدية.', eq_def_dCreditDelivery:'رسم توصيل لكل وحدة على العميل الآجل، يُحسب تلقائياً من الكمية ولم يُقبض نقداً.', eq_dCreditDelivery:'رسوم توصيل الآجل (على الحساب)', cdf_title:'رسوم التوصيل التلقائية', cdf_auto:'رسوم توصيل — {who}', cdf_qty:'الكمية: {qty}', cdf_line:'هذا العميل: {qty} وحدة · رسوم توصيل {fee} (تُضاف) · عمولة السائق {com} (تُخصم)', cdf_owed:'المستحق على العميل', cdf_sumQty:'الكمية المستلمة', cdf_takenLine:'استلم {qty} وحدة · رسوم {fee} · عمولة {com}', imp_button:'استيراد من Excel', imp_title:'استيراد من ملف Excel', imp_step1:'نزّل النموذج: فيه الأعمدة المطلوبة، وورقة ثانية بالقيم المتاحة (الفروع، الأشخاص، المدن).', imp_template:'تنزيل النموذج', imp_step2:'املأ صفاً لكل سجل ثم اختر الملف. صف فيه رقم سجل موجود يعدّل ذلك السجل.', imp_choose:'اختيار الملف', imp_step3:'راجع المعاينة: الصفوف السليمة تُستورد، وكل صف فيه خطأ يقول سببه.', imp_tplName:'نموذج استيراد', imp_lists:'القيم المتاحة', imp_field:'الحقل', imp_value:'القيمة', imp_reading:'جارٍ قراءة الملف…', imp_unreadable:'تعذّرت قراءة الملف. احفظه بصيغة xlsx وحاول مرة أخرى.', imp_noHeader:'لم نجد صف العناوين. استخدم النموذج، أو اجعل أول صف أسماء الأعمدة كما في النموذج.', imp_ready:'جاهز للاستيراد: {n}', imp_withErrors:'فيها أخطاء: {n}', imp_line:'السطر', imp_update:'تعديل سجل موجود', imp_new:'سجل جديد', imp_go:'استيراد {n} صف', imp_done:'تم: {c} جديد، {u} معدّل', imp_tooMany:'الحد 300 صف في المرة الواحدة. قسّم الملف.', imp_codeNotFound:'لا يوجد سجل بالرقم {v}', imp_badCity:'«{v}» ليست في قائمة المدن', imp_notFound:'«{v}» غير موجود', imp_ambiguous:'«{v}» يطابق أكثر من سجل؛ استخدم الرقم', imp_notNumber:'«{v}» ليس رقماً', imp_yesNo:'اكتب نعم أو لا', cp_title:'رسوم التوصيل وعمولة السائق لهذا العميل (لكل وحدة)', cp_hint:'لكل منتج: رسم توصيل لكل وحدة، وعمولة للسائق لكل وحدة. عند اختيار العميل في المبيعات الآجلة يُحسب الرسم تلقائياً ويُضاف إلى النقدية المستحقة، وتُحسب العمولة تلقائياً ضمن الخصومات.', cp_save:'حفظ الرسوم والعمولات', cp_saved:'حُفظت رسوم وعمولات العميل', cp_usual:'سعر المنتج', cp_noUsual:'بلا سعر', cp_fixed:'ثابت', cp_own:'رسم التوصيل / وحدة', cp_noProducts:'لا توجد منتجات بعد.', pv_tab:'الجدول المحوري', pv_title:'الجدول المحوري: المدينة ثم المنطقة ثم الفرع ثم المصدر ثم المنتج', pv_level:'المستوى', pv_openAll:'فتح الكل', pv_closeAll:'طي الكل', pv_customize:'تخصيص المستويات والأرقام', pv_levels:'المستويات بالترتيب', pv_addLevel:'إضافة مستوى', pv_figures:'الأرقام المعروضة', pv_reset:'الرجوع للوضع الافتراضي', pv_openTo:'افتح حتى', pv_search:'ابحث عن فرع أو جهاز أو منتج…', pv_moveUp:'قدّمه مستوى', pv_remove:'إزالة المستوى', pv_allUsed:'كل المستويات مستخدمة', pv_levelType:'نوع المستوى', lv_date:'اليوم', lv_owner:'المتجر / السيارة', lv_enteredBy:'أدخله', lv_city:'المدينة', lv_area:'المنطقة', lv_branch:'الفرع', lv_source:'المصدر', lv_product:'المنتج', lv_by_city:'حسب المدينة', lv_by_product:'حسب المنتج', lv_noProduct:'بدون منتج محدد', eq_title:'معادلة صافي النقدية', eq_hint:'اضغط أي رقم لتنزل مستوى بمستوى: المدينة ← المنطقة ← الفرع ← المصدر ← المنتج', rp_eqTitle:'معادلة صافي النقدية للفترة المختارة', eq_sales:'إجمالي المبيعات', eq_cashSales:'المبيعات المسجّلة', eq_posSales:'مبيعات الشبكة (مدى)', eq_additions:'الإضافات (تحصيلات أخرى)', eq_deductions:'الخصومات', eq_dPos:'مبيعات الشبكة (تذهب للبنك)', eq_dCredit:'المبيعات الآجلة', eq_dTransfer:'تحويلات العملاء البنكية', eq_dDelivery:'رسوم التوصيل قبل الضريبة', eq_dExpense:'المصروفات', eq_dBanked:'الموازنات', eq_net:'صافي النقدية', eq_opPlus:'زائد', eq_opMinus:'ناقص', eq_opEquals:'يساوي', eq_noDeductions:'لا خصومات', eq_noAdditions:'لا إضافات', eq_collected:'أودعه المحصّلون', eq_remaining:'المتبقي للإيداع', eq_allCompany:'الشركة كلها', eq_nothingHere:'لا شيء هنا', eq_def_sales:'كل ما بيع: المبيعات المسجّلة (وتشمل الآجل والمحوَّل) ومبيعات الشبكة.', eq_def_cashSales:'رقم المبيعات الذي يسجّله الفرع أو السائق، ويشمل ما بيع آجلاً أو دُفع بتحويل.', eq_def_posSales:'ما دُفع بالبطاقة، ويصل إلى البنك مباشرة.', eq_def_additions:'نقدية دخلت اليد وليست من مبيعات اليوم، مثل سداد دين قديم.', eq_def_deductions:'ما في المبيعات لكنه لم يصل نقداً إلى اليد، أو خرج منها قبل التسليم.', eq_def_dPos:'مبيعات الشبكة تُسوّى في البنك، فلا يسلّمها أحد.', eq_def_dCredit:'بيع على الحساب: ضمن المبيعات ولم يُقبض بعد.', eq_def_dTransfer:'حوّله العملاء مباشرة إلى حساب الشركة.', eq_def_dDelivery:'رسوم التوصيل تُدفع للبنك؛ يُخصم أصلها قبل الضريبة.', eq_def_dExpense:'دُفع من النقدية قبل تسليمها.', eq_def_dBanked:'أودعه حامل النقدية في البنك مباشرة عبر أجهزة الشبكة.', eq_def_net:'النقدية الواجب تسليمها: إجمالي المبيعات مع الإضافات، بعد طرح الخصومات.', lv_by_area:'حسب المنطقة', lv_by_branch:'حسب الفرع', lv_by_source:'حسب المصدر (متجر، سيارة، نقطة بيع)', lv_count:'الحركات: {n}', lv_allTx:'كل الحركات ({n})', rp_tabBranches:'الفروع', rp_tabAreas:'المناطق', rp_tabSources:'المصادر', rp_tabDays:'الأيام', rp_tabProducts:'المنتجات', rp_tabCustomers:'العملاء (الآجل)', rp_tabTx:'الحركات', rp_total:'الإجمالي', rp_count:'الحركات', rp_source:'المصدر', rp_date:'التاريخ', rp_qty:'الكمية', rp_creditOfIt:'منها آجل', rp_customer:'العميل', rp_lastDate:'آخر حركة', rp_status:'الحالة', ex_button:'تصدير Excel', ex_pdf:'PDF', ex_allPdf:'التقرير PDF', ex_generated:'أُعدّ في {when} بواسطة {who}', ex_popup:'اسمح للمتصفح بفتح نافذة جديدة لطباعة التقرير أو حفظه PDF', ex_all:'تصدير التقرير كاملاً', ex_preparing:'جارٍ تجهيز ملف Excel…', ex_failed:'تعذّر تجهيز الملف. تحقق من الاتصال وحاول مرة أخرى.', entry_transferTitle:'تحويلات العملاء البنكية', entry_transferHint:'ما حوّله العملاء مباشرة إلى حساب الشركة. يُخصم من النقدية الواجب تسليمها، لأنه ضمن المبيعات ولم يُستلم نقداً.', entry_transferAmount:'مبلغ التحويل', entry_addTransfer:'+ إضافة تحويل', entry_addDeposit:'+ إضافة موازنة', entry_depositDevice:'جهاز نقطة البيع', entry_depositSameDevice:'مرتبطة تلقائياً بجهاز نقاط البيع المختار في المصدر', err_depositPosMismatch:'الموازنة يجب أن تكون على نفس جهاز نقاط البيع المختار في المصدر', entry_pickDevice:'اختر الجهاز…', entry_noDevices:'لا توجد أجهزة لهذا الفرع', entry_depositPhoto:'صورة الإيصال', entry_photoUploading:'جارٍ رفع الصورة…', entry_photoReady:'رُفعت الصورة', entry_photoFailed:'تعذّر رفع الصورة. حاول مرة أخرى.', err_depositNeedsPhoto:'أرفق صورة إيصال كل موازنة.', err_depositNeedsPos:'اختر جهاز نقطة البيع لكل موازنة.', err_photoUploading:'انتظر حتى يكتمل رفع الصورة.', err_invalidPhoto:'الصورة غير صالحة لهذه الموازنة. التقط صورة جديدة.', err_invalidPos:'هذا الجهاز لا يتبع هذا الفرع.', entry_priceCustomer:'سعر خاص بهذا العميل', entry_priceCustomerTag:'سعر العميل', us_searchHint:'ابحث بالاسم أو البريد أو الرقم', us_allRoles:'كل الصلاحيات', us_disable:'إيقاف الحساب', us_enable:'تفعيل الحساب', us_confirmDisable:'إيقاف حساب {name}؟ لن يستطيع الدخول حتى يُفعَّل من جديد، ولا يُحذف شيء من سجلاته.', us_confirmEnable:'تفعيل حساب {name} من جديد؟', us_disabledNow:'أُوقف حساب {name}', us_enabledNow:'فُعِّل حساب {name}', bc2_title:'المُحصّلون', bc2_hint:'مُحصّل هذا الفرع يستلم نقديته بعد اعتماد نائب مدير العمليات. يمكن للمُحصّل أن يخدم أكثر من منطقة، أو كل المناطق.', bc2_branchCount:'الفروع: {n}', bc2_current:'المُحصّل الحالي', bc2_otherArea:'يعمل في منطقة {area}. لكل شخص منطقة واحدة', bc2_disabled:'حساب موقوف', bc2_none:'لا يحصّل لأي فرع بعد', bc2_inFlight:'لا يُغيَّر المُحصّل الآن: نقدية هذا الفرع في الطريق إلى {who}.', bc2_confirm:'تعيين {who} مُحصّلاً لفرع {branch}؟', bc2_saved:'أصبح {who} مُحصّل فرع {branch}', bc2_search:'ابحث باسم المُحصّل أو رقمه', bc2_empty:'لا يوجد مُحصّلون بعد. أضف مستخدماً بصلاحية مُحصّل من شاشة المستخدمين.', inv2_doneTitle:'تم تفعيل حسابك', inv2_doneBody:'ادخل الآن ببريدك وكلمة المرور الجديدة.', inv2_signIn:'تسجيل الدخول', inv2_org:'الناقل الأفضل للغاز', inv2_app:'نظام تحصيل النقدية', inv2_youCan:'ستتمكن في النظام من:', inv2_hi:'أهلاً {name}', inv2_lead:'أنت {role} في نظام تحصيل النقدية. اختر كلمة مرور لتفعيل حسابك.', inv2_leadBy:'{who} أضافك بصفتك {role}. اختر كلمة مرور لتفعيل حسابك.', inv2_s1:'قبول الدعوة', inv2_s2:'كلمة المرور', inv2_s3:'الدخول', inv2_pw:'كلمة المرور الجديدة', inv2_pw2:'أعد كتابة كلمة المرور', inv2_ckLen:'8 أحرف على الأقل', inv2_ckMix:'أحرف وأرقام معاً', inv2_ckSame:'كلمتا المرور متطابقتان', inv2_go:'تفعيل الحساب', inv2_going:'جارٍ تفعيل الحساب…', inv2_valid:'الدعوة صالحة حتى {date}', inv2_does_store_manager:'تسجيل مبيعات فرعك ومصروفاته يومياً|تسليم نقدية الفرع لمدير المنطقة|متابعة كل تسليم حتى اعتماده', inv2_does_driver:'تسجيل مبيعات سيارتك يومياً|تسليم نقدية السيارة لمدير الفرع|متابعة ما سلّمته وما اعتُمد', inv2_does_cluster_manager:'استلام نقدية فروع منطقتك وتأكيدها|إرسال نقدية كل فرع إلى مُحصّله|متابعة فروعك ومُحصّليها من شاشة واحدة', inv2_does_collector:'استلام نقدية الفروع المسندة إليك|إيداعها في البنك مع مرجع الإيداع|متابعة ما استلمته وما أودعته', inv2_does_deputy_operations_manager:'مراجعة طلبات مديري المناطق واعتمادها|إعادة أي طلب مع سبب للتصحيح|متابعة التحصيل في كل الفروع', inv2_does_operations_manager:'متابعة التحصيل والتسليمات في كل الفروع|مراجعة التقارير والمؤشرات|متابعة المخاطر والشكاوى', inv2_does_finance:'متابعة النقدية من الفرع حتى البنك|مطابقة الإيداعات مع كشف البنك|مراجعة الفروقات والتقارير', inv2_does_accountant:'مراجعة الإدخالات والتسليمات|مطابقة الإيداعات مع كشف البنك|استخراج التقارير', inv2_does_admin:'إدارة المستخدمين والصلاحيات|إدارة الفروع والمناطق والبيانات الأساسية|متابعة كل ما يجري في النظام', sort_by:'الترتيب', sort_default:'حسب الإدخال', sort_new:'الأحدث أولاً', sort_old:'الأقدم أولاً', sort_high:'المبلغ: الأعلى أولاً', sort_low:'المبلغ: الأقل أولاً', bm_title:'موقع الفرع على الخريطة', bm_hint:'اضغط على الخريطة لتثبيت موقع الفرع أو اسحب الدبوس، أو استخدم موقعك الحالي وأنت داخل الفرع، أو الصق رابط الموقع من خرائط Google.', bm_here:'موقعي الحالي', bm_pastePh:'رابط خرائط Google أو 24.7136, 46.6753', bm_go:'تحديد', bm_none:'لم يُحدَّد موقع الفرع بعد', bm_openGoogle:'فتح في خرائط Google', bm_noZone:'بلا نطاق', bm_suggest:'أقرب فرع: {branch} ({dist}) — النطاق المقترح:', bm_m:'م', bm_km:'كم', bm_applyZone:'اعتماد هذا النطاق', bm_zoneMatches:'يطابق نطاق الفرع', bm_save:'حفظ الموقع', bm_clear:'إزالة الموقع', bm_noGeo:'المتصفح لا يدعم تحديد الموقع', bm_geoDenied:'تعذّر الحصول على موقعك — اسمح للمتصفح بالوصول إلى الموقع ثم أعد المحاولة', bm_badPaste:'لم نجد إحداثيات في النص — الصق رابطاً كاملاً من خرائط Google أو إحداثيات مثل 24.7136, 46.6753', bm_loadFail:'تعذّر تحميل الخريطة — تحقق من الاتصال', calc_totalIn:'إجمالي التحصيلات', calc_totalOut:'إجمالي الخصومات', entry_pickCustomer:'اختر العميل…', entry_creditAddItem:'+ صنف', entry_creditItemsTotal:'مجموع الأصناف', err_creditItemsIncomplete:'أكمل كل صنف: المنتج والكمية', rec_code:'الرقم', rec_codeAuto:'يُمنح الرقم تلقائياً عند الحفظ', admin_customers:'العملاء', admin_cities:'المدن', admin_addCustomer:'إضافة عميل', admin_addCity:'إضافة مدينة', cu_code:'رقم العميل', cu_codeAuto:'يُمنح رقم العميل تلقائياً عند الحفظ', cu_name:'اسم العميل', cu_phone:'الجوال', ci_name:'اسم المدينة', ci_uses:'الفروع', cu_import:'استيراد قائمة', cu_importTitle:'استيراد العملاء', cu_importHint:'الصق الأسماء، اسماً في كل سطر، أو اختر ملف Excel أو CSV. لإضافة المدينة والجوال انسخ أعمدتها من Excel كما هي، أو افصل بينها بفاصلة. يُمنح كل عميل جديد رقماً، ويُتخطى كل اسم مسجّل مسبقاً.', cu_importPh:'مثال: شركة الغذاء النوعي للتجارة - الرمال', cu_importFile:'اختيار ملف Excel أو CSV', cu_importCheck:'مراجعة القائمة', cu_impNew:'جديد', cu_impOnFile:'مسجّل مسبقاً', cu_impRepeat:'مكرر في القائمة', cu_impAdd:'إضافة {n} عميل', cu_impNothing:'لا يوجد اسم جديد لإضافته', cu_impDone:'أُضيف {n} عميل، وتُخطي {s}', cu_impEmpty:'لم يُعثر على أسماء في القائمة', cu_impLoadFail:'تعذّرت قراءة الملف — جرّب حفظه بصيغة CSV', pf_kindCustomer:'عميل', pf_kindCity:'مدينة', err_duplicateCustomer:'هذا العميل مسجّل مسبقاً برقم {code}', err_duplicateCity:'هذه المدينة موجودة في القائمة', err_unknownCustomer:'العميل غير مسجّل — اختره من القائمة أو اطلب من مدير النظام إضافته', err_invalidCustomer:'حساب هذا العميل موقوف، فلا يُسجَّل عليه بيع آجل جديد', err_creditItemsMismatch:'مبلغ البيع الآجل لا يطابق مجموع الأصناف', err_priceLocked:'سعر هذا المنتج ثابت ولا يُغيَّر', err_invalidProduct:'المنتج غير موجود أو موقوف', err_invalidCoordinates:'إحداثيات الموقع غير صحيحة'
   },
   en: {
     appName:'Best Gas Collections', login:'Sign In', email:'Email', password:'Password',
@@ -2275,7 +2320,7 @@ var L = {
     err_generic:'Something went wrong, please try again', ok_saved:'Saved successfully', confirm_delete:'Are you sure you want to delete this?',
     err_alreadyAcknowledged:'Already acknowledged', err_authRequired:'Your session expired — please log in again',
     err_badRequest:'Invalid request', err_conflictOfInterest:"You can't act on a transaction you're a party to (conflict of interest)",
-    err_depositNotEligible:"This deposit isn't eligible for matching", err_emailExists:'This email is already registered', err_iqamaExists:'This iqama number already belongs to another account', login_id:'Email or iqama number', us_emailOptional:'Email (optional)', us_tempTitle:'Temporary password for {name}', us_tempHint:'Hand it over with the iqama number {iq}. They sign in with both, then choose a new password. This password will not be shown again.', us_copyPw:'Copy password', us_copiedPw:'Password copied',
+    err_depositNotEligible:"This deposit isn't eligible for matching", err_emailExists:'This email is already registered', err_iqamaExists:'This iqama number already belongs to another account', fp_askAdmin:'An iqama sign-in has no email. Ask your system admin for a new temporary password.', ho_showMore:'Show more ({n} of {total})', login_id:'Email or iqama number', us_emailOptional:'Email (optional)', us_tempTitle:'Temporary password for {name}', us_tempHint:'Hand it over with the iqama number {iq}. They sign in with both, then choose a new password. This password will not be shown again.', us_copyPw:'Copy password', us_copiedPw:'Password copied',
     err_forbidden:"You don't have permission for this", err_invalidInput:'Missing or invalid data',
     err_invalidKind:'Invalid item type', err_invalidResolution:'Invalid resolution type', err_invalidStatus:'Invalid status',
     err_invalidType:'Invalid type', err_lineAlreadyMatched:'This bank line is already matched',
@@ -2289,7 +2334,7 @@ var L = {
     err_wrongCurrentPassword:'Current password is incorrect', err_network:"Couldn't reach the server — check your connection",
     err_noSourceSelected:'Please pick a source first', err_titleRequired:'Please enter a title',
     noData:'No data', loading:'Loading...', total:'Total', kind_location_to_cluster:'Branch → Area',
-    kind_cluster_to_collector:'Area → Collector', kind_deposit:'Bank deposit', filter:'Filter', all:'All', entity_bank:'Bank', pos_linkTo:'Linked to', pos_link_store:'Store', pos_link_driver:'Driver', pos_imp_driverNoCar:'A driver\'s device; no car with plate {p} yet, so it stays on the branch store', perm_users:'Manage users and permissions (admin only)', nav_users:'Users & permissions', pos_holderName:'Holder name', pos_holderIqama:'Holder iqama', pos_holder:'Holder', pos_imp_branch:'Branch "{v}" is not in the system', pos_imp_noStore:'Branch {v} has no store to link the device to', pos_imp_noCar:'No car with plate {p} in this branch; linked to the branch store', pos_imp_noHolder:'The holder\'s name is required', ch_ofWhich:'Of which through {ch} (quantity)', ch_qtyTotal:'Total quantity', ch_qtyNormal:'Normal sale', ch_qtyOf:'Through {ch}', err_channelQtyExceeds:'The Souq Gas quantity cannot be more than the line\'s quantity.', err_invalidChannel:'That sales channel does not exist or is stopped.', admin_channels:'Sales channels', admin_addChannel:'Add a sales channel', ch_name:'Channel name', pf_kindChannel:'Sales channel', ch_pick:'Sales channel', ch_normal:'Normal sale', ch_tab:'Sales channels', ch_ratesTitle:'This channel\'s delivery fee and driver commission (per unit)', ch_ratesHint:'For each product: a delivery fee per unit and a driver commission per unit. When this channel is chosen on an entry, the fee is worked out from the product lines\' quantities and added under delivery fees, and the commission is deducted under driver commission.', ch_sumQty:'Units sold', ch_net:'Net after fees and commission', ch_takenLine:'Sold {qty} units · fees {fee} · commission {com}', eq_aChannelDelivery:'Sales channel delivery fees', eq_dChannelCommission:'Driver commission — sales channels', eq_def_aChannelDelivery:'The sales channel\'s delivery fee per unit (such as Souq Gas), worked out automatically and added.', eq_def_dChannelCommission:'The driver\'s commission per unit on the channel\'s sales, worked out automatically and deducted.', cdc_secTitle:'Automatic driver commission (credit customers and sales channels)', cdc_secHint:'Worked out from the quantities of credit customers and sales channels and the driver commission per unit, and deducted from the cash owed.', cdc_secEmpty:'Shows here by itself when a credit customer or sales channel with a driver commission is chosen.', cdf_secTitle:'Automatic delivery fees (credit customers and sales channels)', cdf_secHint:'Worked out from the quantities of credit customers and sales channels (such as Souq Gas) and their fee per unit, and added to the cash owed.', cdf_secEmpty:'Shows here by itself when a credit customer or sales channel with a delivery fee is chosen.', cp_allTitle:'Fill every product at once', cp_allGo:'Apply to all products', cp_allDone:'{n} products filled. Check them, then press Save.', eq_aOther:'Other collections', eq_aCreditDelivery:'Credit delivery fees', eq_dCommission:'Driver commission', cp_com:'Driver commission / unit', cdf_comTitle:'Automatic driver commission', cdf_autoCom:'Driver commission — {who}', eq_def_aOther:'Cash that came in without being today\'s sales, such as an old debt paid.', eq_def_aCreditDelivery:'The credit customer\'s delivery fee per unit, worked out automatically and added to the cash owed.', eq_def_dCommission:'The driver\'s commission per unit on credit sales; it comes off the cash.', eq_def_dCreditDelivery:'The credit customer\'s delivery fee per unit, worked out from the quantity; no cash came in for it.', eq_dCreditDelivery:'Credit delivery fees (on account)', cdf_title:'Automatic delivery fees', cdf_auto:'Delivery fee — {who}', cdf_qty:'Quantity: {qty}', cdf_line:'This customer: {qty} units · delivery fee {fee} (added) · driver commission {com} (deducted)', cdf_owed:'Owed by the customer', cdf_sumQty:'Units received', cdf_takenLine:'Took {qty} units · fees {fee} · commission {com}', imp_button:'Import from Excel', imp_title:'Import from an Excel file', imp_step1:'Download the template: it has the columns, and a second sheet with the values you can use (branches, people, cities).', imp_template:'Download the template', imp_step2:'Fill one row per record, then choose the file. A row with an existing record number updates that record.', imp_choose:'Choose the file', imp_step3:'Check the preview: good rows are imported, and each row with a problem says why.', imp_tplName:'Import template', imp_lists:'Values you can use', imp_field:'Field', imp_value:'Value', imp_reading:'Reading the file…', imp_unreadable:'The file could not be read. Save it as xlsx and try again.', imp_noHeader:'No header row found. Use the template, or make the first row the column names from the template.', imp_ready:'Ready to import: {n}', imp_withErrors:'With problems: {n}', imp_line:'Line', imp_update:'Updates a record', imp_new:'New record', imp_go:'Import {n} rows', imp_done:'Done: {c} new, {u} updated', imp_tooMany:'Up to 300 rows at a time. Split the file.', imp_codeNotFound:'No record numbered {v}', imp_badCity:'"{v}" is not in the city list', imp_notFound:'"{v}" was not found', imp_ambiguous:'"{v}" matches more than one record; use its number', imp_notNumber:'"{v}" is not a number', imp_yesNo:'Write yes or no', cp_title:'This customer\'s delivery fee and driver commission (per unit)', cp_hint:'For each product: a delivery fee per unit and a driver commission per unit. When the customer is chosen on a credit sale, the fee is worked out and added to the cash owed, and the commission comes off under deductions.', cp_save:'Save fees and commissions', cp_saved:'Fees and commissions saved', cp_usual:'Product price', cp_noUsual:'no price', cp_fixed:'fixed', cp_own:'Delivery fee / unit', cp_noProducts:'No products yet.', pv_tab:'Pivot table', pv_title:'Pivot table: city, then area, branch, source and product', pv_level:'Level', pv_openAll:'Open all', pv_closeAll:'Close all', lv_city:'City', lv_area:'Area', lv_branch:'Branch', lv_source:'Source', lv_product:'Product', lv_by_city:'By city', lv_by_product:'By product', lv_noProduct:'No product named', eq_title:'Net cash equation', eq_hint:'Tap any figure to go down level by level: city, area, branch, source, product', rp_eqTitle:'Net cash equation for the chosen period', eq_sales:'Total sales', eq_cashSales:'Recorded sales', eq_posSales:'Card sales (mada)', eq_additions:'Additions (other collections)', eq_deductions:'Deductions', eq_dPos:'Card sales (go to the bank)', eq_dCredit:'Credit sales', eq_dTransfer:'Customer bank transfers', eq_dDelivery:'Delivery fees before VAT', eq_dExpense:'Expenses', eq_dBanked:'الموازنات', eq_net:'Net cash', eq_opPlus:'plus', eq_opMinus:'minus', eq_opEquals:'equals', eq_noDeductions:'No deductions', eq_noAdditions:'No additions', eq_collected:'Banked by collectors', eq_remaining:'Still to bank', eq_allCompany:'The whole company', eq_nothingHere:'Nothing here', eq_def_sales:'Everything sold: the recorded sales (credit and transfers included) and card sales.', eq_def_cashSales:'The sales figure the branch or driver records, including what was sold on credit or paid by transfer.', eq_def_posSales:'Paid by card; it reaches the bank on its own.', eq_def_additions:'Cash that came in without being today\'s sales, such as an old debt paid.', eq_def_deductions:'In the sales, but never arrived as cash, or left the hand before the handover.', eq_def_dPos:'Card sales settle at the bank, so nobody hands them over.', eq_def_dCredit:'Sold on account: in the sales, not paid yet.', eq_def_dTransfer:'Customers transferred it straight to the company account.', eq_def_dDelivery:'Delivery fees are paid to the bank; their amount before VAT comes off.', eq_def_dExpense:'Paid out of the cash before the handover.', eq_def_dBanked:'Banked directly by whoever held the cash, through the POS devices.', eq_def_net:'Cash to hand over: total sales with the additions, after the deductions come off.', lv_by_area:'By area', lv_by_branch:'By branch', lv_by_source:'By source (store, car, POS)', lv_count:'{n} transactions', lv_allTx:'All transactions ({n})', rp_tabBranches:'Branches', rp_tabAreas:'Areas', rp_tabSources:'Sources', rp_tabDays:'Days', rp_tabProducts:'Products', rp_tabCustomers:'Customers (credit)', rp_tabTx:'Transactions', rp_total:'Total', rp_count:'Transactions', rp_source:'Source', rp_date:'Date', rp_qty:'Quantity', rp_creditOfIt:'Of it on credit', rp_customer:'Customer', rp_lastDate:'Last activity', rp_status:'Status', ex_button:'Export to Excel', ex_all:'Export the whole report', ex_preparing:'Preparing the Excel file…', ex_failed:'The file could not be prepared. Check the connection and try again.', entry_transferTitle:'Customer bank transfers', entry_transferHint:'What customers transferred straight to the company account. It comes off the cash to hand over: it is in the sales, but never arrived as cash.', entry_transferAmount:'Transfer amount', entry_addTransfer:'+ Add a transfer', entry_addDeposit:'+ Add a الموازنة', entry_depositDevice:'POS device', entry_pickDevice:'Choose the device…', entry_noDevices:'No devices for this branch', entry_depositPhoto:'Slip photo', entry_photoUploading:'Uploading the photo…', entry_photoReady:'Photo uploaded', entry_photoFailed:'The photo did not upload. Try again.', err_depositNeedsPhoto:'Attach the slip photo for each الموازنة.', err_depositNeedsPos:'Choose the POS device for each الموازنة.', err_photoUploading:'Wait for the photo to finish uploading.', err_invalidPhoto:'This photo cannot be used for this الموازنة. Take a new one.', err_invalidPos:'This device does not belong to this branch.', entry_priceCustomer:'This customer\'s own price', entry_priceCustomerTag:'Customer price', us_searchHint:'Search by name, email or number', us_allRoles:'All roles', us_disable:'Stop account', us_enable:'Turn account on', us_confirmDisable:'Stop {name}\'s account? They cannot sign in until it is turned back on. None of their records are deleted.', us_confirmEnable:'Turn {name}\'s account back on?', us_disabledNow:'{name}\'s account is stopped', us_enabledNow:'{name}\'s account is on', bc2_title:'Collectors', bc2_hint:'This branch\'s collector receives its cash after the Deputy Operations Manager validates it. A collector can serve more than one area, or all of them.', bc2_branchCount:'{n} branches', bc2_current:'Current collector', bc2_otherArea:'Works in {area}. Each person serves one area', bc2_disabled:'Account stopped', bc2_none:'Not collecting for any branch yet', bc2_inFlight:'The collector cannot change now: this branch\'s cash is on its way to {who}.', bc2_confirm:'Make {who} the collector for {branch}?', bc2_saved:'{who} now collects for {branch}', bc2_search:'Search by collector name or number', bc2_empty:'No collectors yet. Add a user with the Collector role on the Users screen.', inv2_doneTitle:'Your account is active', inv2_doneBody:'Sign in now with your email and new password.', inv2_signIn:'Sign in', inv2_org:'Best Gas Carrier Co.', inv2_app:'Best Gas Collections', inv2_youCan:'In the system you will:', inv2_hi:'Hello {name}', inv2_lead:'You are {role} in the Cash Collection System. Choose a password to activate your account.', inv2_leadBy:'{who} added you as {role}. Choose a password to activate your account.', inv2_s1:'Accept invitation', inv2_s2:'Password', inv2_s3:'Sign in', inv2_pw:'New password', inv2_pw2:'Type the password again', inv2_ckLen:'At least 8 characters', inv2_ckMix:'Letters and numbers', inv2_ckSame:'Both passwords match', inv2_go:'Activate account', inv2_going:'Activating your account…', inv2_valid:'Invitation valid until {date}', inv2_does_store_manager:'Record your branch sales and expenses every day|Hand the branch cash to the area manager|Follow each handover until it is approved', inv2_does_driver:'Record your vehicle sales every day|Hand the vehicle cash to the branch manager|See what you handed over and what was approved', inv2_does_cluster_manager:'Receive and confirm cash from your branches|Send each branch\'s cash to its collector|Follow your branches and collectors on one screen', inv2_does_collector:'Receive cash from the branches assigned to you|Deposit it at the bank with the reference|See what you received and deposited', inv2_does_deputy_operations_manager:'Review and approve area managers\' requests|Send any request back with a reason|Follow collection across every branch', inv2_does_operations_manager:'Follow collection and handovers in every branch|Review reports and indicators|Follow risks and complaints', inv2_does_finance:'Follow cash from branch to bank|Match deposits with the bank statement|Review differences and reports', inv2_does_accountant:'Review entries and handovers|Match deposits with the bank statement|Export reports', inv2_does_admin:'Manage users and permissions|Manage branches, areas and master data|See everything happening in the system', sort_by:'Sort', sort_default:'As entered', sort_new:'Newest first', sort_old:'Oldest first', sort_high:'Amount: highest first', sort_low:'Amount: lowest first', bm_title:'Branch on the map', bm_hint:'Tap the map to pin the branch or drag the pin, use your current location while inside the branch, or paste its Google Maps link.', bm_here:'My current location', bm_pastePh:'Google Maps link or 24.7136, 46.6753', bm_go:'Locate', bm_none:'The branch has no position yet', bm_openGoogle:'Open in Google Maps', bm_noZone:'No zone', bm_suggest:'Nearest branch: {branch} ({dist}) — suggested zone:', bm_m:'m', bm_km:'km', bm_applyZone:'Use this zone', bm_zoneMatches:'Matches the branch zone', bm_save:'Save position', bm_clear:'Remove position', bm_noGeo:'This browser cannot share your location', bm_geoDenied:'Could not get your location — allow location access and try again', bm_badPaste:'No coordinates found — paste a full Google Maps link or coordinates like 24.7136, 46.6753', bm_loadFail:'The map could not load — check the connection', calc_totalIn:'Total collected', calc_totalOut:'Total deductions', entry_pickCustomer:'Choose the customer…', entry_creditAddItem:'+ Product', entry_creditItemsTotal:'Products total', err_creditItemsIncomplete:'Complete every product line: product and quantity', rec_code:'No.', rec_codeAuto:'The number is assigned when you save', admin_customers:'Customers', admin_cities:'Cities', admin_addCustomer:'Add customer', admin_addCity:'Add city', cu_code:'Customer no.', cu_codeAuto:'The customer number is assigned when you save', cu_name:'Customer name', cu_phone:'Mobile', ci_name:'City name', ci_uses:'Branches', cu_import:'Import a list', cu_importTitle:'Import customers', cu_importHint:'Paste the names, one per line, or choose an Excel or CSV file. To add city and mobile, copy their columns straight from Excel or separate them with commas (quote a name that contains a comma). Each new customer gets a number; names already on file are skipped.', cu_importPh:'e.g. Quality Food Trading Co - Al Rimal', cu_importFile:'Choose an Excel or CSV file', cu_importCheck:'Check the list', cu_impNew:'New', cu_impOnFile:'Already on file', cu_impRepeat:'Repeated in the list', cu_impAdd:'Add {n} customers', cu_impNothing:'No new name to add', cu_impDone:'Added {n} customers, skipped {s}', cu_impEmpty:'No names found in the list', cu_impLoadFail:'Could not read the file — try saving it as CSV', pf_kindCustomer:'Customer', pf_kindCity:'City', err_duplicateCustomer:'This customer is already on file as {code}', err_duplicateCity:'This city is already on the list', err_unknownCustomer:'Customer not on file — pick one from the list or ask the administrator to add it', err_invalidCustomer:'This customer\'s account is closed to new credit', err_creditItemsMismatch:'The credit amount does not match its items', err_priceLocked:'This product has a fixed price', err_invalidProduct:'Product not found or inactive', err_invalidCoordinates:'The map position is not valid'
+    kind_cluster_to_collector:'Area → Collector', kind_deposit:'Bank deposit', filter:'Filter', all:'All', entity_bank:'Bank', pos_linkTo:'Linked to', pos_link_store:'Store', pos_link_driver:'Driver', pos_imp_driverNoCar:'A driver\'s device; no car with plate {p} yet, so it stays on the branch store', perm_users:'Manage users and permissions (admin only)', nav_users:'Users & permissions', pos_holderName:'Holder name', pos_holderIqama:'Holder iqama', pos_holder:'Holder', pos_imp_branch:'Branch "{v}" is not in the system', pos_imp_noStore:'Branch {v} has no store to link the device to', pos_imp_noCar:'No car with plate {p} in this branch; linked to the branch store', pos_imp_noHolder:'The holder\'s name is required', ch_ofWhich:'Of which through {ch} (quantity)', ch_qtyTotal:'Total quantity', ch_qtyNormal:'Normal sale', ch_qtyOf:'Through {ch}', err_channelQtyExceeds:'The Souq Gas quantity cannot be more than the line\'s quantity.', err_invalidChannel:'That sales channel does not exist or is stopped.', admin_channels:'Sales channels', admin_addChannel:'Add a sales channel', ch_name:'Channel name', pf_kindChannel:'Sales channel', ch_pick:'Sales channel', ch_normal:'Normal sale', ch_tab:'Sales channels', ch_ratesTitle:'This channel\'s delivery fee and driver commission (per unit)', ch_ratesHint:'For each product: a delivery fee per unit and a driver commission per unit. When this channel is chosen on an entry, the fee is worked out from the product lines\' quantities and added under delivery fees, and the commission is deducted under driver commission.', ch_sumQty:'Units sold', ch_net:'Net after fees and commission', ch_takenLine:'Sold {qty} units · fees {fee} · commission {com}', eq_aChannelDelivery:'Sales channel delivery fees', eq_dChannelCommission:'Driver commission — sales channels', eq_def_aChannelDelivery:'The sales channel\'s delivery fee per unit (such as Souq Gas), worked out automatically and added.', eq_def_dChannelCommission:'The driver\'s commission per unit on the channel\'s sales, worked out automatically and deducted.', cdc_secTitle:'Automatic driver commission (credit customers and sales channels)', cdc_secHint:'Worked out from the quantities of credit customers and sales channels and the driver commission per unit, and deducted from the cash owed.', cdc_secEmpty:'Shows here by itself when a credit customer or sales channel with a driver commission is chosen.', cdf_secTitle:'Automatic delivery fees (credit customers and sales channels)', cdf_secHint:'Worked out from the quantities of credit customers and sales channels (such as Souq Gas) and their fee per unit, and added to the cash owed.', cdf_secEmpty:'Shows here by itself when a credit customer or sales channel with a delivery fee is chosen.', cp_allTitle:'Fill every product at once', cp_allGo:'Apply to all products', cp_allDone:'{n} products filled. Check them, then press Save.', eq_aOther:'Other collections', eq_aCreditDelivery:'Credit delivery fees', eq_dCommission:'Driver commission', cp_com:'Driver commission / unit', cdf_comTitle:'Automatic driver commission', cdf_autoCom:'Driver commission — {who}', eq_def_aOther:'Cash that came in without being today\'s sales, such as an old debt paid.', eq_def_aCreditDelivery:'The credit customer\'s delivery fee per unit, worked out automatically and added to the cash owed.', eq_def_dCommission:'The driver\'s commission per unit on credit sales; it comes off the cash.', eq_def_dCreditDelivery:'The credit customer\'s delivery fee per unit, worked out from the quantity; no cash came in for it.', eq_dCreditDelivery:'Credit delivery fees (on account)', cdf_title:'Automatic delivery fees', cdf_auto:'Delivery fee — {who}', cdf_qty:'Quantity: {qty}', cdf_line:'This customer: {qty} units · delivery fee {fee} (added) · driver commission {com} (deducted)', cdf_owed:'Owed by the customer', cdf_sumQty:'Units received', cdf_takenLine:'Took {qty} units · fees {fee} · commission {com}', imp_button:'Import from Excel', imp_title:'Import from an Excel file', imp_step1:'Download the template: it has the columns, and a second sheet with the values you can use (branches, people, cities).', imp_template:'Download the template', imp_step2:'Fill one row per record, then choose the file. A row with an existing record number updates that record.', imp_choose:'Choose the file', imp_step3:'Check the preview: good rows are imported, and each row with a problem says why.', imp_tplName:'Import template', imp_lists:'Values you can use', imp_field:'Field', imp_value:'Value', imp_reading:'Reading the file…', imp_unreadable:'The file could not be read. Save it as xlsx and try again.', imp_noHeader:'No header row found. Use the template, or make the first row the column names from the template.', imp_ready:'Ready to import: {n}', imp_withErrors:'With problems: {n}', imp_line:'Line', imp_update:'Updates a record', imp_new:'New record', imp_go:'Import {n} rows', imp_done:'Done: {c} new, {u} updated', imp_tooMany:'Up to 300 rows at a time. Split the file.', imp_codeNotFound:'No record numbered {v}', imp_badCity:'"{v}" is not in the city list', imp_notFound:'"{v}" was not found', imp_ambiguous:'"{v}" matches more than one record; use its number', imp_notNumber:'"{v}" is not a number', imp_yesNo:'Write yes or no', cp_title:'This customer\'s delivery fee and driver commission (per unit)', cp_hint:'For each product: a delivery fee per unit and a driver commission per unit. When the customer is chosen on a credit sale, the fee is worked out and added to the cash owed, and the commission comes off under deductions.', cp_save:'Save fees and commissions', cp_saved:'Fees and commissions saved', cp_usual:'Product price', cp_noUsual:'no price', cp_fixed:'fixed', cp_own:'Delivery fee / unit', cp_noProducts:'No products yet.', pv_tab:'Pivot table', pv_title:'Pivot table: city, then area, branch, source and product', pv_level:'Level', pv_openAll:'Open all', pv_closeAll:'Close all', pv_customize:'Choose levels and figures', pv_levels:'Levels, in order', pv_addLevel:'Add a level', pv_figures:'Figures shown', pv_reset:'Back to the default', pv_openTo:'Open to', pv_search:'Find a branch, device or product…', pv_moveUp:'Move up a level', pv_remove:'Remove level', pv_allUsed:'Every level is in use', pv_levelType:'Level type', lv_date:'Day', lv_owner:'Store / car', lv_enteredBy:'Entered by', lv_city:'City', lv_area:'Area', lv_branch:'Branch', lv_source:'Source', lv_product:'Product', lv_by_city:'By city', lv_by_product:'By product', lv_noProduct:'No product named', eq_title:'Net cash equation', eq_hint:'Tap any figure to go down level by level: city, area, branch, source, product', rp_eqTitle:'Net cash equation for the chosen period', eq_sales:'Total sales', eq_cashSales:'Recorded sales', eq_posSales:'Card sales (mada)', eq_additions:'Additions (other collections)', eq_deductions:'Deductions', eq_dPos:'Card sales (go to the bank)', eq_dCredit:'Credit sales', eq_dTransfer:'Customer bank transfers', eq_dDelivery:'Delivery fees before VAT', eq_dExpense:'Expenses', eq_dBanked:'الموازنات', eq_net:'Net cash', eq_opPlus:'plus', eq_opMinus:'minus', eq_opEquals:'equals', eq_noDeductions:'No deductions', eq_noAdditions:'No additions', eq_collected:'Banked by collectors', eq_remaining:'Still to bank', eq_allCompany:'The whole company', eq_nothingHere:'Nothing here', eq_def_sales:'Everything sold: the recorded sales (credit and transfers included) and card sales.', eq_def_cashSales:'The sales figure the branch or driver records, including what was sold on credit or paid by transfer.', eq_def_posSales:'Paid by card; it reaches the bank on its own.', eq_def_additions:'Cash that came in without being today\'s sales, such as an old debt paid.', eq_def_deductions:'In the sales, but never arrived as cash, or left the hand before the handover.', eq_def_dPos:'Card sales settle at the bank, so nobody hands them over.', eq_def_dCredit:'Sold on account: in the sales, not paid yet.', eq_def_dTransfer:'Customers transferred it straight to the company account.', eq_def_dDelivery:'Delivery fees are paid to the bank; their amount before VAT comes off.', eq_def_dExpense:'Paid out of the cash before the handover.', eq_def_dBanked:'Banked directly by whoever held the cash, through the POS devices.', eq_def_net:'Cash to hand over: total sales with the additions, after the deductions come off.', lv_by_area:'By area', lv_by_branch:'By branch', lv_by_source:'By source (store, car, POS)', lv_count:'{n} transactions', lv_allTx:'All transactions ({n})', rp_tabBranches:'Branches', rp_tabAreas:'Areas', rp_tabSources:'Sources', rp_tabDays:'Days', rp_tabProducts:'Products', rp_tabCustomers:'Customers (credit)', rp_tabTx:'Transactions', rp_total:'Total', rp_count:'Transactions', rp_source:'Source', rp_date:'Date', rp_qty:'Quantity', rp_creditOfIt:'Of it on credit', rp_customer:'Customer', rp_lastDate:'Last activity', rp_status:'Status', ex_button:'Export to Excel', ex_pdf:'PDF', ex_allPdf:'Report as PDF', ex_generated:'Prepared {when} by {who}', ex_popup:'Allow pop-ups so the report can open for printing or saving as PDF', ex_all:'Export the whole report', ex_preparing:'Preparing the Excel file…', ex_failed:'The file could not be prepared. Check the connection and try again.', entry_transferTitle:'Customer bank transfers', entry_transferHint:'What customers transferred straight to the company account. It comes off the cash to hand over: it is in the sales, but never arrived as cash.', entry_transferAmount:'Transfer amount', entry_addTransfer:'+ Add a transfer', entry_addDeposit:'+ Add a الموازنة', entry_depositDevice:'POS device', entry_depositSameDevice:'Linked automatically to the POS machine chosen as the source', err_depositPosMismatch:'A الموازنة must be on the same POS machine chosen as the source', entry_pickDevice:'Choose the device…', entry_noDevices:'No devices for this branch', entry_depositPhoto:'Slip photo', entry_photoUploading:'Uploading the photo…', entry_photoReady:'Photo uploaded', entry_photoFailed:'The photo did not upload. Try again.', err_depositNeedsPhoto:'Attach the slip photo for each الموازنة.', err_depositNeedsPos:'Choose the POS device for each الموازنة.', err_photoUploading:'Wait for the photo to finish uploading.', err_invalidPhoto:'This photo cannot be used for this الموازنة. Take a new one.', err_invalidPos:'This device does not belong to this branch.', entry_priceCustomer:'This customer\'s own price', entry_priceCustomerTag:'Customer price', us_searchHint:'Search by name, email or number', us_allRoles:'All roles', us_disable:'Stop account', us_enable:'Turn account on', us_confirmDisable:'Stop {name}\'s account? They cannot sign in until it is turned back on. None of their records are deleted.', us_confirmEnable:'Turn {name}\'s account back on?', us_disabledNow:'{name}\'s account is stopped', us_enabledNow:'{name}\'s account is on', bc2_title:'Collectors', bc2_hint:'This branch\'s collector receives its cash after the Deputy Operations Manager validates it. A collector can serve more than one area, or all of them.', bc2_branchCount:'{n} branches', bc2_current:'Current collector', bc2_otherArea:'Works in {area}. Each person serves one area', bc2_disabled:'Account stopped', bc2_none:'Not collecting for any branch yet', bc2_inFlight:'The collector cannot change now: this branch\'s cash is on its way to {who}.', bc2_confirm:'Make {who} the collector for {branch}?', bc2_saved:'{who} now collects for {branch}', bc2_search:'Search by collector name or number', bc2_empty:'No collectors yet. Add a user with the Collector role on the Users screen.', inv2_doneTitle:'Your account is active', inv2_doneBody:'Sign in now with your email and new password.', inv2_signIn:'Sign in', inv2_org:'Best Gas Carrier Co.', inv2_app:'Best Gas Collections', inv2_youCan:'In the system you will:', inv2_hi:'Hello {name}', inv2_lead:'You are {role} in the Cash Collection System. Choose a password to activate your account.', inv2_leadBy:'{who} added you as {role}. Choose a password to activate your account.', inv2_s1:'Accept invitation', inv2_s2:'Password', inv2_s3:'Sign in', inv2_pw:'New password', inv2_pw2:'Type the password again', inv2_ckLen:'At least 8 characters', inv2_ckMix:'Letters and numbers', inv2_ckSame:'Both passwords match', inv2_go:'Activate account', inv2_going:'Activating your account…', inv2_valid:'Invitation valid until {date}', inv2_does_store_manager:'Record your branch sales and expenses every day|Hand the branch cash to the area manager|Follow each handover until it is approved', inv2_does_driver:'Record your vehicle sales every day|Hand the vehicle cash to the branch manager|See what you handed over and what was approved', inv2_does_cluster_manager:'Receive and confirm cash from your branches|Send each branch\'s cash to its collector|Follow your branches and collectors on one screen', inv2_does_collector:'Receive cash from the branches assigned to you|Deposit it at the bank with the reference|See what you received and deposited', inv2_does_deputy_operations_manager:'Review and approve area managers\' requests|Send any request back with a reason|Follow collection across every branch', inv2_does_operations_manager:'Follow collection and handovers in every branch|Review reports and indicators|Follow risks and complaints', inv2_does_finance:'Follow cash from branch to bank|Match deposits with the bank statement|Review differences and reports', inv2_does_accountant:'Review entries and handovers|Match deposits with the bank statement|Export reports', inv2_does_admin:'Manage users and permissions|Manage branches, areas and master data|See everything happening in the system', sort_by:'Sort', sort_default:'As entered', sort_new:'Newest first', sort_old:'Oldest first', sort_high:'Amount: highest first', sort_low:'Amount: lowest first', bm_title:'Branch on the map', bm_hint:'Tap the map to pin the branch or drag the pin, use your current location while inside the branch, or paste its Google Maps link.', bm_here:'My current location', bm_pastePh:'Google Maps link or 24.7136, 46.6753', bm_go:'Locate', bm_none:'The branch has no position yet', bm_openGoogle:'Open in Google Maps', bm_noZone:'No zone', bm_suggest:'Nearest branch: {branch} ({dist}) — suggested zone:', bm_m:'m', bm_km:'km', bm_applyZone:'Use this zone', bm_zoneMatches:'Matches the branch zone', bm_save:'Save position', bm_clear:'Remove position', bm_noGeo:'This browser cannot share your location', bm_geoDenied:'Could not get your location — allow location access and try again', bm_badPaste:'No coordinates found — paste a full Google Maps link or coordinates like 24.7136, 46.6753', bm_loadFail:'The map could not load — check the connection', calc_totalIn:'Total collected', calc_totalOut:'Total deductions', entry_pickCustomer:'Choose the customer…', entry_creditAddItem:'+ Product', entry_creditItemsTotal:'Products total', err_creditItemsIncomplete:'Complete every product line: product and quantity', rec_code:'No.', rec_codeAuto:'The number is assigned when you save', admin_customers:'Customers', admin_cities:'Cities', admin_addCustomer:'Add customer', admin_addCity:'Add city', cu_code:'Customer no.', cu_codeAuto:'The customer number is assigned when you save', cu_name:'Customer name', cu_phone:'Mobile', ci_name:'City name', ci_uses:'Branches', cu_import:'Import a list', cu_importTitle:'Import customers', cu_importHint:'Paste the names, one per line, or choose an Excel or CSV file. To add city and mobile, copy their columns straight from Excel or separate them with commas (quote a name that contains a comma). Each new customer gets a number; names already on file are skipped.', cu_importPh:'e.g. Quality Food Trading Co - Al Rimal', cu_importFile:'Choose an Excel or CSV file', cu_importCheck:'Check the list', cu_impNew:'New', cu_impOnFile:'Already on file', cu_impRepeat:'Repeated in the list', cu_impAdd:'Add {n} customers', cu_impNothing:'No new name to add', cu_impDone:'Added {n} customers, skipped {s}', cu_impEmpty:'No names found in the list', cu_impLoadFail:'Could not read the file — try saving it as CSV', pf_kindCustomer:'Customer', pf_kindCity:'City', err_duplicateCustomer:'This customer is already on file as {code}', err_duplicateCity:'This city is already on the list', err_unknownCustomer:'Customer not on file — pick one from the list or ask the administrator to add it', err_invalidCustomer:'This customer\'s account is closed to new credit', err_creditItemsMismatch:'The credit amount does not match its items', err_priceLocked:'This product has a fixed price', err_invalidProduct:'Product not found or inactive', err_invalidCoordinates:'The map position is not valid'
   },
   ur: {
     appName:'بیسٹ گیس — نقد وصولی نظام', login:'لاگ ان', email:'ای میل', password:'پاس ورڈ',
@@ -2443,7 +2488,7 @@ var L = {
     err_generic:'کچھ غلط ہوگیا، دوبارہ کوشش کریں', ok_saved:'کامیابی سے محفوظ ہوگیا', confirm_delete:'کیا آپ واقعی حذف کرنا چاہتے ہیں؟',
     err_alreadyAcknowledged:'پہلے سے تصدیق شدہ', err_authRequired:'سیشن ختم ہوگیا — دوبارہ لاگ ان کریں',
     err_badRequest:'غلط درخواست', err_conflictOfInterest:'آپ اس لین دین پر کارروائی نہیں کر سکتے جس میں آپ خود شامل ہیں (مفادات کا تصادم)',
-    err_depositNotEligible:'یہ جمع رقم مطابقت کے لیے اہل نہیں', err_emailExists:'یہ ای میل پہلے سے رجسٹرڈ ہے', err_iqamaExists:'یہ اقامہ نمبر پہلے سے کسی اور اکاؤنٹ کا ہے', login_id:'ای میل یا اقامہ نمبر', us_emailOptional:'ای میل (اختیاری)', us_tempTitle:'{name} کا عارضی پاس ورڈ', us_tempHint:'اسے اقامہ نمبر {iq} کے ساتھ دیں۔ وہ دونوں سے لاگ اِن کریں گے، پھر نیا پاس ورڈ منتخب کریں گے۔ یہ پاس ورڈ دوبارہ نظر نہیں آئے گا۔', us_copyPw:'پاس ورڈ کاپی کریں', us_copiedPw:'پاس ورڈ کاپی ہو گیا',
+    err_depositNotEligible:'یہ جمع رقم مطابقت کے لیے اہل نہیں', err_emailExists:'یہ ای میل پہلے سے رجسٹرڈ ہے', err_iqamaExists:'یہ اقامہ نمبر پہلے سے کسی اور اکاؤنٹ کا ہے', fp_askAdmin:'اقامہ نمبر کے ساتھ کوئی ای میل نہیں۔ نئے عارضی پاس ورڈ کے لیے سسٹم ایڈمن سے رابطہ کریں۔', ho_showMore:'مزید دکھائیں ({total} میں سے {n})', login_id:'ای میل یا اقامہ نمبر', us_emailOptional:'ای میل (اختیاری)', us_tempTitle:'{name} کا عارضی پاس ورڈ', us_tempHint:'اسے اقامہ نمبر {iq} کے ساتھ دیں۔ وہ دونوں سے لاگ اِن کریں گے، پھر نیا پاس ورڈ منتخب کریں گے۔ یہ پاس ورڈ دوبارہ نظر نہیں آئے گا۔', us_copyPw:'پاس ورڈ کاپی کریں', us_copiedPw:'پاس ورڈ کاپی ہو گیا',
     err_forbidden:'آپ کو اس کی اجازت نہیں ہے', err_invalidInput:'نامکمل یا غلط ڈیٹا',
     err_invalidKind:'غلط آئٹم کی قسم', err_invalidResolution:'غلط حل کی قسم', err_invalidStatus:'غلط حالت',
     err_invalidType:'غلط قسم', err_lineAlreadyMatched:'یہ بینک لائن پہلے سے مماثل ہے',
@@ -2457,7 +2502,7 @@ var L = {
     err_wrongCurrentPassword:'موجودہ پاس ورڈ غلط ہے', err_network:'سرور سے رابطہ نہیں ہو سکا — انٹرنیٹ چیک کریں',
     err_noSourceSelected:'پہلے ایک ذریعہ منتخب کریں', err_titleRequired:'براہ کرم عنوان درج کریں',
     noData:'کوئی ڈیٹا نہیں', loading:'لوڈ ہو رہا ہے...', total:'کل', kind_location_to_cluster:'برانچ ← علاقہ',
-    kind_cluster_to_collector:'علاقہ ← کلکٹر', kind_deposit:'بینک جمع', filter:'فلٹر', all:'تمام', entity_bank:'بینک', pos_linkTo:'منسلک', pos_link_store:'اسٹور', pos_link_driver:'ڈرائیور', pos_imp_driverNoCar:'ڈرائیور کی مشین؛ پلیٹ {p} والی گاڑی ابھی نہیں، اس لیے برانچ اسٹور پر', perm_users:'صارفین اور اجازتوں کا انتظام (صرف ایڈمن)', nav_users:'صارفین اور اجازتیں', pos_holderName:'مشین رکھنے والے کا نام', pos_holderIqama:'رکھنے والے کا اقامہ', pos_holder:'مشین رکھنے والا', pos_imp_branch:'برانچ «{v}» سسٹم میں نہیں', pos_imp_noStore:'برانچ {v} میں کوئی اسٹور نہیں', pos_imp_noCar:'پلیٹ {p} والی گاڑی نہیں ملی؛ برانچ اسٹور سے جوڑ دی', pos_imp_noHolder:'رکھنے والے کا نام ضروری ہے', ch_ofWhich:'اس میں سے {ch} کے ذریعے (مقدار)', ch_qtyTotal:'کل مقدار', ch_qtyNormal:'عام فروخت', ch_qtyOf:'{ch} کے ذریعے', err_channelQtyExceeds:'سوق گیس کی مقدار لائن سے زیادہ نہیں ہو سکتی۔', err_invalidChannel:'یہ سیلز چینل موجود نہیں یا بند ہے۔', admin_channels:'سیلز چینلز', admin_addChannel:'سیلز چینل شامل کریں', ch_name:'چینل کا نام', pf_kindChannel:'سیلز چینل', ch_pick:'سیلز چینل', ch_normal:'عام فروخت', ch_tab:'سیلز چینلز', ch_ratesTitle:'اس چینل کی ڈلیوری فیس اور ڈرائیور کمیشن (فی یونٹ)', ch_ratesHint:'ہر پروڈکٹ کے لیے فی یونٹ ڈلیوری فیس اور ڈرائیور کمیشن۔ اندراج میں یہ چینل منتخب کرنے پر فیس مقدار سے بن کر جمع اور کمیشن منہا ہوتا ہے۔', ch_sumQty:'فروخت شدہ یونٹ', ch_net:'فیس اور کمیشن کے بعد خالص', ch_takenLine:'{qty} یونٹ فروخت · فیس {fee} · کمیشن {com}', eq_aChannelDelivery:'سیلز چینل ڈلیوری فیس', eq_dChannelCommission:'ڈرائیور کمیشن — سیلز چینلز', eq_def_aChannelDelivery:'سیلز چینل کی فی یونٹ ڈلیوری فیس (جیسے سوق گیس)، خودکار اور جمع۔', eq_def_dChannelCommission:'چینل کی فروخت پر ڈرائیور کا فی یونٹ کمیشن، خودکار اور منہا۔', cdc_secTitle:'خودکار ڈرائیور کمیشن (ادھار گاہک اور سیلز چینلز)', cdc_secHint:'ادھار گاہکوں اور چینلز کی مقدار اور فی یونٹ کمیشن سے بنتا ہے اور منہا ہوتا ہے۔', cdc_secEmpty:'کمیشن والا گاہک یا چینل منتخب کرنے پر یہاں خود دکھے گا۔', cdf_secTitle:'خودکار ڈلیوری فیس (ادھار گاہک اور سیلز چینلز)', cdf_secHint:'ادھار گاہکوں اور سیلز چینلز کی مقدار اور فی یونٹ فیس سے بنتی ہے اور جمع ہوتی ہے۔', cdf_secEmpty:'ڈلیوری فیس والا گاہک یا چینل منتخب کرنے پر یہاں خود دکھے گی۔', cp_allTitle:'تمام پروڈکٹس ایک ساتھ بھریں', cp_allGo:'تمام پروڈکٹس پر لاگو کریں', cp_allDone:'{n} پروڈکٹس بھر گئیں۔ دیکھ کر محفوظ کریں۔', eq_aOther:'دیگر وصولیاں', eq_aCreditDelivery:'ادھار ڈلیوری فیس', eq_dCommission:'ڈرائیور کمیشن', cp_com:'ڈرائیور کمیشن / یونٹ', cdf_comTitle:'خودکار ڈرائیور کمیشن', cdf_autoCom:'ڈرائیور کمیشن — {who}', eq_def_aOther:'نقدی جو آج کی فروخت نہیں۔', eq_def_aCreditDelivery:'ادھار گاہک کی فی یونٹ ڈلیوری فیس، خودکار، واجب نقدی میں جمع۔', eq_def_dCommission:'ادھار فروخت پر ڈرائیور کا فی یونٹ کمیشن؛ نقدی سے منہا۔', eq_def_dCreditDelivery:'ادھار گاہک کی فی یونٹ ڈلیوری فیس، مقدار سے خودکار؛ نقد نہیں ملی۔', eq_dCreditDelivery:'ادھار ڈلیوری فیس (کھاتے میں)', cdf_title:'خودکار ڈلیوری فیس', cdf_auto:'ڈلیوری فیس — {who}', cdf_qty:'مقدار: {qty}', cdf_line:'یہ گاہک: {qty} یونٹ · ڈلیوری فیس {fee} (جمع) · ڈرائیور کمیشن {com} (منہا)', cdf_owed:'گاہک کے ذمے', cdf_sumQty:'وصول شدہ مقدار', cdf_takenLine:'{qty} یونٹ لیے · فیس {fee} · کمیشن {com}', imp_button:'Excel سے درآمد', imp_title:'Excel فائل سے درآمد', imp_step1:'نمونہ ڈاؤن لوڈ کریں: اس میں کالم ہیں، اور دوسری شیٹ میں دستیاب قدریں (برانچیں، لوگ، شہر)۔', imp_template:'نمونہ ڈاؤن لوڈ کریں', imp_step2:'ہر ریکارڈ کی ایک قطار بھریں، پھر فائل منتخب کریں۔ موجودہ ریکارڈ نمبر والی قطار اسی ریکارڈ کو بدلتی ہے۔', imp_choose:'فائل منتخب کریں', imp_step3:'پیش نظارہ دیکھیں: درست قطاریں درآمد ہوں گی، غلط قطار اپنی وجہ بتائے گی۔', imp_tplName:'درآمد کا نمونہ', imp_lists:'دستیاب قدریں', imp_field:'خانہ', imp_value:'قدر', imp_reading:'فائل پڑھی جا رہی ہے…', imp_unreadable:'فائل پڑھی نہیں جا سکی۔ xlsx میں محفوظ کر کے دوبارہ کوشش کریں۔', imp_noHeader:'عنوانات کی قطار نہیں ملی۔ نمونہ استعمال کریں۔', imp_ready:'درآمد کے لیے تیار: {n}', imp_withErrors:'غلطیوں والی: {n}', imp_line:'قطار', imp_update:'موجودہ ریکارڈ میں تبدیلی', imp_new:'نیا ریکارڈ', imp_go:'{n} قطاریں درآمد کریں', imp_done:'مکمل: {c} نئے، {u} تبدیل', imp_tooMany:'ایک وقت میں 300 قطاریں۔ فائل تقسیم کریں۔', imp_codeNotFound:'نمبر {v} کا کوئی ریکارڈ نہیں', imp_badCity:'«{v}» شہروں کی فہرست میں نہیں', imp_notFound:'«{v}» نہیں ملا', imp_ambiguous:'«{v}» ایک سے زیادہ سے ملتا ہے؛ نمبر استعمال کریں', imp_notNumber:'«{v}» عدد نہیں', imp_yesNo:'ہاں یا نہیں لکھیں', cp_title:'اس گاہک کی ڈلیوری فیس اور ڈرائیور کمیشن (فی یونٹ)', cp_hint:'ہر پروڈکٹ کے لیے: فی یونٹ ڈلیوری فیس اور فی یونٹ ڈرائیور کمیشن۔ ادھار فروخت میں فیس خود بن کر واجب نقدی میں جمع ہوتی ہے اور کمیشن کٹوتیوں میں۔', cp_save:'فیس اور کمیشن محفوظ کریں', cp_saved:'فیس اور کمیشن محفوظ ہو گئے', cp_usual:'پروڈکٹ کی قیمت', cp_noUsual:'کوئی قیمت نہیں', cp_fixed:'مقرر', cp_own:'ڈلیوری فیس / یونٹ', cp_noProducts:'ابھی کوئی پروڈکٹ نہیں۔', pv_tab:'پیوٹ ٹیبل', pv_title:'پیوٹ ٹیبل: شہر، پھر علاقہ، برانچ، ذریعہ اور پروڈکٹ', pv_level:'سطح', pv_openAll:'سب کھولیں', pv_closeAll:'سب بند کریں', lv_city:'شہر', lv_area:'علاقہ', lv_branch:'برانچ', lv_source:'ذریعہ', lv_product:'پروڈکٹ', lv_by_city:'شہر کے لحاظ سے', lv_by_product:'پروڈکٹ کے لحاظ سے', lv_noProduct:'کوئی پروڈکٹ نہیں', eq_title:'خالص نقدی کی مساوات', eq_hint:'کسی بھی رقم پر ٹیپ کریں: شہر، علاقہ، برانچ، ذریعہ، پروڈکٹ', rp_eqTitle:'منتخب مدت کی خالص نقدی مساوات', eq_sales:'کل فروخت', eq_cashSales:'درج شدہ فروخت', eq_posSales:'کارڈ فروخت (مدى)', eq_additions:'اضافے (دیگر وصولیاں)', eq_deductions:'کٹوتیاں', eq_dPos:'کارڈ فروخت (بینک جاتی ہے)', eq_dCredit:'ادھار فروخت', eq_dTransfer:'گاہکوں کی بینک ٹرانسفر', eq_dDelivery:'ڈلیوری فیس ٹیکس سے پہلے', eq_dExpense:'اخراجات', eq_dBanked:'موازنات', eq_net:'خالص نقدی', eq_opPlus:'جمع', eq_opMinus:'منفی', eq_opEquals:'برابر', eq_noDeductions:'کوئی کٹوتی نہیں', eq_noAdditions:'کوئی اضافہ نہیں', eq_collected:'کلکٹرز نے جمع کرایا', eq_remaining:'جمع کرانا باقی', eq_allCompany:'پوری کمپنی', eq_nothingHere:'یہاں کچھ نہیں', eq_def_sales:'جو کچھ بیچا گیا: درج شدہ فروخت (ادھار اور ٹرانسفر سمیت) اور کارڈ فروخت۔', eq_def_cashSales:'برانچ یا ڈرائیور کی درج کردہ فروخت، ادھار اور ٹرانسفر سمیت۔', eq_def_posSales:'کارڈ سے ادا، خود بینک پہنچتی ہے۔', eq_def_additions:'ہاتھ میں آئی نقدی جو آج کی فروخت نہیں، جیسے پرانا قرض۔', eq_def_deductions:'فروخت میں شامل مگر نقد نہیں آیا، یا حوالگی سے پہلے خرچ ہوا۔', eq_def_dPos:'کارڈ فروخت بینک میں طے ہوتی ہے۔', eq_def_dCredit:'ادھار پر بیچا: فروخت میں شامل، ابھی ادا نہیں ہوا۔', eq_def_dTransfer:'گاہکوں نے براہِ راست کمپنی کے اکاؤنٹ میں بھیجا۔', eq_def_dDelivery:'ڈلیوری فیس بینک کو جاتی ہے؛ ٹیکس سے پہلے کی رقم منہا ہوتی ہے۔', eq_def_dExpense:'حوالگی سے پہلے نقدی سے ادا کیا گیا۔', eq_def_dBanked:'نقدی رکھنے والے نے POS مشینوں کے ذریعے براہِ راست بینک میں جمع کرایا۔', eq_def_net:'حوالے کرنے والی نقدی: کل فروخت اور اضافے، کٹوتیوں کے بعد۔', lv_by_area:'علاقے کے لحاظ سے', lv_by_branch:'برانچ کے لحاظ سے', lv_by_source:'ذریعے کے لحاظ سے (اسٹور، گاڑی، POS)', lv_count:'{n} لین دین', lv_allTx:'تمام لین دین ({n})', rp_tabBranches:'برانچیں', rp_tabAreas:'علاقے', rp_tabSources:'ذرائع', rp_tabDays:'دن', rp_tabProducts:'مصنوعات', rp_tabCustomers:'گاہک (ادھار)', rp_tabTx:'لین دین', rp_total:'کل', rp_count:'لین دین', rp_source:'ذریعہ', rp_date:'تاریخ', rp_qty:'مقدار', rp_creditOfIt:'اس میں ادھار', rp_customer:'گاہک', rp_lastDate:'آخری سرگرمی', rp_status:'حالت', ex_button:'Excel میں برآمد', ex_all:'پوری رپورٹ برآمد کریں', ex_preparing:'Excel فائل تیار ہو رہی ہے…', ex_failed:'فائل تیار نہیں ہو سکی۔ کنکشن چیک کر کے دوبارہ کوشش کریں۔', entry_transferTitle:'گاہکوں کی بینک ٹرانسفر', entry_transferHint:'جو گاہکوں نے براہِ راست کمپنی کے اکاؤنٹ میں بھیجا۔ یہ نقدی سے منہا ہوتا ہے، کیونکہ یہ فروخت میں شامل ہے مگر نقد نہیں ملا۔', entry_transferAmount:'ٹرانسفر کی رقم', entry_addTransfer:'+ ٹرانسفر شامل کریں', entry_addDeposit:'+ موازنہ شامل کریں', entry_depositDevice:'POS مشین', entry_pickDevice:'مشین منتخب کریں…', entry_noDevices:'اس برانچ کی کوئی مشین نہیں', entry_depositPhoto:'رسید کی تصویر', entry_photoUploading:'تصویر اپ لوڈ ہو رہی ہے…', entry_photoReady:'تصویر اپ لوڈ ہو گئی', entry_photoFailed:'تصویر اپ لوڈ نہیں ہوئی۔ دوبارہ کوشش کریں۔', err_depositNeedsPhoto:'ہر موازنہ کی رسید کی تصویر لگائیں۔', err_depositNeedsPos:'ہر موازنہ کے لیے POS مشین منتخب کریں۔', err_photoUploading:'تصویر اپ لوڈ مکمل ہونے کا انتظار کریں۔', err_invalidPhoto:'یہ تصویر اس موازنہ کے لیے قابلِ استعمال نہیں۔ نئی تصویر لیں۔', err_invalidPos:'یہ مشین اس برانچ کی نہیں۔', entry_priceCustomer:'اس گاہک کی اپنی قیمت', entry_priceCustomerTag:'گاہک کی قیمت', us_searchHint:'نام، ای میل یا نمبر سے تلاش کریں', us_allRoles:'تمام کردار', us_disable:'اکاؤنٹ بند کریں', us_enable:'اکاؤنٹ چالو کریں', us_confirmDisable:'{name} کا اکاؤنٹ بند کریں؟ دوبارہ چالو ہونے تک لاگ ان نہیں ہو سکے گا، کوئی ریکارڈ حذف نہیں ہوگا۔', us_confirmEnable:'{name} کا اکاؤنٹ دوبارہ چالو کریں؟', us_disabledNow:'{name} کا اکاؤنٹ بند ہو گیا', us_enabledNow:'{name} کا اکاؤنٹ چالو ہو گیا', bc2_title:'کلکٹرز', bc2_hint:'اس برانچ کا کلکٹر نائب کی منظوری کے بعد نقدی وصول کرتا ہے۔ ایک کلکٹر کئی علاقوں یا تمام علاقوں کی خدمت کر سکتا ہے۔', bc2_branchCount:'{n} برانچیں', bc2_current:'موجودہ کلکٹر', bc2_otherArea:'{area} میں کام کرتا ہے۔ ہر شخص کا ایک علاقہ', bc2_disabled:'اکاؤنٹ بند', bc2_none:'ابھی کسی برانچ کا کلکٹر نہیں', bc2_inFlight:'ابھی کلکٹر نہیں بدلا جا سکتا: اس برانچ کی نقدی {who} کے پاس جا رہی ہے۔', bc2_confirm:'{who} کو {branch} کا کلکٹر بنائیں؟', bc2_saved:'{who} اب {branch} کا کلکٹر ہے', bc2_search:'کلکٹر کا نام یا نمبر تلاش کریں', bc2_empty:'ابھی کوئی کلکٹر نہیں۔ صارفین کی اسکرین سے کلکٹر شامل کریں۔', inv2_doneTitle:'آپ کا اکاؤنٹ فعال ہو گیا', inv2_doneBody:'اب اپنی ای میل اور نئے پاس ورڈ سے لاگ اِن کریں۔', inv2_signIn:'لاگ اِن', inv2_org:'بیسٹ گیس', inv2_app:'نقد وصولی نظام', inv2_youCan:'سسٹم میں آپ یہ کریں گے:', inv2_hi:'السلام علیکم {name}', inv2_lead:'آپ نقد وصولی نظام میں {role} ہیں۔ اکاؤنٹ فعال کرنے کے لیے پاس ورڈ منتخب کریں۔', inv2_leadBy:'{who} نے آپ کو بطور {role} شامل کیا ہے۔ اکاؤنٹ فعال کرنے کے لیے پاس ورڈ منتخب کریں۔', inv2_s1:'دعوت قبول', inv2_s2:'پاس ورڈ', inv2_s3:'لاگ اِن', inv2_pw:'نیا پاس ورڈ', inv2_pw2:'پاس ورڈ دوبارہ لکھیں', inv2_ckLen:'کم از کم 8 حروف', inv2_ckMix:'حروف اور نمبر', inv2_ckSame:'دونوں پاس ورڈ ایک جیسے', inv2_go:'اکاؤنٹ فعال کریں', inv2_going:'اکاؤنٹ فعال ہو رہا ہے…', inv2_valid:'دعوت {date} تک درست ہے', inv2_does_store_manager:'اپنی برانچ کی روزانہ فروخت اور اخراجات درج کریں|برانچ کی نقدی علاقہ منیجر کو دیں|ہر حوالگی کی منظوری تک پیروی کریں', inv2_does_driver:'اپنی گاڑی کی روزانہ فروخت درج کریں|گاڑی کی نقدی برانچ منیجر کو دیں|دیکھیں کیا دیا اور کیا منظور ہوا', inv2_does_cluster_manager:'اپنی برانچوں کی نقدی وصول اور تصدیق کریں|ہر برانچ کی نقدی اس کے کلکٹر کو بھیجیں|برانچیں اور کلکٹر ایک اسکرین پر دیکھیں', inv2_does_collector:'اپنی برانچوں کی نقدی وصول کریں|حوالہ نمبر کے ساتھ بینک میں جمع کریں|وصولی اور جمع شدہ رقم دیکھیں', inv2_does_deputy_operations_manager:'علاقہ منیجرز کی درخواستیں منظور کریں|کسی بھی درخواست کو وجہ کے ساتھ واپس کریں|تمام برانچوں کی وصولی دیکھیں', inv2_does_operations_manager:'تمام برانچوں کی وصولی اور حوالگیاں دیکھیں|رپورٹس دیکھیں|خطرات اور شکایات دیکھیں', inv2_does_finance:'برانچ سے بینک تک نقدی دیکھیں|جمع شدہ رقم کو بینک اسٹیٹمنٹ سے ملائیں|فرق اور رپورٹس دیکھیں', inv2_does_accountant:'اندراجات اور حوالگیاں دیکھیں|بینک اسٹیٹمنٹ سے ملائیں|رپورٹس نکالیں', inv2_does_admin:'صارفین اور اجازتیں سنبھالیں|برانچیں، علاقے اور بنیادی ڈیٹا سنبھالیں|سسٹم میں سب کچھ دیکھیں', sort_by:'ترتیب', sort_default:'اندراج کے مطابق', sort_new:'نئے پہلے', sort_old:'پرانے پہلے', sort_high:'رقم: زیادہ پہلے', sort_low:'رقم: کم پہلے', bm_title:'نقشے پر برانچ', bm_hint:'نقشے پر ٹیپ کریں یا پن گھسیٹیں، برانچ میں ہوں تو اپنا موجودہ مقام استعمال کریں، یا Google Maps کا لنک چسپاں کریں۔', bm_here:'میرا موجودہ مقام', bm_pastePh:'Google Maps لنک یا 24.7136, 46.6753', bm_go:'تلاش', bm_none:'برانچ کا مقام ابھی طے نہیں', bm_openGoogle:'Google Maps میں کھولیں', bm_noZone:'کوئی زون نہیں', bm_suggest:'قریب ترین برانچ: {branch} ({dist}) — تجویز کردہ زون:', bm_m:'م', bm_km:'کلومیٹر', bm_applyZone:'یہ زون لگائیں', bm_zoneMatches:'برانچ کے زون سے مطابق', bm_save:'مقام محفوظ کریں', bm_clear:'مقام ہٹائیں', bm_noGeo:'براؤزر مقام نہیں دے سکتا', bm_geoDenied:'آپ کا مقام نہیں ملا — اجازت دیں اور دوبارہ کوشش کریں', bm_badPaste:'کوئی مقام نہیں ملا — پورا لنک یا 24.7136, 46.6753 چسپاں کریں', bm_loadFail:'نقشہ لوڈ نہیں ہوا', calc_totalIn:'کل وصولی', calc_totalOut:'کل کٹوتیاں', entry_pickCustomer:'گاہک منتخب کریں…', entry_creditAddItem:'+ شے', entry_creditItemsTotal:'اشیاء کا مجموعہ', err_creditItemsIncomplete:'ہر شے مکمل کریں: پروڈکٹ اور مقدار', rec_code:'نمبر', rec_codeAuto:'محفوظ کرنے پر نمبر خود ملے گا', admin_customers:'گاہک', admin_cities:'شہر', admin_addCustomer:'گاہک شامل کریں', admin_addCity:'شہر شامل کریں', cu_code:'گاہک نمبر', cu_codeAuto:'محفوظ کرنے پر نمبر خود ملے گا', cu_name:'گاہک کا نام', cu_phone:'موبائل', ci_name:'شہر کا نام', ci_uses:'برانچیں', cu_import:'فہرست درآمد کریں', cu_importTitle:'گاہک درآمد کریں', cu_importHint:'نام چسپاں کریں، ہر سطر میں ایک، یا Excel/CSV فائل منتخب کریں۔ ہر نئے گاہک کو نمبر ملے گا، موجود نام چھوڑ دیے جائیں گے۔', cu_importPh:'مثال: کمپنی کا نام، شہر', cu_importFile:'Excel یا CSV فائل', cu_importCheck:'فہرست جانچیں', cu_impNew:'نیا', cu_impOnFile:'پہلے سے موجود', cu_impRepeat:'فہرست میں دہرایا گیا', cu_impAdd:'{n} گاہک شامل کریں', cu_impNothing:'کوئی نیا نام نہیں', cu_impDone:'{n} گاہک شامل، {s} چھوڑ دیے', cu_impEmpty:'فہرست میں کوئی نام نہیں ملا', cu_impLoadFail:'فائل نہیں پڑھی جا سکی', pf_kindCustomer:'گاہک', pf_kindCity:'شہر', err_duplicateCustomer:'یہ گاہک پہلے سے {code} پر موجود ہے', err_duplicateCity:'یہ شہر فہرست میں موجود ہے', err_unknownCustomer:'گاہک رجسٹرڈ نہیں', err_invalidCustomer:'اس گاہک کا کھاتہ بند ہے', err_creditItemsMismatch:'ادھار رقم اشیاء کے مجموعے سے مختلف ہے', err_priceLocked:'اس پروڈکٹ کی قیمت مقرر ہے', err_invalidProduct:'پروڈکٹ موجود نہیں', err_invalidCoordinates:'مقام درست نہیں'
+    kind_cluster_to_collector:'علاقہ ← کلکٹر', kind_deposit:'بینک جمع', filter:'فلٹر', all:'تمام', entity_bank:'بینک', pos_linkTo:'منسلک', pos_link_store:'اسٹور', pos_link_driver:'ڈرائیور', pos_imp_driverNoCar:'ڈرائیور کی مشین؛ پلیٹ {p} والی گاڑی ابھی نہیں، اس لیے برانچ اسٹور پر', perm_users:'صارفین اور اجازتوں کا انتظام (صرف ایڈمن)', nav_users:'صارفین اور اجازتیں', pos_holderName:'مشین رکھنے والے کا نام', pos_holderIqama:'رکھنے والے کا اقامہ', pos_holder:'مشین رکھنے والا', pos_imp_branch:'برانچ «{v}» سسٹم میں نہیں', pos_imp_noStore:'برانچ {v} میں کوئی اسٹور نہیں', pos_imp_noCar:'پلیٹ {p} والی گاڑی نہیں ملی؛ برانچ اسٹور سے جوڑ دی', pos_imp_noHolder:'رکھنے والے کا نام ضروری ہے', ch_ofWhich:'اس میں سے {ch} کے ذریعے (مقدار)', ch_qtyTotal:'کل مقدار', ch_qtyNormal:'عام فروخت', ch_qtyOf:'{ch} کے ذریعے', err_channelQtyExceeds:'سوق گیس کی مقدار لائن سے زیادہ نہیں ہو سکتی۔', err_invalidChannel:'یہ سیلز چینل موجود نہیں یا بند ہے۔', admin_channels:'سیلز چینلز', admin_addChannel:'سیلز چینل شامل کریں', ch_name:'چینل کا نام', pf_kindChannel:'سیلز چینل', ch_pick:'سیلز چینل', ch_normal:'عام فروخت', ch_tab:'سیلز چینلز', ch_ratesTitle:'اس چینل کی ڈلیوری فیس اور ڈرائیور کمیشن (فی یونٹ)', ch_ratesHint:'ہر پروڈکٹ کے لیے فی یونٹ ڈلیوری فیس اور ڈرائیور کمیشن۔ اندراج میں یہ چینل منتخب کرنے پر فیس مقدار سے بن کر جمع اور کمیشن منہا ہوتا ہے۔', ch_sumQty:'فروخت شدہ یونٹ', ch_net:'فیس اور کمیشن کے بعد خالص', ch_takenLine:'{qty} یونٹ فروخت · فیس {fee} · کمیشن {com}', eq_aChannelDelivery:'سیلز چینل ڈلیوری فیس', eq_dChannelCommission:'ڈرائیور کمیشن — سیلز چینلز', eq_def_aChannelDelivery:'سیلز چینل کی فی یونٹ ڈلیوری فیس (جیسے سوق گیس)، خودکار اور جمع۔', eq_def_dChannelCommission:'چینل کی فروخت پر ڈرائیور کا فی یونٹ کمیشن، خودکار اور منہا۔', cdc_secTitle:'خودکار ڈرائیور کمیشن (ادھار گاہک اور سیلز چینلز)', cdc_secHint:'ادھار گاہکوں اور چینلز کی مقدار اور فی یونٹ کمیشن سے بنتا ہے اور منہا ہوتا ہے۔', cdc_secEmpty:'کمیشن والا گاہک یا چینل منتخب کرنے پر یہاں خود دکھے گا۔', cdf_secTitle:'خودکار ڈلیوری فیس (ادھار گاہک اور سیلز چینلز)', cdf_secHint:'ادھار گاہکوں اور سیلز چینلز کی مقدار اور فی یونٹ فیس سے بنتی ہے اور جمع ہوتی ہے۔', cdf_secEmpty:'ڈلیوری فیس والا گاہک یا چینل منتخب کرنے پر یہاں خود دکھے گی۔', cp_allTitle:'تمام پروڈکٹس ایک ساتھ بھریں', cp_allGo:'تمام پروڈکٹس پر لاگو کریں', cp_allDone:'{n} پروڈکٹس بھر گئیں۔ دیکھ کر محفوظ کریں۔', eq_aOther:'دیگر وصولیاں', eq_aCreditDelivery:'ادھار ڈلیوری فیس', eq_dCommission:'ڈرائیور کمیشن', cp_com:'ڈرائیور کمیشن / یونٹ', cdf_comTitle:'خودکار ڈرائیور کمیشن', cdf_autoCom:'ڈرائیور کمیشن — {who}', eq_def_aOther:'نقدی جو آج کی فروخت نہیں۔', eq_def_aCreditDelivery:'ادھار گاہک کی فی یونٹ ڈلیوری فیس، خودکار، واجب نقدی میں جمع۔', eq_def_dCommission:'ادھار فروخت پر ڈرائیور کا فی یونٹ کمیشن؛ نقدی سے منہا۔', eq_def_dCreditDelivery:'ادھار گاہک کی فی یونٹ ڈلیوری فیس، مقدار سے خودکار؛ نقد نہیں ملی۔', eq_dCreditDelivery:'ادھار ڈلیوری فیس (کھاتے میں)', cdf_title:'خودکار ڈلیوری فیس', cdf_auto:'ڈلیوری فیس — {who}', cdf_qty:'مقدار: {qty}', cdf_line:'یہ گاہک: {qty} یونٹ · ڈلیوری فیس {fee} (جمع) · ڈرائیور کمیشن {com} (منہا)', cdf_owed:'گاہک کے ذمے', cdf_sumQty:'وصول شدہ مقدار', cdf_takenLine:'{qty} یونٹ لیے · فیس {fee} · کمیشن {com}', imp_button:'Excel سے درآمد', imp_title:'Excel فائل سے درآمد', imp_step1:'نمونہ ڈاؤن لوڈ کریں: اس میں کالم ہیں، اور دوسری شیٹ میں دستیاب قدریں (برانچیں، لوگ، شہر)۔', imp_template:'نمونہ ڈاؤن لوڈ کریں', imp_step2:'ہر ریکارڈ کی ایک قطار بھریں، پھر فائل منتخب کریں۔ موجودہ ریکارڈ نمبر والی قطار اسی ریکارڈ کو بدلتی ہے۔', imp_choose:'فائل منتخب کریں', imp_step3:'پیش نظارہ دیکھیں: درست قطاریں درآمد ہوں گی، غلط قطار اپنی وجہ بتائے گی۔', imp_tplName:'درآمد کا نمونہ', imp_lists:'دستیاب قدریں', imp_field:'خانہ', imp_value:'قدر', imp_reading:'فائل پڑھی جا رہی ہے…', imp_unreadable:'فائل پڑھی نہیں جا سکی۔ xlsx میں محفوظ کر کے دوبارہ کوشش کریں۔', imp_noHeader:'عنوانات کی قطار نہیں ملی۔ نمونہ استعمال کریں۔', imp_ready:'درآمد کے لیے تیار: {n}', imp_withErrors:'غلطیوں والی: {n}', imp_line:'قطار', imp_update:'موجودہ ریکارڈ میں تبدیلی', imp_new:'نیا ریکارڈ', imp_go:'{n} قطاریں درآمد کریں', imp_done:'مکمل: {c} نئے، {u} تبدیل', imp_tooMany:'ایک وقت میں 300 قطاریں۔ فائل تقسیم کریں۔', imp_codeNotFound:'نمبر {v} کا کوئی ریکارڈ نہیں', imp_badCity:'«{v}» شہروں کی فہرست میں نہیں', imp_notFound:'«{v}» نہیں ملا', imp_ambiguous:'«{v}» ایک سے زیادہ سے ملتا ہے؛ نمبر استعمال کریں', imp_notNumber:'«{v}» عدد نہیں', imp_yesNo:'ہاں یا نہیں لکھیں', cp_title:'اس گاہک کی ڈلیوری فیس اور ڈرائیور کمیشن (فی یونٹ)', cp_hint:'ہر پروڈکٹ کے لیے: فی یونٹ ڈلیوری فیس اور فی یونٹ ڈرائیور کمیشن۔ ادھار فروخت میں فیس خود بن کر واجب نقدی میں جمع ہوتی ہے اور کمیشن کٹوتیوں میں۔', cp_save:'فیس اور کمیشن محفوظ کریں', cp_saved:'فیس اور کمیشن محفوظ ہو گئے', cp_usual:'پروڈکٹ کی قیمت', cp_noUsual:'کوئی قیمت نہیں', cp_fixed:'مقرر', cp_own:'ڈلیوری فیس / یونٹ', cp_noProducts:'ابھی کوئی پروڈکٹ نہیں۔', pv_tab:'پیوٹ ٹیبل', pv_title:'پیوٹ ٹیبل: شہر، پھر علاقہ، برانچ، ذریعہ اور پروڈکٹ', pv_level:'سطح', pv_openAll:'سب کھولیں', pv_closeAll:'سب بند کریں', pv_customize:'سطحیں اور اعداد منتخب کریں', pv_levels:'سطحیں، ترتیب سے', pv_addLevel:'سطح شامل کریں', pv_figures:'دکھائے گئے اعداد', pv_reset:'پہلی حالت پر واپس', pv_openTo:'یہاں تک کھولیں', pv_search:'برانچ، مشین یا پروڈکٹ تلاش کریں…', pv_moveUp:'ایک سطح اوپر', pv_remove:'سطح ہٹائیں', pv_allUsed:'تمام سطحیں استعمال میں ہیں', pv_levelType:'سطح کی قسم', lv_date:'دن', lv_owner:'اسٹور / گاڑی', lv_enteredBy:'اندراج کنندہ', lv_city:'شہر', lv_area:'علاقہ', lv_branch:'برانچ', lv_source:'ذریعہ', lv_product:'پروڈکٹ', lv_by_city:'شہر کے لحاظ سے', lv_by_product:'پروڈکٹ کے لحاظ سے', lv_noProduct:'کوئی پروڈکٹ نہیں', eq_title:'خالص نقدی کی مساوات', eq_hint:'کسی بھی رقم پر ٹیپ کریں: شہر، علاقہ، برانچ، ذریعہ، پروڈکٹ', rp_eqTitle:'منتخب مدت کی خالص نقدی مساوات', eq_sales:'کل فروخت', eq_cashSales:'درج شدہ فروخت', eq_posSales:'کارڈ فروخت (مدى)', eq_additions:'اضافے (دیگر وصولیاں)', eq_deductions:'کٹوتیاں', eq_dPos:'کارڈ فروخت (بینک جاتی ہے)', eq_dCredit:'ادھار فروخت', eq_dTransfer:'گاہکوں کی بینک ٹرانسفر', eq_dDelivery:'ڈلیوری فیس ٹیکس سے پہلے', eq_dExpense:'اخراجات', eq_dBanked:'موازنات', eq_net:'خالص نقدی', eq_opPlus:'جمع', eq_opMinus:'منفی', eq_opEquals:'برابر', eq_noDeductions:'کوئی کٹوتی نہیں', eq_noAdditions:'کوئی اضافہ نہیں', eq_collected:'کلکٹرز نے جمع کرایا', eq_remaining:'جمع کرانا باقی', eq_allCompany:'پوری کمپنی', eq_nothingHere:'یہاں کچھ نہیں', eq_def_sales:'جو کچھ بیچا گیا: درج شدہ فروخت (ادھار اور ٹرانسفر سمیت) اور کارڈ فروخت۔', eq_def_cashSales:'برانچ یا ڈرائیور کی درج کردہ فروخت، ادھار اور ٹرانسفر سمیت۔', eq_def_posSales:'کارڈ سے ادا، خود بینک پہنچتی ہے۔', eq_def_additions:'ہاتھ میں آئی نقدی جو آج کی فروخت نہیں، جیسے پرانا قرض۔', eq_def_deductions:'فروخت میں شامل مگر نقد نہیں آیا، یا حوالگی سے پہلے خرچ ہوا۔', eq_def_dPos:'کارڈ فروخت بینک میں طے ہوتی ہے۔', eq_def_dCredit:'ادھار پر بیچا: فروخت میں شامل، ابھی ادا نہیں ہوا۔', eq_def_dTransfer:'گاہکوں نے براہِ راست کمپنی کے اکاؤنٹ میں بھیجا۔', eq_def_dDelivery:'ڈلیوری فیس بینک کو جاتی ہے؛ ٹیکس سے پہلے کی رقم منہا ہوتی ہے۔', eq_def_dExpense:'حوالگی سے پہلے نقدی سے ادا کیا گیا۔', eq_def_dBanked:'نقدی رکھنے والے نے POS مشینوں کے ذریعے براہِ راست بینک میں جمع کرایا۔', eq_def_net:'حوالے کرنے والی نقدی: کل فروخت اور اضافے، کٹوتیوں کے بعد۔', lv_by_area:'علاقے کے لحاظ سے', lv_by_branch:'برانچ کے لحاظ سے', lv_by_source:'ذریعے کے لحاظ سے (اسٹور، گاڑی، POS)', lv_count:'{n} لین دین', lv_allTx:'تمام لین دین ({n})', rp_tabBranches:'برانچیں', rp_tabAreas:'علاقے', rp_tabSources:'ذرائع', rp_tabDays:'دن', rp_tabProducts:'مصنوعات', rp_tabCustomers:'گاہک (ادھار)', rp_tabTx:'لین دین', rp_total:'کل', rp_count:'لین دین', rp_source:'ذریعہ', rp_date:'تاریخ', rp_qty:'مقدار', rp_creditOfIt:'اس میں ادھار', rp_customer:'گاہک', rp_lastDate:'آخری سرگرمی', rp_status:'حالت', ex_button:'Excel میں برآمد', ex_pdf:'PDF', ex_allPdf:'رپورٹ PDF', ex_generated:'{when} کو {who} نے تیار کیا', ex_popup:'رپورٹ پرنٹ یا PDF محفوظ کرنے کے لیے نئی ونڈو کی اجازت دیں', ex_all:'پوری رپورٹ برآمد کریں', ex_preparing:'Excel فائل تیار ہو رہی ہے…', ex_failed:'فائل تیار نہیں ہو سکی۔ کنکشن چیک کر کے دوبارہ کوشش کریں۔', entry_transferTitle:'گاہکوں کی بینک ٹرانسفر', entry_transferHint:'جو گاہکوں نے براہِ راست کمپنی کے اکاؤنٹ میں بھیجا۔ یہ نقدی سے منہا ہوتا ہے، کیونکہ یہ فروخت میں شامل ہے مگر نقد نہیں ملا۔', entry_transferAmount:'ٹرانسفر کی رقم', entry_addTransfer:'+ ٹرانسفر شامل کریں', entry_addDeposit:'+ موازنہ شامل کریں', entry_depositDevice:'POS مشین', entry_depositSameDevice:'ذریعہ میں منتخب POS مشین سے خودبخود منسلک', err_depositPosMismatch:'الموازنة اسی POS مشین پر ہونی چاہیے جو ذریعہ میں منتخب ہے', entry_pickDevice:'مشین منتخب کریں…', entry_noDevices:'اس برانچ کی کوئی مشین نہیں', entry_depositPhoto:'رسید کی تصویر', entry_photoUploading:'تصویر اپ لوڈ ہو رہی ہے…', entry_photoReady:'تصویر اپ لوڈ ہو گئی', entry_photoFailed:'تصویر اپ لوڈ نہیں ہوئی۔ دوبارہ کوشش کریں۔', err_depositNeedsPhoto:'ہر موازنہ کی رسید کی تصویر لگائیں۔', err_depositNeedsPos:'ہر موازنہ کے لیے POS مشین منتخب کریں۔', err_photoUploading:'تصویر اپ لوڈ مکمل ہونے کا انتظار کریں۔', err_invalidPhoto:'یہ تصویر اس موازنہ کے لیے قابلِ استعمال نہیں۔ نئی تصویر لیں۔', err_invalidPos:'یہ مشین اس برانچ کی نہیں۔', entry_priceCustomer:'اس گاہک کی اپنی قیمت', entry_priceCustomerTag:'گاہک کی قیمت', us_searchHint:'نام، ای میل یا نمبر سے تلاش کریں', us_allRoles:'تمام کردار', us_disable:'اکاؤنٹ بند کریں', us_enable:'اکاؤنٹ چالو کریں', us_confirmDisable:'{name} کا اکاؤنٹ بند کریں؟ دوبارہ چالو ہونے تک لاگ ان نہیں ہو سکے گا، کوئی ریکارڈ حذف نہیں ہوگا۔', us_confirmEnable:'{name} کا اکاؤنٹ دوبارہ چالو کریں؟', us_disabledNow:'{name} کا اکاؤنٹ بند ہو گیا', us_enabledNow:'{name} کا اکاؤنٹ چالو ہو گیا', bc2_title:'کلکٹرز', bc2_hint:'اس برانچ کا کلکٹر نائب کی منظوری کے بعد نقدی وصول کرتا ہے۔ ایک کلکٹر کئی علاقوں یا تمام علاقوں کی خدمت کر سکتا ہے۔', bc2_branchCount:'{n} برانچیں', bc2_current:'موجودہ کلکٹر', bc2_otherArea:'{area} میں کام کرتا ہے۔ ہر شخص کا ایک علاقہ', bc2_disabled:'اکاؤنٹ بند', bc2_none:'ابھی کسی برانچ کا کلکٹر نہیں', bc2_inFlight:'ابھی کلکٹر نہیں بدلا جا سکتا: اس برانچ کی نقدی {who} کے پاس جا رہی ہے۔', bc2_confirm:'{who} کو {branch} کا کلکٹر بنائیں؟', bc2_saved:'{who} اب {branch} کا کلکٹر ہے', bc2_search:'کلکٹر کا نام یا نمبر تلاش کریں', bc2_empty:'ابھی کوئی کلکٹر نہیں۔ صارفین کی اسکرین سے کلکٹر شامل کریں۔', inv2_doneTitle:'آپ کا اکاؤنٹ فعال ہو گیا', inv2_doneBody:'اب اپنی ای میل اور نئے پاس ورڈ سے لاگ اِن کریں۔', inv2_signIn:'لاگ اِن', inv2_org:'بیسٹ گیس', inv2_app:'نقد وصولی نظام', inv2_youCan:'سسٹم میں آپ یہ کریں گے:', inv2_hi:'السلام علیکم {name}', inv2_lead:'آپ نقد وصولی نظام میں {role} ہیں۔ اکاؤنٹ فعال کرنے کے لیے پاس ورڈ منتخب کریں۔', inv2_leadBy:'{who} نے آپ کو بطور {role} شامل کیا ہے۔ اکاؤنٹ فعال کرنے کے لیے پاس ورڈ منتخب کریں۔', inv2_s1:'دعوت قبول', inv2_s2:'پاس ورڈ', inv2_s3:'لاگ اِن', inv2_pw:'نیا پاس ورڈ', inv2_pw2:'پاس ورڈ دوبارہ لکھیں', inv2_ckLen:'کم از کم 8 حروف', inv2_ckMix:'حروف اور نمبر', inv2_ckSame:'دونوں پاس ورڈ ایک جیسے', inv2_go:'اکاؤنٹ فعال کریں', inv2_going:'اکاؤنٹ فعال ہو رہا ہے…', inv2_valid:'دعوت {date} تک درست ہے', inv2_does_store_manager:'اپنی برانچ کی روزانہ فروخت اور اخراجات درج کریں|برانچ کی نقدی علاقہ منیجر کو دیں|ہر حوالگی کی منظوری تک پیروی کریں', inv2_does_driver:'اپنی گاڑی کی روزانہ فروخت درج کریں|گاڑی کی نقدی برانچ منیجر کو دیں|دیکھیں کیا دیا اور کیا منظور ہوا', inv2_does_cluster_manager:'اپنی برانچوں کی نقدی وصول اور تصدیق کریں|ہر برانچ کی نقدی اس کے کلکٹر کو بھیجیں|برانچیں اور کلکٹر ایک اسکرین پر دیکھیں', inv2_does_collector:'اپنی برانچوں کی نقدی وصول کریں|حوالہ نمبر کے ساتھ بینک میں جمع کریں|وصولی اور جمع شدہ رقم دیکھیں', inv2_does_deputy_operations_manager:'علاقہ منیجرز کی درخواستیں منظور کریں|کسی بھی درخواست کو وجہ کے ساتھ واپس کریں|تمام برانچوں کی وصولی دیکھیں', inv2_does_operations_manager:'تمام برانچوں کی وصولی اور حوالگیاں دیکھیں|رپورٹس دیکھیں|خطرات اور شکایات دیکھیں', inv2_does_finance:'برانچ سے بینک تک نقدی دیکھیں|جمع شدہ رقم کو بینک اسٹیٹمنٹ سے ملائیں|فرق اور رپورٹس دیکھیں', inv2_does_accountant:'اندراجات اور حوالگیاں دیکھیں|بینک اسٹیٹمنٹ سے ملائیں|رپورٹس نکالیں', inv2_does_admin:'صارفین اور اجازتیں سنبھالیں|برانچیں، علاقے اور بنیادی ڈیٹا سنبھالیں|سسٹم میں سب کچھ دیکھیں', sort_by:'ترتیب', sort_default:'اندراج کے مطابق', sort_new:'نئے پہلے', sort_old:'پرانے پہلے', sort_high:'رقم: زیادہ پہلے', sort_low:'رقم: کم پہلے', bm_title:'نقشے پر برانچ', bm_hint:'نقشے پر ٹیپ کریں یا پن گھسیٹیں، برانچ میں ہوں تو اپنا موجودہ مقام استعمال کریں، یا Google Maps کا لنک چسپاں کریں۔', bm_here:'میرا موجودہ مقام', bm_pastePh:'Google Maps لنک یا 24.7136, 46.6753', bm_go:'تلاش', bm_none:'برانچ کا مقام ابھی طے نہیں', bm_openGoogle:'Google Maps میں کھولیں', bm_noZone:'کوئی زون نہیں', bm_suggest:'قریب ترین برانچ: {branch} ({dist}) — تجویز کردہ زون:', bm_m:'م', bm_km:'کلومیٹر', bm_applyZone:'یہ زون لگائیں', bm_zoneMatches:'برانچ کے زون سے مطابق', bm_save:'مقام محفوظ کریں', bm_clear:'مقام ہٹائیں', bm_noGeo:'براؤزر مقام نہیں دے سکتا', bm_geoDenied:'آپ کا مقام نہیں ملا — اجازت دیں اور دوبارہ کوشش کریں', bm_badPaste:'کوئی مقام نہیں ملا — پورا لنک یا 24.7136, 46.6753 چسپاں کریں', bm_loadFail:'نقشہ لوڈ نہیں ہوا', calc_totalIn:'کل وصولی', calc_totalOut:'کل کٹوتیاں', entry_pickCustomer:'گاہک منتخب کریں…', entry_creditAddItem:'+ شے', entry_creditItemsTotal:'اشیاء کا مجموعہ', err_creditItemsIncomplete:'ہر شے مکمل کریں: پروڈکٹ اور مقدار', rec_code:'نمبر', rec_codeAuto:'محفوظ کرنے پر نمبر خود ملے گا', admin_customers:'گاہک', admin_cities:'شہر', admin_addCustomer:'گاہک شامل کریں', admin_addCity:'شہر شامل کریں', cu_code:'گاہک نمبر', cu_codeAuto:'محفوظ کرنے پر نمبر خود ملے گا', cu_name:'گاہک کا نام', cu_phone:'موبائل', ci_name:'شہر کا نام', ci_uses:'برانچیں', cu_import:'فہرست درآمد کریں', cu_importTitle:'گاہک درآمد کریں', cu_importHint:'نام چسپاں کریں، ہر سطر میں ایک، یا Excel/CSV فائل منتخب کریں۔ ہر نئے گاہک کو نمبر ملے گا، موجود نام چھوڑ دیے جائیں گے۔', cu_importPh:'مثال: کمپنی کا نام، شہر', cu_importFile:'Excel یا CSV فائل', cu_importCheck:'فہرست جانچیں', cu_impNew:'نیا', cu_impOnFile:'پہلے سے موجود', cu_impRepeat:'فہرست میں دہرایا گیا', cu_impAdd:'{n} گاہک شامل کریں', cu_impNothing:'کوئی نیا نام نہیں', cu_impDone:'{n} گاہک شامل، {s} چھوڑ دیے', cu_impEmpty:'فہرست میں کوئی نام نہیں ملا', cu_impLoadFail:'فائل نہیں پڑھی جا سکی', pf_kindCustomer:'گاہک', pf_kindCity:'شہر', err_duplicateCustomer:'یہ گاہک پہلے سے {code} پر موجود ہے', err_duplicateCity:'یہ شہر فہرست میں موجود ہے', err_unknownCustomer:'گاہک رجسٹرڈ نہیں', err_invalidCustomer:'اس گاہک کا کھاتہ بند ہے', err_creditItemsMismatch:'ادھار رقم اشیاء کے مجموعے سے مختلف ہے', err_priceLocked:'اس پروڈکٹ کی قیمت مقرر ہے', err_invalidProduct:'پروڈکٹ موجود نہیں', err_invalidCoordinates:'مقام درست نہیں'
   }
 };
 function t(k){ var l=L[state.lang]||L.ar; return l[k]!==undefined ? l[k] : (L.en[k]!==undefined?L.en[k]:k); }
@@ -2578,7 +2623,7 @@ function plateLatin_(s){
   });
 }
 function latinPart_(s){
-  var x = plateLatin_(s);
+  var x = plateLatin_(String(s).replace(/[\u0660-\u0669]/g, function(c){ return String(c.charCodeAt(0) - 0x0660); }).replace(/[\u06F0-\u06F9]/g, function(c){ return String(c.charCodeAt(0) - 0x06F0); }));
   if (!/[A-Za-z]/.test(x)) return null;
   x = x.replace(/[\u0600-\u06FF]+/g, ' ').replace(/\(\s*\)/g, ' ').replace(/\s+/g, ' ')
     .replace(/\s*[|\/\u2013\u2014-]\s*(?=[|\/\u2013\u2014-]|$)/g, '').replace(/^[\s|\/\u2013\u2014-]+/, '').trim();
@@ -2601,7 +2646,7 @@ function trMap_(){
   if (lang === 'en') trNames_(meta).forEach(function(n){ if (!map[n]) { var lp = latinPart_(n); if (lp) map[n] = lp; } });
   var keys = Object.keys(map).filter(function(k){ return map[k] !== k && /[\u0600-\u06FF]/.test(k); })
     .sort(function(a, b){ return b.length - a.length; });
-  var re = keys.length ? new RegExp('(^|[^\u0600-\u06FF])(' + keys.map(function(k){ return k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }).join('|') + ')(?![\u0600-\u06FF])', 'g') : null;
+  var re = keys.length ? new RegExp('(^|[^\u0621-\u064A\u066E-\u06D3\u06FA-\u06FF])(' + keys.map(function(k){ return k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }).join('|') + ')(?![\u0621-\u064A\u066E-\u06D3\u06FA-\u06FF])', 'g') : null;
   TRX_ = { meta: meta, lang: lang, map: map, re: re };
   return TRX_;
 }
@@ -2897,7 +2942,7 @@ var ERROR_KEYS_ = {
   invalid_customer:'err_invalidCustomer', credit_items_mismatch:'err_creditItemsMismatch', price_locked:'err_priceLocked',
   invalid_product:'err_invalidProduct', invalid_coordinates:'err_invalidCoordinates',
   already_acknowledged:'err_alreadyAcknowledged', auth_required:'err_authRequired', bad_request:'err_badRequest',
-  conflict_of_interest:'err_conflictOfInterest', deposit_not_eligible:'err_depositNotEligible', email_exists:'err_emailExists', iqama_exists:'err_iqamaExists',
+  conflict_of_interest:'err_conflictOfInterest', deposit_not_eligible:'err_depositNotEligible', email_exists:'err_emailExists', iqama_exists:'err_iqamaExists', deposit_pos_mismatch:'err_depositPosMismatch',
   forbidden:'err_forbidden', has_children:'admin_hasChildren', invalid_input:'err_invalidInput', invalid_kind:'err_invalidKind',
   invalid_resolution:'err_invalidResolution', invalid_status:'err_invalidStatus', invalid_type:'err_invalidType',
   line_already_matched:'err_lineAlreadyMatched', missing_action:'err_missingAction', missing_email:'err_missingEmail',
@@ -2972,7 +3017,7 @@ function renderLogin(){
     '<div class="card login-card">' +
       langPills() +
     '<div id="loginMsg"></div>' +
-    '<div class="field"><label>'+esc(t('login_id'))+'</label><input id="loginEmail" type="text" inputmode="email" dir="ltr" autocapitalize="off" autocorrect="off" spellcheck="false" autocomplete="username"></div>' +
+    '<div class="field"><label>'+esc(t('login_id'))+'</label><input id="loginEmail" type="text" dir="ltr" autocapitalize="off" autocorrect="off" spellcheck="false" autocomplete="username"></div>' +
     '<div class="field"><label>'+esc(t('password'))+'</label><input id="loginPw" type="password" autocomplete="current-password"></div>' +
     '<button class="btn" id="loginBtn">'+esc(t('signIn'))+'</button>' +
     '<button type="button" class="login-forgot" id="forgotBtn">'+esc(t('forgotPassword'))+'</button>' +
@@ -3079,7 +3124,7 @@ function doForgotPassword(){
     btn.disabled = false;
     var box = qs('#fpMsg');
     if (!res.ok) { box.innerHTML = '<div class="msg err">'+esc(errMsg_(res))+'</div>'; return; }
-    box.innerHTML = '<div class="msg ok">'+esc(t(res.throttled ? 'forgotPasswordThrottled' : 'forgotPasswordSent'))+'</div>';
+    box.innerHTML = '<div class="msg '+(res.askAdmin ? 'err' : 'ok')+'">'+esc(t(res.askAdmin ? 'fp_askAdmin' : res.throttled ? 'forgotPasswordThrottled' : 'forgotPasswordSent'))+'</div>';
     qs('#fpEmail').value='';
   });
 }
@@ -3346,6 +3391,9 @@ function myLocationId_(){
     var mine = state.meta.cars.filter(function(c){ return c.driverUserId === state.user.id; });
     if (mine.length) return mine[0].locationId;
   }
+  // someone who only holds a POS machine sits where that machine is
+  var myPos = state.meta && (state.meta.pos || []).filter(function(p){ return p.assignedUserId === state.user.id; })[0];
+  if (myPos) return posOwnerLocationId_(myPos);
   return null;
 }
 function myCityLabel_(){
@@ -3389,6 +3437,7 @@ var ICONS = {
   user: '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
   box: '<path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="M3 8l9 5 9-5M12 13v8"/>',
   doc: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/>',
+  printer: '<path d="M6 9V3h12v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M6 14h12v7H6z"/>',
   check: '<path d="M20 6 9 17l-5-5"/>',
   layers: '<path d="m12 2 10 5-10 5L2 7z"/><path d="m2 17 10 5 10-5M2 12l10 5 10-5"/>',
   trend: '<path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/>',
@@ -4063,26 +4112,177 @@ function levelDrillView_(part, entries, depth, scope){
   };
 }
 
-// ---------- Excel ----------
-function exportXlsx_(fileName, sheets){
+// ---------- Excel and PDF (2026-09-29) ----------
+// Every export goes through one sheet model, [{ name, rows, outline?, note? }]:
+// rows[0] is the header, a row whose first cell is the totals label is the
+// totals line, and outline (one level per data row) makes the rows fold in
+// Excel. Excel is built with ExcelJS so it carries the brand: title band,
+// green header, number formats, totals, frozen header, filter, sheet
+// direction and print setup. The same model prints as a PDF through the
+// browser, which shapes Arabic properly where PDF libraries do not.
+var EXCELJS_URL_ = 'https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js';
+var EXCELJS_SRI_ = 'sha384-Pqp51FUN2/qzfxZxBCtF0stpc9ONI6MYZpVqmo8m20SoaQCzf+arZvACkLkirlPz';
+var EX_GREEN_ = '4D6D51', EX_DARK_ = '3A5540', EX_CREAM_ = 'F2EEE4', EX_ZEBRA_ = 'FAF8F3', EX_LINE_ = 'E4DED0', EX_TOTAL_ = 'E6EEE6';
+function exIsTotal_(r){ return Array.isArray(r) && r.length && String(r[0]) === t('rp_total'); }
+function exSubtitle_(opts){
+  var who = state.user ? state.user.name : '';
+  return [opts && opts.note, t('ex_generated').replace('{when}', fmtStamp_(new Date().toISOString())).replace('{who}', who)]
+    .filter(Boolean).join('  ·  ');
+}
+// which columns hold numbers, and whether they are whole numbers
+function exColKinds_(rows){
+  var n = rows[0] ? rows[0].length : 0, kinds = [];
+  for (var c = 0; c < n; c++) {
+    var any = false, allInt = true, allNum = true;
+    for (var r = 1; r < rows.length; r++) {
+      var v = rows[r][c];
+      if (v === '' || v == null) continue;
+      if (typeof v === 'number') { any = true; if (Math.round(v) !== v) allInt = false; }
+      else allNum = false;
+    }
+    // whole numbers only for counts and quantities; every amount keeps its halalas
+    var h = String(rows[0][c] == null ? '' : rows[0][c]);
+    var countish = [t('rp_count'), t('rp_qty'), t('ch_qtyTotal'), t('ch_qtyNormal'), t('lv_count').replace('{n}', '').trim()].indexOf(h) >= 0 || h.indexOf(t('ch_qtyOf').split('{ch}')[0]) === 0;
+    kinds.push(any && allNum ? (allInt && countish ? 'int' : 'money') : 'text');
+  }
+  return kinds;
+}
+function exportXlsx_(fileName, sheets, opts){
   toast('ex_preparing', 'ok');
-  loadLib_(XLSX_URL_, XLSX_SRI_).then(function(){
-    var X = window.XLSX, wb = X.utils.book_new();
-    wb.Workbook = { Views: [{ RTL: state.lang !== 'en' }] };
-    var used = {};
+  var file = fileName.replace(/[\\\/:*?"<>|]/g, '-') + '.xlsx';
+  loadLib_(EXCELJS_URL_, EXCELJS_SRI_).then(function(){
+    var wb = new window.ExcelJS.Workbook();
+    wb.creator = 'Best Gas Collections'; wb.created = new Date();
+    var rtl = state.lang !== 'en', used = {};
+    var logoId = null;
+    try { logoId = wb.addImage({ base64: LOGO_B64, extension: 'png' }); } catch (e) {}
     sheets.forEach(function(sh){
-      var ws = X.utils.aoa_to_sheet(sh.rows.map(function(r){ return Array.isArray(r) ? r.map(trText_) : r; }));
-      ws['!cols'] = (sh.rows[0] || []).map(function(h, i){
-        var w = sh.rows.reduce(function(m, r){ return Math.max(m, String(r[i] == null ? '' : r[i]).length); }, 6);
-        return { wch: Math.min(48, w + 2) };
-      });
-      var name = String(sh.name || 'Sheet').replace(/[:\\\/?*\[\]]/g, ' ').slice(0, 31) || 'Sheet';
+      var rows = (sh.rows || []).map(function(r){ return Array.isArray(r) ? r.map(trText_) : r; });
+      var name = String(trText_(sh.name || 'Sheet')).replace(/[:\\\/?*\[\]]/g, ' ').slice(0, 31) || 'Sheet';
       while (used[name]) name = name.slice(0, 28) + '_' + Object.keys(used).length;
       used[name] = 1;
-      X.utils.book_append_sheet(wb, ws, name);
+      var cols = Math.max(2, rows[0] ? rows[0].length : 2), kinds = exColKinds_(rows);
+      var ws = wb.addWorksheet(name, {
+        views: [{ state: 'frozen', ySplit: 3, rightToLeft: rtl, showGridLines: false }],
+        properties: { outlineProperties: { summaryBelow: false, summaryRight: false } },
+        pageSetup: { paperSize: 9, orientation: cols > 6 ? 'landscape' : 'portrait', fitToPage: true, fitToWidth: 1, fitToHeight: 0,
+          margins: { left: 0.4, right: 0.4, top: 0.5, bottom: 0.5, header: 0.2, footer: 0.2 }, printTitlesRow: '3:3' },
+        headerFooter: { oddFooter: '&L&8Best Gas Collections&R&8&P / &N' }
+      });
+      // title band and the line under it
+      ws.mergeCells(1, 1, 1, cols); ws.mergeCells(2, 1, 2, cols);
+      var t1 = ws.getCell(1, 1);
+      t1.value = trText_(sh.title || sh.name || fileName);
+      t1.font = { name: 'Calibri', size: 15, bold: true, color: { argb: 'FFFFFFFF' } };
+      t1.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF' + EX_GREEN_ } };
+      t1.alignment = { vertical: 'middle', horizontal: rtl ? 'right' : 'left', indent: logoId != null ? 6 : 1 };
+      ws.getRow(1).height = 36;
+      var t2 = ws.getCell(2, 1);
+      t2.value = exSubtitle_({ note: sh.note || (opts && opts.note) });
+      t2.font = { name: 'Calibri', size: 9.5, italic: true, color: { argb: 'FF4A554B' } };
+      t2.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF' + EX_CREAM_ } };
+      t2.alignment = { vertical: 'middle', horizontal: rtl ? 'right' : 'left', indent: 1, wrapText: true };
+      ws.getRow(2).height = 22;
+      if (logoId != null) ws.addImage(logoId, { tl: { col: rtl ? cols - 1 : 0, row: 0 }, ext: { width: 34, height: 34 }, editAs: 'oneCell' });
+      // header
+      var head = ws.getRow(3);
+      (rows[0] || []).forEach(function(h, i){
+        var c = head.getCell(i + 1);
+        c.value = h;
+        c.font = { name: 'Calibri', size: 10.5, bold: true, color: { argb: 'FFFFFFFF' } };
+        c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF' + EX_DARK_ } };
+        c.alignment = { vertical: 'middle', horizontal: kinds[i] === 'text' ? (rtl ? 'right' : 'left') : 'center', wrapText: true };
+        c.border = { bottom: { style: 'medium', color: { argb: 'FF' + EX_GREEN_ } } };
+      });
+      head.height = 30;
+      // rows
+      var outline = sh.outline || null;
+      rows.slice(1).forEach(function(r, k){
+        var row = ws.addRow(r), total = exIsTotal_(r), lvl = outline ? outline[k] : null;
+        row.height = 19;
+        row.eachCell({ includeEmpty: true }, function(c, ci){
+          var kind = kinds[ci - 1];
+          if (kind === 'money') c.numFmt = '#,##0.00;[Red]#,##0.00;"-"';
+          else if (kind === 'int') c.numFmt = '#,##0;[Red]#,##0;"-"';
+          c.font = { name: 'Calibri', size: 10, bold: total || lvl === 0, color: { argb: total ? 'FF' + EX_DARK_ : 'FF1F2A20' } };
+          c.alignment = { vertical: 'middle', horizontal: kind === 'text' ? (rtl ? 'right' : 'left') : 'right',
+            indent: kind === 'text' && ci === 1 && lvl ? Math.min(lvl * 2, 10) : 0 };
+          c.border = total ? { top: { style: 'medium', color: { argb: 'FF' + EX_GREEN_ } }, bottom: { style: 'double', color: { argb: 'FF' + EX_GREEN_ } } }
+            : { bottom: { style: 'hair', color: { argb: 'FF' + EX_LINE_ } } };
+          var fill = total ? EX_TOTAL_ : lvl === 0 ? 'EEF3EE' : (k % 2 ? EX_ZEBRA_ : null);
+          if (fill) c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF' + fill } };
+        });
+        if (lvl) row.outlineLevel = Math.min(lvl, 7);
+        if (total) row.height = 22;
+      });
+      // widths from the longest value, bounded
+      for (var i = 0; i < cols; i++) {
+        var w = rows.reduce(function(m, r){ var v = r[i]; return Math.max(m, String(v == null ? '' : typeof v === 'number' ? money(v) : v).length); }, 8);
+        ws.getColumn(i + 1).width = Math.min(kinds[i] === 'text' ? 46 : 18, w + 3);
+      }
+      if (rows.length > 1) ws.autoFilter = { from: { row: 3, column: 1 }, to: { row: 3, column: cols } };
     });
-    X.writeFile(wb, fileName.replace(/[\\\/:*?"<>|]/g, '-') + '.xlsx');
-  }).catch(function(){ toast('ex_failed', 'err'); });
+    return wb.xlsx.writeBuffer();
+  }).then(function(buf){
+    var blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = file;
+    document.body.appendChild(a); a.click();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+  }).catch(function(){
+    // the plain file is better than none
+    loadLib_(XLSX_URL_, XLSX_SRI_).then(function(){
+      var X = window.XLSX, wb = X.utils.book_new();
+      wb.Workbook = { Views: [{ RTL: state.lang !== 'en' }] };
+      sheets.forEach(function(sh, i){ X.utils.book_append_sheet(wb, X.utils.aoa_to_sheet(sh.rows.map(function(r){ return Array.isArray(r) ? r.map(trText_) : r; })), String(sh.name || 'Sheet').replace(/[:\\\/?*\[\]]/g, ' ').slice(0, 28) + (i ? '_' + i : '')); });
+      X.writeFile(wb, file);
+    }).catch(function(){ toast('ex_failed', 'err'); });
+  });
+}
+// The same sheets as a printed report: the browser's own "Save as PDF".
+function exportPdf_(title, sheets, opts){
+  var w = window.open('', '_blank');
+  if (!w) { toast('ex_popup', 'err'); return; }
+  var rtl = state.lang !== 'en';
+  function cell(v, kind){ return typeof v === 'number' ? (kind === 'int' ? Math.abs(v).toLocaleString('en-US') : money(Math.abs(v))) : esc(trText_(String(v == null ? '' : v))); }
+  var body = sheets.map(function(sh){
+    var rows = sh.rows || [], kinds = exColKinds_(rows), outline = sh.outline || null;
+    return '<section><h2>'+esc(trText_(sh.title || sh.name || ''))+'</h2>' + (sh.note ? '<p class="note">'+esc(trText_(sh.note))+'</p>' : '') +
+      '<table><thead><tr>' + (rows[0] || []).map(function(h, i){ return '<th class="'+(kinds[i] === 'text' ? 't' : 'n')+'">'+esc(trText_(String(h)))+'</th>'; }).join('') + '</tr></thead><tbody>' +
+      rows.slice(1).map(function(r, k){
+        var lvl = outline ? outline[k] : null, cls = exIsTotal_(r) ? 'total' : lvl === 0 ? 'l0' : lvl ? 'l' + Math.min(lvl, 5) : '';
+        return '<tr class="'+cls+'">' + r.map(function(v, i){ return '<td class="'+(kinds[i] === 'text' ? 't' : 'n')+'">'+cell(v, kinds[i])+'</td>'; }).join('') + '</tr>';
+      }).join('') + '</tbody></table></section>';
+  }).join('');
+  var css = '@page{size:A4 landscape;margin:12mm 10mm 14mm}' +
+    '*{box-sizing:border-box}body{margin:0;font-family:Cairo,"Segoe UI",Tahoma,Arial,sans-serif;color:#1f2a20;font-size:10.5px;-webkit-print-color-adjust:exact;print-color-adjust:exact}' +
+    '.top{display:flex;align-items:center;gap:14px;background:#' + EX_GREEN_ + ';color:#fff;padding:12px 16px;border-radius:10px}' +
+    '.top img{width:44px;height:44px;border-radius:50%;background:#' + EX_CREAM_ + '}.top h1{margin:0;font-size:19px;font-weight:800}.top p{margin:2px 0 0;font-size:11px;opacity:.85}' +
+    '.meta{margin:8px 2px 14px;color:#5b665c;font-size:10px}' +
+    'section{margin:0 0 18px}h2{font-size:14px;margin:0 0 6px;color:#' + EX_DARK_ + ';border-bottom:2px solid #' + EX_GREEN_ + ';padding-bottom:4px}.note{margin:0 0 6px;color:#5b665c}' +
+    'table{width:100%;border-collapse:collapse}thead{display:table-header-group}tr{page-break-inside:avoid}' +
+    'th{background:#' + EX_DARK_ + ';color:#fff;font-weight:700;padding:6px 7px;font-size:10px}' +
+    'td{padding:5px 7px;border-bottom:1px solid #' + EX_LINE_ + '}tbody tr:nth-child(even) td{background:#' + EX_ZEBRA_ + '}' +
+    '.n{text-align:' + (rtl ? 'left' : 'right') + ';font-variant-numeric:tabular-nums;white-space:nowrap;direction:ltr;unicode-bidi:embed}.t{text-align:' + (rtl ? 'right' : 'left') + '}' +
+    'tr.l0 td{background:#EEF3EE!important;font-weight:800}tr.l1 td.t:first-child{padding-' + (rtl ? 'right' : 'left') + ':18px}tr.l2 td.t:first-child{padding-' + (rtl ? 'right' : 'left') + ':32px}' +
+    'tr.l3 td.t:first-child{padding-' + (rtl ? 'right' : 'left') + ':46px}tr.l4 td.t:first-child,tr.l5 td.t:first-child{padding-' + (rtl ? 'right' : 'left') + ':60px;color:#4a554b}' +
+    'tr.total td{background:#' + EX_TOTAL_ + '!important;font-weight:800;border-top:2px solid #' + EX_GREEN_ + ';border-bottom:3px double #' + EX_GREEN_ + '}' +
+    '.foot{margin-top:10px;color:#8a938b;font-size:9px;text-align:center}';
+  var html = '<!doctype html><html lang="'+state.lang+'" dir="'+(rtl ? 'rtl' : 'ltr')+'"><head><meta charset="utf-8"><title>'+esc(trText_(title))+'</title>' +
+    '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap"><style>'+css+'</style></head><body>' +
+    '<div class="top"><img src="data:image/png;base64,'+LOGO_B64+'" alt=""><div><h1>'+esc(trText_(title))+'</h1><p>Best Gas Collections</p></div></div>' +
+    '<div class="meta">'+esc(exSubtitle_(opts))+'</div>' + body +
+    '<div class="foot">Best Gas Carrier Co.</div>' +
+    '<script>document.fonts&&document.fonts.ready?document.fonts.ready.then(function(){setTimeout(function(){print()},250)}):setTimeout(function(){print()},800);<\/script></body></html>';
+  w.document.open(); w.document.write(html); w.document.close();
+}
+// the two export buttons every report view carries
+function exButtons_(getSheets, title, opts){
+  var bar = el('<div class="ex-bar"><button type="button" class="ex-btn ex-xl">'+icon_('doc')+'<span>'+esc(t('ex_button'))+'</span></button>' +
+    '<button type="button" class="ex-btn ex-pdf">'+icon_('printer')+'<span>'+esc(t('ex_pdf'))+'</span></button></div>');
+  qs('.ex-xl', bar).addEventListener('click', function(){ exportXlsx_(title() + ' ' + exStamp_(), getSheets(), opts && opts()); });
+  qs('.ex-pdf', bar).addEventListener('click', function(){ exportPdf_(title(), getSheets(), opts && opts()); });
+  return bar;
 }
 function exStamp_(){ return new Date().toISOString().slice(0, 10); }
 // a table as rows: its headers, the rows showing, and its totals line
@@ -4091,6 +4291,7 @@ function tableAoa_(table){
     if (c.classList.contains('col-actions')) return null;
     var txt = c.innerText.replace(/\s+/g, ' ').trim();
     var n = txt.replace(/[,\s]|ر\.س|SAR/g, '');
+    if (/^0\d/.test(n) || /^\d{8,}$/.test(n)) return txt;
     return /^[−-]?\d+(\.\d+)?$/.test(n) ? Number(n.replace('−', '-')) : txt;
   }).filter(function(v){ return v !== null; }); }
   var out = [];
@@ -4105,98 +4306,241 @@ function exEnhance_(table){
   table._ex = true;
   var holder = table.closest('.tbl-scroll') || table;
   if (!holder.parentNode) return;
-  var bar = el('<div class="tbl-tools"><button type="button" class="ex-btn">'+icon_('doc')+'<span>'+esc(t('ex_button'))+'</span></button></div>');
+  function title(){ var card = table.closest('.card'), h = card && qs('h2', card); return (h ? h.textContent.trim() : t('appName')) || 'export'; }
+  var bar = el('<div class="tbl-tools"></div>');
+  bar.appendChild(exButtons_(function(){ return [{ name: title(), rows: tableAoa_(table) }]; }, title));
   holder.parentNode.insertBefore(bar, holder);
-  qs('.ex-btn', bar).addEventListener('click', function(){
-    var card = table.closest('.card');
-    var h = card && qs('h2', card);
-    var title = (h ? h.textContent.trim() : t('appName')) || 'export';
-    exportXlsx_(title + ' ' + exStamp_(), [{ name: title, rows: tableAoa_(table) }]);
-  });
 }
 
-// ---------- the pivot: city › area › branch › source › product ----------
-function pivotTree_(entries, depth){
-  if (depth >= LV_.length) return [];
-  var level = LV_[depth];
-  return lvGroups_(level, entries, 'net').map(function(g){
-    return { level: level, depth: depth, name: g.name, entries: g.entries, T: eqTotals_(g.entries), children: null };
-  }).sort(function(a, b){ return b.T.sales - a.T.sales || String(a.name).localeCompare(String(b.name), 'ar'); });
-}
-function pivotCard_(entries){
-  var total = eqTotals_(entries);
-  var parts = ['sales', 'additions', 'deductions', 'net'].filter(function(p){ return p !== 'additions' || eqNonZero_(total.additions); });
-  var card = el('<div class="card rp-card pv-card" data-noexport="1">' +
-    '<div class="rp-head pv-head"><h2>'+esc(t('pv_tab'))+'</h2><div class="pv-acts">' +
-      '<button type="button" class="ex-btn pv-open">'+esc(t('pv_openAll'))+'</button>' +
-      '<button type="button" class="ex-btn pv-close">'+esc(t('pv_closeAll'))+'</button>' +
-      '<button type="button" class="ex-btn pv-ex">'+icon_('doc')+'<span>'+esc(t('ex_button'))+'</span></button></div></div>' +
-    '<p class="pv-path">' + LV_.map(function(l){ return '<span>'+esc(t('lv_' + l))+'</span>'; }).join('<i aria-hidden="true">›</i>') + '</p>' +
-    '<div class="tbl-scroll rp-scroll"><table class="rp-table pv-table"><thead><tr><th>'+esc(t('pv_level'))+'</th>' +
-      parts.map(function(p){ return '<th class="n'+(p === 'net' ? '' : ' pv-wide')+'">'+esc(t(EQ_PARTS_[p].label))+'</th>'; }).join('') +
-      '<th class="n pv-wide">'+esc(t('rp_count'))+'</th></tr></thead><tbody></tbody>' +
-    '<tfoot><tr><td>'+esc(t('rp_total'))+'</td>' + parts.map(function(p){ return '<td class="n num'+(p === 'net' ? '' : ' pv-wide')+'">'+esc(money(total[p]))+'</td>'; }).join('') +
-      '<td class="n num pv-wide">'+total.count.toLocaleString('en-US')+'</td></tr></tfoot></table></div></div>');
-  var tb = qs('tbody', card);
-  function rowOf(node, after){
-    var leaf = node.depth >= LV_.length - 1;
-    var tr = el('<tr class="pv-row pv-d'+node.depth+'" tabindex="0" aria-expanded="false">' +
-      '<td class="pv-name" style="--d:'+node.depth+'"><span class="pv-in"><span class="pv-tog" aria-hidden="true">'+(leaf ? '•' : '')+'</span>' +
-        '<span class="pv-txt"><b>'+esc(node.name)+'</b><small>'+esc(t('lv_' + node.level))+'</small>' +
-        // on a phone the other columns fold into this line under the name
-        '<small class="pv-mini">'+esc(t('eq_sales'))+' '+esc(money(node.T.sales))+' · '+esc(t('eq_deductions'))+' '+esc(money(node.T.deductions))+'</small></span></span></td>' +
-      parts.map(function(p){ return '<td class="n num'+(p === 'net' ? ' pv-net' : ' pv-wide')+'">'+esc(money(node.T[p]))+'</td>'; }).join('') +
-      '<td class="n num pv-wide">'+node.T.count.toLocaleString('en-US')+'</td></tr>');
-    tr._node = node; node.tr = tr;
-    if (after && after.nextSibling) tb.insertBefore(tr, after.nextSibling); else tb.appendChild(tr);
-    function act(){
-      if (leaf) { drawerOpen_(txListView_({ title: node.name, sub: t('lv_' + node.level), items: node.entries.map(function(e){ return entryRowData_(e, entryAmt_(e).net); }) })); return; }
-      toggle(node);
+// ---------- the pivot (2026-09-29, rebuilt) ----------
+// The finance manager picks the levels and their order and the figures to
+// show; "open to level N" and a search keep a big tree readable. Excel gets
+// the whole tree with Excel's own row grouping (it folds the same way), the
+// PDF prints what is open on screen.
+var PV_DIMS_ = ['city', 'area', 'branch', 'owner', 'source', 'product', 'date', 'enteredBy'];
+var PV_MEASURES_ = ['sales', 'cashSales', 'posSales', 'additions', 'dCredit', 'dTransfer', 'dDelivery', 'dCommission', 'dExpense', 'dBanked', 'deductions', 'net', 'count'];
+var PV_DEF_ = { dims: ['city', 'area', 'branch', 'owner', 'source', 'product'], measures: ['sales', 'deductions', 'net', 'count'] };
+function pvState_(){
+  try {
+    var s = JSON.parse(localStorage.getItem('bgc_pv') || 'null');
+    if (s && Array.isArray(s.dims) && Array.isArray(s.measures)) {
+      var d = s.dims.filter(function(x){ return PV_DIMS_.indexOf(x) >= 0; }), m = s.measures.filter(function(x){ return PV_MEASURES_.indexOf(x) >= 0; });
+      if (d.length && m.length) return { dims: d, measures: m };
     }
-    tr.addEventListener('click', act);
-    tr.addEventListener('keydown', function(e){ if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); act(); } });
-    return tr;
-  }
-  function close(node){
-    if (!node.open) return;
-    node.open = false; node.tr.setAttribute('aria-expanded', 'false');
-    (node.children || []).forEach(function(c){ close(c); if (c.tr) { c.tr.remove(); c.tr = null; } });
-  }
-  function open(node){
-    if (node.open || node.depth >= LV_.length - 1) return;
-    node.children = node.children || pivotTree_(node.entries, node.depth + 1);
-    node.open = true; node.tr.setAttribute('aria-expanded', 'true');
-    var last = node.tr;
-    node.children.forEach(function(c){ last = rowOf(c, last); });
-  }
-  function toggle(node){ if (node.open) close(node); else open(node); }
-  var roots = pivotTree_(entries, 0);
-  roots.forEach(function(n){ rowOf(n, null); });
-  // with one city, start one level open so the table is not a single line
-  if (roots.length === 1) open(roots[0]);
-  function walk(list, fn){ list.forEach(function(n){ fn(n); if (n.children) walk(n.children, fn); }); }
-  qs('.pv-open', card).addEventListener('click', function(){
-    var guard = 0;
-    (function openLevel(list){ list.forEach(function(n){ if (guard++ > 4000) return; open(n); if (n.children) openLevel(n.children); }); })(roots);
+  } catch (e) {}
+  return { dims: PV_DEF_.dims.slice(), measures: PV_DEF_.measures.slice() };
+}
+function pvSave_(s){ try { localStorage.setItem('bgc_pv', JSON.stringify(s)); } catch (e) {} }
+// the store or car a figure belongs to: a POS machine's owner, or the store
+// or car itself when the day was entered for it
+function pvOwner_(e){
+  if (e.sourceType === 'store' || e.sourceType === 'car') return e.sourceType + ':' + e.sourceId;
+  var p = byId(state.meta && state.meta.pos, e.sourceId);
+  return p && p.ownerType && p.ownerId ? p.ownerType + ':' + p.ownerId : '_';
+}
+function pvOwnerName_(key){
+  var i = key.indexOf(':'), type = key.slice(0, i), id = key.slice(i + 1), m = state.meta || {};
+  var x = byId(type === 'store' ? m.stores : m.cars, id);
+  return t('entry_source_' + type) + ' — ' + (x ? (x.name || x.label || '') : '');
+}
+function pvKey_(dim, e){
+  if (dim === 'owner') return pvOwner_(e);
+  if (dim === 'date') return e.date || '_';
+  if (dim === 'enteredBy') return e.enteredBy || '_';
+  return lvKey_(dim, e);
+}
+function pvName_(dim, key, e){
+  if (key === '_') return t(dim === 'product' ? 'lv_noProduct' : 'report_unspecified');
+  if (dim === 'owner') return pvOwnerName_(key);
+  if (dim === 'date') return key;
+  if (dim === 'enteredBy') return userName(key);
+  return lvName_(dim, key, e);
+}
+function pvLabel_(m){ return m === 'count' ? t('rp_count') : t(EQ_PARTS_[m].label); }
+function pvVal_(T, m){ return m === 'count' ? T.count : T[m]; }
+function pvTree_(entries, dims, depth, parent){
+  if (depth >= dims.length) return [];
+  var dim = dims[depth], map = {}, order = [];
+  entries.forEach(function(e){
+    var k = pvKey_(dim, e);
+    if (!map[k]) { map[k] = { dim: dim, depth: depth, key: k, name: pvName_(dim, k, e), entries: [], parent: parent || null }; order.push(k); }
+    map[k].entries.push(e);
   });
-  qs('.pv-close', card).addEventListener('click', function(){ roots.forEach(close); });
-  // Excel gets every level, each row with its full path, so it pivots again there
-  function aoa(){
-    var head = LV_.map(function(l){ return t('lv_' + l); }).concat([t('pv_level')], parts.map(function(p){ return t(EQ_PARTS_[p].label); }), [t('rp_count')]);
-    var out = [head];
+  return order.map(function(k){ var n = map[k]; n.T = eqTotals_(n.entries); return n; }).sort(function(a, b){
+    if (dim === 'date') return String(b.key).localeCompare(String(a.key));
+    return b.T.sales - a.T.sales || String(a.name).localeCompare(String(b.name), 'ar');
+  });
+}
+function pvKids_(n, dims){ if (!n.children) n.children = pvTree_(n.entries, dims, n.depth + 1, n); return n.children; }
+
+function pivotCard_(entries){
+  var st = pvState_();
+  var total = eqTotals_(entries);
+  var card = el('<div class="card rp-card pv-card" data-noexport="1">' +
+    '<div class="rp-head pv-head"><div><h2>'+esc(t('pv_tab'))+'</h2><p class="pv-sub"></p></div></div>' +
+    '<details class="pv-cfg"><summary>'+icon_('layers')+'<span>'+esc(t('pv_customize'))+'</span></summary>' +
+      '<div class="pv-cfg-body">' +
+        '<div class="pv-cfg-row"><span class="pv-cfg-l">'+esc(t('pv_levels'))+'</span><div class="pv-dims"></div></div>' +
+        '<div class="pv-cfg-row"><span class="pv-cfg-l">'+esc(t('pv_addLevel'))+'</span><div class="pv-more"></div></div>' +
+        '<div class="pv-cfg-row"><span class="pv-cfg-l">'+esc(t('pv_figures'))+'</span><div class="pv-meas"></div></div>' +
+        '<button type="button" class="pv-reset">'+esc(t('pv_reset'))+'</button>' +
+      '</div></details>' +
+    '<div class="pv-tools"><div class="pv-depth" role="group" aria-label="'+esc(t('pv_openTo'))+'"></div>' +
+      '<label class="pv-q"><span class="sr-only">'+esc(t('pv_search'))+'</span>'+icon_('search')+'<input type="search" placeholder="'+esc(t('pv_search'))+'"></label></div>' +
+    '<div class="tbl-scroll rp-scroll"><table class="rp-table pv-table" data-nosort><thead></thead><tbody></tbody><tfoot></tfoot></table></div>' +
+    '<div class="muted rp-empty pv-none" hidden>'+esc(t('eq_nothingHere'))+'</div></div>');
+  var tb = qs('tbody', card), roots = [], q = '';
+
+  function measures(){ return st.measures; }
+  // the figure the share bar and the phone column follow
+  function keyMeasure(){ var m = measures(); return m.indexOf('net') >= 0 ? 'net' : m.filter(function(x){ return x !== 'count'; })[0] || m[0]; }
+  function build(){ roots = pvTree_(entries, st.dims, 0, null); if (roots.length === 1) roots[0].open = true; }
+
+  function paintConfig(){
+    qs('.pv-sub', card).innerHTML = st.dims.map(function(d){ return '<span>'+esc(t('lv_' + d))+'</span>'; }).join('<i aria-hidden="true">›</i>');
+    var dimsBox = qs('.pv-dims', card), moreBox = qs('.pv-more', card), measBox = qs('.pv-meas', card);
+    dimsBox.innerHTML = st.dims.map(function(d, i){
+      return '<span class="pv-chip on"><b>'+(i + 1)+'</b>'+esc(t('lv_' + d)) +
+        (i > 0 ? '<button type="button" data-up="'+i+'" aria-label="'+esc(t('pv_moveUp'))+'">'+(state.lang === 'en' ? '‹' : '›')+'</button>' : '') +
+        (st.dims.length > 1 ? '<button type="button" data-rm="'+d+'" aria-label="'+esc(t('pv_remove'))+'">×</button>' : '') + '</span>';
+    }).join('');
+    moreBox.innerHTML = PV_DIMS_.filter(function(d){ return st.dims.indexOf(d) < 0; }).map(function(d){
+      return '<button type="button" class="pv-chip" data-add="'+d+'">+ '+esc(t('lv_' + d))+'</button>';
+    }).join('') || '<span class="muted">'+esc(t('pv_allUsed'))+'</span>';
+    measBox.innerHTML = PV_MEASURES_.map(function(m){
+      var on = st.measures.indexOf(m) >= 0;
+      return '<button type="button" class="pv-chip'+(on ? ' on' : '')+'" data-m="'+m+'" aria-pressed="'+on+'">'+esc(pvLabel_(m))+'</button>';
+    }).join('');
+    var depthBox = qs('.pv-depth', card);
+    depthBox.innerHTML = '<span class="pv-depth-l">'+esc(t('pv_openTo'))+'</span>' + st.dims.map(function(d, i){
+      return '<button type="button" data-depth="'+(i + 1)+'" title="'+esc(t('lv_' + d))+'"><b>'+(i + 1)+'</b><span>'+esc(t('lv_' + d))+'</span></button>';
+    }).join('');
+  }
+  function changed(){ pvSave_(st); build(); paintConfig(); paintHead(); paint(); }
+  qs('.pv-cfg', card).addEventListener('click', function(ev){
+    var b = ev.target.closest('button'); if (!b) return;
+    if (b.dataset.rm) { st.dims = st.dims.filter(function(d){ return d !== b.dataset.rm; }); changed(); }
+    else if (b.dataset.add) { st.dims.push(b.dataset.add); changed(); }
+    else if (b.dataset.up) { var i = +b.dataset.up, x = st.dims[i]; st.dims[i] = st.dims[i - 1]; st.dims[i - 1] = x; changed(); }
+    else if (b.dataset.m) {
+      var m = b.dataset.m, on = st.measures.indexOf(m) >= 0;
+      if (on && st.measures.length === 1) return;
+      st.measures = on ? st.measures.filter(function(x){ return x !== m; }) : PV_MEASURES_.filter(function(x){ return x === m || st.measures.indexOf(x) >= 0; });
+      changed();
+    } else if (b.classList.contains('pv-reset')) { st = { dims: PV_DEF_.dims.slice(), measures: PV_DEF_.measures.slice() }; changed(); }
+  });
+  qs('.pv-depth', card).addEventListener('click', function(ev){
+    var b = ev.target.closest('button[data-depth]'); if (!b) return;
+    var upto = +b.dataset.depth, guard = 0;
+    (function walk(list){ list.forEach(function(n){
+      if (guard++ > 6000) return;
+      n.open = n.depth < upto - 1 && n.depth < st.dims.length - 1;
+      if (n.open) walk(pvKids_(n, st.dims)); else if (n.children) walk(n.children);
+    }); })(roots);
+    qsa('button', qs('.pv-depth', card)).forEach(function(x){ x.classList.toggle('on', x === b); });
+    paint();
+  });
+  var qIn = qs('.pv-q input', card), qTimer = null;
+  qIn.addEventListener('input', function(){ clearTimeout(qTimer); qTimer = setTimeout(function(){ q = normName_(qIn.value || ''); paint(); }, 160); });
+
+  function paintHead(){
+    var ms = measures(), km = keyMeasure();
+    qs('thead', card).innerHTML = '<tr><th>'+esc(t('pv_level'))+'</th>' + ms.map(function(m){ return '<th class="n'+(m === km ? '' : ' pv-wide')+'">'+esc(pvLabel_(m))+'</th>'; }).join('') + '</tr>';
+    qs('tfoot', card).innerHTML = '<tr><td>'+esc(t('rp_total'))+'</td>' + ms.map(function(m){
+      return '<td class="n num'+(m === km ? '' : ' pv-wide')+'">'+esc(m === 'count' ? total.count.toLocaleString('en-US') : money(total[m]))+'</td>'; }).join('') + '</tr>';
+  }
+  // with a search, a node shows when it or anything under it matches
+  function hits(n){
+    if (!q) return true;
+    if (n._q === q) return n._hit;
+    n._q = q;
+    var self = normName_(n.name).indexOf(q) >= 0;
+    var kid = false;
+    if (!self && n.depth < st.dims.length - 1) kid = pvKids_(n, st.dims).some(hits);
+    n._self = self; n._hit = self || kid;
+    return n._hit;
+  }
+  function paint(){
+    var ms = measures(), km = keyMeasure(), leafDepth = st.dims.length - 1, html = [], list = [];
+    (function walk(nodes, parentVal){
+      nodes.forEach(function(n){
+        if (!hits(n)) return;
+        var open = q ? (n._hit && !n._self && n.depth < leafDepth) || (n.open && n.depth < leafDepth) : n.open && n.depth < leafDepth;
+        var leaf = n.depth >= leafDepth;
+        var v = pvVal_(n.T, km), share = parentVal ? Math.round(Math.abs(v) / Math.abs(parentVal) * 100) : null;
+        list.push(n);
+        html.push('<tr class="pv-row pv-d'+Math.min(n.depth, 4)+(n._self && q ? ' pv-hit' : '')+'" tabindex="0" data-i="'+(list.length - 1)+'"'+(leaf ? '' : ' aria-expanded="'+(open ? 'true' : 'false')+'"')+'>' +
+          '<td class="pv-name" style="--d:'+n.depth+'"><span class="pv-in"><span class="pv-tog" aria-hidden="true">'+(leaf ? '•' : '')+'</span>' +
+          '<span class="pv-txt"><b>'+esc(n.name)+'</b><small>'+esc(t('lv_' + n.dim)) + (share != null && nodes.length > 1 ? ' · <bdi dir="ltr">'+share+'%</bdi>' : '') + ' · '+esc(t('lv_count').replace('{n}', n.T.count.toLocaleString('en-US')))+'</small>' +
+          (share != null && nodes.length > 1 ? '<span class="pv-bar" aria-hidden="true"><i style="width:'+Math.min(100, share)+'%"></i></span>' : '') +
+          '<small class="pv-mini">'+ms.filter(function(m){ return m !== km && m !== 'count'; }).slice(0, 2).map(function(m){ return esc(pvLabel_(m))+' '+esc(money(n.T[m])); }).join(' · ')+'</small></span></span></td>' +
+          ms.map(function(m){ return '<td class="n num'+(m === km ? ' pv-net' : ' pv-wide')+'">'+esc(m === 'count' ? n.T.count.toLocaleString('en-US') : money(n.T[m]))+'</td>'; }).join('') + '</tr>');
+        if (open) walk(pvKids_(n, st.dims), v);
+      });
+    })(roots, pvVal_(total, km));
+    tb.innerHTML = html.join('');
+    tb._list = list;
+    qs('.pv-none', card).hidden = list.length > 0;
+  }
+  function act(tr){
+    var n = tb._list[+tr.dataset.i]; if (!n) return;
+    if (n.depth >= st.dims.length - 1) {
+      drawerOpen_(txListView_({ title: n.name, sub: t('lv_' + n.dim), items: n.entries.map(function(e){ return entryRowData_(e, entryAmt_(e).net); }) }));
+      return;
+    }
+    n.open = !n.open;
+    if (!n.open) (function shut(x){ (x.children || []).forEach(function(c){ c.open = false; shut(c); }); })(n);
+    paint();
+    var again = qs('tr[data-i]', tb) && [].filter.call(tb.rows, function(r){ return tb._list[+r.dataset.i] === n; })[0];
+    if (again) again.focus();
+  }
+  tb.addEventListener('click', function(ev){ var tr = ev.target.closest('tr.pv-row'); if (tr) act(tr); });
+  tb.addEventListener('keydown', function(ev){
+    var tr = ev.target.closest('tr.pv-row'); if (!tr) return;
+    if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); act(tr); }
+    else if (ev.key === 'ArrowDown' && tr.nextElementSibling) { ev.preventDefault(); tr.nextElementSibling.focus(); }
+    else if (ev.key === 'ArrowUp' && tr.previousElementSibling) { ev.preventDefault(); tr.previousElementSibling.focus(); }
+  });
+
+  // Excel: every level, each row with its full path at the end, folding by level
+  function fullRows(){
+    var ms = measures(), rows = [], outline = [];
+    rows.push([t('pv_level'), t('pv_levelType')].concat(ms.map(pvLabel_), st.dims.map(function(d){ return t('lv_' + d); })));
     (function add(list, path){
       list.forEach(function(n){
         var p2 = path.concat([n.name]);
-        var row = LV_.map(function(l, i){ return p2[i] || ''; }).concat([t('lv_' + n.level)], parts.map(function(p){ return Math.round(n.T[p] * 100) / 100; }), [n.T.count]);
-        out.push(row);
-        if (n.depth < LV_.length - 1) add(n.children || (n.children = pivotTree_(n.entries, n.depth + 1)), p2);
+        rows.push([n.name, t('lv_' + n.dim)].concat(ms.map(function(m){ return m === 'count' ? n.T.count : Math.round(n.T[m] * 100) / 100; }), st.dims.map(function(d, i){ return p2[i] || ''; })));
+        outline.push(n.depth);
+        if (n.depth < st.dims.length - 1) add(pvKids_(n, st.dims), p2);
       });
     })(roots, []);
-    out.push([t('rp_total'), '', '', '', '', ''].concat(parts.map(function(p){ return Math.round(total[p] * 100) / 100; }), [total.count]));
-    return out;
+    rows.push([t('rp_total'), ''].concat(ms.map(function(m){ return m === 'count' ? total.count : Math.round(total[m] * 100) / 100; }), st.dims.map(function(){ return ''; })));
+    outline.push(null);
+    return { rows: rows, outline: outline };
   }
-  qs('.pv-ex', card).addEventListener('click', function(){ exportXlsx_(t('pv_tab') + ' ' + exStamp_(), [{ name: t('pv_tab'), rows: aoa() }]); });
-  card._aoa = aoa; card._title = t('pv_tab');
+  // PDF: what is open now
+  function shownRows(){
+    var ms = measures(), rows = [[t('pv_level'), t('pv_levelType')].concat(ms.map(pvLabel_))], outline = [];
+    (tb._list || []).forEach(function(n){
+      rows.push([n.name, t('lv_' + n.dim)].concat(ms.map(function(m){ return m === 'count' ? n.T.count : Math.round(n.T[m] * 100) / 100; })));
+      outline.push(n.depth);
+    });
+    rows.push([t('rp_total'), ''].concat(ms.map(function(m){ return m === 'count' ? total.count : Math.round(total[m] * 100) / 100; })));
+    outline.push(null);
+    return { rows: rows, outline: outline };
+  }
+  var levelsNote = function(){ return st.dims.map(function(d){ return t('lv_' + d); }).join(' › ') + (card._note ? '  ·  ' + card._note : ''); };
+  var bar = el('<div class="ex-bar"><button type="button" class="ex-btn">'+icon_('doc')+'<span>'+esc(t('ex_button'))+'</span></button>' +
+    '<button type="button" class="ex-btn">'+icon_('printer')+'<span>'+esc(t('ex_pdf'))+'</span></button></div>');
+  qs('.pv-head', card).appendChild(bar);
+  var btns = qsa('button', bar);
+  btns[0].addEventListener('click', function(){ var r = fullRows(); exportXlsx_(t('pv_tab') + ' ' + exStamp_(), [{ name: t('pv_tab'), rows: r.rows, outline: r.outline, note: levelsNote() }]); });
+  btns[1].addEventListener('click', function(){ var r = shownRows(); exportPdf_(t('pv_tab'), [{ name: t('pv_tab'), rows: r.rows, outline: r.outline, note: levelsNote() }], { note: card._note || '' }); });
+
+  build(); paintConfig(); paintHead(); paint();
+  card._aoa = function(){ return fullRows().rows; };
+  card._outline = function(){ return fullRows().outline; };
+  card._title = t('pv_tab');
   return card;
 }
 
@@ -4213,8 +4557,7 @@ function rpGroup_(entries, keyFn, nameFn){
 }
 // cols: [{ h, v(row), num }]; rows: objects; foot: row for the totals line
 function rpTableCard_(title, cols, rows, foot, onRow){
-  var card = el('<div class="card rp-card" data-noexport="1"><div class="rp-head"><h2>'+esc(title)+' <span class="rp-n">'+rows.length+'</span></h2>' +
-    '<button type="button" class="ex-btn">'+icon_('doc')+'<span>'+esc(t('ex_button'))+'</span></button></div>' +
+  var card = el('<div class="card rp-card" data-noexport="1"><div class="rp-head"><h2>'+esc(title)+' <span class="rp-n">'+rows.length+'</span></h2></div>' +
     '<div class="tbl-scroll rp-scroll"><table class="rp-table"><thead><tr>' + cols.map(function(c){ return '<th'+(c.num ? ' class="n"' : '')+'>'+esc(c.h)+'</th>'; }).join('') + '</tr></thead><tbody></tbody>' +
     (foot ? '<tfoot><tr>' + cols.map(function(c, i){ var v = i === 0 ? t('rp_total') : c.num ? c.v(foot) : ''; return '<td'+(c.num ? ' class="n num"' : '')+'>'+esc(c.num && typeof v === 'number' ? (c.int ? Number(v).toLocaleString('en-US') : money(v)) : (v == null ? '' : v))+'</td>'; }).join('') + '</tr></tfoot>' : '') +
     '</table></div>' + (rows.length ? '' : '<div class="muted rp-empty">'+esc(t('eq_nothingHere'))+'</div>') + '</div>');
@@ -4232,7 +4575,7 @@ function rpTableCard_(title, cols, rows, foot, onRow){
   });
   function aoa(){ return [cols.map(function(c){ return c.h; })].concat(rows.map(function(r){ return cols.map(function(c){ var v = c.v(r); return v == null ? '' : v; }); }))
     .concat(foot ? [cols.map(function(c, i){ return i === 0 ? t('rp_total') : !c.num ? '' : (c.v(foot) == null ? '' : c.v(foot)); })] : []); }
-  qs('.ex-btn', card).addEventListener('click', function(){ exportXlsx_(title + ' ' + exStamp_(), [{ name: title, rows: aoa() }]); });
+  qs('.rp-head', card).appendChild(exButtons_(function(){ return [{ name: title, rows: aoa() }]; }, function(){ return title; }, function(){ return { note: card._note || '' }; }));
   card._aoa = aoa;
   card._title = title;
   return card;
@@ -4364,7 +4707,8 @@ function reportTabs_(entries, res){
         ].concat(moneyCols, [{ h: t('rp_status'), v: function(r){ return entryStatus_(r.e).label; } }]), rows, total, function(r){ drawerOpen_(entryDocView_(r.e)); }); } }
   ];
   var wrap = el('<section class="rp-tabs-wrap"><div class="rp-tabs-head"><div class="rp-tabs" role="tablist"></div>' +
-    '<button type="button" class="btn secondary rp-all">'+icon_('doc')+esc(t('ex_all'))+'</button></div><div class="rp-tab-body"></div></section>');
+    '<div class="rp-all-bar"><button type="button" class="btn secondary rp-all">'+icon_('doc')+esc(t('ex_all'))+'</button>' +
+    '<button type="button" class="btn secondary rp-all-pdf">'+icon_('printer')+esc(t('ex_allPdf'))+'</button></div></div><div class="rp-tab-body"></div></section>');
   var bar = qs('.rp-tabs', wrap), bodyEl = qs('.rp-tab-body', wrap);
   var current = null;
   try { current = sessionStorage.getItem('bgc_rpTab'); } catch (e) {}
@@ -4386,8 +4730,18 @@ function reportTabs_(entries, res){
     var summary = [[t('eq_title'), '']].concat(['sales','cashSales','posSales','aOther','aCreditDelivery','aChannelDelivery','additions','dPos','dCredit','dCommission','dChannelCommission','dTransfer','dDelivery','dExpense','dBanked','deductions','net']
       .filter(function(p){ return ['sales','additions','deductions','net','cashSales'].indexOf(p) >= 0 || eqNonZero_(T[p]); })
       .map(function(p){ return [t(EQ_PARTS_[p].label), Math.round(T[p] * 100) / 100]; }));
-    var sheets = [{ name: t('eq_title'), rows: summary }].concat(tabs.map(function(tb){ var c = tb.card(); return { name: c._title, rows: c._aoa() }; }));
-    exportXlsx_(t('report_title') + ' ' + exStamp_(), sheets);
+    var sheets = [{ name: t('eq_title'), rows: summary }].concat(tabs.map(function(tb){ var c = tb.card(); return { name: c._title, rows: c._aoa(), outline: c._outline ? c._outline() : null }; }));
+    exportXlsx_(t('report_title') + ' ' + exStamp_(), sheets, { note: wrap._note || '' });
+  });
+  qs('.rp-all-pdf', wrap).addEventListener('click', function(){
+    var T = total.T;
+    var summary = [[t('eq_title'), t('ui_sar')]].concat(['sales','cashSales','posSales','additions','deductions','net'].filter(function(p){ return eqNonZero_(T[p]) || p === 'net'; })
+      .map(function(p){ return [t(EQ_PARTS_[p].label), Math.round(T[p] * 100) / 100]; }));
+    var keep = ['pivot', 'branches', 'products', 'customers'];
+    var sheets = [{ name: t('eq_title'), rows: summary }].concat(tabs.filter(function(tb){ return keep.indexOf(tb.key) >= 0; })
+      .map(function(tb){ var c = tb.card(); return { name: c._title, rows: c._aoa(), outline: c._outline ? c._outline() : null }; })
+      .filter(function(sh){ return sh.rows.length > 2; }));
+    exportPdf_(t('report_title'), sheets, { note: wrap._note || '' });
   });
   show(current);
   return wrap;
@@ -4402,6 +4756,7 @@ function sourceName_(e){
   var m = state.meta || {};
   var list = e.sourceType === 'store' ? m.stores : e.sourceType === 'car' ? m.cars : m.pos;
   var x = byId(list, e.sourceId);
+  if (x && e.sourceType === 'pos') return posPickLabel_(x);
   return x ? (x.name || x.label || '') : '';
 }
 function productName_(id){
@@ -6124,6 +6479,8 @@ function tableSortBy_(table, col, dir){
 function tsEnhance_(table){
   if (table._ts || !table.tHead || !table.tHead.rows.length || !table.tBodies.length) return;
   if (table.querySelector('th[data-key]')) return;
+  // a tree keeps its order: sorting would pull rows away from their parents
+  if (table.hasAttribute('data-nosort')) return;
   table._ts = true;
   [].forEach.call(table.tHead.rows[0].cells, function(th, i){
     if (!th.textContent.trim() || th.classList.contains('col-actions')) return;
@@ -6643,12 +7000,19 @@ function renderEntries(body){
   // picked, so saving the day only sends its id.
   function depositLines_(){
     var list = qs('#eDepositLines', form), totalInput = qs('#eDeposit', form);
+    // a day entered for a POS machine banks on that machine, nothing to pick
+    function forced_(){
+      var ty = qs('#eType', form).value, id = qs('#eSource', form).value;
+      return ty === 'pos' && id ? byId(meta.pos, id) : null;
+    }
     function devices_(){
+      var fx = forced_(); if (fx) return [fx];
       var locId = resolveLocationIdForSource_(qs('#eType', form).value, qs('#eSource', form).value);
       return (meta.pos || []).filter(function(p){ return p.active !== false && (!locId || posOwnerLocationId_(p) === locId); });
     }
     function deviceOpts_(){
-      var d = devices_();
+      var d = devices_(), fx = forced_();
+      if (fx) return '<option value="'+esc(fx.id)+'" selected>'+esc(posPickLabel_(fx) + (fx.holderName ? ' · ' + fx.holderName : ''))+'</option>';
       if (!d.length) return '<option value="">'+esc(t('entry_noDevices'))+'</option>';
       return '<option value="">'+esc(t('entry_pickDevice'))+'</option>' + d.map(function(p){
         return '<option value="'+esc(p.id)+'">'+esc(posPickLabel_(p) + (p.holderName ? ' · ' + p.holderName : ''))+'</option>';
@@ -6709,6 +7073,7 @@ function renderEntries(body){
           '<input class="dpCamIn" type="file" accept="image/*" capture="environment" hidden><input class="dpFileIn" type="file" accept="image/*" hidden></div>' +
       '</div>');
       list.appendChild(row);
+      lockDevice_(qs('.dpDevice', row));
       wireCommaInput_(qs('.mlAmount', row), true);
       ['input','blur'].forEach(function(ev){ qs('.mlAmount', row).addEventListener(ev, recompute); });
       qs('.mlDel', row).addEventListener('click', function(){ row.remove(); recompute(); });
@@ -6719,14 +7084,22 @@ function renderEntries(body){
       recompute();
       return row;
     }
+    function lockDevice_(sel){
+      var on = !!forced_();
+      sel.disabled = on;
+      var fld = sel.closest('.field'), hint = fld && qs('.dp-locked', fld);
+      if (fld && on && !hint) fld.appendChild(el('<small class="hint dp-locked">'+esc(t('entry_depositSameDevice'))+'</small>'));
+      if (hint && !on) hint.remove();
+      if (sel._dd && sel._dd.sync) sel._dd.sync();
+    }
     function reset(){ list.innerHTML = ''; add(); }
     // the branch changed: offer that branch's devices
     function refreshDevices(){
       qsa('.dpDevice', list).forEach(function(sel){
         var cur = sel.value;
         sel.innerHTML = deviceOpts_();
-        if (cur && qsa('option', sel).some(function(o){ return o.value === cur; })) sel.value = cur;
-        if (sel._dd && sel._dd.sync) sel._dd.sync();
+        if (!forced_() && cur && qsa('option', sel).some(function(o){ return o.value === cur; })) sel.value = cur;
+        lockDevice_(sel);
       });
     }
     function problem(){
@@ -7241,6 +7614,8 @@ function renderEntries(body){
 
   typeSel.addEventListener('change', populateSourceOptions);
   qs('#eSource', form).addEventListener('change', function(){ updateLocationDisplay(); depositLines.refreshDevices(); });
+  // a new source type redraws the sources; the devices follow once it has
+  qs('#eType', form).addEventListener('change', function(){ setTimeout(function(){ depositLines.refreshDevices(); }, 0); });
   populateSourceOptions();
   productSel.addEventListener('change', toggleCylFields);
   applyMode_();
@@ -7516,9 +7891,9 @@ function renderEntries(body){
     var other = sumOf('otherCash'), expense = sumOf('expenseAmount'), deposit = sumOf('directDepositAmount');
     var vatRate = (state.meta && state.meta.config && state.meta.config.vatRate) || 0.15;
     var vatBack = delivery > 0 ? (delivery / (1 + vatRate)) * vatRate : 0;
-    var sales = cash + pos;
-    var deduct = credit + (delivery - vatBack) + expense + deposit;
-    var net = cash + other - delivery + vatBack - expense - deposit - credit;
+    // the same equation as the dashboard, the handoff and the report
+    var ET = eqTotals_(live);
+    var sales = ET.sales, deduct = ET.deductions, net = ET.net;
     var states = rows.map(function(e){ return e.lockState || (e.voided ? 'voided' : e.consumedBy ? 'submitted' : 'open'); });
     var st = states.indexOf('approved') >= 0 ? 'approved' : states.indexOf('submitted') >= 0 ? 'submitted'
       : states.every(function(x){ return x === 'voided'; }) ? 'voided' : 'open';
@@ -7531,7 +7906,7 @@ function renderEntries(body){
     function line(label, amount, sign, sub){
       if (!amount) return '';
       return '<li><span class="el-ll"><b>'+esc(label)+'</b>'+(sub ? '<i>'+esc(sub)+'</i>' : '')+'</span>' +
-        '<span class="el-la '+(sign < 0 ? 'neg' : 'pos')+'"><bdi dir="ltr">'+(sign < 0 ? '−' : '')+money(amount)+'</bdi></span></li>';
+        '<span class="el-la '+(sign < 0 ? 'neg' : 'pos')+'"><bdi dir="ltr">'+money(Math.abs(amount))+'</bdi></span></li>';
     }
     var detail = '';
     rows.forEach(function(e){
@@ -7543,12 +7918,17 @@ function renderEntries(body){
       lines += line(t('entry_pos'), Number(e.posSales||0), 1);
       lines += line(t('entry_otherTitle'), Number(e.otherCash||0), 1, [itemName_('incomeItems', e.otherCashItemId), e.otherCashReason].filter(Boolean).join(' — '));
       lines += line(t('entry_creditTitle'), Number(e.creditSales||0), -1, creditNote_(e));
+      lines += line(t('eq_dTransfer'), Number(e.bankTransferAmount||0), -1);
+      lines += line(t('eq_aCreditDelivery'), Number(e.creditDeliveryFee||0), 1);
+      lines += line(t('eq_dCommission'), Number(e.creditCommission||0), -1);
+      lines += line(t('eq_aChannelDelivery'), Number(e.channelDeliveryFee||0), 1);
+      lines += line(t('eq_dChannelCommission'), Number(e.channelCommission||0), -1);
       lines += line(t('entry_deliveryTitle'), Number(e.deliveryFeeBankAmount||0), -1, e.deliveryNote);
       lines += line(t('entry_expenseTitle'), Number(e.expenseAmount||0), -1, [itemName_('expenseItems', e.expenseItemId), e.expenseReason].filter(Boolean).join(' — '));
       lines += line(t('entry_depositTitle'), Number(e.directDepositAmount||0), -1, [e.directDepositRef, e.directDepositNote].filter(Boolean).join(' — '));
       if (lines) detail += '<ul class="el-lines'+(off ? ' off' : '')+'">'+lines+'</ul>';
     });
-    if (vatBack && live.length) detail += '<div class="el-vat">'+esc(t('report_vat'))+': <bdi dir="ltr">+'+money(vatBack)+'</bdi></div>';
+    if (vatBack && live.length) detail += '<div class="el-vat">'+esc(t('report_vat'))+': <bdi dir="ltr">'+money(vatBack)+'</bdi></div>';
     var notes = rows.map(function(e){ return e.note; }).filter(Boolean);
     if (notes.length) detail += '<div class="el-note">'+esc(t('entry_note'))+': '+esc(notes.filter(function(n, i){ return notes.indexOf(n) === i; }).join(' · '))+'</div>';
     var vr = rows.filter(function(e){ return e.voided && e.voidReason; })[0];
@@ -7564,7 +7944,7 @@ function renderEntries(body){
         '<span>'+esc(t('entry_source_'+e0.sourceType))+' · '+esc(locationName(e0.locationId))+'</span></div></div>' +
       '<div class="el-date"><b><bdi dir="ltr">'+esc(e0.date)+'</bdi></b><span>'+esc(userName(e0.enteredBy))+'</span></div>' +
       '<div class="el-fig"><span>'+esc(t('el_sales'))+'</span><b><bdi dir="ltr">'+money(sales)+'</bdi></b></div>' +
-      '<div class="el-fig ded"><span>'+esc(t('el_deduct'))+'</span><b><bdi dir="ltr">'+(deduct ? '−'+money(deduct) : '—')+'</bdi></b></div>' +
+      '<div class="el-fig ded"><span>'+esc(t('el_deduct'))+'</span><b><bdi dir="ltr">'+(deduct ? money(deduct) : '—')+'</bdi></b></div>' +
       '<div class="el-fig net"><span>'+esc(t('el_net'))+'</span><b><bdi dir="ltr">'+money(net)+'</bdi></b></div>' +
       '<div class="el-st"><span class="el-badge '+st+'">'+icon_(stIcon)+'<span>'+esc(stLabel)+'</span></span></div>' +
       '<button type="button" class="el-more" aria-expanded="false" aria-label="'+esc(t('el_details'))+'">'+icon_('chevron')+'</button>' +
@@ -8508,7 +8888,18 @@ function renderHandoffs(body){
     body.appendChild(hc);
     var hl = qs('#hList', hc);
     if (!history.length){ hl.innerHTML = '<div class="'+(hFilter.active() ? 'lf-empty' : 'muted')+'">'+esc(t(hFilter.active() ? 'lf_noMatch' : 'noData'))+'</div>'; }
-    history.slice(0,40).forEach(function(h){ hl.appendChild(handoffItem(h, false, false)); });
+    // 40 at a time, never silently cut
+    var shown = 0;
+    function more(){
+      history.slice(shown, shown + 40).forEach(function(h){ hl.appendChild(handoffItem(h, false, false)); });
+      shown = Math.min(history.length, shown + 40);
+      var old = qs('.ho-more', hc); if (old) old.remove();
+      if (shown < history.length) {
+        var b = el('<button type="button" class="btn secondary ho-more">'+esc(t('ho_showMore').replace('{n}', shown).replace('{total}', history.length))+'</button>');
+        b.addEventListener('click', more); hc.appendChild(b);
+      }
+    }
+    more();
   });
 }
 
@@ -8740,7 +9131,7 @@ function renderReport(body){
   locations.forEach(function(l){ if (l.clusterId && myClusterIds.indexOf(l.clusterId) < 0) myClusterIds.push(l.clusterId); });
   var clusters = (meta.clusters||[]).filter(function(c){ return myClusterIds.indexOf(c.id) >= 0; });
   var branchIdSet = locations.map(function(l){ return l.id; });
-  var drivers = (meta.users||[]).filter(function(u){ return u.role === 'driver'; });
+  var drivers = (meta.users||[]).filter(function(u){ return u.role === 'driver' || u.role === 'branch_worker'; });
   var zones = meta.zones || [];
   var products = (meta.products||[]).filter(function(p){ return p.active !== false; });
   // Only roles that can actually submit a daily entry ever appear as
@@ -9281,7 +9672,7 @@ function chainGaps_(){
     else if (u.role === 'branch_worker') placed = (meta.pos||[]).some(function(p){ return p.assignedUserId === u.id; });
     else if (u.role === 'driver') placed = (meta.cars||[]).some(function(c){ return c.driverUserId === u.id; }) ||
       (meta.pos||[]).some(function(p){ return p.assignedUserId === u.id; });
-    if (!placed) add('gap_idle', t('role_' + u.role), { cluster_manager: 'clusters', collector: 'locations', store_manager: 'stores', driver: 'cars' }[u.role], u.name);
+    if (!placed) add('gap_idle', t('role_' + u.role), { cluster_manager: 'clusters', collector: 'locations', store_manager: 'stores', driver: 'cars', branch_worker: 'pos' }[u.role], u.name);
   });
   return gaps;
 }
