@@ -700,6 +700,8 @@ function validateEntity_(kind, d) {
     // form with a read-only empty box nobody can fill.
     if (d.unitPrice != null && d.unitPrice !== '' && !(Number(d.unitPrice) >= 0)) return 'invalid_input';
     if (d.priceLocked && !(Number(d.unitPrice) > 0)) return 'invalid_input';
+    // what one unit of an inventory item costs the company, for stock value
+    if (d.unitCost != null && d.unitCost !== '' && !(Number(d.unitCost) >= 0)) return 'invalid_input';
   } else if (kind === 'income_item' || kind === 'expense_item') {
     if (!d.name) return 'invalid_input';
   } else {

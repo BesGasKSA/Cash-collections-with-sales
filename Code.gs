@@ -27,6 +27,8 @@ var SHEETS = {
   // text itself: {src, en, ur, auto}. auto = Google Translate; a manager's
   // correction sets it false and is never overwritten.
   TRANSLATIONS: 'translations',
+  // stock movements typed in by hand: opening, purchase, return, damage (Inventory.gs)
+  INV_MOVES: 'inventory_moves',
   // Pure geography (Country[KSA, implicit]/City/Zone), independent of
   // Cluster — Cluster is an employee's management assignment (cluster
   // manager + collector) and can cut across zones; Zone is just a label
@@ -689,6 +691,9 @@ function route_(req) {
     recordDeposit: function () { return withCashLock_(function () { return actionRecordDeposit_(req, user); }); },
     uploadEntryPhoto: function () { return actionUploadEntryPhoto_(req, user); },
     listHandoffs: function () { return actionListHandoffs_(req, user); },
+    addInventoryMove: function () { return actionAddInventoryMove_(req, user); },
+    voidInventoryMove: function () { return actionVoidInventoryMove_(req, user); },
+    getInventoryReport: function () { return actionInventoryReport_(req, user); },
 
     // reporting
     getSalesReport: function () { return actionSalesReport_(req, user); },
