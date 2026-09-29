@@ -388,6 +388,7 @@
   .inv-fig.inv-ending{background:var(--green);border-color:var(--green);}
   .inv-fig.inv-ending span,.inv-fig.inv-ending b,.inv-fig.inv-ending small{color:#fff;}
   .inv-short{color:var(--warn);font-weight:700;}
+  .abx-bad td{background:var(--warn-bg);}
   .inv-neg{color:var(--warn);font-weight:800;}
   .inv-neg em{font-style:normal;font-size:10px;margin-inline-start:5px;background:var(--warn-bg);border-radius:4px;padding:0 5px;}
   .inv-nocount{color:var(--muted);font-weight:700;}
@@ -2162,7 +2163,7 @@ var L = {
     admin_addUser:'إضافة مستخدم', admin_name:'الاسم', admin_role:'الدور', admin_active:'نشط', admin_resetPw:'إعادة تعيين كلمة المرور',
     admin_addLocation:'إضافة فرع', admin_city:'المدينة', admin_locName:'اسم الفرع', admin_cluster:'المنطقة',
     admin_zones:'النطاقات', admin_addZone:'إضافة نطاق', admin_zoneName:'اسم النطاق', admin_zone:'النطاق',
-    admin_productType:'نوع المنتج', admin_typeGoods:'مخزني', admin_typeServices:'خدمات', nav_inventory:'المخزون', inv_title:'حركة المخزون', inv_hint:'رصيد أول المدة + المشتريات + المرتجع من المطاعم = المتاح للاستخدام، ثم يُطرح منه المبيعات (من إدخالات النظام) والتالف، فيبقى رصيد آخر المدة. القيم بسعر التكلفة.', inv_opening:'رصيد أول المدة', inv_purchases:'المشتريات', inv_returns:'مرتجع المطاعم', inv_available:'المتاح للاستخدام', inv_sales:'المبيعات', inv_damaged:'التالف', inv_ending:'رصيد آخر المدة', inv_unitCost:'تكلفة الوحدة', inv_from:'من', inv_to:'إلى', inv_allBranches:'كل الفروع', inv_thisMonth:'هذا الشهر', inv_lastMonth:'الشهر الماضي', inv_showValue:'عرض القيم بالتكلفة بدل الكميات', inv_qtyShort:'كمية', inv_byBranch:'المخزون حسب الفرع والصنف', inv_item:'الصنف', inv_items:'الأصناف: {n}', inv_tag_add:'يُضاف', inv_tag_ded:'يُخصم', inv_byLevels:'المخزون بالمستويات', inv_lv_city:'المدينة', inv_lv_area:'المنطقة', inv_lv_branch:'الفرع', inv_lv_item:'الصنف', inv_lv_seller:'جهة البيع', inv_search:'ابحث عن مدينة أو فرع أو صنف أو جهاز…', inv_soldHere:'مبيعات هذا الصنف من هذه الجهة', inv_noOpening:'لم يُسجَّل رصيد أول المدة بعد', inv_uncounted:'{n} صنف/فرع بلا رصيد أول المدة، فلا يدخل في الأرصدة. سجّل الجرد الافتتاحي لكل صنف في كل فرع.', inv_noQtyWarn:'{n} بيع بمبلغ {amt} ر.س سُجّل بلا كمية، فلا يُخصم من المخزون. أدخل البيع بطريقة المنتج (كمية × سعر).', err_hasStock:'لهذا الصنف حركات مخزون، فلا يمكن تحويله إلى خدمة', err_invalidLocation:'اختر فرعاً صحيحاً', inv_empty:'لا توجد حركة مخزون في هذه الفترة. ابدأ بتسجيل رصيد أول المدة لكل صنف.', inv_shortBadge:'عجز', inv_shortBy:'عجز {n}: المبيعات أكثر من الرصيد، راجع الحركات', inv_period:'الفترة من {from} إلى {to}', inv_moves:'حركات المخزون المسجلة', inv_kind:'نوع الحركة', inv_qty:'الكمية', inv_k_opening:'رصيد أول المدة', inv_k_purchase:'مشتريات', inv_k_return:'مرتجع من المطاعم', inv_k_damage:'تالف', inv_addTitle:'تسجيل حركة مخزون', inv_addHint:'المبيعات تُحسب تلقائياً من الإدخالات اليومية، فلا تُسجَّل هنا. رصيد أول المدة يُسجَّل مرة واحدة لكل صنف في كل فرع.', inv_notePh:'رقم فاتورة الشراء أو اسم المطعم أو سبب التلف', inv_save:'حفظ الحركة', inv_saved:'حُفظت الحركة', inv_needQty:'اكتب الكمية', inv_noMoves:'لا توجد حركات مسجلة في هذه الفترة', inv_void:'إلغاء الحركة', inv_voided:'ملغاة', inv_voidReason:'سبب إلغاء هذه الحركة؟', err_openingExists:'رصيد أول المدة مسجَّل لهذا الصنف في هذا الفرع. سجّل الفرق كمشتريات أو تالف، أو ألغِ الرصيد السابق.', err_notInventory:'هذا الصنف خدمة وليس له مخزون',
+    admin_productType:'نوع المنتج', admin_typeGoods:'مخزني', admin_typeServices:'خدمات', nav_inventory:'المخزون', inv_title:'حركة المخزون', inv_hint:'رصيد أول المدة + المشتريات + المرتجع من المطاعم = المتاح للاستخدام، ثم يُطرح منه المبيعات (من إدخالات النظام) والتالف، فيبقى رصيد آخر المدة. القيم بسعر التكلفة.', inv_opening:'رصيد أول المدة', inv_purchases:'المشتريات', inv_returns:'مرتجع المطاعم', inv_available:'المتاح للاستخدام', inv_sales:'المبيعات', inv_damaged:'التالف', inv_ending:'رصيد آخر المدة', inv_unitCost:'تكلفة الوحدة', inv_from:'من', inv_to:'إلى', inv_allBranches:'كل الفروع', inv_thisMonth:'هذا الشهر', inv_lastMonth:'الشهر الماضي', inv_showValue:'عرض القيم بالتكلفة بدل الكميات', inv_qtyShort:'كمية', inv_byBranch:'المخزون حسب الفرع والصنف', inv_item:'الصنف', inv_items:'الأصناف: {n}', inv_tag_add:'يُضاف', inv_tag_ded:'يُخصم', abx_hint:'نزّل الملف: فيه صف لكل جهاز نقاط بيع في فروع منطقتك. كل صف سطر واحد: بيع، آجل، تحويل بنكي، موازنة، مصروف، تحصيل آخر، أو رسوم توصيل. أضف صفوفاً للجهاز الواحد بقدر ما تحتاج، ثم ارفع الملف: يُفحص كل صف قبل الإرسال، ثم ترى الحساب الفعلي، ثم يذهب لنائب مدير العمليات للاعتماد.', abx_sheet:'الإدخال', abx_listsSheet:'القوائم', abx_helpSheet:'طريقة التعبئة', abx_file:'ملف إدخال المنطقة', abx_c_date:'التاريخ', abx_c_posId:'رقم الجهاز', abx_c_branch:'الفرع (للعلم)', abx_c_type:'نوع السطر', abx_c_product:'الصنف', abx_c_qty:'الكمية', abx_c_price:'سعر الوحدة', abx_c_ch:'منها عبر {ch} (كمية)', abx_c_customer:'العميل (رقم أو اسم)', abx_c_amount:'المبلغ', abx_c_item:'البند', abx_c_ref:'المرجع البنكي', abx_c_note:'البيان / السبب', abx_t_sale:'بيع', abx_t_credit:'آجل', abx_t_transfer:'تحويل بنكي', abx_t_deposit:'موازنة', abx_t_expense:'مصروف', abx_t_other:'تحصيل آخر', abx_t_delivery:'رسوم توصيل', abx_helpTitle:'طريقة تعبئة ملف المنطقة', abx_helpRows:'الصفوف', abx_helpRowsTxt:'كل صف سطر واحد لجهاز واحد في يوم واحد. للجهاز الواحد أكثر من صف: صف لكل صنف مباع، وصف لكل عميل آجل، وصف لكل تحويل أو موازنة أو مصروف. الصفوف الفارغة تُتجاهل.', abx_h_sale:'اختر الصنف واكتب الكمية (السعر يُملأ من الصنف إن تُرك فارغاً). إن بيع جزء منها عبر سوق غاز فاكتب ذلك الجزء في عمود «منها عبر سوق غاز»، ويُحسب رسم التوصيل والعمولة تلقائياً.', abx_h_credit:'بيع آجل لعميل مسجَّل: اكتب العميل (رقمه أو اسمه) والصنف والكمية. يُحسب مرة واحدة كبيع ويُخصم كآجل، ورسم توصيل العميل وعمولة السائق تُحسب من ملف العميل. لا تكرره في صف بيع.', abx_h_transfer:'تحويل عميل مباشرة لحساب الشركة: المبلغ، والبيان (رقم التحويل). يُخصم من النقدية.', abx_h_deposit:'موازنة أُودعت في البنك من هذا الجهاز: المبلغ والمرجع البنكي (إلزامي). تُخصم من النقدية.', abx_h_expense:'مصروف دُفع من النقدية: المبلغ، والبند من القائمة، والسبب (إلزامي).', abx_h_other:'نقدية استُلمت لغير البيع: المبلغ، والبند من القائمة، والسبب (إلزامي). تُضاف للنقدية.', abx_h_delivery:'رسوم توصيل دُفعت للبنك: المبلغ والبيان.', abx_helpAuto:'ما يُحسب تلقائياً', abx_helpAutoTxt:'رسوم توصيل العميل وعمولة السائق للآجل، ورسوم وعمولة سوق غاز، وضريبة رسوم التوصيل، وصافي النقدية لكل فرع.', abx_line:'السطر', abx_details:'التفاصيل', abx_via:'منها عبر', abx_noLines:'لا توجد سطور معبأة في الملف', abx_badRows:'{n} سطر يحتاج تصحيحاً في الملف قبل الإرسال', abx_sending:'جارٍ الإرسال: دفعة {n} من {total}', abx_partSent:'أُرسلت {n} دفعة قبل التوقف', abx_e_date:'تاريخ غير صحيح', abx_e_future:'تاريخ مستقبلي', abx_e_pos:'الجهاز ليس في منطقتك', abx_e_type:'نوع السطر غير معروف', abx_e_product:'الصنف غير موجود', abx_e_qty:'الكمية مطلوبة', abx_e_price:'السعر مطلوب', abx_e_locked:'سعر هذا الصنف ثابت', abx_e_channel:'كمية سوق غاز أكبر من الكمية', abx_e_customer:'العميل غير مسجل', abx_e_amount:'المبلغ مطلوب', abx_e_ref:'المرجع البنكي مطلوب', abx_e_item:'البند غير موجود', abx_e_reason:'السبب مطلوب', inv_byLevels:'المخزون بالمستويات', inv_lv_city:'المدينة', inv_lv_area:'المنطقة', inv_lv_branch:'الفرع', inv_lv_item:'الصنف', inv_lv_seller:'جهة البيع', inv_search:'ابحث عن مدينة أو فرع أو صنف أو جهاز…', inv_soldHere:'مبيعات هذا الصنف من هذه الجهة', inv_noOpening:'لم يُسجَّل رصيد أول المدة بعد', inv_uncounted:'{n} صنف/فرع بلا رصيد أول المدة، فلا يدخل في الأرصدة. سجّل الجرد الافتتاحي لكل صنف في كل فرع.', inv_noQtyWarn:'{n} بيع بمبلغ {amt} ر.س سُجّل بلا كمية، فلا يُخصم من المخزون. أدخل البيع بطريقة المنتج (كمية × سعر).', err_hasStock:'لهذا الصنف حركات مخزون، فلا يمكن تحويله إلى خدمة', err_invalidLocation:'اختر فرعاً صحيحاً', inv_empty:'لا توجد حركة مخزون في هذه الفترة. ابدأ بتسجيل رصيد أول المدة لكل صنف.', inv_shortBadge:'عجز', inv_shortBy:'عجز {n}: المبيعات أكثر من الرصيد، راجع الحركات', inv_period:'الفترة من {from} إلى {to}', inv_moves:'حركات المخزون المسجلة', inv_kind:'نوع الحركة', inv_qty:'الكمية', inv_k_opening:'رصيد أول المدة', inv_k_purchase:'مشتريات', inv_k_return:'مرتجع من المطاعم', inv_k_damage:'تالف', inv_addTitle:'تسجيل حركة مخزون', inv_addHint:'رصيد أول المدة (الجرد الافتتاحي) يُسجَّل مرة واحدة فقط لكل صنف في كل فرع، وبعدها يصبح رصيد آخر كل يوم هو رصيد أول اليوم التالي تلقائياً. المبيعات تُحسب من الإدخالات اليومية فلا تُسجَّل هنا؛ سجّل هنا المشتريات والمرتجع من المطاعم والتالف فقط.', inv_notePh:'رقم فاتورة الشراء أو اسم المطعم أو سبب التلف', inv_save:'حفظ الحركة', inv_saved:'حُفظت الحركة', inv_needQty:'اكتب الكمية', inv_noMoves:'لا توجد حركات مسجلة في هذه الفترة', inv_void:'إلغاء الحركة', inv_voided:'ملغاة', inv_voidReason:'سبب إلغاء هذه الحركة؟', err_openingExists:'رصيد أول المدة مسجَّل لهذا الصنف في هذا الفرع. سجّل الفرق كمشتريات أو تالف، أو ألغِ الرصيد السابق.', err_notInventory:'هذا الصنف خدمة وليس له مخزون',
     admin_addStore:'إضافة متجر', admin_storeName:'اسم المتجر', admin_manager:'مدير الفرع', admin_location:'الفرع',
     admin_addCar:'إضافة سيارة', admin_carLabel:'رقم اللوحة/السائق', admin_driver:'السائق',
     admin_addPos:'إضافة جهاز', admin_posLabel:'رقم الجهاز', admin_ownerType:'مرتبط بـ', admin_owner:'الجهة', admin_assignedDriver:'الموظف المسؤول',
@@ -2330,7 +2331,7 @@ var L = {
     admin_addUser:'Add user', admin_name:'Name', admin_role:'Role', admin_active:'Active', admin_resetPw:'Reset password',
     admin_addLocation:'Add branch', admin_city:'City', admin_locName:'Branch name', admin_cluster:'Area',
     admin_zones:'Zones', admin_addZone:'Add zone', admin_zoneName:'Zone name', admin_zone:'Zone',
-    admin_productType:'Product type', admin_typeGoods:'Inventory', admin_typeServices:'Services', nav_inventory:'Inventory', inv_title:'Inventory movement', inv_hint:'Opening + purchases + returns from restaurants = available for use; less sales (from the system\'s entries) and damaged items leaves the ending stock. Values are at cost.', inv_opening:'Opening', inv_purchases:'Purchases', inv_returns:'Returns from restaurants', inv_available:'Available for use', inv_sales:'Sales', inv_damaged:'Damaged', inv_ending:'Ending stock', inv_unitCost:'Unit cost', inv_from:'From', inv_to:'To', inv_allBranches:'All branches', inv_thisMonth:'This month', inv_lastMonth:'Last month', inv_showValue:'Show values at cost instead of quantities', inv_qtyShort:'qty', inv_byBranch:'Stock by branch and item', inv_item:'Item', inv_items:'Items: {n}', inv_tag_add:'added', inv_tag_ded:'deducted', inv_byLevels:'Stock by level', inv_lv_city:'City', inv_lv_area:'Area', inv_lv_branch:'Branch', inv_lv_item:'Item', inv_lv_seller:'Sold by', inv_search:'Find a city, branch, item or device…', inv_soldHere:'this item\'s sales from here', inv_noOpening:'No opening count yet', inv_uncounted:'{n} branch items have no opening count yet, so they are left out of the balances. Record each item\'s opening count at each branch.', inv_noQtyWarn:'{n} sales worth {amt} SAR were entered without a quantity, so they do not come off the stock. Enter sales by product (qty × price).', err_hasStock:'This item has stock movements, so it cannot become a service', err_invalidLocation:'Choose a valid branch', inv_empty:'No stock movement in this period. Start by recording each item\'s opening balance.', inv_shortBadge:'Short', inv_shortBy:'Short by {n}: sales exceed the stock, check the movements', inv_period:'Period {from} to {to}', inv_moves:'Recorded movements', inv_kind:'Movement', inv_qty:'Quantity', inv_k_opening:'Opening balance', inv_k_purchase:'Purchase', inv_k_return:'Return from restaurants', inv_k_damage:'Damaged', inv_addTitle:'Record a stock movement', inv_addHint:'Sales come from the daily entries automatically, so they are not recorded here. The opening balance is recorded once per item in each branch.', inv_notePh:'Purchase invoice number, restaurant name or reason for damage', inv_save:'Save movement', inv_saved:'Movement saved', inv_needQty:'Enter the quantity', inv_noMoves:'No movements recorded in this period', inv_void:'Void movement', inv_voided:'Voided', inv_voidReason:'Why is this movement being voided?', err_openingExists:'This item already has an opening balance at this branch. Record the difference as a purchase or damage, or void the earlier balance.', err_notInventory:'This item is a service and has no stock',
+    admin_productType:'Product type', admin_typeGoods:'Inventory', admin_typeServices:'Services', nav_inventory:'Inventory', inv_title:'Inventory movement', inv_hint:'Opening + purchases + returns from restaurants = available for use; less sales (from the system\'s entries) and damaged items leaves the ending stock. Values are at cost.', inv_opening:'Opening', inv_purchases:'Purchases', inv_returns:'Returns from restaurants', inv_available:'Available for use', inv_sales:'Sales', inv_damaged:'Damaged', inv_ending:'Ending stock', inv_unitCost:'Unit cost', inv_from:'From', inv_to:'To', inv_allBranches:'All branches', inv_thisMonth:'This month', inv_lastMonth:'Last month', inv_showValue:'Show values at cost instead of quantities', inv_qtyShort:'qty', inv_byBranch:'Stock by branch and item', inv_item:'Item', inv_items:'Items: {n}', inv_tag_add:'added', inv_tag_ded:'deducted', abx_hint:'Download the file: it has a row for every POS machine in your area\'s branches. Each row is one line: sale, credit, bank transfer, الموازنة, expense, other collection or delivery fee. Add as many rows per machine as you need, then upload it: every row is checked before sending, you see the real calculation, then it goes to the Deputy Operations Manager for approval.', abx_sheet:'Entries', abx_listsSheet:'Lists', abx_helpSheet:'How to fill', abx_file:'Area entries', abx_c_date:'Date', abx_c_posId:'POS device ID', abx_c_branch:'Branch (for reference)', abx_c_type:'Line type', abx_c_product:'Item', abx_c_qty:'Quantity', abx_c_price:'Unit price', abx_c_ch:'Of which via {ch} (qty)', abx_c_customer:'Customer (number or name)', abx_c_amount:'Amount', abx_c_item:'Expense / collection item', abx_c_ref:'Bank reference', abx_c_note:'Note / reason', abx_t_sale:'Sale', abx_t_credit:'Credit', abx_t_transfer:'Bank transfer', abx_t_deposit:'الموازنة', abx_t_expense:'Expense', abx_t_other:'Other collection', abx_t_delivery:'Delivery fee', abx_helpTitle:'How to fill in the area file', abx_helpRows:'Rows', abx_helpRowsTxt:'Each row is one line for one machine on one day. A machine can have many rows: one per item sold, one per credit customer, one per transfer, الموازنة or expense. Empty rows are ignored.', abx_h_sale:'Pick the item and the quantity (the price comes from the item if left empty). If part of it went through Souq Gas, put that part in the "Of which via Souq Gas" column; its delivery fee and commission are worked out automatically.', abx_h_credit:'A credit sale to a registered customer: the customer (number or name), item and quantity. It counts once as a sale and comes off as credit; the customer\'s delivery fee and the driver\'s commission come from the customer profile. Do not repeat it on a sale row.', abx_h_transfer:'A customer\'s transfer straight to the company account: the amount and a note (transfer number). It comes off the cash.', abx_h_deposit:'A الموازنة banked from this machine: the amount and the bank reference (required). It comes off the cash.', abx_h_expense:'Cash paid out: the amount, the item from the list and the reason (required).', abx_h_other:'Cash received for something other than a sale: the amount, the item from the list and the reason (required). It adds to the cash.', abx_h_delivery:'A delivery fee paid to the bank: the amount and a note.', abx_helpAuto:'Worked out for you', abx_helpAutoTxt:'The customer\'s delivery fee and driver commission on credit, Souq Gas\'s fee and commission, the VAT on delivery fees, and each branch\'s net cash.', abx_line:'Row', abx_details:'Details', abx_via:'via', abx_noLines:'The file has no filled-in lines', abx_badRows:'{n} rows need fixing in the file before sending', abx_sending:'Sending batch {n} of {total}', abx_partSent:'{n} batches were sent before it stopped', abx_e_date:'Invalid date', abx_e_future:'Future date', abx_e_pos:'Machine not in your area', abx_e_type:'Unknown line type', abx_e_product:'Item not found', abx_e_qty:'Quantity required', abx_e_price:'Price required', abx_e_locked:'This item has a fixed price', abx_e_channel:'Souq Gas quantity exceeds the quantity', abx_e_customer:'Customer not registered', abx_e_amount:'Amount required', abx_e_ref:'Bank reference required', abx_e_item:'Item not in the list', abx_e_reason:'Reason required', inv_byLevels:'Stock by level', inv_lv_city:'City', inv_lv_area:'Area', inv_lv_branch:'Branch', inv_lv_item:'Item', inv_lv_seller:'Sold by', inv_search:'Find a city, branch, item or device…', inv_soldHere:'this item\'s sales from here', inv_noOpening:'No opening count yet', inv_uncounted:'{n} branch items have no opening count yet, so they are left out of the balances. Record each item\'s opening count at each branch.', inv_noQtyWarn:'{n} sales worth {amt} SAR were entered without a quantity, so they do not come off the stock. Enter sales by product (qty × price).', err_hasStock:'This item has stock movements, so it cannot become a service', err_invalidLocation:'Choose a valid branch', inv_empty:'No stock movement in this period. Start by recording each item\'s opening balance.', inv_shortBadge:'Short', inv_shortBy:'Short by {n}: sales exceed the stock, check the movements', inv_period:'Period {from} to {to}', inv_moves:'Recorded movements', inv_kind:'Movement', inv_qty:'Quantity', inv_k_opening:'Opening balance', inv_k_purchase:'Purchase', inv_k_return:'Return from restaurants', inv_k_damage:'Damaged', inv_addTitle:'Record a stock movement', inv_addHint:'The opening count is recorded only once per item in each branch; after that, each day\'s ending stock is the next day\'s opening automatically. Sales come from the daily entries, so record only purchases, returns from restaurants and damaged items here.', inv_notePh:'Purchase invoice number, restaurant name or reason for damage', inv_save:'Save movement', inv_saved:'Movement saved', inv_needQty:'Enter the quantity', inv_noMoves:'No movements recorded in this period', inv_void:'Void movement', inv_voided:'Voided', inv_voidReason:'Why is this movement being voided?', err_openingExists:'This item already has an opening balance at this branch. Record the difference as a purchase or damage, or void the earlier balance.', err_notInventory:'This item is a service and has no stock',
     admin_addStore:'Add store', admin_storeName:'Store name', admin_manager:'Branch manager', admin_location:'Branch',
     admin_addCar:'Add car', admin_carLabel:'Plate / driver label', admin_driver:'Driver',
     admin_addPos:'Add POS machine', admin_posLabel:'Terminal id', admin_ownerType:'Belongs to', admin_owner:'Owner', admin_assignedDriver:'Assigned employee',
@@ -2498,7 +2499,7 @@ var L = {
     admin_addUser:'صارف شامل کریں', admin_name:'نام', admin_role:'کردار', admin_active:'فعال', admin_resetPw:'پاس ورڈ ری سیٹ کریں',
     admin_addLocation:'برانچ شامل کریں', admin_city:'شہر', admin_locName:'برانچ کا نام', admin_cluster:'علاقہ',
     admin_zones:'زونز', admin_addZone:'زون شامل کریں', admin_zoneName:'زون کا نام', admin_zone:'زون',
-    admin_productType:'پروڈکٹ کی قسم', admin_typeGoods:'انوینٹری', admin_typeServices:'خدمات', nav_inventory:'انوینٹری', inv_title:'انوینٹری کی حرکت', inv_hint:'ابتدائی اسٹاک + خریداری + ریسٹورنٹس سے واپسی = دستیاب؛ اس میں سے فروخت (سسٹم کے اندراجات سے) اور خراب مال نکال کر اختتامی اسٹاک۔ قیمتیں لاگت پر۔', inv_opening:'ابتدائی', inv_purchases:'خریداری', inv_returns:'ریسٹورنٹس سے واپسی', inv_available:'دستیاب', inv_sales:'فروخت', inv_damaged:'خراب', inv_ending:'اختتامی', inv_unitCost:'فی یونٹ لاگت', inv_from:'سے', inv_to:'تک', inv_allBranches:'تمام برانچز', inv_thisMonth:'یہ مہینہ', inv_lastMonth:'پچھلا مہینہ', inv_showValue:'مقدار کے بجائے لاگت پر قیمت دکھائیں', inv_qtyShort:'مقدار', inv_byBranch:'برانچ اور آئٹم کے لحاظ سے اسٹاک', inv_item:'آئٹم', inv_items:'آئٹمز: {n}', inv_tag_add:'جمع', inv_tag_ded:'منہا', inv_byLevels:'سطح وار اسٹاک', inv_lv_city:'شہر', inv_lv_area:'علاقہ', inv_lv_branch:'برانچ', inv_lv_item:'آئٹم', inv_lv_seller:'فروخت کنندہ', inv_search:'شہر، برانچ، آئٹم یا مشین تلاش کریں…', inv_soldHere:'یہاں سے اس آئٹم کی فروخت', inv_noOpening:'ابتدائی گنتی ابھی درج نہیں', inv_uncounted:'{n} برانچ آئٹمز کی ابتدائی گنتی درج نہیں، اس لیے وہ بیلنس میں شامل نہیں۔', inv_noQtyWarn:'{n} فروخت ({amt} ریال) بغیر مقدار درج ہوئی، اس لیے اسٹاک سے منہا نہیں ہوئی۔', err_hasStock:'اس آئٹم کی اسٹاک حرکات ہیں، یہ سروس نہیں بن سکتا', err_invalidLocation:'درست برانچ منتخب کریں', inv_empty:'اس مدت میں کوئی حرکت نہیں۔ ہر آئٹم کا ابتدائی اسٹاک درج کریں۔', inv_shortBadge:'کمی', inv_shortBy:'{n} کی کمی: فروخت اسٹاک سے زیادہ ہے، حرکات دیکھیں', inv_period:'مدت {from} سے {to}', inv_moves:'درج شدہ حرکات', inv_kind:'حرکت کی قسم', inv_qty:'مقدار', inv_k_opening:'ابتدائی اسٹاک', inv_k_purchase:'خریداری', inv_k_return:'ریسٹورنٹ سے واپسی', inv_k_damage:'خراب', inv_addTitle:'اسٹاک کی حرکت درج کریں', inv_addHint:'فروخت روزانہ اندراجات سے خود آتی ہے۔ ابتدائی اسٹاک ہر برانچ میں ہر آئٹم کا ایک بار درج ہوتا ہے۔', inv_notePh:'خریداری بل نمبر، ریسٹورنٹ کا نام یا خرابی کی وجہ', inv_save:'حرکت محفوظ کریں', inv_saved:'حرکت محفوظ ہو گئی', inv_needQty:'مقدار لکھیں', inv_noMoves:'اس مدت میں کوئی حرکت درج نہیں', inv_void:'حرکت منسوخ کریں', inv_voided:'منسوخ', inv_voidReason:'یہ حرکت کیوں منسوخ کی جا رہی ہے؟', err_openingExists:'اس برانچ میں اس آئٹم کا ابتدائی اسٹاک پہلے سے درج ہے۔', err_notInventory:'یہ آئٹم سروس ہے، اس کا اسٹاک نہیں',
+    admin_productType:'پروڈکٹ کی قسم', admin_typeGoods:'انوینٹری', admin_typeServices:'خدمات', nav_inventory:'انوینٹری', inv_title:'انوینٹری کی حرکت', inv_hint:'ابتدائی اسٹاک + خریداری + ریسٹورنٹس سے واپسی = دستیاب؛ اس میں سے فروخت (سسٹم کے اندراجات سے) اور خراب مال نکال کر اختتامی اسٹاک۔ قیمتیں لاگت پر۔', inv_opening:'ابتدائی', inv_purchases:'خریداری', inv_returns:'ریسٹورنٹس سے واپسی', inv_available:'دستیاب', inv_sales:'فروخت', inv_damaged:'خراب', inv_ending:'اختتامی', inv_unitCost:'فی یونٹ لاگت', inv_from:'سے', inv_to:'تک', inv_allBranches:'تمام برانچز', inv_thisMonth:'یہ مہینہ', inv_lastMonth:'پچھلا مہینہ', inv_showValue:'مقدار کے بجائے لاگت پر قیمت دکھائیں', inv_qtyShort:'مقدار', inv_byBranch:'برانچ اور آئٹم کے لحاظ سے اسٹاک', inv_item:'آئٹم', inv_items:'آئٹمز: {n}', inv_tag_add:'جمع', inv_tag_ded:'منہا', abx_hint:'فائل ڈاؤن لوڈ کریں: اس میں آپ کے علاقے کی ہر POS مشین کی ایک قطار ہے۔ ہر قطار ایک لائن ہے۔ جتنی چاہیں قطاریں شامل کریں، پھر اپ لوڈ کریں۔', abx_sheet:'اندراجات', abx_listsSheet:'فہرستیں', abx_helpSheet:'بھرنے کا طریقہ', abx_file:'علاقہ اندراجات', abx_c_date:'تاریخ', abx_c_posId:'مشین نمبر', abx_c_branch:'برانچ (معلومات)', abx_c_type:'لائن کی قسم', abx_c_product:'آئٹم', abx_c_qty:'مقدار', abx_c_price:'فی یونٹ قیمت', abx_c_ch:'جس میں سے {ch} (مقدار)', abx_c_customer:'گاہک (نمبر یا نام)', abx_c_amount:'رقم', abx_c_item:'مد', abx_c_ref:'بینک حوالہ', abx_c_note:'تفصیل / وجہ', abx_t_sale:'فروخت', abx_t_credit:'اُدھار', abx_t_transfer:'بینک ٹرانسفر', abx_t_deposit:'موازنة', abx_t_expense:'خرچ', abx_t_other:'دیگر وصولی', abx_t_delivery:'ڈیلیوری فیس', abx_helpTitle:'علاقہ فائل بھرنے کا طریقہ', abx_helpRows:'قطاریں', abx_helpRowsTxt:'ہر قطار ایک مشین کی ایک دن کی ایک لائن ہے۔ خالی قطاریں نظرانداز ہوتی ہیں۔', abx_h_sale:'آئٹم اور مقدار لکھیں۔ سوق غاز والا حصہ اس کالم میں لکھیں۔', abx_h_credit:'رجسٹرڈ گاہک کو اُدھار فروخت۔ اسے فروخت کی قطار میں دوبارہ نہ لکھیں۔', abx_h_transfer:'گاہک کی براہ راست منتقلی: رقم اور تفصیل۔', abx_h_deposit:'اس مشین سے بینک میں جمع: رقم اور بینک حوالہ (لازمی)۔', abx_h_expense:'نقد خرچ: رقم، فہرست سے مد اور وجہ (لازمی)۔', abx_h_other:'فروخت کے علاوہ وصولی: رقم، مد اور وجہ (لازمی)۔', abx_h_delivery:'بینک کو ادا ڈیلیوری فیس: رقم اور تفصیل۔', abx_helpAuto:'خودکار حساب', abx_helpAutoTxt:'گاہک کی ڈیلیوری فیس اور کمیشن، سوق غاز کی فیس اور کمیشن، اور ہر برانچ کا خالص نقد۔', abx_line:'قطار', abx_details:'تفصیل', abx_via:'بذریعہ', abx_noLines:'فائل میں کوئی لائن نہیں', abx_badRows:'{n} قطاریں درست کرنی ہیں', abx_sending:'بھیجا جا رہا ہے: {total} میں سے {n}', abx_partSent:'{n} بیچ بھیجے گئے', abx_e_date:'غلط تاریخ', abx_e_future:'مستقبل کی تاریخ', abx_e_pos:'مشین آپ کے علاقے میں نہیں', abx_e_type:'نامعلوم قسم', abx_e_product:'آئٹم نہیں ملا', abx_e_qty:'مقدار ضروری', abx_e_price:'قیمت ضروری', abx_e_locked:'اس آئٹم کی قیمت مقرر ہے', abx_e_channel:'سوق غاز کی مقدار زیادہ ہے', abx_e_customer:'گاہک رجسٹرڈ نہیں', abx_e_amount:'رقم ضروری', abx_e_ref:'بینک حوالہ ضروری', abx_e_item:'مد نہیں ملی', abx_e_reason:'وجہ ضروری', inv_byLevels:'سطح وار اسٹاک', inv_lv_city:'شہر', inv_lv_area:'علاقہ', inv_lv_branch:'برانچ', inv_lv_item:'آئٹم', inv_lv_seller:'فروخت کنندہ', inv_search:'شہر، برانچ، آئٹم یا مشین تلاش کریں…', inv_soldHere:'یہاں سے اس آئٹم کی فروخت', inv_noOpening:'ابتدائی گنتی ابھی درج نہیں', inv_uncounted:'{n} برانچ آئٹمز کی ابتدائی گنتی درج نہیں، اس لیے وہ بیلنس میں شامل نہیں۔', inv_noQtyWarn:'{n} فروخت ({amt} ریال) بغیر مقدار درج ہوئی، اس لیے اسٹاک سے منہا نہیں ہوئی۔', err_hasStock:'اس آئٹم کی اسٹاک حرکات ہیں، یہ سروس نہیں بن سکتا', err_invalidLocation:'درست برانچ منتخب کریں', inv_empty:'اس مدت میں کوئی حرکت نہیں۔ ہر آئٹم کا ابتدائی اسٹاک درج کریں۔', inv_shortBadge:'کمی', inv_shortBy:'{n} کی کمی: فروخت اسٹاک سے زیادہ ہے، حرکات دیکھیں', inv_period:'مدت {from} سے {to}', inv_moves:'درج شدہ حرکات', inv_kind:'حرکت کی قسم', inv_qty:'مقدار', inv_k_opening:'ابتدائی اسٹاک', inv_k_purchase:'خریداری', inv_k_return:'ریسٹورنٹ سے واپسی', inv_k_damage:'خراب', inv_addTitle:'اسٹاک کی حرکت درج کریں', inv_addHint:'ابتدائی اسٹاک ہر برانچ میں ہر آئٹم کا صرف ایک بار درج ہوتا ہے؛ اس کے بعد ہر دن کا اختتامی اسٹاک اگلے دن کا ابتدائی خود بن جاتا ہے۔ یہاں صرف خریداری، واپسی اور خراب مال درج کریں۔', inv_notePh:'خریداری بل نمبر، ریسٹورنٹ کا نام یا خرابی کی وجہ', inv_save:'حرکت محفوظ کریں', inv_saved:'حرکت محفوظ ہو گئی', inv_needQty:'مقدار لکھیں', inv_noMoves:'اس مدت میں کوئی حرکت درج نہیں', inv_void:'حرکت منسوخ کریں', inv_voided:'منسوخ', inv_voidReason:'یہ حرکت کیوں منسوخ کی جا رہی ہے؟', err_openingExists:'اس برانچ میں اس آئٹم کا ابتدائی اسٹاک پہلے سے درج ہے۔', err_notInventory:'یہ آئٹم سروس ہے، اس کا اسٹاک نہیں',
     admin_addStore:'اسٹور شامل کریں', admin_storeName:'اسٹور کا نام', admin_manager:'برانچ منیجر', admin_location:'برانچ',
     admin_addCar:'گاڑی شامل کریں', admin_carLabel:'پلیٹ / ڈرائیور کا نام', admin_driver:'ڈرائیور',
     admin_addPos:'POS مشین شامل کریں', admin_posLabel:'ٹرمینل نمبر', admin_ownerType:'سے منسلک', admin_owner:'مالک', admin_assignedDriver:'ذمہ دار ملازم',
@@ -8086,6 +8087,245 @@ function renderEntries(body){
 // review, submit-for-approval instead of submit-and-done — different enough
 // semantics that reusing the single-location entry screen would mean
 // forking most of its CSV-import card anyway. See CLAUDE.md.
+// ---------- the area manager's Excel: every POS, every section (2026-09-29) ----------
+// One row is one line of one POS machine's day. The line type says which
+// section it belongs to; the reader turns each row into the same entry row
+// the day form writes, so the server's checks, the customer's delivery fee
+// and commission, Souq Gas's fee and commission, and the net all come out
+// exactly as if typed on the form.
+var ABX_TYPES_ = ['sale', 'credit', 'transfer', 'deposit', 'expense', 'other', 'delivery'];
+var ABX_COLS_ = ['date', 'posId', 'branch', 'type', 'product', 'qty', 'price', 'customer', 'amount', 'item', 'ref', 'note'];
+function abxChannels_(){ return ((state.meta && state.meta.channels) || []).filter(function(c){ return c.active !== false; }); }
+function abxHeader_(){
+  var h = ABX_COLS_.map(function(k){ return t('abx_c_' + k); });
+  // one quantity column per sales channel, right after the quantity
+  var at = ABX_COLS_.indexOf('price') + 1;
+  var ch = abxChannels_().map(function(c){ return t('abx_c_ch').replace('{ch}', c.name); });
+  return h.slice(0, at).concat(ch, h.slice(at));
+}
+function abxClusterPos_(clusterId){
+  var m = state.meta || {};
+  var locs = (m.locations || []).filter(function(l){ return !clusterId || l.clusterId === clusterId; }).map(function(l){ return l.id; });
+  return (m.pos || []).filter(function(p){ return p.active !== false && locs.indexOf(posOwnerLocationId_(p)) >= 0; })
+    .sort(function(a, b){ return String(locationName(posOwnerLocationId_(a))).localeCompare(String(locationName(posOwnerLocationId_(b))), 'ar') || String(a.posId || '').localeCompare(String(b.posId || '')); });
+}
+
+function abxTemplate_(clusterId){
+  toast('ex_preparing', 'ok');
+  var m = state.meta || {}, rtl = state.lang !== 'en';
+  loadLib_(EXCELJS_URL_, EXCELJS_SRI_).then(function(){
+    var wb = new window.ExcelJS.Workbook();
+    var head = abxHeader_(), chN = abxChannels_().length, today = localToday_();
+    var pos = abxClusterPos_(clusterId);
+    var products = (m.products || []).filter(function(p){ return p.active !== false; });
+    var customers = (m.customers || []).filter(function(c){ return c.active !== false; });
+    var exp = (m.expenseItems || []).filter(function(x){ return x.active !== false; });
+    var inc = (m.incomeItems || []).filter(function(x){ return x.active !== false; });
+    var green = 'FF4D6D51', dark = 'FF3A5540', cream = 'FFF2EEE4';
+
+    var ws = wb.addWorksheet(t('abx_sheet'), { views: [{ state: 'frozen', ySplit: 1, rightToLeft: rtl }] });
+    // the lists the dropdowns read from
+    var ls = wb.addWorksheet(t('abx_listsSheet'), { views: [{ rightToLeft: rtl }] });
+    var lists = [
+      [t('abx_c_type'), ABX_TYPES_.map(function(k){ return t('abx_t_' + k); })],
+      [t('abx_c_posId'), pos.map(function(p){ return String(p.posId || p.label); })],
+      [t('abx_c_product'), products.map(function(p){ return p.name; })],
+      [t('abx_c_customer'), customers.map(function(c){ return (c.code ? c.code + ' · ' : '') + c.name; })],
+      [t('abx_c_item'), exp.map(function(x){ return x.name; }).concat(inc.map(function(x){ return x.name; }))]
+    ];
+    lists.forEach(function(l, ci){
+      var hc = ls.getCell(1, ci + 1); hc.value = l[0]; hc.font = { bold: true, color: { argb: 'FFFFFFFF' } }; hc.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: dark } };
+      l[1].forEach(function(v, ri){ ls.getCell(ri + 2, ci + 1).value = v; });
+      ls.getColumn(ci + 1).width = 34;
+    });
+    function listRef(ci){ var col = String.fromCharCode(65 + ci), n = Math.max(2, lists[ci][1].length + 1); return "'" + t('abx_listsSheet') + "'!$" + col + '$2:$' + col + '$' + n; }
+
+    // the sheet to fill
+    ws.addRow(head);
+    ws.getRow(1).height = 34;
+    ws.getRow(1).eachCell(function(c){
+      c.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 10.5 }; c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: green } };
+      c.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+    });
+    var idx = {}; head.forEach(function(h, i){ idx[h] = i + 1; });
+    pos.forEach(function(p){
+      var r = [];
+      r[idx[t('abx_c_date')] - 1] = today;
+      r[idx[t('abx_c_posId')] - 1] = String(p.posId || p.label);
+      r[idx[t('abx_c_branch')] - 1] = locationName(posOwnerLocationId_(p)) + (p.holderName ? ' · ' + p.holderName : '');
+      r[idx[t('abx_c_type')] - 1] = t('abx_t_sale');
+      ws.addRow(r);
+    });
+    var last = Math.max(pos.length + 200, 400);
+    function valid(col, ref){ for (var rr = 2; rr <= last; rr++) ws.getCell(rr, col).dataValidation = { type: 'list', allowBlank: true, formulae: [ref], showErrorMessage: false }; }
+    valid(idx[t('abx_c_type')], listRef(0));
+    valid(idx[t('abx_c_posId')], listRef(1));
+    valid(idx[t('abx_c_product')], listRef(2));
+    valid(idx[t('abx_c_customer')], listRef(3));
+    valid(idx[t('abx_c_item')], listRef(4));
+    for (var rr = 2; rr <= last; rr++) {
+      ws.getCell(rr, idx[t('abx_c_posId')]).numFmt = '@';
+      ws.getCell(rr, idx[t('abx_c_branch')]).font = { color: { argb: 'FF7A857B' }, italic: true };
+      if (rr % 2) for (var cc = 1; cc <= head.length; cc++) ws.getCell(rr, cc).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFAF8F3' } };
+    }
+    head.forEach(function(h, i){ ws.getColumn(i + 1).width = i + 1 === idx[t('abx_c_branch')] ? 30 : i + 1 === idx[t('abx_c_note')] || i + 1 === idx[t('abx_c_customer')] ? 28 : 16; });
+
+    // how to fill it
+    var hw = wb.addWorksheet(t('abx_helpSheet'), { views: [{ rightToLeft: rtl }] });
+    hw.getColumn(1).width = 26; hw.getColumn(2).width = 90;
+    hw.mergeCells('A1:B1'); hw.getCell('A1').value = t('abx_helpTitle');
+    hw.getCell('A1').font = { bold: true, size: 15, color: { argb: 'FFFFFFFF' } }; hw.getCell('A1').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: green } };
+    hw.getRow(1).height = 32;
+    [[t('abx_helpRows'), t('abx_helpRowsTxt')]].concat(ABX_TYPES_.map(function(k){ return [t('abx_t_' + k), t('abx_h_' + k)]; }), [[t('abx_helpAuto'), t('abx_helpAutoTxt')]]).forEach(function(r, i){
+      var row = hw.addRow(r); row.getCell(1).font = { bold: true, color: { argb: dark } };
+      row.getCell(2).alignment = { wrapText: true, vertical: 'top' }; row.height = 46;
+      if (i % 2) row.eachCell(function(c){ c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: cream } }; });
+    });
+    // the sheet to fill opens first
+    return wb.xlsx.writeBuffer();
+  }).then(function(buf){
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
+    a.download = (t('abx_file') + ' ' + localToday_()).replace(/[\\\/:*?"<>|]/g, '-') + '.xlsx';
+    document.body.appendChild(a); a.click(); setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+  }).catch(function(){ toast('ex_failed', 'err'); });
+}
+
+// a date cell: a real date, an Excel serial, 2026-09-28 or 28/09/2026
+function abxDate_(v){
+  if (v instanceof Date && !isNaN(v)) return v.getFullYear() + '-' + String(v.getMonth() + 1).padStart(2, '0') + '-' + String(v.getDate()).padStart(2, '0');
+  if (typeof v === 'number' && v > 30000 && v < 80000) { var d = new Date(Math.round((v - 25569) * 86400000)); return d.toISOString().slice(0, 10); }
+  var s = String(v == null ? '' : v).trim().replace(/[٠-٩]/g, function(c){ return String(c.charCodeAt(0) - 0x0660); });
+  var m1 = s.match(/^(\d{4})[-\/.](\d{1,2})[-\/.](\d{1,2})$/), m2 = s.match(/^(\d{1,2})[-\/.](\d{1,2})[-\/.](\d{4})$/);
+  var y, mo, da;
+  if (m1) { y = +m1[1]; mo = +m1[2]; da = +m1[3]; } else if (m2) { y = +m2[3]; mo = +m2[2]; da = +m2[1]; } else return '';
+  var out = y + '-' + String(mo).padStart(2, '0') + '-' + String(da).padStart(2, '0');
+  var chk = new Date(out + 'T00:00:00Z');
+  return !isNaN(chk) && chk.toISOString().slice(0, 10) === out ? out : '';
+}
+function abxNum_(v){
+  if (typeof v === 'number') return v;
+  var s = String(v == null ? '' : v).trim().replace(/[٠-٩]/g, function(c){ return String(c.charCodeAt(0) - 0x0660); }).replace(/[,\s]/g, '').replace('٫', '.');
+  return s === '' ? 0 : Number(s);
+}
+function abxType_(v){
+  var s = normName_(String(v || ''));
+  for (var i = 0; i < ABX_TYPES_.length; i++) {
+    var k = ABX_TYPES_[i];
+    if (s === k || s === normName_(t('abx_t_' + k)) || s === normName_(L.ar['abx_t_' + k] || '') || s === normName_(L.en['abx_t_' + k] || '') || s === normName_(L.ur['abx_t_' + k] || '')) return k;
+  }
+  return '';
+}
+function abxItem_(list, name){
+  var k = normName_(name || '');
+  return (list || []).filter(function(x){ return x.active !== false && normName_(x.name) === k; })[0] || null;
+}
+// file rows -> the entry rows the server takes, each with its check result
+function abxRows_(aoa, clusterId){
+  var m = state.meta || {};
+  var hdr = (aoa[0] || []).map(function(h){ return normName_(String(h || '')); });
+  function colOf(label){ var i = hdr.indexOf(normName_(label)); return i; }
+  function langCol(key){
+    var c = -1;
+    [t('abx_c_' + key), L.ar['abx_c_' + key], L.en['abx_c_' + key], L.ur['abx_c_' + key], key].forEach(function(lbl){ if (c < 0 && lbl) c = colOf(lbl); });
+    return c;
+  }
+  var C = {}; ABX_COLS_.forEach(function(k){ C[k] = langCol(k); });
+  var chCols = abxChannels_().map(function(ch){
+    var c = -1;
+    [t('abx_c_ch'), L.ar.abx_c_ch, L.en.abx_c_ch, L.ur.abx_c_ch].forEach(function(tpl){ if (c < 0 && tpl) c = colOf(tpl.replace('{ch}', ch.name)); });
+    return { ch: ch, col: c };
+  }).filter(function(x){ return x.col >= 0; });
+  var posList = abxClusterPos_(clusterId), today = localToday_();
+  var out = [];
+  aoa.slice(1).forEach(function(r, i){
+    function v(k){ return C[k] >= 0 ? r[C[k]] : ''; }
+    var type = abxType_(v('type'));
+    var qty = abxNum_(v('qty')), price = abxNum_(v('price')), amount = abxNum_(v('amount'));
+    var hasData = [qty, price, amount].some(function(x){ return x; }) || String(v('product') || v('customer') || v('item') || '').trim();
+    if (!hasData) return; // a prefilled POS row left empty is not a line
+    var date = abxDate_(v('date'));
+    var dev = String(v('posId') == null ? '' : v('posId')).trim().replace(/\.0+$/, '');
+    var p = posList.filter(function(x){ return String(x.posId || '') === dev || String(x.label || '') === dev; })[0];
+    var row = { line: i + 2, date: date, sourceType: 'pos', sourceId: p ? p.id : null, type: type, status: 'ok',
+      branchName: p ? locationName(posOwnerLocationId_(p)) : '', posLabel: p ? posPickLabel_(p) : dev, note: String(v('note') || '').trim() };
+    function bad(k){ if (row.status === 'ok') row.status = k; }
+    if (!date) bad('abx_e_date'); else if (date > today) bad('abx_e_future');
+    if (!p) bad('abx_e_pos');
+    if (!type) bad('abx_e_type');
+    var product = null;
+    if (type === 'sale' || type === 'credit') {
+      product = abxItem_(m.products, v('product'));
+      if (!product) bad('abx_e_product');
+      if (!(qty > 0)) bad('abx_e_qty');
+      if (!(price > 0) && product && Number(product.unitPrice) > 0) price = Number(product.unitPrice);
+      if (!(price > 0)) bad('abx_e_price');
+      if (product && product.priceLocked && Number(product.unitPrice) > 0 && Math.abs(price - Number(product.unitPrice)) > 0.001) bad('abx_e_locked');
+      var sub = Math.round(qty * price * 100) / 100;
+      row.productId = product ? product.id : null; row.qty = qty; row.unitPrice = price; row.cashSales = sub;
+      row.productName = product ? product.name : String(v('product') || ''); row.subtotal = sub; row.paymentMethod = 'cash';
+      if (type === 'sale') {
+        var cq = {}, cqSum = 0;
+        chCols.forEach(function(x){ var n = abxNum_(r[x.col]); if (n > 0) { cq[x.ch.id] = n; cqSum += n; } });
+        if (cqSum > qty + 0.0001) bad('abx_e_channel');
+        if (cqSum > 0) { row.channelQtys = cq; row.channelNote = chCols.filter(function(x){ return cq[x.ch.id]; }).map(function(x){ return x.ch.name + ' ' + cq[x.ch.id]; }).join('، '); }
+      } else {
+        var cust = findCustomerLocal_(String(v('customer') || '').replace(/^\s*(CUS-\d+)\s*·.*$/i, '$1'));
+        if (!cust) bad('abx_e_customer');
+        row.creditSales = sub; row.creditCustomer = cust ? cust.code || cust.name : String(v('customer') || '');
+        row.customerName = cust ? cust.name : String(v('customer') || '');
+        row.creditItems = product ? [{ productId: product.id, qty: qty, unitPrice: price }] : null;
+      }
+      row.amount = sub;
+    } else if (type) {
+      if (!(amount > 0)) bad('abx_e_amount');
+      row.amount = amount;
+      if (type === 'transfer') row.bankTransferAmount = amount;
+      else if (type === 'delivery') { row.deliveryFeeBankAmount = amount; row.deliveryNote = row.note; }
+      else if (type === 'deposit') {
+        row.directDepositAmount = amount; row.directDepositRef = String(v('ref') || '').trim(); row.directDepositNote = row.note; row.directDepositPosId = row.sourceId;
+        if (!row.directDepositRef) bad('abx_e_ref');
+      } else if (type === 'expense' || type === 'other') {
+        var it = abxItem_(type === 'expense' ? m.expenseItems : m.incomeItems, v('item'));
+        if (!it) bad('abx_e_item');
+        if (!row.note) bad('abx_e_reason');
+        row.itemName = it ? it.name : String(v('item') || '');
+        if (type === 'expense') { row.expenseAmount = amount; row.expenseItemId = it ? it.id : null; row.expenseReason = row.note; }
+        else { row.otherCash = amount; row.otherCashItemId = it ? it.id : null; row.otherCashReason = row.note; }
+      }
+    }
+    out.push(row);
+  });
+  return out;
+}
+// whole branches per batch, never more than 450 lines in one
+function abxChunks_(rows){
+  var by = {}, order = [];
+  rows.forEach(function(r){ var k = r.sourceId ? posOwnerLocationId_(byId(state.meta.pos, r.sourceId)) || '_' : '_'; if (!by[k]) { by[k] = []; order.push(k); } by[k].push(r); });
+  var out = [], cur = [];
+  order.forEach(function(k){
+    if (cur.length && cur.length + by[k].length > 450) { out.push(cur); cur = []; }
+    if (by[k].length > 450) { for (var i = 0; i < by[k].length; i += 450) out.push(by[k].slice(i, i + 450)); }
+    else cur = cur.concat(by[k]);
+  });
+  if (cur.length) out.push(cur);
+  return out;
+}
+function abxRead_(file, cb){
+  loadLib_(XLSX_URL_, XLSX_SRI_).then(function(){
+    var fr = new FileReader();
+    fr.onload = function(){
+      try {
+        var wb = window.XLSX.read(new Uint8Array(fr.result), { type: 'array', cellDates: true });
+        var name = wb.SheetNames.filter(function(n){ return [L.ar.abx_sheet, L.en.abx_sheet, L.ur.abx_sheet].indexOf(n) >= 0; })[0] || wb.SheetNames[0];
+        cb(null, window.XLSX.utils.sheet_to_json(wb.Sheets[name], { header: 1, raw: true, defval: '' }));
+      } catch (e) { cb(e); }
+    };
+    fr.onerror = function(){ cb(new Error('read')); };
+    fr.readAsArrayBuffer(file);
+  }).catch(function(e){ cb(e); });
+}
+
 function renderAreaBulk(body){
   var role = state.user.role;
   var clusters = (state.meta && state.meta.clusters) || [];
@@ -8093,12 +8333,12 @@ function renderAreaBulk(body){
 
   var card = el('<div class="card">' +
     '<h2>'+esc(t('areaBulk_title'))+'</h2>' +
-    '<div class="muted" style="font-size:12.5px;margin-bottom:10px;">'+esc(t('areaBulk_hint'))+'</div>' +
+    '<div class="muted" style="font-size:12.5px;margin-bottom:10px;line-height:1.8;">'+esc(t('abx_hint'))+'</div>' +
     (role==='admin' ? '<div class="field"><label>'+esc(t('deputy_cluster'))+'</label><select id="abCluster">'+
       clusters.map(function(c){ return '<option value="'+c.id+'">'+esc(c.name)+'</option>'; }).join('')+'</select></div>' : '') +
     '<div class="row" style="gap:10px;flex-wrap:wrap;margin-bottom:10px;align-items:center;">' +
       '<button type="button" class="btn" id="abTemplateBtn" style="background:var(--muted-2);">'+esc(t('areaBulk_template'))+'</button>' +
-      '<input type="file" id="abFile" accept=".csv,text/csv">' +
+      '<input type="file" id="abFile" accept=".xlsx,.xls,.csv">' +
     '</div>' +
     '<div id="abMsg"></div>' +
     '<div id="abPreviewWrap"></div>' +
@@ -8115,92 +8355,27 @@ function renderAreaBulk(body){
     return role === 'admin' ? qs('#abCluster', card).value : myCluster.id;
   }
 
-  qs('#abTemplateBtn', card).addEventListener('click', function(){ downloadAreaBulkCsvTemplate_(currentClusterId()); });
+  qs('#abTemplateBtn', card).addEventListener('click', function(){ abxTemplate_(currentClusterId()); });
 
   var pendingRows = [];
   qs('#abFile', card).addEventListener('change', function(e){
     var file = e.target.files[0];
     if (!file) return;
-    var clusterId = currentClusterId();
-    var reader = new FileReader();
-    reader.onload = function(){
-      var parsed;
-      try { parsed = parseCsv_(String(reader.result||'')); } catch(err){ parsed = null; }
-      if (!parsed || parsed.length < 2){ qs('#abMsg',card).innerHTML = '<div class="msg err">'+esc(t('entry_importParseError'))+'</div>'; return; }
+    qs('#abMsg',card).innerHTML = '<div class="msg">'+esc(t('loading'))+'</div>';
+    abxRead_(file, function(err, aoa){
+      if (err || !aoa || aoa.length < 2) { qs('#abMsg',card).innerHTML = '<div class="msg err">'+esc(t('entry_importParseError'))+'</div>'; return; }
       qs('#abMsg',card).innerHTML = '';
-      var header = parsed[0].map(function(h){ return String(h||'').trim(); });
-      var dataRows = parsed.slice(1).filter(function(r){ return r.some(function(c){ return String(c||'').trim() !== ''; }); });
-      var idx = {};
-      header.forEach(function(h,i){ idx[h]=i; });
-      function cell(r,key){ var i = idx[key]; return (i!=null && r[i]!=null) ? String(r[i]) : ''; }
-
-      // Product-level: one row = one product/service line (qty x unit price,
-      // one payment method) — mirrors exactly what renderEntries' product
-      // mode submits per line, so the same subtotal/routing logic applies
-      // here and the batch that reaches Deputy review always carries real
-      // product detail, never a bare day-total.
-      pendingRows = dataRows.map(function(r){
-        var date = cell(r,'date').trim();
-        var locationName = cell(r,'locationName').trim();
-        var sourceType = cell(r,'sourceType').trim().toLowerCase();
-        var sourceName = cell(r,'sourceName').trim();
-        var productName = cell(r,'product').trim();
-        var qty = Number(cell(r,'qty').replace(/,/g,'').trim() || 0);
-        var unitPrice = Number(cell(r,'unitPrice').replace(/,/g,'').trim() || 0);
-        var paymentMethod = cell(r,'paymentMethod').trim().toLowerCase();
-        var note = cell(r,'note');
-
-        var status = 'ok', locationId = null, sourceId = null, productId = null, product = null;
-        if (!date || !locationName || ['store','car','pos'].indexOf(sourceType) < 0 || !sourceName || !productName || !paymentMethod) status = 'missing';
-        if (status === 'ok') {
-          locationId = resolveLocationByNameInCluster_(locationName, clusterId);
-          if (!locationId) status = 'location_notfound';
-        }
-        if (status === 'ok') {
-          sourceId = resolveSourceByNameInCluster_(sourceType, sourceName, locationId);
-          if (!sourceId) status = 'source_notfound';
-        }
-        if (status === 'ok') {
-          productId = resolveProductByName_(productName);
-          if (!productId) status = 'product_notfound'; else product = byId(state.meta.products, productId);
-        }
-        if (status === 'ok' && !(qty > 0)) status = 'invalid_qty';
-        if (status === 'ok' && !(unitPrice > 0)) status = 'invalid_price';
-        if (status === 'ok' && (posSalesEnabled_() ? ['cash','pos'] : ['cash']).indexOf(paymentMethod) < 0) status = 'invalid_payment';
-        var numCol = function(k){ return Number(String(cell(r,k)||'').replace(/,/g,'').trim() || 0); };
-        var deliveryAmt = numCol('deliveryFee'), creditAmt = numCol('creditSales');
-
-        var extraCols = nonSalesFromRow_(cell, r);
-        if (status === 'ok' && extraCols.otherCash > 0 && (!extraCols.otherCashItemId || !extraCols.otherCashReason)) status = 'missing';
-        if (status === 'ok' && extraCols.expenseAmount > 0 && (!extraCols.expenseItemId || !extraCols.expenseReason)) status = 'missing';
-        if (status === 'ok' && extraCols.directDepositAmount > 0 && !extraCols.directDepositRef) status = 'missing';
-        if (status === 'ok' && creditAmt > 0 && !extraCols.creditCustomer) status = 'missing';
-        if (status === 'ok' && creditAmt > 0 && !findCustomerLocal_(extraCols.creditCustomer)) status = 'customer_notfound';
-        var subtotal = qty * unitPrice;
-        return {
-          date: date, locationName: locationName, sourceType: sourceType, sourceId: sourceId, sourceName: sourceName,
-          productId: productId, productName: productName, qty: qty, unitPrice: unitPrice, paymentMethod: paymentMethod, subtotal: subtotal,
-          cashSales: paymentMethod==='cash' ? subtotal : 0,
-          posSales: paymentMethod==='pos' ? subtotal : 0,
-          deliveryFeeBankAmount: deliveryAmt, deliveryNote: extraCols.deliveryNote,
-          creditSales: creditAmt, creditCustomer: extraCols.creditCustomer,
-          cylindersOut: cell(r,'cylindersOut'), cylindersIn: cell(r,'cylindersIn'), note: note,
-          otherCash: extraCols.otherCash, otherCashItemId: extraCols.otherCashItemId, otherCashReason: extraCols.otherCashReason,
-          directDepositNote: extraCols.directDepositNote,
-          expenseAmount: extraCols.expenseAmount, expenseItemId: extraCols.expenseItemId, expenseReason: extraCols.expenseReason,
-          directDepositAmount: extraCols.directDepositAmount, directDepositRef: extraCols.directDepositRef,
-          status: status
-        };
-      });
+      pendingRows = abxRows_(aoa, currentClusterId());
+      if (!pendingRows.length) { qs('#abMsg',card).innerHTML = '<div class="msg err">'+esc(t('abx_noLines'))+'</div>'; }
       renderAreaBulkPreview();
-    };
-    reader.readAsText(file);
+    });
   });
 
   function renderAreaBulkPreview(){
     var wrap = qs('#abPreviewWrap', card);
     if (!pendingRows.length){ wrap.innerHTML=''; return; }
     var allValid = pendingRows.every(function(r){ return r.status==='ok'; });
+    var badN = pendingRows.filter(function(r){ return r.status !== 'ok'; }).length;
     var statusLabels = {
       ok: '<span class="badge confirmed">'+esc(t('areaBulk_valid'))+'</span>',
       location_notfound: '<span class="badge disputed">'+esc(t('areaBulk_err_location_notfound'))+'</span>',
@@ -8213,21 +8388,20 @@ function renderAreaBulk(body){
       delivery_needs_services: '<span class="badge rejected">'+esc(t('areaBulk_err_delivery_needs_services'))+'</span>',
       customer_notfound: '<span class="badge disputed">'+esc(t('err_unknownCustomer'))+'</span>'
     };
-    var paymentLabels = { cash: t('entry_payment_cash'), pos: t('entry_payment_pos') };
-    var rows = pendingRows.map(function(r, i){
-      var statusLabel = statusLabels[r.status] || '<span class="badge rejected">'+esc(t('areaBulk_err_missing'))+'</span>';
-      // An unrecognized paymentMethod has no i18n entry to translate — show
-      // whatever the file actually said instead of a raw, confusing
-      // "entry_payment_<junk>" key string falling out of t()'s not-found path.
-      return '<tr><td>'+(i+1)+'</td><td>'+esc(r.date)+'</td><td>'+esc(r.locationName)+'</td><td>'+esc(r.sourceType)+'</td><td>'+esc(r.sourceName)+'</td>' +
-        '<td>'+esc(r.productName)+'</td><td>'+(r.qty||0)+'</td><td>'+money(r.unitPrice)+'</td>' +
-        '<td>'+esc(paymentLabels[r.paymentMethod] || r.paymentMethod || '')+'</td><td>'+money(r.subtotal)+'</td><td>'+statusLabel+'</td></tr>';
+    var rows = pendingRows.map(function(r){
+      var what = r.type === 'sale' ? r.productName + ' × ' + r.qty + ' @ ' + money(r.unitPrice) + (r.channelNote ? ' · ' + t('abx_via') + ' ' + r.channelNote : '')
+        : r.type === 'credit' ? r.customerName + ' — ' + r.productName + ' × ' + r.qty
+        : r.type === 'expense' || r.type === 'other' ? r.itemName + (r.note ? ' — ' + r.note : '')
+        : r.type === 'deposit' ? (r.directDepositRef || '') + (r.note ? ' — ' + r.note : '')
+        : (r.note || '');
+      var st = r.status === 'ok' ? '<span class="badge confirmed">'+esc(t('areaBulk_valid'))+'</span>' : '<span class="badge rejected">'+esc(r.statusText || t(r.status))+'</span>';
+      return '<tr class="'+(r.status === 'ok' ? '' : 'abx-bad')+'"><td>'+r.line+'</td><td><bdi dir="ltr">'+esc(r.date || '')+'</bdi></td><td>'+esc(r.branchName)+'</td><td>'+esc(r.posLabel)+'</td>' +
+        '<td>'+esc(r.type ? t('abx_t_' + r.type) : '')+'</td><td>'+esc(what)+'</td><td class="n num">'+money(r.amount || 0)+'</td><td>'+st+'</td></tr>';
     }).join('');
-    wrap.innerHTML = '<h2 style="margin-top:14px;">'+esc(t('entry_importPreview'))+'</h2>' +
-      '<div class="tbl-scroll"><table><thead><tr><th>'+esc(t('areaBulk_col_row'))+'</th><th>'+esc(t('areaBulk_col_date'))+'</th>' +
-      '<th>'+esc(t('areaBulk_col_location'))+'</th><th>'+esc(t('areaBulk_col_type'))+'</th><th>'+esc(t('areaBulk_col_source'))+'</th>' +
-      '<th>'+esc(t('entry_lineProduct'))+'</th><th>'+esc(t('entry_qty'))+'</th><th>'+esc(t('entry_unitPrice'))+'</th>' +
-      '<th>'+esc(t('entry_paymentMethod'))+'</th><th>'+esc(t('entry_lineSubtotal'))+'</th><th>'+esc(t('areaBulk_col_status'))+'</th></tr></thead><tbody>'+rows+'</tbody></table></div>' +
+    wrap.innerHTML = '<h2 style="margin-top:14px;">'+esc(t('entry_importPreview'))+' <span class="rp-n">'+pendingRows.length+'</span></h2>' +
+      (badN ? '<div class="msg err">'+esc(t('abx_badRows').replace('{n}', badN))+'</div>' : '') +
+      '<div class="tbl-scroll"><table class="rp-table"><thead><tr><th>'+esc(t('abx_line'))+'</th><th>'+esc(t('abx_c_date'))+'</th><th>'+esc(t('abx_c_branch'))+'</th><th>'+esc(t('abx_c_posId'))+'</th>' +
+      '<th>'+esc(t('abx_c_type'))+'</th><th>'+esc(t('abx_details'))+'</th><th class="n">'+esc(t('abx_c_amount'))+'</th><th>'+esc(t('areaBulk_col_status'))+'</th></tr></thead><tbody>'+rows+'</tbody></table></div>' +
       (allValid ? '<div id="abCalcWrap">'+esc(t('loading'))+'</div>' : '<div class="msg err" style="margin-top:10px;">'+esc(t('areaBulk_needsAllValid'))+'</div>');
 
     if (!allValid) return;
@@ -8239,25 +8413,42 @@ function renderAreaBulk(body){
     api('bulkSubmitAreaBatch', { clusterId: currentClusterId(), rows: pendingRows, dryRun: true }).then(function(res){
       var calcWrap = qs('#abCalcWrap', wrap);
       if (!calcWrap) return;
-      if (!res.ok){ calcWrap.innerHTML = '<div class="msg err">'+esc(errMsg_(res))+'</div>'; return; }
+      if (!res.ok){
+        // the server's reason goes on the row it is about
+        if (res.error === 'invalid_rows' && Array.isArray(res.results) && res.results.length) {
+          res.results.forEach(function(x){ var r = pendingRows[x.row]; if (r) { r.status = 'srv'; r.statusText = errMsg_({ error: x.error }); } });
+          renderAreaBulkPreview();
+          return;
+        }
+        calcWrap.innerHTML = '<div class="msg err">'+esc(errMsg_(res))+'</div>'; return;
+      }
       var b = res.batch.breakdown;
       calcWrap.innerHTML = '<h2 style="margin-top:14px;">'+esc(t('areaBulk_calcTitle'))+'</h2>' +
         '<div class="muted" style="font-size:12.5px;margin-bottom:8px;">'+esc(t('areaBulk_calcHint'))+'</div>' +
         '<div style="font-size:24px;font-weight:800;text-align:center;margin-bottom:6px;">'+money(b.netCashOwed)+'</div>' +
         breakdownGrid(b) +
         handoffDetailRows(res.batch) +
-        productBreakdownBlock_(pendingRows) +
+        productBreakdownBlock_(pendingRows.filter(function(r){ return r.productId && r.qty > 0; })) +
         (b.deliveryFee > 0 ? vatExplainBlock_(b) : '') +
         '<button class="btn" id="abSubmit" style="margin-top:14px;">'+esc(t('areaBulk_submit'))+'</button>';
       qs('#abSubmit', calcWrap).addEventListener('click', function(){
-        api('bulkSubmitAreaBatch', { clusterId: currentClusterId(), rows: pendingRows }).then(function(res2){
-          if (!res2.ok){ qs('#abMsg',card).innerHTML = '<div class="msg err">'+esc(errMsg_(res2))+'</div>'; return; }
+        var chunks = abxChunks_(pendingRows), done = 0, btnS = this; btnS.disabled = true;
+        (function next(){
+          if (done >= chunks.length) return finish({ ok: true });
+          api('bulkSubmitAreaBatch', { clusterId: currentClusterId(), rows: chunks[done] }).then(function(rc){
+            if (!rc.ok) return finish(rc);
+            done++; qs('#abMsg',card).innerHTML = '<div class="msg">'+esc(t('abx_sending').replace('{n}', done).replace('{total}', chunks.length))+'</div>'; next();
+          });
+        })();
+        function finish(res2){
+          btnS.disabled = false;
+          if (!res2.ok){ qs('#abMsg',card).innerHTML = '<div class="msg err">'+esc(errMsg_(res2) + (done ? ' — ' + t('abx_partSent').replace('{n}', done) : ''))+'</div>'; return; }
           qs('#abMsg',card).innerHTML = '<div class="msg ok">'+esc(t('ok_saved'))+'</div>';
           pendingRows = [];
           renderAreaBulkPreview();
           qs('#abFile', card).value = '';
           loadAreaBulkHistory();
-        });
+        }
       });
     });
   }

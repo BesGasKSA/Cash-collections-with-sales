@@ -2595,6 +2595,33 @@ check(call({ action: 'adminSaveEntity', token: adminTok, kind: 'product', data: 
 check(call({ action: 'adminSaveEntity', token: adminTok, kind: 'product', id: golP.id, data: { type: 'services' } }).error === 'has_stock', 'an item with stock movements stays an inventory item');
 check(call({ action: 'getInventoryReport', token: financeTok, dateFrom: '2026-09-30', dateTo: '2026-09-01' }).error === 'invalid_input', 'a period that ends before it starts is refused');
 
+console.log('--- area Excel: every section of every POS in one upload ---');
+call({ action: 'adminSetConfig', token: adminTok, data: { areaManagerBulkUploadEnabled: true } });
+(function () { var fee = {}, com = {}; fee[invP.entity.id] = 3; com[invP.entity.id] = 1; call({ action: 'adminSaveEntity', token: adminTok, kind: 'channel', id: souq.entity.id, data: { deliveryFees: fee, commissions: com } }); })();
+var xlDate = '2026-09-24';
+var xlRows = [
+  // a sale, part of it through Souq Gas
+  { date: xlDate, sourceType: 'pos', sourceId: dpPos.id, productId: invP.entity.id, qty: 10, unitPrice: 30, cashSales: 300, channelQtys: (function () { var o = {}; o[souq.entity.id] = 4; return o; })() },
+  // a sale on credit to a named customer: counted once, as a sale and as credit
+  { date: xlDate, sourceType: 'pos', sourceId: dpPos.id, productId: invP.entity.id, qty: 5, unitPrice: 30, cashSales: 150, creditSales: 150, creditCustomer: 'Nakheel Restaurant', creditItems: [{ productId: invP.entity.id, qty: 5, unitPrice: 30 }] },
+  { date: xlDate, sourceType: 'pos', sourceId: dpPos.id, bankTransferAmount: 50, note: 'TRX-9' },
+  { date: xlDate, sourceType: 'pos', sourceId: dpPos.id, expenseAmount: 20, expenseItemId: expenseItem.entity.id, expenseReason: 'fuel' },
+  { date: xlDate, sourceType: 'pos', sourceId: dpPos.id, otherCash: 15, otherCashItemId: incomeItem.entity.id, otherCashReason: 'old credit paid' },
+  { date: xlDate, sourceType: 'pos', sourceId: dpPos.id, directDepositAmount: 100, directDepositRef: 'MZ-XL-1', directDepositNote: 'day banking' }
+];
+var xlDry = call({ action: 'bulkSubmitAreaBatch', token: saraTok, clusterId: cluster.entity.id, rows: xlRows, dryRun: true });
+check(xlDry.ok, 'an area file with sales, Souq Gas, credit, transfer, expense, other income and a الموازنة passes (' + (xlDry.error || '') + JSON.stringify(xlDry.results || '') + ')');
+var xb = xlDry.ok ? xlDry.batch.breakdown : {};
+close(xb.creditSales, 150, 'the credit line is deducted as credit');
+close(xb.bankTransfers, 50, 'the transfer is deducted');
+check(xb.channelDeliveryFees > 0 && xb.channelCommissions > 0, 'Souq Gas brings its own delivery fee and commission');
+check(xb.creditCommissions >= 0, 'and the customer\'s commission is worked out from the customer profile');
+var xlReal = call({ action: 'bulkSubmitAreaBatch', token: saraTok, clusterId: cluster.entity.id, rows: xlRows });
+check(xlReal.ok && xlReal.batch.status === 'pending_deputy', 'the file goes to the deputy for approval');
+close(xlReal.batch.breakdown.netCashOwed, xb.netCashOwed, 'and the real submission computes exactly what the preview showed');
+var xlInv = call({ action: 'getInventoryReport', token: financeTok, dateFrom: '2026-09-24', dateTo: '2026-09-24', locationId: dpLoc.id }).rows.filter(function (r) { return r.productId === invP.entity.id; })[0];
+check(xlInv && xlInv.sales === 15, 'stock counts the 10 sold and the 5 on credit once each (got ' + (xlInv && xlInv.sales) + ')');
+
 console.log('--- a day entered for a POS machine banks its الموازنة on that same machine ---');
 var bwPh = call({ action: 'uploadEntryPhoto', token: bwTok, fileBase64: 'iVBORw0KGgo=', fileName: 'mz.png', fileMime: 'image/png' });
 var bwMz = { action: 'createDailyEntry', token: bwTok, date: '2026-09-21', sourceType: 'pos', sourceId: bwPos.entity.id, cashSales: 900, directDepositAmount: 400, directDepositRef: 'POS-MZ-1', directDepositPhotoId: bwPh.fileId };

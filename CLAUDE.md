@@ -1065,6 +1065,20 @@ back `short:true` and the screen flags it without a minus sign. Screen
 `renderInventory` (nav المخزون); its equation card is `no-collapse` so the ending
 stock stays in view on a phone.
 
+**The area manager's Excel (2026-09-29).** The area bulk upload reads an .xlsx
+(`abxTemplate_` builds it with ExcelJS: sheet الإدخال with one prefilled row per
+POS in the area, dropdowns fed from sheet القوائم, and طريقة التعبئة; `abxRead_`
+reads it with SheetJS). One row is one line of one POS's day, typed by
+`ABX_TYPES_`: sale (item, qty, price, plus one "of which via <channel>" column
+per sales channel → `channelQtys`), credit (customer, item, qty: one entry row
+carrying `cashSales` and `creditSales` and `creditItems`, so the units count once
+for stock and the credit comes off the cash), transfer, deposit (الموازنة with a
+bank reference, no photo; `directDepositPosId` = the row's POS), expense and other
+collection (item + reason), delivery fee. `abxRows_` turns rows into the same
+entry rows the form writes and checks each; the server dry run's per-row errors
+land on their rows. Files over 450 lines go up as several batches, whole branches
+each (`abxChunks_`). Tests: "area Excel" section in tests/run.js.
+
 **Grouped pickers (2026-09-29).** `sourceOptionsGrouped_` puts an area manager's
 sources in one `<optgroup>` per branch; the designed dropdown (`ddOpen_`) draws
 each group as a header that folds (closed except the group holding the choice; a
