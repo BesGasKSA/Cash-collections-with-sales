@@ -1037,7 +1037,18 @@ language (ar/ur = RTL, en = LTR), not a fixed setting. Add a language by
 adding one more key to `L` and one `<option>` in the two language
 `<select>` elements (login screen and header) — no other code changes.
 
-**Drivers sign in with their iqama number (2026-09-29).** An account may have no email when it has an :  then makes it with a readable temporary password (, , ) returned to the admin once as , and sends nothing.  does the same for a sheet of drivers. The sign-in box takes an email or an iqama number (;  turns Arabic digits to ASCII, drops spaces/dashes, capitalises passport letters). One iqama per account ().  returns null so a blank login never matches an account without email, and  drops blank addresses. A reset on such an account returns a new  instead of emailing. The admin screen shows it once ().
+**Drivers sign in with their iqama number (2026-09-29).** An account may have no
+email when it has an `iqamaId`: `adminCreateUser` then makes it with a readable
+temporary password (`createIqamaUser_`, `readablePassword_`, `mustChangePw`)
+returned to the admin once as `tempPassword`, and sends nothing.
+`adminImportUsers` does the same for a sheet of drivers. The sign-in box takes an
+email or an iqama number (`userByLogin_`; `normIqama_` turns Arabic digits to
+ASCII, drops spaces and dashes, capitalises passport letters). One iqama per
+account (`iqama_exists`). `userByEmail_('')` returns null, so a blank login never
+matches an account without email, and `sendMail_` drops blank addresses. A reset
+on such an account returns a new `tempPassword` instead of emailing; the admin
+screen shows it once (`tempPwBox_`). A driver enters sales for any POS device
+whose `assignedUserId` is them, with or without a car.
 
 **Names in English and Urdu (2026-09-29).** Master data is typed in Arabic; the
 `translations` sheet (`{src, en, ur, auto}`, keyed by the Arabic text) holds each
