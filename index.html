@@ -1898,7 +1898,7 @@ var ICON_B64 = 'iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAYAAAA9zQYyAAAcG0lEQVR42u2dd1cU
 // Stamped by tools/stamp-build.js at publish time so the running app can
 // say which build it is — a cached page is the usual reason a shipped change
 // seems missing.
-var BUILD_ID = '2026-09-29 12:57 · 5ef4c85';
+var BUILD_ID = '2026-09-29 13:56 · 13b4471';
 var LOGO_SRC = 'data:image/png;base64,' + LOGO_B64;
 var ICON_SRC = LOGO_SRC; // same asset — see the comment above LOGO_B64
 
@@ -9710,8 +9710,11 @@ function posSheetRow_(idx, cells){
   var config = c('pos config'), holder = c('name'), iq = c('id'), dev = c('device id'), branch = c('branch'), mob = c('mobile pos configuration');
   if (!config && !dev && !branch) return null;
   var errs = [], warns = [], data = { label: config || dev, posId: dev, posConfig: /not found/i.test(mob) ? '' : mob, holderName: holder, holderIqama: iq };
-  var b = posBranchOf_(branch, config);
-  if (!b.x) errs.push(t('pos_imp_branch').replace('{v}', branch));
+  // the branch's own number, when the sheet carries it, is an exact match
+  var brCode = c('الرقم'), brName = c('اسم الفرع');
+  var byCode = brCode ? (meta.locations || []).filter(function(l){ return String(l.code || '').toLowerCase() === brCode.toLowerCase(); })[0] : null;
+  var b = byCode ? { x: byCode } : posBranchOf_(branch, (brName ? brName + ' ' : '') + config);
+  if (!b.x) errs.push(t('pos_imp_branch').replace('{v}', [brCode, brName || branch].filter(Boolean).join(' ')));
   else {
     var plate = (config.match(/\d{3,4}/) || [])[0];
     var cars = (meta.cars || []).filter(function(x){ return x.locationId === b.x.id && x.active !== false; });
