@@ -2324,7 +2324,8 @@ close(cdNet.creditDeliveryFees, 100, 'the delivery fee is an addition, on its ow
 close(cdNet.creditCommissions, 50, 'the commission is a deduction, on its own line');
 // the customer owes the fee on account with the goods, so the fee adds no
 // cash; the commission the driver keeps comes off
-close(cdNet.netCashOwed, 5000 - 2250 - 50, 'the cash to hand over: sales, less the credit, less the commission');
+// the fee is only ever added (the user, 2026-09-29); the commission comes off
+close(cdNet.netCashOwed, 5000 - 2250 + 100 - 50, 'the cash to hand over: sales, less the credit, plus the delivery fee, less the commission');
 check(cdLine(cdCust.id, 2, 42).error === 'price_locked', 'there are no special prices: a fixed price stays fixed for everyone');
 var cdPlain = call({ action: 'adminSaveEntity', token: adminTok, kind: 'customer', data: { name: 'No Fee Customer', city: 'Riyadh' } }).entity;
 var cdNone = cdLine(cdPlain.id, 10, 45);
