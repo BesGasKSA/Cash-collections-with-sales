@@ -158,10 +158,6 @@ function deliveryNeedsSale_(sourceType, sourceId, date, cashSales, posSales, sib
 function settleCredit_(r) {
   var items = r.creditItems;
   var clean = [];
-  // the customer's own prices win over the product's, fixed or not
-  var buyer = r.creditCustomerId ? getById_(SHEETS.CUSTOMERS, r.creditCustomerId)
-    : (String(r.creditCustomer || '').trim() ? findCustomer_(r.creditCustomer) : null);
-  var ownPrices = (buyer && buyer.prices) || {};
   if (items != null && items !== '') {
     if (!Array.isArray(items) || items.length > 50) return 'invalid_input';
     var total = 0;
@@ -171,9 +167,7 @@ function settleCredit_(r) {
       if (!p || p.active === false) return 'invalid_product';
       var q = Number(it.qty), up = Number(it.unitPrice);
       if (!isFinite(q) || q <= 0 || !isFinite(up) || up < 0) return 'invalid_input';
-      var own = hasOwn_(ownPrices, p.id) ? ownPrices[p.id] : null;
-      if (own != null && own !== '') { if (Math.abs(up - Number(own)) > 0.005) return 'price_locked'; }
-      else if (p.priceLocked && p.unitPrice != null && p.unitPrice !== '' && Math.abs(up - Number(p.unitPrice)) > 0.005) return 'price_locked';
+      if (p.priceLocked && p.unitPrice != null && p.unitPrice !== '' && Math.abs(up - Number(p.unitPrice)) > 0.005) return 'price_locked';
       var amt = Math.round(q * up * 100) / 100;
       clean.push({ productId: p.id, qty: q, unitPrice: up, amount: amt });
       total += amt;
@@ -185,6 +179,8 @@ function settleCredit_(r) {
     }
   }
   r.creditItems = clean.length ? clean : null;
+  r.creditDeliveryFee = 0;
+  r.creditCommission = 0;
   if (!(Number(r.creditSales || 0) > 0)) { r.creditCustomerId = null; return null; }
   var c;
   if (r.creditCustomerId) {
@@ -198,6 +194,19 @@ function settleCredit_(r) {
   if (c.active === false) return 'invalid_customer';
   r.creditCustomerId = c.id;
   r.creditCustomer = c.name;
+  // The customer's delivery fee per unit, on the units this line took. The
+  // server works it out; whatever the client sent is replaced.
+  // The fee is an addition the customer owes on account with the goods; the
+  // driver's commission per unit is a deduction.
+  var fees = c.deliveryFees || {}, coms = c.commissions || {}, fee = 0, com = 0;
+  (r.creditItems || []).forEach(function (it) {
+    var per = hasOwn_(fees, it.productId) ? Number(fees[it.productId]) : 0;
+    if (per > 0) { it.deliveryFee = Math.round(it.qty * per * 100) / 100; fee += it.deliveryFee; }
+    var cm = hasOwn_(coms, it.productId) ? Number(coms[it.productId]) : 0;
+    if (cm > 0) { it.commission = Math.round(it.qty * cm * 100) / 100; com += it.commission; }
+  });
+  r.creditDeliveryFee = Math.round(fee * 100) / 100;
+  r.creditCommission = Math.round(com * 100) / 100;
   return null;
 }
 
@@ -240,7 +249,7 @@ function checkNonSalesFields_(r, siblingCash) {
     // `siblingCash` is the cash on the OTHER rows of the same submission for
     // the same source and date: one real day gets split across several rows
     // in product mode, and the deposit rides on the first of them.
-    var inHand = Number(r.cashSales || 0) - Number(r.creditSales || 0) - transfer + Number(siblingCash || 0) + other
+    var inHand = Number(r.cashSales || 0) - Number(r.creditSales || 0) - Number(r.creditCommission || 0) - transfer + Number(siblingCash || 0) + other
       - delivery + (delivery > 0 ? (delivery / (1 + vat)) * vat : 0) - exp;
     if (dep > inHand + 0.005) return 'deposit_exceeds_cash';
   }
@@ -259,7 +268,7 @@ function siblingCash_(rows, index) {
     var o = rows[i] || {};
     if (o.sourceType === me.sourceType && o.sourceId === me.sourceId && o.date === me.date) {
       var dl = Number(o.deliveryFeeBankAmount || 0);
-      sum += Number(o.cashSales || 0) - Number(o.creditSales || 0) - Number(o.bankTransferAmount || 0)
+      sum += Number(o.cashSales || 0) - Number(o.creditSales || 0) - Number(o.creditCommission || 0) - Number(o.bankTransferAmount || 0)
         + Number(o.otherCash || 0) - Number(o.expenseAmount || 0) - dl + (dl > 0 ? (dl / (1 + vat)) * vat : 0)
         - Number(o.directDepositAmount || 0);
     }
@@ -323,7 +332,9 @@ function nonSalesFields_(r) {
     deliveryNote: Number(r.deliveryFeeBankAmount || 0) > 0 ? String(r.deliveryNote || '').trim() : '',
     creditCustomer: Number(r.creditSales || 0) > 0 ? String(r.creditCustomer || '').trim() : '',
     creditCustomerId: Number(r.creditSales || 0) > 0 ? (r.creditCustomerId || null) : null,
-    creditItems: Number(r.creditSales || 0) > 0 && r.creditItems && r.creditItems.length ? r.creditItems : null
+    creditItems: Number(r.creditSales || 0) > 0 && r.creditItems && r.creditItems.length ? r.creditItems : null,
+    creditDeliveryFee: Number(r.creditSales || 0) > 0 ? Number(r.creditDeliveryFee || 0) : 0,
+    creditCommission: Number(r.creditSales || 0) > 0 ? Number(r.creditCommission || 0) : 0
   };
 }
 
@@ -693,8 +704,10 @@ function entrySalesTotal_(e) {
 //               - expenses - directDeposit - creditSales
 function computeNet_(entries) {
   var storeCash = 0, carCash = 0, posCash = 0, deliveryFee = 0, posSales = 0, creditSales = 0;
-  var otherCash = 0, expenses = 0, directDeposit = 0, bankTransfers = 0;
+  var otherCash = 0, expenses = 0, directDeposit = 0, bankTransfers = 0, creditDeliveryFees = 0, creditCommissions = 0;
   entries.forEach(function (e) {
+    creditDeliveryFees += Number(e.creditDeliveryFee || 0);
+    creditCommissions += Number(e.creditCommission || 0);
     bankTransfers += Number(e.bankTransferAmount || 0);
     // A sale on credit is part of the day's takings figure the branch
     // enters, but no money came in for it — so it is DEDUCTED below,
@@ -715,12 +728,14 @@ function computeNet_(entries) {
   var vatOnDelivery = deliveryFee > 0 ? (deliveryFee / (1 + vat)) * vat : 0;
   // a customer's bank transfer is inside the sales figure like a credit
   // sale, but the money went straight to the bank: it comes off too
-  var netCashOwed = storeCash + carCash + posCash + otherCash - deliveryFee + vatOnDelivery - expenses - directDeposit - creditSales - bankTransfers;
+  var netCashOwed = storeCash + carCash + posCash + otherCash - deliveryFee + vatOnDelivery - expenses - directDeposit - creditSales - bankTransfers - creditCommissions;
+  // (a credit delivery fee is an addition the customer also owes on account,
+  // so it adds and comes off again: no cash moves for it)
   return {
     storeCash: storeCash, carCash: carCash, posCash: posCash, deliveryFee: deliveryFee,
     posSales: posSales, creditSales: creditSales, vatOnDelivery: vatOnDelivery,
     otherCash: otherCash, expenses: expenses, directDeposit: directDeposit, bankTransfers: bankTransfers,
-    netCashOwed: netCashOwed
+    creditDeliveryFees: creditDeliveryFees, creditCommissions: creditCommissions, netCashOwed: netCashOwed
   };
 }
 
@@ -732,9 +747,11 @@ function computeNet_(entries) {
 // way to see what it was made of.
 function sumBreakdowns_(breakdowns) {
   var out = { storeCash: 0, carCash: 0, posCash: 0, deliveryFee: 0, posSales: 0, creditSales: 0, vatOnDelivery: 0,
-    otherCash: 0, expenses: 0, directDeposit: 0, bankTransfers: 0, netCashOwed: 0 };
+    otherCash: 0, expenses: 0, directDeposit: 0, bankTransfers: 0, creditDeliveryFees: 0, creditCommissions: 0, netCashOwed: 0 };
   breakdowns.forEach(function (b) {
     if (!b) return;
+    out.creditCommissions += Number(b.creditCommissions || 0);
+    out.creditDeliveryFees += Number(b.creditDeliveryFees || 0);
     out.bankTransfers += Number(b.bankTransfers || 0);
     out.storeCash += Number(b.storeCash || 0);
     out.carCash += Number(b.carCash || 0);
