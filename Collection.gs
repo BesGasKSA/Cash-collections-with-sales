@@ -210,8 +210,25 @@ function settleCredit_(r) {
   return null;
 }
 
+// A sale through a channel (the Souq Gas app): the channel's delivery fee and
+// driver commission per unit, on this row's quantity. The server works both
+// out; whatever the client sent is replaced.
+function settleChannel_(r) {
+  r.channelDeliveryFee = 0; r.channelCommission = 0;
+  if (!r.channelId) { r.channelId = null; return null; }
+  var ch = getById_(SHEETS.CHANNELS, r.channelId);
+  if (!ch || ch.active === false) return 'invalid_channel';
+  var qty = Number(r.qty || 0), pid = r.productId;
+  if (qty > 0 && pid) {
+    var fee = Number((ch.deliveryFees || {})[pid] || 0), com = Number((ch.commissions || {})[pid] || 0);
+    r.channelDeliveryFee = Math.round(qty * fee * 100) / 100;
+    r.channelCommission = Math.round(qty * com * 100) / 100;
+  }
+  return null;
+}
+
 function checkNonSalesFields_(r, siblingCash) {
-  var creditErr = settleCredit_(r);
+  var creditErr = settleCredit_(r) || settleChannel_(r);
   if (creditErr) return creditErr;
   var other = Number(r.otherCash || 0);
   if (other < 0 || Number(r.expenseAmount || 0) < 0 || Number(r.directDepositAmount || 0) < 0) return 'invalid_input';
@@ -249,7 +266,7 @@ function checkNonSalesFields_(r, siblingCash) {
     // `siblingCash` is the cash on the OTHER rows of the same submission for
     // the same source and date: one real day gets split across several rows
     // in product mode, and the deposit rides on the first of them.
-    var inHand = Number(r.cashSales || 0) - Number(r.creditSales || 0) - Number(r.creditCommission || 0) + Number(r.creditDeliveryFee || 0) - transfer + Number(siblingCash || 0) + other
+    var inHand = Number(r.cashSales || 0) - Number(r.creditSales || 0) - Number(r.creditCommission || 0) + Number(r.creditDeliveryFee || 0) + Number(r.channelDeliveryFee || 0) - Number(r.channelCommission || 0) - transfer + Number(siblingCash || 0) + other
       - delivery + (delivery > 0 ? (delivery / (1 + vat)) * vat : 0) - exp;
     if (dep > inHand + 0.005) return 'deposit_exceeds_cash';
   }
@@ -268,7 +285,7 @@ function siblingCash_(rows, index) {
     var o = rows[i] || {};
     if (o.sourceType === me.sourceType && o.sourceId === me.sourceId && o.date === me.date) {
       var dl = Number(o.deliveryFeeBankAmount || 0);
-      sum += Number(o.cashSales || 0) - Number(o.creditSales || 0) - Number(o.creditCommission || 0) + Number(o.creditDeliveryFee || 0) - Number(o.bankTransferAmount || 0)
+      sum += Number(o.cashSales || 0) - Number(o.creditSales || 0) - Number(o.creditCommission || 0) + Number(o.creditDeliveryFee || 0) + Number(o.channelDeliveryFee || 0) - Number(o.channelCommission || 0) - Number(o.bankTransferAmount || 0)
         + Number(o.otherCash || 0) - Number(o.expenseAmount || 0) - dl + (dl > 0 ? (dl / (1 + vat)) * vat : 0)
         - Number(o.directDepositAmount || 0);
     }
@@ -334,7 +351,10 @@ function nonSalesFields_(r) {
     creditCustomerId: Number(r.creditSales || 0) > 0 ? (r.creditCustomerId || null) : null,
     creditItems: Number(r.creditSales || 0) > 0 && r.creditItems && r.creditItems.length ? r.creditItems : null,
     creditDeliveryFee: Number(r.creditSales || 0) > 0 ? Number(r.creditDeliveryFee || 0) : 0,
-    creditCommission: Number(r.creditSales || 0) > 0 ? Number(r.creditCommission || 0) : 0
+    creditCommission: Number(r.creditSales || 0) > 0 ? Number(r.creditCommission || 0) : 0,
+    channelId: r.channelId || null,
+    channelDeliveryFee: Number(r.channelDeliveryFee || 0),
+    channelCommission: Number(r.channelCommission || 0)
   };
 }
 
@@ -705,7 +725,10 @@ function entrySalesTotal_(e) {
 function computeNet_(entries) {
   var storeCash = 0, carCash = 0, posCash = 0, deliveryFee = 0, posSales = 0, creditSales = 0;
   var otherCash = 0, expenses = 0, directDeposit = 0, bankTransfers = 0, creditDeliveryFees = 0, creditCommissions = 0;
+  var channelDeliveryFees = 0, channelCommissions = 0;
   entries.forEach(function (e) {
+    channelDeliveryFees += Number(e.channelDeliveryFee || 0);
+    channelCommissions += Number(e.channelCommission || 0);
     creditDeliveryFees += Number(e.creditDeliveryFee || 0);
     creditCommissions += Number(e.creditCommission || 0);
     bankTransfers += Number(e.bankTransferAmount || 0);
@@ -730,12 +753,13 @@ function computeNet_(entries) {
   // sale, but the money went straight to the bank: it comes off too
   var netCashOwed = storeCash + carCash + posCash + otherCash - deliveryFee + vatOnDelivery - expenses - directDeposit - creditSales - bankTransfers - creditCommissions
     // a credit customer's delivery fee is only ever added (the user, 2026-09-29)
-    + creditDeliveryFees;
+    + creditDeliveryFees + channelDeliveryFees - channelCommissions;
   return {
     storeCash: storeCash, carCash: carCash, posCash: posCash, deliveryFee: deliveryFee,
     posSales: posSales, creditSales: creditSales, vatOnDelivery: vatOnDelivery,
     otherCash: otherCash, expenses: expenses, directDeposit: directDeposit, bankTransfers: bankTransfers,
-    creditDeliveryFees: creditDeliveryFees, creditCommissions: creditCommissions, netCashOwed: netCashOwed
+    creditDeliveryFees: creditDeliveryFees, creditCommissions: creditCommissions,
+    channelDeliveryFees: channelDeliveryFees, channelCommissions: channelCommissions, netCashOwed: netCashOwed
   };
 }
 
@@ -747,9 +771,11 @@ function computeNet_(entries) {
 // way to see what it was made of.
 function sumBreakdowns_(breakdowns) {
   var out = { storeCash: 0, carCash: 0, posCash: 0, deliveryFee: 0, posSales: 0, creditSales: 0, vatOnDelivery: 0,
-    otherCash: 0, expenses: 0, directDeposit: 0, bankTransfers: 0, creditDeliveryFees: 0, creditCommissions: 0, netCashOwed: 0 };
+    otherCash: 0, expenses: 0, directDeposit: 0, bankTransfers: 0, creditDeliveryFees: 0, creditCommissions: 0, channelDeliveryFees: 0, channelCommissions: 0, netCashOwed: 0 };
   breakdowns.forEach(function (b) {
     if (!b) return;
+    out.channelDeliveryFees += Number(b.channelDeliveryFees || 0);
+    out.channelCommissions += Number(b.channelCommissions || 0);
     out.creditCommissions += Number(b.creditCommissions || 0);
     out.creditDeliveryFees += Number(b.creditDeliveryFees || 0);
     out.bankTransfers += Number(b.bankTransfers || 0);
