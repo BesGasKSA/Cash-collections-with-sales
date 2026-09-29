@@ -369,6 +369,32 @@
   .tbl-search::after{content:'';position:absolute;top:60%;inset-inline-start:23px;width:6px;height:2px;background:var(--muted-2);transform:rotate(45deg);pointer-events:none;}
   html[dir="rtl"] .tbl-search::after{inset-inline-start:auto;inset-inline-end:23px;transform:rotate(-45deg);}
   .tbl-scroll{overflow-x:auto;}
+  .inv-bar-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;}
+  .inv-presets{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:6px;}
+  .inv-presets button{border:1px solid var(--border);background:var(--card);border-radius:8px;padding:5px 12px;font:inherit;font-size:12.5px;cursor:pointer;color:var(--text);}
+  .inv-presets button:active{transform:scale(.97);}
+  .inv-val{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;margin-inline-start:auto;cursor:pointer;white-space:nowrap;}
+  .inv-tag{font-style:normal;font-size:10.5px;font-weight:700;border-radius:5px;padding:0 6px;margin-inline-start:4px;}
+  .inv-tag-add{background:var(--green-pale);color:var(--green-dark);}
+  .inv-tag-ded{background:var(--warn-bg);color:var(--warn);}
+  .inv-eq-hint{font-size:12.5px;line-height:1.8;margin:0 0 12px;max-width:80ch;}
+  .inv-eq-row{display:flex;flex-wrap:wrap;align-items:stretch;gap:6px;}
+  .inv-op{align-self:center;font-weight:800;font-size:18px;color:var(--muted);padding:0 2px;}
+  .inv-fig{flex:1 1 120px;min-width:118px;border:1px solid var(--border-soft);border-radius:12px;padding:10px 12px;background:var(--card);display:flex;flex-direction:column;gap:2px;}
+  .inv-fig span{font-size:12px;font-weight:700;color:var(--muted);}
+  .inv-fig b{font-size:17px;font-variant-numeric:tabular-nums;}
+  .inv-fig small{font-size:11px;color:var(--muted);}
+  .inv-fig.inv-available{background:var(--bg);}
+  .inv-fig.inv-ending{background:var(--green);border-color:var(--green);}
+  .inv-fig.inv-ending span,.inv-fig.inv-ending b,.inv-fig.inv-ending small{color:#fff;}
+  .inv-short{color:var(--warn);font-weight:700;}
+  .inv-short-row td{background:var(--warn-bg);}
+  .inv-void td{opacity:.5;text-decoration:line-through;}
+  .inv-void td.col-actions{text-decoration:none;}
+  .inv-k{display:inline-block;font-size:11.5px;font-weight:700;padding:2px 8px;border-radius:6px;background:var(--bg);}
+  .inv-k-purchase,.inv-k-opening{background:var(--green-pale);color:var(--green-dark);}
+  .inv-k-damage{background:var(--warn-bg);color:var(--warn);}
+  @media (max-width:640px){ .inv-bar-row{grid-template-columns:1fr 1fr;} .inv-bar-row .field:last-child{grid-column:1 / -1;} .inv-op{display:none;} .inv-fig{flex-basis:calc(50% - 6px);} .inv-val{margin-inline-start:0;} }
   .ex-bar{display:inline-flex;gap:6px;flex-wrap:wrap;align-items:center;}
   .rp-all-bar{display:flex;gap:8px;flex-wrap:wrap;}
   .trx-hint{font-size:13px;line-height:1.85;margin:0 0 12px;max-width:68ch;}
@@ -1910,6 +1936,13 @@
   .dd-search svg{width:16px;height:16px;flex:none;stroke:var(--muted);fill:none;stroke-width:2.2;stroke-linecap:round;}
   .dd-search input.dd-q{border:0 !important;background:transparent !important;box-shadow:none !important;padding:9px 0 !important;
     min-height:0 !important;font-size:14px;font-weight:500;direction:inherit;text-align:start;}
+  .dd-grp{display:flex;align-items:center;gap:8px;padding:9px 12px;margin-top:2px;font-weight:800;font-size:13px;cursor:pointer;border-radius:8px;background:var(--bg);color:var(--green-dark);position:sticky;top:0;z-index:1;}
+  .dd-grp:active{transform:scale(.99);}
+  .dd-grp-car svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2.4;transform:rotate(90deg);transition:transform .15s ease;}
+  [dir="ltr"] .dd-grp-car svg{transform:rotate(-90deg);}
+  .dd-grp.open .dd-grp-car svg{transform:none;}
+  .dd-grp-t{flex:1;}
+  .dd-grp-n{font-size:11px;font-weight:700;background:var(--card);border-radius:999px;padding:1px 8px;color:var(--muted);}
   .dd-list{position:relative;list-style:none;margin:0;padding:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;}
   .dd-opt{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;cursor:pointer;font-size:14px;
     color:var(--text);transition:background .1s ease;user-select:none;}
@@ -2124,7 +2157,7 @@ var L = {
     admin_addUser:'إضافة مستخدم', admin_name:'الاسم', admin_role:'الدور', admin_active:'نشط', admin_resetPw:'إعادة تعيين كلمة المرور',
     admin_addLocation:'إضافة فرع', admin_city:'المدينة', admin_locName:'اسم الفرع', admin_cluster:'المنطقة',
     admin_zones:'النطاقات', admin_addZone:'إضافة نطاق', admin_zoneName:'اسم النطاق', admin_zone:'النطاق',
-    admin_productType:'نوع المنتج', admin_typeGoods:'سلع', admin_typeServices:'خدمات',
+    admin_productType:'نوع المنتج', admin_typeGoods:'مخزني', admin_typeServices:'خدمات', nav_inventory:'المخزون', inv_title:'حركة المخزون', inv_hint:'رصيد أول المدة + المشتريات + المرتجع من المطاعم = المتاح للاستخدام، ثم يُطرح منه المبيعات (من إدخالات النظام) والتالف، فيبقى رصيد آخر المدة. القيم بسعر التكلفة.', inv_opening:'رصيد أول المدة', inv_purchases:'المشتريات', inv_returns:'مرتجع المطاعم', inv_available:'المتاح للاستخدام', inv_sales:'المبيعات', inv_damaged:'التالف', inv_ending:'رصيد آخر المدة', inv_unitCost:'تكلفة الوحدة', inv_from:'من', inv_to:'إلى', inv_allBranches:'كل الفروع', inv_thisMonth:'هذا الشهر', inv_lastMonth:'الشهر الماضي', inv_showValue:'عرض القيم بالتكلفة بدل الكميات', inv_qtyShort:'كمية', inv_byBranch:'المخزون حسب الفرع والصنف', inv_item:'الصنف', inv_items:'الأصناف: {n}', inv_tag_add:'يُضاف', inv_tag_ded:'يُخصم', inv_empty:'لا توجد حركة مخزون في هذه الفترة. ابدأ بتسجيل رصيد أول المدة لكل صنف.', inv_shortBadge:'عجز', inv_shortBy:'عجز {n}: المبيعات أكثر من الرصيد، راجع الحركات', inv_period:'الفترة من {from} إلى {to}', inv_moves:'حركات المخزون المسجلة', inv_kind:'نوع الحركة', inv_qty:'الكمية', inv_k_opening:'رصيد أول المدة', inv_k_purchase:'مشتريات', inv_k_return:'مرتجع من المطاعم', inv_k_damage:'تالف', inv_addTitle:'تسجيل حركة مخزون', inv_addHint:'المبيعات تُحسب تلقائياً من الإدخالات اليومية، فلا تُسجَّل هنا. رصيد أول المدة يُسجَّل مرة واحدة لكل صنف في كل فرع.', inv_notePh:'رقم فاتورة الشراء أو اسم المطعم أو سبب التلف', inv_save:'حفظ الحركة', inv_saved:'حُفظت الحركة', inv_needQty:'اكتب الكمية', inv_noMoves:'لا توجد حركات مسجلة في هذه الفترة', inv_void:'إلغاء الحركة', inv_voided:'ملغاة', inv_voidReason:'سبب إلغاء هذه الحركة؟', err_openingExists:'رصيد أول المدة مسجَّل لهذا الصنف في هذا الفرع. سجّل الفرق كمشتريات أو تالف، أو ألغِ الرصيد السابق.', err_notInventory:'هذا الصنف خدمة وليس له مخزون',
     admin_addStore:'إضافة متجر', admin_storeName:'اسم المتجر', admin_manager:'مدير الفرع', admin_location:'الفرع',
     admin_addCar:'إضافة سيارة', admin_carLabel:'رقم اللوحة/السائق', admin_driver:'السائق',
     admin_addPos:'إضافة جهاز', admin_posLabel:'رقم الجهاز', admin_ownerType:'مرتبط بـ', admin_owner:'الجهة', admin_assignedDriver:'الموظف المسؤول',
@@ -2292,7 +2325,7 @@ var L = {
     admin_addUser:'Add user', admin_name:'Name', admin_role:'Role', admin_active:'Active', admin_resetPw:'Reset password',
     admin_addLocation:'Add branch', admin_city:'City', admin_locName:'Branch name', admin_cluster:'Area',
     admin_zones:'Zones', admin_addZone:'Add zone', admin_zoneName:'Zone name', admin_zone:'Zone',
-    admin_productType:'Product type', admin_typeGoods:'Goods', admin_typeServices:'Services',
+    admin_productType:'Product type', admin_typeGoods:'Inventory', admin_typeServices:'Services', nav_inventory:'Inventory', inv_title:'Inventory movement', inv_hint:'Opening + purchases + returns from restaurants = available for use; less sales (from the system\'s entries) and damaged items leaves the ending stock. Values are at cost.', inv_opening:'Opening', inv_purchases:'Purchases', inv_returns:'Returns from restaurants', inv_available:'Available for use', inv_sales:'Sales', inv_damaged:'Damaged', inv_ending:'Ending stock', inv_unitCost:'Unit cost', inv_from:'From', inv_to:'To', inv_allBranches:'All branches', inv_thisMonth:'This month', inv_lastMonth:'Last month', inv_showValue:'Show values at cost instead of quantities', inv_qtyShort:'qty', inv_byBranch:'Stock by branch and item', inv_item:'Item', inv_items:'Items: {n}', inv_tag_add:'added', inv_tag_ded:'deducted', inv_empty:'No stock movement in this period. Start by recording each item\'s opening balance.', inv_shortBadge:'Short', inv_shortBy:'Short by {n}: sales exceed the stock, check the movements', inv_period:'Period {from} to {to}', inv_moves:'Recorded movements', inv_kind:'Movement', inv_qty:'Quantity', inv_k_opening:'Opening balance', inv_k_purchase:'Purchase', inv_k_return:'Return from restaurants', inv_k_damage:'Damaged', inv_addTitle:'Record a stock movement', inv_addHint:'Sales come from the daily entries automatically, so they are not recorded here. The opening balance is recorded once per item in each branch.', inv_notePh:'Purchase invoice number, restaurant name or reason for damage', inv_save:'Save movement', inv_saved:'Movement saved', inv_needQty:'Enter the quantity', inv_noMoves:'No movements recorded in this period', inv_void:'Void movement', inv_voided:'Voided', inv_voidReason:'Why is this movement being voided?', err_openingExists:'This item already has an opening balance at this branch. Record the difference as a purchase or damage, or void the earlier balance.', err_notInventory:'This item is a service and has no stock',
     admin_addStore:'Add store', admin_storeName:'Store name', admin_manager:'Branch manager', admin_location:'Branch',
     admin_addCar:'Add car', admin_carLabel:'Plate / driver label', admin_driver:'Driver',
     admin_addPos:'Add POS machine', admin_posLabel:'Terminal id', admin_ownerType:'Belongs to', admin_owner:'Owner', admin_assignedDriver:'Assigned employee',
@@ -2460,7 +2493,7 @@ var L = {
     admin_addUser:'صارف شامل کریں', admin_name:'نام', admin_role:'کردار', admin_active:'فعال', admin_resetPw:'پاس ورڈ ری سیٹ کریں',
     admin_addLocation:'برانچ شامل کریں', admin_city:'شہر', admin_locName:'برانچ کا نام', admin_cluster:'علاقہ',
     admin_zones:'زونز', admin_addZone:'زون شامل کریں', admin_zoneName:'زون کا نام', admin_zone:'زون',
-    admin_productType:'پروڈکٹ کی قسم', admin_typeGoods:'اشیاء', admin_typeServices:'خدمات',
+    admin_productType:'پروڈکٹ کی قسم', admin_typeGoods:'انوینٹری', admin_typeServices:'خدمات', nav_inventory:'انوینٹری', inv_title:'انوینٹری کی حرکت', inv_hint:'ابتدائی اسٹاک + خریداری + ریسٹورنٹس سے واپسی = دستیاب؛ اس میں سے فروخت (سسٹم کے اندراجات سے) اور خراب مال نکال کر اختتامی اسٹاک۔ قیمتیں لاگت پر۔', inv_opening:'ابتدائی', inv_purchases:'خریداری', inv_returns:'ریسٹورنٹس سے واپسی', inv_available:'دستیاب', inv_sales:'فروخت', inv_damaged:'خراب', inv_ending:'اختتامی', inv_unitCost:'فی یونٹ لاگت', inv_from:'سے', inv_to:'تک', inv_allBranches:'تمام برانچز', inv_thisMonth:'یہ مہینہ', inv_lastMonth:'پچھلا مہینہ', inv_showValue:'مقدار کے بجائے لاگت پر قیمت دکھائیں', inv_qtyShort:'مقدار', inv_byBranch:'برانچ اور آئٹم کے لحاظ سے اسٹاک', inv_item:'آئٹم', inv_items:'آئٹمز: {n}', inv_tag_add:'جمع', inv_tag_ded:'منہا', inv_empty:'اس مدت میں کوئی حرکت نہیں۔ ہر آئٹم کا ابتدائی اسٹاک درج کریں۔', inv_shortBadge:'کمی', inv_shortBy:'{n} کی کمی: فروخت اسٹاک سے زیادہ ہے، حرکات دیکھیں', inv_period:'مدت {from} سے {to}', inv_moves:'درج شدہ حرکات', inv_kind:'حرکت کی قسم', inv_qty:'مقدار', inv_k_opening:'ابتدائی اسٹاک', inv_k_purchase:'خریداری', inv_k_return:'ریسٹورنٹ سے واپسی', inv_k_damage:'خراب', inv_addTitle:'اسٹاک کی حرکت درج کریں', inv_addHint:'فروخت روزانہ اندراجات سے خود آتی ہے۔ ابتدائی اسٹاک ہر برانچ میں ہر آئٹم کا ایک بار درج ہوتا ہے۔', inv_notePh:'خریداری بل نمبر، ریسٹورنٹ کا نام یا خرابی کی وجہ', inv_save:'حرکت محفوظ کریں', inv_saved:'حرکت محفوظ ہو گئی', inv_needQty:'مقدار لکھیں', inv_noMoves:'اس مدت میں کوئی حرکت درج نہیں', inv_void:'حرکت منسوخ کریں', inv_voided:'منسوخ', inv_voidReason:'یہ حرکت کیوں منسوخ کی جا رہی ہے؟', err_openingExists:'اس برانچ میں اس آئٹم کا ابتدائی اسٹاک پہلے سے درج ہے۔', err_notInventory:'یہ آئٹم سروس ہے، اس کا اسٹاک نہیں',
     admin_addStore:'اسٹور شامل کریں', admin_storeName:'اسٹور کا نام', admin_manager:'برانچ منیجر', admin_location:'برانچ',
     admin_addCar:'گاڑی شامل کریں', admin_carLabel:'پلیٹ / ڈرائیور کا نام', admin_driver:'ڈرائیور',
     admin_addPos:'POS مشین شامل کریں', admin_posLabel:'ٹرمینل نمبر', admin_ownerType:'سے منسلک', admin_owner:'مالک', admin_assignedDriver:'ذمہ دار ملازم',
@@ -2942,7 +2975,7 @@ var ERROR_KEYS_ = {
   invalid_customer:'err_invalidCustomer', credit_items_mismatch:'err_creditItemsMismatch', price_locked:'err_priceLocked',
   invalid_product:'err_invalidProduct', invalid_coordinates:'err_invalidCoordinates',
   already_acknowledged:'err_alreadyAcknowledged', auth_required:'err_authRequired', bad_request:'err_badRequest',
-  conflict_of_interest:'err_conflictOfInterest', deposit_not_eligible:'err_depositNotEligible', email_exists:'err_emailExists', iqama_exists:'err_iqamaExists', deposit_pos_mismatch:'err_depositPosMismatch',
+  conflict_of_interest:'err_conflictOfInterest', deposit_not_eligible:'err_depositNotEligible', email_exists:'err_emailExists', iqama_exists:'err_iqamaExists', deposit_pos_mismatch:'err_depositPosMismatch', opening_exists:'err_openingExists', not_inventory:'err_notInventory',
   forbidden:'err_forbidden', has_children:'admin_hasChildren', invalid_input:'err_invalidInput', invalid_kind:'err_invalidKind',
   invalid_resolution:'err_invalidResolution', invalid_status:'err_invalidStatus', invalid_type:'err_invalidType',
   line_already_matched:'err_lineAlreadyMatched', missing_action:'err_missingAction', missing_email:'err_missingEmail',
@@ -3436,6 +3469,7 @@ var ICONS = {
   pin: '<path d="M12 22s7-6.2 7-12a7 7 0 0 0-14 0c0 5.8 7 12 7 12z"/><circle cx="12" cy="10" r="2.5"/>',
   user: '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
   box: '<path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="M3 8l9 5 9-5M12 13v8"/>',
+  inventory: '<path d="M3 7l9-4 9 4v10l-9 4-9-4z"/><path d="M3 7l9 4 9-4M12 11v10M7.5 5l9 4"/>',
   doc: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/>',
   printer: '<path d="M6 9V3h12v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M6 14h12v7H6z"/>',
   check: '<path d="M20 6 9 17l-5-5"/>',
@@ -3466,6 +3500,7 @@ function navItemsForRole_(){
   items.push(['handoffs','nav_handoffs']);
   if (['admin','finance','accountant','operations_manager','deputy_operations_manager','cluster_manager','store_manager'].indexOf(role)>=0) items.push(['report','nav_report']);
   if (['admin','finance','deputy_operations_manager'].indexOf(role)>=0) items.push(['reconciliation','nav_reconciliation']);
+  if (['admin','finance','accountant','operations_manager','deputy_operations_manager','cluster_manager','store_manager'].indexOf(role)>=0) items.push(['inventory','nav_inventory']);
   items.push(['risk','nav_risk']);
   // every module is the admin's and the finance manager's; user accounts
   // are the admin's alone, on a screen of their own
@@ -3625,7 +3660,7 @@ function renderShell(){
 
   watchCollapsibles_(body);
   if (state.lastAnimatedScreen !== state.screen) { state.lastAnimatedScreen = state.screen; watchEntrance_(body); }
-  var renderers = { home: renderHome, dashboard: renderDashboard, entries: renderEntries, areaBulk: renderAreaBulk, deputyReview: renderDeputyReview, handoffs: renderHandoffs, report: renderReport, reconciliation: renderReconciliation, risk: renderRisk, admin: renderAdmin, users: renderAdmin };
+  var renderers = { home: renderHome, dashboard: renderDashboard, entries: renderEntries, areaBulk: renderAreaBulk, deputyReview: renderDeputyReview, handoffs: renderHandoffs, report: renderReport, reconciliation: renderReconciliation, inventory: renderInventory, risk: renderRisk, admin: renderAdmin, users: renderAdmin };
   (renderers[state.screen] || renderHome)(body);
 }
 
@@ -3823,6 +3858,21 @@ function posPickLabel_(p){
   var dev = String(p.posId || '').trim(), lab = String(p.label || '').trim();
   if (!dev) return lab || p.code || p.id;
   return lab && lab !== dev ? dev + ' · ' + lab : dev;
+}
+// Many branches' sources (an area manager's POS machines) fold by branch:
+// one <optgroup> per branch, each option then needs no branch in its label.
+function sourceOptionsGrouped_(type, list){
+  var locOf = function(x){ return type === 'pos' ? posOwnerLocationId_(x) : x.locationId; };
+  var locs = {}, order = [];
+  list.forEach(function(x){ var l = locOf(x) || '_'; if (!locs[l]) { locs[l] = []; order.push(l); } locs[l].push(x); });
+  if (order.length < 2) return list.map(function(x){ return '<option value="'+esc(x.id)+'">'+esc(sourceOptionLabel_(type, x))+'</option>'; }).join('');
+  order.sort(function(a, b){ return String(locationName(a)).localeCompare(String(locationName(b)), 'ar'); });
+  return order.map(function(l){
+    return '<optgroup label="'+esc(l === '_' ? t('report_unspecified') : locationName(l))+'">' + locs[l].map(function(x){
+      var lab = type === 'pos' ? posPickLabel_(x) + ' — ' + posOwnerName_(x) : (x.name || x.label || x.id);
+      return '<option value="'+esc(x.id)+'">'+esc(lab)+'</option>';
+    }).join('') + '</optgroup>';
+  }).join('');
 }
 function sourceOptionLabel_(type, x){
   if (type === 'store') return (x.name || x.id) + ' — ' + locationName(x.locationId);
@@ -6280,14 +6330,37 @@ function ddOpen_(sel){
   document.body.appendChild(layer);
   var pop = layer.querySelector('.dd-pop'), ul = layer.querySelector('.dd-list'), q = layer.querySelector('.dd-q');
   var active = -1, shown = [];
+  // options inside <optgroup> (a branch's devices) fold under the group's
+  // name: closed at first, except the group holding the current choice; a
+  // search opens every group that matches
+  function grpOf(o){ return o.parentNode && o.parentNode.tagName === 'OPTGROUP' ? o.parentNode.label : null; }
+  var grpCount = {}, closed = {};
+  opts.forEach(function(o){ var g = grpOf(o); if (g != null) grpCount[g] = (grpCount[g] || 0) + 1; });
+  var grpNames = Object.keys(grpCount), selGrp = sel.options[sel.selectedIndex] ? grpOf(sel.options[sel.selectedIndex]) : null;
+  if (grpNames.length > 1) grpNames.forEach(function(g){ closed[g] = g !== selGrp; });
 
   function draw(){
     var term = q ? ddNorm_(q.value) : '';
     shown = [];
     ul.innerHTML = '';
+    var lastGrp;
     opts.forEach(function(o, i){
-      var text = o.textContent;
-      if (term && ddNorm_(text).indexOf(term) < 0) return;
+      var text = o.textContent, g = grpOf(o);
+      if (term && ddNorm_(text).indexOf(term) < 0 && !(g && ddNorm_(g).indexOf(term) >= 0)) return;
+      if (g !== lastGrp) {
+        lastGrp = g;
+        if (g != null && grpNames.length > 1) {
+          var hd = document.createElement('li');
+          var isClosed = closed[g] && !term;
+          hd.className = 'dd-grp' + (isClosed ? '' : ' open');
+          hd.setAttribute('role', 'presentation');
+          hd.innerHTML = '<span class="dd-grp-car" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></span><span class="dd-grp-t">' + ddEsc_(g) + '</span><span class="dd-grp-n">' + grpCount[g] + '</span>';
+          hd.addEventListener('mousedown', function(ev){ ev.preventDefault(); });
+          hd.addEventListener('click', function(ev){ ev.stopPropagation(); closed[g] = !isClosed; draw(); });
+          ul.appendChild(hd);
+        }
+      }
+      if (g != null && grpNames.length > 1 && closed[g] && !term) return;
       shown.push(i);
       var li = document.createElement('li');
       li.className = 'dd-opt' + (o.value === '' ? ' ph' : '');
@@ -7118,6 +7191,8 @@ function renderEntries(body){
   var depositLines = depositLines_();
   transferLines.add();
   depositLines.add();
+  // the form opens on a POS: its الموازنة is on that POS from the start
+  setTimeout(function(){ depositLines.refreshDevices(); }, 0);
   otherLines.add();
   expenseLines.add();
   deliveryLines.add();
@@ -7339,9 +7414,7 @@ function renderEntries(body){
     } else if (type==='pos'){
       list = (meta.pos||[]).filter(function(x){ return (role==='driver' || role==='branch_worker') ? x.assignedUserId===state.user.id : inMyBranch_(posOwnerLocationId_(x)); });
     }
-    srcSel.innerHTML = list.map(function(x){
-      return '<option value="'+x.id+'">'+esc(sourceOptionLabel_(type, x))+'</option>';
-    }).join('') || '<option value="">'+esc(t('noData'))+'</option>';
+    srcSel.innerHTML = sourceOptionsGrouped_(type, list) || '<option value="">'+esc(t('noData'))+'</option>';
 
     // Switching source type carries no meaning across types (a car's cash
     // figure has nothing to do with a store's), so leftover numbers from
@@ -9517,6 +9590,188 @@ function renderReconciliation(body){
 }
 
 // ---------------- risk / complaints register ----------------
+// ---------------- inventory (2026-09-29) ----------------
+// opening + purchases + returns = available; available - sales - damaged =
+// ending, per branch and inventory item, in quantity and at cost. Sales come
+// from the day entries; the rest is typed in as movements.
+var INV_ = { from: null, to: null, loc: '', value: false };
+var INV_KINDS_ = ['opening', 'purchase', 'return', 'damage'];
+function invMonthStart_(d){ return d.slice(0, 8) + '01'; }
+function invPrevMonth_(){
+  var d = new Date(localToday_() + 'T00:00:00'); d.setDate(1); d.setDate(0);
+  var end = d.toISOString().slice(0, 10);
+  return [end.slice(0, 8) + '01', end];
+}
+// the branches this person keeps stock for (null = every branch)
+function invMyBranches_(){
+  var m = state.meta || {}, role = state.user.role, me = state.user.id;
+  if (role === 'admin' || role === 'finance') return null;
+  if (role === 'store_manager') return (m.stores || []).filter(function(s){ return s.storeManagerUserId === me; }).map(function(s){ return s.locationId; });
+  if (role === 'cluster_manager') {
+    var mine = (m.clusters || []).filter(function(c){ return c.clusterManagerUserId === me; }).map(function(c){ return c.id; });
+    return (m.locations || []).filter(function(l){ return mine.indexOf(l.clusterId) >= 0; }).map(function(l){ return l.id; });
+  }
+  return [];
+}
+function invQty_(n){ n = Number(n || 0); return (Math.round(Math.abs(n) * 1000) / 1000).toLocaleString('en-US', { maximumFractionDigits: 3 }); }
+
+function renderInventory(body){
+  body.innerHTML = '';
+  var meta = state.meta || {}, role = state.user.role;
+  var today = localToday_();
+  if (!INV_.from) { INV_.from = invMonthStart_(today); INV_.to = today; }
+  var canEdit = ['admin', 'finance', 'cluster_manager', 'store_manager'].indexOf(role) >= 0;
+  var mine = invMyBranches_();
+  var editLocs = (meta.locations || []).filter(function(l){ return !mine || mine.indexOf(l.id) >= 0; });
+  var viewLocs = ['admin', 'finance', 'accountant', 'operations_manager', 'deputy_operations_manager'].indexOf(role) >= 0 ? (meta.locations || []) : editLocs;
+  var goods = (meta.products || []).filter(function(p){ return p.type !== 'services'; });
+
+  var bar = el('<div class="card inv-bar">' +
+    '<div class="inv-bar-row">' +
+      '<div class="field"><label>'+esc(t('inv_from'))+'</label><input type="date" id="ivFrom" value="'+esc(INV_.from)+'" max="'+today+'"></div>' +
+      '<div class="field"><label>'+esc(t('inv_to'))+'</label><input type="date" id="ivTo" value="'+esc(INV_.to)+'" max="'+today+'"></div>' +
+      '<div class="field"><label>'+esc(t('admin_location'))+'</label><select id="ivLoc"><option value="">'+esc(t('inv_allBranches'))+'</option>' +
+        viewLocs.map(function(l){ return '<option value="'+esc(l.id)+'"'+(INV_.loc === l.id ? ' selected' : '')+'>'+esc(locationName(l.id))+'</option>'; }).join('') + '</select></div>' +
+    '</div>' +
+    '<div class="inv-presets"><button type="button" data-p="month">'+esc(t('inv_thisMonth'))+'</button><button type="button" data-p="last">'+esc(t('inv_lastMonth'))+'</button>' +
+      '<label class="inv-val"><input type="checkbox" id="ivVal"'+(INV_.value ? ' checked' : '')+'> '+esc(t('inv_showValue'))+'</label></div>' +
+  '</div>');
+  body.appendChild(bar);
+  var out = el('<div class="inv-out"><div class="card"><div class="skeleton" style="height:120px"></div></div></div>');
+  body.appendChild(out);
+
+  function load(){
+    INV_.from = qs('#ivFrom', bar).value || INV_.from; INV_.to = qs('#ivTo', bar).value || INV_.to; INV_.loc = qs('#ivLoc', bar).value;
+    out.innerHTML = '<div class="card"><div class="skeleton" style="height:120px"></div></div>';
+    api('getInventoryReport', { dateFrom: INV_.from, dateTo: INV_.to, locationId: INV_.loc || null }).then(function(res){
+      out.innerHTML = '';
+      if (!res.ok) { out.innerHTML = '<div class="card"><div class="msg err">'+esc(errMsg_(res))+'</div></div>'; return; }
+      paint(res);
+    });
+  }
+  ['change'].forEach(function(ev){ ['#ivFrom', '#ivTo', '#ivLoc'].forEach(function(s){ qs(s, bar).addEventListener(ev, load); }); });
+  qs('#ivVal', bar).addEventListener('change', function(){ INV_.value = this.checked; load(); });
+  qsa('.inv-presets button', bar).forEach(function(b){ b.addEventListener('click', function(){
+    if (b.dataset.p === 'month') { qs('#ivFrom', bar).value = invMonthStart_(today); qs('#ivTo', bar).value = today; }
+    else { var pm = invPrevMonth_(); qs('#ivFrom', bar).value = pm[0]; qs('#ivTo', bar).value = pm[1]; }
+    load();
+  }); });
+
+  var COLS = ['opening', 'purchases', 'returns', 'available', 'sales', 'damaged', 'ending'];
+  function paint(res){
+    var rows = res.rows || [];
+    var tot = { endingValue: 0 }; COLS.forEach(function(c){ tot[c] = 0; tot[c + 'Value'] = 0; });
+    rows.forEach(function(r){ COLS.forEach(function(c){ tot[c] += r[c]; tot[c + 'Value'] += r[c + 'Value']; }); });
+    var useVal = INV_.value;
+    function fig(r, c){ return useVal ? money(Math.abs(r[c + 'Value'])) : invQty_(r[c]); }
+
+    // the equation, left to right
+    var eq = el('<section class="card inv-eq no-collapse"><h2>'+esc(t('inv_title'))+'</h2><p class="muted inv-eq-hint">'+esc(t('inv_hint'))+'</p><div class="inv-eq-row">' +
+      [['opening'], ['purchases', 'add'], ['returns', 'add'], ['available', 'sum'], ['sales', 'ded'], ['damaged', 'ded'], ['ending', 'sum']].map(function(p){
+        var c = p[0], v = tot[c + 'Value'];
+        return '<div class="inv-fig inv-'+c+'"><span>'+esc(t('inv_' + c))+(p[1] === 'add' || p[1] === 'ded' ? ' <em class="inv-tag inv-tag-'+p[1]+'">'+esc(t('inv_tag_' + p[1]))+'</em>' : '')+'</span><b class="num">'+money(Math.abs(v))+'</b><small>'+esc(t('ui_sar'))+' · '+esc(t('inv_qtyShort'))+' '+invQty_(tot[c])+'</small></div>';
+      }).join('') + '</div></section>');
+    out.appendChild(eq);
+
+    // branch › item, branches fold
+    var byLoc = {}, order = [];
+    rows.forEach(function(r){ if (!byLoc[r.locationId]) { byLoc[r.locationId] = []; order.push(r.locationId); } byLoc[r.locationId].push(r); });
+    order.sort(function(a, b){ return String(locationName(a)).localeCompare(String(locationName(b)), 'ar'); });
+    var card = el('<div class="card rp-card inv-card" data-noexport="1"><div class="rp-head"><h2>'+esc(t('inv_byBranch'))+' <span class="rp-n">'+order.length+'</span></h2></div>' +
+      '<div class="tbl-scroll rp-scroll"><table class="rp-table pv-table inv-table" data-nosort><thead><tr><th>'+esc(t('inv_item'))+'</th>' +
+        COLS.map(function(c){ return '<th class="n'+(c === 'ending' || c === 'sales' ? '' : ' pv-wide')+'">'+esc(t('inv_' + c))+'</th>'; }).join('') +
+        '<th class="n pv-wide">'+esc(t('inv_unitCost'))+'</th></tr></thead><tbody></tbody>' +
+      '<tfoot><tr><td>'+esc(t('rp_total'))+'</td>' + COLS.map(function(c){ return '<td class="n num'+(c === 'ending' || c === 'sales' ? '' : ' pv-wide')+'">'+(useVal ? money(Math.abs(tot[c + 'Value'])) : invQty_(tot[c]))+'</td>'; }).join('') + '<td class="pv-wide"></td></tr></tfoot></table></div>' +
+      (rows.length ? '' : '<div class="muted rp-empty">'+esc(t('inv_empty'))+'</div>') + '</div>');
+    var tb = qs('tbody', card), open = {};
+    function draw(){
+      var html = [];
+      order.forEach(function(locId){
+        var list = byLoc[locId], sum = {}; COLS.forEach(function(c){ sum[c] = 0; sum[c + 'Value'] = 0; });
+        list.forEach(function(r){ COLS.forEach(function(c){ sum[c] += r[c]; sum[c + 'Value'] += r[c + 'Value']; }); });
+        var isOpen = open[locId] || order.length === 1, short = list.some(function(r){ return r.short; });
+        html.push('<tr class="pv-row pv-d0" tabindex="0" data-loc="'+esc(locId)+'" aria-expanded="'+isOpen+'"><td class="pv-name" style="--d:0"><span class="pv-in"><span class="pv-tog" aria-hidden="true"></span><span class="pv-txt"><b>'+esc(locationName(locId))+'</b><small>'+esc(t('inv_items').replace('{n}', list.length))+(short ? ' · <span class="inv-short">'+esc(t('inv_shortBadge'))+'</span>' : '')+'</small></span></span></td>' +
+          COLS.map(function(c){ return '<td class="n num'+(c === 'ending' ? ' pv-net' : c === 'sales' ? '' : ' pv-wide')+'">'+fig(sum, c)+'</td>'; }).join('') + '<td class="pv-wide"></td></tr>');
+        if (!isOpen) return;
+        list.slice().sort(function(a, b){ return String(productName_(a.productId)).localeCompare(String(productName_(b.productId)), 'ar'); }).forEach(function(r){
+          html.push('<tr class="pv-d1'+(r.short ? ' inv-short-row' : '')+'"><td class="pv-name" style="--d:1"><span class="pv-in"><span class="pv-tog" aria-hidden="true">•</span><span class="pv-txt"><b>'+esc(productName_(r.productId))+'</b>' +
+            (r.short ? '<small class="inv-short">'+esc(t('inv_shortBy').replace('{n}', invQty_(r.ending)))+'</small>' : '') + '</span></span></td>' +
+            COLS.map(function(c){ return '<td class="n num'+(c === 'ending' ? ' pv-net' : c === 'sales' ? '' : ' pv-wide')+'">'+fig(r, c)+'</td>'; }).join('') +
+            '<td class="n num pv-wide">'+(r.unitCost ? money(r.unitCost) : '—')+'</td></tr>');
+        });
+      });
+      tb.innerHTML = html.join('');
+    }
+    tb.addEventListener('click', function(ev){ var tr = ev.target.closest('tr[data-loc]'); if (!tr) return; open[tr.dataset.loc] = !(open[tr.dataset.loc] || order.length === 1); draw(); });
+    tb.addEventListener('keydown', function(ev){ var tr = ev.target.closest('tr[data-loc]'); if (tr && (ev.key === 'Enter' || ev.key === ' ')) { ev.preventDefault(); tr.click(); } });
+    draw();
+    // Excel and PDF: every branch and item, quantities and values
+    function sheets(){
+      var head = [t('inv_item'), t('admin_location')].concat(COLS.map(function(c){ return t('inv_' + c); }), [t('inv_unitCost')], COLS.map(function(c){ return t('inv_' + c) + ' (' + t('ui_sar') + ')'; }));
+      var rowsX = [head], outline = [];
+      order.forEach(function(locId){
+        var list = byLoc[locId], sum = {}; COLS.forEach(function(c){ sum[c] = 0; sum[c + 'Value'] = 0; });
+        list.forEach(function(r){ COLS.forEach(function(c){ sum[c] += r[c]; sum[c + 'Value'] += r[c + 'Value']; }); });
+        rowsX.push([locationName(locId), ''].concat(COLS.map(function(c){ return sum[c]; }), [''], COLS.map(function(c){ return Math.round(sum[c + 'Value'] * 100) / 100; })));
+        outline.push(0);
+        list.forEach(function(r){
+          rowsX.push([productName_(r.productId), locationName(locId)].concat(COLS.map(function(c){ return r[c]; }), [r.unitCost || 0], COLS.map(function(c){ return r[c + 'Value']; })));
+          outline.push(1);
+        });
+      });
+      rowsX.push([t('rp_total'), ''].concat(COLS.map(function(c){ return tot[c]; }), [''], COLS.map(function(c){ return Math.round(tot[c + 'Value'] * 100) / 100; })));
+      outline.push(null);
+      var mv = [[t('rp_date'), t('admin_location'), t('inv_item'), t('inv_kind'), t('inv_qty'), t('entry_note'), t('report_enteredBy'), t('rp_status')]].concat((res.moves || []).map(function(m){
+        return [m.date, locationName(m.locationId), productName_(m.productId), t('inv_k_' + m.kind), Number(m.qty), m.note || '', userName(m.enteredBy), m.voided ? t('inv_voided') : ''];
+      }));
+      return [{ name: t('inv_title'), rows: rowsX, outline: outline, note: INV_.from + ' → ' + INV_.to }, { name: t('inv_moves'), rows: mv }];
+    }
+    qs('.rp-head', card).appendChild(exButtons_(sheets, function(){ return t('inv_title') + ' ' + INV_.from + ' ' + INV_.to; }, function(){ return { note: t('inv_period').replace('{from}', INV_.from).replace('{to}', INV_.to) }; }));
+    out.appendChild(card);
+
+    // typing in a movement
+    if (canEdit && editLocs.length && goods.length) {
+      var f = el('<div class="card inv-add"><h2>'+esc(t('inv_addTitle'))+'</h2><p class="muted inv-eq-hint">'+esc(t('inv_addHint'))+'</p><div class="grid">' +
+        '<div class="field"><label>'+esc(t('admin_location'))+'</label><select class="ivaLoc">'+editLocs.map(function(l){ return '<option value="'+esc(l.id)+'"'+(INV_.loc === l.id ? ' selected' : '')+'>'+esc(locationName(l.id))+'</option>'; }).join('')+'</select></div>' +
+        '<div class="field"><label>'+esc(t('inv_item'))+'</label><select class="ivaProd">'+goods.map(function(p){ return '<option value="'+esc(p.id)+'">'+esc(p.name)+'</option>'; }).join('')+'</select></div>' +
+        '<div class="field"><label>'+esc(t('inv_kind'))+'</label><select class="ivaKind">'+INV_KINDS_.map(function(k){ return '<option value="'+k+'"'+(k === 'purchase' ? ' selected' : '')+'>'+esc(t('inv_k_' + k))+'</option>'; }).join('')+'</select></div>' +
+        '<div class="field"><label>'+esc(t('inv_qty'))+'</label><input class="ivaQty" type="text" inputmode="decimal" value=""></div>' +
+        '<div class="field"><label>'+esc(t('rp_date'))+'</label><input class="ivaDate" type="date" value="'+today+'" max="'+today+'"></div>' +
+        '<div class="field"><label>'+esc(t('entry_note'))+'</label><input class="ivaNote" placeholder="'+esc(t('inv_notePh'))+'"></div>' +
+        '</div><button type="button" class="btn ivaGo">'+esc(t('inv_save'))+'</button><div class="ivaMsg"></div></div>');
+      qs('.ivaGo', f).addEventListener('click', function(){
+        var btn = this, qty = numFromInput_(qs('.ivaQty', f));
+        if (!(qty > 0)) { qs('.ivaMsg', f).innerHTML = '<div class="msg err">'+esc(t('inv_needQty'))+'</div>'; return; }
+        btn.disabled = true;
+        api('addInventoryMove', { locationId: qs('.ivaLoc', f).value, productId: qs('.ivaProd', f).value, kind: qs('.ivaKind', f).value, qty: qty, date: qs('.ivaDate', f).value, note: qs('.ivaNote', f).value.trim() }).then(function(r2){
+          btn.disabled = false;
+          if (!r2.ok) { qs('.ivaMsg', f).innerHTML = '<div class="msg err">'+esc(errMsg_(r2))+'</div>'; return; }
+          showToast_(t('inv_saved'), 'ok'); load();
+        });
+      });
+      out.appendChild(f);
+    }
+
+    // the movements behind the figures
+    var moves = res.moves || [];
+    var mc = el('<div class="card inv-moves"><h2>'+esc(t('inv_moves'))+' <span class="rp-n">'+moves.length+'</span></h2>' +
+      (moves.length ? '<div class="tbl-scroll"><table class="rp-table"><thead><tr><th>'+esc(t('rp_date'))+'</th><th>'+esc(t('admin_location'))+'</th><th>'+esc(t('inv_item'))+'</th><th>'+esc(t('inv_kind'))+'</th><th class="n">'+esc(t('inv_qty'))+'</th><th>'+esc(t('entry_note'))+'</th><th>'+esc(t('report_enteredBy'))+'</th><th class="col-actions"></th></tr></thead><tbody>' +
+        moves.map(function(m){
+          var mineMove = m.enteredBy === state.user.id || role === 'admin' || role === 'finance';
+          return '<tr class="'+(m.voided ? 'inv-void' : '')+'"><td><bdi dir="ltr">'+esc(m.date)+'</bdi></td><td>'+esc(locationName(m.locationId))+'</td><td>'+esc(productName_(m.productId))+'</td>' +
+            '<td><span class="inv-k inv-k-'+m.kind+'">'+esc(t('inv_k_' + m.kind))+'</span></td><td class="n num">'+invQty_(m.qty)+'</td><td>'+esc(m.voided ? t('inv_voided') + ': ' + (m.voidReason || '') : (m.note || ''))+'</td><td>'+esc(userName(m.enteredBy))+'</td>' +
+            '<td class="col-actions">'+(!m.voided && mineMove ? '<button type="button" class="ico-btn danger ivVoid" data-id="'+esc(m.id)+'" title="'+esc(t('inv_void'))+'" aria-label="'+esc(t('inv_void'))+'">'+icon_('close')+'</button>' : '')+'</td></tr>';
+        }).join('') + '</tbody></table></div>' : '<div class="muted rp-empty">'+esc(t('inv_noMoves'))+'</div>') + '</div>');
+    qsa('.ivVoid', mc).forEach(function(b){ b.addEventListener('click', function(){
+      var reason = window.prompt(t('inv_voidReason'));
+      if (!reason || !reason.trim()) return;
+      api('voidInventoryMove', { id: b.dataset.id, reason: reason.trim() }).then(function(r3){ if (!r3.ok) { toastRaw_(errMsg_(r3), 'err'); return; } load(); });
+    }); });
+    out.appendChild(mc);
+  }
+  load();
+}
+
 function renderRisk(body){
   body.innerHTML = '';
   var isCompanyWide = ['admin','finance','accountant','operations_manager','deputy_operations_manager'].indexOf(state.user.role)>=0;
@@ -10118,13 +10373,15 @@ var ENTITY_FIELDS = {
     {k:'name', l:'admin_productName'},
     {k:'type', l:'admin_productType', options:[['goods','admin_typeGoods'],['services','admin_typeServices']]},
     {k:'unitPrice', l:'admin_unitPrice', type:'number'},
+    // what one unit costs the company: the inventory's value
+    {k:'unitCost', l:'inv_unitCost', type:'number'},
     // Fixed price: the entry form shows it read-only, so a branch can't
     // quietly sell at its own price. Left off, the price is only a
     // suggestion the person entering can still change.
     {k:'priceLocked', l:'admin_priceLocked', type:'check'},
     // an inactive product or item drops out of the entry screen's lists
     {k:'active', l:'admin_active', type:'check'}
-  ], cols:['name','type','unitPrice','active'] },
+  ], cols:['name','type','unitPrice','unitCost','active'] },
   income_item: { addKey:'admin_addIncomeItem', fields:[{k:'name', l:'admin_itemName'}, {k:'active', l:'admin_active', type:'check'}], cols:['name','active'] },
   expense_item: { addKey:'admin_addExpenseItem', fields:[{k:'name', l:'admin_itemName'}, {k:'active', l:'admin_active', type:'check'}], cols:['name','active'] },
   // a credit customer: the number (code) is the server's, shown, never typed

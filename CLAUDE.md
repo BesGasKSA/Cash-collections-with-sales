@@ -1050,6 +1050,26 @@ on such an account returns a new `tempPassword` instead of emailing; the admin
 screen shows it once (`tempPwBox_`). A driver enters sales for any POS device
 whose `assignedUserId` is them, with or without a car.
 
+**Inventory (2026-09-29, Inventory.gs).** Per branch and inventory item (product
+`type` goods, shown as مخزني/Inventory; services have no stock) over a period:
+opening + purchases + returns from restaurants = available; available - sales -
+damaged = ending, valued at `product.unitCost`. Opening, purchase, return and damage
+are typed in as `inventory_moves` rows (`addInventoryMove`; one opening per
+branch and item, `opening_exists`); sales are the `qty` of day-entry product lines
+at that branch (credit is already inside those lines, so `creditItems` are not
+added again). Everything before `dateFrom` rolls into the opening. A move is
+voided with a reason (`voidInventoryMove`, author or admin/finance), never
+deleted. Admin/finance keep stock anywhere, an area manager for his area, a branch
+manager for his branch; company-wide roles read all. An ending below zero comes
+back `short:true` and the screen flags it without a minus sign. Screen
+`renderInventory` (nav المخزون); its equation card is `no-collapse` so the ending
+stock stays in view on a phone.
+
+**Grouped pickers (2026-09-29).** `sourceOptionsGrouped_` puts an area manager's
+sources in one `<optgroup>` per branch; the designed dropdown (`ddOpen_`) draws
+each group as a header that folds (closed except the group holding the choice; a
+search opens the matching groups).
+
 **Reports and exports (2026-09-29).** Every export goes through one sheet model
 `[{name, rows, outline?, note?}]` (rows[0] header, a first cell equal to
 `t('rp_total')` marks the totals line, `outline[k]` is the depth of data row k).
