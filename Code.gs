@@ -23,6 +23,10 @@ var SHEETS = {
   // photos of الموازنات, uploaded before the entry that uses them; one photo
   // serves one line, and only its uploader can use it
   ENTRY_PHOTOS: 'entry_photos',
+  // English and Urdu for the Arabic names in master data, keyed by the Arabic
+  // text itself: {src, en, ur, auto}. auto = Google Translate; a manager's
+  // correction sets it false and is never overwritten.
+  TRANSLATIONS: 'translations',
   // Pure geography (Country[KSA, implicit]/City/Zone), independent of
   // Cluster — Cluster is an employee's management assignment (cluster
   // manager + collector) and can cut across zones; Zone is just a label
@@ -695,6 +699,8 @@ function route_(req) {
     adminImportCustomers: function () { return withMeta_(actionAdminImportCustomers_(req, user), req, user); },
     adminImportEntities: function () { return withMeta_(actionAdminImportEntities_(req, user), req, user); },
     adminSetConfig: function () { return withMeta_(actionAdminSetConfig_(req, user), req, user); },
+    adminSaveTranslation: function () { return withMeta_(actionAdminSaveTranslation_(req, user), req, user); },
+    adminFillTranslations: function () { return withMeta_(actionAdminFillTranslations_(req, user), req, user); },
     // starts a fresh round of testing by archiving the movement tabs —
     // renames, never deletes (see Admin.gs)
     adminArchiveTransactions: function () { return actionAdminArchiveTransactions_(req, user); }

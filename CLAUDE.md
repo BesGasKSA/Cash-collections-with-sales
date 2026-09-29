@@ -1037,6 +1037,24 @@ language (ar/ur = RTL, en = LTR), not a fixed setting. Add a language by
 adding one more key to `L` and one `<option>` in the two language
 `<select>` elements (login screen and header) — no other code changes.
 
+**Names in English and Urdu (2026-09-29).** Master data is typed in Arabic; the
+`translations` sheet (`{src, en, ur, auto}`, keyed by the Arabic text) holds each
+name's English and Urdu and ships in `listMeta` as `translations`. `saveEntity_`,
+user create/update and `adminImportEntities` (one batch per file) call
+`fillTranslations_`, which sends new names to `LanguageApp.translate` in chunks;
+a failure never fails the save, and `adminFillTranslations` catches gaps up.
+`adminSaveTranslation` ({src,en,ur} or {rows}) is a manager's correction
+(`auto:false`), never overwritten. Names already carrying Latin letters are not
+sent: the client shows their Latin part (`latinPart_`, with Saudi plate letters
+converted by `plateLatin_`, read in reverse). **The client translates the drawn
+page, not the data**: a MutationObserver swaps known names in text nodes
+(`trNode_`/`trText_`, longest name first, Arabic-letter boundaries), so input
+values, ids and everything sent to the server stay Arabic. Mark an element
+`data-notr` to exempt it (the Admin → الترجمات screen is). Excel exports go
+through `trText_` too. The live list's hand-made translations are built by
+`bestgas-cash-collection/translations/build-live-translations.js` (private:
+real customer names).
+
 ## Traps
 
 ### 1. A bare `<tr>` built through `el()` silently loses its content

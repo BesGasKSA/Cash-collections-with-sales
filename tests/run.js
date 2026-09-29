@@ -2401,5 +2401,50 @@ check(impUpd.ok && impUpd.updated === 1 && ctx.getById_(ctx.SHEETS.PRODUCTS, imp
 check(call({ action: 'adminImportEntities', token: aliTok, kind: 'product', rows: [{ data: { name: 'X' } }] }).error === 'forbidden', 'only an admin imports');
 check(call({ action: 'adminImportEntities', token: adminTok, kind: 'nope', rows: [{ data: { name: 'X' } }] }).error === 'invalid_kind', 'only known record types');
 
+console.log('--- names show in English and Urdu: translated once, correctable by hand ---');
+var tr = ctx._debug.translate;
+function trOf(src) { return (call({ action: 'listMeta', token: adminTok }).translations || []).filter(function (x) { return x.src === src; })[0]; }
+var trProd = call({ action: 'adminSaveEntity', token: adminTok, kind: 'product', data: { name: 'منظم تجريبي', type: 'goods' } });
+check(trProd.ok, 'an Arabic name saves as always');
+var trRow = trOf('منظم تجريبي');
+check(trRow && trRow.en === 'EN:منظم تجريبي' && trRow.ur === 'UR:منظم تجريبي', 'and comes back with its English and Urdu');
+check(trRow && trRow.auto === true, 'marked as a machine translation');
+check(trProd.meta && (trProd.meta.translations || []).some(function (x) { return x.src === 'منظم تجريبي'; }), 'the save answers with the translation too');
+var trCalls = tr.log.length;
+call({ action: 'adminSaveEntity', token: adminTok, kind: 'product', id: trProd.entity.id, data: { unitPrice: 9 } });
+check(tr.log.length === trCalls, 'a name already translated is not sent again');
+call({ action: 'adminSaveEntity', token: adminTok, kind: 'product', data: { name: 'Plain English Name', type: 'goods' } });
+check(tr.log.length === trCalls && !trOf('Plain English Name'), 'a name with no Arabic needs nothing');
+call({ action: 'adminSaveEntity', token: adminTok, kind: 'zone', data: { city: 'Riyadh', name: 'النسيم Al-Naseem' } });
+check(tr.log.length === trCalls, 'nor one that already carries its English');
+
+var fix = call({ action: 'adminSaveTranslation', token: adminTok, src: 'منظم تجريبي', en: 'Test regulator', ur: 'ٹیسٹ ریگولیٹر' });
+check(fix.ok && trOf('منظم تجريبي').en === 'Test regulator' && trOf('منظم تجريبي').auto === false, 'the admin corrects a translation');
+check(fix.meta && fix.meta.translations, 'and the correction answers with fresh reference data');
+tr.log.length = 0;
+call({ action: 'adminFillTranslations', token: adminTok });
+check(trOf('منظم تجريبي').en === 'Test regulator', 'filling the gaps never overwrites a correction');
+check(call({ action: 'adminSaveTranslation', token: aliTok, src: 'منظم تجريبي', en: 'x' }).error === 'forbidden', 'only a manager corrects translations');
+check(call({ action: 'adminSaveTranslation', token: adminTok, src: '', en: 'x' }).error === 'invalid_input', 'a correction names its Arabic text');
+var bulkFix = call({ action: 'adminSaveTranslation', token: adminTok, rows: [{ src: 'منظم تجريبي', en: 'Regulator A' }, { src: 'نص جديد', en: 'New text', ur: 'نیا' }] });
+check(bulkFix.ok && trOf('منظم تجريبي').en === 'Regulator A' && trOf('منظم تجريبي').ur === 'ٹیسٹ ریگولیٹر' && trOf('نص جديد').ur === 'نیا', 'several corrections go in one request, a blank keeps what was there');
+
+tr.fail = true;
+var trDown = call({ action: 'adminSaveEntity', token: adminTok, kind: 'city', data: { name: 'مدينة الاختبار' } });
+check(trDown.ok, 'when Google Translate is down the record still saves');
+check(!trOf('مدينة الاختبار'), 'just without a translation for now');
+tr.fail = false;
+var filled = call({ action: 'adminFillTranslations', token: adminTok });
+check(filled.ok && filled.added >= 1 && trOf('مدينة الاختبار') && trOf('مدينة الاختبار').en === 'EN:مدينة الاختبار', 'and filling the gaps catches it up later');
+
+tr.log.length = 0;
+var trImp = call({ action: 'adminImportEntities', token: adminTok, kind: 'product', rows: [
+  { data: { name: 'صنف مستورد أول', type: 'goods' } }, { data: { name: 'صنف مستورد ثان', type: 'goods' } }, { data: { name: 'صنف مستورد ثالث', type: 'goods' } }
+] });
+check(trImp.ok && trOf('صنف مستورد ثان') && trOf('صنف مستورد ثان').ur === 'UR:صنف مستورد ثان', 'an Excel import is translated too');
+check(tr.log.length === 2, 'in one request per language, not one per row (got ' + tr.log.length + ')');
+call({ action: 'adminSaveEntity', token: adminTok, kind: 'zone', data: { city: 'مدينة المنطقة', name: 'Zone T' } });
+check(trOf('مدينة المنطقة'), 'a city typed on a record is translated along with its name');
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);

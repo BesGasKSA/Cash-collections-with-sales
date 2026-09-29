@@ -369,6 +369,26 @@
   .tbl-search::after{content:'';position:absolute;top:60%;inset-inline-start:23px;width:6px;height:2px;background:var(--muted-2);transform:rotate(45deg);pointer-events:none;}
   html[dir="rtl"] .tbl-search::after{inset-inline-start:auto;inset-inline-end:23px;transform:rotate(-45deg);}
   .tbl-scroll{overflow-x:auto;}
+  .trx-hint{font-size:13px;line-height:1.85;margin:0 0 12px;max-width:68ch;}
+  .trx-bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px;}
+  .trx-bar input[type=search]{flex:1 1 220px;min-width:0;}
+  .trx-bar select{flex:0 0 auto;width:auto;}
+  .trx-count{font-size:12.5px;font-variant-numeric:tabular-nums;margin-inline-end:auto;}
+  .trx-table td{vertical-align:middle;}
+  .trx-table input{width:100%;min-width:150px;margin:0;}
+  .trx-src{font-weight:600;min-width:160px;}
+  .trx-st{display:inline-block;font-size:11.5px;font-weight:700;padding:2px 8px;border-radius:6px;white-space:nowrap;background:var(--border-soft);color:var(--muted);}
+  .trx-st.trx-manual{background:var(--green-pale);color:var(--green-dark);}
+  .trx-st.trx-missing{background:var(--warn-bg);color:var(--warn);}
+  .trx-dirty td:first-child{box-shadow:inset 3px 0 0 var(--green);}
+  @media (max-width:640px){
+    .trx-table thead{display:none;}
+    .trx-table tr{display:grid;grid-template-columns:1fr auto;gap:6px 10px;padding:10px 0;border-bottom:1px solid var(--border-soft);}
+    .trx-table td{display:block;padding:0;border:0;}
+    .trx-table td:nth-child(2),.trx-table td:nth-child(3){grid-column:1 / -1;}
+    .trx-table td:nth-child(4){grid-row:1;grid-column:2;}
+    .trx-table input{min-width:0;}
+  }
   th.sortable{cursor:pointer;user-select:none;white-space:nowrap;}
   th.sortable:hover{color:var(--green-dark);}
   th.sortable .arrow{color:var(--green);margin-inline-start:3px;}
@@ -1898,7 +1918,7 @@ var ICON_B64 = 'iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAYAAAA9zQYyAAAcG0lEQVR42u2dd1cU
 // Stamped by tools/stamp-build.js at publish time so the running app can
 // say which build it is — a cached page is the usual reason a shipped change
 // seems missing.
-var BUILD_ID = '2026-09-29 14:22 · 0031ed4';
+var BUILD_ID = '2026-09-29 14:47 · 7179b74';
 var LOGO_SRC = 'data:image/png;base64,' + LOGO_B64;
 var ICON_SRC = LOGO_SRC; // same asset — see the comment above LOGO_B64
 
@@ -2047,7 +2067,7 @@ var L = {
     dash_agingTitle:'مدة بقاء النقدية دون إيداع', dash_age0_1:'٠–١ يوم', dash_age1_3:'١–٣ أيام', dash_age3_7:'٣–٧ أيام', dash_age7plus:'أكثر من ٧ أيام',
     dash_recentHandoffs:'أحدث التسليمات', dash_deposits:'الإيداعات المسجّلة', dash_noData:'لا توجد بيانات لعرضها بعد',
     admin_users:'المستخدمون', admin_locations:'الفروع', admin_stores:'المتاجر', admin_cars:'السيارات', admin_pos:'أجهزة نقاط البيع',
-    admin_clusters:'المناطق', admin_products:'المنتجات', admin_config:'الإعدادات', admin_audit:'سجل التدقيق',
+    admin_clusters:'المناطق', admin_products:'المنتجات', admin_config:'الإعدادات', admin_audit:'سجل التدقيق', admin_translations:'الترجمات', tr_hint:'الأسماء تُكتب بالعربية، وتظهر لمن اختار الإنجليزية أو الأردية بترجمتها من هنا. يترجم Google كل اسم جديد عند حفظه، وما تصححه أنت يبقى كما كتبته.', tr_search:'بحث في الأسماء', tr_fAll:'الكل', tr_fMissing:'بلا ترجمة', tr_fAuto:'ترجمة آلية', tr_fManual:'مراجَعة', tr_fill:'ترجمة الناقص', tr_save:'حفظ التعديلات', tr_ar:'الاسم بالعربية', tr_state:'الحالة', tr_st_auto:'آلية', tr_st_manual:'مراجَعة', tr_st_latin:'من الاسم نفسه', tr_st_missing:'بلا ترجمة', tr_count:'{n} من {total}', tr_saved:'حُفظت {n} ترجمة', tr_filled:'تُرجم {n} اسماً', tr_filling:'جارٍ الترجمة…',
     admin_addProduct:'إضافة منتج', admin_productName:'اسم المنتج',
     admin_groupSystem:'النظام والمستخدمون', admin_groupMaster:'البيانات الأساسية', admin_groupOther:'أخرى',
     admin_permissions:'مصفوفة الصلاحيات', perm_screen:'الشاشة/الصلاحية', perm_note:'تُبنى هذه المصفوفة من قواعد النظام الفعلية، وليست وثيقة منفصلة قد تصبح قديمة.',
@@ -2215,7 +2235,7 @@ var L = {
     dash_agingTitle:'How long cash has sat uncollected', dash_age0_1:'0–1 day', dash_age1_3:'1–3 days', dash_age3_7:'3–7 days', dash_age7plus:'7+ days',
     dash_recentHandoffs:'Recent handoffs', dash_deposits:'Deposits recorded', dash_noData:'Nothing to show yet',
     admin_users:'Users', admin_locations:'Branches', admin_stores:'Stores', admin_cars:'Cars', admin_pos:'POS machines',
-    admin_clusters:'Areas', admin_products:'Products', admin_config:'Settings', admin_audit:'Audit log',
+    admin_clusters:'Areas', admin_products:'Products', admin_config:'Settings', admin_audit:'Audit log', admin_translations:'Translations', tr_hint:'Names are typed in Arabic. Anyone using English or Urdu sees them translated from here. Google translates every new name when it is saved, and a correction you make stays as you wrote it.', tr_search:'Search names', tr_fAll:'All', tr_fMissing:'Not translated', tr_fAuto:'Machine', tr_fManual:'Checked', tr_fill:'Translate missing', tr_save:'Save changes', tr_ar:'Arabic name', tr_state:'Status', tr_st_auto:'Machine', tr_st_manual:'Checked', tr_st_latin:'From the name', tr_st_missing:'Not translated', tr_count:'{n} of {total}', tr_saved:'{n} translations saved', tr_filled:'{n} names translated', tr_filling:'Translating…',
     admin_addProduct:'Add product', admin_productName:'Product name',
     admin_groupSystem:'System & users', admin_groupMaster:'Master data', admin_groupOther:'Other',
     admin_permissions:'Permissions matrix', perm_screen:'Screen / permission', perm_note:"This matrix is generated from the system's actual access rules, not a separate document that can go stale.",
@@ -2383,7 +2403,7 @@ var L = {
     dash_agingTitle:'نقدی کتنے عرصے سے جمع نہیں ہوئی', dash_age0_1:'٠–١ دن', dash_age1_3:'١–٣ دن', dash_age3_7:'٣–٧ دن', dash_age7plus:'٧ دن سے زیادہ',
     dash_recentHandoffs:'حالیہ ترسیل', dash_deposits:'درج شدہ جمع رقوم', dash_noData:'دکھانے کے لیے ابھی کوئی ڈیٹا نہیں',
     admin_users:'صارفین', admin_locations:'برانچز', admin_stores:'اسٹورز', admin_cars:'گاڑیاں', admin_pos:'POS مشینیں',
-    admin_clusters:'علاقے', admin_products:'پروڈکٹس', admin_config:'ترتیبات', admin_audit:'آڈٹ لاگ',
+    admin_clusters:'علاقے', admin_products:'پروڈکٹس', admin_config:'ترتیبات', admin_audit:'آڈٹ لاگ', admin_translations:'ترجمے', tr_hint:'نام عربی میں لکھے جاتے ہیں۔ انگریزی یا اردو استعمال کرنے والے انہیں یہاں کے ترجمے میں دیکھتے ہیں۔ ہر نیا نام محفوظ ہوتے ہی Google ترجمہ کرتا ہے، اور آپ کی درستی ویسی ہی رہتی ہے جیسی آپ نے لکھی۔', tr_search:'نام تلاش کریں', tr_fAll:'سب', tr_fMissing:'بغیر ترجمہ', tr_fAuto:'مشینی', tr_fManual:'جانچا ہوا', tr_fill:'باقی کا ترجمہ کریں', tr_save:'تبدیلیاں محفوظ کریں', tr_ar:'عربی نام', tr_state:'حالت', tr_st_auto:'مشینی', tr_st_manual:'جانچا ہوا', tr_st_latin:'نام ہی سے', tr_st_missing:'بغیر ترجمہ', tr_count:'{total} میں سے {n}', tr_saved:'{n} ترجمے محفوظ ہوئے', tr_filled:'{n} نام ترجمہ ہوئے', tr_filling:'ترجمہ ہو رہا ہے…',
     admin_addProduct:'پروڈکٹ شامل کریں', admin_productName:'پروڈکٹ کا نام',
     admin_groupSystem:'نظام اور صارفین', admin_groupMaster:'بنیادی ڈیٹا', admin_groupOther:'دیگر',
     admin_permissions:'اجازتوں کی میٹرکس', perm_screen:'اسکرین/اجازت', perm_note:'یہ میٹرکس نظام کے اصل رسائی قوانین سے تیار ہوتی ہے، ایک الگ دستاویز نہیں جو پرانی ہو سکے۔',
@@ -2537,6 +2557,96 @@ var state = {
 
 function setLang(l){ state.lang = l; localStorage.setItem('bgc_lang', l); document.documentElement.lang=l; document.documentElement.dir=dirFor(l); }
 setLang(state.lang);
+
+// ---- Names in the viewer's language (2026-09-29) ----
+// Master data is typed in Arabic. In English or Urdu every name on screen is
+// swapped for its translation: meta.translations (Google Translate on save,
+// corrected by a manager under Admin > Translations). A name that already
+// carries its English ("النسيم Al-Naseem", a POS label with a plate) shows its
+// Latin part in English. This works on the drawn page, text nodes only, so
+// form values, ids and everything sent to the server stay Arabic; an element
+// marked data-notr is left alone.
+var TRX_ = { meta: null, lang: null, map: null, re: null };
+var PLATE_ = { 'ا':'A','أ':'A','إ':'A','آ':'A','ب':'B','ح':'J','د':'D','ر':'R','س':'S','ص':'X','ط':'T','ع':'E','ق':'G','ك':'K','ل':'L','م':'Z','ن':'N','ه':'H','و':'U','ى':'V','ي':'V' };
+// a Saudi plate's letters: two or three single letters with spaces between;
+// the English row reads them in the opposite order
+function plateLatin_(s){
+  return String(s).replace(/(^|[^\u0600-\u06FF])([\u0621-\u064A](?: [\u0621-\u064A]){1,2})(?![\u0600-\u06FF])/g, function(m, pre, g){
+    var ls = g.split(' ');
+    for (var i = 0; i < ls.length; i++) if (!PLATE_[ls[i]]) return m;
+    return pre + ls.reverse().map(function(c){ return PLATE_[c]; }).join('');
+  });
+}
+function latinPart_(s){
+  var x = plateLatin_(s);
+  if (!/[A-Za-z]/.test(x)) return null;
+  x = x.replace(/[\u0600-\u06FF]+/g, ' ').replace(/\(\s*\)/g, ' ').replace(/\s+/g, ' ')
+    .replace(/\s*[|\/\u2013\u2014-]\s*(?=[|\/\u2013\u2014-]|$)/g, '').replace(/^[\s|\/\u2013\u2014-]+/, '').trim();
+  return x || null;
+}
+function trNames_(meta){
+  var out = [];
+  Object.keys(meta || {}).forEach(function(k){
+    if (!Array.isArray(meta[k]) || k === 'translations') return;
+    meta[k].forEach(function(e){ ['name','label','city'].forEach(function(fk){ var v = e && e[fk]; if (typeof v === 'string' && /[\u0600-\u06FF]/.test(v)) out.push(v.trim()); }); });
+  });
+  return out;
+}
+function trMap_(){
+  var meta = state.meta, lang = state.lang;
+  if (!meta || lang === 'ar') return null;
+  if (TRX_.meta === meta && TRX_.lang === lang) return TRX_;
+  var map = {};
+  (meta.translations || []).forEach(function(r){ var v = r && r[lang]; if (r.src && v) map[String(r.src).trim()] = v; });
+  if (lang === 'en') trNames_(meta).forEach(function(n){ if (!map[n]) { var lp = latinPart_(n); if (lp) map[n] = lp; } });
+  var keys = Object.keys(map).filter(function(k){ return map[k] !== k && /[\u0600-\u06FF]/.test(k); })
+    .sort(function(a, b){ return b.length - a.length; });
+  var re = keys.length ? new RegExp('(^|[^\u0600-\u06FF])(' + keys.map(function(k){ return k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }).join('|') + ')(?![\u0600-\u06FF])', 'g') : null;
+  TRX_ = { meta: meta, lang: lang, map: map, re: re };
+  return TRX_;
+}
+// one string in the viewer's language (exports use it too)
+function trText_(v){
+  if (typeof v !== 'string' || !/[\u0600-\u06FF]/.test(v)) return v;
+  var d = trMap_();
+  if (!d || !d.re) return v;
+  return v.replace(d.re, function(m, pre, k){ return pre + d.map[k]; });
+}
+var trSeen_ = typeof WeakMap === 'function' ? new WeakMap() : null;
+function trSkipEl_(x){ return x.hasAttribute('data-notr') || /^(SCRIPT|STYLE|TEXTAREA)$/.test(x.tagName); }
+function trTextNode_(n){
+  var v = n.nodeValue;
+  if (!v || !/[\u0600-\u06FF]/.test(v) || (trSeen_ && trSeen_.get(n) === v)) return;
+  var out = trText_(v);
+  if (trSeen_) trSeen_.set(n, out);
+  if (out !== v) n.nodeValue = out;
+}
+function trNode_(root){
+  if (!trMap_() || !root) return;
+  var p = root.nodeType === 3 ? root.parentNode : root;
+  if (!p || p.nodeType !== 1 || (p.closest && p.closest('[data-notr],script,style,textarea'))) return;
+  if (root.nodeType === 3) { trTextNode_(root); return; }
+  var w = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT, { acceptNode: function(x){
+    if (x.nodeType === 1) return trSkipEl_(x) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_SKIP;
+    return NodeFilter.FILTER_ACCEPT;
+  } });
+  var list = [], n;
+  while ((n = w.nextNode())) list.push(n);
+  list.forEach(trTextNode_);
+}
+(function trWatch_(){
+  if (typeof MutationObserver !== 'function') return;
+  function start(){
+    new MutationObserver(function(muts){
+      if (!trMap_()) return;
+      muts.forEach(function(m){
+        if (m.type === 'characterData') trNode_(m.target);
+        else for (var i = 0; i < m.addedNodes.length; i++) trNode_(m.addedNodes[i]);
+      });
+    }).observe(document.body, { childList: true, subtree: true, characterData: true });
+  }
+  if (document.body) start(); else document.addEventListener('DOMContentLoaded', start);
+})();
 
 // ---------------- helpers ----------------
 function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
@@ -3659,10 +3769,16 @@ function posOwnerLocationId_(p){
   if (p.ownerType === 'store') { var s = byId(meta.stores, p.ownerId); return s && s.locationId; }
   var c = byId(meta.cars, p.ownerId); return c && c.locationId;
 }
+// a POS in a picker leads with its 8-digit device id, the number on the machine
+function posPickLabel_(p){
+  var dev = String(p.posId || '').trim(), lab = String(p.label || '').trim();
+  if (!dev) return lab || p.code || p.id;
+  return lab && lab !== dev ? dev + ' · ' + lab : dev;
+}
 function sourceOptionLabel_(type, x){
   if (type === 'store') return (x.name || x.id) + ' — ' + locationName(x.locationId);
   if (type === 'car') return (x.label || x.id) + ' — ' + locationName(x.locationId);
-  if (type === 'pos') return (x.label || x.id) + ' — ' + posOwnerName_(x) + ' — ' + locationName(posOwnerLocationId_(x));
+  if (type === 'pos') return posPickLabel_(x) + ' — ' + posOwnerName_(x) + ' — ' + locationName(posOwnerLocationId_(x));
   return x.label || x.name || x.id;
 }
 
@@ -3955,7 +4071,7 @@ function exportXlsx_(fileName, sheets){
     wb.Workbook = { Views: [{ RTL: state.lang !== 'en' }] };
     var used = {};
     sheets.forEach(function(sh){
-      var ws = X.utils.aoa_to_sheet(sh.rows);
+      var ws = X.utils.aoa_to_sheet(sh.rows.map(function(r){ return Array.isArray(r) ? r.map(trText_) : r; }));
       ws['!cols'] = (sh.rows[0] || []).map(function(h, i){
         var w = sh.rows.reduce(function(m, r){ return Math.max(m, String(r[i] == null ? '' : r[i]).length); }, 6);
         return { wch: Math.min(48, w + 2) };
@@ -6535,7 +6651,7 @@ function renderEntries(body){
       var d = devices_();
       if (!d.length) return '<option value="">'+esc(t('entry_noDevices'))+'</option>';
       return '<option value="">'+esc(t('entry_pickDevice'))+'</option>' + d.map(function(p){
-        return '<option value="'+esc(p.id)+'">'+esc((p.code ? p.code + ' · ' : '') + (p.label || p.id))+'</option>';
+        return '<option value="'+esc(p.id)+'">'+esc(posPickLabel_(p) + (p.holderName ? ' · ' + p.holderName : ''))+'</option>';
       }).join('');
     }
     function rows(){
@@ -9206,7 +9322,7 @@ function renderAdmin(body){
   ] : [
     { key:'master', label:'admin_groupMaster', tabs:[['chain','admin_chain'],['locations','admin_locations'],['stores','admin_stores'],
         ['cars','admin_cars'],['pos','admin_pos'],['clusters','admin_clusters'],['zones','admin_zones'],['cities','admin_cities'],['products','admin_products'],
-        ['incomeItems','admin_incomeItems'],['expenseItems','admin_expenseItems'],['customers','admin_customers'],['channels','admin_channels']] },
+        ['incomeItems','admin_incomeItems'],['expenseItems','admin_expenseItems'],['customers','admin_customers'],['channels','admin_channels'],['translations','admin_translations']] },
     { key:'other', label:'admin_groupOther', tabs:[['config','admin_config'],['audit','admin_audit']] }
   ];
   // the tab shown belongs to this screen
@@ -9242,6 +9358,7 @@ function renderAdmin(body){
     customers: function(c){ renderAdminEntity(c,'customer'); },
     channels: function(c){ renderAdminEntity(c,'channel'); },
     cities: function(c){ renderAdminEntity(c,'city'); },
+    translations: renderAdminTranslations,
     config: renderAdminConfig, audit: renderAdminAudit
   };
   (renderers[adminTab]||renderAdminUsers)(content);
@@ -10798,6 +10915,81 @@ function renderAdminProfile(content, kind, id){
           return '<li><span class="pf-tld"></span><div><b>'+esc(auditLabel_(a2.action))+'</b><span>'+esc(userName(a2.userId))+' · <bdi dir="ltr">'+esc(fmtStamp_(a2.at))+'</bdi></span></div></li>';
         }).join('') + '</ul>'
       : '<div class="muted pf-none">'+esc(t('pf_noHistory'))+'</div>';
+  });
+}
+
+// Admin > Translations: every Arabic name in master data with its English and
+// Urdu. Google fills them when a name is saved ("machine"); a manager's
+// correction ("checked") is kept for good. Names that already carry their
+// English show it as the suggestion.
+function renderAdminTranslations(content){
+  function trFill_(str, vars){ Object.keys(vars).forEach(function(k){ str = str.split('{' + k + '}').join(String(vars[k])); }); return str; }
+  var meta = state.meta || {}, have = {};
+  (meta.translations || []).forEach(function(r){ if (r.src) have[String(r.src).trim()] = r; });
+  var seen = {}, rows = [];
+  trNames_(meta).concat(Object.keys(have)).forEach(function(n){
+    if (seen[n]) return; seen[n] = 1;
+    var r = have[n] || null, lp = latinPart_(n);
+    rows.push({ src: n, en: r ? r.en : '', ur: r ? r.ur : '', auto: r ? r.auto : null, latin: lp });
+  });
+  rows.sort(function(a, b){ return a.src.localeCompare(b.src, 'ar'); });
+  function stateOf(r){ return r.auto === false ? 'manual' : r.auto ? 'auto' : r.latin ? 'latin' : 'missing'; }
+  var card = el('<div class="card trx" data-notr><h2>'+esc(t('admin_translations'))+'</h2>' +
+    '<p class="muted trx-hint">'+esc(t('tr_hint'))+'</p>' +
+    '<div class="trx-bar"><input id="trQ" type="search" placeholder="'+esc(t('tr_search'))+'">' +
+    '<select id="trF"><option value="all">'+esc(t('tr_fAll'))+'</option><option value="missing">'+esc(t('tr_fMissing'))+'</option>' +
+      '<option value="auto">'+esc(t('tr_fAuto'))+'</option><option value="manual">'+esc(t('tr_fManual'))+'</option></select>' +
+    '<span class="trx-count muted"></span>' +
+    '<button class="btn secondary" id="trFill">'+esc(t('tr_fill'))+'</button>' +
+    '<button class="btn" id="trSave" disabled>'+esc(t('tr_save'))+'</button></div>' +
+    '<div id="trMsg"></div>' +
+    '<div class="tbl-scroll"><table class="rp-table trx-table" data-noexport><thead><tr><th>'+esc(t('tr_ar'))+'</th><th>English</th><th>اردو</th><th>'+esc(t('tr_state'))+'</th></tr></thead><tbody></tbody></table></div></div>');
+  content.appendChild(card);
+  var tb = qs('tbody', card), dirty = {};
+  rows.forEach(function(r, i){
+    var st = stateOf(r);
+    var tr = el('<tr data-i="'+i+'" data-st="'+st+'"><td class="trx-src" dir="rtl">'+esc(r.src)+'</td>' +
+      '<td><input class="trx-en" dir="ltr" value="'+esc(r.en || '')+'" placeholder="'+esc(r.latin || '')+'"></td>' +
+      '<td><input class="trx-ur" dir="rtl" value="'+esc(r.ur || '')+'"></td>' +
+      '<td><span class="trx-st trx-'+st+'">'+esc(t('tr_st_'+st))+'</span></td></tr>');
+    tb.appendChild(tr);
+    qsa('input', tr).forEach(function(inp){ inp.addEventListener('input', function(){
+      dirty[i] = true; tr.classList.add('trx-dirty');
+      qs('#trSave', card).disabled = false;
+      qs('#trSave', card).textContent = t('tr_save') + ' (' + Object.keys(dirty).length + ')';
+    }); });
+  });
+  function filter(){
+    var q = normName_(qs('#trQ', card).value || ''), fv = qs('#trF', card).value, n = 0;
+    qsa('tbody tr', card).forEach(function(tr){
+      var r = rows[+tr.getAttribute('data-i')], st = tr.getAttribute('data-st');
+      var hit = (!q || normName_(r.src + ' ' + (r.en || '') + ' ' + (r.ur || '')).indexOf(q) >= 0) &&
+        (fv === 'all' || (fv === 'missing' ? (st === 'missing' || st === 'latin') : st === fv));
+      tr.hidden = !hit; if (hit) n++;
+    });
+    qs('.trx-count', card).textContent = trFill_(t('tr_count'), { n: n, total: rows.length });
+  }
+  qs('#trQ', card).addEventListener('input', filter);
+  qs('#trF', card).addEventListener('change', filter);
+  filter();
+  function done(res, btn, okKey){
+    btn.disabled = false;
+    if (!res.ok){ qs('#trMsg', card).innerHTML = '<div class="msg err">'+esc(errMsg_(res))+'</div>'; return; }
+    refreshMetaThen(function(){ renderAdmin(qs('#screenBody')); showToast_(trFill_(t(okKey), { n: res.added != null ? res.added : res.saved }), 'ok'); }, res);
+  }
+  qs('#trSave', card).addEventListener('click', function(){
+    var btn = this, list = Object.keys(dirty).map(function(i){
+      var tr = qs('tr[data-i="'+i+'"]', card);
+      return { src: rows[i].src, en: qs('.trx-en', tr).value.trim(), ur: qs('.trx-ur', tr).value.trim() };
+    });
+    if (!list.length) return;
+    btn.disabled = true;
+    api('adminSaveTranslation', { rows: list }).then(function(res){ done(res, btn, 'tr_saved'); });
+  });
+  qs('#trFill', card).addEventListener('click', function(){
+    var btn = this; btn.disabled = true;
+    qs('#trMsg', card).innerHTML = '<div class="msg">'+esc(t('tr_filling'))+'</div>';
+    api('adminFillTranslations', {}).then(function(res){ done(res, btn, 'tr_filled'); });
   });
 }
 
