@@ -2569,6 +2569,32 @@ var inv3 = call({ action: 'getInventoryReport', token: financeTok, dateFrom: '20
 var r3 = inv3.rows.filter(function (r) { return r.productId === invP.entity.id; })[0];
 check(invShort.ok && r3.short === true && r3.ending === -83, 'selling more than the stock is flagged as short');
 
+console.log('--- inventory review fixes: go-live, validation, voids ---');
+var golP = call({ action: 'adminSaveEntity', token: adminTok, kind: 'product', data: { name: 'GoLive Item', type: 'goods', unitPrice: 10, unitCost: 6 } }).entity;
+['2026-09-10', '2026-09-11', '2026-09-12'].forEach(function (d) { call({ action: 'createDailyEntry', token: noorTok, date: d, sourceType: 'store', sourceId: dpStoreId, productId: golP.id, qty: 20, unitPrice: 10, cashSales: 200 }); });
+check(mv(noorTok, { productId: golP.id, kind: 'opening', qty: 100, date: '2026-09-12' }).ok, 'a branch counts its stock after months of sales');
+var gl = call({ action: 'getInventoryReport', token: financeTok, dateFrom: '2026-09-01', dateTo: '2026-09-30', locationId: dpLoc.id }).rows.filter(function (r) { return r.productId === golP.id; })[0];
+check(gl && gl.opening === 100 && gl.sales === 20 && gl.ending === 80 && !gl.short, 'sales before the opening count are not taken off it; the count day\'s own sales are (got ' + JSON.stringify(gl && [gl.opening, gl.sales, gl.ending]) + ')');
+var glEarly = call({ action: 'getInventoryReport', token: financeTok, dateFrom: '2026-08-01', dateTo: '2026-08-31', locationId: dpLoc.id }).rows.filter(function (r) { return r.productId === golP.id; })[0];
+check(!glEarly || (glEarly.noOpening && !glEarly.short), 'a period before the count reads "no opening yet", never short');
+var noCount = call({ action: 'adminSaveEntity', token: adminTok, kind: 'product', data: { name: 'Never Counted', type: 'goods' } }).entity;
+call({ action: 'createDailyEntry', token: noorTok, date: '2026-09-13', sourceType: 'store', sourceId: dpStoreId, productId: noCount.id, qty: 5, unitPrice: 10, cashSales: 50 });
+var nc = call({ action: 'getInventoryReport', token: financeTok, dateFrom: '2026-09-01', dateTo: '2026-09-30', locationId: dpLoc.id }).rows.filter(function (r) { return r.productId === noCount.id; })[0];
+check(nc && nc.noOpening && !nc.short, 'an item nobody has counted yet says so instead of reading short');
+call({ action: 'createDailyEntry', token: noorTok, date: '2026-09-14', sourceType: 'store', sourceId: dpStoreId, productId: golP.id, cashSales: 300 });
+var nq = call({ action: 'getInventoryReport', token: financeTok, dateFrom: '2026-09-01', dateTo: '2026-09-30', locationId: dpLoc.id }).rows.filter(function (r) { return r.productId === golP.id; })[0];
+check(nq && nq.salesWithoutQty === 1 && Math.abs(nq.salesWithoutQtyAmount - 300) < 0.005, 'a sale entered without a quantity is flagged, not silently dropped');
+[true, [5], '1e12', 1e308, 0.0001, 'abc'].forEach(function (bad) {
+  check(mv(noorTok, { productId: golP.id, kind: 'purchase', qty: bad, date: '2026-09-15' }).error === 'invalid_input', 'a quantity of ' + JSON.stringify(bad) + ' is refused');
+});
+check(mv(noorTok, { productId: golP.id, kind: 'purchase', qty: '12', date: '2026-02-31' }).error === 'invalid_input', 'a date that does not exist is refused');
+var inactive = call({ action: 'adminSaveEntity', token: adminTok, kind: 'product', data: { name: 'Off Item', type: 'goods', active: false } }).entity;
+check(mv(noorTok, { productId: inactive.id, kind: 'purchase', qty: 1, date: '2026-09-15' }).error === 'invalid_input', 'an inactive item takes no movements');
+check(call({ action: 'adminSaveEntity', token: adminTok, kind: 'product', data: { name: 'Typo', type: 'service' } }).error === 'invalid_input', 'an item is either inventory or a service');
+check(call({ action: 'adminSaveEntity', token: adminTok, kind: 'product', data: { name: 'Inf', type: 'goods', unitCost: 'Infinity' } }).error === 'invalid_input', 'a cost must be a real number');
+check(call({ action: 'adminSaveEntity', token: adminTok, kind: 'product', id: golP.id, data: { type: 'services' } }).error === 'has_stock', 'an item with stock movements stays an inventory item');
+check(call({ action: 'getInventoryReport', token: financeTok, dateFrom: '2026-09-30', dateTo: '2026-09-01' }).error === 'invalid_input', 'a period that ends before it starts is refused');
+
 console.log('--- a day entered for a POS machine banks its الموازنة on that same machine ---');
 var bwPh = call({ action: 'uploadEntryPhoto', token: bwTok, fileBase64: 'iVBORw0KGgo=', fileName: 'mz.png', fileMime: 'image/png' });
 var bwMz = { action: 'createDailyEntry', token: bwTok, date: '2026-09-21', sourceType: 'pos', sourceId: bwPos.entity.id, cashSales: 900, directDepositAmount: 400, directDepositRef: 'POS-MZ-1', directDepositPhotoId: bwPh.fileId };
