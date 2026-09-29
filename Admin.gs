@@ -75,7 +75,7 @@ function requireCompanyWide_(user) {
 // ---------- Users ----------
 
 function validRole_(r) {
-  return ['admin', 'finance', 'accountant', 'operations_manager', 'deputy_operations_manager', 'cluster_manager', 'store_manager', 'collector', 'driver'].indexOf(r) >= 0;
+  return ['admin', 'finance', 'accountant', 'operations_manager', 'deputy_operations_manager', 'cluster_manager', 'store_manager', 'collector', 'driver', 'branch_worker'].indexOf(r) >= 0;
 }
 
 // New users are *invited*, not handed a temporary password: the email carries
@@ -235,7 +235,8 @@ var ROLE_NAMES_ = {
   cluster_manager: ['مدير منطقة', 'Area Manager', 'علاقہ منیجر'],
   store_manager: ['مدير فرع', 'Branch Manager', 'برانچ منیجر'],
   collector: ['المحصّل', 'Collector', 'کلکٹر'],
-  driver: ['السائق', 'Driver', 'ڈرائیور']
+  driver: ['السائق', 'Driver', 'ڈرائیور'],
+  branch_worker: ['عامل فرع', 'Branch Worker', 'برانچ ورکر']
 };
 
 function htmlEsc_(s) {
