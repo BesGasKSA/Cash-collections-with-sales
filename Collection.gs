@@ -196,8 +196,8 @@ function settleCredit_(r) {
   r.creditCustomer = c.name;
   // The customer's delivery fee per unit, on the units this line took. The
   // server works it out; whatever the client sent is replaced.
-  // The fee is an addition the customer owes on account with the goods; the
-  // driver's commission per unit is a deduction.
+  // The fee is an addition to the cash owed, never a deduction; the driver's
+  // commission per unit is a deduction.
   var fees = c.deliveryFees || {}, coms = c.commissions || {}, fee = 0, com = 0;
   (r.creditItems || []).forEach(function (it) {
     var per = hasOwn_(fees, it.productId) ? Number(fees[it.productId]) : 0;
@@ -249,7 +249,7 @@ function checkNonSalesFields_(r, siblingCash) {
     // `siblingCash` is the cash on the OTHER rows of the same submission for
     // the same source and date: one real day gets split across several rows
     // in product mode, and the deposit rides on the first of them.
-    var inHand = Number(r.cashSales || 0) - Number(r.creditSales || 0) - Number(r.creditCommission || 0) - transfer + Number(siblingCash || 0) + other
+    var inHand = Number(r.cashSales || 0) - Number(r.creditSales || 0) - Number(r.creditCommission || 0) + Number(r.creditDeliveryFee || 0) - transfer + Number(siblingCash || 0) + other
       - delivery + (delivery > 0 ? (delivery / (1 + vat)) * vat : 0) - exp;
     if (dep > inHand + 0.005) return 'deposit_exceeds_cash';
   }
@@ -268,7 +268,7 @@ function siblingCash_(rows, index) {
     var o = rows[i] || {};
     if (o.sourceType === me.sourceType && o.sourceId === me.sourceId && o.date === me.date) {
       var dl = Number(o.deliveryFeeBankAmount || 0);
-      sum += Number(o.cashSales || 0) - Number(o.creditSales || 0) - Number(o.creditCommission || 0) - Number(o.bankTransferAmount || 0)
+      sum += Number(o.cashSales || 0) - Number(o.creditSales || 0) - Number(o.creditCommission || 0) + Number(o.creditDeliveryFee || 0) - Number(o.bankTransferAmount || 0)
         + Number(o.otherCash || 0) - Number(o.expenseAmount || 0) - dl + (dl > 0 ? (dl / (1 + vat)) * vat : 0)
         - Number(o.directDepositAmount || 0);
     }
@@ -728,9 +728,9 @@ function computeNet_(entries) {
   var vatOnDelivery = deliveryFee > 0 ? (deliveryFee / (1 + vat)) * vat : 0;
   // a customer's bank transfer is inside the sales figure like a credit
   // sale, but the money went straight to the bank: it comes off too
-  var netCashOwed = storeCash + carCash + posCash + otherCash - deliveryFee + vatOnDelivery - expenses - directDeposit - creditSales - bankTransfers - creditCommissions;
-  // (a credit delivery fee is an addition the customer also owes on account,
-  // so it adds and comes off again: no cash moves for it)
+  var netCashOwed = storeCash + carCash + posCash + otherCash - deliveryFee + vatOnDelivery - expenses - directDeposit - creditSales - bankTransfers - creditCommissions
+    // a credit customer's delivery fee is only ever added (the user, 2026-09-29)
+    + creditDeliveryFees;
   return {
     storeCash: storeCash, carCash: carCash, posCash: posCash, deliveryFee: deliveryFee,
     posSales: posSales, creditSales: creditSales, vatOnDelivery: vatOnDelivery,
