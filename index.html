@@ -388,6 +388,11 @@
   .inv-fig.inv-ending{background:var(--green);border-color:var(--green);}
   .inv-fig.inv-ending span,.inv-fig.inv-ending b,.inv-fig.inv-ending small{color:#fff;}
   .inv-short{color:var(--warn);font-weight:700;}
+  .inv-neg{color:var(--warn);font-weight:800;}
+  .inv-neg em{font-style:normal;font-size:10px;margin-inline-start:5px;background:var(--warn-bg);border-radius:4px;padding:0 5px;}
+  .inv-nocount{color:var(--muted);font-weight:700;}
+  .inv-warn{display:flex;gap:8px;align-items:flex-start;margin-top:10px;padding:9px 12px;border-radius:10px;background:var(--warn-bg);color:var(--warn);font-size:12.5px;line-height:1.7;}
+  .inv-warn .bi{width:16px;height:16px;flex:none;margin-top:3px;}
   .inv-short-row td{background:var(--warn-bg);}
   .inv-void td{opacity:.5;text-decoration:line-through;}
   .inv-void td.col-actions{text-decoration:none;}
@@ -2157,7 +2162,7 @@ var L = {
     admin_addUser:'إضافة مستخدم', admin_name:'الاسم', admin_role:'الدور', admin_active:'نشط', admin_resetPw:'إعادة تعيين كلمة المرور',
     admin_addLocation:'إضافة فرع', admin_city:'المدينة', admin_locName:'اسم الفرع', admin_cluster:'المنطقة',
     admin_zones:'النطاقات', admin_addZone:'إضافة نطاق', admin_zoneName:'اسم النطاق', admin_zone:'النطاق',
-    admin_productType:'نوع المنتج', admin_typeGoods:'مخزني', admin_typeServices:'خدمات', nav_inventory:'المخزون', inv_title:'حركة المخزون', inv_hint:'رصيد أول المدة + المشتريات + المرتجع من المطاعم = المتاح للاستخدام، ثم يُطرح منه المبيعات (من إدخالات النظام) والتالف، فيبقى رصيد آخر المدة. القيم بسعر التكلفة.', inv_opening:'رصيد أول المدة', inv_purchases:'المشتريات', inv_returns:'مرتجع المطاعم', inv_available:'المتاح للاستخدام', inv_sales:'المبيعات', inv_damaged:'التالف', inv_ending:'رصيد آخر المدة', inv_unitCost:'تكلفة الوحدة', inv_from:'من', inv_to:'إلى', inv_allBranches:'كل الفروع', inv_thisMonth:'هذا الشهر', inv_lastMonth:'الشهر الماضي', inv_showValue:'عرض القيم بالتكلفة بدل الكميات', inv_qtyShort:'كمية', inv_byBranch:'المخزون حسب الفرع والصنف', inv_item:'الصنف', inv_items:'الأصناف: {n}', inv_tag_add:'يُضاف', inv_tag_ded:'يُخصم', inv_empty:'لا توجد حركة مخزون في هذه الفترة. ابدأ بتسجيل رصيد أول المدة لكل صنف.', inv_shortBadge:'عجز', inv_shortBy:'عجز {n}: المبيعات أكثر من الرصيد، راجع الحركات', inv_period:'الفترة من {from} إلى {to}', inv_moves:'حركات المخزون المسجلة', inv_kind:'نوع الحركة', inv_qty:'الكمية', inv_k_opening:'رصيد أول المدة', inv_k_purchase:'مشتريات', inv_k_return:'مرتجع من المطاعم', inv_k_damage:'تالف', inv_addTitle:'تسجيل حركة مخزون', inv_addHint:'المبيعات تُحسب تلقائياً من الإدخالات اليومية، فلا تُسجَّل هنا. رصيد أول المدة يُسجَّل مرة واحدة لكل صنف في كل فرع.', inv_notePh:'رقم فاتورة الشراء أو اسم المطعم أو سبب التلف', inv_save:'حفظ الحركة', inv_saved:'حُفظت الحركة', inv_needQty:'اكتب الكمية', inv_noMoves:'لا توجد حركات مسجلة في هذه الفترة', inv_void:'إلغاء الحركة', inv_voided:'ملغاة', inv_voidReason:'سبب إلغاء هذه الحركة؟', err_openingExists:'رصيد أول المدة مسجَّل لهذا الصنف في هذا الفرع. سجّل الفرق كمشتريات أو تالف، أو ألغِ الرصيد السابق.', err_notInventory:'هذا الصنف خدمة وليس له مخزون',
+    admin_productType:'نوع المنتج', admin_typeGoods:'مخزني', admin_typeServices:'خدمات', nav_inventory:'المخزون', inv_title:'حركة المخزون', inv_hint:'رصيد أول المدة + المشتريات + المرتجع من المطاعم = المتاح للاستخدام، ثم يُطرح منه المبيعات (من إدخالات النظام) والتالف، فيبقى رصيد آخر المدة. القيم بسعر التكلفة.', inv_opening:'رصيد أول المدة', inv_purchases:'المشتريات', inv_returns:'مرتجع المطاعم', inv_available:'المتاح للاستخدام', inv_sales:'المبيعات', inv_damaged:'التالف', inv_ending:'رصيد آخر المدة', inv_unitCost:'تكلفة الوحدة', inv_from:'من', inv_to:'إلى', inv_allBranches:'كل الفروع', inv_thisMonth:'هذا الشهر', inv_lastMonth:'الشهر الماضي', inv_showValue:'عرض القيم بالتكلفة بدل الكميات', inv_qtyShort:'كمية', inv_byBranch:'المخزون حسب الفرع والصنف', inv_item:'الصنف', inv_items:'الأصناف: {n}', inv_tag_add:'يُضاف', inv_tag_ded:'يُخصم', inv_byLevels:'المخزون بالمستويات', inv_lv_city:'المدينة', inv_lv_area:'المنطقة', inv_lv_branch:'الفرع', inv_lv_item:'الصنف', inv_lv_seller:'جهة البيع', inv_search:'ابحث عن مدينة أو فرع أو صنف أو جهاز…', inv_soldHere:'مبيعات هذا الصنف من هذه الجهة', inv_noOpening:'لم يُسجَّل رصيد أول المدة بعد', inv_uncounted:'{n} صنف/فرع بلا رصيد أول المدة، فلا يدخل في الأرصدة. سجّل الجرد الافتتاحي لكل صنف في كل فرع.', inv_noQtyWarn:'{n} بيع بمبلغ {amt} ر.س سُجّل بلا كمية، فلا يُخصم من المخزون. أدخل البيع بطريقة المنتج (كمية × سعر).', err_hasStock:'لهذا الصنف حركات مخزون، فلا يمكن تحويله إلى خدمة', err_invalidLocation:'اختر فرعاً صحيحاً', inv_empty:'لا توجد حركة مخزون في هذه الفترة. ابدأ بتسجيل رصيد أول المدة لكل صنف.', inv_shortBadge:'عجز', inv_shortBy:'عجز {n}: المبيعات أكثر من الرصيد، راجع الحركات', inv_period:'الفترة من {from} إلى {to}', inv_moves:'حركات المخزون المسجلة', inv_kind:'نوع الحركة', inv_qty:'الكمية', inv_k_opening:'رصيد أول المدة', inv_k_purchase:'مشتريات', inv_k_return:'مرتجع من المطاعم', inv_k_damage:'تالف', inv_addTitle:'تسجيل حركة مخزون', inv_addHint:'المبيعات تُحسب تلقائياً من الإدخالات اليومية، فلا تُسجَّل هنا. رصيد أول المدة يُسجَّل مرة واحدة لكل صنف في كل فرع.', inv_notePh:'رقم فاتورة الشراء أو اسم المطعم أو سبب التلف', inv_save:'حفظ الحركة', inv_saved:'حُفظت الحركة', inv_needQty:'اكتب الكمية', inv_noMoves:'لا توجد حركات مسجلة في هذه الفترة', inv_void:'إلغاء الحركة', inv_voided:'ملغاة', inv_voidReason:'سبب إلغاء هذه الحركة؟', err_openingExists:'رصيد أول المدة مسجَّل لهذا الصنف في هذا الفرع. سجّل الفرق كمشتريات أو تالف، أو ألغِ الرصيد السابق.', err_notInventory:'هذا الصنف خدمة وليس له مخزون',
     admin_addStore:'إضافة متجر', admin_storeName:'اسم المتجر', admin_manager:'مدير الفرع', admin_location:'الفرع',
     admin_addCar:'إضافة سيارة', admin_carLabel:'رقم اللوحة/السائق', admin_driver:'السائق',
     admin_addPos:'إضافة جهاز', admin_posLabel:'رقم الجهاز', admin_ownerType:'مرتبط بـ', admin_owner:'الجهة', admin_assignedDriver:'الموظف المسؤول',
@@ -2325,7 +2330,7 @@ var L = {
     admin_addUser:'Add user', admin_name:'Name', admin_role:'Role', admin_active:'Active', admin_resetPw:'Reset password',
     admin_addLocation:'Add branch', admin_city:'City', admin_locName:'Branch name', admin_cluster:'Area',
     admin_zones:'Zones', admin_addZone:'Add zone', admin_zoneName:'Zone name', admin_zone:'Zone',
-    admin_productType:'Product type', admin_typeGoods:'Inventory', admin_typeServices:'Services', nav_inventory:'Inventory', inv_title:'Inventory movement', inv_hint:'Opening + purchases + returns from restaurants = available for use; less sales (from the system\'s entries) and damaged items leaves the ending stock. Values are at cost.', inv_opening:'Opening', inv_purchases:'Purchases', inv_returns:'Returns from restaurants', inv_available:'Available for use', inv_sales:'Sales', inv_damaged:'Damaged', inv_ending:'Ending stock', inv_unitCost:'Unit cost', inv_from:'From', inv_to:'To', inv_allBranches:'All branches', inv_thisMonth:'This month', inv_lastMonth:'Last month', inv_showValue:'Show values at cost instead of quantities', inv_qtyShort:'qty', inv_byBranch:'Stock by branch and item', inv_item:'Item', inv_items:'Items: {n}', inv_tag_add:'added', inv_tag_ded:'deducted', inv_empty:'No stock movement in this period. Start by recording each item\'s opening balance.', inv_shortBadge:'Short', inv_shortBy:'Short by {n}: sales exceed the stock, check the movements', inv_period:'Period {from} to {to}', inv_moves:'Recorded movements', inv_kind:'Movement', inv_qty:'Quantity', inv_k_opening:'Opening balance', inv_k_purchase:'Purchase', inv_k_return:'Return from restaurants', inv_k_damage:'Damaged', inv_addTitle:'Record a stock movement', inv_addHint:'Sales come from the daily entries automatically, so they are not recorded here. The opening balance is recorded once per item in each branch.', inv_notePh:'Purchase invoice number, restaurant name or reason for damage', inv_save:'Save movement', inv_saved:'Movement saved', inv_needQty:'Enter the quantity', inv_noMoves:'No movements recorded in this period', inv_void:'Void movement', inv_voided:'Voided', inv_voidReason:'Why is this movement being voided?', err_openingExists:'This item already has an opening balance at this branch. Record the difference as a purchase or damage, or void the earlier balance.', err_notInventory:'This item is a service and has no stock',
+    admin_productType:'Product type', admin_typeGoods:'Inventory', admin_typeServices:'Services', nav_inventory:'Inventory', inv_title:'Inventory movement', inv_hint:'Opening + purchases + returns from restaurants = available for use; less sales (from the system\'s entries) and damaged items leaves the ending stock. Values are at cost.', inv_opening:'Opening', inv_purchases:'Purchases', inv_returns:'Returns from restaurants', inv_available:'Available for use', inv_sales:'Sales', inv_damaged:'Damaged', inv_ending:'Ending stock', inv_unitCost:'Unit cost', inv_from:'From', inv_to:'To', inv_allBranches:'All branches', inv_thisMonth:'This month', inv_lastMonth:'Last month', inv_showValue:'Show values at cost instead of quantities', inv_qtyShort:'qty', inv_byBranch:'Stock by branch and item', inv_item:'Item', inv_items:'Items: {n}', inv_tag_add:'added', inv_tag_ded:'deducted', inv_byLevels:'Stock by level', inv_lv_city:'City', inv_lv_area:'Area', inv_lv_branch:'Branch', inv_lv_item:'Item', inv_lv_seller:'Sold by', inv_search:'Find a city, branch, item or device…', inv_soldHere:'this item\'s sales from here', inv_noOpening:'No opening count yet', inv_uncounted:'{n} branch items have no opening count yet, so they are left out of the balances. Record each item\'s opening count at each branch.', inv_noQtyWarn:'{n} sales worth {amt} SAR were entered without a quantity, so they do not come off the stock. Enter sales by product (qty × price).', err_hasStock:'This item has stock movements, so it cannot become a service', err_invalidLocation:'Choose a valid branch', inv_empty:'No stock movement in this period. Start by recording each item\'s opening balance.', inv_shortBadge:'Short', inv_shortBy:'Short by {n}: sales exceed the stock, check the movements', inv_period:'Period {from} to {to}', inv_moves:'Recorded movements', inv_kind:'Movement', inv_qty:'Quantity', inv_k_opening:'Opening balance', inv_k_purchase:'Purchase', inv_k_return:'Return from restaurants', inv_k_damage:'Damaged', inv_addTitle:'Record a stock movement', inv_addHint:'Sales come from the daily entries automatically, so they are not recorded here. The opening balance is recorded once per item in each branch.', inv_notePh:'Purchase invoice number, restaurant name or reason for damage', inv_save:'Save movement', inv_saved:'Movement saved', inv_needQty:'Enter the quantity', inv_noMoves:'No movements recorded in this period', inv_void:'Void movement', inv_voided:'Voided', inv_voidReason:'Why is this movement being voided?', err_openingExists:'This item already has an opening balance at this branch. Record the difference as a purchase or damage, or void the earlier balance.', err_notInventory:'This item is a service and has no stock',
     admin_addStore:'Add store', admin_storeName:'Store name', admin_manager:'Branch manager', admin_location:'Branch',
     admin_addCar:'Add car', admin_carLabel:'Plate / driver label', admin_driver:'Driver',
     admin_addPos:'Add POS machine', admin_posLabel:'Terminal id', admin_ownerType:'Belongs to', admin_owner:'Owner', admin_assignedDriver:'Assigned employee',
@@ -2493,7 +2498,7 @@ var L = {
     admin_addUser:'صارف شامل کریں', admin_name:'نام', admin_role:'کردار', admin_active:'فعال', admin_resetPw:'پاس ورڈ ری سیٹ کریں',
     admin_addLocation:'برانچ شامل کریں', admin_city:'شہر', admin_locName:'برانچ کا نام', admin_cluster:'علاقہ',
     admin_zones:'زونز', admin_addZone:'زون شامل کریں', admin_zoneName:'زون کا نام', admin_zone:'زون',
-    admin_productType:'پروڈکٹ کی قسم', admin_typeGoods:'انوینٹری', admin_typeServices:'خدمات', nav_inventory:'انوینٹری', inv_title:'انوینٹری کی حرکت', inv_hint:'ابتدائی اسٹاک + خریداری + ریسٹورنٹس سے واپسی = دستیاب؛ اس میں سے فروخت (سسٹم کے اندراجات سے) اور خراب مال نکال کر اختتامی اسٹاک۔ قیمتیں لاگت پر۔', inv_opening:'ابتدائی', inv_purchases:'خریداری', inv_returns:'ریسٹورنٹس سے واپسی', inv_available:'دستیاب', inv_sales:'فروخت', inv_damaged:'خراب', inv_ending:'اختتامی', inv_unitCost:'فی یونٹ لاگت', inv_from:'سے', inv_to:'تک', inv_allBranches:'تمام برانچز', inv_thisMonth:'یہ مہینہ', inv_lastMonth:'پچھلا مہینہ', inv_showValue:'مقدار کے بجائے لاگت پر قیمت دکھائیں', inv_qtyShort:'مقدار', inv_byBranch:'برانچ اور آئٹم کے لحاظ سے اسٹاک', inv_item:'آئٹم', inv_items:'آئٹمز: {n}', inv_tag_add:'جمع', inv_tag_ded:'منہا', inv_empty:'اس مدت میں کوئی حرکت نہیں۔ ہر آئٹم کا ابتدائی اسٹاک درج کریں۔', inv_shortBadge:'کمی', inv_shortBy:'{n} کی کمی: فروخت اسٹاک سے زیادہ ہے، حرکات دیکھیں', inv_period:'مدت {from} سے {to}', inv_moves:'درج شدہ حرکات', inv_kind:'حرکت کی قسم', inv_qty:'مقدار', inv_k_opening:'ابتدائی اسٹاک', inv_k_purchase:'خریداری', inv_k_return:'ریسٹورنٹ سے واپسی', inv_k_damage:'خراب', inv_addTitle:'اسٹاک کی حرکت درج کریں', inv_addHint:'فروخت روزانہ اندراجات سے خود آتی ہے۔ ابتدائی اسٹاک ہر برانچ میں ہر آئٹم کا ایک بار درج ہوتا ہے۔', inv_notePh:'خریداری بل نمبر، ریسٹورنٹ کا نام یا خرابی کی وجہ', inv_save:'حرکت محفوظ کریں', inv_saved:'حرکت محفوظ ہو گئی', inv_needQty:'مقدار لکھیں', inv_noMoves:'اس مدت میں کوئی حرکت درج نہیں', inv_void:'حرکت منسوخ کریں', inv_voided:'منسوخ', inv_voidReason:'یہ حرکت کیوں منسوخ کی جا رہی ہے؟', err_openingExists:'اس برانچ میں اس آئٹم کا ابتدائی اسٹاک پہلے سے درج ہے۔', err_notInventory:'یہ آئٹم سروس ہے، اس کا اسٹاک نہیں',
+    admin_productType:'پروڈکٹ کی قسم', admin_typeGoods:'انوینٹری', admin_typeServices:'خدمات', nav_inventory:'انوینٹری', inv_title:'انوینٹری کی حرکت', inv_hint:'ابتدائی اسٹاک + خریداری + ریسٹورنٹس سے واپسی = دستیاب؛ اس میں سے فروخت (سسٹم کے اندراجات سے) اور خراب مال نکال کر اختتامی اسٹاک۔ قیمتیں لاگت پر۔', inv_opening:'ابتدائی', inv_purchases:'خریداری', inv_returns:'ریسٹورنٹس سے واپسی', inv_available:'دستیاب', inv_sales:'فروخت', inv_damaged:'خراب', inv_ending:'اختتامی', inv_unitCost:'فی یونٹ لاگت', inv_from:'سے', inv_to:'تک', inv_allBranches:'تمام برانچز', inv_thisMonth:'یہ مہینہ', inv_lastMonth:'پچھلا مہینہ', inv_showValue:'مقدار کے بجائے لاگت پر قیمت دکھائیں', inv_qtyShort:'مقدار', inv_byBranch:'برانچ اور آئٹم کے لحاظ سے اسٹاک', inv_item:'آئٹم', inv_items:'آئٹمز: {n}', inv_tag_add:'جمع', inv_tag_ded:'منہا', inv_byLevels:'سطح وار اسٹاک', inv_lv_city:'شہر', inv_lv_area:'علاقہ', inv_lv_branch:'برانچ', inv_lv_item:'آئٹم', inv_lv_seller:'فروخت کنندہ', inv_search:'شہر، برانچ، آئٹم یا مشین تلاش کریں…', inv_soldHere:'یہاں سے اس آئٹم کی فروخت', inv_noOpening:'ابتدائی گنتی ابھی درج نہیں', inv_uncounted:'{n} برانچ آئٹمز کی ابتدائی گنتی درج نہیں، اس لیے وہ بیلنس میں شامل نہیں۔', inv_noQtyWarn:'{n} فروخت ({amt} ریال) بغیر مقدار درج ہوئی، اس لیے اسٹاک سے منہا نہیں ہوئی۔', err_hasStock:'اس آئٹم کی اسٹاک حرکات ہیں، یہ سروس نہیں بن سکتا', err_invalidLocation:'درست برانچ منتخب کریں', inv_empty:'اس مدت میں کوئی حرکت نہیں۔ ہر آئٹم کا ابتدائی اسٹاک درج کریں۔', inv_shortBadge:'کمی', inv_shortBy:'{n} کی کمی: فروخت اسٹاک سے زیادہ ہے، حرکات دیکھیں', inv_period:'مدت {from} سے {to}', inv_moves:'درج شدہ حرکات', inv_kind:'حرکت کی قسم', inv_qty:'مقدار', inv_k_opening:'ابتدائی اسٹاک', inv_k_purchase:'خریداری', inv_k_return:'ریسٹورنٹ سے واپسی', inv_k_damage:'خراب', inv_addTitle:'اسٹاک کی حرکت درج کریں', inv_addHint:'فروخت روزانہ اندراجات سے خود آتی ہے۔ ابتدائی اسٹاک ہر برانچ میں ہر آئٹم کا ایک بار درج ہوتا ہے۔', inv_notePh:'خریداری بل نمبر، ریسٹورنٹ کا نام یا خرابی کی وجہ', inv_save:'حرکت محفوظ کریں', inv_saved:'حرکت محفوظ ہو گئی', inv_needQty:'مقدار لکھیں', inv_noMoves:'اس مدت میں کوئی حرکت درج نہیں', inv_void:'حرکت منسوخ کریں', inv_voided:'منسوخ', inv_voidReason:'یہ حرکت کیوں منسوخ کی جا رہی ہے؟', err_openingExists:'اس برانچ میں اس آئٹم کا ابتدائی اسٹاک پہلے سے درج ہے۔', err_notInventory:'یہ آئٹم سروس ہے، اس کا اسٹاک نہیں',
     admin_addStore:'اسٹور شامل کریں', admin_storeName:'اسٹور کا نام', admin_manager:'برانچ منیجر', admin_location:'برانچ',
     admin_addCar:'گاڑی شامل کریں', admin_carLabel:'پلیٹ / ڈرائیور کا نام', admin_driver:'ڈرائیور',
     admin_addPos:'POS مشین شامل کریں', admin_posLabel:'ٹرمینل نمبر', admin_ownerType:'سے منسلک', admin_owner:'مالک', admin_assignedDriver:'ذمہ دار ملازم',
@@ -2975,7 +2980,7 @@ var ERROR_KEYS_ = {
   invalid_customer:'err_invalidCustomer', credit_items_mismatch:'err_creditItemsMismatch', price_locked:'err_priceLocked',
   invalid_product:'err_invalidProduct', invalid_coordinates:'err_invalidCoordinates',
   already_acknowledged:'err_alreadyAcknowledged', auth_required:'err_authRequired', bad_request:'err_badRequest',
-  conflict_of_interest:'err_conflictOfInterest', deposit_not_eligible:'err_depositNotEligible', email_exists:'err_emailExists', iqama_exists:'err_iqamaExists', deposit_pos_mismatch:'err_depositPosMismatch', opening_exists:'err_openingExists', not_inventory:'err_notInventory',
+  conflict_of_interest:'err_conflictOfInterest', deposit_not_eligible:'err_depositNotEligible', email_exists:'err_emailExists', iqama_exists:'err_iqamaExists', deposit_pos_mismatch:'err_depositPosMismatch', opening_exists:'err_openingExists', not_inventory:'err_notInventory', has_stock:'err_hasStock', invalid_location:'err_invalidLocation',
   forbidden:'err_forbidden', has_children:'admin_hasChildren', invalid_input:'err_invalidInput', invalid_kind:'err_invalidKind',
   invalid_resolution:'err_invalidResolution', invalid_status:'err_invalidStatus', invalid_type:'err_invalidType',
   line_already_matched:'err_lineAlreadyMatched', missing_action:'err_missingAction', missing_email:'err_missingEmail',
@@ -9593,14 +9598,18 @@ function renderReconciliation(body){
 // ---------------- inventory (2026-09-29) ----------------
 // opening + purchases + returns = available; available - sales - damaged =
 // ending, per branch and inventory item, in quantity and at cost. Sales come
-// from the day entries; the rest is typed in as movements.
+// from the day entries; the rest is typed in as movements. The table rolls
+// up city › area › branch › item › the store, car or POS that sold it.
 var INV_ = { from: null, to: null, loc: '', value: false };
 var INV_KINDS_ = ['opening', 'purchase', 'return', 'damage'];
+var INV_COLS_ = ['opening', 'purchases', 'returns', 'available', 'sales', 'damaged', 'ending'];
 function invMonthStart_(d){ return d.slice(0, 8) + '01'; }
+function invYmd_(d){ return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+// last month in local dates (toISOString would shift a day east of UTC)
 function invPrevMonth_(){
-  var d = new Date(localToday_() + 'T00:00:00'); d.setDate(1); d.setDate(0);
-  var end = d.toISOString().slice(0, 10);
-  return [end.slice(0, 8) + '01', end];
+  var p = localToday_().split('-').map(Number);
+  var end = new Date(p[0], p[1] - 1, 0);
+  return [invYmd_(new Date(end.getFullYear(), end.getMonth(), 1)), invYmd_(end)];
 }
 // the branches this person keeps stock for (null = every branch)
 function invMyBranches_(){
@@ -9614,6 +9623,11 @@ function invMyBranches_(){
   return [];
 }
 function invQty_(n){ n = Number(n || 0); return (Math.round(Math.abs(n) * 1000) / 1000).toLocaleString('en-US', { maximumFractionDigits: 3 }); }
+// a figure without a minus sign: below zero it says "short"
+function invFig_(v, asMoney){
+  var txt = asMoney ? money(Math.abs(v)) : invQty_(v);
+  return v < -0.0005 ? '<span class="inv-neg">'+txt+'<em>'+esc(t('inv_shortBadge'))+'</em></span>' : txt;
+}
 
 function renderInventory(body){
   body.innerHTML = '';
@@ -9624,9 +9638,10 @@ function renderInventory(body){
   var mine = invMyBranches_();
   var editLocs = (meta.locations || []).filter(function(l){ return !mine || mine.indexOf(l.id) >= 0; });
   var viewLocs = ['admin', 'finance', 'accountant', 'operations_manager', 'deputy_operations_manager'].indexOf(role) >= 0 ? (meta.locations || []) : editLocs;
-  var goods = (meta.products || []).filter(function(p){ return p.type !== 'services'; });
+  var goods = (meta.products || []).filter(function(p){ return p.type !== 'services' && p.active !== false; });
+  var lastRes = null;
 
-  var bar = el('<div class="card inv-bar">' +
+  var bar = el('<div class="card inv-bar no-collapse">' +
     '<div class="inv-bar-row">' +
       '<div class="field"><label>'+esc(t('inv_from'))+'</label><input type="date" id="ivFrom" value="'+esc(INV_.from)+'" max="'+today+'"></div>' +
       '<div class="field"><label>'+esc(t('inv_to'))+'</label><input type="date" id="ivTo" value="'+esc(INV_.to)+'" max="'+today+'"></div>' +
@@ -9644,89 +9659,167 @@ function renderInventory(body){
     INV_.from = qs('#ivFrom', bar).value || INV_.from; INV_.to = qs('#ivTo', bar).value || INV_.to; INV_.loc = qs('#ivLoc', bar).value;
     out.innerHTML = '<div class="card"><div class="skeleton" style="height:120px"></div></div>';
     api('getInventoryReport', { dateFrom: INV_.from, dateTo: INV_.to, locationId: INV_.loc || null }).then(function(res){
-      out.innerHTML = '';
       if (!res.ok) { out.innerHTML = '<div class="card"><div class="msg err">'+esc(errMsg_(res))+'</div></div>'; return; }
-      paint(res);
+      lastRes = res; paint(res);
     });
   }
-  ['change'].forEach(function(ev){ ['#ivFrom', '#ivTo', '#ivLoc'].forEach(function(s){ qs(s, bar).addEventListener(ev, load); }); });
-  qs('#ivVal', bar).addEventListener('change', function(){ INV_.value = this.checked; load(); });
+  ['#ivFrom', '#ivTo', '#ivLoc'].forEach(function(s){ qs(s, bar).addEventListener('change', load); });
+  // switching quantities and values needs no second trip to the server
+  qs('#ivVal', bar).addEventListener('change', function(){ INV_.value = this.checked; if (lastRes) paint(lastRes); });
   qsa('.inv-presets button', bar).forEach(function(b){ b.addEventListener('click', function(){
     if (b.dataset.p === 'month') { qs('#ivFrom', bar).value = invMonthStart_(today); qs('#ivTo', bar).value = today; }
     else { var pm = invPrevMonth_(); qs('#ivFrom', bar).value = pm[0]; qs('#ivTo', bar).value = pm[1]; }
     load();
   }); });
 
-  var COLS = ['opening', 'purchases', 'returns', 'available', 'sales', 'damaged', 'ending'];
+  function sumOf(list){
+    var o = { count: list.length }; INV_COLS_.forEach(function(c){ o[c] = 0; o[c + 'Value'] = 0; });
+    list.forEach(function(r){ INV_COLS_.forEach(function(c){ o[c] += r[c]; o[c + 'Value'] += r[c + 'Value']; }); });
+    return o;
+  }
   function paint(res){
+    out.innerHTML = '';
     var rows = res.rows || [];
-    var tot = { endingValue: 0 }; COLS.forEach(function(c){ tot[c] = 0; tot[c + 'Value'] = 0; });
-    rows.forEach(function(r){ COLS.forEach(function(c){ tot[c] += r[c]; tot[c + 'Value'] += r[c + 'Value']; }); });
+    var counted = rows.filter(function(r){ return !r.noOpening; }), uncounted = rows.filter(function(r){ return r.noOpening; });
+    var tot = sumOf(counted);
     var useVal = INV_.value;
-    function fig(r, c){ return useVal ? money(Math.abs(r[c + 'Value'])) : invQty_(r[c]); }
 
-    // the equation, left to right
+    // the equation, in words rather than signs
     var eq = el('<section class="card inv-eq no-collapse"><h2>'+esc(t('inv_title'))+'</h2><p class="muted inv-eq-hint">'+esc(t('inv_hint'))+'</p><div class="inv-eq-row">' +
-      [['opening'], ['purchases', 'add'], ['returns', 'add'], ['available', 'sum'], ['sales', 'ded'], ['damaged', 'ded'], ['ending', 'sum']].map(function(p){
-        var c = p[0], v = tot[c + 'Value'];
-        return '<div class="inv-fig inv-'+c+'"><span>'+esc(t('inv_' + c))+(p[1] === 'add' || p[1] === 'ded' ? ' <em class="inv-tag inv-tag-'+p[1]+'">'+esc(t('inv_tag_' + p[1]))+'</em>' : '')+'</span><b class="num">'+money(Math.abs(v))+'</b><small>'+esc(t('ui_sar'))+' · '+esc(t('inv_qtyShort'))+' '+invQty_(tot[c])+'</small></div>';
-      }).join('') + '</div></section>');
+      [['opening'], ['purchases', 'add'], ['returns', 'add'], ['available'], ['sales', 'ded'], ['damaged', 'ded'], ['ending']].map(function(p){
+        var c = p[0];
+        return '<div class="inv-fig inv-'+c+'"><span>'+esc(t('inv_' + c))+(p[1] ? ' <em class="inv-tag inv-tag-'+p[1]+'">'+esc(t('inv_tag_' + p[1]))+'</em>' : '')+'</span>' +
+          '<b class="num">'+invFig_(tot[c + 'Value'], true)+'</b><small>'+esc(t('ui_sar'))+' · '+esc(t('inv_qtyShort'))+' '+invFig_(tot[c])+'</small></div>';
+      }).join('') + '</div>' +
+      (uncounted.length ? '<div class="inv-warn">'+icon_('alert')+'<span>'+esc(t('inv_uncounted').replace('{n}', uncounted.length))+'</span></div>' : '') +
+      (rows.some(function(r){ return r.salesWithoutQty; }) ? '<div class="inv-warn">'+icon_('alert')+'<span>'+esc(t('inv_noQtyWarn').replace('{n}', rows.reduce(function(a, r){ return a + r.salesWithoutQty; }, 0)).replace('{amt}', money(rows.reduce(function(a, r){ return a + r.salesWithoutQtyAmount; }, 0))))+'</span></div>' : '') +
+      '</section>');
     out.appendChild(eq);
 
-    // branch › item, branches fold
-    var byLoc = {}, order = [];
-    rows.forEach(function(r){ if (!byLoc[r.locationId]) { byLoc[r.locationId] = []; order.push(r.locationId); } byLoc[r.locationId].push(r); });
-    order.sort(function(a, b){ return String(locationName(a)).localeCompare(String(locationName(b)), 'ar'); });
-    var card = el('<div class="card rp-card inv-card" data-noexport="1"><div class="rp-head"><h2>'+esc(t('inv_byBranch'))+' <span class="rp-n">'+order.length+'</span></h2></div>' +
-      '<div class="tbl-scroll rp-scroll"><table class="rp-table pv-table inv-table" data-nosort><thead><tr><th>'+esc(t('inv_item'))+'</th>' +
-        COLS.map(function(c){ return '<th class="n'+(c === 'ending' || c === 'sales' ? '' : ' pv-wide')+'">'+esc(t('inv_' + c))+'</th>'; }).join('') +
-        '<th class="n pv-wide">'+esc(t('inv_unitCost'))+'</th></tr></thead><tbody></tbody>' +
-      '<tfoot><tr><td>'+esc(t('rp_total'))+'</td>' + COLS.map(function(c){ return '<td class="n num'+(c === 'ending' || c === 'sales' ? '' : ' pv-wide')+'">'+(useVal ? money(Math.abs(tot[c + 'Value'])) : invQty_(tot[c]))+'</td>'; }).join('') + '<td class="pv-wide"></td></tr></tfoot></table></div>' +
+    // the tree: city › area › branch › item › who sold it
+    function locOf(id){ return byId(meta.locations, id) || {}; }
+    var LEVELS = ['city', 'area', 'branch', 'item', 'seller'];
+    function build(list, depth){
+      var lvl = LEVELS[depth], map = {}, order = [];
+      if (lvl === 'seller') return [];
+      list.forEach(function(r){
+        var l = locOf(r.locationId);
+        var k = lvl === 'city' ? (l.city || '_') : lvl === 'area' ? (l.clusterId || '_') : lvl === 'branch' ? r.locationId : r.productId;
+        if (!map[k]) { map[k] = { lvl: lvl, depth: depth, key: k, list: [] }; order.push(k); }
+        map[k].list.push(r);
+      });
+      return order.map(function(k){
+        var n = map[k];
+        n.name = k === '_' ? t('report_unspecified') : lvl === 'city' ? k : lvl === 'area' ? clusterName(k) : lvl === 'branch' ? locationName(k) : productName_(k);
+        n.T = sumOf(n.list.filter(function(r){ return !r.noOpening; }));
+        n.short = n.list.some(function(r){ return r.short; });
+        n.uncounted = n.list.every(function(r){ return r.noOpening; });
+        return n;
+      }).sort(function(a, b){ return String(a.name).localeCompare(String(b.name), 'ar'); });
+    }
+    function kids(n){
+      if (n.kids) return n.kids;
+      if (n.lvl === 'item') {
+        var r = n.list[0], by = r.salesBySource || {};
+        n.kids = Object.keys(by).map(function(sk){
+          var i = sk.indexOf(':'), e = { sourceType: sk.slice(0, i), sourceId: sk.slice(i + 1) };
+          var T = {}; INV_COLS_.forEach(function(c){ T[c] = null; });
+          T.sales = by[sk]; T.salesValue = by[sk] * (r.unitCost || 0);
+          return { lvl: 'seller', depth: n.depth + 1, name: t('entry_source_' + e.sourceType) + ' — ' + sourceName_(e), T: T, list: [] };
+        }).sort(function(a, b){ return b.T.sales - a.T.sales; });
+      } else n.kids = build(n.list, n.depth + 1);
+      return n.kids;
+    }
+    var roots = build(rows, 0);
+    if (roots.length === 1) roots[0].open = true;
+    var card = el('<div class="card rp-card pv-card inv-card" data-noexport="1">' +
+      '<div class="rp-head pv-head"><div><h2>'+esc(t('inv_byLevels'))+'</h2><p class="pv-sub">'+LEVELS.map(function(l){ return '<span>'+esc(t('inv_lv_' + l))+'</span>'; }).join('<i aria-hidden="true">›</i>')+'</p></div></div>' +
+      '<div class="pv-tools"><div class="pv-depth" role="group">'+'<span class="pv-depth-l">'+esc(t('pv_openTo'))+'</span>' +
+        LEVELS.map(function(l, i){ return '<button type="button" data-depth="'+(i + 1)+'"><b>'+(i + 1)+'</b><span>'+esc(t('inv_lv_' + l))+'</span></button>'; }).join('') + '</div>' +
+        '<label class="pv-q"><span class="sr-only">'+esc(t('pv_search'))+'</span>'+icon_('search')+'<input type="search" placeholder="'+esc(t('inv_search'))+'"></label></div>' +
+      '<div class="tbl-scroll rp-scroll"><table class="rp-table pv-table inv-table" data-nosort><thead><tr><th>'+esc(t('pv_level'))+'</th>' +
+        INV_COLS_.map(function(c){ return '<th class="n'+(c === 'ending' || c === 'sales' ? '' : ' pv-wide')+'">'+esc(t('inv_' + c))+'</th>'; }).join('') +
+      '</tr></thead><tbody></tbody><tfoot><tr><td>'+esc(t('rp_total'))+'</td>' +
+        INV_COLS_.map(function(c){ return '<td class="n num'+(c === 'ending' || c === 'sales' ? '' : ' pv-wide')+'">'+invFig_(useVal ? tot[c + 'Value'] : tot[c], useVal)+'</td>'; }).join('') +
+      '</tr></tfoot></table></div>' +
       (rows.length ? '' : '<div class="muted rp-empty">'+esc(t('inv_empty'))+'</div>') + '</div>');
-    var tb = qs('tbody', card), open = {};
+    var tb = qs('tbody', card), q = '';
+    function hits(n){
+      if (!q) return true;
+      if (normName_(n.name).indexOf(q) >= 0) return true;
+      return n.lvl !== 'seller' && kids(n).some(hits);
+    }
     function draw(){
-      var html = [];
-      order.forEach(function(locId){
-        var list = byLoc[locId], sum = {}; COLS.forEach(function(c){ sum[c] = 0; sum[c + 'Value'] = 0; });
-        list.forEach(function(r){ COLS.forEach(function(c){ sum[c] += r[c]; sum[c + 'Value'] += r[c + 'Value']; }); });
-        var isOpen = open[locId] || order.length === 1, short = list.some(function(r){ return r.short; });
-        html.push('<tr class="pv-row pv-d0" tabindex="0" data-loc="'+esc(locId)+'" aria-expanded="'+isOpen+'"><td class="pv-name" style="--d:0"><span class="pv-in"><span class="pv-tog" aria-hidden="true"></span><span class="pv-txt"><b>'+esc(locationName(locId))+'</b><small>'+esc(t('inv_items').replace('{n}', list.length))+(short ? ' · <span class="inv-short">'+esc(t('inv_shortBadge'))+'</span>' : '')+'</small></span></span></td>' +
-          COLS.map(function(c){ return '<td class="n num'+(c === 'ending' ? ' pv-net' : c === 'sales' ? '' : ' pv-wide')+'">'+fig(sum, c)+'</td>'; }).join('') + '<td class="pv-wide"></td></tr>');
-        if (!isOpen) return;
-        list.slice().sort(function(a, b){ return String(productName_(a.productId)).localeCompare(String(productName_(b.productId)), 'ar'); }).forEach(function(r){
-          html.push('<tr class="pv-d1'+(r.short ? ' inv-short-row' : '')+'"><td class="pv-name" style="--d:1"><span class="pv-in"><span class="pv-tog" aria-hidden="true">•</span><span class="pv-txt"><b>'+esc(productName_(r.productId))+'</b>' +
-            (r.short ? '<small class="inv-short">'+esc(t('inv_shortBy').replace('{n}', invQty_(r.ending)))+'</small>' : '') + '</span></span></td>' +
-            COLS.map(function(c){ return '<td class="n num'+(c === 'ending' ? ' pv-net' : c === 'sales' ? '' : ' pv-wide')+'">'+fig(r, c)+'</td>'; }).join('') +
-            '<td class="n num pv-wide">'+(r.unitCost ? money(r.unitCost) : '—')+'</td></tr>');
+      var html = [], list = [];
+      (function walk(nodes){
+        nodes.forEach(function(n){
+          if (!hits(n)) return;
+          var leaf = n.lvl === 'seller' || (n.lvl === 'item' && !Object.keys((n.list[0] || {}).salesBySource || {}).length);
+          var open = !!(!leaf && (n.open || (q && normName_(n.name).indexOf(q) < 0)));
+          list.push(n);
+          var flag = n.uncounted ? '<small class="inv-nocount">'+esc(t('inv_noOpening'))+'</small>' : n.short ? '<small class="inv-short">'+esc(n.lvl === 'item' ? t('inv_shortBy').replace('{n}', invQty_(n.T.ending)) : t('inv_shortBadge'))+'</small>' : '';
+          var sub = n.lvl === 'item' ? (n.list[0].unitCost ? t('inv_unitCost') + ' ' + money(n.list[0].unitCost) : '') : n.lvl === 'seller' ? t('inv_soldHere') : t('inv_items').replace('{n}', n.list.length);
+          html.push('<tr class="pv-row pv-d'+Math.min(n.depth, 4)+(n.short && n.lvl === 'item' ? ' inv-short-row' : '')+'" tabindex="0" data-i="'+(list.length - 1)+'"'+(leaf ? '' : ' aria-expanded="'+open+'"')+'>' +
+            '<td class="pv-name" style="--d:'+n.depth+'"><span class="pv-in"><span class="pv-tog" aria-hidden="true">'+(leaf ? '•' : '')+'</span><span class="pv-txt"><b>'+esc(n.name)+'</b>' +
+            '<small>'+esc(t('inv_lv_' + n.lvl))+(sub ? ' · '+esc(sub) : '')+'</small>'+flag+'</span></span></td>' +
+            INV_COLS_.map(function(c){
+              var v = useVal ? n.T[c + 'Value'] : n.T[c];
+              var cls = 'n num' + (c === 'ending' ? ' pv-net' : c === 'sales' ? '' : ' pv-wide');
+              return '<td class="'+cls+'">'+(v == null || (n.uncounted && c !== 'sales') ? '—' : invFig_(v, useVal))+'</td>';
+            }).join('') + '</tr>');
+          if (open) walk(kids(n));
         });
-      });
+      })(roots);
       tb.innerHTML = html.join('');
+      tb._list = list;
     }
-    tb.addEventListener('click', function(ev){ var tr = ev.target.closest('tr[data-loc]'); if (!tr) return; open[tr.dataset.loc] = !(open[tr.dataset.loc] || order.length === 1); draw(); });
-    tb.addEventListener('keydown', function(ev){ var tr = ev.target.closest('tr[data-loc]'); if (tr && (ev.key === 'Enter' || ev.key === ' ')) { ev.preventDefault(); tr.click(); } });
+    tb.addEventListener('click', function(ev){
+      var tr = ev.target.closest('tr[data-i]'); if (!tr || !tr.hasAttribute('aria-expanded')) return;
+      var n = tb._list[+tr.dataset.i]; n.open = !n.open;
+      if (!n.open) (function shut(x){ (x.kids || []).forEach(function(c){ c.open = false; shut(c); }); })(n);
+      draw();
+    });
+    tb.addEventListener('keydown', function(ev){ var tr = ev.target.closest('tr[data-i]'); if (tr && (ev.key === 'Enter' || ev.key === ' ')) { ev.preventDefault(); tr.click(); } });
+    qs('.pv-depth', card).addEventListener('click', function(ev){
+      var b = ev.target.closest('button[data-depth]'); if (!b) return;
+      var upto = +b.dataset.depth;
+      (function walk(nodes){ nodes.forEach(function(n){ n.open = n.depth < upto - 1 && n.lvl !== 'seller'; if (n.open) walk(kids(n)); else if (n.kids) walk(n.kids); }); })(roots);
+      qsa('button', qs('.pv-depth', card)).forEach(function(x){ x.classList.toggle('on', x === b); });
+      draw();
+    });
+    var qIn = qs('.pv-q input', card), qT = null;
+    qIn.addEventListener('input', function(){ clearTimeout(qT); qT = setTimeout(function(){ q = normName_(qIn.value || ''); draw(); }, 160); });
     draw();
-    // Excel and PDF: every branch and item, quantities and values
-    function sheets(){
-      var head = [t('inv_item'), t('admin_location')].concat(COLS.map(function(c){ return t('inv_' + c); }), [t('inv_unitCost')], COLS.map(function(c){ return t('inv_' + c) + ' (' + t('ui_sar') + ')'; }));
+
+    // Excel: every level with its own totals and folding, quantities and
+    // values side by side, then the movements; PDF: what is open
+    function levelRows(all){
+      var head = [t('pv_level'), t('pv_levelType')].concat(INV_COLS_.map(function(c){ return t('inv_' + c); }), INV_COLS_.map(function(c){ return t('inv_' + c) + ' (' + t('ui_sar') + ')'; }));
       var rowsX = [head], outline = [];
-      order.forEach(function(locId){
-        var list = byLoc[locId], sum = {}; COLS.forEach(function(c){ sum[c] = 0; sum[c + 'Value'] = 0; });
-        list.forEach(function(r){ COLS.forEach(function(c){ sum[c] += r[c]; sum[c + 'Value'] += r[c + 'Value']; }); });
-        rowsX.push([locationName(locId), ''].concat(COLS.map(function(c){ return sum[c]; }), [''], COLS.map(function(c){ return Math.round(sum[c + 'Value'] * 100) / 100; })));
-        outline.push(0);
-        list.forEach(function(r){
-          rowsX.push([productName_(r.productId), locationName(locId)].concat(COLS.map(function(c){ return r[c]; }), [r.unitCost || 0], COLS.map(function(c){ return r[c + 'Value']; })));
-          outline.push(1);
+      (function add(nodes){
+        nodes.forEach(function(n){
+          rowsX.push([n.name, t('inv_lv_' + n.lvl) + (n.uncounted ? ' · ' + t('inv_noOpening') : '')].concat(
+            INV_COLS_.map(function(c){ return n.T[c] == null ? '' : n.T[c]; }),
+            INV_COLS_.map(function(c){ return n.T[c + 'Value'] == null ? '' : Math.round(n.T[c + 'Value'] * 100) / 100; })));
+          outline.push(n.depth);
+          if (all ? n.lvl !== 'seller' : n.open) add(kids(n));
         });
-      });
-      rowsX.push([t('rp_total'), ''].concat(COLS.map(function(c){ return tot[c]; }), [''], COLS.map(function(c){ return Math.round(tot[c + 'Value'] * 100) / 100; })));
+      })(roots);
+      rowsX.push([t('rp_total'), ''].concat(INV_COLS_.map(function(c){ return tot[c]; }), INV_COLS_.map(function(c){ return Math.round(tot[c + 'Value'] * 100) / 100; })));
       outline.push(null);
-      var mv = [[t('rp_date'), t('admin_location'), t('inv_item'), t('inv_kind'), t('inv_qty'), t('entry_note'), t('report_enteredBy'), t('rp_status')]].concat((res.moves || []).map(function(m){
-        return [m.date, locationName(m.locationId), productName_(m.productId), t('inv_k_' + m.kind), Number(m.qty), m.note || '', userName(m.enteredBy), m.voided ? t('inv_voided') : ''];
-      }));
-      return [{ name: t('inv_title'), rows: rowsX, outline: outline, note: INV_.from + ' → ' + INV_.to }, { name: t('inv_moves'), rows: mv }];
+      return { rows: rowsX, outline: outline };
     }
-    qs('.rp-head', card).appendChild(exButtons_(sheets, function(){ return t('inv_title') + ' ' + INV_.from + ' ' + INV_.to; }, function(){ return { note: t('inv_period').replace('{from}', INV_.from).replace('{to}', INV_.to) }; }));
+    function moveRows(){
+      return [[t('rp_date'), t('admin_location'), t('inv_item'), t('inv_kind'), t('inv_qty'), t('entry_note'), t('report_enteredBy'), t('rp_status')]].concat((res.moves || []).map(function(m){
+        return [m.date, locationName(m.locationId), productName_(m.productId), t('inv_k_' + m.kind), Number(m.qty), m.note || '', userName(m.enteredBy), m.voided ? t('inv_voided') + ': ' + (m.voidReason || '') : ''];
+      }));
+    }
+    var note = function(){ return { note: t('inv_period').replace('{from}', INV_.from).replace('{to}', INV_.to) }; };
+    var exBar = el('<div class="ex-bar"><button type="button" class="ex-btn">'+icon_('doc')+'<span>'+esc(t('ex_button'))+'</span></button><button type="button" class="ex-btn">'+icon_('printer')+'<span>'+esc(t('ex_pdf'))+'</span></button></div>');
+    qs('.pv-head', card).appendChild(exBar);
+    var eb = qsa('button', exBar);
+    eb[0].addEventListener('click', function(){ var a = levelRows(true); exportXlsx_(t('inv_title') + ' ' + INV_.from + ' ' + INV_.to, [{ name: t('inv_title'), rows: a.rows, outline: a.outline, note: note().note }, { name: t('inv_moves'), rows: moveRows() }], note()); });
+    eb[1].addEventListener('click', function(){ var a = levelRows(false); exportPdf_(t('inv_title'), [{ name: t('inv_byLevels'), rows: a.rows, outline: a.outline }], note()); });
     out.appendChild(card);
 
     // typing in a movement
@@ -9737,7 +9830,7 @@ function renderInventory(body){
         '<div class="field"><label>'+esc(t('inv_kind'))+'</label><select class="ivaKind">'+INV_KINDS_.map(function(k){ return '<option value="'+k+'"'+(k === 'purchase' ? ' selected' : '')+'>'+esc(t('inv_k_' + k))+'</option>'; }).join('')+'</select></div>' +
         '<div class="field"><label>'+esc(t('inv_qty'))+'</label><input class="ivaQty" type="text" inputmode="decimal" value=""></div>' +
         '<div class="field"><label>'+esc(t('rp_date'))+'</label><input class="ivaDate" type="date" value="'+today+'" max="'+today+'"></div>' +
-        '<div class="field"><label>'+esc(t('entry_note'))+'</label><input class="ivaNote" placeholder="'+esc(t('inv_notePh'))+'"></div>' +
+        '<div class="field"><label>'+esc(t('entry_note'))+'</label><input class="ivaNote" maxlength="300" placeholder="'+esc(t('inv_notePh'))+'"></div>' +
         '</div><button type="button" class="btn ivaGo">'+esc(t('inv_save'))+'</button><div class="ivaMsg"></div></div>');
       qs('.ivaGo', f).addEventListener('click', function(){
         var btn = this, qty = numFromInput_(qs('.ivaQty', f));
@@ -9754,13 +9847,14 @@ function renderInventory(body){
 
     // the movements behind the figures
     var moves = res.moves || [];
-    var mc = el('<div class="card inv-moves"><h2>'+esc(t('inv_moves'))+' <span class="rp-n">'+moves.length+'</span></h2>' +
+    var mc = el('<div class="card inv-moves"><h2>'+esc(t('inv_moves'))+' <span class="rp-n">'+(res.movesTotal || moves.length)+'</span></h2>' +
       (moves.length ? '<div class="tbl-scroll"><table class="rp-table"><thead><tr><th>'+esc(t('rp_date'))+'</th><th>'+esc(t('admin_location'))+'</th><th>'+esc(t('inv_item'))+'</th><th>'+esc(t('inv_kind'))+'</th><th class="n">'+esc(t('inv_qty'))+'</th><th>'+esc(t('entry_note'))+'</th><th>'+esc(t('report_enteredBy'))+'</th><th class="col-actions"></th></tr></thead><tbody>' +
         moves.map(function(m){
-          var mineMove = m.enteredBy === state.user.id || role === 'admin' || role === 'finance';
+          var inMine = !mine || mine.indexOf(m.locationId) >= 0;
+          var canVoid = role === 'admin' || role === 'finance' || (inMine && (m.enteredBy === state.user.id || role === 'cluster_manager'));
           return '<tr class="'+(m.voided ? 'inv-void' : '')+'"><td><bdi dir="ltr">'+esc(m.date)+'</bdi></td><td>'+esc(locationName(m.locationId))+'</td><td>'+esc(productName_(m.productId))+'</td>' +
-            '<td><span class="inv-k inv-k-'+m.kind+'">'+esc(t('inv_k_' + m.kind))+'</span></td><td class="n num">'+invQty_(m.qty)+'</td><td>'+esc(m.voided ? t('inv_voided') + ': ' + (m.voidReason || '') : (m.note || ''))+'</td><td>'+esc(userName(m.enteredBy))+'</td>' +
-            '<td class="col-actions">'+(!m.voided && mineMove ? '<button type="button" class="ico-btn danger ivVoid" data-id="'+esc(m.id)+'" title="'+esc(t('inv_void'))+'" aria-label="'+esc(t('inv_void'))+'">'+icon_('close')+'</button>' : '')+'</td></tr>';
+            '<td><span class="inv-k inv-k-'+esc(m.kind)+'">'+esc(t('inv_k_' + m.kind))+'</span></td><td class="n num">'+invQty_(m.qty)+'</td><td>'+esc(m.voided ? t('inv_voided') + ': ' + (m.voidReason || '') : (m.note || ''))+'</td><td>'+esc(userName(m.enteredBy))+'</td>' +
+            '<td class="col-actions">'+(!m.voided && canVoid ? '<button type="button" class="ico-btn danger ivVoid" data-id="'+esc(m.id)+'" title="'+esc(t('inv_void'))+'" aria-label="'+esc(t('inv_void'))+'">'+icon_('close')+'</button>' : '')+'</td></tr>';
         }).join('') + '</tbody></table></div>' : '<div class="muted rp-empty">'+esc(t('inv_noMoves'))+'</div>') + '</div>');
     qsa('.ivVoid', mc).forEach(function(b){ b.addEventListener('click', function(){
       var reason = window.prompt(t('inv_voidReason'));

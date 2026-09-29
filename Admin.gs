@@ -701,7 +701,9 @@ function validateEntity_(kind, d) {
     if (d.unitPrice != null && d.unitPrice !== '' && !(Number(d.unitPrice) >= 0)) return 'invalid_input';
     if (d.priceLocked && !(Number(d.unitPrice) > 0)) return 'invalid_input';
     // what one unit of an inventory item costs the company, for stock value
-    if (d.unitCost != null && d.unitCost !== '' && !(Number(d.unitCost) >= 0)) return 'invalid_input';
+    if (d.unitCost != null && d.unitCost !== '' && !(isFinite(Number(d.unitCost)) && Number(d.unitCost) >= 0)) return 'invalid_input';
+    // an item is kept in stock (goods) or is a service; nothing else
+    if (d.type != null && d.type !== '' && d.type !== 'goods' && d.type !== 'services') return 'invalid_input';
   } else if (kind === 'income_item' || kind === 'expense_item') {
     if (!d.name) return 'invalid_input';
   } else {
@@ -827,6 +829,8 @@ function saveEntity_(req, user) {
   if (err === 'duplicate_customer') return { ok: false, error: err, code: customerDuplicateOf_(merged.name, merged.id).code };
   if (err) return { ok: false, error: err };
   if (req.id) {
+    // an item with stock movements stays an inventory item, or its history would vanish
+    if (kind === 'product' && merged.type === 'services' && obj.type !== 'services' && invHasMoves_(obj.id)) return { ok: false, error: 'has_stock' };
     var flightErr = inFlightError_(kind, obj, merged);
     if (flightErr) return { ok: false, error: flightErr };
   }
