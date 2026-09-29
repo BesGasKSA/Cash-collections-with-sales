@@ -172,6 +172,15 @@ function buildContext() {
       return { getResponseCode: function () { return r.code; }, getContentText: function () { return r.body; } };
     }
   };
+  // Google Translate as the script sees it: tests read .log and can set .fail
+  var translate = { log: [], fail: false };
+  var LanguageApp = {
+    translate: function (text, from, to) {
+      translate.log.push({ text: text, from: from, to: to });
+      if (translate.fail) throw new Error('Service invoked too many times: translate');
+      return String(text).split('\n').map(function (l) { return to.toUpperCase() + ':' + l; }).join('\n');
+    }
+  };
   var GmailApp = {
     sendEmail: function (to, subject, body, options) {
       mailLog.push({ to: to, subject: subject, body: body, from: options && options.from, fromName: options && options.name });
@@ -240,7 +249,7 @@ function buildContext() {
 
   var sandbox = {
     SpreadsheetApp: SpreadsheetApp, PropertiesService: PropertiesService, CacheService: CacheService,
-    LockService: LockService, Utilities: Utilities, MailApp: MailApp, GmailApp: GmailApp, UrlFetchApp: UrlFetchApp, DriveApp: DriveApp,
+    LockService: LockService, Utilities: Utilities, MailApp: MailApp, GmailApp: GmailApp, UrlFetchApp: UrlFetchApp, DriveApp: DriveApp, LanguageApp: LanguageApp,
     ContentService: ContentService, ScriptApp: ScriptApp, Logger: { log: function () {} },
     console: console
   };
@@ -250,7 +259,7 @@ function buildContext() {
   var context = vm.createContext(sandbox);
   vm.runInContext(src, context, { filename: 'apps-script-bundle.js' });
 
-  context._debug = { sheets: sheets, scriptProps: scriptProps, cache: cache, mailLog: mailLog, urlFetch: urlFetch, svcCalls: svcCalls, lock: LOCK_ };
+  context._debug = { sheets: sheets, scriptProps: scriptProps, cache: cache, mailLog: mailLog, urlFetch: urlFetch, translate: translate, svcCalls: svcCalls, lock: LOCK_ };
   return context;
 }
 

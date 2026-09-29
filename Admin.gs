@@ -117,6 +117,7 @@ function actionAdminCreateUser_(req, user) {
   var base = inviteAppUrl_(req);
   var sent = sendInvitation_(newUser, token, user, base);
   logAudit_('admin_invite_user', user.id, newUser.id);
+  fillTranslations_(translatableOf_({ name: newUser.name }));
   return { ok: true, user: publicUser_(newUser), inviteSent: sent, inviteUrl: base + '?invite=' + encodeURIComponent(token) };
 }
 
@@ -454,6 +455,7 @@ function actionAdminUpdateUser_(req, user) {
   if (d.iqamaId !== undefined) target.iqamaId = d.iqamaId;
   writeRow(SHEETS.USERS, target);
   logAudit_('admin_update_user', user.id, target.id);
+  fillTranslations_(translatableOf_({ name: target.name }));
   return { ok: true, user: publicUser_(target) };
 }
 
@@ -706,18 +708,20 @@ function actionAdminImportEntities_(req, user) {
   var rows = Array.isArray(req.rows) ? req.rows : [];
   if (!rows.length) return { ok: false, error: 'invalid_input' };
   if (rows.length > 300) return { ok: false, error: 'too_many_rows' };
-  var results = [], created = 0, updated = 0;
+  var results = [], created = 0, updated = 0, saved = [];
   rows.forEach(function (r, i) {
     r = r || {};
     var lock = LockService.getScriptLock();
     lock.waitLock(30000);
     var res;
-    try { freshenExec_(); res = saveEntity_({ kind: req.kind, id: r.id || null, data: r.data || {} }, user); }
+    try { freshenExec_(); res = saveEntity_({ kind: req.kind, id: r.id || null, data: r.data || {}, noTranslate: true }, user); }
     catch (e) { res = { ok: false, error: String((e && e.message) || e) }; }
     finally { try { lock.releaseLock(); } catch (e2) {} }
-    if (res.ok) { if (r.id) updated++; else created++; }
+    if (res.ok) { if (r.id) updated++; else created++; saved.push(res.entity); }
     results.push({ row: i, ok: !!res.ok, error: res.error || null, id: res.entity ? res.entity.id : null, code: res.entity ? (res.entity.code || null) : (res.code || null) });
   });
+  // the whole file's new names go to Google Translate together, not row by row
+  fillTranslations_([].concat.apply([], saved.map(translatableOf_)));
   logAudit_('admin_import_' + req.kind, user.id, (created + updated) + '/' + rows.length);
   return { ok: true, created: created, updated: updated, total: rows.length, results: results };
 }
@@ -759,7 +763,95 @@ function saveEntity_(req, user) {
 
   var saved = writeRow(sheetName, obj);
   logAudit_('admin_save_' + kind, user.id, saved.id);
+  if (!req.noTranslate) fillTranslations_(translatableOf_(saved));
   return { ok: true, entity: saved };
+}
+
+// ---------- Translations ----------
+// Names are typed in Arabic. The client shows them in English or Urdu from
+// the translations sheet, which Google Translate fills when a name is saved.
+// A name that already carries Latin letters ("النسيم Al-Naseem") is left to
+// the client, which shows its Latin part. A failed translation never fails
+// the save; adminFillTranslations catches the gaps up later.
+var TR_FIELDS_ = ['name', 'label', 'city'];
+function needsTranslation_(s) {
+  s = String(s == null ? '' : s).trim();
+  // an Arabic word, not just a plate's single letters ("أ ص ن 1062")
+  return !!s && /[؀-ۿ]{2,}/.test(s) && !/[A-Za-z]/.test(s);
+}
+function translatableOf_(obj) {
+  return TR_FIELDS_.map(function (k) { return obj && obj[k]; }).filter(needsTranslation_).map(function (s) { return String(s).trim(); });
+}
+function translationIndex_() {
+  var m = {};
+  readSheet(SHEETS.TRANSLATIONS).forEach(function (r) { if (r.src) m[r.src] = r; });
+  return m;
+}
+// one request per chunk of lines, so an import of a hundred names is a few
+// calls, not two hundred; a chunk whose line count comes back different is
+// done one line at a time instead
+function machineTranslate_(list, lang) {
+  var out = [], i = 0;
+  while (i < list.length) {
+    var chunk = [], size = 0;
+    while (i < list.length && chunk.length < 80 && size + list[i].length < 4500) { chunk.push(list[i]); size += list[i].length + 1; i++; }
+    if (!chunk.length) { chunk.push(list[i]); i++; }
+    var lines = String(LanguageApp.translate(chunk.join('\n'), 'ar', lang)).split('\n');
+    if (lines.length !== chunk.length) lines = chunk.map(function (s) { return String(LanguageApp.translate(s, 'ar', lang)); });
+    lines.forEach(function (l) { out.push(String(l).trim()); });
+  }
+  return out;
+}
+function fillTranslations_(srcs) {
+  var idx = translationIndex_(), seen = {}, todo = [];
+  (srcs || []).forEach(function (s) {
+    if (!needsTranslation_(s)) return;
+    s = String(s).trim();
+    if (seen[s] || hasOwn_(idx, s)) return;
+    seen[s] = true; todo.push(s);
+  });
+  if (!todo.length) return 0;
+  var en, ur;
+  try { en = machineTranslate_(todo, 'en'); ur = machineTranslate_(todo, 'ur'); }
+  catch (e) { return 0; }
+  todo.forEach(function (s, i) { writeRow(SHEETS.TRANSLATIONS, { src: s, en: en[i] || '', ur: ur[i] || '', auto: true }); });
+  return todo.length;
+}
+// every name in master data, for filling the gaps in one go
+function allTranslatable_() {
+  var out = [];
+  safeOwnKeys_(ENTITY_SHEET).forEach(function (k) { readSheet(ENTITY_SHEET[k]).forEach(function (r) { out = out.concat(translatableOf_(r)); }); });
+  readSheet(SHEETS.USERS).forEach(function (u) { out = out.concat(translatableOf_({ name: u.name })); });
+  return out;
+}
+function actionAdminFillTranslations_(req, user) {
+  requireManager_(user);
+  var added = fillTranslations_(allTranslatable_());
+  logAudit_('admin_fill_translations', user.id, String(added));
+  return { ok: true, added: added };
+}
+// {src, en, ur} or {rows:[...]}: a blank en/ur keeps what is there
+function actionAdminSaveTranslation_(req, user) {
+  requireManager_(user);
+  var rows = Array.isArray(req.rows) ? req.rows : [{ src: req.src, en: req.en, ur: req.ur }];
+  if (!rows.length || rows.length > 1000) return { ok: false, error: 'invalid_input' };
+  for (var i = 0; i < rows.length; i++) {
+    if (!rows[i] || !String(rows[i].src || '').trim()) return { ok: false, error: 'invalid_input' };
+  }
+  var idx = translationIndex_(), n = 0;
+  rows.forEach(function (r) {
+    var src = String(r.src).trim();
+    var row = hasOwn_(idx, src) ? idx[src] : { src: src, en: '', ur: '' };
+    var en = String(r.en == null ? '' : r.en).trim(), ur = String(r.ur == null ? '' : r.ur).trim();
+    if (!en && !ur && row.id) return;
+    if (en) row.en = en;
+    if (ur) row.ur = ur;
+    row.auto = false;
+    idx[src] = writeRow(SHEETS.TRANSLATIONS, row);
+    n++;
+  });
+  logAudit_('admin_save_translation', user.id, rows.length === 1 ? String(rows[0].src).slice(0, 80) : String(n));
+  return { ok: true, saved: n };
 }
 
 function actionAdminDeleteEntity_(req, user) {
@@ -1199,6 +1291,7 @@ function actionMeta_(req, user) {
     locations: locations, stores: stores, cars: cars, pos: pos,
     clusters: clusters, zones: zones, products: products, users: users,
     incomeItems: incomeItems, expenseItems: expenseItems, customers: customers, cities: cities, channels: channels,
+    translations: readSheet(SHEETS.TRANSLATIONS).map(function (r) { return { src: r.src, en: r.en || '', ur: r.ur || '', auto: r.auto !== false }; }),
     config: { vatRate: vatRate_(), staleThresholdHours: staleThresholdHours_(), heldThresholdHours: heldThresholdHours_(), secondApprovalThreshold: secondApprovalThreshold_(), areaManagerBulkUploadEnabled: areaManagerBulkUploadEnabled_(), posSalesEnabled: posSalesEnabled_(), liveLocked: config_().liveLocked === true, liveLockedAt: config_().liveLockedAt || null }
   };
 }
