@@ -335,6 +335,12 @@ function siblingCash_(rows, index) {
 // file import may carry neither: those rows come from paper, after the fact.
 function checkDepositSlip_(r, user, locationId) {
   if (!(Number(r.directDepositAmount || 0) > 0)) return null;
+  // a day entered for one POS machine banks its الموازنة on that machine
+  // (2026-09-29): no device named means that one, another one is refused
+  if (r.sourceType === 'pos' && r.sourceId) {
+    if (!r.directDepositPosId) r.directDepositPosId = r.sourceId;
+    else if (r.directDepositPosId !== r.sourceId) return 'deposit_pos_mismatch';
+  }
   if (user.role === 'admin' && !r.directDepositPhotoId) return null;
   if (!r.directDepositPhotoId) return 'deposit_needs_photo';
   var ph = getById_(SHEETS.ENTRY_PHOTOS, r.directDepositPhotoId);
@@ -856,6 +862,16 @@ function actionCreateHandoff_(req, user) {
 // netCashOwed for this car alone), not the raw cash figure — confirmed
 // directly by the user against their own process (2026-09-13): a driver
 // handing over the full, un-netted cash was wrong.
+// The car an entry's cash rides in: the car itself, or the car a POS machine is
+// mounted on (2026-09-29: every driver's POS sits on his car, so a driver's
+// POS day must go through his own handover like a car day).
+function entryCarId_(e, posById) {
+  if (e.sourceType === 'car') return e.sourceId;
+  if (e.sourceType === 'pos') { var p = posById[e.sourceId]; if (p && p.ownerType === 'car') return p.ownerId; }
+  return null;
+}
+function posById_() { var m = {}; readSheet(SHEETS.POS).forEach(function (p) { m[p.id] = p; }); return m; }
+
 function createCarHandoff_(req, user) {
   var car = getById_(SHEETS.CARS, req.carId);
   if (!car) return { ok: false, error: 'not_found' };
@@ -869,8 +885,9 @@ function createCarHandoff_(req, user) {
   if (!store || !store.storeManagerUserId) return { ok: false, error: 'no_store_manager' };
   if (store.storeManagerUserId === user.id) return { ok: false, error: 'conflict_of_interest' };
 
+  var posMap = posById_();
   var entries = readSheet(SHEETS.ENTRIES).filter(function (e) {
-    return e.sourceType === 'car' && e.sourceId === car.id && !e.consumedBy && !e.voided;
+    return entryCarId_(e, posMap) === car.id && !e.consumedBy && !e.voided;
   });
   if (!entries.length) return { ok: false, error: 'no_entries' };
   var totals = computeNet_(entries);
@@ -923,12 +940,12 @@ function createLocationHandoff_(req, user) {
   // just types the car's numbers in directly), which was never anyone
   // else's cash to hand over in the first place.
   var store = storeOfLocation_(location.id);
-  var allUnconsumed = unconsumedEntriesForLocation_(location.id);
+  var allUnconsumed = unconsumedEntriesForLocation_(location.id), posMap = posById_();
   var directEntries = allUnconsumed.filter(function (e) {
     // what the area manager entered for this branch is his cash, handed on
     // in his own request (createClusterHandoff_), never by the branch manager
     if (e.enteredBy === cluster.clusterManagerUserId) return false;
-    return e.sourceType !== 'car' || (store && e.enteredBy === store.storeManagerUserId);
+    return !entryCarId_(e, posMap) || (store && e.enteredBy === store.storeManagerUserId);
   });
 
   var heldCarHandoffs = readSheet(SHEETS.HANDOFFS).filter(function (h) {
