@@ -76,13 +76,12 @@ missing people. The home screen's **منطقتي / فرعي** panel
 (`myOrgPanel_`) shows the area manager their area, its collectors, branches, and
 each branch's manager, collector, cars/drivers and POS/holders. A branch manager sees
 the same panel for their own branch, with the area manager above it. Any
-missing link shows in red. Admin → Master data → **سلامة الربط** (`chainGaps_` / `renderAdminChain`) lists every gap company-wide: missing people, branches with no area or store, disabled users still assigned, and people in a chain role placed nowhere. Each gap has a button to the tab that fixes it, and the tab shows the gap count as a badge. **One person, one area (2026-09-24).** Nobody may be area manager or
-collector on two areas at once, admins standing in included, and being
-manager on one and collector on another counts too (`user_in_other_area`,
-checked in `validateEntity_` against every other cluster row, and every
-branch's collector). A collector may serve several branches, but all in one area. The area
-pickers stop offering anyone already on another area, and chain health lists
-legacy rows that break the rule (`gap_multiArea`).
+missing link shows in red. Admin → Master data → **سلامة الربط** (`chainGaps_` / `renderAdminChain`) lists every gap company-wide: missing people, branches with no area or store, disabled users still assigned, and people in a chain role placed nowhere. Each gap has a button to the tab that fixes it, and the tab shows the gap count as a badge. **One area per area manager; collectors may serve many (changed 2026-09-29).** An area
+manager runs one area and is never a branch collector (`user_in_other_area`, in
+`validateEntity_`). A collector may serve branches in any number of areas, even all of
+them: the user asked for it on 2026-09-29, replacing the 2026-09-24 one-area rule for
+collectors. Handoffs already go branch by branch, so nothing downstream assumes one area.
+Chain health (`gap_multiArea`) now flags only an area manager on two areas.
 
 **Collectors belong to branches, not areas (2026-09-27).** The user asked
 for one area to be served by two or more collectors, each area-manager
