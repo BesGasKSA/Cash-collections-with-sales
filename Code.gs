@@ -532,10 +532,19 @@ function userByLogin_(login) {
   return login.indexOf('@') >= 0 ? userByEmail_(login) : userByIqama_(login);
 }
 
+// The language a person sees (2026-09-30: English is the default). Accounts
+// saved before carry "ar" only because Arabic used to be the default, so an
+// account's language counts when someone chose it (languageChosen: picked in
+// the app, or set by an admin) or when it is English or Urdu.
+function userLang_(u) {
+  var l = u && u.language;
+  if (l === 'en' || l === 'ur') return l;
+  return u && u.languageChosen && l === 'ar' ? 'ar' : 'en';
+}
 function publicUser_(u) {
   return {
     id: u.id, code: u.code || null, name: u.name, email: u.email, role: u.role,
-    active: u.active !== false, language: u.language || 'ar',
+    active: u.active !== false, language: userLang_(u),
     locationId: u.locationId || null, clusterId: u.clusterId || null,
     mustChangePw: !!u.mustChangePw, iqamaId: u.iqamaId || null,
     status: userStatus_(u), lastLoginAt: u.lastLoginAt || null,
@@ -883,7 +892,8 @@ function actionForgotPassword_(req) {
 }
 
 function actionSetLanguage_(req, user) {
-  user.language = req.language === 'en' || req.language === 'ur' ? req.language : 'ar';
+  user.language = req.language === 'ar' || req.language === 'ur' ? req.language : 'en';
+  user.languageChosen = true;
   writeRow(SHEETS.USERS, user);
   return { ok: true };
 }

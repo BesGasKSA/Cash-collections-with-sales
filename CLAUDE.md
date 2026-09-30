@@ -1155,6 +1155,43 @@ its lines (`abx_e_pos`).
   `readTableRows_` (Excel first visible sheet, raw numbers, dates yyyy-mm-dd; or
   CSV). The entries template is an Excel file.
 
+**Reports and dashboard redesign (2026-09-30).**
+- The net-cash equation (`netEquation_`, dashboard and report) is one card: the
+  net as the hero figure (counts up; `.eqx-big .n` is in `countUp_`) with the
+  deposited/remaining split, beside a ledger: sales, + additions, − deductions,
+  = net. A zero part is one quiet line; a part's lines show only when there are
+  two or more. Classes `eqx-*`.
+- `trendChart(rows, {onPick})` draws at the card's real width (ResizeObserver;
+  the old stretched SVG distorted text and cut labels), fills every day of the
+  range (a day without sales is a zero), labels the peak and the last day, and
+  shows a crosshair tooltip. In Arabic and Urdu time runs right to left, like
+  the branch heatmap.
+- `barRows_`: one list is one series, one green; `opts.status` keeps state
+  colours. Zero rows fold into one "بدون حركة" line. `comparisonRow_` shows
+  "لا مقارنة" when last week had nothing (it used to say ▲100%).
+- `branchBoard_(entries, {onRow, onCell})`: league (rank, area, days entered
+  of the window, sales with a share bar, net) and a branch × day heatmap of the
+  last 31 days; a day with no entry is an outlined empty cell. On the dashboard
+  and as the report tab `branchDays`; its day matrix joins the full Excel as a
+  sheet with a colour scale (`sh.heat`). Drill `locDay` opens one branch's day.
+- Exports: flat tables get an Excel data bar (and a drawn bar in the PDF) on
+  the first amount column (`exBarCol_`; not grouped trees, `noBars` opts out).
+  The full report's summary sheet is `rpEqSummary_`: parts bold, their lines
+  folded under them, the net as the closing line (`row.isTotal`, kept through
+  `exKeepMark_`). Every new Excel feature was opened in real Excel.
+- Tiles on wider screens put the icon beside the figure; a zero figure recedes;
+  six tiles sit 3 × 2.
+- Backdrop: `#app.shell::before` (two slow light pools) and `::after` (gauge
+  contour lines fading down, paper grain); the sidebar has flowing cream contour
+  lines, a light pool behind the logo and a sheen on hover; a card is lit under
+  the mouse (`bgSpot_`). All still under reduced motion, hidden in print.
+
+**English is the default language (2026-09-30).** The client starts in English.
+The server's `userLang_(u)` gives an account's language only when it was chosen
+(`languageChosen`: picked in the app via `setLanguage`, or set by an admin) or
+is English/Urdu; accounts carrying "ar" only from the old default open in
+English. New accounts default to English, invitations included.
+
 **Dropdown and date picker redesign (2026-09-30).**
 - Dropdown (`ddOpen_`): the list is as wide as its longest name (at least the
   field, at most 460px) and names wrap instead of being cut; "name — place"

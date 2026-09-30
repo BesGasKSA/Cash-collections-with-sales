@@ -97,7 +97,7 @@ function actionAdminCreateUser_(req, user) {
     email: String(d.email).trim(),
     role: d.role,
     active: true,
-    language: d.language || 'ar',
+    language: d.language || 'en', languageChosen: !!d.language,
     locationId: d.locationId || null,
     clusterId: d.clusterId || null,
     iqamaId: d.iqamaId || null,
@@ -188,7 +188,7 @@ function actionInviteInfo_(req) {
   var u = userByInviteToken_(req.inviteToken);
   if (!u) return { ok: true, status: 'invalid' };
   var st = inviteTokenState_(u);
-  var out = { ok: true, status: st, language: u.language || 'ar' };
+  var out = { ok: true, status: st, language: userLang_(u) };
   if (st === 'valid') {
     out.name = u.name; out.email = u.email; out.role = u.role; out.expiresAt = u.inviteExpiresAt;
     var inviter = u.invitedBy ? getById_(SHEETS.USERS, u.invitedBy) : null;
@@ -310,7 +310,7 @@ function fill_(s, vars) {
 
 function sendInvitation_(u, token, inviter, appUrl) {
   var link = appUrl + '?invite=' + encodeURIComponent(token);
-  var lang = u.language === 'en' || u.language === 'ur' ? u.language : 'ar';
+  var lang = userLang_(u);
   var c = inviteCopy_(lang);
   var who = inviter && inviter.name ? inviter.name : 'Best Gas';
   var expTxt = String(u.inviteExpiresAt || '').slice(0, 10);
@@ -461,7 +461,7 @@ function actionAdminUpdateUser_(req, user) {
     if (!validRole_(d.role)) return { ok: false, error: 'invalid_input' };
     target.role = d.role;
   }
-  if (d.language != null) target.language = d.language;
+  if (d.language != null) { target.language = d.language; target.languageChosen = true; }
   if (d.active != null) target.active = !!d.active;
   if (d.locationId !== undefined) target.locationId = d.locationId;
   if (d.clusterId !== undefined) target.clusterId = d.clusterId;
@@ -484,7 +484,7 @@ function createIqamaUser_(d, iq, user) {
   var temp = readablePassword_(), salt = randomSalt_();
   var newUser = {
     id: Utilities.getUuid(), name: String(d.name).trim(), email: '', role: d.role, active: true,
-    language: d.language || 'ar', locationId: d.locationId || null, clusterId: d.clusterId || null,
+    language: d.language || 'en', languageChosen: !!d.language, locationId: d.locationId || null, clusterId: d.clusterId || null,
     iqamaId: iq, salt: salt, pass: hashPw_(temp, salt), mustChangePw: true,
     inviteStatus: 'accepted', createdAt: new Date().toISOString()
   };

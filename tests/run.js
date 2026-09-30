@@ -1263,7 +1263,7 @@ check(v1 !== v2, 'every write changes the sheet version, so no two writers can l
 
 console.log('--- invitations: invited -> accepted -> active, with last login ---');
 var invMailBefore = ctx._debug.mailLog.length;
-var inv = call({ action: 'adminCreateUser', token: adminTok, appUrl: 'https://besgasksa.github.io/Cash-collections-with-sales/', data: { name: 'Invitee Person', email: 'invitee@bestgas.sa', role: 'store_manager' } });
+var inv = call({ action: 'adminCreateUser', token: adminTok, appUrl: 'https://besgasksa.github.io/Cash-collections-with-sales/', data: { name: 'Invitee Person', email: 'invitee@bestgas.sa', role: 'store_manager', language: 'ar' } });
 check(inv.ok && inv.inviteSent === true, 'creating a user sends an invitation');
 check(inv.user.status === 'invited' && !!inv.user.invitedAt && !!inv.user.inviteExpiresAt, 'a new user starts as "invited", with the send time and expiry recorded');
 check(inv.user.lastLoginAt === null, 'and has no last login yet');
@@ -2162,10 +2162,10 @@ console.log('--- review fixes: names ---');
 check(!saveCustomer({ name: 'مؤسسة النور للتجارة\u200f' }).ok, 'an invisible direction mark does not make a new customer');
 saveCustomer({ name: 'شركة الخليج المتحدة' });
 check(saveCustomer({ name: 'شرکة الخلیج المتحدة' }).error === 'duplicate_customer', 'nor does typing it on an Urdu or Persian keyboard');
-call({ action: 'adminCreateUser', token: adminTok, appUrl: 'https://x.test/', data: { name: 'عبد الله القحطاني', email: 'fx.abd@bestgas.sa', role: 'driver' } });
+call({ action: 'adminCreateUser', token: adminTok, appUrl: 'https://x.test/', data: { name: 'عبد الله القحطاني', email: 'fx.abd@bestgas.sa', role: 'driver', language: 'ar' } });
 var fxAbd = ctx._debug.mailLog.filter(function (m) { return m.to === 'fx.abd@bestgas.sa'; }).pop();
 check(fxAbd && fxAbd.html.indexOf('أهلاً عبد الله،') >= 0, 'the invitation greets عبد الله as عبد الله, not عبد');
-call({ action: 'adminCreateUser', token: adminTok, appUrl: 'https://x.test/', data: { name: 'أبو فهد', email: 'fx.abu@bestgas.sa', role: 'driver' } });
+call({ action: 'adminCreateUser', token: adminTok, appUrl: 'https://x.test/', data: { name: 'أبو فهد', email: 'fx.abu@bestgas.sa', role: 'driver', language: 'ar' } });
 var fxAbu = ctx._debug.mailLog.filter(function (m) { return m.to === 'fx.abu@bestgas.sa'; }).pop();
 check(fxAbu && fxAbu.html.indexOf('أهلاً أبو فهد،') >= 0, 'and a kunya stays whole');
 
@@ -2724,6 +2724,17 @@ Object.keys(ctx._debug.sheets).forEach(function (n) {
   });
 });
 check(txBad.length === 0, 'after the whole run, every row of every sheet is [text id, JSON, ISO text] (' + txBad.slice(0, 3).join(' | ') + ')');
+
+console.log('--- English is the default language; a chosen one stays ---');
+var lgNew = call({ action: 'adminCreateUser', token: adminTok, appUrl: 'https://x.test/', data: { name: 'Lang Default', email: 'lang.default@bestgas.sa', role: 'collector' } });
+check(lgNew.ok && lgNew.user.language === 'en', 'a new account without a language is English (got ' + (lgNew.user && lgNew.user.language) + ')');
+var lgMail = ctx._debug.mailLog.filter(function (m) { return m.to === 'lang.default@bestgas.sa'; }).pop();
+check(lgMail && lgMail.html.indexOf('Accept invitation') >= 0 && lgMail.html.indexOf('قبول الدعوة') < 0, 'and its invitation is in English');
+var lgOld = ctx.getById_(ctx.SHEETS.USERS, lgNew.user.id); lgOld.language = 'ar'; delete lgOld.languageChosen; ctx.writeRow(ctx.SHEETS.USERS, lgOld);
+check(ctx.publicUser_(ctx.getById_(ctx.SHEETS.USERS, lgNew.user.id)).language === 'en', 'an account that only carries the old Arabic default opens in English');
+ctx.actionSetLanguage_({ language: 'ar' }, ctx.getById_(ctx.SHEETS.USERS, lgNew.user.id));
+check(ctx.publicUser_(ctx.getById_(ctx.SHEETS.USERS, lgNew.user.id)).language === 'ar', 'once someone picks Arabic, Arabic stays');
+check(call({ action: 'adminCreateUser', token: adminTok, appUrl: 'https://x.test/', data: { name: 'Lang Urdu', email: 'lang.ur@bestgas.sa', role: 'collector', language: 'ur' } }).user.language === 'ur', 'Urdu set by the admin stays Urdu');
 
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);
