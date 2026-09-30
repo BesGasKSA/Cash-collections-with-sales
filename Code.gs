@@ -694,6 +694,7 @@ function route_(req) {
     addInventoryMove: function () { return actionAddInventoryMove_(req, user); },
     voidInventoryMove: function () { return actionVoidInventoryMove_(req, user); },
     getInventoryReport: function () { return actionInventoryReport_(req, user); },
+    importInventoryDay: function () { return actionImportInventoryDay_(req, user); },
 
     // reporting
     getSalesReport: function () { return actionSalesReport_(req, user); },

@@ -704,6 +704,16 @@ function validateEntity_(kind, d) {
     if (d.unitCost != null && d.unitCost !== '' && !(isFinite(Number(d.unitCost)) && Number(d.unitCost) >= 0)) return 'invalid_input';
     // an item is kept in stock (goods) or is a service; nothing else
     if (d.type != null && d.type !== '' && d.type !== 'goods' && d.type !== 'services') return 'invalid_input';
+    // Cylinders (2026-09-30): a cylinder item keeps full and empty counts; a
+    // product may draw its stock from one (the iron empty-cylinder sale draws
+    // from the iron exchange), one level only, with its effect on the counts.
+    if (d.stockEffect != null && d.stockEffect !== '' && ['exchange', 'sell_empty', 'sell_full'].indexOf(d.stockEffect) < 0) return 'invalid_input';
+    if (d.stockOf) {
+      if (d.cylinder || d.stockOf === d.id) return 'invalid_input';
+      var anchor = getById_(SHEETS.PRODUCTS, d.stockOf);
+      if (!anchor || anchor.stockOf || anchor.type === 'services') return 'invalid_input';
+      if (d.id && readSheet(SHEETS.PRODUCTS).some(function (p) { return p.stockOf === d.id && p.id !== d.id; })) return 'invalid_input';
+    }
   } else if (kind === 'income_item' || kind === 'expense_item') {
     if (!d.name) return 'invalid_input';
   } else {
@@ -831,6 +841,8 @@ function saveEntity_(req, user) {
   if (req.id) {
     // an item with stock movements stays an inventory item, or its history would vanish
     if (kind === 'product' && merged.type === 'services' && obj.type !== 'services' && invHasMoves_(obj.id)) return { ok: false, error: 'has_stock' };
+    // full and empty counts would lose their meaning
+    if (kind === 'product' && !!merged.cylinder !== !!obj.cylinder && invHasMoves_(obj.id)) return { ok: false, error: 'has_stock' };
     var flightErr = inFlightError_(kind, obj, merged);
     if (flightErr) return { ok: false, error: flightErr };
   }
