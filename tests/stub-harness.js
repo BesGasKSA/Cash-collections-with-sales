@@ -9,6 +9,24 @@ var fs = require('fs');
 var path = require('path');
 var crypto = require('crypto');
 
+// What Google Sheets does to text written with setValues/appendRow: it reads it
+// the way a person typing would — '2026-09-30' becomes a date, '08:00' a time,
+// '0501234567' the number 501234567, '12/3' a date. A leading apostrophe keeps
+// it text (and is not stored). The fake converts the same way, so a write that
+// puts a bare date, time or number-like string in a cell shows up in a test.
+function sheetValue(v) {
+  if (typeof v !== 'string') return v;
+  if (v[0] === "'") return v.slice(1);
+  var m;
+  if ((m = v.match(/^(\d{4})-(\d{2})-(\d{2})$/))) return new Date(Date.UTC(+m[1], +m[2] - 1, +m[3]));
+  if ((m = v.match(/^(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?$/)) && +m[1] <= 12 && +m[2] <= 31)
+    return new Date(Date.UTC(m[3] ? +m[3] : 2026, +m[1] - 1, +m[2]));
+  if ((m = v.match(/^(\d{1,2}):(\d{2})$/))) return new Date(Date.UTC(1899, 11, 30, +m[1], +m[2]));
+  if (/^[+-]?\d+(\.\d+)?([eE][+-]?\d+)?$/.test(v)) return Number(v);
+  if (/^(true|false)$/i.test(v)) return v.toLowerCase() === 'true';
+  return v;
+}
+
 function makeSheet(name, svcCalls, registry) {
   var rows = []; // array of [id, jsonString, updatedAtIso]
   return {
@@ -35,7 +53,7 @@ function makeSheet(name, svcCalls, registry) {
           for (var i = 0; i < vals.length; i++) {
             var rowIndex = r1 - 1 + i;
             var full = rows[rowIndex] || ['', '', ''];
-            for (var j = 0; j < vals[i].length; j++) full[c1 - 1 + j] = vals[i][j];
+            for (var j = 0; j < vals[i].length; j++) full[c1 - 1 + j] = sheetValue(vals[i][j]);
             rows[rowIndex] = full;
           }
         }
@@ -50,7 +68,7 @@ function makeSheet(name, svcCalls, registry) {
       if (registry) { delete registry[name]; registry[n] = this; }
       name = n; return this;
     },
-    appendRow: function (arr) { rows.push(arr.slice()); },
+    appendRow: function (arr) { rows.push(arr.map(sheetValue)); },
     deleteRow: function (r) { rows.splice(r - 1, 1); },
     _rows: rows
   };

@@ -2706,5 +2706,24 @@ check(cyN.opening === 1593, 'the next day opens with the day\'s ending (got ' + 
 check(call({ action: 'importInventoryDay', token: noorTok, locationId: dpLoc.id, date: '2026-09-29', ref: 'tr', moves: [{ productId: cyIron.id, state: 'full', kind: 'transfer_out', qty: 10 }, { productId: cyIron.id, state: 'empty', kind: 'transfer_in', qty: 2 }] }).ok, 'transfers out of and into the branch are movements too');
 check(call({ action: 'adminSaveEntity', token: adminTok, kind: 'product', id: cyIron.id, data: { cylinder: false } }).error === 'has_stock', 'a cylinder item with stock cannot stop being one');
 
+console.log('\n=== Sheets reads written text as if typed: every cell must come back as written ===');
+// The fake sheet converts '2026-09-30', '08:00', '0501234567' the way Google Sheets
+// does (stub-harness sheetValue). Records live inside the JSON cell, so they are
+// safe; the id and updatedAt cells beside it must stay plain text too.
+var txId = ctx.writeRow(ctx.SHEETS.RISK_ITEMS, { date: '2026-09-30', time: '08:00', phone: '0501234567', ref: '12/3', big: '012345678901234567' }).id;
+ctx.bumpVersion_(ctx.SHEETS.RISK_ITEMS);
+var txBack = ctx.readSheet(ctx.SHEETS.RISK_ITEMS).filter(function (r) { return r.id === txId; })[0] || {};
+check(txBack.date === '2026-09-30' && txBack.time === '08:00' && txBack.phone === '0501234567' && txBack.ref === '12/3' && txBack.big === '012345678901234567',
+  'a record\'s date, time, phone and long number read back exactly as written');
+check(typeof txBack.updatedAt === 'string' && /^\d{4}-\d{2}-\d{2}T/.test(txBack.updatedAt), 'updatedAt reads back as the ISO text it was written as');
+var txBad = [];
+Object.keys(ctx._debug.sheets).forEach(function (n) {
+  ctx._debug.sheets[n]._rows.slice(1).forEach(function (r, i) {
+    if (typeof r[0] !== 'string' || typeof r[1] !== 'string' || r[1].charAt(0) !== '{' || typeof r[2] !== 'string')
+      txBad.push(n + ' row ' + (i + 2) + ': ' + JSON.stringify(r).slice(0, 80));
+  });
+});
+check(txBad.length === 0, 'after the whole run, every row of every sheet is [text id, JSON, ISO text] (' + txBad.slice(0, 3).join(' | ') + ')');
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);
