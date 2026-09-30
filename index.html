@@ -2473,7 +2473,7 @@ var ICON_B64 = 'iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAYAAAA9zQYyAAAcG0lEQVR42u2dd1cU
 // Stamped by tools/stamp-build.js at publish time so the running app can
 // say which build it is — a cached page is the usual reason a shipped change
 // seems missing.
-var BUILD_ID = '2026-10-01 00:19 · 6973ee2';
+var BUILD_ID = '2026-10-01 00:21 · 8ca986f';
 var LOGO_SRC = 'data:image/png;base64,' + LOGO_B64;
 var ICON_SRC = LOGO_SRC; // same asset — see the comment above LOGO_B64
 // The sign-in mark (2026-09-30): the logo's round emblem as a coin with a
@@ -6731,7 +6731,8 @@ function renderHome(body){
     var lastLogin = lastLoginLabel_();
     var city = myCityLabel_();
     var dates = todayDatesLines_();
-    var chips = [dates.gregorian];
+    // the Gregorian date is already in the page header above the card
+    var chips = [];
     if (dates.hijri) chips.push(dates.hijri);
     chips.push(lastLogin ? t('home_lastLogin') + ': ' + lastLogin : t('home_firstLogin'));
     if (state.user.role === 'cluster_manager'){
