@@ -1155,6 +1155,25 @@ its lines (`abx_e_pos`).
   `readTableRows_` (Excel first visible sheet, raw numbers, dates yyyy-mm-dd; or
   CSV). The entries template is an Excel file.
 
+**Dropdown and date picker redesign (2026-09-30).**
+- Dropdown (`ddOpen_`): the list is as wide as its longest name (at least the
+  field, at most 460px) and names wrap instead of being cut; "name — place"
+  options show the place on a second muted line; branch groups are quiet
+  section labels. The field fades a long value at its end (mask, no "…") in
+  the value's own direction (`ddVDir_`: an English name in an Arabic form keeps
+  its beginning); the full text is the button's title.
+- Date picker (`dpEnhance_`/`dpOpen_`): every `input[type=date]` stays in the
+  page, hidden, and keeps the value, min, max and change event the screens use;
+  a `dd-btn dp-btn` shows the date in the app's language and opens a calendar in
+  the dropdown's popover (bottom sheet on a phone): Sunday-first week, Friday and
+  Saturday marked, the Hijri months of the page (`islamic-umalqura`), today/
+  yesterday, and clear only on a field that started empty (an optional filter).
+  Arabic uses `ar-SA-u-ca-gregory-nu-latn`: plain `ar-SA` defaults to the Hijri
+  calendar. The field shows the longest form that fits (`30 سبتمبر 2026`, then
+  `30 سبتمبر` this year, then `30/09/2026`), re-checked by a ResizeObserver.
+  Code that sets `.value` updates the button (HTMLInputElement value hook, like
+  the select one). Mark a container `data-native` to keep the browser's field.
+
 **Grouped pickers (2026-09-29).** `sourceOptionsGrouped_` puts an area manager's
 sources in one `<optgroup>` per branch; the designed dropdown (`ddOpen_`) draws
 each group as a header that folds (closed except the group holding the choice; a

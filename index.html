@@ -1940,16 +1940,25 @@
     font:inherit;font-size:14px;line-height:1.35;text-align:start;cursor:pointer;
     transition:border-color .16s ease, box-shadow .16s ease, background .16s ease;}
   html[dir="rtl"] .dd-btn{padding:10px 14px 10px 12px;}
-  .dd-btn .dd-v{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600;}
+  /* a long value fades out at its end instead of a cut "…"; the full text is the title */
+  .dd-btn .dd-v{flex:1;min-width:0;white-space:nowrap;overflow:hidden;font-weight:600;
+    -webkit-mask-image:linear-gradient(to left, transparent 0, #000 20px);mask-image:linear-gradient(to left, transparent 0, #000 20px);}
+  html[dir="rtl"] .dd-btn .dd-v{-webkit-mask-image:linear-gradient(to right, transparent 0, #000 20px);mask-image:linear-gradient(to right, transparent 0, #000 20px);}
+  /* the value runs in its own script's direction (ddVDir_), so an English name
+     in an Arabic form keeps its beginning and fades at its own end */
+  html[dir="rtl"] .dd-btn .dd-v{text-align:right;} html[dir="ltr"] .dd-btn .dd-v{text-align:left;}
+  html[dir] .dd-btn .dd-v.v-ltr{direction:ltr;-webkit-mask-image:linear-gradient(to left, transparent 0, #000 20px);mask-image:linear-gradient(to left, transparent 0, #000 20px);}
+  html[dir] .dd-btn .dd-v.v-rtl{direction:rtl;-webkit-mask-image:linear-gradient(to right, transparent 0, #000 20px);mask-image:linear-gradient(to right, transparent 0, #000 20px);}
   .dd-btn.is-empty .dd-v{color:var(--muted);font-weight:500;}
-  .dd-btn .dd-car{width:26px;height:26px;border-radius:8px;display:grid;place-items:center;flex:none;
-    background:var(--green-pale);color:var(--green-dark);transition:transform .22s cubic-bezier(.2,.8,.2,1), background .16s ease, color .16s ease;}
-  .dd-btn .dd-car svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round;}
+  .dd-btn .dd-car{width:18px;height:18px;display:grid;place-items:center;flex:none;color:var(--muted);
+    transition:transform .22s cubic-bezier(.2,.8,.2,1), color .16s ease;}
+  .dd-btn .dd-car svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;}
   .dd-btn:hover{border-color:var(--muted-2);}
-  .dd-btn:hover .dd-car{background:color-mix(in srgb, var(--green) 18%, transparent);}
+  .dd-btn:hover .dd-car{color:var(--green-dark);}
+  .dd-btn:active{transform:scale(.99);}
   .dd-btn:focus-visible,.dd-btn[aria-expanded="true"]{outline:none;border-color:var(--green);background:#fff;
     box-shadow:0 0 0 3px color-mix(in srgb, var(--green) 16%, transparent);}
-  .dd-btn[aria-expanded="true"] .dd-car{transform:rotate(180deg);background:var(--green);color:#fff;}
+  .dd-btn[aria-expanded="true"] .dd-car{transform:rotate(180deg);color:var(--green);}
   .dd-btn:disabled{background:var(--bg);color:var(--muted);border-style:dashed;cursor:default;box-shadow:none;}
   .dd-btn:disabled .dd-car{opacity:.35;}
   .field:focus-within .dd-btn{border-color:var(--green);}
@@ -1968,21 +1977,29 @@
   .dd-search svg{width:16px;height:16px;flex:none;stroke:var(--muted);fill:none;stroke-width:2.2;stroke-linecap:round;}
   .dd-search input.dd-q{border:0 !important;background:transparent !important;box-shadow:none !important;padding:9px 0 !important;
     min-height:0 !important;font-size:14px;font-weight:500;direction:inherit;text-align:start;}
-  .dd-grp{display:flex;align-items:center;gap:8px;padding:9px 12px;margin-top:2px;font-weight:800;font-size:13px;cursor:pointer;border-radius:8px;background:var(--bg);color:var(--green-dark);position:sticky;top:0;z-index:1;}
-  .dd-grp:active{transform:scale(.99);}
+  /* a branch heading inside the list: a quiet section label, not a button */
+  .dd-grp{display:flex;align-items:center;gap:8px;padding:11px 8px 7px;margin-top:2px;font-weight:800;font-size:12.5px;cursor:pointer;
+    background:var(--card);color:var(--muted);position:sticky;top:0;z-index:1;border-top:1px solid var(--border-soft);}
+  .dd-list > .dd-grp:first-child{border-top:0;}
+  .dd-grp:hover,.dd-grp.open{color:var(--green-dark);}
+  .dd-grp:active{opacity:.7;}
   .dd-grp-car svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2.4;transform:rotate(90deg);transition:transform .15s ease;}
   [dir="ltr"] .dd-grp-car svg{transform:rotate(-90deg);}
   .dd-grp.open .dd-grp-car svg{transform:none;}
   .dd-grp-t{flex:1;}
-  .dd-grp-n{font-size:11px;font-weight:700;background:var(--card);border-radius:999px;padding:1px 8px;color:var(--muted);}
-  .dd-list{position:relative;list-style:none;margin:0;padding:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;}
+  .dd-grp-n{font-size:11.5px;font-weight:700;color:var(--muted-2);font-variant-numeric:tabular-nums;}
+  .dd-list{position:relative;list-style:none;margin:0;padding:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:var(--border) transparent;}
+  .dd-list::-webkit-scrollbar{width:6px;} .dd-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:6px;}
   .dd-opt{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;cursor:pointer;font-size:14px;
     color:var(--text);transition:background .1s ease;user-select:none;}
-  .dd-opt .dd-t{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  /* never cut: a name wraps, and "device — car" reads as a name over its place */
+  .dd-opt .dd-t{flex:1;min-width:0;display:flex;flex-direction:column;line-height:1.35;overflow-wrap:anywhere;}
+  .dd-opt .dd-s{font-size:12px;font-weight:500;color:var(--muted);}
+  .dd-opt[aria-selected="true"] .dd-s{color:var(--green);}
   .dd-opt .dd-ck{width:18px;height:18px;flex:none;opacity:0;color:var(--green);transform:scale(.6);
     transition:opacity .15s ease, transform .2s cubic-bezier(.2,.8,.2,1);}
   .dd-opt .dd-ck svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2.8;stroke-linecap:round;stroke-linejoin:round;}
-  .dd-opt.act{background:color-mix(in srgb, var(--green) 8%, transparent);}
+  .dd-opt.act{background:var(--bg);}
   .dd-opt[aria-selected="true"]{background:var(--green-pale);color:var(--green-dark);font-weight:700;}
   .dd-opt[aria-selected="true"] .dd-ck{opacity:1;transform:none;}
   .dd-opt.ph .dd-t{color:var(--muted);}
@@ -2001,6 +2018,50 @@
   @keyframes ddFade{from{opacity:0;}to{opacity:1;}}
   @media (max-width:700px){ .field .dd-btn{font-size:16px;min-height:46px;} }
   @media (prefers-reduced-motion: reduce){ .dd-pop,.dd-back{animation:none !important;} .dd-btn .dd-car{transition:none;} }
+
+  /* ---- designed date picker (see dpEnhance_) ---- */
+  input.dp-native{position:absolute !important;width:1px !important;height:1px !important;min-height:0 !important;
+    padding:0 !important;margin:0 !important;border:0 !important;opacity:0 !important;pointer-events:none !important;
+    clip:rect(0 0 0 0);overflow:hidden;}
+  .dp-btn .dp-ic{width:18px;height:18px;flex:none;display:grid;place-items:center;color:var(--green);}
+  .dp-btn .dp-ic svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;}
+  .dp-btn{gap:8px;}
+  .dp-btn .dd-v{font-variant-numeric:tabular-nums;}
+  .dp-btn.is-empty .dp-ic{color:var(--muted-2);}
+  .dp-pop{width:318px;padding:12px 12px 10px;}
+  .dd-layer.sheet .dp-pop{width:auto;padding:8px 16px calc(16px + env(safe-area-inset-bottom));}
+  .dp-head{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+  .dp-title{flex:1;display:flex;flex-direction:column;align-items:center;line-height:1.3;min-width:0;text-align:center;}
+  .dp-month{font-size:15.5px;font-weight:800;color:var(--text);}
+  .dp-hijri{font-size:11.5px;font-weight:600;color:var(--muted);}
+  .dp-nav{width:38px;height:38px;flex:none;border-radius:11px;border:1px solid var(--border-soft);background:var(--card);
+    color:var(--green-dark);display:grid;place-items:center;cursor:pointer;padding:0;transition:background .15s ease, transform .1s ease;}
+  .dp-nav svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;}
+  .dp-prev svg{transform:rotate(180deg);}
+  html[dir="rtl"] .dp-prev svg{transform:none;} html[dir="rtl"] .dp-next svg{transform:rotate(180deg);}
+  .dp-nav:hover{background:var(--bg);} .dp-nav:active{transform:scale(.93);}
+  .dp-nav:disabled{opacity:.3;cursor:default;transform:none;background:var(--card);}
+  .dp-week,.dp-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;}
+  .dp-week span{font-size:11px;font-weight:700;color:var(--muted);text-align:center;padding:2px 0 6px;white-space:nowrap;}
+  .dp-week span.we{color:var(--green);}
+  .dp-day{min-height:38px;border:0;border-radius:10px;background:transparent;font:inherit;font-size:14px;font-weight:600;padding:0;
+    color:var(--text);cursor:pointer;font-variant-numeric:tabular-nums;transition:background .12s ease, transform .1s ease;}
+  .dp-day:hover{background:var(--bg);}
+  .dp-day:active{transform:scale(.9);}
+  .dp-day.out{color:var(--muted-2);font-weight:500;}
+  .dp-day.today{box-shadow:inset 0 0 0 1.5px var(--green);color:var(--green-dark);font-weight:800;}
+  .dp-day.sel{background:var(--green);color:#fff;font-weight:800;box-shadow:0 6px 14px -6px rgba(77,109,81,.75);}
+  .dp-day:disabled{color:var(--muted-2);opacity:.38;cursor:default;background:transparent;transform:none;box-shadow:none;}
+  .dp-day:focus-visible,.dp-chip:focus-visible,.dp-nav:focus-visible{outline:2px solid var(--green);outline-offset:1px;}
+  .dp-foot{display:flex;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border-soft);}
+  .dp-chip{flex:1;min-height:38px;border-radius:10px;border:1px solid var(--border);background:var(--card);font:inherit;font-size:13px;
+    font-weight:700;color:var(--green-dark);cursor:pointer;transition:background .15s ease, transform .1s ease;}
+  .dp-chip:hover{background:var(--green-pale);} .dp-chip:active{transform:scale(.97);}
+  .dp-chip:disabled{opacity:.4;cursor:default;transform:none;background:var(--card);}
+  .dp-chip.dp-clear{flex:0 0 auto;padding:0 16px;color:var(--muted);}
+  .dd-layer.sheet .dp-day{min-height:46px;font-size:15.5px;}
+  .dd-layer.sheet .dp-chip{min-height:46px;font-size:14.5px;}
+  .dd-layer.sheet .dp-title .dp-month{font-size:17px;}
   /* Arabic is a joined script: any tracking pulls connected letters apart */
   html[dir="rtl"] body, html[dir="rtl"] body *{letter-spacing:normal !important;}
   /* ===================== Design v3 (2026-09-29): quiet ledger =====================
@@ -2148,7 +2209,7 @@ var ICON_B64 = 'iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAYAAAA9zQYyAAAcG0lEQVR42u2dd1cU
 // Stamped by tools/stamp-build.js at publish time so the running app can
 // say which build it is — a cached page is the usual reason a shipped change
 // seems missing.
-var BUILD_ID = '2026-09-30 21:27 · 56aa97b';
+var BUILD_ID = '2026-09-30 21:46 · 378bac7';
 var LOGO_SRC = 'data:image/png;base64,' + LOGO_B64;
 var ICON_SRC = LOGO_SRC; // same asset — see the comment above LOGO_B64
 // The sign-in mark (2026-09-30): the logo's round emblem as a coin with a
@@ -2364,7 +2425,7 @@ var L = {
     admin_addUser:'إضافة مستخدم', admin_name:'الاسم', admin_role:'الدور', admin_active:'نشط', admin_resetPw:'إعادة تعيين كلمة المرور',
     admin_addLocation:'إضافة فرع', admin_city:'المدينة', admin_locName:'اسم الفرع', admin_cluster:'المنطقة',
     admin_zones:'النطاقات', admin_addZone:'إضافة نطاق', admin_zoneName:'اسم النطاق', admin_zone:'النطاق',
-    admin_productType:'نوع المنتج', admin_typeGoods:'مخزني', admin_typeServices:'خدمات', nav_inventory:'المخزون', inv_title:'حركة المخزون', inv_hint:'رصيد أول المدة + المشتريات + المرتجع + الوارد = المتاح، ثم تُطرح المبيعات (من إدخالات النظام) والتالف والصادر، فيبقى رصيد آخر المدة. الأسطوانات تُعدّ مليان وفارغ: التبديل يُخرج مليانة ويُعيد فارغة، والشراء المليان تعبئة تُخرج فوارغ بعددها. القيم بسعر التكلفة.', inv_opening:'رصيد أول المدة', inv_purchases:'المشتريات', inv_returns:'مرتجع المطاعم', inv_available:'المتاح للاستخدام', inv_sales:'المبيعات', inv_damaged:'التالف', inv_ending:'رصيد آخر المدة', inv_unitCost:'تكلفة الوحدة', inv_from:'من', inv_to:'إلى', inv_allBranches:'كل الفروع', inv_thisMonth:'هذا الشهر', inv_lastMonth:'الشهر الماضي', inv_showValue:'عرض القيم بالتكلفة بدل الكميات', inv_qtyShort:'كمية', inv_byBranch:'المخزون حسب الفرع والصنف', inv_item:'الصنف', inv_items:'الأصناف: {n}', inv_tag_add:'يُضاف', inv_tag_ded:'يُخصم', abx_hint:'نزّل الملف: فيه صف لكل جهاز نقاط بيع في فروع منطقتك. كل صف سطر واحد: بيع، آجل، تحويل بنكي، موازنة، مصروف، تحصيل آخر، أو رسوم توصيل. أضف صفوفاً للجهاز الواحد بقدر ما تحتاج، ثم ارفع الملف: يُفحص كل صف قبل الإرسال، ثم ترى الحساب الفعلي، ثم يذهب لنائب مدير العمليات للاعتماد.', abx_sheet:'الإدخال', abx_listsSheet:'القوائم', abx_helpSheet:'طريقة التعبئة', abx_file:'ملف إدخال المنطقة', abx_c_date:'التاريخ', abx_c_posId:'رقم الجهاز', abx_c_branch:'الفرع (للعلم)', abx_c_type:'نوع السطر', abx_c_product:'الصنف', abx_c_qty:'الكمية', abx_c_price:'سعر الوحدة', abx_c_ch:'منها عبر {ch} (كمية)', admin_cylinder:'أسطوانة (تُعدّ مليان وفارغ)', admin_stockName:'اسم صنف المخزون', admin_emptyCost:'تكلفة الأسطوانة الفارغة', admin_stockOf:'يسحب من مخزون صنف', admin_stockEffect:'أثره على المخزون', eff_exchange:'تبديل: تخرج مليانة وتعود فارغة', eff_sell_empty:'بيع أسطوانة فارغة', eff_sell_full:'بيع أسطوانة مليانة', inv_exchangeIn:'فوارغ عائدة من التبديل', inv_transfersIn:'نقل وارد من فرع', inv_refillOut:'فوارغ أُرسلت للتعبئة', inv_transfersOut:'نقل صادر إلى فرع', inv_k_transfer_in:'نقل وارد من فرع', inv_k_transfer_out:'نقل صادر إلى فرع', inv_st_full:'مليان', inv_st_empty:'فارغ', inv_state:'مليان أو فارغ', err_useStockItem:'المخزون يُسجَّل على صنف الأسطوانة نفسه، لا على المنتج الذي يسحب منه', err_alreadyImported:'كميات هذا اليوم محفوظة من قبل', br_stTitle:'كميات المخزون في الملف', br_stHint:'رصيد أول المدة والمشتريات والنقل من أعلى الملف. المبيعات تأتي من الأجهزة، ويُقارن رصيد نهاية اليوم المحسوب بما في الملف.', br_stNoBranch:'لم يُعرف الفرع من أجهزة الملف ولا من اسمه', br_stNoItem:'لا يوجد صنف في النظام يقابل العمود: {h}', br_stNotCyl:'الصنف {p} غير معلَّم كأسطوانة (مليان وفارغ)', br_stFileEnd:'نهاية اليوم في الملف', br_stCalcEnd:'نهاية اليوم حسب النظام', br_stHasOpen:'له رصيد في النظام', br_stOpenDiff:'رصيد النظام في بداية اليوم {sys} والملف {file}', br_stMismatch:'لا يطابق الملف', br_stSetupHint:'ربط الأسطوانات بمنتجات البيع غير مكتمل. زر الإعداد يعلّم أصناف التبديل كأسطوانات ويربط بها أصناف البيع (بيع فارغة) كما يحسبها الملف.', br_stSetup:'إعداد الأسطوانات تلقائياً', br_stAskAdmin:'ربط الأسطوانات غير مكتمل؛ يطلب من الإدارة أو المالية إعداده ثم يُعاد رفع الملف.', br_stSetupDone:'تم إعداد الأسطوانات', br_stSave:'حفظ كميات المخزون (بنود: {n})', br_stSaved:'حُفظت {n} حركة مخزون', br_stDone:'تم الحفظ', br_stRef:'ورقة الفرع', br_ref:'شبكة {dev} {date}', br_cardNote:'مبلغ الشبكة المستلم في البنك', br_found:'تم التعرف على تقرير الفرع اليومي', br_foundHint:'{n} جهاز فيها حركة، و{i} صنفاً في الجدول. راجع الأصناف والمصروف ثم التحقق بالأسفل.', br_date:'تاريخ اليوم', br_expItem:'بند المصروف', br_expReason:'سبب المصروف', br_otherItem:'بند التحصيل الآخر', br_otherReason:'سبب التحصيل', br_itemsHint:'كل عمود في الملف يقابله صنف في النظام (يُحفظ اختيارك لهذا الجهاز)', br_pick:'اختر…', br_fSales:'مبيعات الملف', br_fCard:'الشبكة (الموازنات)', br_fExp:'المصروفات', br_fOther:'تحصيلات أخرى', br_fNet:'النقدية حسب الملف', br_rowOff:'إجمالي هذه الأجهزة في الملف لا يساوي الكمية × السعر:', abx_c_chCom:'عمولة السائق لكل وحدة عبر {ch}', abx_e_chCom:'عمولة السائق غير صحيحة', abx_comShort:'عمولة', abx_c_customer:'العميل (رقم أو اسم)', abx_c_amount:'المبلغ', abx_c_item:'البند', abx_c_ref:'المرجع البنكي', abx_c_note:'البيان / السبب', abx_t_sale:'بيع', abx_t_credit:'آجل', abx_t_transfer:'تحويل بنكي', abx_t_deposit:'موازنة', abx_t_expense:'مصروف', abx_t_other:'تحصيل آخر', abx_t_delivery:'رسوم توصيل', abx_helpTitle:'طريقة تعبئة ملف المنطقة', abx_helpRows:'الصفوف', abx_helpRowsTxt:'كل صف سطر واحد لجهاز واحد في يوم واحد. للجهاز الواحد أكثر من صف: صف لكل صنف مباع، وصف لكل عميل آجل، وصف لكل تحويل أو موازنة أو مصروف. الصفوف الفارغة تُتجاهل.', abx_h_sale:'اختر الصنف واكتب الكمية (السعر يُملأ من الصنف إن تُرك فارغاً). إن بيع جزء منها عبر سوق غاز فاكتب ذلك الجزء في عمود «منها عبر سوق غاز»، ويُحسب رسم التوصيل والعمولة تلقائياً.', abx_h_credit:'بيع آجل لعميل مسجَّل: اكتب العميل (رقمه أو اسمه) والصنف والكمية. يُحسب مرة واحدة كبيع ويُخصم كآجل، ورسم توصيل العميل وعمولة السائق تُحسب من ملف العميل. لا تكرره في صف بيع.', abx_h_transfer:'تحويل عميل مباشرة لحساب الشركة: المبلغ، والبيان (رقم التحويل). يُخصم من النقدية.', abx_h_deposit:'موازنة أُودعت في البنك من هذا الجهاز: المبلغ والمرجع البنكي (إلزامي). تُخصم من النقدية.', abx_h_expense:'مصروف دُفع من النقدية: المبلغ، والبند من القائمة، والسبب (إلزامي).', abx_h_other:'نقدية استُلمت لغير البيع: المبلغ، والبند من القائمة، والسبب (إلزامي). تُضاف للنقدية.', abx_h_delivery:'رسوم توصيل دُفعت للبنك: المبلغ والبيان.', abx_helpAuto:'ما يُحسب تلقائياً', abx_helpAutoTxt:'رسوم توصيل العميل وعمولة السائق للآجل، ورسوم وعمولة سوق غاز، وضريبة رسوم التوصيل، وصافي النقدية لكل فرع.', abx_line:'السطر', abx_details:'التفاصيل', abx_via:'منها عبر', abx_noLines:'لا توجد سطور معبأة في الملف', abx_badRows:'{n} سطر يحتاج تصحيحاً في الملف قبل الإرسال', abx_sending:'جارٍ الإرسال: دفعة {n} من {total}', abx_partSent:'أُرسلت {n} دفعة قبل التوقف', abx_e_date:'تاريخ غير صحيح', abx_e_future:'تاريخ مستقبلي', abx_e_pos:'الجهاز ليس في منطقتك', abx_e_type:'نوع السطر غير معروف', abx_e_product:'الصنف غير موجود', abx_e_qty:'الكمية مطلوبة', abx_e_price:'السعر مطلوب', abx_e_locked:'سعر هذا الصنف ثابت', abx_e_channel:'كمية سوق غاز أكبر من الكمية', abx_e_customer:'العميل غير مسجل', abx_e_amount:'المبلغ مطلوب', abx_e_ref:'المرجع البنكي مطلوب', abx_e_item:'البند غير موجود', abx_e_reason:'السبب مطلوب', inv_byLevels:'المخزون بالمستويات', inv_lv_city:'المدينة', inv_lv_area:'المنطقة', inv_lv_branch:'الفرع', inv_lv_item:'الصنف', inv_lv_seller:'جهة البيع', inv_search:'ابحث عن مدينة أو فرع أو صنف أو جهاز…', inv_soldHere:'مبيعات هذا الصنف من هذه الجهة', inv_noOpening:'لم يُسجَّل رصيد أول المدة بعد', inv_uncounted:'{n} صنف/فرع بلا رصيد أول المدة، فلا يدخل في الأرصدة. سجّل الجرد الافتتاحي لكل صنف في كل فرع.', inv_noQtyWarn:'{n} بيع بمبلغ {amt} ر.س سُجّل بلا كمية، فلا يُخصم من المخزون. أدخل البيع بطريقة المنتج (كمية × سعر).', err_hasStock:'لهذا الصنف حركات مخزون، فلا يمكن تحويله إلى خدمة', err_invalidLocation:'اختر فرعاً صحيحاً', inv_empty:'لا توجد حركة مخزون في هذه الفترة. ابدأ بتسجيل رصيد أول المدة لكل صنف.', inv_shortBadge:'عجز', inv_shortBy:'عجز {n}: المبيعات أكثر من الرصيد، راجع الحركات', inv_period:'الفترة من {from} إلى {to}', inv_moves:'حركات المخزون المسجلة', inv_kind:'نوع الحركة', inv_qty:'الكمية', inv_k_opening:'رصيد أول المدة', inv_k_purchase:'مشتريات', inv_k_return:'مرتجع من المطاعم', inv_k_damage:'تالف', inv_addTitle:'تسجيل حركة مخزون', inv_addHint:'رصيد أول المدة (الجرد الافتتاحي) يُسجَّل مرة واحدة فقط لكل صنف في كل فرع، وبعدها يصبح رصيد آخر كل يوم هو رصيد أول اليوم التالي تلقائياً. المبيعات تُحسب من الإدخالات اليومية فلا تُسجَّل هنا؛ سجّل هنا المشتريات والمرتجع من المطاعم والتالف فقط.', inv_notePh:'رقم فاتورة الشراء أو اسم المطعم أو سبب التلف', inv_save:'حفظ الحركة', inv_saved:'حُفظت الحركة', inv_needQty:'اكتب الكمية', inv_noMoves:'لا توجد حركات مسجلة في هذه الفترة', inv_void:'إلغاء الحركة', inv_voided:'ملغاة', inv_voidReason:'سبب إلغاء هذه الحركة؟', err_openingExists:'رصيد أول المدة مسجَّل لهذا الصنف في هذا الفرع. سجّل الفرق كمشتريات أو تالف، أو ألغِ الرصيد السابق.', err_notInventory:'هذا الصنف خدمة وليس له مخزون',
+    admin_productType:'نوع المنتج', admin_typeGoods:'مخزني', admin_typeServices:'خدمات', nav_inventory:'المخزون', inv_title:'حركة المخزون', inv_hint:'رصيد أول المدة + المشتريات + المرتجع + الوارد = المتاح، ثم تُطرح المبيعات (من إدخالات النظام) والتالف والصادر، فيبقى رصيد آخر المدة. الأسطوانات تُعدّ مليان وفارغ: التبديل يُخرج مليانة ويُعيد فارغة، والشراء المليان تعبئة تُخرج فوارغ بعددها. القيم بسعر التكلفة.', inv_opening:'رصيد أول المدة', inv_purchases:'المشتريات', inv_returns:'مرتجع المطاعم', inv_available:'المتاح للاستخدام', inv_sales:'المبيعات', inv_damaged:'التالف', inv_ending:'رصيد آخر المدة', inv_unitCost:'تكلفة الوحدة', inv_from:'من', inv_to:'إلى', inv_allBranches:'كل الفروع', inv_thisMonth:'هذا الشهر', inv_lastMonth:'الشهر الماضي', inv_showValue:'عرض القيم بالتكلفة بدل الكميات', inv_qtyShort:'كمية', inv_byBranch:'المخزون حسب الفرع والصنف', inv_item:'الصنف', inv_items:'الأصناف: {n}', inv_tag_add:'يُضاف', inv_tag_ded:'يُخصم', abx_hint:'نزّل الملف: فيه صف لكل جهاز نقاط بيع في فروع منطقتك. كل صف سطر واحد: بيع، آجل، تحويل بنكي، موازنة، مصروف، تحصيل آخر، أو رسوم توصيل. أضف صفوفاً للجهاز الواحد بقدر ما تحتاج، ثم ارفع الملف: يُفحص كل صف قبل الإرسال، ثم ترى الحساب الفعلي، ثم يذهب لنائب مدير العمليات للاعتماد.', abx_sheet:'الإدخال', abx_listsSheet:'القوائم', abx_helpSheet:'طريقة التعبئة', abx_file:'ملف إدخال المنطقة', abx_c_date:'التاريخ', abx_c_posId:'رقم الجهاز', abx_c_branch:'الفرع (للعلم)', abx_c_type:'نوع السطر', abx_c_product:'الصنف', abx_c_qty:'الكمية', abx_c_price:'سعر الوحدة', abx_c_ch:'منها عبر {ch} (كمية)', dp_pick:'اختر التاريخ', dp_today:'اليوم', dp_yesterday:'أمس', dp_clear:'مسح', dp_prev:'الشهر السابق', dp_next:'الشهر التالي', dp_days:'أحد,اثنين,ثلاثاء,أربعاء,خميس,جمعة,سبت', admin_cylinder:'أسطوانة (تُعدّ مليان وفارغ)', admin_stockName:'اسم صنف المخزون', admin_emptyCost:'تكلفة الأسطوانة الفارغة', admin_stockOf:'يسحب من مخزون صنف', admin_stockEffect:'أثره على المخزون', eff_exchange:'تبديل: تخرج مليانة وتعود فارغة', eff_sell_empty:'بيع أسطوانة فارغة', eff_sell_full:'بيع أسطوانة مليانة', inv_exchangeIn:'فوارغ عائدة من التبديل', inv_transfersIn:'نقل وارد من فرع', inv_refillOut:'فوارغ أُرسلت للتعبئة', inv_transfersOut:'نقل صادر إلى فرع', inv_k_transfer_in:'نقل وارد من فرع', inv_k_transfer_out:'نقل صادر إلى فرع', inv_st_full:'مليان', inv_st_empty:'فارغ', inv_state:'مليان أو فارغ', err_useStockItem:'المخزون يُسجَّل على صنف الأسطوانة نفسه، لا على المنتج الذي يسحب منه', err_alreadyImported:'كميات هذا اليوم محفوظة من قبل', br_stTitle:'كميات المخزون في الملف', br_stHint:'رصيد أول المدة والمشتريات والنقل من أعلى الملف. المبيعات تأتي من الأجهزة، ويُقارن رصيد نهاية اليوم المحسوب بما في الملف.', br_stNoBranch:'لم يُعرف الفرع من أجهزة الملف ولا من اسمه', br_stNoItem:'لا يوجد صنف في النظام يقابل العمود: {h}', br_stNotCyl:'الصنف {p} غير معلَّم كأسطوانة (مليان وفارغ)', br_stFileEnd:'نهاية اليوم في الملف', br_stCalcEnd:'نهاية اليوم حسب النظام', br_stHasOpen:'له رصيد في النظام', br_stOpenDiff:'رصيد النظام في بداية اليوم {sys} والملف {file}', br_stMismatch:'لا يطابق الملف', br_stSetupHint:'ربط الأسطوانات بمنتجات البيع غير مكتمل. زر الإعداد يعلّم أصناف التبديل كأسطوانات ويربط بها أصناف البيع (بيع فارغة) كما يحسبها الملف.', br_stSetup:'إعداد الأسطوانات تلقائياً', br_stAskAdmin:'ربط الأسطوانات غير مكتمل؛ يطلب من الإدارة أو المالية إعداده ثم يُعاد رفع الملف.', br_stSetupDone:'تم إعداد الأسطوانات', br_stSave:'حفظ كميات المخزون (بنود: {n})', br_stSaved:'حُفظت {n} حركة مخزون', br_stDone:'تم الحفظ', br_stRef:'ورقة الفرع', br_ref:'شبكة {dev} {date}', br_cardNote:'مبلغ الشبكة المستلم في البنك', br_found:'تم التعرف على تقرير الفرع اليومي', br_foundHint:'{n} جهاز فيها حركة، و{i} صنفاً في الجدول. راجع الأصناف والمصروف ثم التحقق بالأسفل.', br_date:'تاريخ اليوم', br_expItem:'بند المصروف', br_expReason:'سبب المصروف', br_otherItem:'بند التحصيل الآخر', br_otherReason:'سبب التحصيل', br_itemsHint:'كل عمود في الملف يقابله صنف في النظام (يُحفظ اختيارك لهذا الجهاز)', br_pick:'اختر…', br_fSales:'مبيعات الملف', br_fCard:'الشبكة (الموازنات)', br_fExp:'المصروفات', br_fOther:'تحصيلات أخرى', br_fNet:'النقدية حسب الملف', br_rowOff:'إجمالي هذه الأجهزة في الملف لا يساوي الكمية × السعر:', abx_c_chCom:'عمولة السائق لكل وحدة عبر {ch}', abx_e_chCom:'عمولة السائق غير صحيحة', abx_comShort:'عمولة', abx_c_customer:'العميل (رقم أو اسم)', abx_c_amount:'المبلغ', abx_c_item:'البند', abx_c_ref:'المرجع البنكي', abx_c_note:'البيان / السبب', abx_t_sale:'بيع', abx_t_credit:'آجل', abx_t_transfer:'تحويل بنكي', abx_t_deposit:'موازنة', abx_t_expense:'مصروف', abx_t_other:'تحصيل آخر', abx_t_delivery:'رسوم توصيل', abx_helpTitle:'طريقة تعبئة ملف المنطقة', abx_helpRows:'الصفوف', abx_helpRowsTxt:'كل صف سطر واحد لجهاز واحد في يوم واحد. للجهاز الواحد أكثر من صف: صف لكل صنف مباع، وصف لكل عميل آجل، وصف لكل تحويل أو موازنة أو مصروف. الصفوف الفارغة تُتجاهل.', abx_h_sale:'اختر الصنف واكتب الكمية (السعر يُملأ من الصنف إن تُرك فارغاً). إن بيع جزء منها عبر سوق غاز فاكتب ذلك الجزء في عمود «منها عبر سوق غاز»، ويُحسب رسم التوصيل والعمولة تلقائياً.', abx_h_credit:'بيع آجل لعميل مسجَّل: اكتب العميل (رقمه أو اسمه) والصنف والكمية. يُحسب مرة واحدة كبيع ويُخصم كآجل، ورسم توصيل العميل وعمولة السائق تُحسب من ملف العميل. لا تكرره في صف بيع.', abx_h_transfer:'تحويل عميل مباشرة لحساب الشركة: المبلغ، والبيان (رقم التحويل). يُخصم من النقدية.', abx_h_deposit:'موازنة أُودعت في البنك من هذا الجهاز: المبلغ والمرجع البنكي (إلزامي). تُخصم من النقدية.', abx_h_expense:'مصروف دُفع من النقدية: المبلغ، والبند من القائمة، والسبب (إلزامي).', abx_h_other:'نقدية استُلمت لغير البيع: المبلغ، والبند من القائمة، والسبب (إلزامي). تُضاف للنقدية.', abx_h_delivery:'رسوم توصيل دُفعت للبنك: المبلغ والبيان.', abx_helpAuto:'ما يُحسب تلقائياً', abx_helpAutoTxt:'رسوم توصيل العميل وعمولة السائق للآجل، ورسوم وعمولة سوق غاز، وضريبة رسوم التوصيل، وصافي النقدية لكل فرع.', abx_line:'السطر', abx_details:'التفاصيل', abx_via:'منها عبر', abx_noLines:'لا توجد سطور معبأة في الملف', abx_badRows:'{n} سطر يحتاج تصحيحاً في الملف قبل الإرسال', abx_sending:'جارٍ الإرسال: دفعة {n} من {total}', abx_partSent:'أُرسلت {n} دفعة قبل التوقف', abx_e_date:'تاريخ غير صحيح', abx_e_future:'تاريخ مستقبلي', abx_e_pos:'الجهاز ليس في منطقتك', abx_e_type:'نوع السطر غير معروف', abx_e_product:'الصنف غير موجود', abx_e_qty:'الكمية مطلوبة', abx_e_price:'السعر مطلوب', abx_e_locked:'سعر هذا الصنف ثابت', abx_e_channel:'كمية سوق غاز أكبر من الكمية', abx_e_customer:'العميل غير مسجل', abx_e_amount:'المبلغ مطلوب', abx_e_ref:'المرجع البنكي مطلوب', abx_e_item:'البند غير موجود', abx_e_reason:'السبب مطلوب', inv_byLevels:'المخزون بالمستويات', inv_lv_city:'المدينة', inv_lv_area:'المنطقة', inv_lv_branch:'الفرع', inv_lv_item:'الصنف', inv_lv_seller:'جهة البيع', inv_search:'ابحث عن مدينة أو فرع أو صنف أو جهاز…', inv_soldHere:'مبيعات هذا الصنف من هذه الجهة', inv_noOpening:'لم يُسجَّل رصيد أول المدة بعد', inv_uncounted:'{n} صنف/فرع بلا رصيد أول المدة، فلا يدخل في الأرصدة. سجّل الجرد الافتتاحي لكل صنف في كل فرع.', inv_noQtyWarn:'{n} بيع بمبلغ {amt} ر.س سُجّل بلا كمية، فلا يُخصم من المخزون. أدخل البيع بطريقة المنتج (كمية × سعر).', err_hasStock:'لهذا الصنف حركات مخزون، فلا يمكن تحويله إلى خدمة', err_invalidLocation:'اختر فرعاً صحيحاً', inv_empty:'لا توجد حركة مخزون في هذه الفترة. ابدأ بتسجيل رصيد أول المدة لكل صنف.', inv_shortBadge:'عجز', inv_shortBy:'عجز {n}: المبيعات أكثر من الرصيد، راجع الحركات', inv_period:'الفترة من {from} إلى {to}', inv_moves:'حركات المخزون المسجلة', inv_kind:'نوع الحركة', inv_qty:'الكمية', inv_k_opening:'رصيد أول المدة', inv_k_purchase:'مشتريات', inv_k_return:'مرتجع من المطاعم', inv_k_damage:'تالف', inv_addTitle:'تسجيل حركة مخزون', inv_addHint:'رصيد أول المدة (الجرد الافتتاحي) يُسجَّل مرة واحدة فقط لكل صنف في كل فرع، وبعدها يصبح رصيد آخر كل يوم هو رصيد أول اليوم التالي تلقائياً. المبيعات تُحسب من الإدخالات اليومية فلا تُسجَّل هنا؛ سجّل هنا المشتريات والمرتجع من المطاعم والتالف فقط.', inv_notePh:'رقم فاتورة الشراء أو اسم المطعم أو سبب التلف', inv_save:'حفظ الحركة', inv_saved:'حُفظت الحركة', inv_needQty:'اكتب الكمية', inv_noMoves:'لا توجد حركات مسجلة في هذه الفترة', inv_void:'إلغاء الحركة', inv_voided:'ملغاة', inv_voidReason:'سبب إلغاء هذه الحركة؟', err_openingExists:'رصيد أول المدة مسجَّل لهذا الصنف في هذا الفرع. سجّل الفرق كمشتريات أو تالف، أو ألغِ الرصيد السابق.', err_notInventory:'هذا الصنف خدمة وليس له مخزون',
     admin_addStore:'إضافة متجر', admin_storeName:'اسم المتجر', admin_manager:'مدير الفرع', admin_location:'الفرع',
     admin_addCar:'إضافة سيارة', admin_carLabel:'رقم اللوحة/السائق', admin_driver:'السائق',
     admin_addPos:'إضافة جهاز', admin_posLabel:'رقم الجهاز', admin_ownerType:'مرتبط بـ', admin_owner:'الجهة', admin_assignedDriver:'الموظف المسؤول',
@@ -2532,7 +2593,7 @@ var L = {
     admin_addUser:'Add user', admin_name:'Name', admin_role:'Role', admin_active:'Active', admin_resetPw:'Reset password',
     admin_addLocation:'Add branch', admin_city:'City', admin_locName:'Branch name', admin_cluster:'Area',
     admin_zones:'Zones', admin_addZone:'Add zone', admin_zoneName:'Zone name', admin_zone:'Zone',
-    admin_productType:'Product type', admin_typeGoods:'Inventory', admin_typeServices:'Services', nav_inventory:'Inventory', inv_title:'Inventory movement', inv_hint:'Opening + purchases + returns from restaurants = available for use; less sales (from the system\'s entries) and damaged items leaves the ending stock. Values are at cost.', inv_opening:'Opening', inv_purchases:'Purchases', inv_returns:'Returns from restaurants', inv_available:'Available for use', inv_sales:'Sales', inv_damaged:'Damaged', inv_ending:'Ending stock', inv_unitCost:'Unit cost', inv_from:'From', inv_to:'To', inv_allBranches:'All branches', inv_thisMonth:'This month', inv_lastMonth:'Last month', inv_showValue:'Show values at cost instead of quantities', inv_qtyShort:'qty', inv_byBranch:'Stock by branch and item', inv_item:'Item', inv_items:'Items: {n}', inv_tag_add:'added', inv_tag_ded:'deducted', abx_hint:'Download the file: it has a row for every POS machine in your area\'s branches. Each row is one line: sale, credit, bank transfer, الموازنة, expense, other collection or delivery fee. Add as many rows per machine as you need, then upload it: every row is checked before sending, you see the real calculation, then it goes to the Deputy Operations Manager for approval.', abx_sheet:'Entries', abx_listsSheet:'Lists', abx_helpSheet:'How to fill', abx_file:'Area entries', abx_c_date:'Date', abx_c_posId:'POS device ID', abx_c_branch:'Branch (for reference)', abx_c_type:'Line type', abx_c_product:'Item', abx_c_qty:'Quantity', abx_c_price:'Unit price', abx_c_ch:'Of which via {ch} (qty)', admin_cylinder:'Cylinder (counted full and empty)', admin_stockName:'Stock item name', admin_emptyCost:'Cost of an empty cylinder', admin_stockOf:'Draws stock from', admin_stockEffect:'Effect on stock', eff_exchange:'Exchange: a full one out, an empty one back', eff_sell_empty:'Sells an empty cylinder', eff_sell_full:'Sells a full cylinder', inv_exchangeIn:'Empties back from exchanges', inv_transfersIn:'Transfer in from a branch', inv_refillOut:'Empties sent for refilling', inv_transfersOut:'Transfer out to a branch', inv_k_transfer_in:'Transfer in from a branch', inv_k_transfer_out:'Transfer out to a branch', inv_st_full:'Full', inv_st_empty:'Empty', inv_state:'Full or empty', err_useStockItem:'Stock is kept on the cylinder item itself, not on the product drawing from it', err_alreadyImported:'This day\'s quantities are already saved', br_stTitle:'Stock quantities in the file', br_stHint:'Opening, purchases and transfers from the top of the file. Sales come from the devices, and the computed end of day is checked against the file\'s.', br_stNoBranch:'The branch could not be found from the file\'s devices or its name', br_stNoItem:'No item in the system matches the column: {h}', br_stNotCyl:'{p} is not marked as a cylinder (full and empty)', br_stFileEnd:'End of day in the file', br_stCalcEnd:'End of day per the system', br_stHasOpen:'has a system count', br_stOpenDiff:'System start of day {sys}, file {file}', br_stMismatch:'Does not match the file', br_stSetupHint:'The cylinder links are incomplete. Setup marks the exchange items as cylinders and links the sale items to them (selling an empty), as the file counts them.', br_stSetup:'Set up cylinders automatically', br_stAskAdmin:'The cylinder links are incomplete; ask management or finance to set them up, then upload again.', br_stSetupDone:'Cylinders set up', br_stSave:'Save stock quantities ({n} items)', br_stSaved:'{n} stock movements saved', br_stDone:'Saved', br_stRef:'Branch sheet', br_ref:'Card {dev} {date}', br_cardNote:'Card amount received in the bank', br_found:'Branch daily report recognised', br_foundHint:'{n} devices with activity and {i} item columns. Check the items and the expense, then the check below.', br_date:'Day', br_expItem:'Expense item', br_expReason:'Expense reason', br_otherItem:'Other collection item', br_otherReason:'Collection reason', br_itemsHint:'Each column in the file matches an item in the system (your choice is kept on this device)', br_pick:'Choose…', br_fSales:'Sales in the file', br_fCard:'Card (الموازنات)', br_fExp:'Expenses', br_fOther:'Other collections', br_fNet:'Cash per the file', br_rowOff:'These devices\' total in the file is not quantity × price:', abx_c_chCom:'Driver commission per unit via {ch}', abx_e_chCom:'Driver commission is not valid', abx_comShort:'commission', abx_c_customer:'Customer (number or name)', abx_c_amount:'Amount', abx_c_item:'Expense / collection item', abx_c_ref:'Bank reference', abx_c_note:'Note / reason', abx_t_sale:'Sale', abx_t_credit:'Credit', abx_t_transfer:'Bank transfer', abx_t_deposit:'الموازنة', abx_t_expense:'Expense', abx_t_other:'Other collection', abx_t_delivery:'Delivery fee', abx_helpTitle:'How to fill in the area file', abx_helpRows:'Rows', abx_helpRowsTxt:'Each row is one line for one machine on one day. A machine can have many rows: one per item sold, one per credit customer, one per transfer, الموازنة or expense. Empty rows are ignored.', abx_h_sale:'Pick the item and the quantity (the price comes from the item if left empty). If part of it went through Souq Gas, put that part in the "Of which via Souq Gas" column; its delivery fee and commission are worked out automatically.', abx_h_credit:'A credit sale to a registered customer: the customer (number or name), item and quantity. It counts once as a sale and comes off as credit; the customer\'s delivery fee and the driver\'s commission come from the customer profile. Do not repeat it on a sale row.', abx_h_transfer:'A customer\'s transfer straight to the company account: the amount and a note (transfer number). It comes off the cash.', abx_h_deposit:'A الموازنة banked from this machine: the amount and the bank reference (required). It comes off the cash.', abx_h_expense:'Cash paid out: the amount, the item from the list and the reason (required).', abx_h_other:'Cash received for something other than a sale: the amount, the item from the list and the reason (required). It adds to the cash.', abx_h_delivery:'A delivery fee paid to the bank: the amount and a note.', abx_helpAuto:'Worked out for you', abx_helpAutoTxt:'The customer\'s delivery fee and driver commission on credit, Souq Gas\'s fee and commission, the VAT on delivery fees, and each branch\'s net cash.', abx_line:'Row', abx_details:'Details', abx_via:'via', abx_noLines:'The file has no filled-in lines', abx_badRows:'{n} rows need fixing in the file before sending', abx_sending:'Sending batch {n} of {total}', abx_partSent:'{n} batches were sent before it stopped', abx_e_date:'Invalid date', abx_e_future:'Future date', abx_e_pos:'Machine not in your area', abx_e_type:'Unknown line type', abx_e_product:'Item not found', abx_e_qty:'Quantity required', abx_e_price:'Price required', abx_e_locked:'This item has a fixed price', abx_e_channel:'Souq Gas quantity exceeds the quantity', abx_e_customer:'Customer not registered', abx_e_amount:'Amount required', abx_e_ref:'Bank reference required', abx_e_item:'Item not in the list', abx_e_reason:'Reason required', inv_byLevels:'Stock by level', inv_lv_city:'City', inv_lv_area:'Area', inv_lv_branch:'Branch', inv_lv_item:'Item', inv_lv_seller:'Sold by', inv_search:'Find a city, branch, item or device…', inv_soldHere:'this item\'s sales from here', inv_noOpening:'No opening count yet', inv_uncounted:'{n} branch items have no opening count yet, so they are left out of the balances. Record each item\'s opening count at each branch.', inv_noQtyWarn:'{n} sales worth {amt} SAR were entered without a quantity, so they do not come off the stock. Enter sales by product (qty × price).', err_hasStock:'This item has stock movements, so it cannot become a service', err_invalidLocation:'Choose a valid branch', inv_empty:'No stock movement in this period. Start by recording each item\'s opening balance.', inv_shortBadge:'Short', inv_shortBy:'Short by {n}: sales exceed the stock, check the movements', inv_period:'Period {from} to {to}', inv_moves:'Recorded movements', inv_kind:'Movement', inv_qty:'Quantity', inv_k_opening:'Opening balance', inv_k_purchase:'Purchase', inv_k_return:'Return from restaurants', inv_k_damage:'Damaged', inv_addTitle:'Record a stock movement', inv_addHint:'The opening count is recorded only once per item in each branch; after that, each day\'s ending stock is the next day\'s opening automatically. Sales come from the daily entries, so record only purchases, returns from restaurants and damaged items here.', inv_notePh:'Purchase invoice number, restaurant name or reason for damage', inv_save:'Save movement', inv_saved:'Movement saved', inv_needQty:'Enter the quantity', inv_noMoves:'No movements recorded in this period', inv_void:'Void movement', inv_voided:'Voided', inv_voidReason:'Why is this movement being voided?', err_openingExists:'This item already has an opening balance at this branch. Record the difference as a purchase or damage, or void the earlier balance.', err_notInventory:'This item is a service and has no stock',
+    admin_productType:'Product type', admin_typeGoods:'Inventory', admin_typeServices:'Services', nav_inventory:'Inventory', inv_title:'Inventory movement', inv_hint:'Opening + purchases + returns from restaurants = available for use; less sales (from the system\'s entries) and damaged items leaves the ending stock. Values are at cost.', inv_opening:'Opening', inv_purchases:'Purchases', inv_returns:'Returns from restaurants', inv_available:'Available for use', inv_sales:'Sales', inv_damaged:'Damaged', inv_ending:'Ending stock', inv_unitCost:'Unit cost', inv_from:'From', inv_to:'To', inv_allBranches:'All branches', inv_thisMonth:'This month', inv_lastMonth:'Last month', inv_showValue:'Show values at cost instead of quantities', inv_qtyShort:'qty', inv_byBranch:'Stock by branch and item', inv_item:'Item', inv_items:'Items: {n}', inv_tag_add:'added', inv_tag_ded:'deducted', abx_hint:'Download the file: it has a row for every POS machine in your area\'s branches. Each row is one line: sale, credit, bank transfer, الموازنة, expense, other collection or delivery fee. Add as many rows per machine as you need, then upload it: every row is checked before sending, you see the real calculation, then it goes to the Deputy Operations Manager for approval.', abx_sheet:'Entries', abx_listsSheet:'Lists', abx_helpSheet:'How to fill', abx_file:'Area entries', abx_c_date:'Date', abx_c_posId:'POS device ID', abx_c_branch:'Branch (for reference)', abx_c_type:'Line type', abx_c_product:'Item', abx_c_qty:'Quantity', abx_c_price:'Unit price', abx_c_ch:'Of which via {ch} (qty)', dp_pick:'Choose a date', dp_today:'Today', dp_yesterday:'Yesterday', dp_clear:'Clear', dp_prev:'Previous month', dp_next:'Next month', dp_days:'Sun,Mon,Tue,Wed,Thu,Fri,Sat', admin_cylinder:'Cylinder (counted full and empty)', admin_stockName:'Stock item name', admin_emptyCost:'Cost of an empty cylinder', admin_stockOf:'Draws stock from', admin_stockEffect:'Effect on stock', eff_exchange:'Exchange: a full one out, an empty one back', eff_sell_empty:'Sells an empty cylinder', eff_sell_full:'Sells a full cylinder', inv_exchangeIn:'Empties back from exchanges', inv_transfersIn:'Transfer in from a branch', inv_refillOut:'Empties sent for refilling', inv_transfersOut:'Transfer out to a branch', inv_k_transfer_in:'Transfer in from a branch', inv_k_transfer_out:'Transfer out to a branch', inv_st_full:'Full', inv_st_empty:'Empty', inv_state:'Full or empty', err_useStockItem:'Stock is kept on the cylinder item itself, not on the product drawing from it', err_alreadyImported:'This day\'s quantities are already saved', br_stTitle:'Stock quantities in the file', br_stHint:'Opening, purchases and transfers from the top of the file. Sales come from the devices, and the computed end of day is checked against the file\'s.', br_stNoBranch:'The branch could not be found from the file\'s devices or its name', br_stNoItem:'No item in the system matches the column: {h}', br_stNotCyl:'{p} is not marked as a cylinder (full and empty)', br_stFileEnd:'End of day in the file', br_stCalcEnd:'End of day per the system', br_stHasOpen:'has a system count', br_stOpenDiff:'System start of day {sys}, file {file}', br_stMismatch:'Does not match the file', br_stSetupHint:'The cylinder links are incomplete. Setup marks the exchange items as cylinders and links the sale items to them (selling an empty), as the file counts them.', br_stSetup:'Set up cylinders automatically', br_stAskAdmin:'The cylinder links are incomplete; ask management or finance to set them up, then upload again.', br_stSetupDone:'Cylinders set up', br_stSave:'Save stock quantities ({n} items)', br_stSaved:'{n} stock movements saved', br_stDone:'Saved', br_stRef:'Branch sheet', br_ref:'Card {dev} {date}', br_cardNote:'Card amount received in the bank', br_found:'Branch daily report recognised', br_foundHint:'{n} devices with activity and {i} item columns. Check the items and the expense, then the check below.', br_date:'Day', br_expItem:'Expense item', br_expReason:'Expense reason', br_otherItem:'Other collection item', br_otherReason:'Collection reason', br_itemsHint:'Each column in the file matches an item in the system (your choice is kept on this device)', br_pick:'Choose…', br_fSales:'Sales in the file', br_fCard:'Card (الموازنات)', br_fExp:'Expenses', br_fOther:'Other collections', br_fNet:'Cash per the file', br_rowOff:'These devices\' total in the file is not quantity × price:', abx_c_chCom:'Driver commission per unit via {ch}', abx_e_chCom:'Driver commission is not valid', abx_comShort:'commission', abx_c_customer:'Customer (number or name)', abx_c_amount:'Amount', abx_c_item:'Expense / collection item', abx_c_ref:'Bank reference', abx_c_note:'Note / reason', abx_t_sale:'Sale', abx_t_credit:'Credit', abx_t_transfer:'Bank transfer', abx_t_deposit:'الموازنة', abx_t_expense:'Expense', abx_t_other:'Other collection', abx_t_delivery:'Delivery fee', abx_helpTitle:'How to fill in the area file', abx_helpRows:'Rows', abx_helpRowsTxt:'Each row is one line for one machine on one day. A machine can have many rows: one per item sold, one per credit customer, one per transfer, الموازنة or expense. Empty rows are ignored.', abx_h_sale:'Pick the item and the quantity (the price comes from the item if left empty). If part of it went through Souq Gas, put that part in the "Of which via Souq Gas" column; its delivery fee and commission are worked out automatically.', abx_h_credit:'A credit sale to a registered customer: the customer (number or name), item and quantity. It counts once as a sale and comes off as credit; the customer\'s delivery fee and the driver\'s commission come from the customer profile. Do not repeat it on a sale row.', abx_h_transfer:'A customer\'s transfer straight to the company account: the amount and a note (transfer number). It comes off the cash.', abx_h_deposit:'A الموازنة banked from this machine: the amount and the bank reference (required). It comes off the cash.', abx_h_expense:'Cash paid out: the amount, the item from the list and the reason (required).', abx_h_other:'Cash received for something other than a sale: the amount, the item from the list and the reason (required). It adds to the cash.', abx_h_delivery:'A delivery fee paid to the bank: the amount and a note.', abx_helpAuto:'Worked out for you', abx_helpAutoTxt:'The customer\'s delivery fee and driver commission on credit, Souq Gas\'s fee and commission, the VAT on delivery fees, and each branch\'s net cash.', abx_line:'Row', abx_details:'Details', abx_via:'via', abx_noLines:'The file has no filled-in lines', abx_badRows:'{n} rows need fixing in the file before sending', abx_sending:'Sending batch {n} of {total}', abx_partSent:'{n} batches were sent before it stopped', abx_e_date:'Invalid date', abx_e_future:'Future date', abx_e_pos:'Machine not in your area', abx_e_type:'Unknown line type', abx_e_product:'Item not found', abx_e_qty:'Quantity required', abx_e_price:'Price required', abx_e_locked:'This item has a fixed price', abx_e_channel:'Souq Gas quantity exceeds the quantity', abx_e_customer:'Customer not registered', abx_e_amount:'Amount required', abx_e_ref:'Bank reference required', abx_e_item:'Item not in the list', abx_e_reason:'Reason required', inv_byLevels:'Stock by level', inv_lv_city:'City', inv_lv_area:'Area', inv_lv_branch:'Branch', inv_lv_item:'Item', inv_lv_seller:'Sold by', inv_search:'Find a city, branch, item or device…', inv_soldHere:'this item\'s sales from here', inv_noOpening:'No opening count yet', inv_uncounted:'{n} branch items have no opening count yet, so they are left out of the balances. Record each item\'s opening count at each branch.', inv_noQtyWarn:'{n} sales worth {amt} SAR were entered without a quantity, so they do not come off the stock. Enter sales by product (qty × price).', err_hasStock:'This item has stock movements, so it cannot become a service', err_invalidLocation:'Choose a valid branch', inv_empty:'No stock movement in this period. Start by recording each item\'s opening balance.', inv_shortBadge:'Short', inv_shortBy:'Short by {n}: sales exceed the stock, check the movements', inv_period:'Period {from} to {to}', inv_moves:'Recorded movements', inv_kind:'Movement', inv_qty:'Quantity', inv_k_opening:'Opening balance', inv_k_purchase:'Purchase', inv_k_return:'Return from restaurants', inv_k_damage:'Damaged', inv_addTitle:'Record a stock movement', inv_addHint:'The opening count is recorded only once per item in each branch; after that, each day\'s ending stock is the next day\'s opening automatically. Sales come from the daily entries, so record only purchases, returns from restaurants and damaged items here.', inv_notePh:'Purchase invoice number, restaurant name or reason for damage', inv_save:'Save movement', inv_saved:'Movement saved', inv_needQty:'Enter the quantity', inv_noMoves:'No movements recorded in this period', inv_void:'Void movement', inv_voided:'Voided', inv_voidReason:'Why is this movement being voided?', err_openingExists:'This item already has an opening balance at this branch. Record the difference as a purchase or damage, or void the earlier balance.', err_notInventory:'This item is a service and has no stock',
     admin_addStore:'Add store', admin_storeName:'Store name', admin_manager:'Branch manager', admin_location:'Branch',
     admin_addCar:'Add car', admin_carLabel:'Plate / driver label', admin_driver:'Driver',
     admin_addPos:'Add POS machine', admin_posLabel:'Terminal id', admin_ownerType:'Belongs to', admin_owner:'Owner', admin_assignedDriver:'Assigned employee',
@@ -2700,7 +2761,7 @@ var L = {
     admin_addUser:'صارف شامل کریں', admin_name:'نام', admin_role:'کردار', admin_active:'فعال', admin_resetPw:'پاس ورڈ ری سیٹ کریں',
     admin_addLocation:'برانچ شامل کریں', admin_city:'شہر', admin_locName:'برانچ کا نام', admin_cluster:'علاقہ',
     admin_zones:'زونز', admin_addZone:'زون شامل کریں', admin_zoneName:'زون کا نام', admin_zone:'زون',
-    admin_productType:'پروڈکٹ کی قسم', admin_typeGoods:'انوینٹری', admin_typeServices:'خدمات', nav_inventory:'انوینٹری', inv_title:'انوینٹری کی حرکت', inv_hint:'ابتدائی اسٹاک + خریداری + ریسٹورنٹس سے واپسی = دستیاب؛ اس میں سے فروخت (سسٹم کے اندراجات سے) اور خراب مال نکال کر اختتامی اسٹاک۔ قیمتیں لاگت پر۔', inv_opening:'ابتدائی', inv_purchases:'خریداری', inv_returns:'ریسٹورنٹس سے واپسی', inv_available:'دستیاب', inv_sales:'فروخت', inv_damaged:'خراب', inv_ending:'اختتامی', inv_unitCost:'فی یونٹ لاگت', inv_from:'سے', inv_to:'تک', inv_allBranches:'تمام برانچز', inv_thisMonth:'یہ مہینہ', inv_lastMonth:'پچھلا مہینہ', inv_showValue:'مقدار کے بجائے لاگت پر قیمت دکھائیں', inv_qtyShort:'مقدار', inv_byBranch:'برانچ اور آئٹم کے لحاظ سے اسٹاک', inv_item:'آئٹم', inv_items:'آئٹمز: {n}', inv_tag_add:'جمع', inv_tag_ded:'منہا', abx_hint:'فائل ڈاؤن لوڈ کریں: اس میں آپ کے علاقے کی ہر POS مشین کی ایک قطار ہے۔ ہر قطار ایک لائن ہے۔ جتنی چاہیں قطاریں شامل کریں، پھر اپ لوڈ کریں۔', abx_sheet:'اندراجات', abx_listsSheet:'فہرستیں', abx_helpSheet:'بھرنے کا طریقہ', abx_file:'علاقہ اندراجات', abx_c_date:'تاریخ', abx_c_posId:'مشین نمبر', abx_c_branch:'برانچ (معلومات)', abx_c_type:'لائن کی قسم', abx_c_product:'آئٹم', abx_c_qty:'مقدار', abx_c_price:'فی یونٹ قیمت', abx_c_ch:'جس میں سے {ch} (مقدار)', admin_cylinder:'سلنڈر (بھرا اور خالی گنا جاتا ہے)', admin_stockName:'اسٹاک آئٹم کا نام', admin_emptyCost:'خالی سلنڈر کی لاگت', admin_stockOf:'اسٹاک اس آئٹم سے', admin_stockEffect:'اسٹاک پر اثر', eff_exchange:'تبادلہ: بھرا جاتا ہے، خالی واپس آتا ہے', eff_sell_empty:'خالی سلنڈر کی فروخت', eff_sell_full:'بھرے سلنڈر کی فروخت', inv_exchangeIn:'تبادلے سے واپس خالی', inv_transfersIn:'برانچ سے آمد', inv_refillOut:'بھرنے کے لیے بھیجے گئے خالی', inv_transfersOut:'برانچ کو منتقلی', inv_k_transfer_in:'برانچ سے آمد', inv_k_transfer_out:'برانچ کو منتقلی', inv_st_full:'بھرا', inv_st_empty:'خالی', inv_state:'بھرا یا خالی', err_useStockItem:'اسٹاک سلنڈر آئٹم پر ہی رکھا جاتا ہے', err_alreadyImported:'اس دن کی مقداریں پہلے سے محفوظ ہیں', br_stTitle:'فائل میں اسٹاک کی مقداریں', br_stHint:'فائل کے اوپر سے ابتدائی اسٹاک، خریداری اور منتقلی۔ فروخت ڈیوائسز سے آتی ہے، اور دن کے اختتام کا حساب فائل سے ملایا جاتا ہے۔', br_stNoBranch:'فائل کی ڈیوائسز یا نام سے برانچ نہیں ملی', br_stNoItem:'اس کالم سے ملتا آئٹم سسٹم میں نہیں: {h}', br_stNotCyl:'{p} سلنڈر کے طور پر نشان زد نہیں', br_stFileEnd:'فائل میں دن کا اختتام', br_stCalcEnd:'سسٹم کے مطابق دن کا اختتام', br_stHasOpen:'سسٹم میں اسٹاک موجود', br_stOpenDiff:'سسٹم میں دن کا آغاز {sys}، فائل {file}', br_stMismatch:'فائل سے مختلف', br_stSetupHint:'سلنڈر کے روابط نامکمل ہیں۔ سیٹ اپ تبادلہ آئٹمز کو سلنڈر بناتا ہے اور فروخت آئٹمز کو ان سے جوڑتا ہے۔', br_stSetup:'سلنڈر خودکار سیٹ اپ', br_stAskAdmin:'سلنڈر کے روابط نامکمل ہیں؛ انتظامیہ یا فنانس سے سیٹ اپ کروائیں، پھر دوبارہ اپ لوڈ کریں۔', br_stSetupDone:'سلنڈر سیٹ ہو گئے', br_stSave:'اسٹاک کی مقداریں محفوظ کریں ({n})', br_stSaved:'{n} اسٹاک حرکات محفوظ', br_stDone:'محفوظ', br_stRef:'برانچ شیٹ', br_ref:'کارڈ {dev} {date}', br_cardNote:'بینک میں موصول کارڈ رقم', br_found:'برانچ کی یومیہ رپورٹ پہچان لی گئی', br_foundHint:'{n} ڈیوائسز میں سرگرمی اور {i} آئٹم کالم۔ آئٹمز اور خرچ دیکھیں، پھر نیچے جانچ۔', br_date:'دن', br_expItem:'خرچ کی مد', br_expReason:'خرچ کی وجہ', br_otherItem:'دیگر وصولی کی مد', br_otherReason:'وصولی کی وجہ', br_itemsHint:'فائل کا ہر کالم سسٹم کے ایک آئٹم سے ملتا ہے (آپ کا انتخاب اسی ڈیوائس پر محفوظ رہتا ہے)', br_pick:'منتخب کریں…', br_fSales:'فائل کی فروخت', br_fCard:'کارڈ (الموازنات)', br_fExp:'اخراجات', br_fOther:'دیگر وصولیاں', br_fNet:'فائل کے مطابق نقد', br_rowOff:'فائل میں ان ڈیوائسز کا کل مقدار × قیمت کے برابر نہیں:', abx_c_chCom:'{ch} کے ذریعے فی یونٹ ڈرائیور کمیشن', abx_e_chCom:'ڈرائیور کمیشن درست نہیں', abx_comShort:'کمیشن', abx_c_customer:'گاہک (نمبر یا نام)', abx_c_amount:'رقم', abx_c_item:'مد', abx_c_ref:'بینک حوالہ', abx_c_note:'تفصیل / وجہ', abx_t_sale:'فروخت', abx_t_credit:'اُدھار', abx_t_transfer:'بینک ٹرانسفر', abx_t_deposit:'موازنة', abx_t_expense:'خرچ', abx_t_other:'دیگر وصولی', abx_t_delivery:'ڈیلیوری فیس', abx_helpTitle:'علاقہ فائل بھرنے کا طریقہ', abx_helpRows:'قطاریں', abx_helpRowsTxt:'ہر قطار ایک مشین کی ایک دن کی ایک لائن ہے۔ خالی قطاریں نظرانداز ہوتی ہیں۔', abx_h_sale:'آئٹم اور مقدار لکھیں۔ سوق غاز والا حصہ اس کالم میں لکھیں۔', abx_h_credit:'رجسٹرڈ گاہک کو اُدھار فروخت۔ اسے فروخت کی قطار میں دوبارہ نہ لکھیں۔', abx_h_transfer:'گاہک کی براہ راست منتقلی: رقم اور تفصیل۔', abx_h_deposit:'اس مشین سے بینک میں جمع: رقم اور بینک حوالہ (لازمی)۔', abx_h_expense:'نقد خرچ: رقم، فہرست سے مد اور وجہ (لازمی)۔', abx_h_other:'فروخت کے علاوہ وصولی: رقم، مد اور وجہ (لازمی)۔', abx_h_delivery:'بینک کو ادا ڈیلیوری فیس: رقم اور تفصیل۔', abx_helpAuto:'خودکار حساب', abx_helpAutoTxt:'گاہک کی ڈیلیوری فیس اور کمیشن، سوق غاز کی فیس اور کمیشن، اور ہر برانچ کا خالص نقد۔', abx_line:'قطار', abx_details:'تفصیل', abx_via:'بذریعہ', abx_noLines:'فائل میں کوئی لائن نہیں', abx_badRows:'{n} قطاریں درست کرنی ہیں', abx_sending:'بھیجا جا رہا ہے: {total} میں سے {n}', abx_partSent:'{n} بیچ بھیجے گئے', abx_e_date:'غلط تاریخ', abx_e_future:'مستقبل کی تاریخ', abx_e_pos:'مشین آپ کے علاقے میں نہیں', abx_e_type:'نامعلوم قسم', abx_e_product:'آئٹم نہیں ملا', abx_e_qty:'مقدار ضروری', abx_e_price:'قیمت ضروری', abx_e_locked:'اس آئٹم کی قیمت مقرر ہے', abx_e_channel:'سوق غاز کی مقدار زیادہ ہے', abx_e_customer:'گاہک رجسٹرڈ نہیں', abx_e_amount:'رقم ضروری', abx_e_ref:'بینک حوالہ ضروری', abx_e_item:'مد نہیں ملی', abx_e_reason:'وجہ ضروری', inv_byLevels:'سطح وار اسٹاک', inv_lv_city:'شہر', inv_lv_area:'علاقہ', inv_lv_branch:'برانچ', inv_lv_item:'آئٹم', inv_lv_seller:'فروخت کنندہ', inv_search:'شہر، برانچ، آئٹم یا مشین تلاش کریں…', inv_soldHere:'یہاں سے اس آئٹم کی فروخت', inv_noOpening:'ابتدائی گنتی ابھی درج نہیں', inv_uncounted:'{n} برانچ آئٹمز کی ابتدائی گنتی درج نہیں، اس لیے وہ بیلنس میں شامل نہیں۔', inv_noQtyWarn:'{n} فروخت ({amt} ریال) بغیر مقدار درج ہوئی، اس لیے اسٹاک سے منہا نہیں ہوئی۔', err_hasStock:'اس آئٹم کی اسٹاک حرکات ہیں، یہ سروس نہیں بن سکتا', err_invalidLocation:'درست برانچ منتخب کریں', inv_empty:'اس مدت میں کوئی حرکت نہیں۔ ہر آئٹم کا ابتدائی اسٹاک درج کریں۔', inv_shortBadge:'کمی', inv_shortBy:'{n} کی کمی: فروخت اسٹاک سے زیادہ ہے، حرکات دیکھیں', inv_period:'مدت {from} سے {to}', inv_moves:'درج شدہ حرکات', inv_kind:'حرکت کی قسم', inv_qty:'مقدار', inv_k_opening:'ابتدائی اسٹاک', inv_k_purchase:'خریداری', inv_k_return:'ریسٹورنٹ سے واپسی', inv_k_damage:'خراب', inv_addTitle:'اسٹاک کی حرکت درج کریں', inv_addHint:'ابتدائی اسٹاک ہر برانچ میں ہر آئٹم کا صرف ایک بار درج ہوتا ہے؛ اس کے بعد ہر دن کا اختتامی اسٹاک اگلے دن کا ابتدائی خود بن جاتا ہے۔ یہاں صرف خریداری، واپسی اور خراب مال درج کریں۔', inv_notePh:'خریداری بل نمبر، ریسٹورنٹ کا نام یا خرابی کی وجہ', inv_save:'حرکت محفوظ کریں', inv_saved:'حرکت محفوظ ہو گئی', inv_needQty:'مقدار لکھیں', inv_noMoves:'اس مدت میں کوئی حرکت درج نہیں', inv_void:'حرکت منسوخ کریں', inv_voided:'منسوخ', inv_voidReason:'یہ حرکت کیوں منسوخ کی جا رہی ہے؟', err_openingExists:'اس برانچ میں اس آئٹم کا ابتدائی اسٹاک پہلے سے درج ہے۔', err_notInventory:'یہ آئٹم سروس ہے، اس کا اسٹاک نہیں',
+    admin_productType:'پروڈکٹ کی قسم', admin_typeGoods:'انوینٹری', admin_typeServices:'خدمات', nav_inventory:'انوینٹری', inv_title:'انوینٹری کی حرکت', inv_hint:'ابتدائی اسٹاک + خریداری + ریسٹورنٹس سے واپسی = دستیاب؛ اس میں سے فروخت (سسٹم کے اندراجات سے) اور خراب مال نکال کر اختتامی اسٹاک۔ قیمتیں لاگت پر۔', inv_opening:'ابتدائی', inv_purchases:'خریداری', inv_returns:'ریسٹورنٹس سے واپسی', inv_available:'دستیاب', inv_sales:'فروخت', inv_damaged:'خراب', inv_ending:'اختتامی', inv_unitCost:'فی یونٹ لاگت', inv_from:'سے', inv_to:'تک', inv_allBranches:'تمام برانچز', inv_thisMonth:'یہ مہینہ', inv_lastMonth:'پچھلا مہینہ', inv_showValue:'مقدار کے بجائے لاگت پر قیمت دکھائیں', inv_qtyShort:'مقدار', inv_byBranch:'برانچ اور آئٹم کے لحاظ سے اسٹاک', inv_item:'آئٹم', inv_items:'آئٹمز: {n}', inv_tag_add:'جمع', inv_tag_ded:'منہا', abx_hint:'فائل ڈاؤن لوڈ کریں: اس میں آپ کے علاقے کی ہر POS مشین کی ایک قطار ہے۔ ہر قطار ایک لائن ہے۔ جتنی چاہیں قطاریں شامل کریں، پھر اپ لوڈ کریں۔', abx_sheet:'اندراجات', abx_listsSheet:'فہرستیں', abx_helpSheet:'بھرنے کا طریقہ', abx_file:'علاقہ اندراجات', abx_c_date:'تاریخ', abx_c_posId:'مشین نمبر', abx_c_branch:'برانچ (معلومات)', abx_c_type:'لائن کی قسم', abx_c_product:'آئٹم', abx_c_qty:'مقدار', abx_c_price:'فی یونٹ قیمت', abx_c_ch:'جس میں سے {ch} (مقدار)', dp_pick:'تاریخ منتخب کریں', dp_today:'آج', dp_yesterday:'کل', dp_clear:'صاف کریں', dp_prev:'پچھلا مہینہ', dp_next:'اگلا مہینہ', dp_days:'اتوار,پیر,منگل,بدھ,جمعرات,جمعہ,ہفتہ', admin_cylinder:'سلنڈر (بھرا اور خالی گنا جاتا ہے)', admin_stockName:'اسٹاک آئٹم کا نام', admin_emptyCost:'خالی سلنڈر کی لاگت', admin_stockOf:'اسٹاک اس آئٹم سے', admin_stockEffect:'اسٹاک پر اثر', eff_exchange:'تبادلہ: بھرا جاتا ہے، خالی واپس آتا ہے', eff_sell_empty:'خالی سلنڈر کی فروخت', eff_sell_full:'بھرے سلنڈر کی فروخت', inv_exchangeIn:'تبادلے سے واپس خالی', inv_transfersIn:'برانچ سے آمد', inv_refillOut:'بھرنے کے لیے بھیجے گئے خالی', inv_transfersOut:'برانچ کو منتقلی', inv_k_transfer_in:'برانچ سے آمد', inv_k_transfer_out:'برانچ کو منتقلی', inv_st_full:'بھرا', inv_st_empty:'خالی', inv_state:'بھرا یا خالی', err_useStockItem:'اسٹاک سلنڈر آئٹم پر ہی رکھا جاتا ہے', err_alreadyImported:'اس دن کی مقداریں پہلے سے محفوظ ہیں', br_stTitle:'فائل میں اسٹاک کی مقداریں', br_stHint:'فائل کے اوپر سے ابتدائی اسٹاک، خریداری اور منتقلی۔ فروخت ڈیوائسز سے آتی ہے، اور دن کے اختتام کا حساب فائل سے ملایا جاتا ہے۔', br_stNoBranch:'فائل کی ڈیوائسز یا نام سے برانچ نہیں ملی', br_stNoItem:'اس کالم سے ملتا آئٹم سسٹم میں نہیں: {h}', br_stNotCyl:'{p} سلنڈر کے طور پر نشان زد نہیں', br_stFileEnd:'فائل میں دن کا اختتام', br_stCalcEnd:'سسٹم کے مطابق دن کا اختتام', br_stHasOpen:'سسٹم میں اسٹاک موجود', br_stOpenDiff:'سسٹم میں دن کا آغاز {sys}، فائل {file}', br_stMismatch:'فائل سے مختلف', br_stSetupHint:'سلنڈر کے روابط نامکمل ہیں۔ سیٹ اپ تبادلہ آئٹمز کو سلنڈر بناتا ہے اور فروخت آئٹمز کو ان سے جوڑتا ہے۔', br_stSetup:'سلنڈر خودکار سیٹ اپ', br_stAskAdmin:'سلنڈر کے روابط نامکمل ہیں؛ انتظامیہ یا فنانس سے سیٹ اپ کروائیں، پھر دوبارہ اپ لوڈ کریں۔', br_stSetupDone:'سلنڈر سیٹ ہو گئے', br_stSave:'اسٹاک کی مقداریں محفوظ کریں ({n})', br_stSaved:'{n} اسٹاک حرکات محفوظ', br_stDone:'محفوظ', br_stRef:'برانچ شیٹ', br_ref:'کارڈ {dev} {date}', br_cardNote:'بینک میں موصول کارڈ رقم', br_found:'برانچ کی یومیہ رپورٹ پہچان لی گئی', br_foundHint:'{n} ڈیوائسز میں سرگرمی اور {i} آئٹم کالم۔ آئٹمز اور خرچ دیکھیں، پھر نیچے جانچ۔', br_date:'دن', br_expItem:'خرچ کی مد', br_expReason:'خرچ کی وجہ', br_otherItem:'دیگر وصولی کی مد', br_otherReason:'وصولی کی وجہ', br_itemsHint:'فائل کا ہر کالم سسٹم کے ایک آئٹم سے ملتا ہے (آپ کا انتخاب اسی ڈیوائس پر محفوظ رہتا ہے)', br_pick:'منتخب کریں…', br_fSales:'فائل کی فروخت', br_fCard:'کارڈ (الموازنات)', br_fExp:'اخراجات', br_fOther:'دیگر وصولیاں', br_fNet:'فائل کے مطابق نقد', br_rowOff:'فائل میں ان ڈیوائسز کا کل مقدار × قیمت کے برابر نہیں:', abx_c_chCom:'{ch} کے ذریعے فی یونٹ ڈرائیور کمیشن', abx_e_chCom:'ڈرائیور کمیشن درست نہیں', abx_comShort:'کمیشن', abx_c_customer:'گاہک (نمبر یا نام)', abx_c_amount:'رقم', abx_c_item:'مد', abx_c_ref:'بینک حوالہ', abx_c_note:'تفصیل / وجہ', abx_t_sale:'فروخت', abx_t_credit:'اُدھار', abx_t_transfer:'بینک ٹرانسفر', abx_t_deposit:'موازنة', abx_t_expense:'خرچ', abx_t_other:'دیگر وصولی', abx_t_delivery:'ڈیلیوری فیس', abx_helpTitle:'علاقہ فائل بھرنے کا طریقہ', abx_helpRows:'قطاریں', abx_helpRowsTxt:'ہر قطار ایک مشین کی ایک دن کی ایک لائن ہے۔ خالی قطاریں نظرانداز ہوتی ہیں۔', abx_h_sale:'آئٹم اور مقدار لکھیں۔ سوق غاز والا حصہ اس کالم میں لکھیں۔', abx_h_credit:'رجسٹرڈ گاہک کو اُدھار فروخت۔ اسے فروخت کی قطار میں دوبارہ نہ لکھیں۔', abx_h_transfer:'گاہک کی براہ راست منتقلی: رقم اور تفصیل۔', abx_h_deposit:'اس مشین سے بینک میں جمع: رقم اور بینک حوالہ (لازمی)۔', abx_h_expense:'نقد خرچ: رقم، فہرست سے مد اور وجہ (لازمی)۔', abx_h_other:'فروخت کے علاوہ وصولی: رقم، مد اور وجہ (لازمی)۔', abx_h_delivery:'بینک کو ادا ڈیلیوری فیس: رقم اور تفصیل۔', abx_helpAuto:'خودکار حساب', abx_helpAutoTxt:'گاہک کی ڈیلیوری فیس اور کمیشن، سوق غاز کی فیس اور کمیشن، اور ہر برانچ کا خالص نقد۔', abx_line:'قطار', abx_details:'تفصیل', abx_via:'بذریعہ', abx_noLines:'فائل میں کوئی لائن نہیں', abx_badRows:'{n} قطاریں درست کرنی ہیں', abx_sending:'بھیجا جا رہا ہے: {total} میں سے {n}', abx_partSent:'{n} بیچ بھیجے گئے', abx_e_date:'غلط تاریخ', abx_e_future:'مستقبل کی تاریخ', abx_e_pos:'مشین آپ کے علاقے میں نہیں', abx_e_type:'نامعلوم قسم', abx_e_product:'آئٹم نہیں ملا', abx_e_qty:'مقدار ضروری', abx_e_price:'قیمت ضروری', abx_e_locked:'اس آئٹم کی قیمت مقرر ہے', abx_e_channel:'سوق غاز کی مقدار زیادہ ہے', abx_e_customer:'گاہک رجسٹرڈ نہیں', abx_e_amount:'رقم ضروری', abx_e_ref:'بینک حوالہ ضروری', abx_e_item:'مد نہیں ملی', abx_e_reason:'وجہ ضروری', inv_byLevels:'سطح وار اسٹاک', inv_lv_city:'شہر', inv_lv_area:'علاقہ', inv_lv_branch:'برانچ', inv_lv_item:'آئٹم', inv_lv_seller:'فروخت کنندہ', inv_search:'شہر، برانچ، آئٹم یا مشین تلاش کریں…', inv_soldHere:'یہاں سے اس آئٹم کی فروخت', inv_noOpening:'ابتدائی گنتی ابھی درج نہیں', inv_uncounted:'{n} برانچ آئٹمز کی ابتدائی گنتی درج نہیں، اس لیے وہ بیلنس میں شامل نہیں۔', inv_noQtyWarn:'{n} فروخت ({amt} ریال) بغیر مقدار درج ہوئی، اس لیے اسٹاک سے منہا نہیں ہوئی۔', err_hasStock:'اس آئٹم کی اسٹاک حرکات ہیں، یہ سروس نہیں بن سکتا', err_invalidLocation:'درست برانچ منتخب کریں', inv_empty:'اس مدت میں کوئی حرکت نہیں۔ ہر آئٹم کا ابتدائی اسٹاک درج کریں۔', inv_shortBadge:'کمی', inv_shortBy:'{n} کی کمی: فروخت اسٹاک سے زیادہ ہے، حرکات دیکھیں', inv_period:'مدت {from} سے {to}', inv_moves:'درج شدہ حرکات', inv_kind:'حرکت کی قسم', inv_qty:'مقدار', inv_k_opening:'ابتدائی اسٹاک', inv_k_purchase:'خریداری', inv_k_return:'ریسٹورنٹ سے واپسی', inv_k_damage:'خراب', inv_addTitle:'اسٹاک کی حرکت درج کریں', inv_addHint:'ابتدائی اسٹاک ہر برانچ میں ہر آئٹم کا صرف ایک بار درج ہوتا ہے؛ اس کے بعد ہر دن کا اختتامی اسٹاک اگلے دن کا ابتدائی خود بن جاتا ہے۔ یہاں صرف خریداری، واپسی اور خراب مال درج کریں۔', inv_notePh:'خریداری بل نمبر، ریسٹورنٹ کا نام یا خرابی کی وجہ', inv_save:'حرکت محفوظ کریں', inv_saved:'حرکت محفوظ ہو گئی', inv_needQty:'مقدار لکھیں', inv_noMoves:'اس مدت میں کوئی حرکت درج نہیں', inv_void:'حرکت منسوخ کریں', inv_voided:'منسوخ', inv_voidReason:'یہ حرکت کیوں منسوخ کی جا رہی ہے؟', err_openingExists:'اس برانچ میں اس آئٹم کا ابتدائی اسٹاک پہلے سے درج ہے۔', err_notInventory:'یہ آئٹم سروس ہے، اس کا اسٹاک نہیں',
     admin_addStore:'اسٹور شامل کریں', admin_storeName:'اسٹور کا نام', admin_manager:'برانچ منیجر', admin_location:'برانچ',
     admin_addCar:'گاڑی شامل کریں', admin_carLabel:'پلیٹ / ڈرائیور کا نام', admin_driver:'ڈرائیور',
     admin_addPos:'POS مشین شامل کریں', admin_posLabel:'ٹرمینل نمبر', admin_ownerType:'سے منسلک', admin_owner:'مالک', admin_assignedDriver:'ذمہ دار ملازم',
@@ -6573,10 +6634,18 @@ function ddEnhance_(sel){
   new MutationObserver(function(){ ddSync_(sel); })
     .observe(sel, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ['disabled','selected','style'] });
 }
+// the direction of a value's first letter: Arabic script reads right to left
+function ddVDir_(el, text){
+  var m = /[A-Za-z\u0590-\u08FF]/.exec(String(text || ''));
+  var rtl = m ? m[0] > 'z' : document.documentElement.dir === 'rtl';
+  el.classList.toggle('v-rtl', rtl); el.classList.toggle('v-ltr', !rtl);
+}
 function ddSync_(sel){
   var btn = sel._dd; if (!btn) return;
   var o = sel.options[sel.selectedIndex];
   btn.firstChild.textContent = o ? o.textContent : '';
+  ddVDir_(btn.firstChild, o ? o.textContent : '');
+  btn.title = o && o.value !== '' ? o.textContent : '';
   btn.classList.toggle('is-empty', !o || o.value === '');
   btn.disabled = !!sel.disabled;
   btn.style.display = sel.style.display === 'none' ? 'none' : '';
@@ -6584,8 +6653,11 @@ function ddSync_(sel){
 function ddScan_(root){
   if (!root || root.nodeType !== 1) return;
   if (root.tagName === 'SELECT') { ddEnhance_(root); return; }
+  if (root.tagName === 'INPUT') { if (root.type === 'date') dpEnhance_(root); return; }
   var list = root.getElementsByTagName('select');
   for (var i = 0; i < list.length; i++) ddEnhance_(list[i]);
+  var ins = root.getElementsByTagName('input');
+  for (var j = 0; j < ins.length; j++) if (ins[j].type === 'date') dpEnhance_(ins[j]);
 }
 function ddEsc_(x){ return String(x).replace(/[&<>"]/g, function(c){ return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]; }); }
 function ddNorm_(x){
@@ -6688,6 +6760,7 @@ function customerRowsFromSheet_(rows){ return customerRowsFromCells_(rows || [])
 
 function ddOpen_(sel){
   ddClose_(false);
+  dpClose_(false);
   var btn = sel._dd;
   if (!btn || btn.disabled) return;
   var phone = window.matchMedia('(max-width:700px)').matches;
@@ -6742,12 +6815,13 @@ function ddOpen_(sel){
       li.setAttribute('aria-selected', i === sel.selectedIndex ? 'true' : 'false');
       if (o.disabled) li.setAttribute('aria-disabled', 'true');
       li.dataset.i = i;
-      var shownText = ddEsc_(text);
-      if (term){
-        var at = ddNorm_(text).indexOf(term);
-        if (at >= 0) shownText = ddEsc_(text.slice(0, at)) + '<mark>' + ddEsc_(text.slice(at, at + term.length)) + '</mark>' + ddEsc_(text.slice(at + term.length));
+      function hl(str){
+        var at = term ? ddNorm_(str).indexOf(term) : -1;
+        return at < 0 ? ddEsc_(str) : ddEsc_(str.slice(0, at)) + '<mark>' + ddEsc_(str.slice(at, at + term.length)) + '</mark>' + ddEsc_(str.slice(at + term.length));
       }
-      li.innerHTML = '<span class="dd-t">' + shownText + '</span><span class="dd-ck">' + DD_CHECK_ + '</span>';
+      // "Hamra POS — Hamra Truck": the name, and under it where it belongs
+      var cut = text.indexOf(' — '), main = cut > 0 ? text.slice(0, cut) : text, sub = cut > 0 ? text.slice(cut + 3) : '';
+      li.innerHTML = '<span class="dd-t"><span class="dd-m">' + hl(main) + '</span>' + (sub ? '<span class="dd-s">' + hl(sub) + '</span>' : '') + '</span><span class="dd-ck">' + DD_CHECK_ + '</span>';
       ul.appendChild(li);
     });
     if (!shown.length) ul.innerHTML = '<li class="dd-empty">' + ddEsc_(t('lf_noMatch')) + '</li>';
@@ -6783,10 +6857,15 @@ function ddOpen_(sel){
     if (phone) return;
     var r = btn.getBoundingClientRect();
     var vw = document.documentElement.clientWidth, vh = window.innerHeight;
-    var width = Math.min(Math.max(r.width, 220), vw - 16);
+    // as wide as the longest name needs (never narrower than the field), so
+    // nothing in the list is cut
+    pop.style.width = 'auto'; pop.style.left = '0px';
+    pop.style.minWidth = Math.min(Math.max(r.width, 260), vw - 16) + 'px';
+    pop.style.maxWidth = Math.min(460, vw - 16) + 'px';
+    var width = pop.offsetWidth;
     var below = vh - r.bottom - 10, above = r.top - 10;
     var up = below < 240 && above > below;
-    var maxH = Math.min(360, (up ? above : below) - 8);
+    var maxH = Math.min(380, (up ? above : below) - 8);
     pop.style.width = width + 'px';
     pop.style.maxHeight = Math.max(160, maxH) + 'px';
     var rtl = document.documentElement.dir === 'rtl';
@@ -6845,8 +6924,9 @@ function ddOpen_(sel){
     window.removeEventListener('resize', onResize);
   } };
   btn.setAttribute('aria-expanded', 'true');
-  place();
   draw();
+  place();
+  setActive(active, true);
   // focus the search box on a desktop; on a phone that would throw up the
   // keyboard over the list, so focus the list's first row instead
   if (q && !phone) q.focus(); else { pop.tabIndex = -1; pop.focus({ preventScroll: true }); }
@@ -6860,6 +6940,178 @@ function ddClose_(refocus){
   if (o.layer.parentNode) o.layer.parentNode.removeChild(o.layer);
   if (refocus && o.sel._dd && document.contains(o.sel._dd)) o.sel._dd.focus({ preventScroll: true });
 }
+// ---------------- designed date picker ----------------
+// The browser's own date field showed "30-Sep-2026" and an English calendar
+// inside the Arabic form. The input stays and keeps the value, min, max and
+// the change event every screen listens to; a button shows the date in the
+// app's language, and a calendar in the dropdown's own popover (a bottom sheet
+// on a phone) picks it. The week starts on Sunday with Friday and Saturday
+// marked, and the Hijri months of the page show under the month's name.
+var DP_ = { open: null };
+var DP_ICON_ = '<svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/><circle cx="12" cy="15" r="1.2" fill="currentColor" stroke="none"/></svg>';
+var DP_CHEV_ = '<svg viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></svg>';
+function dpLocale_(){ return state.lang === 'en' ? 'en-GB' : state.lang === 'ur' ? 'ur-PK-u-nu-latn' : 'ar-SA-u-ca-gregory-nu-latn'; }
+function dpParse_(v){ var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(v || '')); if (!m) return null; var d = new Date(+m[1], +m[2] - 1, +m[3]); return isNaN(d) ? null : d; }
+function dpIso_(d){ return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+function dpFmt_(d, o){ try { return new Intl.DateTimeFormat(dpLocale_(), o).format(d); } catch (e) { return dpIso_(d); } }
+function dpHijri_(d){ try { return new Intl.DateTimeFormat((state.lang === 'en' ? 'en' : 'ar-SA') + '-u-ca-islamic-umalqura-nu-latn', { month: 'long', year: 'numeric' }).format(d); } catch (e) { return ''; } }
+function dpEnhance_(inp){
+  if (!inp || inp._dp || !inp.parentNode || inp.closest('[data-native]')) return;
+  var btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'dd-btn dp-btn';
+  btn.setAttribute('aria-haspopup', 'dialog');
+  btn.setAttribute('aria-expanded', 'false');
+  btn.innerHTML = '<span class="dd-v"></span><span class="dp-ic" aria-hidden="true">' + DP_ICON_ + '</span>';
+  var lbl = inp.closest('.field') && inp.closest('.field').querySelector('label');
+  if (lbl && lbl.textContent) btn.setAttribute('aria-label', lbl.textContent.replace('*', '').trim());
+  inp._dp = btn; btn._inp = inp;
+  // a field that starts empty is an optional filter, and can be emptied again
+  inp._dpClear = !inp.value;
+  inp.classList.add('dp-native');
+  inp.tabIndex = -1;
+  inp.parentNode.insertBefore(btn, inp.nextSibling);
+  dpSync_(inp);
+  btn.addEventListener('click', function(){ if (DP_.open && DP_.open.inp === inp) dpClose_(true); else dpOpen_(inp); });
+  btn.addEventListener('keydown', function(e){ if (['ArrowDown', 'Enter', ' '].indexOf(e.key) >= 0){ e.preventDefault(); dpOpen_(inp); } });
+  inp.addEventListener('change', function(){ dpSync_(inp); });
+  inp.addEventListener('input', function(){ dpSync_(inp); });
+  inp.addEventListener('focus', function(){ btn.focus(); });
+  new MutationObserver(function(){ dpSync_(inp); }).observe(inp, { attributes: true, attributeFilter: ['disabled', 'style', 'value', 'min', 'max'] });
+  // a field drawn before it was on screen, or resized, fits its date again
+  if (typeof ResizeObserver === 'function') { var lastW = -1; new ResizeObserver(function(){ var w = btn.clientWidth; if (w !== lastW) { lastW = w; dpSync_(inp); } }).observe(btn); }
+}
+function dpSync_(inp){
+  var btn = inp._dp; if (!btn) return;
+  var d = dpParse_(inp.value);
+  var dv = btn.querySelector('.dd-v');
+  // the longest form that fits the field: "30 سبتمبر 2026", then without the
+  // year when it is this year, then "30/09/2026" (a narrow phone column)
+  var forms = d ? [dpFmt_(d, { day: 'numeric', month: 'long', year: 'numeric' })] : [t('dp_pick')];
+  if (d && d.getFullYear() === new Date().getFullYear()) forms.push(dpFmt_(d, { day: 'numeric', month: 'long' }));
+  if (d) forms.push(dpFmt_(d, { day: '2-digit', month: '2-digit', year: 'numeric' }));
+  for (var i = 0; i < forms.length; i++) {
+    dv.textContent = forms[i];
+    if (!dv.clientWidth || dv.scrollWidth <= dv.clientWidth + 1) break;
+  }
+  ddVDir_(dv, dv.textContent);
+  btn.title = d ? dpFmt_(d, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : '';
+  btn.classList.toggle('is-empty', !d);
+  btn.disabled = !!inp.disabled;
+  btn.style.display = inp.style.display === 'none' ? 'none' : '';
+}
+function dpOpen_(inp){
+  ddClose_(false); dpClose_(false);
+  var btn = inp._dp;
+  if (!btn || btn.disabled) return;
+  var phone = window.matchMedia('(max-width:700px)').matches;
+  var rtl = document.documentElement.dir === 'rtl';
+  var today = dpParse_(localToday_()) || new Date();
+  var min = dpParse_(inp.min), max = dpParse_(inp.max);
+  var cur = dpParse_(inp.value);
+  var focus = cur || (max && today > max ? max : today);
+  var view = new Date(focus.getFullYear(), focus.getMonth(), 1);
+  var label = btn.getAttribute('aria-label') || '';
+  var days = String(t('dp_days')).split(',');
+  var layer = document.createElement('div');
+  layer.className = 'dd-layer dp-layer' + (phone ? ' sheet' : '');
+  layer.innerHTML = '<div class="dd-back"></div><div class="dd-pop dp-pop" role="dialog"' + (label ? ' aria-label="' + ddEsc_(label) + '"' : '') + '>' +
+    (phone ? '<div class="dd-grab"></div>' + (label ? '<div class="dd-title">' + ddEsc_(label) + '</div>' : '') : '') +
+    '<div class="dp-head"><button type="button" class="dp-nav dp-prev" aria-label="' + ddEsc_(t('dp_prev')) + '">' + DP_CHEV_ + '</button>' +
+      '<div class="dp-title" aria-live="polite"><b class="dp-month"></b><small class="dp-hijri"></small></div>' +
+      '<button type="button" class="dp-nav dp-next" aria-label="' + ddEsc_(t('dp_next')) + '">' + DP_CHEV_ + '</button></div>' +
+    '<div class="dp-week" aria-hidden="true">' + days.map(function(n, i){ return '<span' + (i >= 5 ? ' class="we"' : '') + '>' + ddEsc_(n) + '</span>'; }).join('') + '</div>' +
+    '<div class="dp-grid" role="grid"></div>' +
+    '<div class="dp-foot"><button type="button" class="dp-chip" data-q="0">' + ddEsc_(t('dp_today')) + '</button>' +
+      '<button type="button" class="dp-chip" data-q="1">' + ddEsc_(t('dp_yesterday')) + '</button>' +
+      (inp._dpClear ? '<button type="button" class="dp-chip dp-clear" data-q="clear">' + ddEsc_(t('dp_clear')) + '</button>' : '') + '</div></div>';
+  document.body.appendChild(layer);
+  var pop = layer.querySelector('.dp-pop'), grid = layer.querySelector('.dp-grid');
+  function ok(d){ return !(min && d < min) && !(max && d > max); }
+  function same(a, b){ return a && b && a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate(); }
+  function draw(){
+    layer.querySelector('.dp-month').textContent = dpFmt_(view, { month: 'long', year: 'numeric' });
+    var last = new Date(view.getFullYear(), view.getMonth() + 1, 0);
+    var h1 = dpHijri_(view), h2 = dpHijri_(last);
+    layer.querySelector('.dp-hijri').textContent = h1 === h2 ? h1 : h1.replace(/\s*\d+.*$/, '') + ' – ' + h2;
+    layer.querySelector('.dp-prev').disabled = !!(min && view <= new Date(min.getFullYear(), min.getMonth(), 1));
+    layer.querySelector('.dp-next').disabled = !!(max && view >= new Date(max.getFullYear(), max.getMonth(), 1));
+    var start = new Date(view.getFullYear(), view.getMonth(), 1 - view.getDay());
+    var cells = Math.ceil((view.getDay() + last.getDate()) / 7) * 7, html = [];
+    for (var i = 0; i < cells; i++) {
+      var d = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i);
+      var cls = 'dp-day' + (d.getMonth() !== view.getMonth() ? ' out' : '') + (same(d, today) ? ' today' : '') + (same(d, cur) ? ' sel' : '');
+      html.push('<button type="button" class="' + cls + '" data-d="' + dpIso_(d) + '" tabindex="' + (same(d, focus) ? '0' : '-1') + '"' +
+        (ok(d) ? '' : ' disabled') + ' aria-selected="' + (same(d, cur) ? 'true' : 'false') + '" aria-label="' + ddEsc_(dpFmt_(d, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })) + '">' + d.getDate() + '</button>');
+    }
+    grid.innerHTML = html.join('');
+    var qs0 = layer.querySelectorAll('.dp-chip[data-q]');
+    for (var k = 0; k < qs0.length; k++) {
+      var qv = qs0[k].getAttribute('data-q');
+      if (qv !== 'clear') qs0[k].disabled = !ok(new Date(today.getFullYear(), today.getMonth(), today.getDate() - Number(qv)));
+    }
+  }
+  function pick(d){
+    if (d && !ok(d)) return;
+    var v = d ? dpIso_(d) : '', changed = inp.value !== v;
+    inp.value = v;
+    dpClose_(true);
+    if (changed) { inp.dispatchEvent(new Event('input', { bubbles: true })); inp.dispatchEvent(new Event('change', { bubbles: true })); }
+  }
+  function moveTo(d){
+    if (min && d < min) d = min; if (max && d > max) d = max;
+    focus = d;
+    if (d.getMonth() !== view.getMonth() || d.getFullYear() !== view.getFullYear()) view = new Date(d.getFullYear(), d.getMonth(), 1);
+    draw();
+    var c = grid.querySelector('[data-d="' + dpIso_(d) + '"]'); if (c) c.focus({ preventScroll: true });
+  }
+  function month(n){ view = new Date(view.getFullYear(), view.getMonth() + n, 1); focus = new Date(view.getFullYear(), view.getMonth(), Math.min(focus.getDate(), new Date(view.getFullYear(), view.getMonth() + 1, 0).getDate())); draw(); }
+  function place(){
+    if (phone) return;
+    var r = btn.getBoundingClientRect(), vw = document.documentElement.clientWidth, vh = window.innerHeight;
+    var w = pop.offsetWidth, h = pop.offsetHeight;
+    var left = rtl ? r.right - w : r.left;
+    pop.style.left = Math.max(8, Math.min(left, vw - w - 8)) + 'px';
+    if (vh - r.bottom - 10 < h && r.top - 10 > vh - r.bottom) { pop.classList.add('up'); pop.style.bottom = (vh - r.top + 6) + 'px'; pop.style.top = 'auto'; }
+    else { pop.style.top = (r.bottom + 6) + 'px'; pop.style.bottom = 'auto'; }
+  }
+  grid.addEventListener('click', function(e){ var b = e.target.closest('.dp-day'); if (b && !b.disabled) pick(dpParse_(b.getAttribute('data-d'))); });
+  layer.querySelector('.dp-prev').addEventListener('click', function(){ month(-1); });
+  layer.querySelector('.dp-next').addEventListener('click', function(){ month(1); });
+  layer.querySelector('.dp-foot').addEventListener('click', function(e){
+    var c = e.target.closest('.dp-chip'); if (!c || c.disabled) return;
+    var qv = c.getAttribute('data-q');
+    pick(qv === 'clear' ? null : new Date(today.getFullYear(), today.getMonth(), today.getDate() - Number(qv)));
+  });
+  layer.querySelector('.dd-back').addEventListener('click', function(){ dpClose_(true); });
+  layer.addEventListener('keydown', function(e){
+    if (e.key === 'Escape') { e.preventDefault(); dpClose_(true); return; }
+    if (e.key === 'Tab') return;
+    if (!e.target.classList.contains('dp-day')) return;
+    var step = { ArrowRight: rtl ? -1 : 1, ArrowLeft: rtl ? 1 : -1, ArrowDown: 7, ArrowUp: -7 }[e.key];
+    if (step) { e.preventDefault(); moveTo(new Date(focus.getFullYear(), focus.getMonth(), focus.getDate() + step)); return; }
+    if (e.key === 'PageUp' || e.key === 'PageDown') { e.preventDefault(); moveTo(new Date(focus.getFullYear(), focus.getMonth() + (e.key === 'PageUp' ? -1 : 1), focus.getDate())); return; }
+    if (e.key === 'Home' || e.key === 'End') { e.preventDefault(); moveTo(new Date(focus.getFullYear(), focus.getMonth(), focus.getDate() + (e.key === 'Home' ? -focus.getDay() : 6 - focus.getDay()))); }
+  });
+  function onScroll(e){ if (!pop.contains(e.target)) dpClose_(false); }
+  function onResize(){ dpClose_(false); }
+  if (!phone) { window.addEventListener('scroll', onScroll, true); window.addEventListener('resize', onResize); }
+  DP_.open = { inp: inp, layer: layer, cleanup: function(){ window.removeEventListener('scroll', onScroll, true); window.removeEventListener('resize', onResize); } };
+  btn.setAttribute('aria-expanded', 'true');
+  draw();
+  place();
+  var fc = grid.querySelector('[tabindex="0"]');
+  if (fc && !phone) fc.focus({ preventScroll: true }); else { pop.tabIndex = -1; pop.focus({ preventScroll: true }); }
+}
+function dpClose_(refocus){
+  var o = DP_.open;
+  if (!o) return;
+  DP_.open = null;
+  o.cleanup();
+  if (o.inp._dp) o.inp._dp.setAttribute('aria-expanded', 'false');
+  if (o.layer.parentNode) o.layer.parentNode.removeChild(o.layer);
+  if (refocus && o.inp._dp && document.contains(o.inp._dp)) o.inp._dp.focus({ preventScroll: true });
+}
 (function ddInit_(){
   // a script setting .value / .selectedIndex updates the button too
   var P = HTMLSelectElement.prototype;
@@ -6869,6 +7121,10 @@ function ddClose_(refocus){
     Object.defineProperty(P, k, { configurable: true, enumerable: d.enumerable, get: d.get,
       set: function(v){ d.set.call(this, v); if (this._dd) ddSync_(this); } });
   });
+  // a script setting a date field's .value updates its button too
+  var PI = HTMLInputElement.prototype, dv = Object.getOwnPropertyDescriptor(PI, 'value');
+  if (dv && dv.set && dv.configurable) Object.defineProperty(PI, 'value', { configurable: true, enumerable: dv.enumerable, get: dv.get,
+    set: function(v){ dv.set.call(this, v); if (this._dp) dpSync_(this); } });
   function start(){
     ddScan_(document.body);
     new MutationObserver(function(muts){
@@ -6885,6 +7141,7 @@ function ddClose_(refocus){
         });
         Array.prototype.forEach.call(m.addedNodes, ddScan_);
       });
+      if (DP_.open && !document.contains(DP_.open.inp)) dpClose_(false);
     }).observe(document.body, { childList: true, subtree: true });
   }
   if (document.body) start(); else document.addEventListener('DOMContentLoaded', start);
