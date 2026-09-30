@@ -180,6 +180,20 @@ http.createServer(function (req, res) {
     res.end(last ? (last.html || '<pre>' + String(last.body).replace(/</g, '&lt;') + '</pre>') : 'no mail');
     return;
   }
+  // POST /__save?name=x.xlsx — keeps a file the page built (an export) in
+  // .superpowers/exports (git-ignored), so it can be opened in Excel and checked
+  if (req.method === 'POST' && req.url.indexOf('/__save') === 0) {
+    var nm = decodeURIComponent((/[?&]name=([^&]+)/.exec(req.url) || [])[1] || 'export.bin').replace(/[\\\/:*?"<>|]/g, '-');
+    var chunks = [];
+    req.on('data', function (c) { chunks.push(c); });
+    req.on('end', function () {
+      var dir = path.join(ROOT, '.superpowers', 'exports');
+      fs.mkdirSync(dir, { recursive: true });
+      fs.writeFileSync(path.join(dir, nm), Buffer.concat(chunks));
+      res.writeHead(200, { 'Content-Type': 'text/plain' }); res.end('saved ' + nm);
+    });
+    return;
+  }
   var reqPath = req.url.split('?')[0];
   if (reqPath === '/') reqPath = '/index.html';
   var filePath = path.join(ROOT, reqPath);
