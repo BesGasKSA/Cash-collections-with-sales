@@ -1202,6 +1202,12 @@ its lines (`abx_e_pos`).
 - The entry form docks the net owed and the save button (`e-dock`, sticky);
   its card must not scroll sideways, or sticky holds inside the card
   (`.card:has(.e-dock){overflow:visible}`).
+- Empty lists that are good news (nothing waiting: deputy requests, area
+  batches, risk register) use `emptyOk_(msg)`; a failed load shows its error,
+  never the empty state. Neutral empties (`rp-empty`/`lf-empty`/`lv-empty`) are
+  centred with a faint document mark.
+- Admin section tabs carry an icon and a record count (`adm-tabs`), one
+  swipeable row on a phone. The user invitation opens from a button.
 
 **English is the default language (2026-09-30).** The client starts in English.
 The server's `userLang_(u)` gives an account's language only when it was chosen
