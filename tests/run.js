@@ -2666,5 +2666,45 @@ var bwMzOk = call(bwm({}));
 check(bwMzOk.ok && bwMzOk.entry.directDepositPosId === bwPos.entity.id, 'and one that names no device is put on the day\'s own device');
 check(bwMzOk.ok && bwMzOk.deposit && bwMzOk.deposit.posId === bwPos.entity.id, 'the bank deposit carries that device too');
 
+console.log('--- cylinders are counted full and empty, as the branch sheet counts them ---');
+var cyIron = call({ action: 'adminSaveEntity', token: adminTok, kind: 'product', data: { name: 'Cy Iron Exchange', type: 'goods', unitPrice: 37, cylinder: true, stockName: 'Iron cylinders' } }).entity;
+var cyIronSell = call({ action: 'adminSaveEntity', token: adminTok, kind: 'product', data: { name: 'Cy Iron Empty Sale', type: 'goods', unitPrice: 186, stockOf: cyIron.id, stockEffect: 'sell_empty' } });
+check(cyIronSell.ok, 'a product can draw its stock from a cylinder item (' + (cyIronSell.error || '') + ')');
+cyIronSell = cyIronSell.entity;
+check(call({ action: 'adminSaveEntity', token: adminTok, kind: 'product', data: { name: 'Cy Bad', type: 'goods', cylinder: true, stockOf: cyIron.id } }).error === 'invalid_input', 'a cylinder item cannot itself draw from another');
+check(call({ action: 'adminSaveEntity', token: adminTok, kind: 'product', data: { name: 'Cy Bad2', type: 'goods', stockOf: cyIronSell.id } }).error === 'invalid_input', 'nor can a product draw from one that draws from another');
+check(call({ action: 'adminSaveEntity', token: adminTok, kind: 'product', data: { name: 'Cy Bad3', type: 'goods', stockOf: cyIron.id, stockEffect: 'melt' } }).error === 'invalid_input', 'an unknown effect is refused');
+var cyReg = call({ action: 'adminSaveEntity', token: adminTok, kind: 'product', data: { name: 'Cy Regulator', type: 'goods', unitPrice: 45 } }).entity;
+function cyMv(o) { var p = { action: 'addInventoryMove', token: noorTok, locationId: dpLoc.id }; Object.keys(o).forEach(function (k) { p[k] = o[k]; }); return call(p); }
+check(cyMv({ productId: cyIron.id, kind: 'opening', qty: 5, date: '2026-09-28' }).error === 'invalid_input', 'a cylinder movement must say full or empty');
+check(cyMv({ productId: cyIronSell.id, kind: 'purchase', qty: 5, date: '2026-09-28' }).error === 'use_stock_item', 'stock is kept on the cylinder item, not on the product that draws from it');
+check(cyMv({ productId: cyReg.id, state: 'full', kind: 'purchase', qty: 5, date: '2026-09-28' }).error === 'invalid_input', 'an item without cylinders takes no full/empty');
+var cyDay = { action: 'importInventoryDay', token: noorTok, locationId: dpLoc.id, date: '2026-09-28', ref: 'branch-sheet 2026-09-28', moves: [
+  { productId: cyIron.id, state: 'full', kind: 'opening', qty: 3458 }, { productId: cyIron.id, state: 'empty', kind: 'opening', qty: 1432 },
+  { productId: cyIron.id, state: 'full', kind: 'purchase', qty: 1400 }, { productId: cyReg.id, kind: 'opening', qty: 54 }] };
+var cyImp = call(cyDay);
+check(cyImp.ok && cyImp.moves.length === 4, 'a day\'s quantities go in together (' + (cyImp.error || '') + ')');
+check(call(cyDay).error === 'already_imported', 'the same sheet day cannot go in twice');
+var cyDup = JSON.parse(JSON.stringify(cyDay)); cyDup.ref = 'again'; cyDup.moves = [{ productId: cyIron.id, state: 'full', kind: 'opening', qty: 1 }, { productId: cyReg.id, kind: 'purchase', qty: 3 }];
+check(call(cyDup).error === 'opening_exists', 'a second opening count is refused, and nothing of that day is written');
+check(!ctx.readSheet(ctx.SHEETS.INV_MOVES).some(function (m) { return m.importRef === 'again'; }), 'all or nothing');
+check(call({ action: 'importInventoryDay', token: dpTok, locationId: dpLoc.id, date: '2026-09-28', ref: 'x', moves: [{ productId: cyReg.id, kind: 'purchase', qty: 1 }] }).error === 'forbidden', 'a driver cannot load stock');
+var cyStore = call({ action: 'listMeta', token: adminTok }).stores.filter(function (s) { return s.locationId === dpLoc.id; })[0].id;
+call({ action: 'createDailyEntry', token: noorTok, date: '2026-09-28', sourceType: 'store', sourceId: cyStore, productId: cyIron.id, qty: 1565, unitPrice: 37, cashSales: 57905 });
+call({ action: 'createDailyEntry', token: noorTok, date: '2026-09-28', sourceType: 'store', sourceId: cyStore, productId: cyIronSell.id, qty: 4, unitPrice: 186, cashSales: 744 });
+call({ action: 'createDailyEntry', token: noorTok, date: '2026-09-28', sourceType: 'store', sourceId: cyStore, productId: cyReg.id, qty: 3, unitPrice: 45, cashSales: 135 });
+var cyRep = call({ action: 'getInventoryReport', token: financeTok, dateFrom: '2026-09-28', dateTo: '2026-09-28', locationId: dpLoc.id });
+function cyRow(pid, st) { return (cyRep.rows || []).filter(function (r) { return r.productId === pid && (r.state || '') === (st || ''); })[0] || {}; }
+var cyFull = cyRow(cyIron.id, 'full'), cyEmpty = cyRow(cyIron.id, 'empty');
+check(cyFull.ending === 3293, 'full iron: 3458 + 1400 refilled - 1565 exchanged = 3293, as the sheet (got ' + cyFull.ending + ')');
+check(cyEmpty.ending === 1593, 'empty iron: 1432 - 1400 sent to refill + 1565 back from exchanges - 4 sold = 1593, as the sheet (got ' + cyEmpty.ending + ')');
+check(cyEmpty.refillOut === 1400 && cyEmpty.exchangeIn === 1565 && cyEmpty.sales === 4, 'and each part shows on its own column');
+check(cyRow(cyReg.id).ending === 51, 'an item without cylinders counts as before (got ' + cyRow(cyReg.id).ending + ')');
+var cyNext = call({ action: 'getInventoryReport', token: financeTok, dateFrom: '2026-09-29', dateTo: '2026-09-29', locationId: dpLoc.id });
+var cyN = (cyNext.rows || []).filter(function (r) { return r.productId === cyIron.id && r.state === 'empty'; })[0] || {};
+check(cyN.opening === 1593, 'the next day opens with the day\'s ending (got ' + cyN.opening + ')');
+check(call({ action: 'importInventoryDay', token: noorTok, locationId: dpLoc.id, date: '2026-09-29', ref: 'tr', moves: [{ productId: cyIron.id, state: 'full', kind: 'transfer_out', qty: 10 }, { productId: cyIron.id, state: 'empty', kind: 'transfer_in', qty: 2 }] }).ok, 'transfers out of and into the branch are movements too');
+check(call({ action: 'adminSaveEntity', token: adminTok, kind: 'product', id: cyIron.id, data: { cylinder: false } }).error === 'has_stock', 'a cylinder item with stock cannot stop being one');
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);

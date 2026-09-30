@@ -1107,7 +1107,29 @@ in localStorage `bgc_brOpt`); each item column maps to a product by
 regulators, hose) or the manager's own pick (`bgc_brMap`). The sheet's own
 figures (`brFileTotals_`) show beside the system's, and a device row whose total
 is not qty × price is named. A device number not registered in the area stops
-its lines (`abx_e_pos`). The stock block on top is not read yet: the system has no full/empty split.
+its lines (`abx_e_pos`). 
+
+**Cylinders full and empty, and the sheet's quantities block (2026-09-30).**
+- A product with `cylinder` keeps two stock rows, `state` full and empty
+  (`stockName` names them, `emptyCost` values the empties). A product with
+  `stockOf` draws from one (one level only, validated in `validateEntity_`) with
+  `stockEffect`: `exchange` (full out, empty back: `exchangeIn`), `sell_empty`,
+  `sell_full`. A full purchase is a refill: the empty row gets `refillOut` of the
+  same number. New kinds `transfer_in` / `transfer_out`. Available = opening +
+  purchases + returns + exchangeIn + transfersIn; ending = available - sales -
+  damaged - refillOut - transfersOut. This is the branch sheet's own arithmetic.
+- Moves go on the stock-holding item only (`use_stock_item`), with `state` for a
+  cylinder and none otherwise. A cylinder item with moves cannot stop being one.
+- `importInventoryDay {locationId, date, ref, moves}` saves a day's openings
+  (only where none exists), purchases and transfers all or nothing; `importRef`
+  stops the same sheet day going in twice (`already_imported`).
+- The area upload reads the sheet's top block (`brParseStock_`: row with
+  مليان/فارغ, group headers above, rows opening/مشتريات/نقل الى (out)/نقل من (in)/
+  نهاية) and shows each stock line with the end of day computed from the file's
+  own device sales beside the file's end (`brStockPanel_`). Admin/finance get a
+  one-tap setup that marks each group's exchange product a cylinder and links the
+  group's sale products as `sell_empty`, which is how the sheet counts them.
+  Saving stock is separate from the cash batch and needs no deputy.
 
 **Grouped pickers (2026-09-29).** `sourceOptionsGrouped_` puts an area manager's
 sources in one `<optgroup>` per branch; the designed dropdown (`ddOpen_`) draws
