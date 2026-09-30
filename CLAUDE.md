@@ -1107,8 +1107,7 @@ in localStorage `bgc_brOpt`); each item column maps to a product by
 regulators, hose) or the manager's own pick (`bgc_brMap`). The sheet's own
 figures (`brFileTotals_`) show beside the system's, and a device row whose total
 is not qty × price is named. A device number not registered in the area stops
-its lines (`abx_e_pos`). The first real file (القدس, 28/9) gave 42,793.00 both
-ways. The stock block on top is not read yet: the system has no full/empty split.
+its lines (`abx_e_pos`). The stock block on top is not read yet: the system has no full/empty split.
 
 **Grouped pickers (2026-09-29).** `sourceOptionsGrouped_` puts an area manager's
 sources in one `<optgroup>` per branch; the designed dropdown (`ddOpen_`) draws
