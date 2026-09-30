@@ -1190,6 +1190,19 @@ its lines (`abx_e_pos`).
   lines, a light pool behind the logo and a sheen on hover; a card is lit under
   the mouse (`bgSpot_`). All still under reduced motion, hidden in print.
 
+**Screen-by-screen redesign (2026-10-01).**
+- Handovers: pending and disputed come first (`ho-wait`, never folded); two or
+  more send forms sit behind one tab row (`ho-send`, remembered per session).
+- Stock: the equation card follows its own switch: quantities lead unless
+  values are on and some item has a unit cost (`inv_noCosts` note otherwise);
+  zero steps recede.
+- Every visible file field is a drop zone (`fzEnhance_`, same scan as the
+  dropdown/date picker): drag a file or tap, kinds from `accept`, chosen name.
+- Reconciliation opens with "matched X of Y deposits" and a bar (`rc-sum`).
+- The entry form docks the net owed and the save button (`e-dock`, sticky);
+  its card must not scroll sideways, or sticky holds inside the card
+  (`.card:has(.e-dock){overflow:visible}`).
+
 **English is the default language (2026-09-30).** The client starts in English.
 The server's `userLang_(u)` gives an account's language only when it was chosen
 (`languageChosen`: picked in the app via `setLanguage`, or set by an admin) or
