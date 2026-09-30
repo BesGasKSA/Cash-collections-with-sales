@@ -1093,6 +1093,22 @@ each (`abxChunks_`). Tests: "area Excel" section in tests/run.js.
   and a re-run reuses the batch's existing handoffs and direct deposits instead of
   writing them twice. Deputy approve/reject run under `withCashLock_`.
 
+**The branch's own daily sheet uploads as it is (2026-09-30).** The branches keep
+a "Daily Branches Report" sheet: stock block on top, then a price row
+(`السعر…`) and one row per POS device (`رقم الجهاز`) with quantities per item,
+`الإجمالي`, `مبلغ الشبكة` (card, received in the bank), `مصروف`, `اخري`,
+`المجموع`. The area upload recognises it (`brParse_`, found by the header row
+holding both `رقم الجهاز` and `الشبكة`) and rewrites it as the area Excel's own
+lines (`brToAbx_`), so `abxRows_`, the server dry run and the deputy step are
+unchanged. Card → a الموازنة with reference `شبكة <device> <date>`; the expense
+item/reason and other-collection item/reason are picked once in `#abBr` (saved
+in localStorage `bgc_brOpt`); each item column maps to a product by
+`brGuessProduct_` keywords (exchange vs sale, iron/fiber/wazfa/5 kg,
+regulators, hose) or the manager's own pick (`bgc_brMap`). The sheet's own
+figures (`brFileTotals_`) show beside the system's, and a device row whose total
+is not qty × price is named. A device number not registered in the area stops
+its lines (`abx_e_pos`). The stock block on top is not read yet: the system has no full/empty split.
+
 **Grouped pickers (2026-09-29).** `sourceOptionsGrouped_` puts an area manager's
 sources in one `<optgroup>` per branch; the designed dropdown (`ddOpen_`) draws
 each group as a header that folds (closed except the group holding the choice; a
