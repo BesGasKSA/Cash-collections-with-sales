@@ -1140,6 +1140,21 @@ its lines (`abx_e_pos`).
   group's sale products as `sell_empty`, which is how the sheet counts them.
   Saving stock is separate from the cash batch and needs no deputy.
 
+**Excel refused every export, and imports were CSV-only (2026-09-30).**
+- Every ExcelJS export had fit-to-page *and* outline settings; ExcelJS 4.4
+  writes `<pageSetUpPr>` before `<outlinePr>`, against the file format's order,
+  and real Excel refuses the whole file. ExcelJS and SheetJS read it back fine,
+  so no browser test noticed. A sheet now gets one or the other (grouped trees:
+  outline + a print scale from the column widths; flat tables: fit to width).
+  Found by bisecting the XML with Excel itself. Check any export change with
+  `tests/export-opens-in-excel.ps1` (mock server `POST /__save` keeps exports in
+  `.superpowers/exports`), not with a JS reader.
+- Exports leave out columns empty or zero on every row (`exDropEmptyCols_`).
+- The entries import and the bank statement import only accepted CSV. Every table
+  picker now uses `TABLE_ACCEPT_` (extensions and MIME types) and reads through
+  `readTableRows_` (Excel first visible sheet, raw numbers, dates yyyy-mm-dd; or
+  CSV). The entries template is an Excel file.
+
 **Grouped pickers (2026-09-29).** `sourceOptionsGrouped_` puts an area manager's
 sources in one `<optgroup>` per branch; the designed dropdown (`ddOpen_`) draws
 each group as a header that folds (closed except the group holding the choice; a

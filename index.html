@@ -2148,7 +2148,7 @@ var ICON_B64 = 'iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAYAAAA9zQYyAAAcG0lEQVR42u2dd1cU
 // Stamped by tools/stamp-build.js at publish time so the running app can
 // say which build it is — a cached page is the usual reason a shipped change
 // seems missing.
-var BUILD_ID = '2026-09-30 11:52 · 91e3d89';
+var BUILD_ID = '2026-09-30 21:27 · 56aa97b';
 var LOGO_SRC = 'data:image/png;base64,' + LOGO_B64;
 var ICON_SRC = LOGO_SRC; // same asset — see the comment above LOGO_B64
 // The sign-in mark (2026-09-30): the logo's round emblem as a coin with a
@@ -2247,7 +2247,7 @@ var L = {
     mustChangePw:'يجب تغيير كلمة المرور', newPassword:'كلمة المرور الجديدة', currentPassword:'كلمة المرور الحالية',
     save:'حفظ', cancel:'إلغاء', logout:'خروج', language:'اللغة',
     nav_home:'الرئيسية', nav_entries:'الإدخالات', nav_areaBulk:'رفع دفعة المنطقة', nav_deputyReview:'اعتمادات نائب مدير العمليات', nav_handoffs:'التسليمات', nav_report:'تقرير المبيعات', nav_admin:'الإدارة', nav_notifications:'الإشعارات — تسليمات بانتظارك',
-    nav_reconciliation:'التسوية البنكية', recon_title:'التسوية البنكية', recon_hint:'حمّل كشف الحساب البنكي (CSV) لمطابقة الإيداعات المُسجّلة تلقائياً بما وصل فعلياً للبنك.',
+    nav_reconciliation:'التسوية البنكية', recon_title:'التسوية البنكية', recon_hint:'حمّل كشف الحساب البنكي (Excel أو CSV، الأعمدة date, amount, reference) لمطابقة الإيداعات المُسجّلة تلقائياً بما وصل فعلياً للبنك.',
     recon_import:'استيراد كشف الحساب', recon_result:'تم استيراد {imported} صف — {matched} مطابقة تلقائية',
     recon_totalDeposits:'إجمالي الإيداعات', recon_reconciled:'مُسوّاة', recon_unmatchedDeposits:'إيداعات غير مطابقة',
     recon_unmatchedLines:'حركات بنكية غير مطابقة', recon_noUnmatchedDeposits:'كل الإيداعات مطابقة — لا يوجد شيء معلّق',
@@ -2266,7 +2266,7 @@ var L = {
     entry_pos:'مبيعات نقاط البيع', entry_note:'ملاحظة', entry_submit:'حفظ الإدخال', entry_list:'الإدخالات الأخيرة',
     entry_credit:'المبيعات الآجلة (كريدت)', entry_creditHint:'مبيعات على الحساب — تُخصم من النقدية الواجب تسليمها، لأن مبلغ المبيعات المُدخَل يشملها ولم تُستلم نقداً',
     entry_location:'الفرع',
-    entry_importTitle:'استيراد من CSV / إكسل', entry_importHint:'حمّل قالب CSV واملأه، ثم ارفعه هنا. الأعمدة: date, sourceType, sourceName, product, cashSales, deliveryFee, posSales, creditSales, cylindersOut, cylindersIn, note',
+    entry_importTitle:'استيراد من CSV / إكسل', entry_importHint:'حمّل القالب (Excel) واملأه، ثم ارفعه هنا (Excel أو CSV). الأعمدة: date, sourceType, sourceName, product, cashSales, deliveryFee, posSales, creditSales, cylindersOut, cylindersIn, note',
     err_featureDisabled:'هذه الميزة معطّلة حالياً من الإدارة', err_invalidRows:'هناك صفوف غير صحيحة في الملف — صحّح الأخطاء ثم أعد الرفع',
     areaBulk_title:'رفع دفعة بيانات المنطقة', areaBulk_hint:'حمّل قالب CSV واملأه ببيانات كل الفروع في منطقتك — كل سطر بند منتج واحد (كمية × سعر الوحدة، نقدي أو نقاط بيع). التوصيل والآجل والتحصيلات والمصروفات والموازنة لها أعمدتها. الأعمدة: date, locationName, sourceType, sourceName, product, qty, unitPrice, paymentMethod (cash/pos), deliveryFee, deliveryNote, creditSales, creditCustomer, otherCash, otherCashItem, otherCashReason, expenseAmount, expenseItem, expenseReason, directDeposit, depositRef, depositNote, cylindersOut, cylindersIn, note',
     areaBulk_template:'تحميل القالب', areaBulk_col_row:'#', areaBulk_col_date:'التاريخ', areaBulk_col_location:'الفرع', areaBulk_col_type:'النوع', areaBulk_col_source:'المصدر', areaBulk_col_status:'الحالة',
@@ -2419,7 +2419,7 @@ var L = {
     mustChangePw:'You must change your password', newPassword:'New password', currentPassword:'Current password',
     save:'Save', cancel:'Cancel', logout:'Log out', language:'Language',
     nav_home:'Home', nav_entries:'Entries', nav_areaBulk:'Area Bulk Upload', nav_deputyReview:'Deputy approvals', nav_handoffs:'Handoffs', nav_report:'Sales Report', nav_admin:'Admin', nav_notifications:'Notifications — handoffs awaiting you',
-    nav_reconciliation:'Bank Reconciliation', recon_title:'Bank Reconciliation', recon_hint:'Upload the bank statement (CSV) to automatically match recorded deposits against what actually arrived at the bank.',
+    nav_reconciliation:'Bank Reconciliation', recon_title:'Bank Reconciliation', recon_hint:'Upload the bank statement (Excel or CSV, columns date, amount, reference) to automatically match recorded deposits against what actually arrived at the bank.',
     recon_import:'Import statement', recon_result:'Imported {imported} rows — {matched} auto-matched',
     recon_totalDeposits:'Total deposits', recon_reconciled:'Reconciled', recon_unmatchedDeposits:'Unmatched deposits',
     recon_unmatchedLines:'Unmatched bank lines', recon_noUnmatchedDeposits:'Every deposit is matched — nothing pending',
@@ -2438,7 +2438,7 @@ var L = {
     entry_pos:'POS sales', entry_note:'Note', entry_submit:'Save entry', entry_list:'Recent entries',
     entry_credit:'Credit sales', entry_creditHint:'Sold on credit — deducted from the cash to hand over, because the sales figure entered includes it but no cash came in',
     entry_location:'Location',
-    entry_importTitle:'Import from CSV / Excel', entry_importHint:'Download the CSV template, fill it in, then upload it here. Columns: date, sourceType, sourceName, product, cashSales, deliveryFee, posSales, creditSales, cylindersOut, cylindersIn, note',
+    entry_importTitle:'Import from CSV / Excel', entry_importHint:'Download the template (Excel), fill it in, then upload it here (Excel or CSV). Columns: date, sourceType, sourceName, product, cashSales, deliveryFee, posSales, creditSales, cylindersOut, cylindersIn, note',
     err_featureDisabled:'This feature is currently disabled by admin', err_invalidRows:'The file has invalid rows — fix them and re-upload',
     areaBulk_title:'Area Bulk Upload', areaBulk_hint:'Download the CSV template and fill it in for every branch in your area — each row is one product line (qty × unit price, cash or POS). Delivery, credit, non-sales collections, expenses and الموازنة have columns of their own. Columns: date, locationName, sourceType, sourceName, product, qty, unitPrice, paymentMethod (cash/pos), deliveryFee, deliveryNote, creditSales, creditCustomer, otherCash, otherCashItem, otherCashReason, expenseAmount, expenseItem, expenseReason, directDeposit, depositRef, depositNote, cylindersOut, cylindersIn, note',
     areaBulk_template:'Download template', areaBulk_col_row:'#', areaBulk_col_date:'Date', areaBulk_col_location:'Location', areaBulk_col_type:'Type', areaBulk_col_source:'Source', areaBulk_col_status:'Status',
@@ -2587,7 +2587,7 @@ var L = {
     mustChangePw:'پاس ورڈ تبدیل کرنا ضروری ہے', newPassword:'نیا پاس ورڈ', currentPassword:'موجودہ پاس ورڈ',
     save:'محفوظ کریں', cancel:'منسوخ کریں', logout:'لاگ آؤٹ', language:'زبان',
     nav_home:'ہوم', nav_entries:'اندراجات', nav_areaBulk:'ایریا بلک اپ لوڈ', nav_deputyReview:'ایریا بیچ منظوری', nav_handoffs:'ترسیل', nav_report:'سیلز رپورٹ', nav_admin:'ایڈمن', nav_notifications:'اطلاعات — آپ کی زیر التواء ترسیل',
-    nav_reconciliation:'بینک مطابقت', recon_title:'بینک مطابقت', recon_hint:'بینک اسٹیٹمنٹ (CSV) اپ لوڈ کریں تاکہ درج شدہ جمع رقوم خودکار طور پر اصل بینک ریکارڈ سے ملائی جائیں۔',
+    nav_reconciliation:'بینک مطابقت', recon_title:'بینک مطابقت', recon_hint:'بینک اسٹیٹمنٹ (Excel یا CSV) اپ لوڈ کریں تاکہ درج شدہ جمع رقوم خودکار طور پر اصل بینک ریکارڈ سے ملائی جائیں۔',
     recon_import:'اسٹیٹمنٹ درآمد کریں', recon_result:'{imported} قطاریں درآمد ہوئیں — {matched} خودکار مطابقت',
     recon_totalDeposits:'کل جمع رقوم', recon_reconciled:'مطابقت شدہ', recon_unmatchedDeposits:'غیر مطابقت شدہ جمع رقوم',
     recon_unmatchedLines:'غیر مطابقت شدہ بینک اندراجات', recon_noUnmatchedDeposits:'ہر جمع رقم مطابقت شدہ ہے — کچھ باقی نہیں',
@@ -4418,8 +4418,30 @@ function offerDownload_(blob, file){
   qs('.dl-x', bar).addEventListener('click', function(){ bar.remove(); });
   setTimeout(function(){ if (bar.parentNode) bar.remove(); URL.revokeObjectURL(url); }, 25000);
 }
+// A column with nothing in it on any row (blank, zero or a dash) says nothing
+// and only squeezes the others on paper: the export leaves it out. The first
+// column (the row's name) always stays.
+function exDropEmptyCols_(rows){
+  if (!rows || rows.length < 2 || !Array.isArray(rows[0])) return rows;
+  var n = rows[0].length, keep = [];
+  for (var i = 0; i < n; i++) {
+    var used = i === 0 || rows.slice(1).some(function(r){
+      var v = Array.isArray(r) ? r[i] : null;
+      if (v == null) return false;
+      if (typeof v === 'number') return v !== 0;
+      var sv = String(v).trim(); return sv !== '' && sv !== '-' && sv !== '—';
+    });
+    if (used) keep.push(i);
+  }
+  if (keep.length === n) return rows;
+  return rows.map(function(r){ return Array.isArray(r) ? keep.map(function(i){ return r[i]; }) : r; });
+}
+function exTrimSheets_(sheets){
+  return (sheets || []).map(function(sh){ var o = {}; Object.keys(sh).forEach(function(k){ o[k] = sh[k]; }); o.rows = exDropEmptyCols_(sh.rows); return o; });
+}
 function exportXlsx_(fileName, sheets, opts){
   toast('ex_preparing', 'ok');
+  sheets = exTrimSheets_(sheets);
   var file = fileName.replace(/[\\\/:*?"<>|]/g, '-') + '.xlsx';
   loadLib_(EXCELJS_URL_, EXCELJS_SRI_).then(function(){
     var wb = new window.ExcelJS.Workbook();
@@ -4433,11 +4455,21 @@ function exportXlsx_(fileName, sheets, opts){
       while (used[name]) name = name.slice(0, 28) + '_' + Object.keys(used).length;
       used[name] = 1;
       var cols = Math.max(2, rows[0] ? rows[0].length : 2), kinds = exColKinds_(rows);
+      // Trap (2026-09-30): ExcelJS 4.4 writes <pageSetUpPr> before <outlinePr>
+      // when a sheet has both "fit to page" and outline settings, the reverse of
+      // the file format's order, and Excel then refuses to open the file at all
+      // (ExcelJS and SheetJS still read it, so nothing in the browser noticed).
+      // A sheet gets one or the other, never both: a grouped tree keeps its
+      // levels' buttons above each group and prints at a scale; a flat table
+      // prints fitted to the page width. tests/export-opens-in-excel.ps1 checks.
+      var grouped = !!(sh.outline && sh.outline.some(function(d){ return d > 0; }));
+      var ps = { paperSize: 9, orientation: cols > 6 ? 'landscape' : 'portrait',
+        margins: { left: 0.4, right: 0.4, top: 0.5, bottom: 0.5, header: 0.2, footer: 0.2 }, printTitlesRow: '3:3' };
+      if (!grouped) { ps.fitToPage = true; ps.fitToWidth = 1; ps.fitToHeight = 0; }
       var ws = wb.addWorksheet(name, {
         views: [{ state: 'frozen', ySplit: 3, rightToLeft: rtl, showGridLines: false }],
-        properties: { outlineProperties: { summaryBelow: false, summaryRight: false } },
-        pageSetup: { paperSize: 9, orientation: cols > 6 ? 'landscape' : 'portrait', fitToPage: true, fitToWidth: 1, fitToHeight: 0,
-          margins: { left: 0.4, right: 0.4, top: 0.5, bottom: 0.5, header: 0.2, footer: 0.2 }, printTitlesRow: '3:3' },
+        properties: grouped ? { outlineProperties: { summaryBelow: false, summaryRight: false } } : {},
+        pageSetup: ps,
         headerFooter: { oddFooter: '&L&8Best Gas Collections&R&8&P / &N' }
       });
       // title band and the line under it
@@ -4491,6 +4523,14 @@ function exportXlsx_(fileName, sheets, opts){
         var w = rows.reduce(function(m, r){ var v = r[i]; return Math.max(m, String(v == null ? '' : typeof v === 'number' ? money(v) : v).length); }, 8);
         ws.getColumn(i + 1).width = Math.min(kinds[i] === 'text' ? 46 : 18, w + 3);
       }
+      // a grouped tree prints at the scale that fits its real width on one page
+      // across (A4: about 150 width units landscape, 100 portrait at 100%)
+      if (grouped) {
+        var sumW = 0; for (var j = 1; j <= cols; j++) sumW += ws.getColumn(j).width || 10;
+        var land = sumW > 100;
+        ws.pageSetup.orientation = land ? 'landscape' : 'portrait';
+        ws.pageSetup.scale = Math.max(35, Math.min(100, Math.floor(100 * (land ? 148 : 98) / sumW)));
+      }
       if (rows.length > 1) ws.autoFilter = { from: { row: 3, column: 1 }, to: { row: 3, column: cols } };
     });
     return wb.xlsx.writeBuffer();
@@ -4510,6 +4550,7 @@ function exportXlsx_(fileName, sheets, opts){
 }
 // The same sheets as a printed report: the browser's own "Save as PDF".
 function exportPdf_(title, sheets, opts){
+  sheets = exTrimSheets_(sheets);
   var w = window.open('', '_blank');
   if (!w) { toast('ex_popup', 'err'); return; }
   var rtl = state.lang !== 'en';
@@ -6377,13 +6418,16 @@ function downloadCsvTemplate_(){
   var sampleStore = (meta.stores && meta.stores[0] && meta.stores[0].name) || 'Store name';
   var header = 'date,sourceType,sourceName,product,cashSales,deliveryFee,deliveryNote,posSales,creditSales,creditCustomer,' + NON_SALES_COLUMNS + ',cylindersOut,cylindersIn,note';
   var sample = new Date().toISOString().slice(0,10)+',store,'+sampleStore+',,1000,115,,0,0,,,,,,,,,,,,,';
-  var csv = header+'\n'+sample+'\n';
-  var blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
-  var url = URL.createObjectURL(blob);
-  var a = document.createElement('a');
-  a.href = url; a.download = 'entries_template.csv';
-  document.body.appendChild(a); a.click(); document.body.removeChild(a);
-  setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
+  // an Excel file (the import reads Excel and CSV alike), header on row 1,
+  // handed over through the same download bar as every export
+  var cols = header.split(','), ex = sample.split(',');
+  var row = cols.map(function(c, i){ var v = ex[i] == null ? '' : ex[i]; return v !== '' && !isNaN(Number(v)) && c !== 'date' ? Number(v) : v; });
+  loadLib_(XLSX_URL_, XLSX_SRI_).then(function(){
+    var X = window.XLSX, wb = X.utils.book_new(), ws = X.utils.aoa_to_sheet([cols, row]);
+    ws['!cols'] = cols.map(function(c){ return { wch: Math.max(12, c.length + 2) }; });
+    X.utils.book_append_sheet(wb, ws, 'entries');
+    offerDownload_(new Blob([X.write(wb, { bookType: 'xlsx', type: 'array' })], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), 'entries_template.xlsx');
+  }).catch(function(e){ showToast_(t('ex_failed') + (e && e.message ? ' (' + e.message + ')' : ''), 'err'); });
 }
 
 // Product-level template: one row = one product/service line (qty x unit
@@ -8191,7 +8235,7 @@ function renderEntries(body){
       '<div class="muted" style="font-size:12.5px;margin-bottom:10px;">'+esc(t('entry_importHint'))+'</div>' +
       '<div class="row" style="gap:10px;flex-wrap:wrap;margin-bottom:10px;align-items:center;">' +
         '<button type="button" class="btn" id="impTemplateBtn" style="background:var(--muted-2);">'+esc(t('entry_importTemplate'))+'</button>' +
-        '<input type="file" id="impFile" accept=".csv,text/csv">' +
+        '<input type="file" id="impFile" accept="'+TABLE_ACCEPT_+'">' +
       '</div>' +
       '<div id="impMsg"></div>' +
       '<div id="impPreviewWrap"></div>' +
@@ -8203,10 +8247,7 @@ function renderEntries(body){
     qs('#impFile', importCard).addEventListener('change', function(e){
       var file = e.target.files[0];
       if (!file) return;
-      var reader = new FileReader();
-      reader.onload = function(){
-        var parsed;
-        try { parsed = parseCsv_(String(reader.result||'')); } catch(err){ parsed = null; }
+      readTableRows_(file, function(parsed){
         if (!parsed || parsed.length < 2){ qs('#impMsg',importCard).innerHTML = '<div class="msg err">'+esc(t('entry_importParseError'))+'</div>'; return; }
         qs('#impMsg',importCard).innerHTML = '';
         var header = parsed[0].map(function(h){ return String(h||'').trim(); });
@@ -8252,8 +8293,7 @@ function renderEntries(body){
         });
 
         renderImportPreview();
-      };
-      reader.readAsText(file);
+      });
     });
 
     function renderImportPreview(){
@@ -8843,6 +8883,39 @@ function brStockItem_(x){
   return p || null;
 }
 // ---- end branch daily report ----
+// Any table file a person picks: Excel (.xlsx/.xls, first visible sheet;
+// dates as yyyy-mm-dd, numbers as plain numbers) or CSV/text. cb(rows) with rows as arrays of
+// strings, or cb(null) when the file cannot be read.
+function readTableRows_(file, cb){
+  var isXl = /\.(xlsx|xlsm|xls)$/i.test(file.name || '') || /spreadsheetml|ms-excel/i.test(file.type || '');
+  if (!isXl) {
+    var rd = new FileReader();
+    rd.onload = function(){ var p; try { p = parseCsv_(String(rd.result || '')); } catch (e) { p = null; } cb(p); };
+    rd.onerror = function(){ cb(null); };
+    rd.readAsText(file);
+    return;
+  }
+  loadLib_(XLSX_URL_, XLSX_SRI_).then(function(){
+    var fr = new FileReader();
+    fr.onload = function(){
+      try {
+        var wb = window.XLSX.read(new Uint8Array(fr.result), { type: 'array', cellDates: true });
+        var ws = wb.Sheets[wb.SheetNames.filter(function(n){ return !(wb.Workbook && wb.Workbook.Sheets && (wb.Workbook.Sheets[wb.SheetNames.indexOf(n)] || {}).Hidden); })[0] || wb.SheetNames[0]];
+        // raw values: a number formatted "1,234.00" in the sheet stays 1234
+        var rows = window.XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: '', blankrows: false });
+        cb(rows.map(function(r){ return r.map(function(c){
+          if (c instanceof Date) return abxDate_(c);
+          return String(c == null ? '' : c).trim();
+        }); }));
+      } catch (e) { cb(null); }
+    };
+    fr.onerror = function(){ cb(null); };
+    fr.readAsArrayBuffer(file);
+  }).catch(function(){ cb(null); });
+}
+// what a file picker offers for a table: Excel and CSV, by extension and by type
+// (some phones only match the type, some only the extension)
+var TABLE_ACCEPT_ = '.xlsx,.xls,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv';
 function abxRead_(file, cb){
   loadLib_(XLSX_URL_, XLSX_SRI_).then(function(){
     var fr = new FileReader();
@@ -8870,7 +8943,7 @@ function renderAreaBulk(body){
       clusters.map(function(c){ return '<option value="'+c.id+'">'+esc(c.name)+'</option>'; }).join('')+'</select></div>' : '') +
     '<div class="row" style="gap:10px;flex-wrap:wrap;margin-bottom:10px;align-items:center;">' +
       '<button type="button" class="btn" id="abTemplateBtn" style="background:var(--muted-2);">'+esc(t('areaBulk_template'))+'</button>' +
-      '<input type="file" id="abFile" accept=".xlsx,.xls,.csv">' +
+      '<input type="file" id="abFile" accept="'+TABLE_ACCEPT_+'">' +
     '</div>' +
     '<div id="abMsg"></div>' +
     '<div id="abBr"></div>' +
@@ -10432,7 +10505,7 @@ function renderReconciliation(body){
       var importCard = el('<div class="card">' +
         '<h2>'+esc(t('recon_title'))+'</h2>' +
         '<div class="muted" style="font-size:12.5px;margin-bottom:10px;">'+esc(t('recon_hint'))+'</div>' +
-        '<input type="file" id="reconFile" accept=".csv,text/csv">' +
+        '<input type="file" id="reconFile" accept="'+TABLE_ACCEPT_+'">' +
         '<div id="reconMsg"></div>' +
       '</div>');
       body.appendChild(importCard);
@@ -10440,10 +10513,7 @@ function renderReconciliation(body){
       if (canAct) qs('#reconFile', importCard).addEventListener('change', function(e){
         var file = e.target.files[0];
         if (!file) return;
-        var reader = new FileReader();
-        reader.onload = function(){
-          var parsed;
-          try { parsed = parseCsv_(String(reader.result||'')); } catch(err){ parsed = null; }
+        readTableRows_(file, function(parsed){
           if (!parsed || parsed.length < 2){ qs('#reconMsg',importCard).innerHTML = '<div class="msg err">'+esc(t('entry_importParseError'))+'</div>'; return; }
           var header = parsed[0].map(function(h){ return String(h||'').trim(); });
           var idx = {};
@@ -10458,8 +10528,7 @@ function renderReconciliation(body){
             qs('#reconMsg',importCard).innerHTML = '<div class="msg ok">'+esc(t('recon_result').replace('{imported}',res2.imported).replace('{matched}',res2.autoMatched))+'</div>';
             loadReconciliation();
           });
-        };
-        reader.readAsText(file);
+        });
       });
 
       body.appendChild(kpiRow([
@@ -11566,7 +11635,7 @@ function posSheetRow_(idx, cells){
 function entityImportCard_(kind){
   var card = el('<div class="card xl-imp" hidden><h2>'+icon_('doc')+esc(t('imp_title'))+'</h2>' +
     '<ol class="xl-steps"><li>'+esc(t('imp_step1'))+' <button type="button" class="ex-btn xlTpl">'+icon_('doc')+'<span>'+esc(t('imp_template'))+'</span></button></li>' +
-      '<li>'+esc(t('imp_step2'))+' <label class="btn secondary cu-imp-file">'+esc(t('imp_choose'))+'<input type="file" class="xlFile" accept=".xlsx,.xls,.csv" hidden></label></li>' +
+      '<li>'+esc(t('imp_step2'))+' <label class="btn secondary cu-imp-file">'+esc(t('imp_choose'))+'<input type="file" class="xlFile" accept="'+TABLE_ACCEPT_+'" hidden></label></li>' +
       '<li>'+esc(t('imp_step3'))+'</li></ol>' +
     '<div class="xl-msg" aria-live="polite"></div><div class="xl-prev"></div></div>');
   var rows = [];
@@ -11871,7 +11940,7 @@ function customerImportCard_(){
     '<p class="muted cu-imp-hint">'+esc(t('cu_importHint'))+'</p>' +
     '<textarea rows="5" placeholder="'+esc(t('cu_importPh'))+'"></textarea>' +
     '<div class="cu-imp-row">' +
-      '<label class="btn secondary cu-imp-file">'+icon_('doc')+'<span>'+esc(t('cu_importFile'))+'</span><input type="file" accept=".xlsx,.xls,.csv,.txt" hidden></label>' +
+      '<label class="btn secondary cu-imp-file">'+icon_('doc')+'<span>'+esc(t('cu_importFile'))+'</span><input type="file" accept="'+TABLE_ACCEPT_+',.txt,text/plain" hidden></label>' +
       '<button type="button" class="btn cu-imp-check">'+esc(t('cu_importCheck'))+'</button>' +
     '</div><div class="cu-imp-prev"></div><div class="cu-imp-msg"></div></div>');
   var prev = qs('.cu-imp-prev', card), msg = qs('.cu-imp-msg', card), ta = qs('textarea', card);
