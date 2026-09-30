@@ -228,6 +228,24 @@ function settleChannel_(r) {
   // keeps its whole quantity, and channelQtys says how much of it went
   // through each channel; the fee and commission follow that part only.
   var map = r.channelQtys;
+  // The driver's commission per unit changes from day to day (2026-09-30):
+  // channelComRates {channelId: per unit} on the line replaces the channel's
+  // standard rate for that line only; the delivery fee keeps its rate.
+  var ov = r.channelComRates, ovClean = null;
+  if (ov != null && ov !== '') {
+    if (typeof ov !== 'object' || Array.isArray(ov)) return 'invalid_input';
+    ovClean = {};
+    var ok = safeOwnKeys_(ov);
+    if (ok.length > 10) return 'invalid_input';
+    for (var j = 0; j < ok.length; j++) {
+      if (ov[ok[j]] === '' || ov[ok[j]] == null) continue;
+      var rate = Number(ov[ok[j]]);
+      if (!isFinite(rate) || rate < 0 || rate > 100000) return 'invalid_input';
+      ovClean[ok[j]] = Math.round(rate * 1000) / 1000;
+    }
+    if (!Object.keys(ovClean).length) ovClean = null;
+  }
+  r.channelComRates = ovClean;
   if (map != null && map !== '') {
     if (typeof map !== 'object' || Array.isArray(map)) return 'invalid_input';
     var keys = safeOwnKeys_(map), clean = {}, part = 0, fee0 = 0, com0 = 0;
@@ -241,7 +259,8 @@ function settleChannel_(r) {
       clean[keys[i]] = cq; part += cq;
       if (r.productId) {
         fee0 += Math.round(cq * Number((c0.deliveryFees || {})[r.productId] || 0) * 100) / 100;
-        com0 += Math.round(cq * Number((c0.commissions || {})[r.productId] || 0) * 100) / 100;
+        var comRate = ovClean && hasOwn_(ovClean, keys[i]) ? ovClean[keys[i]] : Number((c0.commissions || {})[r.productId] || 0);
+        com0 += Math.round(cq * comRate * 100) / 100;
       }
     }
     if (part > Number(r.qty || 0) + 1e-9) return 'channel_qty_exceeds';
@@ -257,7 +276,7 @@ function settleChannel_(r) {
   if (!ch || ch.active === false) return 'invalid_channel';
   var qty = Number(r.qty || 0), pid = r.productId;
   if (qty > 0 && pid) {
-    var fee = Number((ch.deliveryFees || {})[pid] || 0), com = Number((ch.commissions || {})[pid] || 0);
+    var fee = Number((ch.deliveryFees || {})[pid] || 0), com = ovClean && hasOwn_(ovClean, r.channelId) ? ovClean[r.channelId] : Number((ch.commissions || {})[pid] || 0);
     r.channelDeliveryFee = Math.round(qty * fee * 100) / 100;
     r.channelCommission = Math.round(qty * com * 100) / 100;
   }
@@ -398,7 +417,8 @@ function nonSalesFields_(r) {
     channelId: r.channelId || null,
     channelQtys: r.channelQtys || null,
     channelDeliveryFee: Number(r.channelDeliveryFee || 0),
-    channelCommission: Number(r.channelCommission || 0)
+    channelCommission: Number(r.channelCommission || 0),
+    channelComRates: r.channelComRates || null
   };
 }
 
@@ -1298,7 +1318,9 @@ function actionDeputyApproveBatch_(req, user) {
   if (user.role !== 'deputy_operations_manager' && user.role !== 'admin') return { ok: false, error: 'forbidden' };
   var batch = getById_(SHEETS.AREA_BULK_BATCHES, req.id);
   if (!batch) return { ok: false, error: 'not_found' };
-  if (batch.status !== 'pending_deputy') return { ok: false, error: 'not_pending' };
+  // 'approving' is a run that stopped half-way (a timeout on a big batch):
+  // approving again finishes it without writing anything twice
+  if (batch.status !== 'pending_deputy' && batch.status !== 'approving') return { ok: false, error: 'not_pending' };
   // Structurally near-impossible today (a user holds exactly one role), but
   // checked explicitly anyway — a self-check is never implied by the role
   // requirement alone (see CLAUDE.md Trap #3).
@@ -1311,8 +1333,11 @@ function actionDeputyApproveBatch_(req, user) {
   // whose day nets to nothing (banked directly, say) sends none: its entries
   // stay settled by this approval. Every branch is checked before anything
   // is written, so a branch without a collector stops the whole approval.
+  // one read of the entries, not one per line (a big batch timed out here)
+  var entryById = {};
+  readSheet(SHEETS.ENTRIES).forEach(function (e) { entryById[e.id] = e; });
   var entryLoc = {};
-  batch.entryIds.forEach(function (id) { var e = getById_(SHEETS.ENTRIES, id); if (e) entryLoc[id] = e.locationId; });
+  batch.entryIds.forEach(function (id) { var e = entryById[id]; if (e) entryLoc[id] = e.locationId; });
   var plans = [];
   for (var i = 0; i < (batch.perLocation || []).length; i++) {
     var pl = batch.perLocation[i];
@@ -1323,8 +1348,16 @@ function actionDeputyApproveBatch_(req, user) {
     plans.push({ pl: pl, collectorId: collectorId, entryIds: batch.entryIds.filter(function (id) { return entryLoc[id] === pl.locationId; }) });
   }
 
+  // mark the run first, so a timeout leaves 'approving', not 'pending_deputy'
+  if (batch.status !== 'approving') { batch.status = 'approving'; batch.approvingSince = new Date().toISOString(); writeRow(SHEETS.AREA_BULK_BATCHES, batch); }
+  var already = {};
+  readSheet(SHEETS.HANDOFFS).forEach(function (h) { if (h.viaBulkBatch === batch.id && h.kind === 'cluster_to_collector') already[h.locationId] = h; });
   var handoffOfEntry = {};
   var handoffs = plans.map(function (p) {
+    if (already[p.pl.locationId]) {
+      p.entryIds.forEach(function (id) { handoffOfEntry[id] = already[p.pl.locationId].id; });
+      return already[p.pl.locationId];
+    }
     var handoff = {
       id: Utilities.getUuid(),
       kind: 'cluster_to_collector',
@@ -1347,15 +1380,19 @@ function actionDeputyApproveBatch_(req, user) {
     return handoff;
   });
   var uploader = getById_(SHEETS.USERS, batch.uploadedBy) || user;
+  var banked = {};
+  readSheet(SHEETS.HANDOFFS).forEach(function (h) {
+    if (h.kind === 'deposit' && h.direct && h.status !== 'voided') (h.sourceEntryIds || []).forEach(function (id) { banked[id] = true; });
+  });
   batch.entryIds.forEach(function (id) {
-    var e = getById_(SHEETS.ENTRIES, id);
+    var e = entryById[id];
     if (!e) return;
     // an entry of a branch with nothing to hand over stays with the batch
-    if (handoffOfEntry[id]) { e.consumedBy = handoffOfEntry[id]; writeRow(SHEETS.ENTRIES, e); }
+    if (handoffOfEntry[id] && e.consumedBy !== handoffOfEntry[id]) { e.consumedBy = handoffOfEntry[id]; writeRow(SHEETS.ENTRIES, e); }
     // Cash the branch banked itself, reported through the upload: the
     // deposit record is created now, not at upload time, so a rejected
-    // batch never leaves a deposit behind.
-    if (Number(e.directDepositAmount || 0) > 0) recordDirectDeposit_(e, uploader);
+    // batch never leaves a deposit behind (and a resumed run never twice).
+    if (Number(e.directDepositAmount || 0) > 0 && !banked[id]) recordDirectDeposit_(e, uploader);
   });
 
   batch.status = 'deputy_approved';

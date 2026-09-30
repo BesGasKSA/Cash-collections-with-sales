@@ -727,8 +727,8 @@ function route_(req) {
     bulkSubmitAreaBatch: function () { return actionBulkSubmitAreaBatch_(req, user); },
     listAreaBulkBatches: function () { return actionListAreaBulkBatches_(req, user); },
     areaBulkBatchDetail: function () { return actionAreaBulkBatchDetail_(req, user); },
-    deputyApproveBatch: function () { return actionDeputyApproveBatch_(req, user); },
-    deputyRejectBatch: function () { return actionDeputyRejectBatch_(req, user); },
+    deputyApproveBatch: function () { return withCashLock_(function () { return actionDeputyApproveBatch_(req, user); }); },
+    deputyRejectBatch: function () { return withCashLock_(function () { return actionDeputyRejectBatch_(req, user); }); },
 
     // admin — users (special: password/invite logic)
     // withMeta_ appends the refreshed reference data to a successful write,
