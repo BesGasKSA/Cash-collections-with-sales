@@ -1181,6 +1181,10 @@ its lines (`abx_e_pos`).
   `exKeepMark_`). Every new Excel feature was opened in real Excel.
 - Tiles on wider screens put the icon beside the figure; a zero figure recedes;
   six tiles sit 3 × 2.
+- Icons (ICONS) are duotone: an outline plus a tinted shape (class d, fill 18%);
+  inventory is a gas cylinder, credit a receipt, handoffs a coin between arrows.
+  Utility glyphs (close, chevrons, search, menu) stay plain lines. A tile figure
+  is never cut with an ellipsis; tiles need 230px, so a tablet shows two across.
 - Backdrop: `#app.shell::before` (two slow light pools) and `::after` (gauge
   contour lines fading down, paper grain); the sidebar has flowing cream contour
   lines, a light pool behind the logo and a sheen on hover; a card is lit under
