@@ -2622,6 +2622,41 @@ close(xlReal.batch.breakdown.netCashOwed, xb.netCashOwed, 'and the real submissi
 var xlInv = call({ action: 'getInventoryReport', token: financeTok, dateFrom: '2026-09-24', dateTo: '2026-09-24', locationId: dpLoc.id }).rows.filter(function (r) { return r.productId === invP.entity.id; })[0];
 check(xlInv && xlInv.sales === 15, 'stock counts the 10 sold and the 5 on credit once each (got ' + (xlInv && xlInv.sales) + ')');
 
+console.log('--- the Souq Gas driver commission can be changed on the day\'s line ---');
+var comOv = {}; comOv[souq.entity.id] = 2.25;
+var cqOv = {}; cqOv[souq.entity.id] = 4;
+var ovE = call({ action: 'createDailyEntry', token: dpTok, date: '2026-09-26', sourceType: 'pos', sourceId: dpPos.id, productId: invP.entity.id, qty: 10, unitPrice: 30, cashSales: 300, channelQtys: cqOv, channelComRates: comOv });
+check(ovE.ok && Math.abs(ovE.entry.channelCommission - 9) < 0.005, 'a commission of 2.25 a unit on 4 units gives 9, not the standard rate (got ' + (ovE.entry && ovE.entry.channelCommission) + ')');
+check(ovE.ok && Math.abs(ovE.entry.channelDeliveryFee - 12) < 0.005, 'while the delivery fee keeps its standard rate');
+check(ovE.ok && ovE.entry.channelComRates && ovE.entry.channelComRates[souq.entity.id] === 2.25, 'and the rate used is kept on the entry');
+var badOv = {}; badOv[souq.entity.id] = -1;
+check(call({ action: 'createDailyEntry', token: dpTok, date: '2026-09-26', sourceType: 'pos', sourceId: dpPos.id, productId: invP.entity.id, qty: 2, unitPrice: 30, cashSales: 60, channelQtys: cqOv, channelComRates: badOv }).error === 'invalid_input', 'a negative commission is refused');
+var plainE = call({ action: 'createDailyEntry', token: dpTok, date: '2026-09-26', sourceType: 'pos', sourceId: dpPos.id, productId: invP.entity.id, qty: 5, unitPrice: 30, cashSales: 150, channelQtys: cqOv });
+check(plainE.ok && Math.abs(plainE.entry.channelCommission - 4) < 0.005, 'without a change the standard rate still applies');
+var bulkOv = call({ action: 'bulkSubmitAreaBatch', token: saraTok, clusterId: cluster.entity.id, dryRun: true,
+  rows: [{ date: '2026-09-25', sourceType: 'pos', sourceId: dpPos.id, productId: invP.entity.id, qty: 10, unitPrice: 30, cashSales: 300, channelQtys: cqOv, channelComRates: comOv }] });
+check(bulkOv.ok && Math.abs(bulkOv.batch.breakdown.channelCommissions - 9) < 0.005, 'the area manager\'s Excel takes the changed commission too (got ' + (bulkOv.batch && bulkOv.batch.breakdown.channelCommissions) + ')');
+
+console.log('--- a deputy approval that stopped half-way finishes without doubling anything ---');
+var resRows = [
+  { date: '2026-09-25', sourceType: 'pos', sourceId: dpPos.id, productId: invP.entity.id, qty: 4, unitPrice: 30, cashSales: 120, directDepositAmount: 20, directDepositRef: 'MZ-RES-1' }
+];
+var resBatch = call({ action: 'bulkSubmitAreaBatch', token: saraTok, clusterId: cluster.entity.id, rows: resRows });
+check(resBatch.ok, 'an area batch waits for the deputy');
+// simulate a run that wrote the branch's handover and then timed out
+var rb = ctx.getById_(ctx.SHEETS.AREA_BULK_BATCHES, resBatch.batch.id);
+rb.status = 'approving'; ctx.writeRow(ctx.SHEETS.AREA_BULK_BATCHES, rb);
+ctx.writeRow(ctx.SHEETS.HANDOFFS, { kind: 'cluster_to_collector', fromUserId: rb.uploadedBy, toUserId: musa.id, clusterId: rb.clusterId, locationId: rb.perLocation[0].locationId,
+  amount: rb.perLocation[0].amount, breakdown: rb.perLocation[0].breakdown, perLocation: [rb.perLocation[0]], sourceEntryIds: rb.entryIds, sourceHandoffIds: [], status: 'pending', createdAt: new Date().toISOString(), viaBulkBatch: rb.id });
+var resApprove = call({ action: 'deputyApproveBatch', token: call({ action: 'login', email: 'deputy@bestgas.sa', password: 'Deputy#Pass1' }).token || adminTok, id: rb.id });
+check(resApprove.ok, 'approving again picks up where it stopped (' + (resApprove.error || '') + ')');
+var resHandoffs = ctx.readSheet(ctx.SHEETS.HANDOFFS).filter(function (h) { return h.viaBulkBatch === rb.id; });
+check(resHandoffs.length === 1, 'and the branch still has exactly one handover (got ' + resHandoffs.length + ')');
+var resDeposits = ctx.readSheet(ctx.SHEETS.HANDOFFS).filter(function (h) { return h.kind === 'deposit' && (h.sourceEntryIds || []).indexOf(rb.entryIds[0]) >= 0; });
+check(resDeposits.length === 1, 'and one الموازنة deposit (got ' + resDeposits.length + ')');
+var resAgain = call({ action: 'deputyApproveBatch', token: adminTok, id: rb.id });
+check(resAgain.error === 'not_pending', 'a finished approval cannot run a second time');
+
 console.log('--- a day entered for a POS machine banks its الموازنة on that same machine ---');
 var bwPh = call({ action: 'uploadEntryPhoto', token: bwTok, fileBase64: 'iVBORw0KGgo=', fileName: 'mz.png', fileMime: 'image/png' });
 var bwMz = { action: 'createDailyEntry', token: bwTok, date: '2026-09-21', sourceType: 'pos', sourceId: bwPos.entity.id, cashSales: 900, directDepositAmount: 400, directDepositRef: 'POS-MZ-1', directDepositPhotoId: bwPh.fileId };

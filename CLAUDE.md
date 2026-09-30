@@ -1079,6 +1079,20 @@ entry rows the form writes and checks each; the server dry run's per-row errors
 land on their rows. Files over 450 lines go up as several batches, whole branches
 each (`abxChunks_`). Tests: "area Excel" section in tests/run.js.
 
+**Souq Gas commission per line, downloads, resumable approval (2026-09-30).**
+- The driver's commission per unit is not fixed: a product line may carry
+  `channelComRates {channelId: rate}` (`settleChannel_`), replacing the channel's
+  standard rate for that line only; the delivery fee keeps its rate. The form has a
+  box beside each channel quantity (`.lnChCom`, empty = standard, shown as the hint);
+  the area Excel has an optional column `abx_c_chCom` beside each channel's quantity.
+- Every Excel download goes through `offerDownload_`: it tries the automatic download
+  and also shows a bar with a real link (`#dlBar`), because a file built after an
+  async load no longer counts as a tap and phones blocked it silently. Failures show
+  the error text.
+- `actionDeputyApproveBatch_` is resumable: status `approving` is set before writing,
+  and a re-run reuses the batch's existing handoffs and direct deposits instead of
+  writing them twice. Deputy approve/reject run under `withCashLock_`.
+
 **Grouped pickers (2026-09-29).** `sourceOptionsGrouped_` puts an area manager's
 sources in one `<optgroup>` per branch; the designed dropdown (`ddOpen_`) draws
 each group as a header that folds (closed except the group holding the choice; a
