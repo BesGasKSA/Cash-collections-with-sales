@@ -496,6 +496,27 @@
   #app.shell{display:grid;grid-template-columns:var(--sb-w) minmax(0,1fr);min-height:100vh;}
   .sb{position:sticky;top:0;height:100vh;overflow-y:auto;background:linear-gradient(180deg,#3f5c43 0%,#2c4431 55%,#22362a 100%);color:#fff;display:flex;flex-direction:column;padding:18px 14px;gap:18px;z-index:30;}
   .sb::-webkit-scrollbar{width:0;}
+  /* the sidebar's depth (2026-09-30): cream gauge lines flowing slowly down
+     the green, a light pool behind the logo, a sheen across an item on hover */
+  .sb{isolation:isolate;}
+  .sb::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='500' viewBox='0 0 300 500'%3E%3Cg fill='none' stroke='%23F2EEE4' stroke-width='1' stroke-opacity='.09'%3E%3Cpath d='M20 -10 C 36 90, 4 170, 20 250 S 32.8 420, 20 510' /%3E%3Cpath d='M62 -10 C 81 90, 43 170, 62 250 S 77.2 420, 62 510' /%3E%3Cpath d='M104 -10 C 126 90, 82 170, 104 250 S 121.6 420, 104 510' /%3E%3Cpath d='M146 -10 C 171 90, 121 170, 146 250 S 166 420, 146 510' /%3E%3Cpath d='M188 -10 C 216 90, 160 170, 188 250 S 210.4 420, 188 510' /%3E%3Cpath d='M230 -10 C 261 90, 199 170, 230 250 S 254.8 420, 230 510' /%3E%3Cpath d='M272 -10 C 306 90, 238 170, 272 250 S 299.2 420, 272 510' /%3E%3C/g%3E%3C/svg%3E");background-size:300px 500px;background-repeat:repeat;
+    animation:sbFlow 90s linear infinite;opacity:.9;}
+  .sb::after{content:"";position:absolute;inset:0 0 auto 0;height:260px;z-index:-1;pointer-events:none;
+    background:radial-gradient(80% 70% at 50% 0%, rgba(242,238,228,.16), transparent 70%);}
+  @keyframes sbFlow{from{background-position:0 0;}to{background-position:0 500px;}}
+  .sb-item{overflow:hidden;}
+  .sb-item::after{content:"";position:absolute;inset:0;pointer-events:none;border-radius:inherit;
+    background:linear-gradient(105deg, transparent 30%, rgba(255,255,255,.14) 50%, transparent 70%);transform:translateX(-120%);}
+  .sb-item:hover::after{transform:translateX(120%);transition:transform .7s cubic-bezier(.2,.8,.2,1);}
+  html[dir="rtl"] .sb-item::after{transform:translateX(120%);}
+  html[dir="rtl"] .sb-item:hover::after{transform:translateX(-120%);}
+  .sb-item svg{transition:transform .2s cubic-bezier(.2,.8,.2,1);}
+  .sb-item:hover svg{transform:translateX(3px);}
+  html[dir="rtl"] .sb-item:hover svg{transform:translateX(-3px);}
+  .sb-item:active{transform:scale(.97);}
+  .sb-item.active::after{display:none;}
+  @media (prefers-reduced-motion:reduce){ .sb::before{animation:none;} .sb-item::after{display:none;} .sb-item svg{transition:none;} }
   .sb-brand{display:flex;align-items:center;gap:12px;padding:4px 6px 14px;border-bottom:1px solid rgba(255,255,255,.1);}
   .emblem{--s:46px;display:inline-block;vertical-align:middle;width:var(--s);height:var(--s);border-radius:50%;overflow:hidden;position:relative;flex-shrink:0;box-shadow:0 0 0 2px rgba(242,238,228,.55),0 6px 16px rgba(0,0,0,.28);background:var(--green);}
   .emblem img{position:absolute;max-width:none;width:calc(var(--s) * 555 / 244);height:calc(var(--s) * 457 / 244);left:calc(var(--s) * -148 / 244);top:calc(var(--s) * -43 / 244);}
@@ -611,6 +632,22 @@
   .tile .vl{font-size:24px;font-weight:800;letter-spacing:-.02em;line-height:1.1;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .tile .ft{font-size:11.5px;color:var(--muted);display:flex;align-items:center;gap:6px;}
   .tile .spark{height:28px;margin-top:-4px;}
+  /* wider screens (2026-09-30): the icon beside the label and figure, not on a
+     row of its own; the arrow at the edge; a zero figure recedes */
+  @media (min-width:701px){
+    .tiles{grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;}
+    .tile{display:grid;grid-template-columns:36px minmax(0,1fr) 18px;column-gap:12px;row-gap:4px;align-items:start;padding:14px 14px 12px;}
+    .tile .top{display:contents;}
+    .tile .ic{grid-column:1;grid-row:1 / span 2;}
+    .tile > div:not(.top):not(.ft){grid-column:2;grid-row:1 / span 2;min-width:0;}
+    .tile .go{grid-column:3;grid-row:1;align-self:center;}
+    .tile .ft{grid-column:2 / 4;grid-row:3;margin-top:4px;}
+    .tile .vl{font-size:23px;margin-top:2px;}
+  }
+  /* six figures sit as two rows of three, never four and an orphan pair */
+  @media (min-width:901px){ .tiles:has(> .tile:nth-child(6):last-child){grid-template-columns:repeat(3,minmax(0,1fr));} }
+  .tile.is-zero .vl{color:var(--muted-2);}
+  .tile.is-zero .ic{background:var(--bg);color:var(--muted-2);}
   @media (max-width:700px){ .tile{padding:13px 12px 12px;gap:8px;} .tile .vl{font-size:18px;} .tile .ic{width:30px;height:30px;border-radius:9px;} .tile .ic svg{width:16px;height:16px;} }
 
   /* ---------- Statement (replaces + − = formula cards) ---------- */
@@ -659,15 +696,17 @@
   /* ---------- List rows (holders, bars, recent) ---------- */
   .rows{display:flex;flex-direction:column;}
   .rrow{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;align-items:center;gap:12px;padding:11px 8px;border-radius:12px;}
-  .rrow + .rrow{border-top:1px dashed var(--border-soft);}
+  .rrow + .rrow{border-top:1px solid var(--border-soft);}
+  .rrow-zero{font-size:12px;color:var(--muted);padding:9px 8px 2px;border-top:1px solid var(--border-soft);}
   .rrow.click{cursor:pointer;}
   .rrow.click:hover{background:#f7f6f1;}
   .rrow .mk{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:var(--c,var(--green));background:color-mix(in srgb,var(--c,var(--green)) 12%,#fff);}
   .rrow .mk svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
-  .rrow .t{font-size:13.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-  .rrow .s{font-size:11.5px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-  .rrow .bar{height:6px;border-radius:999px;background:var(--border-soft);margin-top:6px;overflow:hidden;display:flex;}
-  .rrow .bar span{display:block;height:100%;}
+  .rrow .t{font-size:13.5px;font-weight:700;overflow-wrap:anywhere;line-height:1.35;}
+  .rrow .s{font-size:11.5px;color:var(--muted);margin-top:2px;overflow-wrap:anywhere;line-height:1.4;}
+  .rrow .bar{height:6px;border-radius:2px;background:var(--bg);margin-top:7px;overflow:hidden;display:flex;}
+  .rrow .bar span{display:block;height:100%;border-radius:0 3px 3px 0;}
+  html[dir="rtl"] .rrow .bar span{border-radius:3px 0 0 3px;}
   .rrow .a{font-size:14px;font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap;text-align:end;}
   .rrow .chev{color:var(--muted);opacity:.35;}
   .rrow .chev svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;display:block;}
@@ -854,6 +893,68 @@
   .chart-wrap .pt{transition:r .15s ease;}
   .chart-tip{position:absolute;pointer-events:none;background:var(--green-deep);color:#fff;border-radius:10px;padding:6px 10px;font-size:11.5px;font-weight:700;white-space:nowrap;opacity:0;transform:translate(-50%,-140%);transition:opacity .15s ease;box-shadow:var(--shadow-md);z-index:2;}
   .chart-tip.on{opacity:1;}
+  .tc2{width:100%;overflow:hidden;}
+  /* branch performance: league + day heatmap (branchBoard_) */
+  .bh-hint{margin:-4px 0 12px;font-size:12px;color:var(--muted);}
+  .bh-table td{vertical-align:middle;}
+  .bh-rank{color:var(--muted);font-weight:700;width:34px;}
+  .bh-name{font-weight:700;font-size:13.5px;}
+  .bh-sub{font-size:11.5px;color:var(--muted);}
+  .bh-cov{display:inline-block;font-size:12px;font-weight:700;padding:2px 9px;border-radius:999px;background:#fbefe3;color:#8a4b17;white-space:nowrap;font-variant-numeric:tabular-nums;}
+  .bh-cov.full{background:var(--green-pale);color:var(--green-dark);}
+  .bh-amt{font-weight:800;}
+  .bh-bar{height:4px;background:var(--bg);border-radius:2px;margin-top:5px;overflow:hidden;}
+  .bh-bar span{display:block;height:100%;background:var(--green);border-radius:0 2px 2px 0;}
+  html[dir="rtl"] .bh-bar span{border-radius:2px 0 0 2px;margin-inline-start:0;}
+  .bh-heat{margin-top:18px;padding-top:14px;border-top:1px solid var(--border-soft);}
+  .bh-heat-head{display:flex;align-items:baseline;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:10px;}
+  .bh-heat-head h3{margin:0;font-size:14px;font-weight:800;}
+  .bh-miss{font-size:12px;font-weight:700;color:#8a4b17;background:#fbefe3;padding:3px 10px;border-radius:999px;}
+  .bh-miss.ok{color:var(--green-dark);background:var(--green-pale);}
+  .bh-scroll{overflow-x:auto;padding-bottom:4px;}
+  .bh-grid{display:grid;grid-template-columns:minmax(110px,170px) repeat(var(--n), minmax(13px,40px));justify-content:start;gap:3px;min-width:calc(120px + var(--n) * 16px);align-items:center;}
+  .bh-corner{position:sticky;inset-inline-start:0;background:var(--card);}
+  .bh-day{font-size:10px;color:var(--muted);text-align:center;white-space:nowrap;font-variant-numeric:tabular-nums;direction:ltr;overflow:visible;}
+  .bh-day.we{color:var(--green);}
+  .bh-rowname{position:sticky;inset-inline-start:0;z-index:1;background:var(--card);font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;
+    padding-inline-end:8px;-webkit-mask-image:linear-gradient(to left, transparent 0, #000 14px);mask-image:linear-gradient(to left, transparent 0, #000 14px);}
+  html[dir="rtl"] .bh-rowname{-webkit-mask-image:linear-gradient(to right, transparent 0, #000 14px);mask-image:linear-gradient(to right, transparent 0, #000 14px);}
+  .bh-cell{height:22px;border:0;border-radius:4px;padding:0;cursor:pointer;transition:transform .1s ease, box-shadow .1s ease;}
+  .bh-cell:hover{box-shadow:0 0 0 2px var(--text);position:relative;z-index:2;}
+  .bh-cell:active{transform:scale(.9);}
+  .bh-cell.none{background:var(--card);box-shadow:inset 0 0 0 1px var(--border);cursor:default;}
+  .bh-cell.none:hover{box-shadow:inset 0 0 0 1px var(--muted-2);}
+  .bh-cell:focus-visible{outline:2px solid var(--green);outline-offset:1px;}
+  .bh-legend{display:flex;align-items:center;gap:5px;margin-top:10px;font-size:11px;color:var(--muted);flex-wrap:wrap;}
+  .bh-legend i{width:14px;height:12px;border-radius:3px;display:inline-block;}
+  .bh-legend i.none{background:var(--card);box-shadow:inset 0 0 0 1px var(--border);margin-inline-start:10px;}
+  .cmp-row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 2px;}
+  .cmp-row + .cmp-row{border-top:1px solid var(--border-soft);}
+  .cmp-l{font-size:12px;font-weight:700;color:var(--muted);}
+  .cmp-v{font-size:20px;font-weight:800;margin:2px 0;}
+  .cmp-p{font-size:11.5px;color:var(--muted);}
+  .cmp-badge{flex:none;font-size:13px;font-weight:800;padding:5px 10px;border-radius:999px;white-space:nowrap;font-variant-numeric:tabular-nums;}
+  .cmp-badge.up{color:var(--green-dark);background:var(--green-pale);}
+  .cmp-badge.down{color:#9a3b22;background:#fbe9e3;}
+  .cmp-badge.none{color:var(--muted);background:var(--bg);font-weight:700;}
+  .tc-svg{display:block;max-width:100%;direction:ltr;font-family:inherit;overflow:visible;}
+  .tc-grid{stroke:var(--border-soft);stroke-width:1;}
+  .tc-tick{font-size:10.5px;fill:var(--muted);font-variant-numeric:tabular-nums;}
+  .tc-area{fill:var(--green);fill-opacity:.1;}
+  .tc-line{fill:none;stroke:var(--green);stroke-width:2;stroke-linejoin:round;stroke-linecap:round;}
+  .tc-dot{fill:var(--green);stroke:var(--card);stroke-width:2;}
+  .tc-dot.zero{fill:var(--card);stroke:var(--muted-2);stroke-width:1.5;}
+  .tc-end{fill:var(--green-dark);stroke:var(--card);stroke-width:2;}
+  .tc-lab{font-size:11px;font-weight:700;fill:var(--muted);font-variant-numeric:tabular-nums;}
+  .tc-lab.strong{fill:var(--text);font-weight:800;}
+  .tc-cross{stroke:var(--muted-2);stroke-width:1;opacity:0;}
+  .tc-cross.on{opacity:1;}
+  .tc-hov{fill:var(--green-dark);stroke:var(--card);stroke-width:2;opacity:0;}
+  .tc-hov.on{opacity:1;}
+  .tc-hit{fill:transparent;touch-action:pan-y;}
+  .tc2 .chart-tip{display:flex;flex-direction:column;align-items:center;gap:1px;}
+  .tc2 .chart-tip .v{font-size:13px;font-weight:800;}
+  .tc2 .chart-tip .d{font-size:11px;font-weight:600;opacity:.8;}
   .chart-tip .v{font-variant-numeric:tabular-nums;}
   /* ---- touch feedback: press-in + ripple from the finger ---- */
   .st-row.click,.rrow.click,.tx,.bt-scroll button,.sb-item,.cx-more{position:relative;overflow:hidden;}
@@ -1474,6 +1575,58 @@
     .eq-row{grid-template-columns:repeat(3,minmax(0,1fr)) minmax(0,1.15fr);align-items:start;gap:12px;}
   }
   @media (prefers-reduced-motion:reduce){ .eq-card{animation:none;} .eq-bar span{transition:none;} }
+  /* the net cash equation, one card: hero figure + ledger (netEquation_) */
+  .eqx{background:var(--card);border:1px solid var(--border-soft);border-radius:20px;padding:16px;margin:0 0 18px;box-shadow:var(--shadow-sm);}
+  .eqx-head{display:flex;align-items:baseline;justify-content:space-between;gap:6px 14px;flex-wrap:wrap;margin:0 2px 12px;}
+  .eqx-head h2{margin:0;font-size:16.5px;font-weight:800;}
+  .eqx-head p{margin:0;font-size:12px;color:var(--muted);}
+  .eqx-body{display:grid;grid-template-columns:1fr;gap:14px;}
+  .eqx-hero{background:var(--green-dark);color:#fff;border-radius:16px;padding:16px 16px 14px;display:flex;flex-direction:column;gap:12px;
+    background-image:radial-gradient(120% 90% at 100% 0%, rgba(242,238,228,.14), transparent 60%);}
+  .eqx-heroBtn{display:flex;flex-direction:column;align-items:flex-start;gap:4px;border:0;background:none;color:inherit;font:inherit;cursor:pointer;padding:0;text-align:start;}
+  .eqx-heroBtn:active{transform:scale(.99);}
+  .eqx-k{font-size:13px;font-weight:700;color:rgba(255,255,255,.78);}
+  .eqx-big{display:flex;align-items:baseline;gap:6px;line-height:1.05;}
+  .eqx-big .n{font-size:40px;font-weight:800;letter-spacing:-.02em;}
+  .eqx-big small{font-size:13px;font-weight:700;color:rgba(255,255,255,.7);}
+  .eqx-bar{height:6px;border-radius:999px;background:rgba(255,255,255,.2);overflow:hidden;}
+  .eqx-bar span{display:block;height:100%;border-radius:999px;background:var(--cream);transition:width .8s cubic-bezier(.2,.8,.2,1);}
+  .eqx-split{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;}
+  .eqx-chip{display:flex;flex-direction:column;align-items:flex-start;gap:2px;border:0;border-radius:12px;padding:8px 10px;background:rgba(255,255,255,.08);
+    color:#fff;font:inherit;cursor:pointer;text-align:start;transition:background .15s ease, transform .1s ease;}
+  .eqx-chip:hover{background:rgba(255,255,255,.14);} .eqx-chip:active{transform:scale(.97);}
+  .eqx-chip span{font-size:11.5px;font-weight:700;color:rgba(255,255,255,.72);}
+  .eqx-chip b{font-size:14.5px;font-weight:800;font-variant-numeric:tabular-nums;}
+  .eqx-ledger{display:flex;flex-direction:column;}
+  .eqx-step + .eqx-step{border-top:1px solid var(--border-soft);}
+  .eqx-main,.eqx-total{display:grid;grid-template-columns:22px minmax(0,1fr) auto 16px;align-items:center;gap:8px;width:100%;min-height:48px;
+    padding:8px 6px;border:0;background:none;font:inherit;color:var(--text);cursor:pointer;border-radius:12px;text-align:start;}
+  .eqx-main:hover,.eqx-total:hover{background:var(--bg);} .eqx-main:active,.eqx-total:active{transform:scale(.99);}
+  .eqx-main:disabled{cursor:default;background:none;transform:none;}
+  .eqx-op{font-size:17px;font-weight:800;color:var(--muted);text-align:center;}
+  .eqx-l{font-size:14px;font-weight:700;}
+  .eqx-v{font-size:17px;font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap;}
+  .eqx-step.ded .eqx-v{color:#7a3b1d;}
+  .eqx-step.zero .eqx-l,.eqx-step.zero .eqx-v{color:var(--muted);font-weight:600;font-size:13.5px;}
+  .eqx-go{color:var(--muted);} .eqx-go svg{width:15px;height:15px;display:block;stroke:currentColor;fill:none;stroke-width:2;}
+  html[dir="rtl"] .eqx-go svg{transform:scaleX(-1);}
+  /* under the label (past the sign) and under the figure (clear of the arrow) */
+  .eqx-lines{display:flex;flex-direction:column;padding:0 0 8px;padding-inline-start:30px;padding-inline-end:24px;}
+  .eqx-lines .eq-line{min-height:34px;font-size:12.5px;color:var(--muted);padding:4px 6px;}
+  .eqx-lines .eq-line b{color:var(--text);font-weight:700;}
+  .eqx-total{border-top:2px solid var(--text);border-radius:0;margin-top:2px;min-height:52px;}
+  .eqx-total .eqx-op,.eqx-total .eqx-l{color:var(--text);}
+  .eqx-total b{font-size:19px;font-weight:800;color:var(--green-dark);font-variant-numeric:tabular-nums;grid-column:3;text-align:end;}
+  .eqx-main:focus-visible,.eqx-total:focus-visible,.eqx-chip:focus-visible,.eqx-heroBtn:focus-visible{outline:2px solid var(--green);outline-offset:2px;}
+  .eqx-heroBtn:focus-visible,.eqx-chip:focus-visible{outline-color:var(--cream);}
+  @media (min-width:900px){
+    .eqx{padding:20px;}
+    .eqx-body{grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:20px;align-items:stretch;}
+    .eqx-hero{padding:22px 22px 18px;justify-content:space-between;}
+    .eqx-big .n{font-size:50px;}
+  }
+  @media (max-width:420px){ .eqx{padding:12px;} .eqx-big .n{font-size:34px;} }
+  @media (prefers-reduced-motion:reduce){ .eqx-bar span{transition:none;} }
   /* level by level */
   .lv-head{padding:4px 2px 12px;}
   .lv-k{font-size:13px;font-weight:700;color:var(--muted);}
@@ -2078,6 +2231,34 @@
     --ease:cubic-bezier(.2,.8,.2,1);
   }
   body{background-color:var(--bg);background-image:radial-gradient(1100px 420px at 90% -8%,rgba(77,109,81,.07),transparent 62%);background-attachment:fixed;}
+  /* ---- the workspace backdrop (2026-09-30): warm ledger paper under soft
+     light. Two slow light pools, gauge-like contour lines across the top that
+     fade before the figures, and a fine grain. Behind everything, never
+     clickable, still under reduced motion. ---- */
+  #app.shell{position:relative;isolation:isolate;}
+  #app.shell::before{content:"";position:fixed;inset:-18%;z-index:-2;pointer-events:none;
+    background:
+      radial-gradient(38% 34% at 78% 16%, rgba(77,109,81,.13), transparent 70%),
+      radial-gradient(34% 30% at 18% 72%, rgba(214,190,140,.16), transparent 72%),
+      radial-gradient(30% 26% at 60% 88%, rgba(77,109,81,.07), transparent 70%);
+    animation:bgDrift 60s ease-in-out infinite alternate;will-change:transform;}
+  #app.shell::after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1440' height='300' viewBox='0 0 1440 300'%3E%3Cg fill='none' stroke='%234D6D51' stroke-width='1' stroke-opacity='.16'%3E%3Cpath d='M-20 40 C 180 26, 340 54, 520 40 S 860 23.2, 1060 45.6 S 1380 54, 1460 35.8' /%3E%3Cpath d='M-20 66 C 180 49.8, 340 82.2, 520 66 S 860 46.56, 1060 72.48 S 1380 82.2, 1460 61.14' /%3E%3Cpath d='M-20 92 C 180 73.6, 340 110.4, 520 92 S 860 69.92, 1060 99.36 S 1380 110.4, 1460 86.48' /%3E%3Cpath d='M-20 118 C 180 97.4, 340 138.6, 520 118 S 860 93.28, 1060 126.24 S 1380 138.6, 1460 111.82' /%3E%3Cpath d='M-20 144 C 180 121.2, 340 166.8, 520 144 S 860 116.64, 1060 153.12 S 1380 166.8, 1460 137.16' /%3E%3Cpath d='M-20 170 C 180 145, 340 195, 520 170 S 860 140, 1060 180 S 1380 195, 1460 162.5' /%3E%3Cpath d='M-20 196 C 180 168.8, 340 223.2, 520 196 S 860 163.36, 1060 206.88 S 1380 223.2, 1460 187.84' /%3E%3Cpath d='M-20 222 C 180 192.6, 340 251.4, 520 222 S 860 186.72, 1060 233.76 S 1380 251.4, 1460 213.18' /%3E%3Cpath d='M-20 248 C 180 216.4, 340 279.6, 520 248 S 860 210.07999999999998, 1060 260.64 S 1380 279.6, 1460 238.52' /%3E%3C/g%3E%3C/svg%3E"), url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .2  0 0 0 0 .25  0 0 0 0 .2  0 0 0 .55 0'/%3E%3C/filter%3E%3Crect width='100%' height='100%' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-repeat:no-repeat, repeat;background-position:top center, 0 0;background-size:max(1440px,100vw) 300px, 160px 160px;
+    -webkit-mask-image:linear-gradient(to bottom, #000 0, rgba(0,0,0,.55) 240px, rgba(0,0,0,.35) 420px, rgba(0,0,0,.3) 100%);
+    mask-image:linear-gradient(to bottom, #000 0, rgba(0,0,0,.55) 240px, rgba(0,0,0,.35) 420px, rgba(0,0,0,.3) 100%);opacity:.9;}
+  @keyframes bgDrift{
+    0%{transform:translate3d(0,0,0) scale(1);}
+    50%{transform:translate3d(-3%,2%,0) scale(1.04);}
+    100%{transform:translate3d(2%,-2%,0) scale(1.02);}
+  }
+  /* a card lights up softly under the pointer (mouse only; bgSpot_ sets --mx/--my) */
+  @media (hover:hover) and (pointer:fine){
+    .card.spot{background-image:radial-gradient(420px circle at var(--mx,50%) var(--my,50%), rgba(77,109,81,.07), transparent 45%);}
+    .card.spot{border-color:color-mix(in srgb, var(--green) 22%, var(--border-soft));}
+  }
+  @media (prefers-reduced-motion:reduce){ #app.shell::before{animation:none;} }
+  @media print{ #app.shell::before,#app.shell::after{display:none;} }
   main{max-width:min(1360px,94vw);}
   h1,h2,h3{color:var(--ink);text-wrap:balance;}
   p{text-wrap:pretty;}
@@ -2209,7 +2390,7 @@ var ICON_B64 = 'iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAYAAAA9zQYyAAAcG0lEQVR42u2dd1cU
 // Stamped by tools/stamp-build.js at publish time so the running app can
 // say which build it is — a cached page is the usual reason a shipped change
 // seems missing.
-var BUILD_ID = '2026-09-30 21:46 · 378bac7';
+var BUILD_ID = '2026-10-01 00:00 · 824cef5';
 var LOGO_SRC = 'data:image/png;base64,' + LOGO_B64;
 var ICON_SRC = LOGO_SRC; // same asset — see the comment above LOGO_B64
 // The sign-in mark (2026-09-30): the logo's round emblem as a coin with a
@@ -2425,7 +2606,7 @@ var L = {
     admin_addUser:'إضافة مستخدم', admin_name:'الاسم', admin_role:'الدور', admin_active:'نشط', admin_resetPw:'إعادة تعيين كلمة المرور',
     admin_addLocation:'إضافة فرع', admin_city:'المدينة', admin_locName:'اسم الفرع', admin_cluster:'المنطقة',
     admin_zones:'النطاقات', admin_addZone:'إضافة نطاق', admin_zoneName:'اسم النطاق', admin_zone:'النطاق',
-    admin_productType:'نوع المنتج', admin_typeGoods:'مخزني', admin_typeServices:'خدمات', nav_inventory:'المخزون', inv_title:'حركة المخزون', inv_hint:'رصيد أول المدة + المشتريات + المرتجع + الوارد = المتاح، ثم تُطرح المبيعات (من إدخالات النظام) والتالف والصادر، فيبقى رصيد آخر المدة. الأسطوانات تُعدّ مليان وفارغ: التبديل يُخرج مليانة ويُعيد فارغة، والشراء المليان تعبئة تُخرج فوارغ بعددها. القيم بسعر التكلفة.', inv_opening:'رصيد أول المدة', inv_purchases:'المشتريات', inv_returns:'مرتجع المطاعم', inv_available:'المتاح للاستخدام', inv_sales:'المبيعات', inv_damaged:'التالف', inv_ending:'رصيد آخر المدة', inv_unitCost:'تكلفة الوحدة', inv_from:'من', inv_to:'إلى', inv_allBranches:'كل الفروع', inv_thisMonth:'هذا الشهر', inv_lastMonth:'الشهر الماضي', inv_showValue:'عرض القيم بالتكلفة بدل الكميات', inv_qtyShort:'كمية', inv_byBranch:'المخزون حسب الفرع والصنف', inv_item:'الصنف', inv_items:'الأصناف: {n}', inv_tag_add:'يُضاف', inv_tag_ded:'يُخصم', abx_hint:'نزّل الملف: فيه صف لكل جهاز نقاط بيع في فروع منطقتك. كل صف سطر واحد: بيع، آجل، تحويل بنكي، موازنة، مصروف، تحصيل آخر، أو رسوم توصيل. أضف صفوفاً للجهاز الواحد بقدر ما تحتاج، ثم ارفع الملف: يُفحص كل صف قبل الإرسال، ثم ترى الحساب الفعلي، ثم يذهب لنائب مدير العمليات للاعتماد.', abx_sheet:'الإدخال', abx_listsSheet:'القوائم', abx_helpSheet:'طريقة التعبئة', abx_file:'ملف إدخال المنطقة', abx_c_date:'التاريخ', abx_c_posId:'رقم الجهاز', abx_c_branch:'الفرع (للعلم)', abx_c_type:'نوع السطر', abx_c_product:'الصنف', abx_c_qty:'الكمية', abx_c_price:'سعر الوحدة', abx_c_ch:'منها عبر {ch} (كمية)', dp_pick:'اختر التاريخ', dp_today:'اليوم', dp_yesterday:'أمس', dp_clear:'مسح', dp_prev:'الشهر السابق', dp_next:'الشهر التالي', dp_days:'أحد,اثنين,ثلاثاء,أربعاء,خميس,جمعة,سبت', admin_cylinder:'أسطوانة (تُعدّ مليان وفارغ)', admin_stockName:'اسم صنف المخزون', admin_emptyCost:'تكلفة الأسطوانة الفارغة', admin_stockOf:'يسحب من مخزون صنف', admin_stockEffect:'أثره على المخزون', eff_exchange:'تبديل: تخرج مليانة وتعود فارغة', eff_sell_empty:'بيع أسطوانة فارغة', eff_sell_full:'بيع أسطوانة مليانة', inv_exchangeIn:'فوارغ عائدة من التبديل', inv_transfersIn:'نقل وارد من فرع', inv_refillOut:'فوارغ أُرسلت للتعبئة', inv_transfersOut:'نقل صادر إلى فرع', inv_k_transfer_in:'نقل وارد من فرع', inv_k_transfer_out:'نقل صادر إلى فرع', inv_st_full:'مليان', inv_st_empty:'فارغ', inv_state:'مليان أو فارغ', err_useStockItem:'المخزون يُسجَّل على صنف الأسطوانة نفسه، لا على المنتج الذي يسحب منه', err_alreadyImported:'كميات هذا اليوم محفوظة من قبل', br_stTitle:'كميات المخزون في الملف', br_stHint:'رصيد أول المدة والمشتريات والنقل من أعلى الملف. المبيعات تأتي من الأجهزة، ويُقارن رصيد نهاية اليوم المحسوب بما في الملف.', br_stNoBranch:'لم يُعرف الفرع من أجهزة الملف ولا من اسمه', br_stNoItem:'لا يوجد صنف في النظام يقابل العمود: {h}', br_stNotCyl:'الصنف {p} غير معلَّم كأسطوانة (مليان وفارغ)', br_stFileEnd:'نهاية اليوم في الملف', br_stCalcEnd:'نهاية اليوم حسب النظام', br_stHasOpen:'له رصيد في النظام', br_stOpenDiff:'رصيد النظام في بداية اليوم {sys} والملف {file}', br_stMismatch:'لا يطابق الملف', br_stSetupHint:'ربط الأسطوانات بمنتجات البيع غير مكتمل. زر الإعداد يعلّم أصناف التبديل كأسطوانات ويربط بها أصناف البيع (بيع فارغة) كما يحسبها الملف.', br_stSetup:'إعداد الأسطوانات تلقائياً', br_stAskAdmin:'ربط الأسطوانات غير مكتمل؛ يطلب من الإدارة أو المالية إعداده ثم يُعاد رفع الملف.', br_stSetupDone:'تم إعداد الأسطوانات', br_stSave:'حفظ كميات المخزون (بنود: {n})', br_stSaved:'حُفظت {n} حركة مخزون', br_stDone:'تم الحفظ', br_stRef:'ورقة الفرع', br_ref:'شبكة {dev} {date}', br_cardNote:'مبلغ الشبكة المستلم في البنك', br_found:'تم التعرف على تقرير الفرع اليومي', br_foundHint:'{n} جهاز فيها حركة، و{i} صنفاً في الجدول. راجع الأصناف والمصروف ثم التحقق بالأسفل.', br_date:'تاريخ اليوم', br_expItem:'بند المصروف', br_expReason:'سبب المصروف', br_otherItem:'بند التحصيل الآخر', br_otherReason:'سبب التحصيل', br_itemsHint:'كل عمود في الملف يقابله صنف في النظام (يُحفظ اختيارك لهذا الجهاز)', br_pick:'اختر…', br_fSales:'مبيعات الملف', br_fCard:'الشبكة (الموازنات)', br_fExp:'المصروفات', br_fOther:'تحصيلات أخرى', br_fNet:'النقدية حسب الملف', br_rowOff:'إجمالي هذه الأجهزة في الملف لا يساوي الكمية × السعر:', abx_c_chCom:'عمولة السائق لكل وحدة عبر {ch}', abx_e_chCom:'عمولة السائق غير صحيحة', abx_comShort:'عمولة', abx_c_customer:'العميل (رقم أو اسم)', abx_c_amount:'المبلغ', abx_c_item:'البند', abx_c_ref:'المرجع البنكي', abx_c_note:'البيان / السبب', abx_t_sale:'بيع', abx_t_credit:'آجل', abx_t_transfer:'تحويل بنكي', abx_t_deposit:'موازنة', abx_t_expense:'مصروف', abx_t_other:'تحصيل آخر', abx_t_delivery:'رسوم توصيل', abx_helpTitle:'طريقة تعبئة ملف المنطقة', abx_helpRows:'الصفوف', abx_helpRowsTxt:'كل صف سطر واحد لجهاز واحد في يوم واحد. للجهاز الواحد أكثر من صف: صف لكل صنف مباع، وصف لكل عميل آجل، وصف لكل تحويل أو موازنة أو مصروف. الصفوف الفارغة تُتجاهل.', abx_h_sale:'اختر الصنف واكتب الكمية (السعر يُملأ من الصنف إن تُرك فارغاً). إن بيع جزء منها عبر سوق غاز فاكتب ذلك الجزء في عمود «منها عبر سوق غاز»، ويُحسب رسم التوصيل والعمولة تلقائياً.', abx_h_credit:'بيع آجل لعميل مسجَّل: اكتب العميل (رقمه أو اسمه) والصنف والكمية. يُحسب مرة واحدة كبيع ويُخصم كآجل، ورسم توصيل العميل وعمولة السائق تُحسب من ملف العميل. لا تكرره في صف بيع.', abx_h_transfer:'تحويل عميل مباشرة لحساب الشركة: المبلغ، والبيان (رقم التحويل). يُخصم من النقدية.', abx_h_deposit:'موازنة أُودعت في البنك من هذا الجهاز: المبلغ والمرجع البنكي (إلزامي). تُخصم من النقدية.', abx_h_expense:'مصروف دُفع من النقدية: المبلغ، والبند من القائمة، والسبب (إلزامي).', abx_h_other:'نقدية استُلمت لغير البيع: المبلغ، والبند من القائمة، والسبب (إلزامي). تُضاف للنقدية.', abx_h_delivery:'رسوم توصيل دُفعت للبنك: المبلغ والبيان.', abx_helpAuto:'ما يُحسب تلقائياً', abx_helpAutoTxt:'رسوم توصيل العميل وعمولة السائق للآجل، ورسوم وعمولة سوق غاز، وضريبة رسوم التوصيل، وصافي النقدية لكل فرع.', abx_line:'السطر', abx_details:'التفاصيل', abx_via:'منها عبر', abx_noLines:'لا توجد سطور معبأة في الملف', abx_badRows:'{n} سطر يحتاج تصحيحاً في الملف قبل الإرسال', abx_sending:'جارٍ الإرسال: دفعة {n} من {total}', abx_partSent:'أُرسلت {n} دفعة قبل التوقف', abx_e_date:'تاريخ غير صحيح', abx_e_future:'تاريخ مستقبلي', abx_e_pos:'الجهاز ليس في منطقتك', abx_e_type:'نوع السطر غير معروف', abx_e_product:'الصنف غير موجود', abx_e_qty:'الكمية مطلوبة', abx_e_price:'السعر مطلوب', abx_e_locked:'سعر هذا الصنف ثابت', abx_e_channel:'كمية سوق غاز أكبر من الكمية', abx_e_customer:'العميل غير مسجل', abx_e_amount:'المبلغ مطلوب', abx_e_ref:'المرجع البنكي مطلوب', abx_e_item:'البند غير موجود', abx_e_reason:'السبب مطلوب', inv_byLevels:'المخزون بالمستويات', inv_lv_city:'المدينة', inv_lv_area:'المنطقة', inv_lv_branch:'الفرع', inv_lv_item:'الصنف', inv_lv_seller:'جهة البيع', inv_search:'ابحث عن مدينة أو فرع أو صنف أو جهاز…', inv_soldHere:'مبيعات هذا الصنف من هذه الجهة', inv_noOpening:'لم يُسجَّل رصيد أول المدة بعد', inv_uncounted:'{n} صنف/فرع بلا رصيد أول المدة، فلا يدخل في الأرصدة. سجّل الجرد الافتتاحي لكل صنف في كل فرع.', inv_noQtyWarn:'{n} بيع بمبلغ {amt} ر.س سُجّل بلا كمية، فلا يُخصم من المخزون. أدخل البيع بطريقة المنتج (كمية × سعر).', err_hasStock:'لهذا الصنف حركات مخزون، فلا يمكن تحويله إلى خدمة', err_invalidLocation:'اختر فرعاً صحيحاً', inv_empty:'لا توجد حركة مخزون في هذه الفترة. ابدأ بتسجيل رصيد أول المدة لكل صنف.', inv_shortBadge:'عجز', inv_shortBy:'عجز {n}: المبيعات أكثر من الرصيد، راجع الحركات', inv_period:'الفترة من {from} إلى {to}', inv_moves:'حركات المخزون المسجلة', inv_kind:'نوع الحركة', inv_qty:'الكمية', inv_k_opening:'رصيد أول المدة', inv_k_purchase:'مشتريات', inv_k_return:'مرتجع من المطاعم', inv_k_damage:'تالف', inv_addTitle:'تسجيل حركة مخزون', inv_addHint:'رصيد أول المدة (الجرد الافتتاحي) يُسجَّل مرة واحدة فقط لكل صنف في كل فرع، وبعدها يصبح رصيد آخر كل يوم هو رصيد أول اليوم التالي تلقائياً. المبيعات تُحسب من الإدخالات اليومية فلا تُسجَّل هنا؛ سجّل هنا المشتريات والمرتجع من المطاعم والتالف فقط.', inv_notePh:'رقم فاتورة الشراء أو اسم المطعم أو سبب التلف', inv_save:'حفظ الحركة', inv_saved:'حُفظت الحركة', inv_needQty:'اكتب الكمية', inv_noMoves:'لا توجد حركات مسجلة في هذه الفترة', inv_void:'إلغاء الحركة', inv_voided:'ملغاة', inv_voidReason:'سبب إلغاء هذه الحركة؟', err_openingExists:'رصيد أول المدة مسجَّل لهذا الصنف في هذا الفرع. سجّل الفرق كمشتريات أو تالف، أو ألغِ الرصيد السابق.', err_notInventory:'هذا الصنف خدمة وليس له مخزون',
+    admin_productType:'نوع المنتج', admin_typeGoods:'مخزني', admin_typeServices:'خدمات', nav_inventory:'المخزون', inv_title:'حركة المخزون', inv_hint:'رصيد أول المدة + المشتريات + المرتجع + الوارد = المتاح، ثم تُطرح المبيعات (من إدخالات النظام) والتالف والصادر، فيبقى رصيد آخر المدة. الأسطوانات تُعدّ مليان وفارغ: التبديل يُخرج مليانة ويُعيد فارغة، والشراء المليان تعبئة تُخرج فوارغ بعددها. القيم بسعر التكلفة.', inv_opening:'رصيد أول المدة', inv_purchases:'المشتريات', inv_returns:'مرتجع المطاعم', inv_available:'المتاح للاستخدام', inv_sales:'المبيعات', inv_damaged:'التالف', inv_ending:'رصيد آخر المدة', inv_unitCost:'تكلفة الوحدة', inv_from:'من', inv_to:'إلى', inv_allBranches:'كل الفروع', inv_thisMonth:'هذا الشهر', inv_lastMonth:'الشهر الماضي', inv_showValue:'عرض القيم بالتكلفة بدل الكميات', inv_qtyShort:'كمية', inv_byBranch:'المخزون حسب الفرع والصنف', inv_item:'الصنف', inv_items:'الأصناف: {n}', inv_tag_add:'يُضاف', inv_tag_ded:'يُخصم', abx_hint:'نزّل الملف: فيه صف لكل جهاز نقاط بيع في فروع منطقتك. كل صف سطر واحد: بيع، آجل، تحويل بنكي، موازنة، مصروف، تحصيل آخر، أو رسوم توصيل. أضف صفوفاً للجهاز الواحد بقدر ما تحتاج، ثم ارفع الملف: يُفحص كل صف قبل الإرسال، ثم ترى الحساب الفعلي، ثم يذهب لنائب مدير العمليات للاعتماد.', abx_sheet:'الإدخال', abx_listsSheet:'القوائم', abx_helpSheet:'طريقة التعبئة', abx_file:'ملف إدخال المنطقة', abx_c_date:'التاريخ', abx_c_posId:'رقم الجهاز', abx_c_branch:'الفرع (للعلم)', abx_c_type:'نوع السطر', abx_c_product:'الصنف', abx_c_qty:'الكمية', abx_c_price:'سعر الوحدة', abx_c_ch:'منها عبر {ch} (كمية)', bh_section:'الفروع', bh_title:'أداء الفروع', bh_tab:'الفروع × الأيام', bh_hint:'المبيعات وصافي النقدية لكل فرع، وكم يوماً أدخل فيه بياناته. في الخريطة: الخانة الفارغة يوم بلا أي إدخال.', bh_days:'أيام الإدخال', bh_of:'{n} من {m}', bh_heat:'المبيعات اليومية لكل فرع', bh_missing:'أيام بلا إدخال: {n}', bh_allIn:'كل الفروع أدخلت كل الأيام', bh_less:'أقل', bh_more:'أكثر', bh_none:'بلا إدخال', eq_none:'لا يوجد', dash_zeroRows:'بدون حركة: {list}', dash_noCompare:'لا مقارنة', dash_prevNone:'لا مبيعات', dp_pick:'اختر التاريخ', dp_today:'اليوم', dp_yesterday:'أمس', dp_clear:'مسح', dp_prev:'الشهر السابق', dp_next:'الشهر التالي', dp_days:'أحد,اثنين,ثلاثاء,أربعاء,خميس,جمعة,سبت', admin_cylinder:'أسطوانة (تُعدّ مليان وفارغ)', admin_stockName:'اسم صنف المخزون', admin_emptyCost:'تكلفة الأسطوانة الفارغة', admin_stockOf:'يسحب من مخزون صنف', admin_stockEffect:'أثره على المخزون', eff_exchange:'تبديل: تخرج مليانة وتعود فارغة', eff_sell_empty:'بيع أسطوانة فارغة', eff_sell_full:'بيع أسطوانة مليانة', inv_exchangeIn:'فوارغ عائدة من التبديل', inv_transfersIn:'نقل وارد من فرع', inv_refillOut:'فوارغ أُرسلت للتعبئة', inv_transfersOut:'نقل صادر إلى فرع', inv_k_transfer_in:'نقل وارد من فرع', inv_k_transfer_out:'نقل صادر إلى فرع', inv_st_full:'مليان', inv_st_empty:'فارغ', inv_state:'مليان أو فارغ', err_useStockItem:'المخزون يُسجَّل على صنف الأسطوانة نفسه، لا على المنتج الذي يسحب منه', err_alreadyImported:'كميات هذا اليوم محفوظة من قبل', br_stTitle:'كميات المخزون في الملف', br_stHint:'رصيد أول المدة والمشتريات والنقل من أعلى الملف. المبيعات تأتي من الأجهزة، ويُقارن رصيد نهاية اليوم المحسوب بما في الملف.', br_stNoBranch:'لم يُعرف الفرع من أجهزة الملف ولا من اسمه', br_stNoItem:'لا يوجد صنف في النظام يقابل العمود: {h}', br_stNotCyl:'الصنف {p} غير معلَّم كأسطوانة (مليان وفارغ)', br_stFileEnd:'نهاية اليوم في الملف', br_stCalcEnd:'نهاية اليوم حسب النظام', br_stHasOpen:'له رصيد في النظام', br_stOpenDiff:'رصيد النظام في بداية اليوم {sys} والملف {file}', br_stMismatch:'لا يطابق الملف', br_stSetupHint:'ربط الأسطوانات بمنتجات البيع غير مكتمل. زر الإعداد يعلّم أصناف التبديل كأسطوانات ويربط بها أصناف البيع (بيع فارغة) كما يحسبها الملف.', br_stSetup:'إعداد الأسطوانات تلقائياً', br_stAskAdmin:'ربط الأسطوانات غير مكتمل؛ يطلب من الإدارة أو المالية إعداده ثم يُعاد رفع الملف.', br_stSetupDone:'تم إعداد الأسطوانات', br_stSave:'حفظ كميات المخزون (بنود: {n})', br_stSaved:'حُفظت {n} حركة مخزون', br_stDone:'تم الحفظ', br_stRef:'ورقة الفرع', br_ref:'شبكة {dev} {date}', br_cardNote:'مبلغ الشبكة المستلم في البنك', br_found:'تم التعرف على تقرير الفرع اليومي', br_foundHint:'{n} جهاز فيها حركة، و{i} صنفاً في الجدول. راجع الأصناف والمصروف ثم التحقق بالأسفل.', br_date:'تاريخ اليوم', br_expItem:'بند المصروف', br_expReason:'سبب المصروف', br_otherItem:'بند التحصيل الآخر', br_otherReason:'سبب التحصيل', br_itemsHint:'كل عمود في الملف يقابله صنف في النظام (يُحفظ اختيارك لهذا الجهاز)', br_pick:'اختر…', br_fSales:'مبيعات الملف', br_fCard:'الشبكة (الموازنات)', br_fExp:'المصروفات', br_fOther:'تحصيلات أخرى', br_fNet:'النقدية حسب الملف', br_rowOff:'إجمالي هذه الأجهزة في الملف لا يساوي الكمية × السعر:', abx_c_chCom:'عمولة السائق لكل وحدة عبر {ch}', abx_e_chCom:'عمولة السائق غير صحيحة', abx_comShort:'عمولة', abx_c_customer:'العميل (رقم أو اسم)', abx_c_amount:'المبلغ', abx_c_item:'البند', abx_c_ref:'المرجع البنكي', abx_c_note:'البيان / السبب', abx_t_sale:'بيع', abx_t_credit:'آجل', abx_t_transfer:'تحويل بنكي', abx_t_deposit:'موازنة', abx_t_expense:'مصروف', abx_t_other:'تحصيل آخر', abx_t_delivery:'رسوم توصيل', abx_helpTitle:'طريقة تعبئة ملف المنطقة', abx_helpRows:'الصفوف', abx_helpRowsTxt:'كل صف سطر واحد لجهاز واحد في يوم واحد. للجهاز الواحد أكثر من صف: صف لكل صنف مباع، وصف لكل عميل آجل، وصف لكل تحويل أو موازنة أو مصروف. الصفوف الفارغة تُتجاهل.', abx_h_sale:'اختر الصنف واكتب الكمية (السعر يُملأ من الصنف إن تُرك فارغاً). إن بيع جزء منها عبر سوق غاز فاكتب ذلك الجزء في عمود «منها عبر سوق غاز»، ويُحسب رسم التوصيل والعمولة تلقائياً.', abx_h_credit:'بيع آجل لعميل مسجَّل: اكتب العميل (رقمه أو اسمه) والصنف والكمية. يُحسب مرة واحدة كبيع ويُخصم كآجل، ورسم توصيل العميل وعمولة السائق تُحسب من ملف العميل. لا تكرره في صف بيع.', abx_h_transfer:'تحويل عميل مباشرة لحساب الشركة: المبلغ، والبيان (رقم التحويل). يُخصم من النقدية.', abx_h_deposit:'موازنة أُودعت في البنك من هذا الجهاز: المبلغ والمرجع البنكي (إلزامي). تُخصم من النقدية.', abx_h_expense:'مصروف دُفع من النقدية: المبلغ، والبند من القائمة، والسبب (إلزامي).', abx_h_other:'نقدية استُلمت لغير البيع: المبلغ، والبند من القائمة، والسبب (إلزامي). تُضاف للنقدية.', abx_h_delivery:'رسوم توصيل دُفعت للبنك: المبلغ والبيان.', abx_helpAuto:'ما يُحسب تلقائياً', abx_helpAutoTxt:'رسوم توصيل العميل وعمولة السائق للآجل، ورسوم وعمولة سوق غاز، وضريبة رسوم التوصيل، وصافي النقدية لكل فرع.', abx_line:'السطر', abx_details:'التفاصيل', abx_via:'منها عبر', abx_noLines:'لا توجد سطور معبأة في الملف', abx_badRows:'{n} سطر يحتاج تصحيحاً في الملف قبل الإرسال', abx_sending:'جارٍ الإرسال: دفعة {n} من {total}', abx_partSent:'أُرسلت {n} دفعة قبل التوقف', abx_e_date:'تاريخ غير صحيح', abx_e_future:'تاريخ مستقبلي', abx_e_pos:'الجهاز ليس في منطقتك', abx_e_type:'نوع السطر غير معروف', abx_e_product:'الصنف غير موجود', abx_e_qty:'الكمية مطلوبة', abx_e_price:'السعر مطلوب', abx_e_locked:'سعر هذا الصنف ثابت', abx_e_channel:'كمية سوق غاز أكبر من الكمية', abx_e_customer:'العميل غير مسجل', abx_e_amount:'المبلغ مطلوب', abx_e_ref:'المرجع البنكي مطلوب', abx_e_item:'البند غير موجود', abx_e_reason:'السبب مطلوب', inv_byLevels:'المخزون بالمستويات', inv_lv_city:'المدينة', inv_lv_area:'المنطقة', inv_lv_branch:'الفرع', inv_lv_item:'الصنف', inv_lv_seller:'جهة البيع', inv_search:'ابحث عن مدينة أو فرع أو صنف أو جهاز…', inv_soldHere:'مبيعات هذا الصنف من هذه الجهة', inv_noOpening:'لم يُسجَّل رصيد أول المدة بعد', inv_uncounted:'{n} صنف/فرع بلا رصيد أول المدة، فلا يدخل في الأرصدة. سجّل الجرد الافتتاحي لكل صنف في كل فرع.', inv_noQtyWarn:'{n} بيع بمبلغ {amt} ر.س سُجّل بلا كمية، فلا يُخصم من المخزون. أدخل البيع بطريقة المنتج (كمية × سعر).', err_hasStock:'لهذا الصنف حركات مخزون، فلا يمكن تحويله إلى خدمة', err_invalidLocation:'اختر فرعاً صحيحاً', inv_empty:'لا توجد حركة مخزون في هذه الفترة. ابدأ بتسجيل رصيد أول المدة لكل صنف.', inv_shortBadge:'عجز', inv_shortBy:'عجز {n}: المبيعات أكثر من الرصيد، راجع الحركات', inv_period:'الفترة من {from} إلى {to}', inv_moves:'حركات المخزون المسجلة', inv_kind:'نوع الحركة', inv_qty:'الكمية', inv_k_opening:'رصيد أول المدة', inv_k_purchase:'مشتريات', inv_k_return:'مرتجع من المطاعم', inv_k_damage:'تالف', inv_addTitle:'تسجيل حركة مخزون', inv_addHint:'رصيد أول المدة (الجرد الافتتاحي) يُسجَّل مرة واحدة فقط لكل صنف في كل فرع، وبعدها يصبح رصيد آخر كل يوم هو رصيد أول اليوم التالي تلقائياً. المبيعات تُحسب من الإدخالات اليومية فلا تُسجَّل هنا؛ سجّل هنا المشتريات والمرتجع من المطاعم والتالف فقط.', inv_notePh:'رقم فاتورة الشراء أو اسم المطعم أو سبب التلف', inv_save:'حفظ الحركة', inv_saved:'حُفظت الحركة', inv_needQty:'اكتب الكمية', inv_noMoves:'لا توجد حركات مسجلة في هذه الفترة', inv_void:'إلغاء الحركة', inv_voided:'ملغاة', inv_voidReason:'سبب إلغاء هذه الحركة؟', err_openingExists:'رصيد أول المدة مسجَّل لهذا الصنف في هذا الفرع. سجّل الفرق كمشتريات أو تالف، أو ألغِ الرصيد السابق.', err_notInventory:'هذا الصنف خدمة وليس له مخزون',
     admin_addStore:'إضافة متجر', admin_storeName:'اسم المتجر', admin_manager:'مدير الفرع', admin_location:'الفرع',
     admin_addCar:'إضافة سيارة', admin_carLabel:'رقم اللوحة/السائق', admin_driver:'السائق',
     admin_addPos:'إضافة جهاز', admin_posLabel:'رقم الجهاز', admin_ownerType:'مرتبط بـ', admin_owner:'الجهة', admin_assignedDriver:'الموظف المسؤول',
@@ -2593,7 +2774,7 @@ var L = {
     admin_addUser:'Add user', admin_name:'Name', admin_role:'Role', admin_active:'Active', admin_resetPw:'Reset password',
     admin_addLocation:'Add branch', admin_city:'City', admin_locName:'Branch name', admin_cluster:'Area',
     admin_zones:'Zones', admin_addZone:'Add zone', admin_zoneName:'Zone name', admin_zone:'Zone',
-    admin_productType:'Product type', admin_typeGoods:'Inventory', admin_typeServices:'Services', nav_inventory:'Inventory', inv_title:'Inventory movement', inv_hint:'Opening + purchases + returns from restaurants = available for use; less sales (from the system\'s entries) and damaged items leaves the ending stock. Values are at cost.', inv_opening:'Opening', inv_purchases:'Purchases', inv_returns:'Returns from restaurants', inv_available:'Available for use', inv_sales:'Sales', inv_damaged:'Damaged', inv_ending:'Ending stock', inv_unitCost:'Unit cost', inv_from:'From', inv_to:'To', inv_allBranches:'All branches', inv_thisMonth:'This month', inv_lastMonth:'Last month', inv_showValue:'Show values at cost instead of quantities', inv_qtyShort:'qty', inv_byBranch:'Stock by branch and item', inv_item:'Item', inv_items:'Items: {n}', inv_tag_add:'added', inv_tag_ded:'deducted', abx_hint:'Download the file: it has a row for every POS machine in your area\'s branches. Each row is one line: sale, credit, bank transfer, الموازنة, expense, other collection or delivery fee. Add as many rows per machine as you need, then upload it: every row is checked before sending, you see the real calculation, then it goes to the Deputy Operations Manager for approval.', abx_sheet:'Entries', abx_listsSheet:'Lists', abx_helpSheet:'How to fill', abx_file:'Area entries', abx_c_date:'Date', abx_c_posId:'POS device ID', abx_c_branch:'Branch (for reference)', abx_c_type:'Line type', abx_c_product:'Item', abx_c_qty:'Quantity', abx_c_price:'Unit price', abx_c_ch:'Of which via {ch} (qty)', dp_pick:'Choose a date', dp_today:'Today', dp_yesterday:'Yesterday', dp_clear:'Clear', dp_prev:'Previous month', dp_next:'Next month', dp_days:'Sun,Mon,Tue,Wed,Thu,Fri,Sat', admin_cylinder:'Cylinder (counted full and empty)', admin_stockName:'Stock item name', admin_emptyCost:'Cost of an empty cylinder', admin_stockOf:'Draws stock from', admin_stockEffect:'Effect on stock', eff_exchange:'Exchange: a full one out, an empty one back', eff_sell_empty:'Sells an empty cylinder', eff_sell_full:'Sells a full cylinder', inv_exchangeIn:'Empties back from exchanges', inv_transfersIn:'Transfer in from a branch', inv_refillOut:'Empties sent for refilling', inv_transfersOut:'Transfer out to a branch', inv_k_transfer_in:'Transfer in from a branch', inv_k_transfer_out:'Transfer out to a branch', inv_st_full:'Full', inv_st_empty:'Empty', inv_state:'Full or empty', err_useStockItem:'Stock is kept on the cylinder item itself, not on the product drawing from it', err_alreadyImported:'This day\'s quantities are already saved', br_stTitle:'Stock quantities in the file', br_stHint:'Opening, purchases and transfers from the top of the file. Sales come from the devices, and the computed end of day is checked against the file\'s.', br_stNoBranch:'The branch could not be found from the file\'s devices or its name', br_stNoItem:'No item in the system matches the column: {h}', br_stNotCyl:'{p} is not marked as a cylinder (full and empty)', br_stFileEnd:'End of day in the file', br_stCalcEnd:'End of day per the system', br_stHasOpen:'has a system count', br_stOpenDiff:'System start of day {sys}, file {file}', br_stMismatch:'Does not match the file', br_stSetupHint:'The cylinder links are incomplete. Setup marks the exchange items as cylinders and links the sale items to them (selling an empty), as the file counts them.', br_stSetup:'Set up cylinders automatically', br_stAskAdmin:'The cylinder links are incomplete; ask management or finance to set them up, then upload again.', br_stSetupDone:'Cylinders set up', br_stSave:'Save stock quantities ({n} items)', br_stSaved:'{n} stock movements saved', br_stDone:'Saved', br_stRef:'Branch sheet', br_ref:'Card {dev} {date}', br_cardNote:'Card amount received in the bank', br_found:'Branch daily report recognised', br_foundHint:'{n} devices with activity and {i} item columns. Check the items and the expense, then the check below.', br_date:'Day', br_expItem:'Expense item', br_expReason:'Expense reason', br_otherItem:'Other collection item', br_otherReason:'Collection reason', br_itemsHint:'Each column in the file matches an item in the system (your choice is kept on this device)', br_pick:'Choose…', br_fSales:'Sales in the file', br_fCard:'Card (الموازنات)', br_fExp:'Expenses', br_fOther:'Other collections', br_fNet:'Cash per the file', br_rowOff:'These devices\' total in the file is not quantity × price:', abx_c_chCom:'Driver commission per unit via {ch}', abx_e_chCom:'Driver commission is not valid', abx_comShort:'commission', abx_c_customer:'Customer (number or name)', abx_c_amount:'Amount', abx_c_item:'Expense / collection item', abx_c_ref:'Bank reference', abx_c_note:'Note / reason', abx_t_sale:'Sale', abx_t_credit:'Credit', abx_t_transfer:'Bank transfer', abx_t_deposit:'الموازنة', abx_t_expense:'Expense', abx_t_other:'Other collection', abx_t_delivery:'Delivery fee', abx_helpTitle:'How to fill in the area file', abx_helpRows:'Rows', abx_helpRowsTxt:'Each row is one line for one machine on one day. A machine can have many rows: one per item sold, one per credit customer, one per transfer, الموازنة or expense. Empty rows are ignored.', abx_h_sale:'Pick the item and the quantity (the price comes from the item if left empty). If part of it went through Souq Gas, put that part in the "Of which via Souq Gas" column; its delivery fee and commission are worked out automatically.', abx_h_credit:'A credit sale to a registered customer: the customer (number or name), item and quantity. It counts once as a sale and comes off as credit; the customer\'s delivery fee and the driver\'s commission come from the customer profile. Do not repeat it on a sale row.', abx_h_transfer:'A customer\'s transfer straight to the company account: the amount and a note (transfer number). It comes off the cash.', abx_h_deposit:'A الموازنة banked from this machine: the amount and the bank reference (required). It comes off the cash.', abx_h_expense:'Cash paid out: the amount, the item from the list and the reason (required).', abx_h_other:'Cash received for something other than a sale: the amount, the item from the list and the reason (required). It adds to the cash.', abx_h_delivery:'A delivery fee paid to the bank: the amount and a note.', abx_helpAuto:'Worked out for you', abx_helpAutoTxt:'The customer\'s delivery fee and driver commission on credit, Souq Gas\'s fee and commission, the VAT on delivery fees, and each branch\'s net cash.', abx_line:'Row', abx_details:'Details', abx_via:'via', abx_noLines:'The file has no filled-in lines', abx_badRows:'{n} rows need fixing in the file before sending', abx_sending:'Sending batch {n} of {total}', abx_partSent:'{n} batches were sent before it stopped', abx_e_date:'Invalid date', abx_e_future:'Future date', abx_e_pos:'Machine not in your area', abx_e_type:'Unknown line type', abx_e_product:'Item not found', abx_e_qty:'Quantity required', abx_e_price:'Price required', abx_e_locked:'This item has a fixed price', abx_e_channel:'Souq Gas quantity exceeds the quantity', abx_e_customer:'Customer not registered', abx_e_amount:'Amount required', abx_e_ref:'Bank reference required', abx_e_item:'Item not in the list', abx_e_reason:'Reason required', inv_byLevels:'Stock by level', inv_lv_city:'City', inv_lv_area:'Area', inv_lv_branch:'Branch', inv_lv_item:'Item', inv_lv_seller:'Sold by', inv_search:'Find a city, branch, item or device…', inv_soldHere:'this item\'s sales from here', inv_noOpening:'No opening count yet', inv_uncounted:'{n} branch items have no opening count yet, so they are left out of the balances. Record each item\'s opening count at each branch.', inv_noQtyWarn:'{n} sales worth {amt} SAR were entered without a quantity, so they do not come off the stock. Enter sales by product (qty × price).', err_hasStock:'This item has stock movements, so it cannot become a service', err_invalidLocation:'Choose a valid branch', inv_empty:'No stock movement in this period. Start by recording each item\'s opening balance.', inv_shortBadge:'Short', inv_shortBy:'Short by {n}: sales exceed the stock, check the movements', inv_period:'Period {from} to {to}', inv_moves:'Recorded movements', inv_kind:'Movement', inv_qty:'Quantity', inv_k_opening:'Opening balance', inv_k_purchase:'Purchase', inv_k_return:'Return from restaurants', inv_k_damage:'Damaged', inv_addTitle:'Record a stock movement', inv_addHint:'The opening count is recorded only once per item in each branch; after that, each day\'s ending stock is the next day\'s opening automatically. Sales come from the daily entries, so record only purchases, returns from restaurants and damaged items here.', inv_notePh:'Purchase invoice number, restaurant name or reason for damage', inv_save:'Save movement', inv_saved:'Movement saved', inv_needQty:'Enter the quantity', inv_noMoves:'No movements recorded in this period', inv_void:'Void movement', inv_voided:'Voided', inv_voidReason:'Why is this movement being voided?', err_openingExists:'This item already has an opening balance at this branch. Record the difference as a purchase or damage, or void the earlier balance.', err_notInventory:'This item is a service and has no stock',
+    admin_productType:'Product type', admin_typeGoods:'Inventory', admin_typeServices:'Services', nav_inventory:'Inventory', inv_title:'Inventory movement', inv_hint:'Opening + purchases + returns from restaurants = available for use; less sales (from the system\'s entries) and damaged items leaves the ending stock. Values are at cost.', inv_opening:'Opening', inv_purchases:'Purchases', inv_returns:'Returns from restaurants', inv_available:'Available for use', inv_sales:'Sales', inv_damaged:'Damaged', inv_ending:'Ending stock', inv_unitCost:'Unit cost', inv_from:'From', inv_to:'To', inv_allBranches:'All branches', inv_thisMonth:'This month', inv_lastMonth:'Last month', inv_showValue:'Show values at cost instead of quantities', inv_qtyShort:'qty', inv_byBranch:'Stock by branch and item', inv_item:'Item', inv_items:'Items: {n}', inv_tag_add:'added', inv_tag_ded:'deducted', abx_hint:'Download the file: it has a row for every POS machine in your area\'s branches. Each row is one line: sale, credit, bank transfer, الموازنة, expense, other collection or delivery fee. Add as many rows per machine as you need, then upload it: every row is checked before sending, you see the real calculation, then it goes to the Deputy Operations Manager for approval.', abx_sheet:'Entries', abx_listsSheet:'Lists', abx_helpSheet:'How to fill', abx_file:'Area entries', abx_c_date:'Date', abx_c_posId:'POS device ID', abx_c_branch:'Branch (for reference)', abx_c_type:'Line type', abx_c_product:'Item', abx_c_qty:'Quantity', abx_c_price:'Unit price', abx_c_ch:'Of which via {ch} (qty)', bh_section:'Branches', bh_title:'Branch performance', bh_tab:'Branches × days', bh_hint:'Sales and net cash per branch, and how many days each one entered its data. In the map, an empty cell is a day with no entry at all.', bh_days:'Days entered', bh_of:'{n} of {m}', bh_heat:'Daily sales per branch', bh_missing:'Days with no entry: {n}', bh_allIn:'Every branch entered every day', bh_less:'Less', bh_more:'More', bh_none:'No entry', eq_none:'None', dash_zeroRows:'Nothing for: {list}', dash_noCompare:'No comparison', dash_prevNone:'no sales', dp_pick:'Choose a date', dp_today:'Today', dp_yesterday:'Yesterday', dp_clear:'Clear', dp_prev:'Previous month', dp_next:'Next month', dp_days:'Sun,Mon,Tue,Wed,Thu,Fri,Sat', admin_cylinder:'Cylinder (counted full and empty)', admin_stockName:'Stock item name', admin_emptyCost:'Cost of an empty cylinder', admin_stockOf:'Draws stock from', admin_stockEffect:'Effect on stock', eff_exchange:'Exchange: a full one out, an empty one back', eff_sell_empty:'Sells an empty cylinder', eff_sell_full:'Sells a full cylinder', inv_exchangeIn:'Empties back from exchanges', inv_transfersIn:'Transfer in from a branch', inv_refillOut:'Empties sent for refilling', inv_transfersOut:'Transfer out to a branch', inv_k_transfer_in:'Transfer in from a branch', inv_k_transfer_out:'Transfer out to a branch', inv_st_full:'Full', inv_st_empty:'Empty', inv_state:'Full or empty', err_useStockItem:'Stock is kept on the cylinder item itself, not on the product drawing from it', err_alreadyImported:'This day\'s quantities are already saved', br_stTitle:'Stock quantities in the file', br_stHint:'Opening, purchases and transfers from the top of the file. Sales come from the devices, and the computed end of day is checked against the file\'s.', br_stNoBranch:'The branch could not be found from the file\'s devices or its name', br_stNoItem:'No item in the system matches the column: {h}', br_stNotCyl:'{p} is not marked as a cylinder (full and empty)', br_stFileEnd:'End of day in the file', br_stCalcEnd:'End of day per the system', br_stHasOpen:'has a system count', br_stOpenDiff:'System start of day {sys}, file {file}', br_stMismatch:'Does not match the file', br_stSetupHint:'The cylinder links are incomplete. Setup marks the exchange items as cylinders and links the sale items to them (selling an empty), as the file counts them.', br_stSetup:'Set up cylinders automatically', br_stAskAdmin:'The cylinder links are incomplete; ask management or finance to set them up, then upload again.', br_stSetupDone:'Cylinders set up', br_stSave:'Save stock quantities ({n} items)', br_stSaved:'{n} stock movements saved', br_stDone:'Saved', br_stRef:'Branch sheet', br_ref:'Card {dev} {date}', br_cardNote:'Card amount received in the bank', br_found:'Branch daily report recognised', br_foundHint:'{n} devices with activity and {i} item columns. Check the items and the expense, then the check below.', br_date:'Day', br_expItem:'Expense item', br_expReason:'Expense reason', br_otherItem:'Other collection item', br_otherReason:'Collection reason', br_itemsHint:'Each column in the file matches an item in the system (your choice is kept on this device)', br_pick:'Choose…', br_fSales:'Sales in the file', br_fCard:'Card (الموازنات)', br_fExp:'Expenses', br_fOther:'Other collections', br_fNet:'Cash per the file', br_rowOff:'These devices\' total in the file is not quantity × price:', abx_c_chCom:'Driver commission per unit via {ch}', abx_e_chCom:'Driver commission is not valid', abx_comShort:'commission', abx_c_customer:'Customer (number or name)', abx_c_amount:'Amount', abx_c_item:'Expense / collection item', abx_c_ref:'Bank reference', abx_c_note:'Note / reason', abx_t_sale:'Sale', abx_t_credit:'Credit', abx_t_transfer:'Bank transfer', abx_t_deposit:'الموازنة', abx_t_expense:'Expense', abx_t_other:'Other collection', abx_t_delivery:'Delivery fee', abx_helpTitle:'How to fill in the area file', abx_helpRows:'Rows', abx_helpRowsTxt:'Each row is one line for one machine on one day. A machine can have many rows: one per item sold, one per credit customer, one per transfer, الموازنة or expense. Empty rows are ignored.', abx_h_sale:'Pick the item and the quantity (the price comes from the item if left empty). If part of it went through Souq Gas, put that part in the "Of which via Souq Gas" column; its delivery fee and commission are worked out automatically.', abx_h_credit:'A credit sale to a registered customer: the customer (number or name), item and quantity. It counts once as a sale and comes off as credit; the customer\'s delivery fee and the driver\'s commission come from the customer profile. Do not repeat it on a sale row.', abx_h_transfer:'A customer\'s transfer straight to the company account: the amount and a note (transfer number). It comes off the cash.', abx_h_deposit:'A الموازنة banked from this machine: the amount and the bank reference (required). It comes off the cash.', abx_h_expense:'Cash paid out: the amount, the item from the list and the reason (required).', abx_h_other:'Cash received for something other than a sale: the amount, the item from the list and the reason (required). It adds to the cash.', abx_h_delivery:'A delivery fee paid to the bank: the amount and a note.', abx_helpAuto:'Worked out for you', abx_helpAutoTxt:'The customer\'s delivery fee and driver commission on credit, Souq Gas\'s fee and commission, the VAT on delivery fees, and each branch\'s net cash.', abx_line:'Row', abx_details:'Details', abx_via:'via', abx_noLines:'The file has no filled-in lines', abx_badRows:'{n} rows need fixing in the file before sending', abx_sending:'Sending batch {n} of {total}', abx_partSent:'{n} batches were sent before it stopped', abx_e_date:'Invalid date', abx_e_future:'Future date', abx_e_pos:'Machine not in your area', abx_e_type:'Unknown line type', abx_e_product:'Item not found', abx_e_qty:'Quantity required', abx_e_price:'Price required', abx_e_locked:'This item has a fixed price', abx_e_channel:'Souq Gas quantity exceeds the quantity', abx_e_customer:'Customer not registered', abx_e_amount:'Amount required', abx_e_ref:'Bank reference required', abx_e_item:'Item not in the list', abx_e_reason:'Reason required', inv_byLevels:'Stock by level', inv_lv_city:'City', inv_lv_area:'Area', inv_lv_branch:'Branch', inv_lv_item:'Item', inv_lv_seller:'Sold by', inv_search:'Find a city, branch, item or device…', inv_soldHere:'this item\'s sales from here', inv_noOpening:'No opening count yet', inv_uncounted:'{n} branch items have no opening count yet, so they are left out of the balances. Record each item\'s opening count at each branch.', inv_noQtyWarn:'{n} sales worth {amt} SAR were entered without a quantity, so they do not come off the stock. Enter sales by product (qty × price).', err_hasStock:'This item has stock movements, so it cannot become a service', err_invalidLocation:'Choose a valid branch', inv_empty:'No stock movement in this period. Start by recording each item\'s opening balance.', inv_shortBadge:'Short', inv_shortBy:'Short by {n}: sales exceed the stock, check the movements', inv_period:'Period {from} to {to}', inv_moves:'Recorded movements', inv_kind:'Movement', inv_qty:'Quantity', inv_k_opening:'Opening balance', inv_k_purchase:'Purchase', inv_k_return:'Return from restaurants', inv_k_damage:'Damaged', inv_addTitle:'Record a stock movement', inv_addHint:'The opening count is recorded only once per item in each branch; after that, each day\'s ending stock is the next day\'s opening automatically. Sales come from the daily entries, so record only purchases, returns from restaurants and damaged items here.', inv_notePh:'Purchase invoice number, restaurant name or reason for damage', inv_save:'Save movement', inv_saved:'Movement saved', inv_needQty:'Enter the quantity', inv_noMoves:'No movements recorded in this period', inv_void:'Void movement', inv_voided:'Voided', inv_voidReason:'Why is this movement being voided?', err_openingExists:'This item already has an opening balance at this branch. Record the difference as a purchase or damage, or void the earlier balance.', err_notInventory:'This item is a service and has no stock',
     admin_addStore:'Add store', admin_storeName:'Store name', admin_manager:'Branch manager', admin_location:'Branch',
     admin_addCar:'Add car', admin_carLabel:'Plate / driver label', admin_driver:'Driver',
     admin_addPos:'Add POS machine', admin_posLabel:'Terminal id', admin_ownerType:'Belongs to', admin_owner:'Owner', admin_assignedDriver:'Assigned employee',
@@ -2761,7 +2942,7 @@ var L = {
     admin_addUser:'صارف شامل کریں', admin_name:'نام', admin_role:'کردار', admin_active:'فعال', admin_resetPw:'پاس ورڈ ری سیٹ کریں',
     admin_addLocation:'برانچ شامل کریں', admin_city:'شہر', admin_locName:'برانچ کا نام', admin_cluster:'علاقہ',
     admin_zones:'زونز', admin_addZone:'زون شامل کریں', admin_zoneName:'زون کا نام', admin_zone:'زون',
-    admin_productType:'پروڈکٹ کی قسم', admin_typeGoods:'انوینٹری', admin_typeServices:'خدمات', nav_inventory:'انوینٹری', inv_title:'انوینٹری کی حرکت', inv_hint:'ابتدائی اسٹاک + خریداری + ریسٹورنٹس سے واپسی = دستیاب؛ اس میں سے فروخت (سسٹم کے اندراجات سے) اور خراب مال نکال کر اختتامی اسٹاک۔ قیمتیں لاگت پر۔', inv_opening:'ابتدائی', inv_purchases:'خریداری', inv_returns:'ریسٹورنٹس سے واپسی', inv_available:'دستیاب', inv_sales:'فروخت', inv_damaged:'خراب', inv_ending:'اختتامی', inv_unitCost:'فی یونٹ لاگت', inv_from:'سے', inv_to:'تک', inv_allBranches:'تمام برانچز', inv_thisMonth:'یہ مہینہ', inv_lastMonth:'پچھلا مہینہ', inv_showValue:'مقدار کے بجائے لاگت پر قیمت دکھائیں', inv_qtyShort:'مقدار', inv_byBranch:'برانچ اور آئٹم کے لحاظ سے اسٹاک', inv_item:'آئٹم', inv_items:'آئٹمز: {n}', inv_tag_add:'جمع', inv_tag_ded:'منہا', abx_hint:'فائل ڈاؤن لوڈ کریں: اس میں آپ کے علاقے کی ہر POS مشین کی ایک قطار ہے۔ ہر قطار ایک لائن ہے۔ جتنی چاہیں قطاریں شامل کریں، پھر اپ لوڈ کریں۔', abx_sheet:'اندراجات', abx_listsSheet:'فہرستیں', abx_helpSheet:'بھرنے کا طریقہ', abx_file:'علاقہ اندراجات', abx_c_date:'تاریخ', abx_c_posId:'مشین نمبر', abx_c_branch:'برانچ (معلومات)', abx_c_type:'لائن کی قسم', abx_c_product:'آئٹم', abx_c_qty:'مقدار', abx_c_price:'فی یونٹ قیمت', abx_c_ch:'جس میں سے {ch} (مقدار)', dp_pick:'تاریخ منتخب کریں', dp_today:'آج', dp_yesterday:'کل', dp_clear:'صاف کریں', dp_prev:'پچھلا مہینہ', dp_next:'اگلا مہینہ', dp_days:'اتوار,پیر,منگل,بدھ,جمعرات,جمعہ,ہفتہ', admin_cylinder:'سلنڈر (بھرا اور خالی گنا جاتا ہے)', admin_stockName:'اسٹاک آئٹم کا نام', admin_emptyCost:'خالی سلنڈر کی لاگت', admin_stockOf:'اسٹاک اس آئٹم سے', admin_stockEffect:'اسٹاک پر اثر', eff_exchange:'تبادلہ: بھرا جاتا ہے، خالی واپس آتا ہے', eff_sell_empty:'خالی سلنڈر کی فروخت', eff_sell_full:'بھرے سلنڈر کی فروخت', inv_exchangeIn:'تبادلے سے واپس خالی', inv_transfersIn:'برانچ سے آمد', inv_refillOut:'بھرنے کے لیے بھیجے گئے خالی', inv_transfersOut:'برانچ کو منتقلی', inv_k_transfer_in:'برانچ سے آمد', inv_k_transfer_out:'برانچ کو منتقلی', inv_st_full:'بھرا', inv_st_empty:'خالی', inv_state:'بھرا یا خالی', err_useStockItem:'اسٹاک سلنڈر آئٹم پر ہی رکھا جاتا ہے', err_alreadyImported:'اس دن کی مقداریں پہلے سے محفوظ ہیں', br_stTitle:'فائل میں اسٹاک کی مقداریں', br_stHint:'فائل کے اوپر سے ابتدائی اسٹاک، خریداری اور منتقلی۔ فروخت ڈیوائسز سے آتی ہے، اور دن کے اختتام کا حساب فائل سے ملایا جاتا ہے۔', br_stNoBranch:'فائل کی ڈیوائسز یا نام سے برانچ نہیں ملی', br_stNoItem:'اس کالم سے ملتا آئٹم سسٹم میں نہیں: {h}', br_stNotCyl:'{p} سلنڈر کے طور پر نشان زد نہیں', br_stFileEnd:'فائل میں دن کا اختتام', br_stCalcEnd:'سسٹم کے مطابق دن کا اختتام', br_stHasOpen:'سسٹم میں اسٹاک موجود', br_stOpenDiff:'سسٹم میں دن کا آغاز {sys}، فائل {file}', br_stMismatch:'فائل سے مختلف', br_stSetupHint:'سلنڈر کے روابط نامکمل ہیں۔ سیٹ اپ تبادلہ آئٹمز کو سلنڈر بناتا ہے اور فروخت آئٹمز کو ان سے جوڑتا ہے۔', br_stSetup:'سلنڈر خودکار سیٹ اپ', br_stAskAdmin:'سلنڈر کے روابط نامکمل ہیں؛ انتظامیہ یا فنانس سے سیٹ اپ کروائیں، پھر دوبارہ اپ لوڈ کریں۔', br_stSetupDone:'سلنڈر سیٹ ہو گئے', br_stSave:'اسٹاک کی مقداریں محفوظ کریں ({n})', br_stSaved:'{n} اسٹاک حرکات محفوظ', br_stDone:'محفوظ', br_stRef:'برانچ شیٹ', br_ref:'کارڈ {dev} {date}', br_cardNote:'بینک میں موصول کارڈ رقم', br_found:'برانچ کی یومیہ رپورٹ پہچان لی گئی', br_foundHint:'{n} ڈیوائسز میں سرگرمی اور {i} آئٹم کالم۔ آئٹمز اور خرچ دیکھیں، پھر نیچے جانچ۔', br_date:'دن', br_expItem:'خرچ کی مد', br_expReason:'خرچ کی وجہ', br_otherItem:'دیگر وصولی کی مد', br_otherReason:'وصولی کی وجہ', br_itemsHint:'فائل کا ہر کالم سسٹم کے ایک آئٹم سے ملتا ہے (آپ کا انتخاب اسی ڈیوائس پر محفوظ رہتا ہے)', br_pick:'منتخب کریں…', br_fSales:'فائل کی فروخت', br_fCard:'کارڈ (الموازنات)', br_fExp:'اخراجات', br_fOther:'دیگر وصولیاں', br_fNet:'فائل کے مطابق نقد', br_rowOff:'فائل میں ان ڈیوائسز کا کل مقدار × قیمت کے برابر نہیں:', abx_c_chCom:'{ch} کے ذریعے فی یونٹ ڈرائیور کمیشن', abx_e_chCom:'ڈرائیور کمیشن درست نہیں', abx_comShort:'کمیشن', abx_c_customer:'گاہک (نمبر یا نام)', abx_c_amount:'رقم', abx_c_item:'مد', abx_c_ref:'بینک حوالہ', abx_c_note:'تفصیل / وجہ', abx_t_sale:'فروخت', abx_t_credit:'اُدھار', abx_t_transfer:'بینک ٹرانسفر', abx_t_deposit:'موازنة', abx_t_expense:'خرچ', abx_t_other:'دیگر وصولی', abx_t_delivery:'ڈیلیوری فیس', abx_helpTitle:'علاقہ فائل بھرنے کا طریقہ', abx_helpRows:'قطاریں', abx_helpRowsTxt:'ہر قطار ایک مشین کی ایک دن کی ایک لائن ہے۔ خالی قطاریں نظرانداز ہوتی ہیں۔', abx_h_sale:'آئٹم اور مقدار لکھیں۔ سوق غاز والا حصہ اس کالم میں لکھیں۔', abx_h_credit:'رجسٹرڈ گاہک کو اُدھار فروخت۔ اسے فروخت کی قطار میں دوبارہ نہ لکھیں۔', abx_h_transfer:'گاہک کی براہ راست منتقلی: رقم اور تفصیل۔', abx_h_deposit:'اس مشین سے بینک میں جمع: رقم اور بینک حوالہ (لازمی)۔', abx_h_expense:'نقد خرچ: رقم، فہرست سے مد اور وجہ (لازمی)۔', abx_h_other:'فروخت کے علاوہ وصولی: رقم، مد اور وجہ (لازمی)۔', abx_h_delivery:'بینک کو ادا ڈیلیوری فیس: رقم اور تفصیل۔', abx_helpAuto:'خودکار حساب', abx_helpAutoTxt:'گاہک کی ڈیلیوری فیس اور کمیشن، سوق غاز کی فیس اور کمیشن، اور ہر برانچ کا خالص نقد۔', abx_line:'قطار', abx_details:'تفصیل', abx_via:'بذریعہ', abx_noLines:'فائل میں کوئی لائن نہیں', abx_badRows:'{n} قطاریں درست کرنی ہیں', abx_sending:'بھیجا جا رہا ہے: {total} میں سے {n}', abx_partSent:'{n} بیچ بھیجے گئے', abx_e_date:'غلط تاریخ', abx_e_future:'مستقبل کی تاریخ', abx_e_pos:'مشین آپ کے علاقے میں نہیں', abx_e_type:'نامعلوم قسم', abx_e_product:'آئٹم نہیں ملا', abx_e_qty:'مقدار ضروری', abx_e_price:'قیمت ضروری', abx_e_locked:'اس آئٹم کی قیمت مقرر ہے', abx_e_channel:'سوق غاز کی مقدار زیادہ ہے', abx_e_customer:'گاہک رجسٹرڈ نہیں', abx_e_amount:'رقم ضروری', abx_e_ref:'بینک حوالہ ضروری', abx_e_item:'مد نہیں ملی', abx_e_reason:'وجہ ضروری', inv_byLevels:'سطح وار اسٹاک', inv_lv_city:'شہر', inv_lv_area:'علاقہ', inv_lv_branch:'برانچ', inv_lv_item:'آئٹم', inv_lv_seller:'فروخت کنندہ', inv_search:'شہر، برانچ، آئٹم یا مشین تلاش کریں…', inv_soldHere:'یہاں سے اس آئٹم کی فروخت', inv_noOpening:'ابتدائی گنتی ابھی درج نہیں', inv_uncounted:'{n} برانچ آئٹمز کی ابتدائی گنتی درج نہیں، اس لیے وہ بیلنس میں شامل نہیں۔', inv_noQtyWarn:'{n} فروخت ({amt} ریال) بغیر مقدار درج ہوئی، اس لیے اسٹاک سے منہا نہیں ہوئی۔', err_hasStock:'اس آئٹم کی اسٹاک حرکات ہیں، یہ سروس نہیں بن سکتا', err_invalidLocation:'درست برانچ منتخب کریں', inv_empty:'اس مدت میں کوئی حرکت نہیں۔ ہر آئٹم کا ابتدائی اسٹاک درج کریں۔', inv_shortBadge:'کمی', inv_shortBy:'{n} کی کمی: فروخت اسٹاک سے زیادہ ہے، حرکات دیکھیں', inv_period:'مدت {from} سے {to}', inv_moves:'درج شدہ حرکات', inv_kind:'حرکت کی قسم', inv_qty:'مقدار', inv_k_opening:'ابتدائی اسٹاک', inv_k_purchase:'خریداری', inv_k_return:'ریسٹورنٹ سے واپسی', inv_k_damage:'خراب', inv_addTitle:'اسٹاک کی حرکت درج کریں', inv_addHint:'ابتدائی اسٹاک ہر برانچ میں ہر آئٹم کا صرف ایک بار درج ہوتا ہے؛ اس کے بعد ہر دن کا اختتامی اسٹاک اگلے دن کا ابتدائی خود بن جاتا ہے۔ یہاں صرف خریداری، واپسی اور خراب مال درج کریں۔', inv_notePh:'خریداری بل نمبر، ریسٹورنٹ کا نام یا خرابی کی وجہ', inv_save:'حرکت محفوظ کریں', inv_saved:'حرکت محفوظ ہو گئی', inv_needQty:'مقدار لکھیں', inv_noMoves:'اس مدت میں کوئی حرکت درج نہیں', inv_void:'حرکت منسوخ کریں', inv_voided:'منسوخ', inv_voidReason:'یہ حرکت کیوں منسوخ کی جا رہی ہے؟', err_openingExists:'اس برانچ میں اس آئٹم کا ابتدائی اسٹاک پہلے سے درج ہے۔', err_notInventory:'یہ آئٹم سروس ہے، اس کا اسٹاک نہیں',
+    admin_productType:'پروڈکٹ کی قسم', admin_typeGoods:'انوینٹری', admin_typeServices:'خدمات', nav_inventory:'انوینٹری', inv_title:'انوینٹری کی حرکت', inv_hint:'ابتدائی اسٹاک + خریداری + ریسٹورنٹس سے واپسی = دستیاب؛ اس میں سے فروخت (سسٹم کے اندراجات سے) اور خراب مال نکال کر اختتامی اسٹاک۔ قیمتیں لاگت پر۔', inv_opening:'ابتدائی', inv_purchases:'خریداری', inv_returns:'ریسٹورنٹس سے واپسی', inv_available:'دستیاب', inv_sales:'فروخت', inv_damaged:'خراب', inv_ending:'اختتامی', inv_unitCost:'فی یونٹ لاگت', inv_from:'سے', inv_to:'تک', inv_allBranches:'تمام برانچز', inv_thisMonth:'یہ مہینہ', inv_lastMonth:'پچھلا مہینہ', inv_showValue:'مقدار کے بجائے لاگت پر قیمت دکھائیں', inv_qtyShort:'مقدار', inv_byBranch:'برانچ اور آئٹم کے لحاظ سے اسٹاک', inv_item:'آئٹم', inv_items:'آئٹمز: {n}', inv_tag_add:'جمع', inv_tag_ded:'منہا', abx_hint:'فائل ڈاؤن لوڈ کریں: اس میں آپ کے علاقے کی ہر POS مشین کی ایک قطار ہے۔ ہر قطار ایک لائن ہے۔ جتنی چاہیں قطاریں شامل کریں، پھر اپ لوڈ کریں۔', abx_sheet:'اندراجات', abx_listsSheet:'فہرستیں', abx_helpSheet:'بھرنے کا طریقہ', abx_file:'علاقہ اندراجات', abx_c_date:'تاریخ', abx_c_posId:'مشین نمبر', abx_c_branch:'برانچ (معلومات)', abx_c_type:'لائن کی قسم', abx_c_product:'آئٹم', abx_c_qty:'مقدار', abx_c_price:'فی یونٹ قیمت', abx_c_ch:'جس میں سے {ch} (مقدار)', bh_section:'برانچز', bh_title:'برانچ کی کارکردگی', bh_tab:'برانچز × دن', bh_hint:'ہر برانچ کی فروخت اور خالص نقد، اور کتنے دن ڈیٹا درج کیا۔ نقشے میں خالی خانہ وہ دن ہے جس میں کوئی اندراج نہیں۔', bh_days:'اندراج کے دن', bh_of:'{m} میں سے {n}', bh_heat:'ہر برانچ کی روزانہ فروخت', bh_missing:'بغیر اندراج کے دن: {n}', bh_allIn:'ہر برانچ نے ہر دن درج کیا', bh_less:'کم', bh_more:'زیادہ', bh_none:'کوئی اندراج نہیں', eq_none:'کوئی نہیں', dash_zeroRows:'کوئی حرکت نہیں: {list}', dash_noCompare:'موازنہ نہیں', dash_prevNone:'کوئی فروخت نہیں', dp_pick:'تاریخ منتخب کریں', dp_today:'آج', dp_yesterday:'کل', dp_clear:'صاف کریں', dp_prev:'پچھلا مہینہ', dp_next:'اگلا مہینہ', dp_days:'اتوار,پیر,منگل,بدھ,جمعرات,جمعہ,ہفتہ', admin_cylinder:'سلنڈر (بھرا اور خالی گنا جاتا ہے)', admin_stockName:'اسٹاک آئٹم کا نام', admin_emptyCost:'خالی سلنڈر کی لاگت', admin_stockOf:'اسٹاک اس آئٹم سے', admin_stockEffect:'اسٹاک پر اثر', eff_exchange:'تبادلہ: بھرا جاتا ہے، خالی واپس آتا ہے', eff_sell_empty:'خالی سلنڈر کی فروخت', eff_sell_full:'بھرے سلنڈر کی فروخت', inv_exchangeIn:'تبادلے سے واپس خالی', inv_transfersIn:'برانچ سے آمد', inv_refillOut:'بھرنے کے لیے بھیجے گئے خالی', inv_transfersOut:'برانچ کو منتقلی', inv_k_transfer_in:'برانچ سے آمد', inv_k_transfer_out:'برانچ کو منتقلی', inv_st_full:'بھرا', inv_st_empty:'خالی', inv_state:'بھرا یا خالی', err_useStockItem:'اسٹاک سلنڈر آئٹم پر ہی رکھا جاتا ہے', err_alreadyImported:'اس دن کی مقداریں پہلے سے محفوظ ہیں', br_stTitle:'فائل میں اسٹاک کی مقداریں', br_stHint:'فائل کے اوپر سے ابتدائی اسٹاک، خریداری اور منتقلی۔ فروخت ڈیوائسز سے آتی ہے، اور دن کے اختتام کا حساب فائل سے ملایا جاتا ہے۔', br_stNoBranch:'فائل کی ڈیوائسز یا نام سے برانچ نہیں ملی', br_stNoItem:'اس کالم سے ملتا آئٹم سسٹم میں نہیں: {h}', br_stNotCyl:'{p} سلنڈر کے طور پر نشان زد نہیں', br_stFileEnd:'فائل میں دن کا اختتام', br_stCalcEnd:'سسٹم کے مطابق دن کا اختتام', br_stHasOpen:'سسٹم میں اسٹاک موجود', br_stOpenDiff:'سسٹم میں دن کا آغاز {sys}، فائل {file}', br_stMismatch:'فائل سے مختلف', br_stSetupHint:'سلنڈر کے روابط نامکمل ہیں۔ سیٹ اپ تبادلہ آئٹمز کو سلنڈر بناتا ہے اور فروخت آئٹمز کو ان سے جوڑتا ہے۔', br_stSetup:'سلنڈر خودکار سیٹ اپ', br_stAskAdmin:'سلنڈر کے روابط نامکمل ہیں؛ انتظامیہ یا فنانس سے سیٹ اپ کروائیں، پھر دوبارہ اپ لوڈ کریں۔', br_stSetupDone:'سلنڈر سیٹ ہو گئے', br_stSave:'اسٹاک کی مقداریں محفوظ کریں ({n})', br_stSaved:'{n} اسٹاک حرکات محفوظ', br_stDone:'محفوظ', br_stRef:'برانچ شیٹ', br_ref:'کارڈ {dev} {date}', br_cardNote:'بینک میں موصول کارڈ رقم', br_found:'برانچ کی یومیہ رپورٹ پہچان لی گئی', br_foundHint:'{n} ڈیوائسز میں سرگرمی اور {i} آئٹم کالم۔ آئٹمز اور خرچ دیکھیں، پھر نیچے جانچ۔', br_date:'دن', br_expItem:'خرچ کی مد', br_expReason:'خرچ کی وجہ', br_otherItem:'دیگر وصولی کی مد', br_otherReason:'وصولی کی وجہ', br_itemsHint:'فائل کا ہر کالم سسٹم کے ایک آئٹم سے ملتا ہے (آپ کا انتخاب اسی ڈیوائس پر محفوظ رہتا ہے)', br_pick:'منتخب کریں…', br_fSales:'فائل کی فروخت', br_fCard:'کارڈ (الموازنات)', br_fExp:'اخراجات', br_fOther:'دیگر وصولیاں', br_fNet:'فائل کے مطابق نقد', br_rowOff:'فائل میں ان ڈیوائسز کا کل مقدار × قیمت کے برابر نہیں:', abx_c_chCom:'{ch} کے ذریعے فی یونٹ ڈرائیور کمیشن', abx_e_chCom:'ڈرائیور کمیشن درست نہیں', abx_comShort:'کمیشن', abx_c_customer:'گاہک (نمبر یا نام)', abx_c_amount:'رقم', abx_c_item:'مد', abx_c_ref:'بینک حوالہ', abx_c_note:'تفصیل / وجہ', abx_t_sale:'فروخت', abx_t_credit:'اُدھار', abx_t_transfer:'بینک ٹرانسفر', abx_t_deposit:'موازنة', abx_t_expense:'خرچ', abx_t_other:'دیگر وصولی', abx_t_delivery:'ڈیلیوری فیس', abx_helpTitle:'علاقہ فائل بھرنے کا طریقہ', abx_helpRows:'قطاریں', abx_helpRowsTxt:'ہر قطار ایک مشین کی ایک دن کی ایک لائن ہے۔ خالی قطاریں نظرانداز ہوتی ہیں۔', abx_h_sale:'آئٹم اور مقدار لکھیں۔ سوق غاز والا حصہ اس کالم میں لکھیں۔', abx_h_credit:'رجسٹرڈ گاہک کو اُدھار فروخت۔ اسے فروخت کی قطار میں دوبارہ نہ لکھیں۔', abx_h_transfer:'گاہک کی براہ راست منتقلی: رقم اور تفصیل۔', abx_h_deposit:'اس مشین سے بینک میں جمع: رقم اور بینک حوالہ (لازمی)۔', abx_h_expense:'نقد خرچ: رقم، فہرست سے مد اور وجہ (لازمی)۔', abx_h_other:'فروخت کے علاوہ وصولی: رقم، مد اور وجہ (لازمی)۔', abx_h_delivery:'بینک کو ادا ڈیلیوری فیس: رقم اور تفصیل۔', abx_helpAuto:'خودکار حساب', abx_helpAutoTxt:'گاہک کی ڈیلیوری فیس اور کمیشن، سوق غاز کی فیس اور کمیشن، اور ہر برانچ کا خالص نقد۔', abx_line:'قطار', abx_details:'تفصیل', abx_via:'بذریعہ', abx_noLines:'فائل میں کوئی لائن نہیں', abx_badRows:'{n} قطاریں درست کرنی ہیں', abx_sending:'بھیجا جا رہا ہے: {total} میں سے {n}', abx_partSent:'{n} بیچ بھیجے گئے', abx_e_date:'غلط تاریخ', abx_e_future:'مستقبل کی تاریخ', abx_e_pos:'مشین آپ کے علاقے میں نہیں', abx_e_type:'نامعلوم قسم', abx_e_product:'آئٹم نہیں ملا', abx_e_qty:'مقدار ضروری', abx_e_price:'قیمت ضروری', abx_e_locked:'اس آئٹم کی قیمت مقرر ہے', abx_e_channel:'سوق غاز کی مقدار زیادہ ہے', abx_e_customer:'گاہک رجسٹرڈ نہیں', abx_e_amount:'رقم ضروری', abx_e_ref:'بینک حوالہ ضروری', abx_e_item:'مد نہیں ملی', abx_e_reason:'وجہ ضروری', inv_byLevels:'سطح وار اسٹاک', inv_lv_city:'شہر', inv_lv_area:'علاقہ', inv_lv_branch:'برانچ', inv_lv_item:'آئٹم', inv_lv_seller:'فروخت کنندہ', inv_search:'شہر، برانچ، آئٹم یا مشین تلاش کریں…', inv_soldHere:'یہاں سے اس آئٹم کی فروخت', inv_noOpening:'ابتدائی گنتی ابھی درج نہیں', inv_uncounted:'{n} برانچ آئٹمز کی ابتدائی گنتی درج نہیں، اس لیے وہ بیلنس میں شامل نہیں۔', inv_noQtyWarn:'{n} فروخت ({amt} ریال) بغیر مقدار درج ہوئی، اس لیے اسٹاک سے منہا نہیں ہوئی۔', err_hasStock:'اس آئٹم کی اسٹاک حرکات ہیں، یہ سروس نہیں بن سکتا', err_invalidLocation:'درست برانچ منتخب کریں', inv_empty:'اس مدت میں کوئی حرکت نہیں۔ ہر آئٹم کا ابتدائی اسٹاک درج کریں۔', inv_shortBadge:'کمی', inv_shortBy:'{n} کی کمی: فروخت اسٹاک سے زیادہ ہے، حرکات دیکھیں', inv_period:'مدت {from} سے {to}', inv_moves:'درج شدہ حرکات', inv_kind:'حرکت کی قسم', inv_qty:'مقدار', inv_k_opening:'ابتدائی اسٹاک', inv_k_purchase:'خریداری', inv_k_return:'ریسٹورنٹ سے واپسی', inv_k_damage:'خراب', inv_addTitle:'اسٹاک کی حرکت درج کریں', inv_addHint:'ابتدائی اسٹاک ہر برانچ میں ہر آئٹم کا صرف ایک بار درج ہوتا ہے؛ اس کے بعد ہر دن کا اختتامی اسٹاک اگلے دن کا ابتدائی خود بن جاتا ہے۔ یہاں صرف خریداری، واپسی اور خراب مال درج کریں۔', inv_notePh:'خریداری بل نمبر، ریسٹورنٹ کا نام یا خرابی کی وجہ', inv_save:'حرکت محفوظ کریں', inv_saved:'حرکت محفوظ ہو گئی', inv_needQty:'مقدار لکھیں', inv_noMoves:'اس مدت میں کوئی حرکت درج نہیں', inv_void:'حرکت منسوخ کریں', inv_voided:'منسوخ', inv_voidReason:'یہ حرکت کیوں منسوخ کی جا رہی ہے؟', err_openingExists:'اس برانچ میں اس آئٹم کا ابتدائی اسٹاک پہلے سے درج ہے۔', err_notInventory:'یہ آئٹم سروس ہے، اس کا اسٹاک نہیں',
     admin_addStore:'اسٹور شامل کریں', admin_storeName:'اسٹور کا نام', admin_manager:'برانچ منیجر', admin_location:'برانچ',
     admin_addCar:'گاڑی شامل کریں', admin_carLabel:'پلیٹ / ڈرائیور کا نام', admin_driver:'ڈرائیور',
     admin_addPos:'POS مشین شامل کریں', admin_posLabel:'ٹرمینل نمبر', admin_ownerType:'سے منسلک', admin_owner:'مالک', admin_assignedDriver:'ذمہ دار ملازم',
@@ -2891,7 +3072,8 @@ function dirFor(lang){ return lang==='en' ? 'ltr' : 'rtl'; }
 // local testing against mock-backend-server.js).
 var DEFAULT_API_URL = 'https://script.google.com/macros/s/AKfycbxgS7bhn4Nn0szYnKVRb6rjGEKumqCJkQ8jY2uNjDrf2wP2YQYgTvltLrwsbKviD7I/exec';
 var state = {
-  lang: localStorage.getItem('bgc_lang') || 'ar',
+  // English unless this device or the account chose another language
+  lang: localStorage.getItem('bgc_lang') || 'en',
   apiUrl: localStorage.getItem('bgc_apiUrl') || DEFAULT_API_URL,
   token: localStorage.getItem('bgc_token') || '',
   user: null,
@@ -4311,13 +4493,36 @@ function netEquation_(opts){
     '<div class="eq-prog"><div class="eq-bar"><span style="width:'+pct.toFixed(1)+'%"></span></div>' +
     '<button type="button" class="eq-line on-dark" data-part="_deposited"><span>'+esc(t('eq_collected'))+'</span><b class="num">'+esc(money(collected))+'</b></button>' +
     '<button type="button" class="eq-line on-dark" data-part="_remaining"><span>'+esc(t('eq_remaining'))+'</span><b class="num">'+esc(money(remaining))+'</b></button></div>';
-  var node = el('<section class="eq-wrap" aria-label="'+esc(t('eq_title'))+'">' +
-    '<div class="eq-head"><h2>'+esc(opts.title || t('eq_title'))+'</h2><p>'+esc(t('eq_hint'))+'</p></div>' +
-    '<div class="eq-row">' +
-      card('sales', '', '', salesLines, 'sales') +
-      card('additions', '+', 'eq_opPlus', addLines, 'add') +
-      card('deductions', '−', 'eq_opMinus', dedLines, 'ded') +
-      card('net', '=', 'eq_opEquals', netLines, 'net') +
+  // One card (2026-09-30): the net leads as the hero figure, the ledger beside
+  // it shows how it is reached. A part that is zero is one quiet line, and a
+  // part's lines only show when they say more than its own total.
+  function step(part, op, lines, n, cls){
+    var zero = !eqNonZero_(T[part]);
+    return '<div class="eqx-step '+cls+(zero ? ' zero' : '')+'">' +
+      '<button type="button" class="eqx-main" data-part="'+part+'"'+(zero ? ' disabled' : '')+'>' +
+        '<span class="eqx-op" aria-hidden="true">'+op+'</span>' +
+        '<span class="eqx-l">'+esc(t(EQ_PARTS_[part].label))+'</span>' +
+        '<b class="eqx-v num">'+(zero ? esc(t('eq_none')) : esc(money(T[part])))+'</b>' +
+        '<span class="eqx-go" aria-hidden="true">'+(zero ? '' : icon_('chevron'))+'</span>' +
+      '</button>' + (!zero && n > 1 ? '<div class="eqx-lines">'+lines+'</div>' : '') + '</div>';
+  }
+  function count(list){ return list.filter(function(p){ return eqNonZero_(T[p]); }).length; }
+  var heroProg = collected == null ? '' :
+    '<div class="eqx-prog"><div class="eqx-bar" role="img" aria-label="'+esc(t('eq_collected'))+' '+pct.toFixed(0)+'%"><span style="width:'+pct.toFixed(1)+'%"></span></div>' +
+    '<div class="eqx-split"><button type="button" class="eqx-chip" data-part="_deposited"><span>'+esc(t('eq_collected'))+'</span><b class="num">'+esc(money(collected))+'</b></button>' +
+    '<button type="button" class="eqx-chip" data-part="_remaining"><span>'+esc(t('eq_remaining'))+'</span><b class="num">'+esc(money(remaining))+'</b></button></div></div>';
+  var node = el('<section class="eqx" aria-label="'+esc(t('eq_title'))+'">' +
+    '<div class="eqx-head"><h2>'+esc(opts.title || t('eq_title'))+'</h2><p>'+esc(t('eq_hint'))+'</p></div>' +
+    '<div class="eqx-body">' +
+      '<div class="eqx-hero"><button type="button" class="eqx-heroBtn" data-part="net">' +
+        '<span class="eqx-k">'+esc(t(EQ_PARTS_.net.label))+'</span>' +
+        '<span class="eqx-big"><span class="n">'+esc(money(T.net))+'</span><small>'+esc(t('ui_sar'))+'</small></span></button>' + heroProg + '</div>' +
+      '<div class="eqx-ledger">' +
+        step('sales', '', salesLines, count(EQ_SALES_), 'sales') +
+        step('additions', '+', addLines, count(EQ_ADD_), 'add') +
+        step('deductions', '−', dedLines, count(EQ_DEDUCT_), 'ded') +
+        '<button type="button" class="eqx-total" data-part="net"><span class="eqx-op" aria-hidden="true">=</span><span class="eqx-l">'+esc(t(EQ_PARTS_.net.label))+'</span><b class="num">'+esc(money(T.net))+'</b></button>' +
+      '</div>' +
     '</div></section>');
   qsa('[data-part]', node).forEach(function(b){
     b.addEventListener('click', function(ev){
@@ -4443,13 +4648,22 @@ function levelDrillView_(part, entries, depth, scope){
 var EXCELJS_URL_ = 'https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js';
 var EXCELJS_SRI_ = 'sha384-Pqp51FUN2/qzfxZxBCtF0stpc9ONI6MYZpVqmo8m20SoaQCzf+arZvACkLkirlPz';
 var EX_GREEN_ = '4D6D51', EX_DARK_ = '3A5540', EX_CREAM_ = 'F2EEE4', EX_ZEBRA_ = 'FAF8F3', EX_LINE_ = 'E4DED0', EX_TOTAL_ = 'E6EEE6';
-function exIsTotal_(r){ return Array.isArray(r) && r.length && String(r[0]) === t('rp_total'); }
+function exIsTotal_(r){ return Array.isArray(r) && r.length && (r.isTotal === true || String(r[0]) === t('rp_total')); }
+function exKeepMark_(from, to){ if (from && from.isTotal) to.isTotal = true; return to; }
 function exSubtitle_(opts){
   var who = state.user ? state.user.name : '';
   return [opts && opts.note, t('ex_generated').replace('{when}', fmtStamp_(new Date().toISOString())).replace('{who}', who)]
     .filter(Boolean).join('  ·  ');
 }
 // which columns hold numbers, and whether they are whole numbers
+// the column that gets the in-cell bar: the sheet's own choice, else its first
+// amount column; none for a grouped tree or a sheet of fewer than two lines
+function exBarCol_(sh, kinds, grouped){
+  if (grouped || sh.noBars) return -1;
+  if (sh.barCol != null) return sh.barCol;
+  return kinds.indexOf('money');
+}
+function exColLetter_(n){ var s2 = ''; while (n > 0) { var m = (n - 1) % 26; s2 = String.fromCharCode(65 + m) + s2; n = Math.floor((n - 1) / 26); } return s2; }
 function exColKinds_(rows){
   var n = rows[0] ? rows[0].length : 0, kinds = [];
   for (var c = 0; c < n; c++) {
@@ -4495,7 +4709,7 @@ function exDropEmptyCols_(rows){
     if (used) keep.push(i);
   }
   if (keep.length === n) return rows;
-  return rows.map(function(r){ return Array.isArray(r) ? keep.map(function(i){ return r[i]; }) : r; });
+  return rows.map(function(r){ return Array.isArray(r) ? exKeepMark_(r, keep.map(function(i){ return r[i]; })) : r; });
 }
 function exTrimSheets_(sheets){
   return (sheets || []).map(function(sh){ var o = {}; Object.keys(sh).forEach(function(k){ o[k] = sh[k]; }); o.rows = exDropEmptyCols_(sh.rows); return o; });
@@ -4511,7 +4725,7 @@ function exportXlsx_(fileName, sheets, opts){
     var logoId = null;
     try { logoId = wb.addImage({ base64: LOGO_B64, extension: 'png' }); } catch (e) {}
     sheets.forEach(function(sh){
-      var rows = (sh.rows || []).map(function(r){ return Array.isArray(r) ? r.map(trText_) : r; });
+      var rows = (sh.rows || []).map(function(r){ return Array.isArray(r) ? exKeepMark_(r, r.map(trText_)) : r; });
       var name = String(trText_(sh.name || 'Sheet')).replace(/[:\\\/?*\[\]]/g, ' ').slice(0, 31) || 'Sheet';
       while (used[name]) name = name.slice(0, 28) + '_' + Object.keys(used).length;
       used[name] = 1;
@@ -4593,6 +4807,20 @@ function exportXlsx_(fileName, sheets, opts){
         ws.pageSetup.scale = Math.max(35, Math.min(100, Math.floor(100 * (land ? 148 : 98) / sumW)));
       }
       if (rows.length > 1) ws.autoFilter = { from: { row: 3, column: 1 }, to: { row: 3, column: cols } };
+      // a flat table's main amount carries an in-cell bar, so size reads at a
+      // glance (not a grouped tree: its levels would share one scale)
+      var barCol = exBarCol_(sh, kinds, grouped), dataRows = rows.slice(1).filter(function(r){ return !exIsTotal_(r); }).length;
+      // a branch-by-day matrix: one green scale over the day cells (a day
+      // without an entry stays blank, so it is not painted as a low day)
+      if (sh.heat && dataRows > 0) {
+        ws.addConditionalFormatting({ ref: exColLetter_(sh.heat.from) + '4:' + exColLetter_(sh.heat.to) + (3 + dataRows), rules: [{ type: 'colorScale', priority: 2,
+          cfvo: [{ type: 'min' }, { type: 'max' }], color: [{ argb: 'FFEEF3EC' }, { argb: 'FF4D6D51' }] }] });
+      }
+      if (barCol >= 0 && dataRows > 1) {
+        var L = exColLetter_(barCol + 1);
+        ws.addConditionalFormatting({ ref: L + '4:' + L + (3 + dataRows), rules: [{ type: 'dataBar', priority: 1, gradient: false,
+          cfvo: [{ type: 'num', value: 0 }, { type: 'max' }], color: { argb: 'FF9DBA8E' } }] });
+      }
     });
     return wb.xlsx.writeBuffer();
   }).then(function(buf){
@@ -4618,11 +4846,16 @@ function exportPdf_(title, sheets, opts){
   function cell(v, kind){ return typeof v === 'number' ? (kind === 'int' ? Math.abs(v).toLocaleString('en-US') : money(Math.abs(v))) : esc(trText_(String(v == null ? '' : v))); }
   var body = sheets.map(function(sh){
     var rows = sh.rows || [], kinds = exColKinds_(rows), outline = sh.outline || null;
+    var grouped = !!(outline && outline.some(function(d){ return d > 0; })), barCol = exBarCol_(sh, kinds, grouped);
+    var barMax = barCol < 0 ? 0 : rows.slice(1).reduce(function(m, r){ return exIsTotal_(r) ? m : Math.max(m, Math.abs(Number(r[barCol]) || 0)); }, 0);
     return '<section><h2>'+esc(trText_(sh.title || sh.name || ''))+'</h2>' + (sh.note ? '<p class="note">'+esc(trText_(sh.note))+'</p>' : '') +
       '<table><thead><tr>' + (rows[0] || []).map(function(h, i){ return '<th class="'+(kinds[i] === 'text' ? 't' : 'n')+'">'+esc(trText_(String(h)))+'</th>'; }).join('') + '</tr></thead><tbody>' +
       rows.slice(1).map(function(r, k){
         var lvl = outline ? outline[k] : null, cls = exIsTotal_(r) ? 'total' : lvl === 0 ? 'l0' : lvl ? 'l' + Math.min(lvl, 5) : '';
-        return '<tr class="'+cls+'">' + r.map(function(v, i){ return '<td class="'+(kinds[i] === 'text' ? 't' : 'n')+'">'+cell(v, kinds[i])+'</td>'; }).join('') + '</tr>';
+        return '<tr class="'+cls+'">' + r.map(function(v, i){
+          var bar = i === barCol && barMax > 0 && !exIsTotal_(r) && typeof v === 'number' ? ' style="--w:'+(Math.abs(v) / barMax * 100).toFixed(1)+'%"' : '';
+          return '<td class="'+(kinds[i] === 'text' ? 't' : 'n')+(bar ? ' bar' : '')+'"'+bar+'>'+cell(v, kinds[i])+'</td>';
+        }).join('') + '</tr>';
       }).join('') + '</tbody></table></section>';
   }).join('');
   var css = '@page{size:A4 landscape;margin:12mm 10mm 14mm}' +
@@ -4642,7 +4875,8 @@ function exportPdf_(title, sheets, opts){
     '.kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin:0 0 16px}.kpi{border:1px solid #' + EX_LINE_ + ';border-radius:10px;padding:9px 11px;background:#fff}' +
     '.kpi span{display:block;font-size:9.5px;color:#5b665c;font-weight:700}.kpi b{display:block;font-size:15px;margin-top:3px;font-variant-numeric:tabular-nums;direction:ltr;text-align:' + (rtl ? 'right' : 'left') + '}' +
     '.kpi.strong{background:#' + EX_GREEN_ + ';border-color:#' + EX_GREEN_ + '}.kpi.strong span,.kpi.strong b{color:#fff}' +
-    'section{page-break-inside:auto}h2{page-break-after:avoid}';
+    'section{page-break-inside:auto}h2{page-break-after:avoid}' +
+    'td.bar{background-image:linear-gradient(to ' + (rtl ? 'right' : 'left') + ',rgba(157,186,142,.55) var(--w),transparent var(--w))!important;background-size:100% 62%;background-position:center;background-repeat:no-repeat}';
   var html = '<!doctype html><html lang="'+state.lang+'" dir="'+(rtl ? 'rtl' : 'ltr')+'"><head><meta charset="utf-8"><title>'+esc(trText_(title))+'</title>' +
     '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap"><style>'+css+'</style></head><body>' +
     '<div class="top"><img src="data:image/png;base64,'+LOGO_B64+'" alt=""><div><h1>'+esc(trText_(title))+'</h1><p>Best Gas Collections</p></div></div>' +
@@ -5051,6 +5285,9 @@ function reportTabs_(entries, res, note){
     { key: 'branches', label: t('rp_tabBranches'), card: function(){ return rpTableCard_(t('rp_tabBranches'),
         [{ h: t('admin_location'), v: function(r){ return r.name; } }, { h: t('admin_cluster'), v: function(r){ var l = byId(meta.locations, r.key); return l ? clusterName(l.clusterId) : ''; } }].concat(moneyCols, [countCol]),
         branches, total, function(r){ drill(r.name, r.entries); }); } },
+    { key: 'branchDays', label: t('bh_tab'), card: function(){ return branchBoard_(entries, {
+        onRow: function(b){ drill(b.name, b.entries); },
+        onCell: function(b, d){ drill(b.name + ' · ' + d, b.entries.filter(function(e){ return String(e.date).slice(0, 10) === d; })); } }); } },
     { key: 'areas', label: t('rp_tabAreas'), card: function(){ return rpTableCard_(t('rp_tabAreas'),
         [{ h: t('admin_cluster'), v: function(r){ return r.name; } }].concat(moneyCols, [countCol]), areas, total, function(r){ drill(r.name, r.entries); }); } },
     { key: 'sources', label: t('rp_tabSources'), card: function(){ return rpTableCard_(t('rp_tabSources'),
@@ -5185,18 +5422,16 @@ function reportTabs_(entries, res, note){
   });
   qs('.rp-all', wrap).addEventListener('click', function(){
     var T = total.T;
-    var summary = [[t('eq_title'), '']].concat(['sales','cashSales','posSales','aOther','aCreditDelivery','aChannelDelivery','additions','dPos','dCredit','dCommission','dChannelCommission','dTransfer','dDelivery','dExpense','dBanked','deductions','net']
-      .filter(function(p){ return ['sales','additions','deductions','net','cashSales'].indexOf(p) >= 0 || eqNonZero_(T[p]); })
-      .map(function(p){ return [t(EQ_PARTS_[p].label), Math.round(T[p] * 100) / 100]; }));
-    var sheets = [{ name: t('eq_title'), rows: summary }].concat(tabs.map(function(tb){ var c = tb.card(); return { name: c._title, rows: c._aoa(), outline: c._outline ? c._outline() : null }; }));
+    var sm = rpEqSummary_(T, ['sales','cashSales','posSales','additions','aOther','aCreditDelivery','aChannelDelivery','deductions','dPos','dCredit','dCommission','dChannelCommission','dTransfer','dDelivery','dExpense','dBanked','net'], '');
+    var sheets = [{ name: t('eq_title'), rows: sm.rows, outline: sm.outline, noBars: true }];
+    tabs.forEach(function(tb){ var c = tb.card(); sheets.push({ name: c._title, rows: c._aoa(), outline: c._outline ? c._outline() : null }); if (c._more) sheets = sheets.concat(c._more()); });
     exportXlsx_(t('report_title') + ' ' + exStamp_(), sheets, { note: wrap._note || '' });
   });
   qs('.rp-all-pdf', wrap).addEventListener('click', function(){
     var T = total.T;
-    var summary = [[t('eq_title'), t('ui_sar')]].concat(['sales','cashSales','posSales','additions','deductions','net'].filter(function(p){ return eqNonZero_(T[p]) || p === 'net'; })
-      .map(function(p){ return [t(EQ_PARTS_[p].label), Math.round(T[p] * 100) / 100]; }));
+    var sm = rpEqSummary_(T, ['sales','cashSales','posSales','additions','aOther','aCreditDelivery','aChannelDelivery','deductions','dPos','dCredit','dCommission','dChannelCommission','dTransfer','dDelivery','dExpense','dBanked','net'], t('ui_sar'));
     var keep = ['pivot', 'branches', 'areas', 'products', 'customers', 'channels'];
-    var sheets = [{ name: t('eq_title'), rows: summary }].concat(tabs.filter(function(tb){ return keep.indexOf(tb.key) >= 0; })
+    var sheets = [{ name: t('eq_title'), rows: sm.rows, outline: sm.outline, noBars: true }].concat(tabs.filter(function(tb){ return keep.indexOf(tb.key) >= 0; })
       .map(function(tb){ var c = tb.card(); return { name: c._title, rows: c._aoa(), outline: c._outline ? c._outline() : null }; })
       .filter(function(sh){ return sh.rows.length > 2; }));
     var branchesN = {}; entries.forEach(function(e){ branchesN[e.locationId] = 1; });
@@ -5208,6 +5443,27 @@ function reportTabs_(entries, res, note){
   });
   show(current);
   return wrap;
+}
+// The equation as a summary sheet (2026-09-30): each part a bold line, its
+// non-zero lines folded under it, a part of nothing left out, the net closing.
+function rpEqSummary_(T, parts, unitHead){
+  var MAIN = { sales: 1, additions: 1, deductions: 1 }, groups = [], cur = null;
+  function val(p){ return Math.round(T[p] * 100) / 100; }
+  parts.forEach(function(p){
+    if (p === 'net') return;
+    if (MAIN[p]) { cur = { p: p, lines: [] }; groups.push(cur); return; }
+    if (cur && eqNonZero_(T[p])) cur.lines.push(p);
+  });
+  var rows = [[t('eq_title'), unitHead || '']], outline = [];
+  groups.forEach(function(g){
+    if (g.p !== 'sales' && !eqNonZero_(T[g.p])) return;
+    rows.push([t(EQ_PARTS_[g.p].label), val(g.p)]); outline.push(0);
+    // a single line that only repeats its part (all sales in cash) adds nothing
+    if (g.lines.length === 1 && val(g.lines[0]) === val(g.p)) return;
+    g.lines.forEach(function(p){ rows.push([t(EQ_PARTS_[p].label), val(p)]); outline.push(1); });
+  });
+  var net = [t(EQ_PARTS_.net.label), val('net')]; net.isTotal = true; rows.push(net); outline.push(null);
+  return { rows: rows, outline: outline };
 }
 // name of a master-data item (collection / expense), for search text
 function itemName_(listName, id){
@@ -5344,7 +5600,9 @@ function drawerClose_(){
 // ---------- building blocks ----------
 function tile_(o){
   // o: {label, value, icon, color, foot, onClick}
-  var node = el('<div class="tile'+(o.onClick?' click':'')+'" style="--c:'+(o.color||'var(--green)')+'"'+(o.onClick?' role="button" tabindex="0"':'')+'>' +
+  // a figure of nothing reads quieter than one that needs attention
+  var zero = /^[0.,\s]+$/.test(String(o.value == null ? '' : o.value));
+  var node = el('<div class="tile'+(o.onClick?' click':'')+(zero?' is-zero':'')+'" style="--c:'+(o.color||'var(--green)')+'"'+(o.onClick?' role="button" tabindex="0"':'')+'>' +
     '<div class="top"><span class="ic">'+icon_(o.icon||'layers')+'</span>' + (o.onClick ? '<span class="go">'+icon_('chevron')+'</span>' : '') + '</div>' +
     '<div><div class="lb">'+esc(o.label)+'</div><div class="vl">'+esc(o.value)+'</div></div>' +
     (o.foot ? '<div class="ft">'+o.foot+'</div>' : '') +
@@ -5400,13 +5658,115 @@ function panel_(title, opts){
   if (opts.hint) node.appendChild(el('<div class="muted" style="font-size:12px;margin:-6px 0 10px;">'+esc(opts.hint)+'</div>'));
   return node;
 }
+// Branches at a glance (2026-09-30): a league table (sales, net cash, how many
+// days each branch reported) and a branch-by-day heatmap of the last 31 days
+// of the range. A day with no entry at all is an outlined empty cell, never a
+// quiet zero, so a branch that stopped reporting shows as a gap.
+// opts: {onRow(b), onCell(b, date)}. The card carries _aoa (the league) and
+// _more (the day matrix) for the report's Excel.
+var BH_RAMP_ = ['#e6ede3', '#c3d6be', '#97b891', '#6b9466', '#46694a'];
+function branchBoard_(entries, opts){
+  opts = opts || {};
+  var by = {}, anyDay = {};
+  (entries || []).forEach(function(e){
+    if (e.voided || !e.locationId) return;
+    var d = String(e.date || '').slice(0, 10); if (!d) return;
+    var b = by[e.locationId] || (by[e.locationId] = { id: e.locationId, sales: 0, net: 0, count: 0, days: {}, entries: [] });
+    var a = entryAmt_(e);
+    b.sales += a.gross; b.net += a.net; b.count++; b.entries.push(e);
+    b.days[d] = (b.days[d] || 0) + a.gross; anyDay[d] = 1;
+  });
+  var keys = Object.keys(anyDay).sort();
+  var card = el('<div class="card bh-card no-collapse" data-noexport="1"><div class="rp-head"><h2>'+esc(t('bh_title'))+'</h2></div><p class="bh-hint">'+esc(t('bh_hint'))+'</p></div>');
+  card._title = t('bh_title');
+  if (!keys.length) { card.appendChild(el('<div class="muted rp-empty">'+esc(t('eq_nothingHere'))+'</div>')); card._aoa = function(){ return [[t('bh_title')]]; }; return card; }
+  var end = dpParse_(keys[keys.length - 1]), start = dpParse_(keys[0]);
+  var first = new Date(end.getFullYear(), end.getMonth(), end.getDate() - 30); if (start > first) first = start;
+  var cols = [];
+  for (var d = first; d <= end; d = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1)) cols.push(dpIso_(d));
+  var list = Object.keys(by).map(function(k){ return by[k]; }).sort(function(a, b){ return b.sales - a.sales; });
+  var max = 0, missing = 0;
+  list.forEach(function(b){
+    b.reported = cols.filter(function(c){ return b.days[c] != null; }).length;
+    missing += cols.length - b.reported;
+    cols.forEach(function(c){ if ((b.days[c] || 0) > max) max = b.days[c]; });
+    var l = byId((state.meta || {}).locations, b.id);
+    b.name = locationName(b.id); b.area = l ? clusterName(l.clusterId) : '';
+  });
+  var topSales = list.length ? list[0].sales : 0;
+  function r2(v){ return Math.round(v * 100) / 100; }
+  // the league
+  var tbl = el('<div class="tbl-scroll"><table class="rp-table bh-table"><thead><tr><th class="n">#</th><th>'+esc(t('admin_location'))+'</th><th>'+esc(t('bh_days'))+'</th>' +
+    '<th class="n">'+esc(t('eq_sales'))+'</th><th class="n">'+esc(t(EQ_PARTS_.net.label))+'</th></tr></thead><tbody></tbody></table></div>');
+  var tb = qs('tbody', tbl);
+  list.forEach(function(b, i){
+    var full = b.reported === cols.length;
+    var tr = el('<tr'+(opts.onRow ? ' class="pf-row" tabindex="0"' : '')+'><td class="n bh-rank">'+(i + 1)+'</td>' +
+      '<td><div class="bh-name">'+esc(b.name)+'</div>'+(b.area ? '<div class="bh-sub">'+esc(b.area)+'</div>' : '')+'</td>' +
+      '<td><span class="bh-cov'+(full ? ' full' : '')+'">'+esc(t('bh_of').replace('{n}', b.reported).replace('{m}', cols.length))+'</span></td>' +
+      '<td class="n num"><div class="bh-amt">'+money(b.sales)+'</div><div class="bh-bar"><span style="width:'+(topSales ? (b.sales / topSales * 100).toFixed(1) : 0)+'%"></span></div></td>' +
+      '<td class="n num">'+money(b.net)+'</td></tr>');
+    if (opts.onRow) { tr.addEventListener('click', function(){ opts.onRow(b); }); tr.addEventListener('keydown', function(e){ if (e.key === 'Enter') opts.onRow(b); }); }
+    tb.appendChild(tr);
+  });
+  card.appendChild(tbl);
+  // the heatmap
+  function step(v){ if (v == null) return -1; if (!max || v <= 0) return 0; return Math.min(4, Math.floor(v / max * 4.999)); }
+  var heat = el('<div class="bh-heat"><div class="bh-heat-head"><h3>'+esc(t('bh_heat'))+'</h3>' +
+    (missing ? '<span class="bh-miss">'+esc(t('bh_missing').replace('{n}', missing))+'</span>' : '<span class="bh-miss ok">'+esc(t('bh_allIn'))+'</span>') + '</div>' +
+    '<div class="bh-scroll"><div class="bh-grid" style="--n:'+cols.length+'"></div></div>' +
+    '<div class="bh-legend"><span>'+esc(t('bh_less'))+'</span>' + BH_RAMP_.map(function(c){ return '<i style="background:'+c+'"></i>'; }).join('') +
+    '<span>'+esc(t('bh_more'))+'</span><i class="none"></i><span>'+esc(t('bh_none'))+'</span></div></div>');
+  var grid = qs('.bh-grid', heat), html = ['<div class="bh-corner"></div>'];
+  cols.forEach(function(c, i){
+    var dd = dpParse_(c), show = cols.length <= 10 || i === 0 || i === cols.length - 1 || dd.getDate() === 1 || (i % 7 === 0 && cols.length - 1 - i > 3);
+    html.push('<div class="bh-day'+(dd.getDay() === 5 || dd.getDay() === 6 ? ' we' : '')+'">'+(show ? Number(c.slice(8)) + '/' + Number(c.slice(5, 7)) : '')+'</div>');
+  });
+  list.forEach(function(b, bi){
+    html.push('<div class="bh-rowname" title="'+esc(b.name)+'">'+esc(b.name)+'</div>');
+    cols.forEach(function(c){
+      var v = b.days[c], st = step(v);
+      var tip = b.name + ' · ' + dpFmt_(dpParse_(c), { weekday: 'short', day: 'numeric', month: 'long' }) + ' · ' + (v == null ? t('bh_none') : money(v));
+      html.push('<button type="button" class="bh-cell'+(st < 0 ? ' none' : '')+'" data-b="'+bi+'" data-d="'+c+'" title="'+esc(tip)+'" aria-label="'+esc(tip)+'"'+(st >= 0 ? ' style="background:'+BH_RAMP_[st]+'"' : '')+'></button>');
+    });
+  });
+  grid.innerHTML = html.join('');
+  grid.addEventListener('click', function(e){
+    var c = e.target.closest('.bh-cell'); if (!c || c.classList.contains('none') || !opts.onCell) return;
+    opts.onCell(list[+c.getAttribute('data-b')], c.getAttribute('data-d'));
+  });
+  card.appendChild(heat);
+  // Excel: the league (with bars on sales) and the day matrix (a colour scale)
+  function league(){
+    return [['#', t('admin_location'), t('admin_cluster'), t('bh_days'), t('eq_sales'), t(EQ_PARTS_.net.label)]].concat(list.map(function(b, i){
+      return [String(i + 1), b.name, b.area, t('bh_of').replace('{n}', b.reported).replace('{m}', cols.length), r2(b.sales), r2(b.net)];
+    }), [[t('rp_total'), '', '', '', r2(list.reduce(function(a, b){ return a + b.sales; }, 0)), r2(list.reduce(function(a, b){ return a + b.net; }, 0))]]);
+  }
+  function matrix(){
+    return [[t('admin_location'), t('admin_cluster')].concat(cols, [t('rp_total')])].concat(list.map(function(b){
+      return [b.name, b.area].concat(cols.map(function(c){ return b.days[c] == null ? '' : r2(b.days[c]); }), [r2(b.sales)]);
+    }));
+  }
+  card._aoa = league;
+  card._more = function(){ return [{ name: t('bh_heat'), rows: matrix(), noBars: true, heat: { from: 3, to: 2 + cols.length } }]; };
+  qs('.rp-head', card).appendChild(exButtons_(function(){ return [{ name: t('bh_title'), rows: league() }].concat(card._more()); }, function(){ return t('bh_title'); }, function(){ return { note: card._note || '' }; }));
+  return card;
+}
 // Rows with a label, sub-line, proportional bar and amount; clickable.
 function barRows_(rows, opts){
   // rows: [{label, sub, amount, color, icon, mark, onClick}]
+  // One list is one series: its bars share the brand green; only a status list
+  // (opts.status) keeps a colour per state, always beside its icon and name.
+  // Rows at zero fold into one quiet line under the others.
   opts = opts || {};
+  var zeroRows = rows.filter(function(r){ return !Number(r.amount); });
+  if (zeroRows.length && zeroRows.length < rows.length) rows = rows.filter(function(r){ return Number(r.amount); });
+  else zeroRows = [];
   var max = Math.max.apply(null, rows.map(function(r){ return Math.abs(r.amount); }).concat([1]));
   var wrap = el('<div class="rows"></div>');
   if (!rows.length) { wrap.appendChild(el('<div class="muted" style="padding:6px 2px;">'+esc(t('dash_noData'))+'</div>')); return wrap; }
+  rows = rows.map(function(r){ var o = {}; Object.keys(r).forEach(function(k){ o[k] = r[k]; }); if (!opts.status) o.color = 'var(--green)'; return o; });
+  if (zeroRows.length) setTimeout(function(){ wrap.appendChild(el('<div class="rrow-zero">'+esc(t('dash_zeroRows').replace('{list}', zeroRows.map(function(r){ return r.label; }).join('، ')))+'</div>')); }, 0);
   rows.forEach(function(r){
     var mark = r.icon ? icon_(r.icon) : esc(r.mark || initials_(r.label));
     var row = el('<div class="rrow'+(r.onClick?' click':'')+'" style="--c:'+(r.color||'var(--green)')+'"'+(r.onClick?' role="button" tabindex="0"':'')+'>' +
@@ -5768,6 +6128,7 @@ function openMetric_(key, ctx, extra){
     holderHandoffs: function(){ return { title: userName(extra.uid), sub: t('dash_heldConfirmedNotDeposited'), items: hof(function(h){ return h.status === 'confirmed' && !h.consumedBy && h.kind !== 'deposit' && h.toUserId === extra.uid; }) }; },
     city:        function(){ return { title: extra.city, sub: t('dash_byCity'), items: ent(function(e){ var l = byId(state.meta.locations, e.locationId); return (l ? l.city : '') === extra.city; }, 'gross') }; },
     location:    function(){ return { title: locationName(extra.locationId), sub: t('dash_byLocation'), items: ent(function(e){ return e.locationId === extra.locationId; }, 'gross') }; },
+    locDay:      function(){ return { title: locationName(extra.locationId), sub: extra.date, items: ent(function(e){ return e.locationId === extra.locationId && String(e.date).slice(0, 10) === extra.date; }, 'gross') }; },
     product:     function(){ return { title: extra.name || t('report_unspecified'), sub: t('report_byProduct'), items: ent(function(e){ return (e.productId || null) === (extra.productId || null); }, 'gross') }; },
     date:        function(){ return { title: extra.date, sub: t('report_trend'), items: ent(function(e){ return e.date === extra.date; }, 'gross') }; },
     sourceType:  function(){ return { title: t('entry_source_' + extra.type), sub: t('dash_bySourceType'), items: ent(function(e){ return e.sourceType === extra.type; }, 'gross') }; },
@@ -5797,7 +6158,7 @@ function watchEntrance_(body){
   mo.observe(body, { childList: true, subtree: true });
 }
 function countUp_(root){
-  qsa('.tile .vl, .st-head .v, .hero .cta .big', root).forEach(function(node){
+  qsa('.tile .vl, .st-head .v, .hero .cta .big, .eqx-big .n', root).forEach(function(node){
     var tn = null;
     for (var i = 0; i < node.childNodes.length; i++) { if (node.childNodes[i].nodeType === 3 && /\d/.test(node.childNodes[i].nodeValue)) { tn = node.childNodes[i]; break; } }
     if (!tn) return;
@@ -5975,14 +6336,7 @@ function whereIsCashPanel_(entries, dash, open, handoffs){
 }
 function trendPanel_(byDate, open){
   var p = panel_(t('report_trend'), { noCollapse: true });
-  var chart = trendChart(byDate || []);
-  p.appendChild(chart);
-  qsa('rect', chart).forEach(function(rect, i){
-    var row = (byDate||[])[i];
-    if (!row) return;
-    rect.style.cursor = 'pointer';
-    rect.addEventListener('click', open('date', { date: row.date }));
-  });
+  p.appendChild(trendChart(byDate || [], { onPick: function(row){ open('date', { date: row.date })(); } }));
   return p;
 }
 function locationsView_(report, open){
@@ -6050,6 +6404,13 @@ function renderDashboard(body){
     // ---- where the cash is ----
     body.appendChild(whereIsCashPanel_(entries, dash, open, handoffs));
 
+    // ---- branches: the league and the days each one reported ----
+    body.appendChild(secTitle_(t('bh_section')));
+    body.appendChild(branchBoard_(entries, {
+      onRow: function(b){ open('location', { locationId: b.id })(); },
+      onCell: function(b, d){ open('locDay', { locationId: b.id, date: d })(); }
+    }));
+
     // ---- sales analysis ----
     body.appendChild(secTitle_(t('dash_salesAnalysis')));
     var g1 = el('<div class="g2" style="margin-bottom:18px;"></div>');
@@ -6073,7 +6434,8 @@ function renderDashboard(body){
     g2.appendChild(cityPanel);
     var prodPanel = panel_(t('report_byProduct'));
     prodPanel.appendChild(barRows_((report.byProduct||[]).map(function(r){
-      return { label: r.name || t('report_unspecified'), sub: t('report_cashChannel')+' '+money(r.cashAmount)+' · '+t('report_posChannel')+' '+money(r.posAmount)+' · '+t('report_creditChannel')+' '+money(r.creditAmount), amount: r.total, icon: 'box', color: 'var(--c-pos)', onClick: open('product', { productId: r.productId, name: r.name }) };
+      var ch = [[t('report_cashChannel'), r.cashAmount], [t('report_posChannel'), r.posAmount], [t('report_creditChannel'), r.creditAmount]].filter(function(c){ return Number(c[1]); });
+      return { label: r.name || t('report_unspecified'), sub: ch.length > 1 ? ch.map(function(c){ return c[0] + ' ' + money(c[1]); }).join(' · ') : '', amount: r.total, icon: 'box', onClick: open('product', { productId: r.productId, name: r.name }) };
     })));
     g2.appendChild(prodPanel);
     body.appendChild(g2);
@@ -6111,7 +6473,7 @@ function renderDashboard(body){
       { label: t('handoff_confirmed'), amount: byStatus.confirmed, icon: 'check', color: 'var(--c-deposit)', onClick: open('allHandoffs') },
       { label: t('handoff_disputed'), amount: byStatus.disputed, icon: 'alert', color: 'var(--c-danger)', onClick: open('disputed') },
       { label: t('handoff_rejected'), amount: byStatus.rejected, icon: 'close', color: 'var(--muted)' }
-    ], { count: true }));
+    ], { count: true, status: true }));
     g3.appendChild(statusPanel);
     var byKind = { car_to_location:0, location_to_cluster:0, cluster_to_collector:0, deposit:0 };
     handoffs.forEach(function(h){ if (byKind.hasOwnProperty(h.kind)) byKind[h.kind] += Number(h.amount||0); });
@@ -7112,6 +7474,19 @@ function dpClose_(refocus){
   if (o.layer.parentNode) o.layer.parentNode.removeChild(o.layer);
   if (refocus && o.inp._dp && document.contains(o.inp._dp)) o.inp._dp.focus({ preventScroll: true });
 }
+// A soft light following the pointer across the card under it (mouse only).
+(function bgSpot_(){
+  if (!window.matchMedia || !window.matchMedia('(hover:hover) and (pointer:fine)').matches) return;
+  var cur = null, raf = 0, ev = null;
+  function paint(){
+    raf = 0;
+    var c = ev && ev.target && ev.target.closest ? ev.target.closest('.card') : null;
+    if (c !== cur) { if (cur) cur.classList.remove('spot'); cur = c; if (cur) cur.classList.add('spot'); }
+    if (cur) { var r = cur.getBoundingClientRect(); cur.style.setProperty('--mx', (ev.clientX - r.left) + 'px'); cur.style.setProperty('--my', (ev.clientY - r.top) + 'px'); }
+  }
+  document.addEventListener('pointermove', function(e){ ev = e; if (!raf) raf = requestAnimationFrame(paint); }, { passive: true });
+  document.addEventListener('pointerleave', function(){ if (cur) cur.classList.remove('spot'); cur = null; });
+})();
 (function ddInit_(){
   // a script setting .value / .selectedIndex updates the button too
   var P = HTMLSelectElement.prototype;
@@ -10269,67 +10644,92 @@ function barList(rows, labelFn, cashFn, posFn, creditFn){
 
 // Minimal inline SVG bar chart for a date trend — no charting library, self
 // contained like the rest of this app.
-function trendChart(rows){
-  if (!rows.length) return el('<div class="muted">'+esc(t('noData'))+'</div>');
-  var w = 700, h = 210, padX = 18, padTop = 26, padBottom = 30;
-  var max = Math.max.apply(null, rows.map(function(r){ return r.total; }).concat([1]));
-  var stepX = rows.length > 1 ? (w - padX * 2) / (rows.length - 1) : 0;
-  function xAt(i){ return rows.length > 1 ? padX + i * stepX : w / 2; }
-  function yAt(v){ return h - padBottom - (v / max) * (h - padTop - padBottom); }
-  var uid = 'tg' + Math.random().toString(36).slice(2, 8);
-  // horizontal guides at 0/50/100% of the peak
-  var grid = [0, 0.5, 1].map(function(f){
-    var y = yAt(max * f);
-    return '<line x1="'+padX+'" y1="'+y+'" x2="'+(w-padX)+'" y2="'+y+'" stroke="var(--border)" stroke-width="1" stroke-dasharray="'+(f===0?'0':'3 5')+'"/>' +
-      // no value labels on the guides: the svg is stretched to fill its card
-      // (preserveAspectRatio=none), which distorts text. The peak label and the
-      // hover readout carry the numbers instead.
-      '';
-  }).join('');
-  var line = rows.map(function(r,i){ return (i ? 'L' : 'M') + xAt(i) + ' ' + yAt(r.total); }).join(' ');
-  var area = line + ' L' + xAt(rows.length-1) + ' ' + (h - padBottom) + ' L' + xAt(0) + ' ' + (h - padBottom) + ' Z';
-  var pts = rows.map(function(r,i){
-    return '<circle class="pt" cx="'+xAt(i)+'" cy="'+yAt(r.total)+'" r="3.5" fill="#fff" stroke="var(--green)" stroke-width="2.5"/>';
-  }).join('');
-  // one invisible column per point: the click/hover target (and what the
-  // dashboard binds its drill-down to, in row order)
-  var hitW = rows.length > 1 ? stepX : (w - padX * 2);
-  var hits = rows.map(function(r,i){
-    return '<rect class="hit" x="'+(xAt(i)-hitW/2)+'" y="'+padTop+'" width="'+hitW+'" height="'+(h-padTop-padBottom)+'" data-i="'+i+'"><title>'+esc(r.date)+': '+esc(money(r.total))+'</title></rect>';
-  }).join('');
-  var labels = rows.map(function(r,i){
-    var show = rows.length <= 8 || i === 0 || i === rows.length-1 || i === Math.floor(rows.length/2);
-    return show ? '<text x="'+xAt(i)+'" y="'+(h-9)+'" font-size="9.5" fill="var(--muted)" text-anchor="middle">'+esc(String(r.date).slice(5))+'</text>' : '';
-  }).join('');
-  var peak = rows.reduce(function(a,b){ return b.total > a.total ? b : a; }, rows[0]);
-  var peakI = rows.indexOf(peak);
-  var peakLabel = '<text x="'+xAt(peakI)+'" y="'+(yAt(peak.total)-11)+'" font-size="10.5" font-weight="800" fill="var(--green-dark)" text-anchor="middle">'+esc(money(peak.total))+'</text>';
-  var wrap = el('<div class="chart-wrap">' +
-    '<svg class="trend-svg" viewBox="0 0 '+w+' '+h+'" preserveAspectRatio="none" role="img">' +
-      '<defs><linearGradient id="'+uid+'" x1="0" y1="0" x2="0" y2="1">' +
-        '<stop offset="0%" stop-color="var(--green)" stop-opacity=".32"/>' +
-        '<stop offset="100%" stop-color="var(--green)" stop-opacity=".02"/></linearGradient></defs>' +
-      grid +
-      '<path d="'+area+'" fill="url(#'+uid+')"/>' +
-      '<path d="'+line+'" fill="none" stroke="var(--green)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>' +
-      pts + peakLabel + labels + hits +
-    '</svg><div class="chart-tip"></div></div>');
-  // hover readout
-  var tip = qs('.chart-tip', wrap), svg = qs('svg', wrap), circles = qsa('.pt', wrap);
-  qsa('.hit', wrap).forEach(function(hit, i){
-    hit.addEventListener('mouseenter', function(){
-      var box = svg.getBoundingClientRect(), wrapBox = wrap.getBoundingClientRect();
-      tip.innerHTML = '<span class="v">'+esc(money(rows[i].total))+'</span> · '+esc(rows[i].date);
-      tip.style.left = (box.left - wrapBox.left + (xAt(i) / w) * box.width) + 'px';
-      tip.style.top = (box.top - wrapBox.top + (yAt(rows[i].total) / h) * box.height) + 'px';
+// The daily trend (2026-09-30): drawn at the card's real width (a stretched
+// SVG distorted its text and cut the peak label), every day of the range a
+// point (a day without sales is a zero, never a straight line across it),
+// clean axis ticks, labels only on the peak and the last day, and a crosshair
+// with the day and amount under the pointer. opts.onPick(row) on a click.
+function trendChart(rows, opts){
+  opts = opts || {};
+  if (!rows || !rows.length) return el('<div class="muted">'+esc(t('noData'))+'</div>');
+  var by = {};
+  rows.forEach(function(r){ if (r && r.date) by[String(r.date).slice(0, 10)] = r; });
+  var keys = Object.keys(by).sort();
+  var d0 = dpParse_(keys[0]), d1 = dpParse_(keys[keys.length - 1]), all = [];
+  for (var d = d0; d && d <= d1 && all.length < 400; d = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1)) {
+    var iso = dpIso_(d);
+    all.push(by[iso] ? { date: iso, total: Number(by[iso].total || 0), row: by[iso] } : { date: iso, total: 0, row: null });
+  }
+  var wrap = el('<div class="chart-wrap tc2"><div class="chart-tip"></div></div>');
+  var tip = qs('.chart-tip', wrap), svgNS = 'http://www.w3.org/2000/svg';
+  function nice(v){ if (v <= 0) return 1; var p = Math.pow(10, Math.floor(Math.log10(v))), m = v / p; return (m <= 1 ? 1 : m <= 2 ? 2 : m <= 2.5 ? 2.5 : m <= 5 ? 5 : 10) * p; }
+  function compact(v){ return v >= 1e6 ? (Math.round(v / 1e5) / 10) + 'M' : v >= 1e3 ? (Math.round(v / 100) / 10) + 'K' : String(Math.round(v)); }
+  function dm(iso){ var p = iso.split('-'); return Number(p[2]) + '/' + Number(p[1]); }
+  var lastW = 0;
+  function draw(W){
+    W = Math.max(260, Math.round(W)); lastW = W;
+    var H = W < 480 ? 196 : 236, padL = 44, padR = 14, padT = 26, padB = 28;
+    var n = all.length, max = nice(Math.max.apply(null, all.map(function(r){ return r.total; })) || 1);
+    var pw = W - padL - padR, ph = H - padT - padB;
+    // right to left in Arabic and Urdu, like the branch-by-day map: the axis
+    // on the right, the first day on the right
+    var rtl = document.documentElement.dir === 'rtl';
+    function M(v){ return rtl ? W - v : v; }
+    function A(a){ return !rtl || a === 'middle' ? a : a === 'start' ? 'end' : 'start'; }
+    function x(i){ return M(n > 1 ? padL + i * pw / (n - 1) : padL + pw / 2); }
+    function y(v){ return padT + ph - (v / max) * ph; }
+    var g = [0, .5, 1].map(function(fr){
+      var yy = y(max * fr);
+      return '<line x1="'+M(padL)+'" y1="'+yy+'" x2="'+M(W - padR)+'" y2="'+yy+'" class="tc-grid"/>' +
+        '<text x="'+M(padL - 8)+'" y="'+(yy + 3.5)+'" class="tc-tick" text-anchor="'+A('end')+'">'+compact(max * fr)+'</text>';
+    }).join('');
+    var line = all.map(function(r, i){ return (i ? 'L' : 'M') + x(i).toFixed(1) + ' ' + y(r.total).toFixed(1); }).join(' ');
+    var area = line + ' L' + x(n - 1).toFixed(1) + ' ' + y(0) + ' L' + x(0).toFixed(1) + ' ' + y(0) + ' Z';
+    // x labels: first, last, and evenly between as room allows
+    var room = Math.max(2, Math.floor(pw / 64)), every = Math.max(1, Math.ceil((n - 1) / (room - 1)));
+    var xl = all.map(function(r, i){
+      if (!(i === 0 || i === n - 1 || (i % every === 0 && n - 1 - i >= every / 2))) return '';
+      var anchor = A(i === 0 ? 'start' : i === n - 1 ? 'end' : 'middle');
+      return '<text x="'+x(i)+'" y="'+(H - 8)+'" class="tc-tick" text-anchor="'+anchor+'">'+dm(r.date)+'</text>';
+    }).join('');
+    var peakI = 0; all.forEach(function(r, i){ if (r.total > all[peakI].total) peakI = i; });
+    function label(i, strong){
+      var xx = x(i), anchor = xx < 60 ? 'start' : xx > W - 60 ? 'end' : 'middle';
+      return '<text x="'+xx+'" y="'+(y(all[i].total) - 10)+'" class="tc-lab'+(strong ? ' strong' : '')+'" text-anchor="'+anchor+'">'+money(all[i].total)+'</text>';
+    }
+    var labs = label(peakI, true) + (n - 1 !== peakI && Math.abs(x(n - 1) - x(peakI)) > 70 ? label(n - 1, false) : '');
+    var dots = (n <= 31 ? all.map(function(r, i){ return '<circle cx="'+x(i)+'" cy="'+y(r.total)+'" r="3.5" class="tc-dot'+(r.row ? '' : ' zero')+'"/>'; }).join('') : '') +
+      '<circle cx="'+x(n - 1)+'" cy="'+y(all[n - 1].total)+'" r="4.5" class="tc-end"/>';
+    var svg = '<svg class="tc-svg" width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="'+esc(t('report_trend'))+'">' + g +
+      '<path d="'+area+'" class="tc-area"/><path d="'+line+'" class="tc-line"/>' + dots + labs + xl +
+      '<line class="tc-cross" x1="0" y1="'+padT+'" x2="0" y2="'+(padT + ph)+'"/><circle class="tc-hov" r="5" cx="-20" cy="-20"/>' +
+      '<rect class="tc-hit" x="'+(rtl ? padR : padL)+'" y="0" width="'+pw+'" height="'+H+'"/></svg>';
+    var old = qs('svg', wrap); if (old) old.remove();
+    wrap.insertAdjacentHTML('afterbegin', svg);
+    var sv = qs('svg', wrap), cross = qs('.tc-cross', sv), hov = qs('.tc-hov', sv), hit = qs('.tc-hit', sv);
+    function at(ev){
+      var b = sv.getBoundingClientRect(), px = M((ev.clientX - b.left) * (W / b.width));
+      return Math.max(0, Math.min(n - 1, Math.round(n > 1 ? (px - padL) / (pw / (n - 1)) : 0)));
+    }
+    function show(i){
+      var r = all[i], xx = x(i), yy = y(r.total);
+      cross.setAttribute('x1', xx); cross.setAttribute('x2', xx); cross.classList.add('on');
+      hov.setAttribute('cx', xx); hov.setAttribute('cy', yy); hov.classList.add('on');
+      tip.innerHTML = '<span class="v">'+esc(money(r.total))+'</span><span class="d">'+esc(dpFmt_(dpParse_(r.date), { weekday: 'short', day: 'numeric', month: 'long' }))+'</span>';
+      tip.style.left = Math.max(60, Math.min(W - 60, xx)) + 'px'; tip.style.top = yy + 'px';
       tip.classList.add('on');
-      if (circles[i]) circles[i].classList.add('on');
-    });
-    hit.addEventListener('mouseleave', function(){ tip.classList.remove('on'); if (circles[i]) circles[i].classList.remove('on'); });
-  });
+    }
+    function hide(){ cross.classList.remove('on'); hov.classList.remove('on'); tip.classList.remove('on'); }
+    hit.addEventListener('pointermove', function(ev){ show(at(ev)); });
+    hit.addEventListener('pointerdown', function(ev){ show(at(ev)); });
+    hit.addEventListener('pointerleave', hide);
+    hit.addEventListener('click', function(ev){ var r = all[at(ev)]; if (r.row && opts.onPick) opts.onPick(r.row); });
+    hit.style.cursor = opts.onPick ? 'pointer' : 'crosshair';
+  }
+  draw(640);
+  if (typeof ResizeObserver === 'function') new ResizeObserver(function(){ var w = wrap.clientWidth; if (w && Math.abs(w - lastW) > 2) draw(w); }).observe(wrap);
   return wrap;
 }
-
 // Inline SVG donut with a legend — segments: [{label, value, color}].
 function donutChart(segments){
   segments = segments.filter(function(s){ return s.value > 0; });
@@ -10407,18 +10807,18 @@ function kpiRow(items){
 // prominent, previous figure as context underneath, and a colored up/down
 // percentage badge (0% previous with something now reads as +100%, not a
 // divide-by-zero NaN).
+// A change against last week: a percentage only when last week had
+// something to compare with; from nothing, growth has no percentage.
 function comparisonRow_(label, current, previous){
-  var delta = current - previous;
-  var pct = previous > 0 ? (delta / previous * 100) : (current > 0 ? 100 : 0);
-  var up = delta >= 0;
-  var color = up ? 'var(--ok)' : 'var(--danger)';
-  var arrow = up ? '▲' : '▼';
-  return '<div class="row" style="justify-content:space-between;align-items:center;padding:10px 0;border-top:1px dashed var(--border-soft);">' +
-    '<div><div class="muted" style="font-size:12px;">'+esc(label)+'</div>' +
-      '<div style="font-size:18px;font-weight:800;">'+money(current)+'</div>' +
-      '<div class="muted" style="font-size:11.5px;">'+esc(t('dash_comparisonPrevious'))+': '+money(previous)+'</div></div>' +
-    '<div style="color:'+color+';font-weight:800;font-size:15px;white-space:nowrap;">'+arrow+' '+Math.abs(Math.round(pct))+'%</div>' +
-  '</div>';
+  current = Number(current || 0); previous = Number(previous || 0);
+  var badge;
+  if (previous > 0) {
+    var pct = (current - previous) / previous * 100, up = current >= previous;
+    badge = '<span class="cmp-badge '+(up ? 'up' : 'down')+'">'+(up ? '▲' : '▼')+' '+Math.abs(Math.round(pct))+'%</span>';
+  } else badge = '<span class="cmp-badge none">'+esc(t('dash_noCompare'))+'</span>';
+  return '<div class="cmp-row"><div class="cmp-main"><div class="cmp-l">'+esc(label)+'</div>' +
+      '<div class="cmp-v num">'+money(current)+'</div>' +
+      '<div class="cmp-p">'+esc(t('dash_comparisonPrevious'))+': '+(previous > 0 ? money(previous) : esc(t('dash_prevNone')))+'</div></div>' + badge + '</div>';
 }
 
 var CHART_PALETTE = ['#4D6D51','#8fae7a','#b3820f','#3b5540','#c14a30','#98988f'];
@@ -12826,7 +13226,7 @@ function renderAdminProfile(content, kind, id){
       '<div class="field"><label>'+esc(t('admin_name'))+'</label><input class="ueName" value="'+esc(r.name||'')+'"></div>' +
       '<div class="field"><label>'+esc(t('email'))+'</label><input class="ueEmail" type="email" dir="ltr" value="'+esc(r.email||'')+'"></div>' +
       '<div class="field"><label>'+esc(t('admin_role'))+'</label><select class="ueRole">'+roles.map(function(x){ return '<option value="'+x+'"'+(x===r.role?' selected':'')+'>'+esc(roleLabel(x))+'</option>'; }).join('')+'</select></div>' +
-      '<div class="field"><label>'+esc(t('language'))+'</label><select class="ueLang">'+langOpts.map(function(l){ return '<option value="'+l[0]+'"'+(l[0]===(r.language||'ar')?' selected':'')+'>'+l[1]+'</option>'; }).join('')+'</select></div>' +
+      '<div class="field"><label>'+esc(t('language'))+'</label><select class="ueLang">'+langOpts.map(function(l){ return '<option value="'+l[0]+'"'+(l[0]===(r.language||'en')?' selected':'')+'>'+l[1]+'</option>'; }).join('')+'</select></div>' +
       '<div class="field"><label>'+esc(t('admin_iqamaId'))+'</label><input class="ueIqamaId" value="'+esc(r.iqamaId||'')+'"></div>' +
       '<div class="field field-check"><label>'+esc(t('admin_active'))+'</label><input type="checkbox" class="ueActive" style="width:18px;height:18px;"'+(r.active!==false?' checked':'')+'></div>' +
     '</div>'));
