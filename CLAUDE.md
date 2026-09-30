@@ -838,6 +838,15 @@ lazy `insertSheet` already covers any unknown sheet name, in both the real
 backend and the harness's fake `SpreadsheetApp`, so `readSheet(SHEETS.AREA_BULK_BATCHES)`
 just works the first time it's called.)
 
+**The fake sheet converts text the way Google Sheets does (2026-09-30).** Sheets
+reads a written string as if someone typed it: `2026-09-30` becomes a Date, `08:00`
+a time, `0501234567` the number 501234567. `sheetValue` in `stub-harness.js` does
+the same on every `setValues`/`appendRow`. This app is safe from that because every
+row is `[uuid, JSON, ISO timestamp]`, and none of those three looks like a number,
+date or time. The last block of `run.js` sweeps every row of every sheet to check
+that stays true. A new sheet that writes plain cells must put `'` in front of each
+string, as `bestgas-attendance`'s `toRow_` does, or that sweep fails.
+
 For UI changes, `tests/run.js` alone is not enough — see Traps #1.
 `tests/mock-backend-server.js` serves the real `index.html` and answers its
 API calls with the same real backend logic (same stub harness) on one
