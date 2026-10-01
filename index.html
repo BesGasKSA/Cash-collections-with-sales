@@ -501,17 +501,79 @@
 
   /* ---------- App shell ---------- */
   #app.shell{display:grid;grid-template-columns:var(--sb-w) minmax(0,1fr);min-height:100vh;}
-  .sb{position:sticky;top:0;height:100vh;overflow-y:auto;background:linear-gradient(180deg,#3f5c43 0%,#2c4431 55%,#22362a 100%);color:#fff;display:flex;flex-direction:column;padding:18px 14px;gap:18px;z-index:30;}
-  .sb::-webkit-scrollbar{width:0;}
-  /* the sidebar's depth (2026-09-30): cream gauge lines flowing slowly down
-     the green, a light pool behind the logo, a sheen across an item on hover */
-  .sb{isolation:isolate;}
-  .sb::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;
-    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='500' viewBox='0 0 300 500'%3E%3Cg fill='none' stroke='%23F2EEE4' stroke-width='1' stroke-opacity='.09'%3E%3Cpath d='M20 -10 C 36 90, 4 170, 20 250 S 32.8 420, 20 510' /%3E%3Cpath d='M62 -10 C 81 90, 43 170, 62 250 S 77.2 420, 62 510' /%3E%3Cpath d='M104 -10 C 126 90, 82 170, 104 250 S 121.6 420, 104 510' /%3E%3Cpath d='M146 -10 C 171 90, 121 170, 146 250 S 166 420, 146 510' /%3E%3Cpath d='M188 -10 C 216 90, 160 170, 188 250 S 210.4 420, 188 510' /%3E%3Cpath d='M230 -10 C 261 90, 199 170, 230 250 S 254.8 420, 230 510' /%3E%3Cpath d='M272 -10 C 306 90, 238 170, 272 250 S 299.2 420, 272 510' /%3E%3C/g%3E%3C/svg%3E");background-size:300px 500px;background-repeat:repeat;
-    animation:sbFlow 90s linear infinite;opacity:.9;}
-  .sb::after{content:"";position:absolute;inset:0 0 auto 0;height:260px;z-index:-1;pointer-events:none;
-    background:radial-gradient(80% 70% at 50% 0%, rgba(242,238,228,.16), transparent 70%);}
-  @keyframes sbFlow{from{background-position:0 0;}to{background-position:0 500px;}}
+  .sb{position:sticky;top:0;height:100vh;overflow:hidden;isolation:isolate;color:#fff;z-index:30;
+    background:linear-gradient(168deg,#3e6446 0%,#2b4a34 30%,#1d3526 64%,#111f18 100%);box-shadow:8px 0 30px -14px rgba(17,31,24,.6);}
+  html[dir="rtl"] .sb{box-shadow:-8px 0 30px -14px rgba(17,31,24,.6);}
+  /* the content scrolls inside; the atmosphere behind it (.sb-fx) stays put */
+  .sb-in{position:relative;height:100%;overflow-x:hidden;overflow-y:auto;display:flex;flex-direction:column;padding:18px 14px;gap:18px;scrollbar-width:none;}
+  .sb-in::-webkit-scrollbar{width:0;}
+  /* the sidebar's atmosphere (2026-10-01). Behind the menu, never clickable:
+     a sage light that drifts at the top and a warm flame glow that breathes at
+     the bottom, two layers of gauge lines moving at different speeds (cream
+     lines down, amber dots up), gas bubbles rising, a soft light under the
+     mouse, grain, and a light-catching edge where the sidebar meets the page.
+     Every animation moves transform/opacity only. --sb-t (set by renderShell)
+     is a negative delay, so a screen change redraws the sidebar without the
+     motion starting over. Reduced motion: all of it holds still. */
+  .sb-fx{position:absolute;inset:0;z-index:-1;overflow:hidden;pointer-events:none;contain:layout paint;}
+  .sb-fx i{position:absolute;display:block;}
+  .sb-aur{border-radius:50%;left:50%;will-change:transform;animation-delay:var(--sb-t,0s);}
+  .sb-aur.a{width:max(160%,300px);aspect-ratio:1;top:-170px;background:radial-gradient(closest-side, rgba(140,214,146,.33), rgba(140,214,146,.10) 54%, transparent);animation:sbAurA 24s ease-in-out infinite alternate;animation-delay:var(--sb-t,0s);}
+  .sb-aur.b{width:max(175%,320px);aspect-ratio:1;bottom:-150px;background:radial-gradient(closest-side, rgba(246,176,78,.56), rgba(246,176,78,.17) 54%, transparent);animation:sbAurB 13s ease-in-out infinite alternate;animation-delay:var(--sb-t,0s);}
+  .sb-aur.c{width:max(120%,240px);aspect-ratio:1;top:34%;background:radial-gradient(closest-side, rgba(122,196,170,.20), transparent);animation:sbAurC 31s ease-in-out infinite alternate;animation-delay:var(--sb-t,0s);}
+  @keyframes sbAurA{from{transform:translate3d(-62%,0,0) scale(1);}to{transform:translate3d(-34%,56px,0) scale(1.18);}}
+  @keyframes sbAurB{from{transform:translate3d(-38%,10px,0) scale(.9);opacity:.55;}to{transform:translate3d(-60%,-44px,0) scale(1.16);opacity:1;}}
+  @keyframes sbAurC{from{transform:translate3d(-80%,-60px,0) scale(.9);}to{transform:translate3d(-18%,70px,0) scale(1.15);}}
+  .sb-ln{left:0;right:0;background-repeat:repeat;will-change:transform;}
+  .sb-ln.l1{top:-500px;bottom:0;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='500' viewBox='0 0 300 500'%3E%3Cg fill='none' stroke='%23F2EEE4' stroke-width='1' stroke-opacity='.17'%3E%3Cpath d='M20 -10 C 36.0 90, 4.0 170, 20 250 S 32.8 420, 20 510' /%3E%3Cpath d='M62 -10 C 81.5 90, 42.5 170, 62 250 S 77.6 420, 62 510' /%3E%3Cpath d='M104 -10 C 127.0 90, 81.0 170, 104 250 S 122.4 420, 104 510' /%3E%3Cpath d='M146 -10 C 172.6 90, 119.4 170, 146 250 S 167.2 420, 146 510' /%3E%3Cpath d='M188 -10 C 218.1 90, 157.9 170, 188 250 S 212.1 420, 188 510' /%3E%3Cpath d='M230 -10 C 263.6 90, 196.4 170, 230 250 S 256.9 420, 230 510' /%3E%3Cpath d='M272 -10 C 309.1 90, 234.9 170, 272 250 S 301.7 420, 272 510' /%3E%3C/g%3E%3C/svg%3E");background-size:300px 500px;animation:sbFlow 64s linear infinite;animation-delay:var(--sb-t,0s);}
+  .sb-ln.l2{top:0;bottom:-640px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='380' height='640' viewBox='0 0 380 640'%3E%3Cg fill='none' stroke='%23F6DDB0' stroke-width='2' stroke-opacity='.34' stroke-linecap='round' stroke-dasharray='.1 11'%3E%3Cpath d='M38 -10 C 8.0 115, 68.0 218, 38 320 S 14.0 538, 38 650' /%3E%3Cpath d='M114 -10 C 77.4 115, 150.6 218, 114 320 S 84.7 538, 114 650' /%3E%3Cpath d='M190 -10 C 146.8 115, 233.2 218, 190 320 S 155.4 538, 190 650' /%3E%3Cpath d='M266 -10 C 216.2 115, 315.8 218, 266 320 S 226.2 538, 266 650' /%3E%3Cpath d='M342 -10 C 285.6 115, 398.4 218, 342 320 S 296.9 538, 342 650' /%3E%3C/g%3E%3C/svg%3E");background-size:380px 640px;animation:sbFlowUp 96s linear infinite;animation-delay:var(--sb-t,0s);}
+  @keyframes sbFlow{to{transform:translate3d(0,500px,0);}}
+  @keyframes sbFlowUp{to{transform:translate3d(0,-640px,0);}}
+  .sb-bub{left:var(--x);bottom:-26px;width:var(--s);height:var(--s);border-radius:50%;opacity:0;will-change:transform,opacity;
+    background:radial-gradient(circle at 32% 30%, rgba(255,255,255,.85), rgba(255,255,255,.16) 40%, rgba(255,255,255,.04) 72%);
+    box-shadow:inset 0 0 0 1px rgba(242,238,228,.50), 0 0 10px rgba(242,238,228,.18);
+    animation:sbRise var(--d) linear infinite;animation-delay:calc(var(--sb-t,0s) - var(--dl));}
+  @keyframes sbRise{
+    0%{transform:translate3d(0,0,0) scale(.5);opacity:0;}
+    7%{opacity:.95;}
+    50%{transform:translate3d(var(--sw),-53vh,0) scale(.9);opacity:.8;}
+    86%{opacity:.45;}
+    100%{transform:translate3d(calc(var(--sw) * -.5),-106vh,0) scale(1.1);opacity:0;}
+  }
+  .sb-sweep{left:-20%;right:-20%;top:0;height:46%;opacity:0;will-change:transform,opacity;
+    background:linear-gradient(180deg, transparent, rgba(255,255,255,.085) 45%, rgba(255,255,255,.11) 50%, rgba(255,255,255,.085) 55%, transparent);
+    animation:sbSweep 11s cubic-bezier(.5,0,.3,1) infinite;animation-delay:var(--sb-t,0s);}
+  @keyframes sbSweep{0%{transform:translate3d(0,-110%,0) skewY(-14deg);opacity:0;}12%{opacity:1;}58%{transform:translate3d(0,260%,0) skewY(-14deg);opacity:1;}64%,100%{transform:translate3d(0,260%,0) skewY(-14deg);opacity:0;}}
+  .sb-spot{left:0;top:0;width:360px;height:360px;margin:-180px 0 0 -180px;border-radius:50%;opacity:0;transition:opacity .35s ease;will-change:transform;
+    background:radial-gradient(closest-side, rgba(242,238,228,.19), rgba(242,238,228,.06) 55%, transparent);}
+  .sb.lit .sb-spot{opacity:1;}
+  .sb-grain{inset:0;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .5 0'/%3E%3C/filter%3E%3Crect width='100%' height='100%' filter='url(%23n)'/%3E%3C/svg%3E");background-size:160px 160px;mix-blend-mode:soft-light;opacity:.55;}
+  .sb-edge{top:0;bottom:0;inset-inline-end:0;width:1px;background:linear-gradient(180deg, rgba(242,238,228,0), rgba(242,238,228,.46) 20%, rgba(236,170,82,.44) 70%, rgba(242,238,228,0));}
+  .sb-edge::after{content:"";position:absolute;top:0;left:-1px;width:3px;height:150px;border-radius:3px;opacity:0;
+    background:linear-gradient(180deg, transparent, rgba(255,255,255,.95), transparent);animation:sbGlint 8s cubic-bezier(.55,0,.4,1) infinite;animation-delay:var(--sb-t,0s);}
+  @keyframes sbGlint{0%{transform:translate3d(0,-160px,0);opacity:0;}10%{opacity:1;}55%{transform:translate3d(0,100vh,0);opacity:.7;}60%,100%{transform:translate3d(0,100vh,0);opacity:0;}}
+  /* the logo breathes: a soft halo behind it and one slow ring leaving it */
+  .sb-emb{position:relative;display:inline-flex;flex-shrink:0;}
+  .sb-emb::before{content:"";position:absolute;inset:-10px;border-radius:50%;background:radial-gradient(closest-side, rgba(242,238,228,.58), rgba(242,238,228,.16) 62%, transparent);
+    animation:sbBreath 4.2s ease-in-out infinite alternate;animation-delay:var(--sb-t,0s);}
+  .sb-emb::after{content:"";position:absolute;inset:-3px;border-radius:50%;border:1.5px solid rgba(242,238,228,.62);opacity:0;pointer-events:none;
+    animation:sbPing 4.2s cubic-bezier(.2,.7,.3,1) infinite;animation-delay:var(--sb-t,0s);}
+  @keyframes sbBreath{from{transform:scale(.84);opacity:.3;}to{transform:scale(1.2);opacity:.95;}}
+  @keyframes sbPing{0%{transform:scale(.94);opacity:0;}12%{opacity:.6;}72%,100%{transform:scale(1.7);opacity:0;}}
+  /* the selected item: one cream plate that slides from the old item to the
+     new one (sbIndPlace_). Without it the item keeps its own cream background. */
+  .sb-ind{position:absolute;left:0;top:0;border-radius:12px;pointer-events:none;opacity:0;will-change:transform;
+    background:linear-gradient(180deg,#fcfaf5,var(--cream));
+    box-shadow:0 8px 20px -6px rgba(0,0,0,.34), inset 0 1px 0 rgba(255,255,255,.9), 0 0 28px rgba(242,238,228,.24);
+    transition:transform .4s cubic-bezier(.3,1.32,.5,1);}
+  .sb-nav.has-ind .sb-ind{opacity:1;}
+  .sb-nav.has-ind .sb-item.active{background:transparent;box-shadow:none;}
+  .sb-nav.slide .sb-item.active{animation:sbInkIn .4s ease both;}
+  .sb-nav.slide .sb-item.was{animation:sbInkOut .26s ease both;}
+  .sb-nav.slide .sb-item.active svg{animation:sbPop .5s cubic-bezier(.3,1.5,.5,1) .14s both;}
+  @keyframes sbInkIn{0%,50%{color:rgba(255,255,255,.92);}100%{color:var(--green-deep);}}
+  @keyframes sbInkOut{0%,40%{color:var(--green-deep);}100%{color:rgba(255,255,255,.8);}}
+  @keyframes sbPop{0%{transform:scale(.8);}100%{transform:scale(1);}}
   .sb-item{overflow:hidden;}
   .sb-item::after{content:"";position:absolute;inset:0;pointer-events:none;border-radius:inherit;
     background:linear-gradient(105deg, transparent 30%, rgba(255,255,255,.14) 50%, transparent 70%);transform:translateX(-120%);}
@@ -523,21 +585,23 @@
   html[dir="rtl"] .sb-item:hover svg{transform:translateX(-3px);}
   .sb-item:active{transform:scale(.97);}
   .sb-item.active::after{display:none;}
-  @media (prefers-reduced-motion:reduce){ .sb::before{animation:none;} .sb-item::after{display:none;} .sb-item svg{transition:none;} }
-  .sb-brand{display:flex;align-items:center;gap:12px;padding:4px 6px 14px;border-bottom:1px solid rgba(255,255,255,.1);}
+  @media (prefers-reduced-motion:reduce){ .sb-item::after,.sb-bub,.sb-sweep,.sb-spot,.sb-edge::after,.sb-emb::after{display:none;} .sb-item svg{transition:none;} }
+  .sb-brand{display:flex;align-items:center;gap:12px;padding:4px 6px 14px;border-bottom:1px solid transparent;border-image:linear-gradient(90deg, rgba(242,238,228,0), rgba(242,238,228,.34), rgba(242,238,228,0)) 1;}
+  .sb-brand .emblem{z-index:1;}
   .emblem{--s:46px;display:inline-block;vertical-align:middle;width:var(--s);height:var(--s);border-radius:50%;overflow:hidden;position:relative;flex-shrink:0;box-shadow:0 0 0 2px rgba(242,238,228,.55),0 6px 16px rgba(0,0,0,.28);background:var(--green);}
   .emblem img{position:absolute;max-width:none;width:calc(var(--s) * 555 / 244);height:calc(var(--s) * 457 / 244);left:calc(var(--s) * -148 / 244);top:calc(var(--s) * -43 / 244);}
   .sb-brand .t1{font-weight:800;font-size:15.5px;line-height:1.25;}
   .sb-brand .t2{font-size:11.5px;opacity:.65;margin-top:2px;}
-  .sb-nav{display:flex;flex-direction:column;gap:3px;}
+  .sb-nav{display:flex;flex-direction:column;gap:3px;position:relative;}
   .sb-sec{font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;opacity:.45;padding:6px 12px 4px;}
-  .sb-item{all:unset;box-sizing:border-box;display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:12px;color:rgba(255,255,255,.8);font-size:14px;font-weight:600;cursor:pointer;position:relative;transition:background .15s ease,color .15s ease;}
+  .sb-item{all:unset;box-sizing:border-box;display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:12px;color:rgba(255,255,255,.8);font-size:14px;font-weight:600;cursor:pointer;position:relative;z-index:1;transition:background .15s ease,color .15s ease;}
   .sb-item:hover{background:rgba(255,255,255,.08);color:#fff;}
   .sb-item:focus-visible{outline:2px solid var(--cream);outline-offset:2px;}
   .sb-item svg{width:20px;height:20px;flex-shrink:0;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;}
   .sb-item.active{background:var(--cream);color:var(--green-deep);box-shadow:0 4px 14px rgba(0,0,0,.18);}
   .sb-item .pill{margin-inline-start:auto;background:var(--c-danger);color:#fff;border-radius:999px;font-size:10.5px;font-weight:800;min-width:20px;height:20px;padding:0 6px;display:inline-flex;align-items:center;justify-content:center;}
-  .sb-user{margin-top:auto;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:12px;display:flex;flex-direction:column;gap:10px;}
+  .sb-user{margin-top:auto;background:linear-gradient(160deg,rgba(255,255,255,.14),rgba(255,255,255,.05));border:1px solid rgba(255,255,255,.15);border-radius:16px;padding:12px;display:flex;flex-direction:column;gap:10px;
+    -webkit-backdrop-filter:blur(9px) saturate(1.25);backdrop-filter:blur(9px) saturate(1.25);box-shadow:0 14px 28px -16px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.16);}
   .sb-user .who2{display:flex;align-items:center;gap:10px;min-width:0;}
   .avatar{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--cream),#d9d2bf);color:var(--green-deep);font-weight:800;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
   .sb-user .nm{font-weight:700;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
@@ -572,15 +636,17 @@
   /* tablet: icon rail */
   @media (max-width:1100px) and (min-width:701px){
     #app.shell{grid-template-columns:78px minmax(0,1fr);}
-    .sb{padding:16px 10px;align-items:center;}
+    .sb-in{padding:16px 10px;align-items:center;}
     .sb-brand{padding:4px 0 12px;border-bottom:0;}
-    .sb-brand .txt,.sb-sec,.sb-item .lbl,.sb-user .nm,.sb-user .rl,.sb-user select{display:none;}
+    .sb-emb::before{inset:-7px;} .sb-emb::after{display:none;}
+    .sb-bub:nth-of-type(2n){display:none;}
+    .sb-brand .txt,.sb-sec,.sb-item .lbl,.sb-user .nm,.sb-user .rl,.sb-user select,.sb-user .build{display:none;}
     .sb-item{justify-content:center;width:52px;height:48px;padding:0;}
     .sb-item .pill{position:absolute;top:4px;inset-inline-end:4px;min-width:16px;height:16px;font-size:9.5px;padding:0 4px;}
-    .sb-user{padding:8px;align-items:center;background:transparent;border:0;}
+    .sb-user{padding:8px;align-items:center;background:transparent;border:0;-webkit-backdrop-filter:none;backdrop-filter:none;box-shadow:none;}
     .sb-user .ctl{flex-direction:column;}
     .sb-user .out{flex:none;width:42px;padding:0;font-size:0;}
-    .sb-user .out svg{display:block;margin:auto;}
+    .sb .sb-user .out svg{display:block;margin:auto;}
     .shell main,#app.shell main{padding:22px 22px 48px;}
     .tb{padding:12px 22px;}
   }
@@ -2330,6 +2396,30 @@
     background-repeat:no-repeat, repeat;background-position:top center, 0 0;background-size:max(1440px,100vw) 300px, 160px 160px;
     -webkit-mask-image:linear-gradient(to bottom, #000 0, rgba(0,0,0,.55) 240px, rgba(0,0,0,.35) 420px, rgba(0,0,0,.3) 100%);
     mask-image:linear-gradient(to bottom, #000 0, rgba(0,0,0,.55) 240px, rgba(0,0,0,.35) 420px, rgba(0,0,0,.3) 100%);opacity:.9;}
+  /* 2026-10-01: more depth behind the work. .bgfx (built by renderShell) adds
+     three slow colour lights (brand green, flame amber, a cool sage), a gauge
+     dial turning very slowly in the far corner, a fine dot field under the
+     amber light, and a soft glow that follows the mouse. All of it sits behind
+     the cards, moves transform/opacity only, and holds still under reduced motion. */
+  .bgfx{position:fixed;inset:0;z-index:-1;overflow:hidden;pointer-events:none;contain:strict;}
+  .bgfx i{position:absolute;display:block;}
+  .bg-orb{border-radius:50%;will-change:transform;}
+  .bg-orb.o1{width:64vmax;height:64vmax;inset-inline-end:-20vmax;top:-30vmax;background:radial-gradient(closest-side, rgba(77,109,81,.30), rgba(77,109,81,.09) 56%, transparent);animation:bgOrb1 36s ease-in-out infinite alternate;animation-delay:var(--sb-t,0s);}
+  .bg-orb.o2{width:56vmax;height:56vmax;inset-inline-start:-12vmax;bottom:-26vmax;background:radial-gradient(closest-side, rgba(233,174,92,.34), rgba(233,174,92,.10) 56%, transparent);animation:bgOrb2 44s ease-in-out infinite alternate;animation-delay:var(--sb-t,0s);}
+  .bg-orb.o3{width:40vmax;height:40vmax;left:34%;top:26%;background:radial-gradient(closest-side, rgba(132,196,172,.20), transparent);animation:bgOrb3 52s ease-in-out infinite alternate;animation-delay:var(--sb-t,0s);}
+  @keyframes bgOrb1{from{transform:translate3d(0,0,0) scale(1);}to{transform:translate3d(-9vmax,7vmax,0) scale(1.16);}}
+  @keyframes bgOrb2{from{transform:translate3d(0,0,0) scale(.94);}to{transform:translate3d(10vmax,-6vmax,0) scale(1.14);}}
+  @keyframes bgOrb3{from{transform:translate3d(-14vmax,-4vmax,0) scale(.9);}to{transform:translate3d(12vmax,8vmax,0) scale(1.2);}}
+  .bg-dial{--rs:min(880px,120vmin);width:var(--rs);height:var(--rs);inset-inline-end:calc(var(--rs) * -.33);bottom:calc(var(--rs) * -.38);
+    background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 900 900'%3E%3Cg fill='none' stroke='%234D6D51' stroke-width='1.2'%3E%3Ccircle cx='450' cy='450' r='90' stroke-opacity='0.200'/%3E%3Ccircle cx='450' cy='450' r='150' stroke-opacity='0.188'/%3E%3Ccircle cx='450' cy='450' r='210' stroke-opacity='0.176'/%3E%3Ccircle cx='450' cy='450' r='270' stroke-opacity='0.164'/%3E%3Ccircle cx='450' cy='450' r='330' stroke-opacity='0.152'/%3E%3Ccircle cx='450' cy='450' r='390' stroke-opacity='0.140'/%3E%3Ccircle cx='450' cy='450' r='440' stroke-opacity='0.128'/%3E%3Ccircle cx='450' cy='450' r='300' stroke-width='10' stroke-dasharray='1.6 17.25' stroke-opacity='.20'/%3E%3Ccircle cx='450' cy='450' r='420' stroke-width='16' stroke-dasharray='2.2 41.78' stroke-opacity='.15'/%3E%3Ccircle cx='450' cy='450' r='240' stroke-width='3' stroke-linecap='round' stroke-dasharray='380 9999' stroke-opacity='.34' transform='rotate(150 450 450)'/%3E%3Ccircle cx='450' cy='450' r='360' stroke='%23D9A14E' stroke-width='3.5' stroke-linecap='round' stroke-dasharray='500 9999' stroke-opacity='.62' transform='rotate(-70 450 450)'/%3E%3C/g%3E%3C/svg%3E") center/contain no-repeat;animation:bgSpin 260s linear infinite;animation-delay:var(--sb-t,0s);will-change:transform;}
+  @keyframes bgSpin{to{transform:rotate(360deg);}}
+  .bg-dots{inset:0;background-image:radial-gradient(rgba(77,109,81,.30) 1px, transparent 1.5px);background-size:22px 22px;
+    -webkit-mask-image:radial-gradient(58% 62% at 0% 100%, #000 0, rgba(0,0,0,.5) 45%, transparent 78%);mask-image:radial-gradient(58% 62% at 0% 100%, #000 0, rgba(0,0,0,.5) 45%, transparent 78%);}
+  html[dir="rtl"] .bg-dots{-webkit-mask-image:radial-gradient(58% 62% at 100% 100%, #000 0, rgba(0,0,0,.5) 45%, transparent 78%);mask-image:radial-gradient(58% 62% at 100% 100%, #000 0, rgba(0,0,0,.5) 45%, transparent 78%);}
+  .bg-glow{left:0;top:0;width:620px;height:620px;margin:-310px 0 0 -310px;border-radius:50%;opacity:0;will-change:transform;
+    background:radial-gradient(closest-side, rgba(77,109,81,.15), rgba(77,109,81,.05) 55%, transparent);transition:opacity .45s ease, transform .2s ease-out;}
+  .bgfx.lit .bg-glow{opacity:1;}
+  @media (max-width:700px){ .bg-orb.o1{background:radial-gradient(closest-side, rgba(77,109,81,.22), rgba(77,109,81,.07) 56%, transparent);} }
   @keyframes bgDrift{
     0%{transform:translate3d(0,0,0) scale(1);}
     50%{transform:translate3d(-3%,2%,0) scale(1.04);}
@@ -2340,8 +2430,8 @@
     .card.spot{background-image:radial-gradient(420px circle at var(--mx,50%) var(--my,50%), rgba(77,109,81,.07), transparent 45%);}
     .card.spot{border-color:color-mix(in srgb, var(--green) 22%, var(--border-soft));}
   }
-  @media (prefers-reduced-motion:reduce){ #app.shell::before{animation:none;} }
-  @media print{ #app.shell::before,#app.shell::after{display:none;} }
+  @media (prefers-reduced-motion:reduce){ #app.shell::before{animation:none;} .bg-glow{display:none;} }
+  @media print{ #app.shell::before,#app.shell::after,.bgfx{display:none;} }
   main{max-width:min(1360px,94vw);}
   h1,h2,h3{color:var(--ink);text-wrap:balance;}
   p{text-wrap:pretty;}
@@ -2473,7 +2563,7 @@ var ICON_B64 = 'iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAYAAAA9zQYyAAAcG0lEQVR42u2dd1cU
 // Stamped by tools/stamp-build.js at publish time so the running app can
 // say which build it is — a cached page is the usual reason a shipped change
 // seems missing.
-var BUILD_ID = '2026-10-01 00:21 · 8ca986f';
+var BUILD_ID = '2026-10-01 10:04 · 11b277f';
 var LOGO_SRC = 'data:image/png;base64,' + LOGO_B64;
 var ICON_SRC = LOGO_SRC; // same asset — see the comment above LOGO_B64
 // The sign-in mark (2026-09-30): the logo's round emblem as a coin with a
@@ -4102,6 +4192,74 @@ function initials_(name){
   return (parts[0].charAt(0) + (parts.length > 1 ? parts[parts.length-1].charAt(0) : '')).toUpperCase();
 }
 
+// ---------- sidebar effects (2026-10-01) ----------
+// Bubbles: [left %, size px, seconds to rise, head start s, sideways sway px]
+var SB_BUBBLES_ = [[10,11,16,0,12],[27,6,12,6,-8],[44,16,20,11,14],[61,8,14,3,-10],[76,12,18,14,9],[88,5,11,8,-6],[19,9,22,17,-12],[53,14,17,9,10],[36,7,13,1,8],[70,6,15,12,-9]];
+var sbInd_ = null, sbRO_ = null;
+// The cream plate behind the selected item. It starts where it stood before
+// the redraw and slides to the new item; a resize just snaps it into place.
+function sbIndPlace_(nav, animate){
+  var ind = qs('.sb-ind', nav), act = qs('.sb-item.active', nav);
+  if (!ind) return;
+  if (!act || !act.offsetWidth) { nav.classList.remove('has-ind', 'slide'); return; }   // phone: the sidebar is hidden
+  var to = { x: act.offsetLeft, y: act.offsetTop, w: act.offsetWidth, h: act.offsetHeight, key: act.getAttribute('data-k') };
+  // nothing moved (a ResizeObserver reports once the moment it starts watching): leave a running slide alone
+  if (!animate && sbInd_ && sbInd_.key === to.key && sbInd_.x === to.x && sbInd_.y === to.y && sbInd_.w === to.w && sbInd_.h === to.h) return;
+  var still = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var from = (animate && !still && sbInd_ && sbInd_.key !== to.key && sbInd_.w === to.w) ? sbInd_ : to;
+  ind.style.transition = 'none';
+  ind.style.width = to.w + 'px'; ind.style.height = to.h + 'px';
+  ind.style.transform = 'translate3d(' + from.x + 'px,' + from.y + 'px,0)';
+  nav.classList.add('has-ind');
+  if (from !== to) {
+    nav.classList.add('slide');
+    void ind.offsetWidth;
+    ind.style.transition = '';
+    ind.style.transform = 'translate3d(' + to.x + 'px,' + to.y + 'px,0)';
+    setTimeout(function(){ nav.classList.remove('slide'); }, 700);
+  } else if (!animate) {
+    nav.classList.remove('slide');
+    void ind.offsetWidth; ind.style.transition = '';
+  } else { void ind.offsetWidth; ind.style.transition = ''; }
+  sbInd_ = to;
+}
+// A soft light follows the mouse across the page backdrop (mouse only). One
+// listener for the life of the page; each redraw hands it the new layer.
+var bgGlowAt_ = null, bgGlowEl_ = null, bgGlowOn_ = false;
+function bgGlow_(bgfx){
+  if (!window.matchMedia || !window.matchMedia('(hover:hover) and (pointer:fine)').matches) return;
+  bgGlowEl_ = bgfx;
+  var put = function(){
+    var g = bgGlowEl_ && qs('.bg-glow', bgGlowEl_);
+    if (!g || !bgGlowAt_) return;
+    g.style.transform = 'translate3d(' + bgGlowAt_[0] + 'px,' + bgGlowAt_[1] + 'px,0)';
+    bgGlowEl_.classList.add('lit');
+  };
+  put();
+  if (bgGlowOn_) return;
+  bgGlowOn_ = true;
+  var raf = 0;
+  document.addEventListener('pointermove', function(e){
+    if (e.pointerType && e.pointerType !== 'mouse') return;
+    bgGlowAt_ = [e.clientX, e.clientY];
+    if (raf) return;
+    raf = requestAnimationFrame(function(){ raf = 0; put(); });
+  }, { passive: true });
+  document.addEventListener('pointerleave', function(){ if (bgGlowEl_) bgGlowEl_.classList.remove('lit'); });
+}
+// A soft light follows the mouse across the sidebar (mouse only).
+function sbSpot_(sb){
+  if (!window.matchMedia || !window.matchMedia('(hover:hover) and (pointer:fine)').matches) return;
+  var spot = qs('.sb-spot', sb), raf = 0, x = 0, y = 0;
+  if (!spot) return;
+  sb.addEventListener('pointermove', function(e){
+    var r = sb.getBoundingClientRect(); x = e.clientX - r.left; y = e.clientY - r.top;
+    if (raf) return;
+    raf = requestAnimationFrame(function(){ raf = 0; spot.style.transform = 'translate3d(' + x + 'px,' + y + 'px,0)'; sb.classList.add('lit'); });
+  }, { passive: true });
+  sb.addEventListener('pointerleave', function(){ sb.classList.remove('lit'); });
+}
+
 function goScreen_(screen){
   if (state.screen === screen) { var sb = qs('#screenBody'); if (sb) window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
   drawerClose_();
@@ -4125,9 +4283,19 @@ function renderShell(){
   var dates = (typeof todayDatesLines_ === 'function') ? todayDatesLines_() : { gregorian: '' };
   var badge = state.notifCount ? '<span class="pill" data-notif-pill>'+esc(state.notifCount)+'</span>' : '<span class="pill" data-notif-pill hidden></span>';
 
+  // ---- the backdrop's moving layer (lights, gauge dial, dots, mouse glow) ----
+  var bgfx = el('<div class="bgfx" aria-hidden="true"><i class="bg-orb o1"></i><i class="bg-orb o2"></i><i class="bg-orb o3"></i><i class="bg-dots"></i><i class="bg-dial"></i><i class="bg-glow"></i></div>');
+  bgfx.style.setProperty('--sb-t', '-' + (performance.now() / 1000).toFixed(2) + 's');
+  root.appendChild(bgfx);
+  bgGlow_(bgfx);
+
   // ---- sidebar (desktop / tablet) ----
   var sb = el('<aside class="sb" aria-label="'+esc(t('appName'))+'">' +
-    '<div class="sb-brand"><span class="emblem"><img src="'+ICON_SRC+'" alt=""></span>' +
+    '<div class="sb-fx" aria-hidden="true"><i class="sb-aur a"></i><i class="sb-aur b"></i><i class="sb-aur c"></i><i class="sb-ln l1"></i><i class="sb-ln l2"></i>' +
+      SB_BUBBLES_.map(function(b){ return '<i class="sb-bub" style="--x:'+b[0]+'%;--s:'+b[1]+'px;--d:'+b[2]+'s;--dl:'+b[3]+'s;--sw:'+b[4]+'px;"></i>'; }).join('') +
+      '<i class="sb-sweep"></i><i class="sb-spot"></i><i class="sb-grain"></i><i class="sb-edge"></i></div>' +
+    '<div class="sb-in">' +
+    '<div class="sb-brand"><span class="sb-emb"><span class="emblem"><img src="'+ICON_SRC+'" alt=""></span></span>' +
       '<div class="txt"><div class="t1">'+esc(t('appName'))+'</div><div class="t2">Best Gas Carrier Co.</div></div></div>' +
     '<div class="sb-nav" role="navigation"></div>' +
     '<div class="sb-user">' +
@@ -4143,16 +4311,26 @@ function renderShell(){
         '<button type="button" class="out" id="logoutBtn" title="'+esc(t('logout'))+'">'+icon_('logout')+esc(t('logout'))+'</button>' +
       '</div>' +
     '</div>' +
+    '</div>' +
   '</aside>');
+  sb.style.setProperty('--sb-t', '-' + (performance.now() / 1000).toFixed(2) + 's');
+  sbSpot_(sb);
   var sbNav = qs('.sb-nav', sb);
+  sbNav.appendChild(el('<span class="sb-ind" aria-hidden="true"></span>'));
   navItems.forEach(function(it){
-    var b = el('<button type="button" class="sb-item'+(state.screen===it[0]?' active':'')+'" title="'+esc(t(it[1]))+'"'+(state.screen===it[0]?' aria-current="page"':'')+'>' +
+    var b = el('<button type="button" class="sb-item'+(state.screen===it[0]?' active':'')+(sbInd_ && sbInd_.key===it[0] && state.screen!==it[0]?' was':'')+'" data-k="'+esc(it[0])+'" title="'+esc(t(it[1]))+'"'+(state.screen===it[0]?' aria-current="page"':'')+'>' +
       icon_(it[0]) + '<span class="lbl">'+esc(t(it[1]))+'</span>' + (it[0]==='handoffs' ? badge : '') +
     '</button>');
     b.addEventListener('click', function(){ goScreen_(it[0]); });
     sbNav.appendChild(b);
   });
   root.appendChild(sb);
+  sbIndPlace_(sbNav, true);
+  if (window.ResizeObserver) {
+    if (sbRO_) sbRO_.disconnect();
+    sbRO_ = new ResizeObserver(function(){ sbIndPlace_(sbNav, false); });
+    sbRO_.observe(sbNav);
+  }
 
   // ---- content column: top bar + page ----
   var col = el('<div class="col"></div>');
