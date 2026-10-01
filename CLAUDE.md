@@ -1312,6 +1312,52 @@ through `trText_` too. The live list's hand-made translations are built by
 `bestgas-cash-collection/translations/build-live-translations.js` (private:
 real customer names).
 
+## The entry screen's cycle, folding lines, draft and update check (2026-10-01)
+
+Asked for by the user in one afternoon, all in `renderEntries` unless noted.
+
+- **A product line folds once it is done.** Each `.eLine` has `.ln-body` (the
+  form, with a Done button) and `.ln-sum` (one row: number, product, quantity x
+  price, channel parts, total). `foldLine_` checks the line (`lineOk_`) and
+  folds it; `openLine_` opens one, folds the others and drops an untouched
+  empty line; Add product folds what is complete and does not stack a second
+  empty line. The inputs stay in the page, so saving reads them as before. A
+  line the save refuses opens itself.
+- **The cycle.** Sections are done in order and each is confirmed before the
+  next: source and date, the sales (product lines, or the sales block in direct
+  mode), then other collections, delivery, credit, expenses, transfers,
+  الموازنات. `flowSteps_` lists them, `flowSync_` locks what is not reached
+  (`data-locked`, clicks answered with a toast by a capture listener) and marks
+  the one to do (`flow-now`, with a one-tap "Nothing to add here" row,
+  `.me-skip`). A money section is confirmed when `dataset.ok === '1'`; opening
+  one clears that. Save refuses while any step is unconfirmed
+  (`flowPending_`). The two worked-out sections and, in product mode, the sales
+  totals are never steps. **Sections never open by themselves any more**: the
+  old "open when it gets a figure" line in `sync_` is gone.
+- **The draft.** The form is kept in `localStorage` (`bgc_entryDraft_<userId>`)
+  as it is typed and by the Save draft button, and put back when the screen
+  opens (`draftCollect_`, `draftApply_`): source, date, mode, every product line
+  with its folded state, every money line, uploaded slip photo ids, the note,
+  and the confirmed sections (re-confirmed through their own checks). Saving
+  the day or Discard clears it; older than three days is dropped. `draftBusy`
+  stops saving and the lock listener while a draft is being put back. One
+  draft per person per browser, never sent to the server.
+- **No zero waiting in a field**: figure boxes start empty with a `0`
+  placeholder, and a lone zero clears on focus (`focusin` on the form).
+  `numFromInput_('')` is 0, so nothing downstream changed.
+- **الموازنات for a branch day**: when the source is the branch, the device
+  picker opens on "<branch name> (<number of its POS devices>)" with an empty
+  value, meaning the branch as a whole; a single device can still be picked.
+  Server: `checkDepositSlip_` asks for a device only when the source is not
+  the store (`deposit_needs_pos` still applies to a car's day).
+- **A newer build is picked up by itself** (`checkBuild_`, end of the file):
+  `tools/stamp-build.js` writes the stamp to `version.json` as well; the app
+  compares it with `BUILD_ID` on opening (one reload, guarded by
+  `sessionStorage.bgc_updTried`), every five minutes and when the tab returns
+  (a bar with one button). Why: after the preview fix above was live, the user
+  still saw the old figures on a page left open. `version.json` must be
+  committed with every build.
+
 ## Costing and profitability (2026-10-01, `Costing.gs`)
 
 The user asked for monthly expense profiles per car and per store (every

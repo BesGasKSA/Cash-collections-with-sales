@@ -2283,7 +2283,7 @@ check(call({ action: 'uploadEntryPhoto', fileBase64: 'iVBORw0KGgo=' }).ok === fa
 var mzBase = { action: 'createDailyEntry', token: aliTok, date: '2026-09-03', sourceType: 'store', sourceId: store.entity.id, cashSales: 800, directDepositAmount: 300, directDepositRef: 'MZ-1' };
 function mz(extra) { var o = {}; Object.keys(mzBase).forEach(function (k) { o[k] = mzBase[k]; }); Object.keys(extra).forEach(function (k) { o[k] = extra[k]; }); return o; }
 check(call(mz({ directDepositPosId: pos.entity.id })).error === 'deposit_needs_photo', 'a الموازنة without its photo is refused');
-check(call(mz({ directDepositPhotoId: ph.fileId })).error === 'deposit_needs_pos', 'and one that does not say which POS device, where the branch has one');
+check(call(mz({ sourceType: 'car', sourceId: car.entity.id, directDepositPhotoId: ph.fileId })).error === 'deposit_needs_pos', 'a car\'s الموازنة must say which POS device, where the branch has one');
 var otherBranchPos = call({ action: 'adminSaveEntity', token: adminTok, kind: 'pos', data: { ownerType: 'store', ownerId: filterStore.id, label: 'Jeddah POS', assignedUserId: mgr8.id } }).entity;
 check(call(mz({ directDepositPhotoId: ph.fileId, directDepositPosId: otherBranchPos.id })).error === 'invalid_pos', 'a POS device from another branch is refused');
 var phOther = call({ action: 'uploadEntryPhoto', token: adminTok, fileBase64: 'iVBORw0KGgo=', fileName: 'x.png', fileMime: 'image/png' });
@@ -2293,6 +2293,9 @@ check(mzOk.ok && mzOk.entry.directDepositPosId === pos.entity.id, 'with its devi
 check(mzOk.deposit && mzOk.deposit.attachmentId === ph.fileId && mzOk.deposit.posId === pos.entity.id, 'and the bank deposit it records carries the photo and the device');
 check(call(mz({ directDepositPhotoId: ph.fileId, directDepositPosId: pos.entity.id, directDepositRef: 'MZ-2' })).error === 'invalid_photo', 'one photo serves one الموازنة only');
 check(call({ action: 'getFile', token: financeTok, fileId: ph.fileId }).ok, 'finance can open the photo');
+var phAll = call({ action: 'uploadEntryPhoto', token: aliTok, fileBase64: 'iVBORw0KGgo=', fileName: 'all.png', fileMime: 'image/png' });
+var mzAll = call(mz({ directDepositPhotoId: phAll.fileId, directDepositRef: 'MZ-ALL', directDepositAmount: 100 }));
+check(mzAll.ok && mzAll.entry.directDepositPosId === null, 'a day entered for the branch itself may bank one الموازنة for all its devices: no device named (got ' + (mzAll.error || 'ok') + ')');
 var mzLines = call({ action: 'importDailyEntries', token: aliTok, rows: [
   slip(aliTok, { date: '2026-09-04', sourceType: 'store', sourceId: store.entity.id, cashSales: 1000, directDepositAmount: 600, directDepositRef: 'MZ-A' }),
   slip(aliTok, { date: '2026-09-04', sourceType: 'store', sourceId: store.entity.id, directDepositAmount: 600, directDepositRef: 'MZ-B' })

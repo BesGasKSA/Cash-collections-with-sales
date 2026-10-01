@@ -22,4 +22,6 @@ var html = fs.readFileSync(file, 'utf8');
 if (!/var BUILD_ID = '[^']*';/.test(html)) throw new Error('BUILD_ID not found in index.html');
 html = html.replace(/var BUILD_ID = '[^']*';/, "var BUILD_ID = '" + stamp + "';");
 fs.writeFileSync(file, html);
+// the running app reads this to notice a newer build (checkBuild_ in index.html)
+fs.writeFileSync(path.join(root, 'version.json'), JSON.stringify({ build: stamp }) + '\n');
 console.log('build stamped: ' + stamp);
