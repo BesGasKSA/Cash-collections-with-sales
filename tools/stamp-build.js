@@ -22,6 +22,9 @@ var html = fs.readFileSync(file, 'utf8');
 if (!/var BUILD_ID = '[^']*';/.test(html)) throw new Error('BUILD_ID not found in index.html');
 html = html.replace(/var BUILD_ID = '[^']*';/, "var BUILD_ID = '" + stamp + "';");
 fs.writeFileSync(file, html);
-// the running app reads this to notice a newer build (checkBuild_ in index.html)
-fs.writeFileSync(path.join(root, 'version.json'), JSON.stringify({ build: stamp }) + '\n');
+// the running app reads this to notice a newer build (checkBuild_ in index.html).
+// Plain ASCII (the middle dot goes in as ·), so no server charset can make
+// the stamp read differently from the page's own and loop the update prompt.
+fs.writeFileSync(path.join(root, 'version.json'),
+  JSON.stringify({ build: stamp }).replace(/[\u0080-￿]/g, function (c) { return '\\u' + ('0000' + c.charCodeAt(0).toString(16)).slice(-4); }) + '\n');
 console.log('build stamped: ' + stamp);
