@@ -2563,7 +2563,7 @@ var ICON_B64 = 'iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAYAAAA9zQYyAAAcG0lEQVR42u2dd1cU
 // Stamped by tools/stamp-build.js at publish time so the running app can
 // say which build it is — a cached page is the usual reason a shipped change
 // seems missing.
-var BUILD_ID = '2026-10-01 10:04 · 11b277f';
+var BUILD_ID = '2026-10-01 14:35 · cc01b67';
 var LOGO_SRC = 'data:image/png;base64,' + LOGO_B64;
 var ICON_SRC = LOGO_SRC; // same asset — see the comment above LOGO_B64
 // The sign-in mark (2026-09-30): the logo's round emblem as a coin with a
@@ -8252,7 +8252,7 @@ function renderEntries(body){
     function drawAutoFees_(){
       var feeBox = qs('#eCreditFees', form), comBox = qs('#eCreditComs', form);
       if (!feeBox || !comBox) return;
-      var feeHtml = [], comHtml = [], fee = 0, com = 0;
+      var feeHtml = [], comHtml = [], fee = 0, com = 0, creditFee = 0, creditCom = 0;
       // the part of each product line sold through a channel (Souq Gas)
       if (qs('#eMode', form).value === 'product') (meta.channels || []).forEach(function(ch){
         var cq = 0, cf = 0, cc = 0, fees = ch.deliveryFees || {}, coms = ch.commissions || {};
@@ -8271,16 +8271,19 @@ function renderEntries(body){
       qsa('.mline', list).forEach(function(row){
         var lf = lineFee_(row);
         var sub = '<small>'+esc(t('cdf_qty').replace('{qty}', lf.qty))+'</small>';
-        if (lf.fee > 0) { fee += lf.fee; feeHtml.push('<div class="cdf-row"><span>'+esc(t('cdf_auto').replace('{who}', lf.cust.name))+sub+'</span><b class="num">'+esc(money(lf.fee))+'</b></div>'); }
-        if (lf.com > 0) { com += lf.com; comHtml.push('<div class="cdf-row"><span>'+esc(t('cdf_autoCom').replace('{who}', lf.cust.name))+sub+'</span><b class="num">'+esc(money(lf.com))+'</b></div>'); }
+        if (lf.fee > 0) { fee += lf.fee; creditFee += lf.fee; feeHtml.push('<div class="cdf-row"><span>'+esc(t('cdf_auto').replace('{who}', lf.cust.name))+sub+'</span><b class="num">'+esc(money(lf.fee))+'</b></div>'); }
+        if (lf.com > 0) { com += lf.com; creditCom += lf.com; comHtml.push('<div class="cdf-row"><span>'+esc(t('cdf_autoCom').replace('{who}', lf.cust.name))+sub+'</span><b class="num">'+esc(money(lf.com))+'</b></div>'); }
       });
       feeBox.innerHTML = feeHtml.length ? '<div class="cdf-h">'+icon_('truck')+esc(t('cdf_title'))+'</div>' + feeHtml.join('') : '';
       comBox.innerHTML = comHtml.length ? '<div class="cdf-h">'+icon_('user')+esc(t('cdf_comTitle'))+'</div>' + comHtml.join('') : '';
       feeBox.dataset.total = String(Math.round(fee * 100) / 100);
+      // the credit customers' part alone, for the net preview (the channels' part is counted there from the lines)
+      feeBox.dataset.credit = String(Math.round(creditFee * 100) / 100);
       var feeTotal = qs('#eCreditFeeTotal', form);
       if (feeTotal) { feeTotal.value = fee ? money(fee) : '0'; feeTotal.dispatchEvent(new Event('input', { bubbles: true })); }
       var feeEmpty = qs('.cdf-empty', form); if (feeEmpty) feeEmpty.hidden = feeHtml.length > 0;
       comBox.dataset.total = String(Math.round(com * 100) / 100);
+      comBox.dataset.credit = String(Math.round(creditCom * 100) / 100);
       var comTotal = qs('#eCreditComTotal', form);
       if (comTotal) { comTotal.value = com ? money(com) : '0'; comTotal.dispatchEvent(new Event('input', { bubbles: true })); }
       var comEmpty = qs('.cdc-empty', form); if (comEmpty) comEmpty.hidden = comHtml.length > 0;
@@ -8612,8 +8615,10 @@ function renderEntries(body){
     var credit = numFromInput_(qs('#eCredit', form));
     var transfer = numFromInput_(qs('#eTransfer', form));
     var feeBox = qs('#eCreditFees', form), comBox = qs('#eCreditComs', form);
-    var creditFee = feeBox ? Number(feeBox.dataset.total || 0) : 0;
-    var commission = comBox ? Number(comBox.dataset.total || 0) : 0;
+    // credit customers only: dataset.total also holds the channels' fees and
+    // commissions, which are added below, so reading it here counted them twice
+    var creditFee = feeBox ? Number(feeBox.dataset.credit || 0) : 0;
+    var commission = comBox ? Number(comBox.dataset.credit || 0) : 0;
     // a sales channel's delivery fee comes in and its driver commission goes
     // out, per unit of each line's channel quantity, as settleChannel_ does
     var chFee = 0, chCom = 0;
@@ -8622,8 +8627,8 @@ function renderEntries(body){
       qsa('.lnCh', lineEl).forEach(function(x){
         var q = numFromInput_(x), ch = byId(meta.channels, x.getAttribute('data-ch'));
         if (!(q > 0) || !ch || !pid) return;
-        chFee += q * Number((ch.deliveryFees || {})[pid] || 0);
-        chCom += q * lineComRate_(lineEl, ch, pid);
+        chFee += Math.round(q * Number((ch.deliveryFees || {})[pid] || 0) * 100) / 100;
+        chCom += Math.round(q * lineComRate_(lineEl, ch, pid) * 100) / 100;
       });
     });
     var net = cash + other + creditFee + chFee - delivery + vatBack - expense - deposited - credit - transfer - commission - chCom;
