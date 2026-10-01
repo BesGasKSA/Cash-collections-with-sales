@@ -367,9 +367,12 @@ function checkDepositSlip_(r, user, locationId) {
   var devices = readSheet(SHEETS.POS).filter(function (m) {
     return m.active !== false && resolveSourceLocation_('pos', m.id) === locationId;
   });
+  // A day entered for the branch itself (2026-10-01) may bank one الموازنة for
+  // all its devices together: no device named means the branch as a whole. A
+  // car's day still says which device.
   if (r.directDepositPosId) {
     if (!devices.some(function (m) { return m.id === r.directDepositPosId; })) return 'invalid_pos';
-  } else if (devices.length) return 'deposit_needs_pos';
+  } else if (devices.length && r.sourceType !== 'store') return 'deposit_needs_pos';
   return null;
 }
 function claimPhoto_(photoId, entryId) {
