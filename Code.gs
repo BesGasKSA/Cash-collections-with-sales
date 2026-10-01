@@ -55,7 +55,13 @@ var SHEETS = {
   // takings (fuel, a repair). Both are picked from a list an admin keeps,
   // never typed free-hand, so the report can group them.
   INCOME_ITEMS: 'income_items',
-  EXPENSE_ITEMS: 'expense_items'
+  EXPENSE_ITEMS: 'expense_items',
+  // Costing (Costing.gs): the catalogue of cost types, the monthly cost lines
+  // of each car, store, branch, area, city and the company, and each product's
+  // unit cost over time
+  COST_TYPES: 'cost_types',
+  COST_LINES: 'cost_lines',
+  PRODUCT_COSTS: 'product_costs'
 };
 
 var IDLE_MS = 12 * 3600 * 1000;      // 12h idle session expiry
@@ -611,7 +617,8 @@ function requireAuth_(req) {
 var CACHEABLE_READ_ACTIONS_ = {
   getDashboardAll: 1, getSalesReport: 1, listHandoffs: 1, listEntries: 1, listMeta: 1,
   listDashboard: 1, getDashboardComparison: 1, getHeldCashTrend: 1, getShortfallByEntrant: 1,
-  listAudit: 1, getReconciliation: 1, listAreaBulkBatches: 1, listRiskItems: 1
+  listAudit: 1, getReconciliation: 1, listAreaBulkBatches: 1, listRiskItems: 1,
+  listCosts: 1, getCostReport: 1, getProfitReport: 1
 };
 var RESP_CACHE_TTL_SEC = 120;
 
@@ -704,6 +711,17 @@ function route_(req) {
     voidInventoryMove: function () { return actionVoidInventoryMove_(req, user); },
     getInventoryReport: function () { return actionInventoryReport_(req, user); },
     importInventoryDay: function () { return actionImportInventoryDay_(req, user); },
+
+    // costing and profitability (see Costing.gs)
+    listCosts: function () { return actionListCosts_(req, user); },
+    saveCostLine: function () { return actionSaveCostLine_(req, user); },
+    changeCostLine: function () { return actionChangeCostLine_(req, user); },
+    endCostLine: function () { return actionEndCostLine_(req, user); },
+    voidCostLine: function () { return actionVoidCostLine_(req, user); },
+    importCostLines: function () { return actionImportCostLines_(req, user); },
+    setProductCost: function () { return withMeta_(actionSetProductCost_(req, user), req, user); },
+    getCostReport: function () { return actionCostReport_(req, user); },
+    getProfitReport: function () { return actionProfitReport_(req, user); },
 
     // reporting
     getSalesReport: function () { return actionSalesReport_(req, user); },
