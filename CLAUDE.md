@@ -1189,6 +1189,22 @@ its lines (`abx_e_pos`).
   contour lines fading down, paper grain); the sidebar has flowing cream contour
   lines, a light pool behind the logo and a sheen on hover; a card is lit under
   the mouse (`bgSpot_`). All still under reduced motion, hidden in print.
+- Sidebar atmosphere (2026-10-01): `.sb` no longer scrolls; the menu scrolls
+  inside `.sb-in` so the effects layer `.sb-fx` stays put. `.sb-fx` holds three
+  drifting lights (green top, flame amber bottom), two line layers at different
+  speeds (`.sb-ln`), rising bubbles (`SB_BUBBLES_`), a sweep of light, a mouse
+  light (`sbSpot_`), grain and a light-catching edge. The logo sits in `.sb-emb`
+  (halo). The selected item is one cream plate, `.sb-ind`, that slides from the
+  old item to the new one (`sbIndPlace_`; `sbInd_` remembers the last place
+  across redraws). Traps: renderShell rebuilds the sidebar on every screen
+  change, so every animation takes `--sb-t` (a negative delay from
+  `performance.now()`) or it would restart each click; and a ResizeObserver
+  reports once on start, which must not cut the slide short (the unchanged
+  check in `sbIndPlace_`). Transform and opacity only.
+- Page backdrop layer `.bgfx` (built by renderShell, fixed, behind everything):
+  three colour lights, a gauge dial turning in the far corner (`.bg-dial`), a
+  dot field, and a glow that follows the mouse (`bgGlow_`, one document
+  listener for the life of the page).
 
 **Screen-by-screen redesign (2026-10-01).**
 - Handovers: pending and disputed come first (`ho-wait`, never folded); two or
