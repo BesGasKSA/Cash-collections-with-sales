@@ -2706,6 +2706,251 @@ check(cyN.opening === 1593, 'the next day opens with the day\'s ending (got ' + 
 check(call({ action: 'importInventoryDay', token: noorTok, locationId: dpLoc.id, date: '2026-09-29', ref: 'tr', moves: [{ productId: cyIron.id, state: 'full', kind: 'transfer_out', qty: 10 }, { productId: cyIron.id, state: 'empty', kind: 'transfer_in', qty: 2 }] }).ok, 'transfers out of and into the branch are movements too');
 check(call({ action: 'adminSaveEntity', token: adminTok, kind: 'product', id: cyIron.id, data: { cylinder: false } }).error === 'has_stock', 'a cylinder item with stock cannot stop being one');
 
+console.log('--- costing: cost types are master data, seeded once ---');
+var pfMeta = call({ action: 'listMeta', token: adminTok });
+check(pfMeta.ok && Array.isArray(pfMeta.costTypes) && pfMeta.costTypes.length >= 30, 'the cost types are seeded (got ' + (pfMeta.costTypes || []).length + ')');
+check((pfMeta.costTypes || []).every(function (c) { return /^CST-\d{4}$/.test(c.code || '') && c.name && c.group; }), 'each with its number, name and group');
+check(!call({ action: 'listMeta', token: saraTok }).costTypes, 'an area manager is not sent the cost types');
+function pfType(group, word) { return pfMeta.costTypes.filter(function (c) { return c.group === group && c.name.indexOf(word) >= 0; })[0]; }
+var pfDep = pfMeta.costTypes.filter(function (c) { return c.depreciation; })[0];
+var pfIns = pfType('vehicle', 'تأمين'), pfFuel = pfType('vehicle', 'وقود'), pfSal = pfType('staff', 'راتب'), pfRent = pfType('premises', 'إيجار'), pfGa = pfMeta.costTypes.filter(function (c) { return c.group === 'admin'; })[0];
+check(pfDep && pfIns && pfFuel && pfSal && pfRent && pfGa, 'depreciation, insurance, fuel, salary, rent and a G&A type exist');
+check(call({ action: 'adminSaveEntity', token: adminTok, kind: 'cost_type', data: { name: 'PF bad', group: 'nonsense' } }).error === 'invalid_input', 'a cost type needs a known group');
+var pfOwn = call({ action: 'adminSaveEntity', token: adminTok, kind: 'cost_type', data: { name: 'PF Car wash', group: 'vehicle', nature: 'variable' } });
+check(pfOwn.ok && /^CST-/.test(pfOwn.entity.code), 'finance adds a cost type of its own');
+
+console.log('--- costing: a small company to cost ---');
+function pfUser(name, role) { return call({ action: 'adminCreateUser', token: adminTok, data: { name: name, email: name.toLowerCase().replace(/\W+/g, '.') + '@bestgas.sa', role: role } }).user; }
+var pfMgr = pfUser('PF Area Manager', 'cluster_manager'), pfCol = pfUser('PF Collector', 'collector');
+var pfSm1 = pfUser('PF Manager A', 'store_manager'), pfSm2 = pfUser('PF Manager B', 'store_manager');
+var pfDr1 = pfUser('PF Driver A', 'driver'), pfDr2 = pfUser('PF Driver B', 'driver');
+var pfAcc = pfUser('PF Accountant', 'accountant');
+var pfAccTok = acceptInvite('pf.accountant@bestgas.sa');
+function pfEnt(kind, data) { var r = call({ action: 'adminSaveEntity', token: adminTok, kind: kind, data: data }); check(r.ok, 'create ' + kind + ' ' + (data.name || data.label) + (r.ok ? '' : ': ' + r.error)); return r.entity || {}; }
+var pfArea = pfEnt('cluster', { name: 'PF Area', clusterManagerUserId: pfMgr.id });
+var pfLocA = pfEnt('location', { city: 'PF City', name: 'PF Branch A', clusterId: pfArea.id, collectorUserId: pfCol.id });
+var pfLocB = pfEnt('location', { city: 'PF City', name: 'PF Branch B', clusterId: pfArea.id, collectorUserId: pfCol.id });
+var pfStA = pfEnt('store', { locationId: pfLocA.id, name: 'PF Store A', storeManagerUserId: pfSm1.id });
+var pfStB = pfEnt('store', { locationId: pfLocB.id, name: 'PF Store B', storeManagerUserId: pfSm2.id });
+var pfCarA = pfEnt('car', { locationId: pfLocA.id, label: 'PF Car A1', driverUserId: pfDr1.id });
+var pfCarB = pfEnt('car', { locationId: pfLocB.id, label: 'PF Car B1', driverUserId: pfDr2.id });
+var pfPos = pfEnt('pos', { ownerType: 'car', ownerId: pfCarA.id, label: 'PF POS A1', assignedUserId: pfDr1.id });
+// price 23 includes 15% VAT: 20 net; the unit costs 15
+var pfP1 = pfEnt('product', { name: 'PF Cylinder', type: 'goods', unitPrice: 23, unitCost: 15 });
+var pfExp = pfEnt('expense_item', { name: 'PF Fuel from takings' });
+function pfSale(date, sourceType, sourceId, qty, extra) {
+  var p = { action: 'createDailyEntry', token: adminTok, date: date, sourceType: sourceType, sourceId: sourceId, productId: pfP1.id, qty: qty, unitPrice: 23, cashSales: qty * 23 };
+  Object.keys(extra || {}).forEach(function (k) { p[k] = extra[k]; });
+  var r = call(p); check(r.ok, 'sale ' + sourceType + ' ' + date + (r.ok ? '' : ': ' + r.error)); return r;
+}
+pfSale('2026-03-10', 'store', pfStA.id, 100);
+pfSale('2026-03-10', 'car', pfCarA.id, 50, { expenseAmount: 40, expenseItemId: pfExp.id, expenseReason: 'diesel' });
+pfSale('2026-03-11', 'pos', pfPos.id, 20);
+pfSale('2026-03-10', 'car', pfCarB.id, 30);
+
+console.log('--- costing: who may read and write costs ---');
+function pfLine(tok, o) { var p = { action: 'saveCostLine', token: tok }; Object.keys(o).forEach(function (k) { p[k] = o[k]; }); return call(p); }
+check(call({ action: 'listCosts', token: dpTok }).error === 'forbidden', 'a driver sees no costs');
+check(call({ action: 'listCosts', token: saraTok }).error === 'forbidden', 'nor does an area manager');
+check(call({ action: 'getProfitReport', token: saraTok, dateFrom: '2026-03-01', dateTo: '2026-03-31' }).error === 'forbidden', 'nor the profit report');
+check(call({ action: 'listCosts', token: pfAccTok }).ok, 'the accountant reads costs');
+check(pfLine(pfAccTok, { centreType: 'car', centreId: pfCarA.id, typeId: pfIns.id, amount: 100, fromMonth: '2026-03' }).error === 'forbidden', 'but only admin and finance write them');
+
+console.log('--- costing: a cost line is checked ---');
+check(pfLine(adminTok, { centreType: 'car', centreId: pfCarA.id, typeId: pfIns.id, amount: 0, fromMonth: '2026-03' }).error === 'invalid_input', 'an amount is needed');
+check(pfLine(adminTok, { centreType: 'car', centreId: pfCarA.id, typeId: pfIns.id, amount: -5, fromMonth: '2026-03' }).error === 'invalid_input', 'and it is not negative');
+check(pfLine(adminTok, { centreType: 'car', centreId: pfCarA.id, typeId: pfIns.id, amount: 100, fromMonth: '2026-13' }).error === 'invalid_month', 'a real month');
+check(pfLine(adminTok, { centreType: 'car', centreId: pfCarA.id, typeId: pfIns.id, amount: 100, fromMonth: '2026-03', toMonth: '2026-02' }).error === 'invalid_month', 'that does not end before it starts');
+check(pfLine(adminTok, { centreType: 'car', centreId: 'nope', typeId: pfIns.id, amount: 100, fromMonth: '2026-03' }).error === 'invalid_centre', 'a car that exists');
+check(pfLine(adminTok, { centreType: 'planet', centreId: pfCarA.id, typeId: pfIns.id, amount: 100, fromMonth: '2026-03' }).error === 'invalid_centre', 'a known level');
+check(pfLine(adminTok, { centreType: 'car', centreId: pfCarA.id, typeId: 'nope', amount: 100, fromMonth: '2026-03' }).error === 'invalid_type', 'a cost type that exists');
+
+console.log('--- costing: the profiles ---');
+var pfDepLine = pfLine(adminTok, { centreType: 'car', centreId: pfCarA.id, typeId: pfDep.id, fromMonth: '2026-01', asset: { cost: 72000, residual: 12000, lifeMonths: 60 } });
+check(pfDepLine.ok && pfDepLine.line.amount === 1000 && pfDepLine.line.toMonth === '2030-12', 'depreciation is worked out from the asset: (72,000 - 12,000) / 60 months = 1,000 until 2030-12 (got ' + (pfDepLine.line && pfDepLine.line.amount + ' ' + pfDepLine.line.toMonth) + ')');
+check(pfLine(adminTok, { centreType: 'car', centreId: pfCarA.id, typeId: pfDep.id, fromMonth: '2026-01', asset: { cost: 100, residual: 200, lifeMonths: 12 } }).error === 'invalid_input', 'the residual cannot exceed the cost');
+var pfSalLine = pfLine(adminTok, { centreType: 'car', centreId: pfCarA.id, typeId: pfSal.id, amount: 3100, fromMonth: '2026-03', employeeUserId: pfDr1.id });
+check(pfSalLine.ok && pfSalLine.line.employeeUserId === pfDr1.id, 'the driver\'s salary sits on his car');
+var pfRentLine = pfLine(adminTok, { centreType: 'store', centreId: pfStA.id, typeId: pfRent.id, amount: 6200, fromMonth: '2026-01' });
+check(pfRentLine.ok, 'the store\'s rent');
+check(pfLine(adminTok, { centreType: 'store', centreId: pfStA.id, typeId: pfRent.id, amount: 6200, fromMonth: '2026-01' }).error === 'duplicate_line', 'the same line twice is refused');
+check(pfLine(adminTok, { centreType: 'store', centreId: pfStA.id, typeId: pfRent.id, amount: 7000, fromMonth: '2026-06' }).error === 'overlap_line', 'two running lines of one type on one place cannot overlap');
+check(pfLine(adminTok, { centreType: 'store', centreId: pfStA.id, typeId: pfRent.id, amount: 7000, fromMonth: '2026-06', label: 'Second shop' }).ok, 'unless they are told apart by a label');
+check(pfLine(adminTok, { centreType: 'car', centreId: pfCarB.id, typeId: pfIns.id, amount: 310, fromMonth: '2026-03' }).ok, 'car B: insurance');
+var pfLocLine = pfLine(adminTok, { centreType: 'location', centreId: pfLocA.id, typeId: pfSal.id, amount: 620, fromMonth: '2026-03', label: 'Branch manager' });
+var pfAreaLine = pfLine(adminTok, { centreType: 'cluster', centreId: pfArea.id, typeId: pfSal.id, amount: 930, fromMonth: '2026-03', label: 'Area manager' });
+var pfCoLine = pfLine(adminTok, { centreType: 'company', centreId: 'company', typeId: pfGa.id, amount: 1550, fromMonth: '2026-03' });
+check(pfLocLine.ok && pfAreaLine.ok && pfCoLine.ok, 'branch, area and company overheads');
+check(pfLine(adminTok, { centreType: 'city', centreId: 'Atlantis', typeId: pfGa.id, amount: 5, fromMonth: '2026-03' }).error === 'invalid_centre', 'a city some branch sits in');
+
+console.log('--- costing: the month of March 2026, top line to bottom line ---');
+function pfReport(o) { var p = { action: 'getProfitReport', token: pfAccTok, dateFrom: '2026-03-01', dateTo: '2026-03-31' }; Object.keys(o || {}).forEach(function (k) { p[k] = o[k]; }); return call(p); }
+function pfNode(rep, key) { return ((rep.nodes || []).filter(function (n) { return n.key === key; })[0] || {}).T || {}; }
+var pfR = pfReport();
+check(pfR.ok && pfR.basis === 'sales' && pfR.vatIncluded === true, 'the report runs, sharing overheads by sales, prices holding VAT');
+var pfCo = pfNode(pfR, 'location:' + pfLocA.id), pfB = pfNode(pfR, 'location:' + pfLocB.id), pfAr = pfNode(pfR, 'cluster:PF City|' + pfArea.id);
+var pfUa = pfNode(pfR, 'car:' + pfCarA.id), pfUs = pfNode(pfR, 'store:' + pfStA.id), pfUb = pfNode(pfR, 'car:' + pfCarB.id), pfUsb = pfNode(pfR, 'store:' + pfStB.id);
+close(pfUs.gross, 2300, 'store A sold 2,300 with VAT'); close(pfUs.net, 2000, '2,000 without it'); close(pfUs.cogs, 1500, 'cost of goods 100 x 15'); close(pfUs.gm, 500, 'gross margin 500');
+close(pfUa.net, 1400, 'car A1 carries its own sales and its POS machine\'s: 1,000 + 400');
+close(pfUa.cogs, 1050, 'car A1 cost of goods 70 x 15'); close(pfUa.gm, 350, 'car A1 gross margin');
+close(pfUa.expenses, 40, 'what the car paid out of its takings is its cost');
+close(pfUa.fixed, 4100, 'car A1 monthly profile: depreciation 1,000 + driver 3,100');
+close(pfUa.fixedVehicle, 1000, 'of which vehicle 1,000'); close(pfUa.fixedStaff, 3100, 'and staff 3,100');
+close(pfUa.cm, -3790, 'car A1 contribution = 350 - 40 - 4,100');
+close(pfUs.fixed, 6200, 'store A: only the rent that ran in March (the second shop starts in June)');
+close(pfUs.cm, -5700, 'store A contribution');
+close(pfUb.cm, -160, 'car B1 contribution = 150 - 310');
+close(pfUsb.net, 0, 'store B sold nothing'); close(pfUsb.profit, 0, 'and with no sales it is given no overhead');
+close(pfUs.ovhLocation, 620 * 2000 / 3400, 'the branch overhead is shared by sales: store A');
+close(pfUa.ovhLocation, 620 * 1400 / 3400, 'and car A1');
+close(pfUs.ovhCluster, 465, 'the area overhead 930 x 2,000 / 4,000'); close(pfUb.ovhCluster, 139.5, 'car B1 share of the area');
+close(pfUa.ovhCompany, 542.5, 'G&A 1,550 x 1,400 / 4,000');
+close(pfCo.cm, -9490, 'branch A contribution'); close(pfCo.ovhLocation, 620, 'branch A carries its whole own overhead');
+close(pfCo.ovhCluster, 790.5, 'its share of the area'); close(pfCo.ovhCompany, 1317.5, 'its share of G&A');
+close(pfCo.profit, -12218, 'branch A bottom line');
+close(pfB.profit, -532, 'branch B bottom line');
+var pfTot = pfNode(pfR, 'company');
+close(pfTot.net, 4000, 'company net sales'); close(pfTot.gm, 1000, 'company gross margin'); close(pfTot.fixed, 10610, 'company direct fixed costs');
+close(pfTot.cm, -9650, 'company contribution'); close(pfTot.ovh, 3100, 'every overhead counted once');
+close(pfTot.profit, -12750, 'company bottom line = the branches added up');
+close(pfAr.profit, -12750, 'the area node agrees'); close(pfNode(pfR, 'city:PF City').profit, -12750, 'and the city node');
+close(pfTot.qty, 200, 'units sold');
+check(pfR.ok && pfR.bucket === 'day' && pfR.buckets.length === 31, 'a month comes back day by day');
+var pfSerA = ((pfR.units || []).filter(function (u) { return u.key === 'car:' + pfCarA.id; })[0] || {}).series || {};
+close((pfSerA.net || [])[9], 1000, 'car A1 on the 10th'); close((pfSerA.net || [])[10], 400, 'and the 11th');
+close((pfSerA.fixed || [])[0], 4100 / 31, 'its fixed cost is spread over the days of the month');
+close((pfSerA.net || []).reduce(function (a, b) { return a + b; }, 0), 1400, 'the days add up to the month');
+close((pfSerA.ovh || []).reduce(function (a, b) { return a + b; }, 0), pfUa.ovh, 'overhead days add up too');
+check((pfSerA.other || []).length === 31 && (pfSerA.other || []).every(function (v) { return v === 0; }), 'delivery fees charged have a series of their own, apart from net sales');
+
+console.log('--- costing: one day, another basis, another month ---');
+var pfDay = pfReport({ dateFrom: '2026-03-10', dateTo: '2026-03-10' });
+var pfDayT = pfNode(pfDay, 'company');
+close(pfDayT.net, 3600, 'the 10th: net sales'); close(pfDayT.gm, 900, 'gross margin');
+close(pfDayT.fixed, 10610 / 31, 'one day carries a 31st of the month\'s fixed costs');
+close(pfDayT.cm, 900 - 40 - 10610 / 31, 'contribution of the day'); close(pfDayT.ovh, 100, 'overheads of the day');
+close(pfDayT.profit, 900 - 40 - 10610 / 31 - 100, 'the day\'s bottom line');
+var pfEq = pfReport({ basis: 'equal' });
+close(pfNode(pfEq, 'store:' + pfStB.id).ovhCluster, 232.5, 'shared equally, each of the area\'s four stores and cars takes a quarter of its overhead');
+close(pfNode(pfEq, 'company').profit, -12750, 'the company total does not depend on the basis');
+check(pfReport({ basis: 'moon' }).error === 'invalid_input', 'an unknown basis is refused');
+check(pfReport({ dateFrom: '2026-03-31', dateTo: '2026-03-01' }).error === 'invalid_input', 'so is a range that ends before it starts');
+var pfFeb = pfReport({ dateFrom: '2026-02-01', dateTo: '2026-02-28' });
+close(pfNode(pfFeb, 'company').fixed, 7200, 'February: only the lines that had started (depreciation 1,000 + rent 6,200)');
+close(pfNode(pfFeb, 'company').ovh, 0, 'no overhead line had started');
+var pfYear = pfReport({ dateFrom: '2026-01-01', dateTo: '2026-06-30' });
+check(pfYear.ok && pfYear.bucket === 'month' && pfYear.buckets.join() === '2026-01,2026-02,2026-03,2026-04,2026-05,2026-06', 'a long range comes back month by month');
+var pfCmp = pfReport({ compare: true });
+close(((pfCmp.prev || {}).company || {}).fixed, 7200, 'compare brings the period before (February) for each node');
+
+console.log('--- costing: prices without VAT, cost history ---');
+check(call({ action: 'adminSetConfig', token: adminTok, data: { salesIncludeVat: false } }).ok, 'the setting: sales prices do not include VAT');
+close(pfNode(pfReport(), 'store:' + pfStA.id).net, 2300, 'then net sales are the sales as entered');
+check(call({ action: 'adminSetConfig', token: adminTok, data: { salesIncludeVat: true } }).ok && call({ action: 'listMeta', token: adminTok }).config.salesIncludeVat === true, 'and back; the setting shows in the reference data');
+check(call({ action: 'adminSaveEntity', token: adminTok, kind: 'product', id: pfP1.id, data: { unitCost: 16 } }).ok, 'the unit cost changes today');
+close(pfNode(pfReport(), 'company').cogs, 3000, 'March keeps the cost it was sold at');
+var pfNoCost = pfEnt('product', { name: 'PF No cost', type: 'goods', unitPrice: 10 });
+check(call({ action: 'createDailyEntry', token: adminTok, date: '2026-03-12', sourceType: 'store', sourceId: pfStB.id, productId: pfNoCost.id, qty: 10, unitPrice: 10, cashSales: 100 }).ok, 'a sale of an item with no cost');
+var pfCov = pfReport();
+close(pfCov.coverage.uncostedSales, 100 / 1.15, 'is reported as sales with no cost behind them');
+check(pfCov.coverage.productsWithoutCost.indexOf(pfNoCost.id) >= 0, 'naming the product');
+
+console.log('--- costing: changing, ending and voiding a line ---');
+var pfChg = call({ action: 'changeCostLine', token: adminTok, id: pfRentLine.line.id, fromMonth: '2026-04', amount: 6500 });
+check(pfChg.ok && pfChg.ended.toMonth === '2026-03' && pfChg.line.fromMonth === '2026-04' && pfChg.line.amount === 6500, 'a new amount from April ends the old line in March and starts a new one');
+close(pfNode(pfReport(), 'store:' + pfStA.id).fixed, 6200, 'March still shows the old rent');
+close(pfNode(pfReport({ dateFrom: '2026-04-01', dateTo: '2026-04-30' }), 'store:' + pfStA.id).fixed, 6500, 'April the new one');
+check(call({ action: 'changeCostLine', token: adminTok, id: pfChg.line.id, fromMonth: '2026-02', amount: 1 }).error === 'invalid_month', 'a change cannot start before the line did');
+var pfEnd = call({ action: 'endCostLine', token: adminTok, id: pfSalLine.line.id, toMonth: '2026-03' });
+check(pfEnd.ok && pfEnd.line.toMonth === '2026-03', 'a line is ended at a month');
+close(pfNode(pfReport({ dateFrom: '2026-04-01', dateTo: '2026-04-30' }), 'car:' + pfCarA.id).fixed, 1000, 'and stops counting after it');
+check(call({ action: 'voidCostLine', token: adminTok, id: pfCoLine.line.id }).error === 'invalid_input', 'voiding needs a reason');
+check(call({ action: 'voidCostLine', token: pfAccTok, id: pfCoLine.line.id, reason: 'x' }).error === 'forbidden', 'and the right to write');
+check(call({ action: 'voidCostLine', token: adminTok, id: pfCoLine.line.id, reason: 'typed twice' }).ok, 'a wrong line is voided with a reason');
+close(pfNode(pfReport(), 'company').ovhCompany, 0, 'and drops out of the figures');
+check(call({ action: 'voidCostLine', token: adminTok, id: pfCoLine.line.id, reason: 'again' }).error === 'already_voided', 'once');
+
+console.log('--- costing: a sheet of costs goes in all or nothing, and only once ---');
+function pfImp(rows, o) { var p = { action: 'importCostLines', token: adminTok, month: '2026-03', rows: rows }; Object.keys(o || {}).forEach(function (k) { p[k] = o[k]; }); return call(p); }
+var pfRows = [{ centreType: 'car', centreId: pfCarB.id, typeId: pfIns.id, amount: 310 }, { centreType: 'car', centreId: pfCarB.id, typeId: pfFuel.id, amount: 500 }];
+var pfI1 = pfImp(pfRows);
+check(pfI1.ok && pfI1.created === 1 && pfI1.skipped === 1 && pfI1.changed === 0, 'the line already there is skipped, the new one is added (got ' + JSON.stringify([pfI1.created, pfI1.skipped, pfI1.changed, pfI1.error]) + ')');
+var pfI2 = pfImp(pfRows);
+check(pfI2.ok && pfI2.created === 0 && pfI2.skipped === 2, 'the same sheet again changes nothing');
+var pfBefore = call({ action: 'listCosts', token: adminTok }).lines.length;
+var pfI3 = pfImp([{ centreType: 'car', centreId: pfCarB.id, typeId: pfOwn.entity.id, amount: 25 }, { centreType: 'car', centreId: 'nope', typeId: pfIns.id, amount: 5 }]);
+check(!pfI3.ok && pfI3.error === 'invalid_centre' && pfI3.index === 1 && call({ action: 'listCosts', token: adminTok }).lines.length === pfBefore, 'one bad row stops the whole sheet');
+var pfI4 = pfImp([{ centreType: 'car', centreId: pfCarB.id, typeId: pfFuel.id, amount: 650 }], { month: '2026-04' });
+check(pfI4.ok && pfI4.changed === 1, 'a different amount from April is a change from April');
+close(pfNode(pfReport(), 'car:' + pfCarB.id).fixed, 810, 'March: insurance 310 + fuel 500');
+close(pfNode(pfReport({ dateFrom: '2026-04-01', dateTo: '2026-04-30' }), 'car:' + pfCarB.id).fixed, 960, 'April: 310 + 650');
+var pfI5 = pfImp([{ centreType: 'car', centreId: pfCarB.id, typeId: pfOwn.entity.id, amount: 75 }], { oneOff: true });
+check(pfI5.ok && pfI5.created === 1 && pfI5.lines[0].toMonth === '2026-03' && pfI5.lines[0].oneOff === true, 'a one-month cost stays in its month');
+check(call({ action: 'adminDeleteEntity', token: adminTok, kind: 'cost_type', id: pfOwn.entity.id }).error === 'has_children', 'a cost type in use cannot be deleted');
+
+console.log('--- costing: the monthly expenses report ---');
+var pfCr = call({ action: 'getCostReport', token: pfAccTok, monthFrom: '2026-02', monthTo: '2026-04' });
+check(pfCr.ok && pfCr.months.join() === '2026-02,2026-03,2026-04', 'three months');
+function pfCrRow(f) { return (pfCr.rows || []).filter(f)[0] || { amounts: [] }; }
+var pfCrDep = pfCrRow(function (r) { return r.centreType === 'car' && r.centreId === pfCarA.id && r.typeId === pfDep.id; });
+check(pfCrDep.amounts.join() === '1000,1000,1000' && pfCrDep.locationId === pfLocA.id && pfCrDep.clusterId === pfArea.id && pfCrDep.city === 'PF City', 'depreciation every month, placed under its branch, area and city');
+var pfCrFuel = (pfCr.rows || []).filter(function (r) { return r.centreId === pfCarB.id && r.typeId === pfFuel.id; });
+check(pfCrFuel.length === 2 && pfCrFuel.map(function (r) { return r.amounts.join(); }).sort().join('|') === '0,0,650|0,500,0', 'the fuel line before and after its change');
+var pfCrTak = pfCrRow(function (r) { return r.source === 'takings' && r.centreId === pfCarA.id; });
+check(pfCrTak.amounts.join() === '0,40,0', 'what was paid out of the takings shows in its month');
+check(!(pfCr.rows || []).some(function (r) { return r.lineId === pfCoLine.line.id; }), 'a voided line is not in the report');
+check(call({ action: 'getCostReport', token: saraTok, monthFrom: '2026-02', monthTo: '2026-04' }).error === 'forbidden', 'the expenses report is not for an area manager');
+check(call({ action: 'getCostReport', token: pfAccTok, monthFrom: '2020-01', monthTo: '2026-04' }).error === 'invalid_input', 'at most 36 months at a time');
+
+console.log('--- costing review fixes: ending a line, sheets and labelled lines, cost corrections ---');
+check(call({ action: 'endCostLine', token: adminTok, id: pfChg.ended.id, toMonth: '2026-12' }).error === 'overlap_line', 'an ended line cannot be stretched over the line that replaced it');
+check(call({ action: 'endCostLine', token: adminTok, id: pfI5.lines[0].id, toMonth: '2026-08' }).error === 'invalid_input', 'a one-month cost has no other last month');
+check(call({ action: 'endCostLine', token: adminTok, id: pfDepLine.line.id, toMonth: '2031-06' }).error === 'invalid_month', 'depreciation cannot run past its asset\'s life');
+check(call({ action: 'endCostLine', token: adminTok, id: pfDepLine.line.id, toMonth: '2028-12' }).ok, 'but it can stop early (the car was sold)');
+// a sheet row carries no label: it speaks for the one running line of its type
+var pfCash = pfLine(adminTok, { centreType: 'store', centreId: pfStB.id, typeId: pfSal.id, amount: 3000, fromMonth: '2026-03', label: 'Cashier' });
+check(pfCash.ok, 'store B: a labelled salary line');
+var pfL1 = pfImp([{ centreType: 'store', centreId: pfStB.id, typeId: pfSal.id, amount: 3000 }]);
+check(pfL1.ok && pfL1.skipped === 1 && pfL1.created === 0, 'the sheet\'s plain row finds the labelled line and adds nothing (got ' + JSON.stringify([pfL1.created, pfL1.skipped, pfL1.error]) + ')');
+var pfL2 = pfImp([{ centreType: 'store', centreId: pfStB.id, typeId: pfSal.id, amount: 3200 }], { month: '2026-04' });
+check(pfL2.ok && pfL2.changed === 1 && pfL2.lines[0].label === 'Cashier' && pfL2.lines[0].amount === 3200, 'a new amount changes that line and keeps its label');
+check(pfLine(adminTok, { centreType: 'store', centreId: pfStB.id, typeId: pfSal.id, amount: 2000, fromMonth: '2026-03', label: 'Helper' }).ok, 'a second salary line on the store');
+var pfL3 = pfImp([{ centreType: 'store', centreId: pfStB.id, typeId: pfSal.id, amount: 5000 }], { month: '2026-04' });
+check(!pfL3.ok && pfL3.error === 'overlap_line' && pfL3.index === 0, 'with two lines of the type, a plain row cannot say which it means');
+// a one-month cost typed again with another amount replaces the first
+var pfO2 = pfImp([{ centreType: 'car', centreId: pfCarB.id, typeId: pfOwn.entity.id, amount: 80 }], { oneOff: true });
+var pfOnes = call({ action: 'listCosts', token: adminTok }).lines.filter(function (l) { return l.oneOff && l.centreId === pfCarB.id && l.typeId === pfOwn.entity.id; });
+check(pfO2.ok && pfO2.changed === 1 && pfOnes.length === 1 && pfOnes[0].amount === 80, 'the corrected one-month cost stands alone (got ' + JSON.stringify([pfO2.changed, pfO2.created, pfOnes.length]) + ')');
+// a voided line no longer ties its place down
+var pfCarX = pfEnt('car', { locationId: pfLocB.id, label: 'PF Car X', driverUserId: pfDr2.id });
+var pfXl = pfLine(adminTok, { centreType: 'car', centreId: pfCarX.id, typeId: pfIns.id, amount: 100, fromMonth: '2026-03' });
+check(call({ action: 'adminDeleteEntity', token: adminTok, kind: 'car', id: pfCarX.id }).error === 'has_children', 'a car with a cost line stays');
+check(call({ action: 'voidCostLine', token: adminTok, id: pfXl.line.id, reason: 'wrong car' }).ok && call({ action: 'adminDeleteEntity', token: adminTok, kind: 'car', id: pfCarX.id }).ok, 'once its only line is voided it can go');
+// the unit cost from a date: a correction reaches back
+check(call({ action: 'setProductCost', token: pfAccTok, productId: pfP1.id, unitCost: 14, from: '2026-03-11' }).error === 'forbidden', 'the accountant does not set costs');
+check(call({ action: 'setProductCost', token: adminTok, productId: pfP1.id, unitCost: 14, from: '2099-01-01' }).error === 'invalid_input', 'a cost cannot start in the future');
+check(call({ action: 'setProductCost', token: adminTok, productId: pfP1.id, unitCost: -1, from: '2026-03-11' }).error === 'invalid_input', 'nor be negative');
+var pfSc = call({ action: 'setProductCost', token: adminTok, productId: pfP1.id, unitCost: 14, from: '2026-03-11' });
+check(pfSc.ok && pfSc.product.unitCost === 14, 'a unit cost is set from a date, and becomes the product\'s cost');
+close(pfNode(pfReport(), 'company').cogs, 1500 + 750 + 20 * 14 + 450, 'sales from that date cost 14, the earlier ones still 15');
+var pfHist = (call({ action: 'listCosts', token: pfAccTok }).productCosts || []).filter(function (r) { return r.productId === pfP1.id; });
+check(pfHist.length === 2 && pfHist.map(function (r) { return r.from + ':' + r.unitCost; }).sort().join() === '2000-01-01:15,2026-03-11:14', 'the history keeps what stood before and drops the later cost it replaced (got ' + pfHist.map(function (r) { return r.from + ':' + r.unitCost; }).join() + ')');
+// a cost cleared to follow the stock item
+var pfAnchor = pfEnt('product', { name: 'PF Anchor', type: 'goods', unitPrice: 30, unitCost: 15 });
+var pfChild = pfEnt('product', { name: 'PF Child', type: 'goods', unitPrice: 30, unitCost: 20, stockOf: pfAnchor.id, stockEffect: 'sell_full' });
+check(call({ action: 'setProductCost', token: adminTok, productId: pfChild.id, unitCost: 0, from: '2026-01-01' }).ok, 'a product\'s own cost is cleared from the start of the year');
+var pfBeforeChild = pfNode(pfReport(), 'company').cogs;
+check(call({ action: 'createDailyEntry', token: adminTok, date: '2026-03-13', sourceType: 'store', sourceId: pfStB.id, productId: pfChild.id, qty: 10, unitPrice: 30, cashSales: 300 }).ok, 'and it is sold');
+close(pfNode(pfReport(), 'company').cogs - pfBeforeChild, 150, 'its sale then costs what its stock item costs');
+// odd ids never break the report
+ctx.writeRow(ctx.SHEETS.PRODUCT_COSTS, { productId: 'toString', unitCost: 5, from: '2026-01-01' });
+ctx.writeRow(ctx.SHEETS.PRODUCT_COSTS, { productId: '__proto__', unitCost: 5, from: '2026-01-01' });
+check(pfReport().ok, 'a cost record with an odd product id does not stop the report');
+// what one unit costs is not for every role
+var pfDrMeta = call({ action: 'listMeta', token: dpTok });
+check(pfDrMeta.ok && pfDrMeta.products.length > 0 && pfDrMeta.products.every(function (p) { return p.unitCost === undefined && p.emptyCost === undefined; }), 'a driver is not sent unit costs');
+check(call({ action: 'listMeta', token: pfAccTok }).products.some(function (p) { return p.unitCost === 14; }), 'the accountant is');
+
 console.log('\n=== Sheets reads written text as if typed: every cell must come back as written ===');
 // The fake sheet converts '2026-09-30', '08:00', '0501234567' the way Google Sheets
 // does (stub-harness sheetValue). Records live inside the JSON cell, so they are

@@ -17,16 +17,21 @@ var ENTITY_SHEET = {
   expense_item: SHEETS.EXPENSE_ITEMS,
   customer: SHEETS.CUSTOMERS,
   city: SHEETS.CITIES,
-  channel: SHEETS.CHANNELS
+  channel: SHEETS.CHANNELS,
+  cost_type: SHEETS.COST_TYPES
 };
 
 // child sheet + the field on the child that points at the parent, used to
 // block deletes that would orphan children.
 var ENTITY_CHILDREN = {
-  location: [{ sheet: SHEETS.STORES, field: 'locationId' }, { sheet: SHEETS.CARS, field: 'locationId' }],
-  store: [{ sheet: SHEETS.POS, field: 'ownerId', ownerType: 'store' }],
-  car: [{ sheet: SHEETS.POS, field: 'ownerId', ownerType: 'car' }],
-  cluster: [{ sheet: SHEETS.LOCATIONS, field: 'clusterId' }],
+  // a place with cost lines keeps its row, or the months already reported would lose them
+  // (a voided line does not count: `live`)
+  location: [{ sheet: SHEETS.STORES, field: 'locationId' }, { sheet: SHEETS.CARS, field: 'locationId' }, { sheet: SHEETS.COST_LINES, field: 'centreId', centreType: 'location', live: true }],
+  store: [{ sheet: SHEETS.POS, field: 'ownerId', ownerType: 'store' }, { sheet: SHEETS.COST_LINES, field: 'centreId', centreType: 'store', live: true }],
+  car: [{ sheet: SHEETS.POS, field: 'ownerId', ownerType: 'car' }, { sheet: SHEETS.COST_LINES, field: 'centreId', centreType: 'car', live: true }],
+  cluster: [{ sheet: SHEETS.LOCATIONS, field: 'clusterId' }, { sheet: SHEETS.COST_LINES, field: 'centreId', centreType: 'cluster', live: true }],
+  // a cost type with lines on it stays on file (deactivate instead)
+  cost_type: [{ sheet: SHEETS.COST_LINES, field: 'typeId', live: true }],
   zone: [{ sheet: SHEETS.LOCATIONS, field: 'zoneId' }],
   pos: [],
   // a product with existing sales history stays selectable in entry forms
@@ -716,6 +721,12 @@ function validateEntity_(kind, d) {
     }
   } else if (kind === 'income_item' || kind === 'expense_item') {
     if (!d.name) return 'invalid_input';
+  } else if (kind === 'cost_type') {
+    // the catalogue of costs (Costing.gs): what it is called, the family it
+    // reports under, and whether it moves with activity
+    if (!String(d.name || '').trim()) return 'invalid_input';
+    if (COST_GROUPS_.indexOf(d.group) < 0) return 'invalid_input';
+    if (d.nature != null && d.nature !== '' && d.nature !== 'fixed' && d.nature !== 'variable') return 'invalid_input';
   } else {
     return 'invalid_kind';
   }
@@ -847,12 +858,16 @@ function saveEntity_(req, user) {
     if (flightErr) return { ok: false, error: flightErr };
   }
 
+  // a product's unit cost before this save (null for a new product), so the
+  // sales already made keep the cost they were sold at (noteProductCost_)
+  var costBefore = kind === 'product' && req.id ? Number(obj.unitCost || 0) : null;
   safeOwnKeys_(d).forEach(function (k) { obj[k] = d[k]; });
   if (obj.active === undefined) obj.active = true;
   if ((kind === 'customer' || kind === 'city') && obj.name) obj.name = String(obj.name).replace(/\s+/g, ' ').trim();
   if (hasOwn_(CODE_PREFIX_, kind) && !obj.code) obj.code = nextCode_(kind);
 
   var saved = writeRow(sheetName, obj);
+  if (kind === 'product') noteProductCost_(saved, costBefore, user.id);
   logAudit_('admin_save_' + kind, user.id, saved.id);
   if (!req.noTranslate) fillTranslations_(translatableOf_(saved));
   return { ok: true, entity: saved };
@@ -965,6 +980,8 @@ function actionAdminDeleteEntity_(req, user) {
     for (var j = 0; j < rows.length; j++) {
       if (rows[j][rule.field] !== req.id) continue;
       if (rule.ownerType && rows[j].ownerType !== rule.ownerType) continue;
+      if (rule.centreType && rows[j].centreType !== rule.centreType) continue;
+      if (rule.live && rows[j].voided) continue;
       return { ok: false, error: 'has_children' };
     }
   }
@@ -997,10 +1014,12 @@ function actionAdminSetConfig_(req, user) {
   if (d.secondApprovalThreshold != null) cfg.secondApprovalThreshold = Number(d.secondApprovalThreshold);
   if (d.areaManagerBulkUploadEnabled != null) cfg.areaManagerBulkUploadEnabled = !!d.areaManagerBulkUploadEnabled;
   if (d.posSalesEnabled != null) cfg.posSalesEnabled = !!d.posSalesEnabled;
+  // whether the prices typed at the branches hold VAT (profit is read without it)
+  if (d.salesIncludeVat != null) cfg.salesIncludeVat = !!d.salesIncludeVat;
   writeRow(SHEETS.CONFIG, cfg);
   // what changed, from what to what — a settings change moves money too
   var was = JSON.parse(before), diff = [];
-  ['vatRate', 'staleThresholdHours', 'heldThresholdHours', 'secondApprovalThreshold', 'areaManagerBulkUploadEnabled', 'posSalesEnabled', 'liveLocked', 'senderName'].forEach(function (k) {
+  ['vatRate', 'staleThresholdHours', 'heldThresholdHours', 'secondApprovalThreshold', 'areaManagerBulkUploadEnabled', 'posSalesEnabled', 'salesIncludeVat', 'liveLocked', 'senderName'].forEach(function (k) {
     if (String(was[k]) !== String(cfg[k])) diff.push(k + ': ' + was[k] + ' → ' + cfg[k]);
   });
   logAudit_('admin_set_config', user.id, diff.join('; ') || 'no change');
@@ -1171,7 +1190,7 @@ function cityDuplicateOf_(name, selfId) {
 // script lock.
 var CODE_PREFIX_ = {
   location: 'BR', cluster: 'AR', city: 'CT', zone: 'ZN', store: 'ST', car: 'CR', pos: 'POS',
-  product: 'PR', income_item: 'INC', expense_item: 'EXP', customer: 'CUS', user: 'EMP', channel: 'CH'
+  product: 'PR', income_item: 'INC', expense_item: 'EXP', customer: 'CUS', user: 'EMP', channel: 'CH', cost_type: 'CST'
 };
 function codeSheet_(kind) { return kind === 'user' ? SHEETS.USERS : ENTITY_SHEET[kind]; }
 function isCodedSheet_(name) {
@@ -1254,6 +1273,7 @@ function runOneTimeMigrations_() {
   seedCitiesOnce_();
   seedCustomersOnce_();
   backfillCodesOnce_();
+  seedCostTypesOnce_();
   // the app became Best Gas Collections; the sender name saved at setup still
   // said the old default (a name someone chose is kept)
   runOnce_('SENDER_RENAMED', function () {
@@ -1368,6 +1388,10 @@ function actionMeta_(req, user) {
   var cities = readSheet(SHEETS.CITIES);
   var users = readSheet(SHEETS.USERS).map(publicUser_);
 
+  // what a unit costs the company is not a driver's, a counter worker's or a collector's to read
+  if (['driver', 'branch_worker', 'collector'].indexOf(user.role) >= 0) {
+    products = products.map(function (p) { var o = {}; safeOwnKeys_(p).forEach(function (k) { if (k !== 'unitCost' && k !== 'emptyCost') o[k] = p[k]; }); return o; });
+  }
   if (!isCompanyWide_(user.role)) {
     // holders' iqama numbers are private, and they are sign-in names
     pos = pos.map(function (p) { var o = {}; safeOwnKeys_(p).forEach(function (k) { if (k !== 'holderIqama') o[k] = p[k]; }); return o; });
@@ -1379,12 +1403,14 @@ function actionMeta_(req, user) {
     });
   }
 
+  // the cost catalogue rides along for the people who read costs
+  var costTypes = costCanRead_(user) ? readSheet(SHEETS.COST_TYPES) : undefined;
   return {
-    ok: true,
+    ok: true, costTypes: costTypes,
     locations: locations, stores: stores, cars: cars, pos: pos,
     clusters: clusters, zones: zones, products: products, users: users,
     incomeItems: incomeItems, expenseItems: expenseItems, customers: customers, cities: cities, channels: channels,
     translations: readSheet(SHEETS.TRANSLATIONS).map(function (r) { return { src: r.src, en: r.en || '', ur: r.ur || '', auto: r.auto !== false }; }),
-    config: { vatRate: vatRate_(), staleThresholdHours: staleThresholdHours_(), heldThresholdHours: heldThresholdHours_(), secondApprovalThreshold: secondApprovalThreshold_(), areaManagerBulkUploadEnabled: areaManagerBulkUploadEnabled_(), posSalesEnabled: posSalesEnabled_(), liveLocked: config_().liveLocked === true, liveLockedAt: config_().liveLockedAt || null }
+    config: { vatRate: vatRate_(), staleThresholdHours: staleThresholdHours_(), heldThresholdHours: heldThresholdHours_(), secondApprovalThreshold: secondApprovalThreshold_(), areaManagerBulkUploadEnabled: areaManagerBulkUploadEnabled_(), posSalesEnabled: posSalesEnabled_(), salesIncludeVat: salesIncludeVat_(), liveLocked: config_().liveLocked === true, liveLockedAt: config_().liveLockedAt || null }
   };
 }

@@ -272,7 +272,7 @@ function buildContext() {
     console: console
   };
 
-  var files = ['Code.gs', 'Admin.gs', 'Collection.gs', 'Reconciliation.gs', 'Risk.gs', 'MicrosoftMail.gs', 'Inventory.gs'];
+  var files = ['Code.gs', 'Admin.gs', 'Collection.gs', 'Reconciliation.gs', 'Risk.gs', 'MicrosoftMail.gs', 'Inventory.gs', 'Costing.gs'];
   var src = files.map(function (f) { return fs.readFileSync(path.join(__dirname, '..', f), 'utf8'); }).join('\n');
   var context = vm.createContext(sandbox);
   vm.runInContext(src, context, { filename: 'apps-script-bundle.js' });

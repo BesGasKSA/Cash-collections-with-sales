@@ -22,6 +22,8 @@ BestGas-Cash-Collection/
 ├── Admin.gs          user management + full CRUD over the entity hierarchy
 ├── Reconciliation.gs bank statement import + auto/manual matching
 ├── Risk.gs            operational risk / complaint register
+├── Inventory.gs       stock per branch and item, cylinders full and empty
+├── Costing.gs         cost types, monthly cost lines, the profit and expenses reports
 ├── tests/
 │   ├── stub-harness.js   rebuilds SpreadsheetApp/PropertiesService/etc. under
 │   │                      Node's vm module so the real .gs files run unmodified
@@ -918,7 +920,9 @@ deployment rather than creating a new one). Admin account: `aboumahdi04@gmail.co
 **The deploy folder is `C:\Claude\bestgas-cash-collection\apps-script`** (moved out
 of `%TEMP%` on 2026-09-29, where Windows could have cleared it). It already has
 `.clasp.json` and the private `CustomerSeed.js`: `clasp pull`, copy `Code.gs` →
-`الرمز.js`, `Admin.gs` → `Admin.js`, `Collection.gs` → `Collection.js`, then
+`الرمز.js`, `Admin.gs` → `Admin.js`, `Collection.gs` → `Collection.js`,
+`Inventory.gs` → `Inventory.js`, `Costing.gs` → `Costing.js` (in
+`filePushOrder` too), then
 `clasp push -f` and `clasp deploy -i …` as below. The steps below that create a
 fresh folder are only for rebuilding it.
 
@@ -1094,6 +1098,15 @@ each (`abxChunks_`). Tests: "area Excel" section in tests/run.js.
   standard rate for that line only; the delivery fee keeps its rate. The form has a
   box beside each channel quantity (`.lnChCom`, empty = standard, shown as the hint);
   the area Excel has an optional column `abx_c_chCom` beside each channel's quantity.
+- **The entry preview counted a channel's fee and commission twice (fixed
+  2026-10-01).** `drawAutoFees_` writes the delivery and commission *section*
+  totals, which hold the channels' amounts and the credit customers' together
+  (`dataset.total`); `entryNetPreview_` read that as "credit" and then added the
+  channels again from the lines. A Souq-Gas-only day showed the fee under both
+  the credit and the channel line. It was the preview alone: `settleCredit_` and
+  `settleChannel_` each work their part out once, so saved entries were right.
+  The preview reads `dataset.credit` now. If a third kind of automatic fee is
+  added, give it its own figure rather than folding it into a shared total.
 - Every Excel download goes through `offerDownload_`: it tries the automatic download
   and also shows a bar with a real link (`#dlBar`), because a file built after an
   async load no longer counts as a tap and phones blocked it silently. Failures show
@@ -1298,6 +1311,115 @@ values, ids and everything sent to the server stay Arabic. Mark an element
 through `trText_` too. The live list's hand-made translations are built by
 `bestgas-cash-collection/translations/build-live-translations.js` (private:
 real customer names).
+
+## Costing and profitability (2026-10-01, `Costing.gs`)
+
+The user asked for monthly expense profiles per car and per store (every
+expense type, depreciation, employee cost), overheads above them, expense
+reports by branch, area and city, and the daily profit "top line or bottom
+line, gross margin or contribution margin with G&A". The links it needs were
+already there: `car.driverUserId`, `car.locationId`, `pos.ownerType/ownerId`
+with `assignedUserId`/`holderName`, `store.locationId`, `location.clusterId` and
+`location.city`, and `product.unitCost`.
+
+**The model is multi-level contribution margin accounting** (profit-centre
+reporting; SAP calls the sharing step an assessment, Odoo Fleet has the same
+recurring vehicle costs). A cost is charged where it is caused, a level carries
+its own costs in full, and the levels above reach it as a share:
+
+```
+sales as entered (cash + card; credit is inside)
+- VAT inside the prices            config salesIncludeVat, default on
+= net sales                        top line
+- cost of goods                    qty x unit cost on the entry's date
+= GROSS MARGIN
+- commissions, and expenses paid out of the takings
+- the car's or store's own cost lines, day by day
+= CONTRIBUTION MARGIN
+- branch, area, city overheads and head-office G&A (shared)
+= NET PROFIT                       bottom line
+```
+
+- **Cost types** are master data: entity kind `cost_type` (sheet `cost_types`,
+  numbers `CST-0001`), with `group` (vehicle, staff, premises, operations,
+  admin), `nature` (fixed, variable) and `depreciation`. 47 are seeded once
+  (`seedCostTypesOnce_`) together with their English and Urdu, so nothing waits
+  on Google Translate. A type with lines cannot be deleted.
+- **Cost lines** (sheet `cost_lines`): `{centreType: car|store|location|cluster|
+  city|company, centreId, typeId, amount (a month), fromMonth, toMonth|null,
+  oneOff, label, employeeUserId, asset}`. A city is its name, the company is
+  `'company'`. Nothing is edited: `changeCostLine` ends the old line the month
+  before and starts a new one (from the line's own first month it voids and
+  replaces), `endCostLine` sets the last month, `voidCostLine` needs a reason.
+  Two running lines of one type on one place cannot overlap unless a label or
+  an employee tells them apart (`overlap_line`, `duplicate_line`). An `asset`
+  `{cost, residual, lifeMonths}` makes the line straight-line depreciation with
+  its end month worked out. A place with lines cannot be deleted
+  (`ENTITY_CHILDREN`).
+- **`importCostLines {month, oneOff, rows}`** is all or nothing and safe to
+  repeat: a running line with the same amount is skipped, another amount is a
+  change from that month. The Excel sheet (one row per place, one column per
+  cost type) and "copy from another car" both go through it. A sheet row has no
+  label, so it speaks for the one running line of its type on that place
+  whatever label or person that line carries (two such lines: `overlap_line`,
+  the row cannot say which); the sheet shows a cell only in that same case. A
+  one-month cost sent again with another amount replaces the first. New rows go
+  in one sheet call (`costAppendMany_`; the client sends 200 a time), because
+  row-by-row writes held the script lock for minutes.
+- **`endCostLine`** refuses a one-month cost, never runs depreciation past its
+  asset's life, and may move an ended line's end later only where nothing else
+  of its kind runs (`overlap_line`).
+- **Unit cost over time**: `saveEntity_` calls `noteProductCost_` when a
+  product's `unitCost` changes, and `setProductCost {productId, unitCost, from}`
+  sets it from a date (the Unit costs chip under cost profiles). Both go through
+  `productCostFrom_`: `product_costs` keeps `{productId, unitCost, from}`,
+  records dated that day or later are superseded (kept, `voided`), and the first
+  change also writes the cost that stood until then (`from: 2000-01-01`). So a
+  correction reaches back by choosing the date the cost should have started. A
+  sale older than the first record takes the first cost known, so entering unit
+  costs today costs the past too. A history value of 0 falls through to the
+  stock item the product draws from (`emptyCost` for `sell_empty`).
+- `listMeta` no longer sends `unitCost`/`emptyCost` to drivers, branch workers
+  and collectors. Maps keyed by record ids are `Object.create(null)` (trap 4).
+  A voided cost line does not block deleting its place or type (`live` rules).
+- **`getProfitReport {dateFrom, dateTo, basis, compare}`** (`profitCompute_`).
+  A unit is a store or a car; a POS machine's day belongs to its owner
+  (`costUnitOf_`), anything unplaceable to `none:<branch>`. A monthly amount is
+  spread over the days of its month, so any range works. Each overhead pool is
+  shared among the units under it by `basis` (`sales` net sales, `qty` units
+  sold, `equal`), weights taken over the whole range; no weights means equally,
+  no units means the pool stays on a pseudo unit `ovh:<level>:<id>`. Nodes:
+  `company > city:<name> > cluster:<city>|<areaId> > location:<id> > store:/car:`
+  (an area is listed inside each city it has branches in). Every node's `T`
+  is the sum of its units, so the tree always adds up to the company whatever
+  the basis. Series come per unit, by day up to 62 days and by month beyond.
+  `coverage` names sales with no cost of goods and units with no cost lines.
+  `compare` adds the period before (the calendar months before for whole
+  months).
+- **`getCostReport {monthFrom, monthTo}`** (36 months at most): every line month
+  by month with its branch, area and city, plus rows from the day entries:
+  `takings` (by expense item) and `commission`.
+- **Who**: admin, finance and the accountant read (`COST_ROLES_`: a salary is in
+  there, so not the operations managers); admin and finance write. `listMeta`
+  carries `costTypes` only for those three roles.
+- **Screen** `renderProfit` (nav الربحية, state `PL_`, sessionStorage `bgc_pl`):
+  overview (the four-step staircase, tiles incl. break-even per day, a bar per
+  day that goes below the line and red for a loss, where the money goes, the
+  places underneath ranked, what the figures are missing), by level (tree),
+  day by day, monthly expenses (by place or by type), cost profiles (per car,
+  store, branch, area, city, head office; a side panel with the chain driver ›
+  POS › branch › area › city, the lines, add / new amount / end / void, copy
+  from another, Excel sheet and upload). `PL_.focus` is a node key; the
+  breadcrumb and the ranked list move it. A loss is red with the word, never a
+  minus sign (`plAmt_`). `exportXlsx_` sheets may set `keepCols` (the cost sheet
+  must keep its empty columns); `exportPdf_` prints a figure below zero red, with
+  the sheet's `negWord` when it gives one (it used to print losses as plain
+  positive numbers). `plGet_` keeps answers under a minute, only for moving
+  between tabs; it is emptied on entering the screen, on any cost change and in
+  `logout()`, which also resets `state.screen` (found in review: the next person
+  on the same tab was shown the previous one's cached profit report).
+- **The daily sales board** (`branchBoard_`) switches level: city, area, branch,
+  store or car (remembered in `bgc_bhLevel`).
 
 ## Traps
 
