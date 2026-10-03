@@ -2984,5 +2984,104 @@ ctx.actionSetLanguage_({ language: 'ar' }, ctx.getById_(ctx.SHEETS.USERS, lgNew.
 check(ctx.publicUser_(ctx.getById_(ctx.SHEETS.USERS, lgNew.user.id)).language === 'ar', 'once someone picks Arabic, Arabic stays');
 check(call({ action: 'adminCreateUser', token: adminTok, appUrl: 'https://x.test/', data: { name: 'Lang Urdu', email: 'lang.ur@bestgas.sa', role: 'collector', language: 'ur' } }).user.language === 'ur', 'Urdu set by the admin stays Urdu');
 
+console.log('--- a handover amount is the same at every stage, and its parts always add up to it ---');
+// what a receiver's statement adds up: what came in, less what came off,
+// less what was received short at a handover on the way
+function partsNet_(b) {
+  var ins = Number(b.storeCash || 0) + Number(b.carCash || 0) + Number(b.posCash || 0) + Number(b.otherCash || 0) + Number(b.creditDeliveryFees || 0) + Number(b.channelDeliveryFees || 0);
+  var outs = Number(b.deliveryFee || 0) - Number(b.vatOnDelivery || 0) + Number(b.creditSales || 0) + Number(b.creditCommissions || 0) + Number(b.channelCommissions || 0) +
+    Number(b.bankTransfers || 0) + Number(b.expenses || 0) + Number(b.directDeposit || 0) + Number(b.shortfall || 0);
+  return ins - outs;
+}
+var sfDay = ctx.computeNet_([
+  { sourceType: 'car', cashSales: 920, deliveryFeeBankAmount: 115, expenseAmount: 50, bankTransferAmount: 100, channelDeliveryFee: 30, channelCommission: 10 },
+  { sourceType: 'pos', cashSales: 200, posSales: 300 }]);
+close(sfDay.netCashOwed, 890, 'the test day nets to 890');
+close(partsNet_(sfDay), 890, 'and its parts add up to it');
+function sfRow(id, kind, from, to, b, status, sources) {
+  ctx.writeRow(SHEETS.HANDOFFS, { id: id, kind: kind, fromUserId: from, createdBy: from, toUserId: to, amount: b.netCashOwed, breakdown: b,
+    sourceEntryIds: [], sourceHandoffIds: sources || [], consumedBy: null, status: status || 'pending', createdAt: new Date().toISOString() });
+}
+sfRow('sf-car', 'car_to_location', 'sf-driver', 'sf-bm', sfDay);
+var sfC1 = ctx.actionConfirmHandoff_({ id: 'sf-car', receivedAmount: 870 }, { id: 'sf-bm', role: 'store_manager' });
+check(sfC1.ok && sfC1.handoff.amount === 870, 'the branch manager received 870 of 890');
+close(sfC1.handoff.breakdown.shortfall, 20, 'the 20 short is a part of the statement');
+close(partsNet_(sfC1.handoff.breakdown), 870, 'so the statement still adds up to what was received');
+var sfUp = ctx.sumBreakdowns_([sfC1.handoff.breakdown, ctx.computeNet_([{ sourceType: 'store', cashSales: 1500, creditSales: 200 }])]);
+close(sfUp.netCashOwed, 2170, 'the branch hands on 870 + 1,300');
+close(sfUp.shortfall, 20, 'with the 20 short still in it');
+close(partsNet_(sfUp), 2170, 'and the statement adds up at that stage too');
+sfRow('sf-loc', 'location_to_cluster', 'sf-bm', 'sf-am', sfUp, 'pending', ['sf-car']);
+var sfC2 = ctx.actionConfirmHandoff_({ id: 'sf-loc', receivedAmount: 2160 }, { id: 'sf-am', role: 'cluster_manager' });
+close(sfC2.handoff.breakdown.shortfall, 30, 'a second short receipt adds to the first');
+close(partsNet_(sfC2.handoff.breakdown), 2160, 'and the statement adds up to the 2,160 received');
+sfRow('sf-over', 'car_to_location', 'sf-driver', 'sf-bm', ctx.computeNet_([{ sourceType: 'car', cashSales: 600 }]));
+var sfC3 = ctx.actionConfirmHandoff_({ id: 'sf-over', receivedAmount: 605 }, { id: 'sf-bm', role: 'store_manager' });
+close(sfC3.handoff.breakdown.shortfall, -5, 'five more than declared is the same part, the other way');
+close(partsNet_(sfC3.handoff.breakdown), 605, 'and that statement adds up to 605');
+sfRow('sf-exact', 'car_to_location', 'sf-driver', 'sf-bm', ctx.computeNet_([{ sourceType: 'car', cashSales: 400 }]));
+var sfC4 = ctx.actionConfirmHandoff_({ id: 'sf-exact', receivedAmount: 400 }, { id: 'sf-bm', role: 'store_manager' });
+check(sfC4.ok && !sfC4.handoff.breakdown.shortfall, 'a handover received in full carries no short part');
+sfRow('sf-disp', 'car_to_location', 'sf-driver', 'sf-bm', ctx.computeNet_([{ sourceType: 'car', cashSales: 600 }]), 'disputed');
+var sfR = ctx.actionResolveDispute_({ id: 'sf-disp', resolution: 'confirm', receivedAmount: 550, note: 'counted 550' }, { id: 'sf-fin', role: 'finance' });
+check(sfR.ok && sfR.handoff.amount === 550, 'a dispute settled at 550');
+close(sfR.handoff.breakdown.shortfall, 50, 'records the 50 short as a part too');
+close(partsNet_(sfR.handoff.breakdown), 550, 'so its statement adds up to 550');
+
+console.log('--- the screens use the same arithmetic as the server ---');
+var clientHtml = require('fs').readFileSync(require('path').join(__dirname, '..', 'index.html'), 'utf8');
+// a top-level client function's source, braces matched past strings and comments
+function clientFn_(name) {
+  var at = clientHtml.indexOf('\nfunction ' + name + '(');
+  if (at < 0) return '';
+  var i = clientHtml.indexOf('{', at), depth = 0, q = null;
+  for (; i < clientHtml.length; i++) {
+    var c = clientHtml[i], n = clientHtml[i + 1];
+    if (q) { if (c === '\\') i++; else if (c === q) q = null; continue; }
+    if (c === "'" || c === '"' || c === '\x60') { q = c; continue; }
+    if (c === '/' && n === '/') { i = clientHtml.indexOf('\n', i); continue; }
+    if (c === '/' && n === '*') { i = clientHtml.indexOf('*/', i) + 1; continue; }
+    if (c === '{') depth++;
+    else if (c === '}' && --depth === 0) return clientHtml.slice(at + 1, i + 1);
+  }
+  return '';
+}
+var vm = require('vm');
+var clientCtx = vm.createContext({ t: function (k) { return k; }, money: function (n) { return Number(n || 0).toFixed(2); }, vatRateClient_: function () { return 0.15; } });
+['entryAmt_', 'cashCalcRows_', 'brkParts_'].forEach(function (n) {
+  var src = clientFn_(n);
+  check(!!src, 'the screen function ' + n + ' exists');
+  if (src) vm.runInContext(src, clientCtx);
+});
+var mixed = [
+  { sourceType: 'car', cashSales: 920, deliveryFeeBankAmount: 115, expenseAmount: 50, bankTransferAmount: 100, channelDeliveryFee: 30, channelCommission: 10 },
+  { sourceType: 'pos', cashSales: 200, posSales: 300, directDepositAmount: 80 },
+  { sourceType: 'store', cashSales: 1500, creditSales: 200, creditDeliveryFee: 12, creditCommission: 4, otherCash: 35 }];
+if (clientCtx.entryAmt_) close(mixed.reduce(function (a, e) { return a + clientCtx.entryAmt_(e).net; }, 0), ctx.computeNet_(mixed).netCashOwed, 'each entry\'s net on the screens adds up to the server\'s net');
+function rowsAddUp_(b, label) {
+  if (!clientCtx.brkParts_ || !clientCtx.cashCalcRows_) return check(false, label + ': no brkParts_');
+  var rows = clientCtx.cashCalcRows_(clientCtx.brkParts_(b));
+  var ins = 0, outs = 0, fin = null;
+  rows.forEach(function (r) { if (!r.kind) ins += r.amount; else if (r.kind === 'deduct') outs += r.amount; else if (r.kind === 'final') fin = r.amount; });
+  close(ins - outs, b.netCashOwed, label + ': the lines add up to the amount');
+  close(fin, b.netCashOwed, label + ': and the last line is the amount');
+}
+rowsAddUp_(sfDay, 'a day with a transfer, Souq Gas and a delivery fee');
+rowsAddUp_(ctx.computeNet_(mixed), 'a mixed day with credit fees and a الموازنة');
+rowsAddUp_(sfC2.handoff.breakdown, 'a handover received short twice');
+rowsAddUp_(sfC3.handoff.breakdown, 'a handover received over');
+// a handover confirmed short before the part existed: the gap still shows as a line
+rowsAddUp_(Object.assign({}, ctx.computeNet_([{ sourceType: 'car', cashSales: 600 }]), { netCashOwed: 580 }), 'an old short handover');
+if (clientCtx.brkParts_) {
+  var ddParts = clientCtx.brkParts_({ storeCash: 0, carCash: 0, posCash: 0, deliveryFee: 0, posSales: 0, creditSales: 0, vatOnDelivery: 0, otherCash: 0, expenses: 0, directDeposit: 0, netCashOwed: 750 });
+  check(!ddParts.short, 'a الموازنة banked at the branch (a breakdown that only carries its amount) draws no short or over line');
+}
+check(/brkParts_\(/.test(clientFn_('breakdownGrid')), 'the handover card draws its statement from brkParts_');
+check(/brkParts_\(/.test(clientFn_('handoffDocView_')), 'the handover document draws its statement from brkParts_');
+var rhSrc = clientFn_('renderHandoffs');
+check(rhSrc.indexOf('entryAmt_(e).net') >= 0 && !/Number\(e\.expenseAmount\|\|0\)\s*-\s*Number\(e\.directDepositAmount/.test(rhSrc),
+  'the area manager\'s ready figure counts his own days with entryAmt_, the server\'s arithmetic');
+check(/T\.netCashOwed/.test(clientFn_('salesAndCollectionStatements_')), 'the collection statement takes what is owed from the server\'s total');
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);

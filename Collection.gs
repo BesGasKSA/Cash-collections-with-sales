@@ -838,9 +838,11 @@ function computeNet_(entries) {
 // way to see what it was made of.
 function sumBreakdowns_(breakdowns) {
   var out = { storeCash: 0, carCash: 0, posCash: 0, deliveryFee: 0, posSales: 0, creditSales: 0, vatOnDelivery: 0,
-    otherCash: 0, expenses: 0, directDeposit: 0, bankTransfers: 0, creditDeliveryFees: 0, creditCommissions: 0, channelDeliveryFees: 0, channelCommissions: 0, netCashOwed: 0 };
+    otherCash: 0, expenses: 0, directDeposit: 0, bankTransfers: 0, creditDeliveryFees: 0, creditCommissions: 0, channelDeliveryFees: 0, channelCommissions: 0,
+    shortfall: 0, netCashOwed: 0 };
   breakdowns.forEach(function (b) {
     if (!b) return;
+    out.shortfall += Number(b.shortfall || 0);
     out.channelDeliveryFees += Number(b.channelDeliveryFees || 0);
     out.channelCommissions += Number(b.channelCommissions || 0);
     out.creditCommissions += Number(b.creditCommissions || 0);
@@ -859,6 +861,17 @@ function sumBreakdowns_(breakdowns) {
     out.netCashOwed += Number(b.netCashOwed || 0);
   });
   return out;
+}
+
+// A handover received short (or over) changes what travels on, so the
+// difference becomes a part of the breakdown, added to any difference already
+// in it from a stage below. Rewriting only netCashOwed (until 2026-10-03) left
+// the parts adding up to the declared figure at every later stage: the
+// statement said 600 while the amount said 580, and it read as the amount
+// changing between stages.
+function receivedBreakdown_(b, received, shortfall) {
+  if (!b) return b;
+  return Object.assign({}, b, { netCashOwed: received, shortfall: Math.round((Number(b.shortfall || 0) + shortfall) * 100) / 100 });
 }
 
 // ---------- Handoffs (the approval gate) ----------
@@ -1507,7 +1520,7 @@ function actionConfirmHandoff_(req, user) {
     h.originalAmount = declared;
     h.amount = received;
     h.shortfall = shortfall;
-    if (h.breakdown) { h.breakdown = Object.assign({}, h.breakdown, { netCashOwed: received }); }
+    h.breakdown = receivedBreakdown_(h.breakdown, received, shortfall);
   }
 
   // Four-eyes on large amounts — never blocks the chain (the receiver's
@@ -1687,7 +1700,7 @@ function actionResolveDispute_(req, user) {
       h.originalAmount = declared;
       h.amount = received;
       h.shortfall = shortfall;
-      if (h.breakdown) h.breakdown = Object.assign({}, h.breakdown, { netCashOwed: received });
+      h.breakdown = receivedBreakdown_(h.breakdown, received, shortfall);
     }
     h.status = 'confirmed';
     h.confirmedAt = new Date().toISOString();
