@@ -3083,5 +3083,48 @@ check(rhSrc.indexOf('entryAmt_(e).net') >= 0 && !/Number\(e\.expenseAmount\|\|0\
   'the area manager\'s ready figure counts his own days with entryAmt_, the server\'s arithmetic');
 check(/T\.netCashOwed/.test(clientFn_('salesAndCollectionStatements_')), 'the collection statement takes what is owed from the server\'s total');
 
+console.log('--- signed out after ten minutes without a touch, the draft kept ---');
+function idleCtx_(lastActiveAgoMs, opts) {
+  opts = opts || {};
+  var store = {}, now = 1800000000000, out = { logouts: 0 };
+  if (lastActiveAgoMs != null) store.bgc_lastActive = String(now - lastActiveAgoMs);
+  if (opts.draft) store['bgc_entryDraft_u1'] = '{"v":1}';
+  var c = vm.createContext({
+    Date: { now: function () { return now; } }, Number: Number, String: String, Math: Math,
+    localStorage: { getItem: function (k) { return Object.prototype.hasOwnProperty.call(store, k) ? store[k] : null; }, setItem: function (k, v) { store[k] = String(v); } },
+    state: { user: { id: 'u1' } }, out: out
+  });
+  vm.runInContext('var IDLE_LIMIT_MS = 10 * 60 * 1000; var idleSaveHook_ = null, idleWrote_ = 0; function logout(){ out.logouts++; state.user = null; }', c);
+  ['idleMark_', 'idleLast_', 'idleCheck_'].forEach(function (n) { vm.runInContext(clientFn_(n), c); });
+  if (opts.hook) vm.runInContext('idleSaveHook_ = function(){ out.hookRan = true; return ' + (opts.hook === 'saved') + '; };', c);
+  return { c: c, out: out, store: store };
+}
+var ic1 = idleCtx_(9 * 60 * 1000); ic1.c.idleCheck_();
+check(ic1.out.logouts === 0, 'nine minutes without a touch: still signed in');
+var ic2 = idleCtx_(10 * 60 * 1000 + 1000, { hook: 'saved' }); ic2.c.idleCheck_();
+check(ic2.out.logouts === 1 && ic2.out.hookRan, 'ten minutes: the entry screen keeps its draft, then the person is signed out');
+check(ic2.c.state.idleOut === 'draft', 'and the sign-in page says the entry is kept as a draft');
+var ic3 = idleCtx_(60 * 60 * 1000); ic3.c.idleCheck_();
+check(ic3.out.logouts === 1 && ic3.c.state.idleOut === 'plain', 'nothing typed: signed out with the plain message');
+var ic4 = idleCtx_(60 * 60 * 1000, { draft: true }); ic4.c.idleCheck_();
+check(ic4.c.state.idleOut === 'draft', 'a draft saved earlier (another screen open now) is still announced');
+var ic5 = idleCtx_(null); ic5.c.idleCheck_();
+check(ic5.out.logouts === 0 && Number(ic5.store.bgc_lastActive) > 0, 'no activity recorded yet (first run of this build): counting starts, nobody is signed out');
+var ic6 = idleCtx_(60 * 60 * 1000); ic6.c.state.user = null; ic6.c.idleCheck_();
+check(ic6.out.logouts === 0, 'nobody signed in: nothing to do');
+var ic7 = idleCtx_(9 * 60 * 1000); ic7.c.idleMark_(true);
+check(Number(ic7.store.bgc_lastActive) === 1800000000000, 'activity moves the mark to now');
+
+console.log('--- the welcome line turns with every sign-in ---');
+var wSrc = clientHtml.slice(clientHtml.indexOf('\nvar WIS_ = ['), clientHtml.indexOf('\nvar OTD_V_'));
+check(wSrc.length > 100, 'the sayings are in the page');
+var wc = vm.createContext({ state: { user: { id: 'abc' } }, localStorage: { getItem: function () { return wc.n; } }, Number: Number, String: String, Math: Math, n: '0' });
+vm.runInContext(wSrc, wc); vm.runInContext(clientFn_('wisPick_'), wc);
+var allOk = wc.WIS_.length >= 20 && wc.WIS_.every(function (q) { return q.en && q.ar && q.ur && q.by && q.by.en && q.by.ar && q.by.ur && !/\u2014|\u2013/.test(q.en + q.ar + q.ur); });
+check(allOk, 'every saying has English, Arabic and Urdu text and its author in all three, with no dashes');
+wc.n = '2'; var w2 = wc.wisPick_(); wc.n = '3'; var w3 = wc.wisPick_(); wc.n = '4'; var w4 = wc.wisPick_();
+check(!w2.event && w3.event && !w4.event, 'one sign-in a saying, the next an event of this day, then a saying again');
+check(w2.quote !== w4.quote, 'and the saying is a different one each time');
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);
