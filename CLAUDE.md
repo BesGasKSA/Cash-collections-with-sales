@@ -672,7 +672,13 @@ block the chain waiting on admin review: it confirms immediately with the
 real received amount (`h.amount` becomes `receivedAmount`, the original
 claim moves to `h.originalAmount`, the gap to `h.shortfall`), so every
 handoff further up the chain moves real cash, never the original overstated
-claim. `escalateShortfall_` emails the cluster manager, the collector of
+claim. The difference is also written into the breakdown as its own part,
+`breakdown.shortfall` (positive short, negative over, added to any difference
+already in it from a stage below: `receivedBreakdown_`), and `sumBreakdowns_`
+carries it up. Until 2026-10-03 only `netCashOwed` was rewritten, so every
+later statement's lines added up to the declared figure while its amount said
+the received one; the user read that as "the amount changes between phases".
+`escalateShortfall_` emails the cluster manager, the collector of
 that branch (`collectorForHandoff_`), and every admin/finance account the moment a shortfall is
 accepted — not just the next person in line — so a shortfall absorbed at
 one level is never invisible to the rest of the chain. The separate
@@ -1357,6 +1363,47 @@ Asked for by the user in one afternoon, all in `renderEntries` unless noted.
   (a bar with one button). Why: after the preview fix above was live, the user
   still saw the old figures on a page left open. `version.json` must be
   committed with every build.
+
+## Handover amounts, the folded handovers screen, idle sign-out, the welcome line (2026-10-03)
+
+- **The net formula lives once on each side.** Server: `computeNet_`. Client:
+  `entryAmt_` (one entry) and `brkParts_` (a handover's breakdown, every part
+  plus `short`, the gap between its parts and its amount, so a handover
+  confirmed short before `breakdown.shortfall` existed still adds up; a
+  breakdown with no parts at all, a branch الموازنة deposit, gets no gap line).
+  `cashCalcRows_(brkParts_(b))` draws a statement; `breakdownGrid` and the
+  handover document both use it. Three hand-rolled copies were found and
+  removed: the area manager's "ready" card (left out transfers, credit fees
+  and Souq Gas: showed 1,000 where the request carried 960), the handover
+  document (five parts only) and the collection statement in
+  `salesAndCollectionStatements_` (now `T.netCashOwed`, less collector
+  deposits only). Tests in `tests/run.js` load these client functions with
+  `clientFn_` and check them against `computeNet_`; do not add a fourth copy.
+- **Every handover is one row** (`handoffItem`): `.ho-sum` (kind, amount,
+  branch and who to whom, status, a short/over chip, time) opens `.ho-body`
+  (route, notes, Amounts / History / Document, actions). One open per list
+  (`div._hoSet`); `HO_OPEN_` keeps the open row across a redraw and is
+  cleared by an action that lands (`after_`, confirm) and by `goScreen_`.
+  At the receiving step the statement is open inside the row. The deputy's
+  area-batch cards use the same row. Cards whose rows fold carry
+  `no-collapse`, or the page's own "Show all" clipping cuts an opened row.
+- **Ten minutes idle signs out** (`idleWatch_`, started next to
+  `checkBuild_(true)`). Activity (pointer, key, wheel, touch, scroll, input)
+  is written to `localStorage.bgc_lastActive` at most every 15 s, so every tab
+  shares it; `idleCheck_` runs every 20 s, when a tab comes back into view and
+  at start-up (an app reopened after a long gap opens on sign-in). The token is
+  signed, not stored, so the server cannot revoke it: clearing it on the
+  device is what ends the session (server `IDLE_MS` is still 12 h). Before
+  signing out, `idleSaveHook_` (set by the entry screen) saves the draft even
+  inside its 700 ms debounce; the sign-in page then says the entry is kept,
+  and home shows a "Continue" card while a draft exists.
+- **The welcome line** (`heroWisdom_` in the home hero) turns with every
+  sign-in (`bgc_loginN_<userId>`): a saying (`WIS_`, en/ar/ur, only quotes
+  with a reliable source; popular misattributions left out on purpose), then
+  an event of today's date from `otd.json` (one per day, en/ar/ur, chosen from
+  Wikipedia's "on this day" with the grim and the political left out; loaded
+  once, kept in `localStorage.bgc_otd` under `OTD_V_`, bump it when the file
+  changes). No event or no network: the saying.
 
 ## Costing and profitability (2026-10-01, `Costing.gs`)
 
