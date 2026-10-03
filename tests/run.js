@@ -3039,6 +3039,18 @@ function clientFn_(name) {
     var c = clientHtml[i], n = clientHtml[i + 1];
     if (q) { if (c === '\\') i++; else if (c === q) q = null; continue; }
     if (c === "'" || c === '"' || c === '\x60') { q = c; continue; }
+    // a regex literal (a slash where a value starts): skip to its closing slash
+    if (c === '/' && n !== '/' && n !== '*' && /(^|[(,=:[!&|?{};+\-*%~^<>]|\breturn)\s*$/.test(clientHtml.slice(Math.max(0, i - 12), i))) {
+      var inClass = false;
+      for (i++; i < clientHtml.length; i++) {
+        var r = clientHtml[i];
+        if (r === '\\') { i++; continue; }
+        if (r === '[') inClass = true;
+        else if (r === ']') inClass = false;
+        else if ((r === '/' && !inClass) || r === '\n') break;
+      }
+      continue;
+    }
     if (c === '/' && n === '/') { i = clientHtml.indexOf('\n', i); continue; }
     if (c === '/' && n === '*') { i = clientHtml.indexOf('*/', i) + 1; continue; }
     if (c === '{') depth++;
@@ -3125,6 +3137,56 @@ check(allOk, 'every saying has English, Arabic and Urdu text and its author in a
 wc.n = '2'; var w2 = wc.wisPick_(); wc.n = '3'; var w3 = wc.wisPick_(); wc.n = '4'; var w4 = wc.wisPick_();
 check(!w2.event && w3.event && !w4.event, 'one sign-in a saying, the next an event of this day, then a saying again');
 check(w2.quote !== w4.quote, 'and the saying is a different one each time');
+
+console.log('--- review 2026-10-03: a stale session is never restored, and the clock going back signs nobody out ---');
+function staleCtx_(agoMs, opts) {
+  opts = opts || {};
+  var now = 1800000000000, store = { bgc_user: '{"id":"u9"}', bgc_meta: '{}' };
+  if (opts.token !== false) store.bgc_token = 'tok';
+  if (agoMs != null) store.bgc_lastActive = String(now - agoMs);
+  if (opts.draft) store.bgc_entryDraft_u9 = '{"v":1}';
+  var c = vm.createContext({ Date: { now: function () { return now; } }, Number: Number, String: String, JSON: JSON, Math: Math,
+    localStorage: { getItem: function (k) { return Object.prototype.hasOwnProperty.call(store, k) ? store[k] : null; }, setItem: function (k, v) { store[k] = String(v); }, removeItem: function (k) { delete store[k]; } },
+    state: { token: 'tok', user: null, meta: null } });
+  vm.runInContext('var IDLE_LIMIT_MS = 10 * 60 * 1000;', c);
+  var src = clientFn_('idleStaleAtStart_');
+  check(!!src, 'idleStaleAtStart_ exists');
+  if (src) vm.runInContext(src, c);
+  return { c: c, store: store };
+}
+var sa1 = staleCtx_(11 * 60 * 1000, { draft: true });
+check(sa1.c.idleStaleAtStart_ && sa1.c.idleStaleAtStart_() === true, 'an app reopened after eleven idle minutes is stale');
+check(!sa1.store.bgc_token && !sa1.store.bgc_user && !sa1.store.bgc_meta && sa1.c.state.token === '', 'and its token, user and reference data are dropped before anything is drawn');
+check(sa1.c.state.idleOut === 'draft' && !!sa1.store.bgc_entryDraft_u9, 'the draft stays, and the sign-in page says so');
+var sa2 = staleCtx_(5 * 60 * 1000);
+check(sa2.c.idleStaleAtStart_ && sa2.c.idleStaleAtStart_() === false && sa2.store.bgc_token === 'tok', 'five minutes: the session is restored as before');
+var sa3 = staleCtx_(null);
+check(sa3.c.idleStaleAtStart_ && sa3.c.idleStaleAtStart_() === false && sa3.store.bgc_token === 'tok', 'no activity recorded yet: restored as before');
+var sa4 = staleCtx_(60 * 60 * 1000, { token: false });
+check(sa4.c.idleStaleAtStart_ && sa4.c.idleStaleAtStart_() === false && !sa4.c.state.idleOut, 'nobody signed in: no message');
+var ck = idleCtx_(-5 * 60 * 1000); ck.c.idleCheck_();
+check(ck.out.logouts === 0 && Number(ck.store.bgc_lastActive) === 1800000000000, 'the clock set back five minutes: nobody is signed out, and counting starts again from now');
+
+console.log('--- review 2026-10-03: the short part, and older records ---');
+if (clientCtx.brkParts_) {
+  var rv1 = clientCtx.brkParts_({ carCash: 600, shortfall: 20, netCashOwed: 580 });
+  check(rv1.short === 20 && !rv1.diff, 'the server\'s short part is used as it is');
+  var rv2 = clientCtx.brkParts_({ storeCash: 1500, creditSales: 200, netCashOwed: 1500 });
+  check(!rv2.short && rv2.diff === -200, 'a handover from before credit was deducted shows a neutral difference, never a receipt that was over');
+  var rv3 = clientCtx.brkParts_({ carCash: 600, netCashOwed: 580 }, { originalAmount: 600, amount: 580 });
+  check(rv3.short === 20 && !rv3.diff, 'a handover received short before the part was kept still says short');
+  var rv4 = clientCtx.brkParts_({ carCash: 1200, shortfall: 10, netCashOwed: 1170 });
+  check(rv4.short === 10 && rv4.diff === 20, 'a part kept today plus a short from an older stage: both shown, the statement still adds up');
+  rowsAddUp_({ carCash: 1200, shortfall: 10, netCashOwed: 1170 }, 'a statement with a short part and an older difference');
+  rowsAddUp_({ storeCash: 1500, creditSales: 200, netCashOwed: 1500 }, 'an old statement from before credit was deducted');
+}
+
+console.log('--- review 2026-10-03: the welcome line, and the test helper ---');
+vm.runInContext(clientFn_('wisPick_'), wc);
+wc.n = '3'; var w5 = wc.wisPick_();
+check(w5.alt && w5.alt !== w5.quote, 'an event sign-in carries another saying for when there is no event');
+var abxLen = clientFn_('abxTemplate_').length;
+check(abxLen > 0 && abxLen < 20000, 'the helper reads a function holding a regex literal and stops at its end (got ' + abxLen + ' characters)');
 
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);
