@@ -720,14 +720,17 @@ console.log('--- sales report filters: city, entered-by, product, and amount ran
 var filterLoc = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: 'Jeddah', name: 'Filter Test', clusterId: cluster.entity.id } }).entity;
 var mgr8 = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Filter Store Manager', email: 'mgr8.fx@bestgas.sa', role: 'store_manager' } }).user;
 var filterStore = call({ action: 'adminSaveEntity', token: adminTok, kind: 'store', data: { locationId: filterLoc.id, name: 'Filter Store', storeManagerUserId: mgr8.id } }).entity;
-call({ action: 'createDailyEntry', token: adminTok, date: '2026-09-11', sourceType: 'store', sourceId: filterStore.id, productId: prodA.id, cashSales: 900 });
+// prodA was deactivated above, and a sale names an active item (security review 2026-10-04)
+var prodF = call({ action: 'adminSaveEntity', token: adminTok, kind: 'product', data: { name: 'Filter Product', type: 'goods' } }).entity;
+check(call({ action: 'createDailyEntry', token: adminTok, date: '2026-09-11', sourceType: 'store', sourceId: filterStore.id, productId: prodA.id, cashSales: 900 }).error === 'invalid_product', 'a sale of a deactivated item is refused');
+call({ action: 'createDailyEntry', token: adminTok, date: '2026-09-11', sourceType: 'store', sourceId: filterStore.id, productId: prodF.id, cashSales: 900 });
 
 var cityReport = call({ action: 'getSalesReport', token: adminTok, city: 'Jeddah' });
 check(cityReport.ok && cityReport.totals.netCashOwed >= 900, 'city filter includes the Jeddah entry');
 check(!cityReport.byLocation.some(function (r) { return r.city === 'Riyadh'; }), 'city filter excludes Riyadh locations');
 
-var productReport = call({ action: 'getSalesReport', token: adminTok, productId: prodA.id });
-check(productReport.ok && productReport.entries.every(function (e) { return e.productId === prodA.id; }), 'product filter only returns entries tagged with that product');
+var productReport = call({ action: 'getSalesReport', token: adminTok, productId: prodF.id });
+check(productReport.ok && productReport.entries.length > 0 && productReport.entries.every(function (e) { return e.productId === prodF.id; }), 'product filter only returns entries tagged with that product');
 
 var entererReport = call({ action: 'getSalesReport', token: adminTok, enteredBy: admin.id });
 check(entererReport.ok && entererReport.entries.every(function (e) { return e.enteredBy === admin.id; }), 'entered-by filter only returns entries submitted by that person');
@@ -1869,8 +1872,13 @@ var beforeUsers = call({ action: 'listMeta', token: adminTok }).users.length;
 var beforeProducts = call({ action: 'listMeta', token: adminTok }).products.length;
 check(beforeEntries > 0 && beforeUsers > 0, 'there is movement and an org to begin with');
 
+// cash on its way would vanish with the round (security review 2026-10-04)
+var archOpen = ctx.readSheet(SHEETS.HANDOFFS).filter(function (h) { return ['pending', 'pending_deputy', 'disputed'].indexOf(h.status) >= 0; });
+check(archOpen.length > 0 && call({ action: 'adminArchiveTransactions', token: adminTok, confirm: 'ARCHIVE' }).error === 'cash_in_flight', 'nothing is archived while a handover is still open');
+archOpen.forEach(function (h) { h.status = 'rejected'; ctx.writeRow(SHEETS.HANDOFFS, h); });
 var arch = call({ action: 'adminArchiveTransactions', token: adminTok, confirm: 'ARCHIVE' });
-check(arch.ok && arch.archived.length > 0, 'the archive runs and reports what it moved');
+check(arch.ok && arch.archived.length > 0, 'once settled, the archive runs and reports what it moved');
+check(!arch.archived.some(function (a) { return a.sheet === SHEETS.AUDIT; }), 'the audit trail stays where it is');
 check(arch.archived.every(function (a) { return a.archivedAs.indexOf(a.sheet + '_archive_') === 0 && a.rows > 0; }),
   'each moved tab keeps its name plus a dated suffix, and its row count is reported');
 
@@ -1891,7 +1899,7 @@ check(ctx.readSheet(SHEETS.AUDIT).some(function (a) { return a.action === 'admin
 // the first archive's own line, so its dated name was about to be reused.
 call({ action: 'createDailyEntry', token: aliTok, date: '2026-08-28', sourceType: 'store', sourceId: store.entity.id, cashSales: 10 });
 var arch2 = call({ action: 'adminArchiveTransactions', token: adminTok, confirm: 'ARCHIVE' });
-check(arch2.ok && arch2.archived.length >= 2, 'a second fresh start straight after the first still works');
+check(arch2.ok && arch2.archived.length >= 1, 'a second fresh start straight after the first still works');
 var names2 = arch2.archived.map(function (a) { return a.archivedAs; });
 check(names2.every(function (n) { return arch.archived.map(function (a) { return a.archivedAs; }).indexOf(n) < 0; }),
   'and never reuses (or overwrites) the first round\'s archive tab names');
@@ -2208,7 +2216,7 @@ var stLoc = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location',
 var stMgr = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Sales Total Manager', email: 'stmgr.fx@bestgas.sa', role: 'store_manager' } }).user;
 var stStore = call({ action: 'adminSaveEntity', token: adminTok, kind: 'store', data: { locationId: stLoc.id, name: 'Sales Total Store', storeManagerUserId: stMgr.id } }).entity;
 var stCust = call({ action: 'adminSaveEntity', token: adminTok, kind: 'customer', data: { name: 'Sales Total Customer', city: 'Jeddah' } }).entity;
-var stEntry = call({ action: 'createDailyEntry', token: adminTok, date: '2026-08-02', sourceType: 'store', sourceId: stStore.id, productId: prodA.id, cashSales: 900, creditSales: 300, creditCustomerId: stCust.id });
+var stEntry = call({ action: 'createDailyEntry', token: adminTok, date: '2026-08-02', sourceType: 'store', sourceId: stStore.id, productId: prodF.id, cashSales: 900, creditSales: 300, creditCustomerId: stCust.id });
 check(stEntry.ok, 'a day of 900 sold, 300 of it on credit, is saved');
 var stDay = call({ action: 'getSalesReport', token: adminTok, dateFrom: '2026-08-02', dateTo: '2026-08-02' });
 var stTrend = (stDay.byDate || []).filter(function (d) { return d.date === '2026-08-02'; })[0];
@@ -2323,12 +2331,17 @@ check(cdOk.ok && cdOk.entry.creditDeliveryFee === 100, 'and the customer\'s deli
 check(cdLine(cdCust.id, 50, 45, { creditDeliveryFee: 1 }).entry.creditDeliveryFee === 100, 'a fee sent by the client is ignored: the server works it out');
 check(cdOk.ok && cdOk.entry.creditCommission === 50, 'the driver\'s commission is worked out too: 50 x 1');
 var cdNet = ctx.computeNet_([cdOk.entry]);
-close(cdNet.creditDeliveryFees, 100, 'the delivery fee is an addition, on its own line');
+close(cdNet.creditDeliveryFees, 100, 'the delivery fee is shown with what was sold, on its own line');
+close(cdNet.creditDeliveryUnpaid, 100, 'and taken off again: the customer pays it later, never in cash (the user, 2026-10-04)');
+check(cdOk.entry.creditFeeRule === 2, 'a day saved from now on carries the rule it was saved under');
 close(cdNet.creditCommissions, 50, 'the commission is a deduction, on its own line');
 // the customer owes the fee on account with the goods, so the fee adds no
 // cash; the commission the driver keeps comes off
 // the fee is only ever added (the user, 2026-09-29); the commission comes off
-close(cdNet.netCashOwed, 5000 - 2250 + 100 - 50, 'the cash to hand over: sales, less the credit, plus the delivery fee, less the commission');
+close(cdNet.netCashOwed, 5000 - 2250 + 100 - 100 - 50, 'the cash to hand over: sales, less the credit, the delivery fee in and out again, less the commission');
+var cdOld = JSON.parse(JSON.stringify(cdOk.entry)); delete cdOld.creditFeeRule;
+close(ctx.computeNet_([cdOld]).netCashOwed, 5000 - 2250 + 100 - 50, 'a day saved before the change keeps the figure it was handed over with');
+close(ctx.computeNet_([cdOld]).creditDeliveryUnpaid, 0, 'and carries no such deduction');
 check(cdLine(cdCust.id, 2, 42).error === 'price_locked', 'there are no special prices: a fixed price stays fixed for everyone');
 var cdPlain = call({ action: 'adminSaveEntity', token: adminTok, kind: 'customer', data: { name: 'No Fee Customer', city: 'Riyadh' } }).entity;
 var cdNone = cdLine(cdPlain.id, 10, 45);
@@ -2336,6 +2349,7 @@ check(cdNone.ok && !cdNone.entry.creditDeliveryFee, 'a customer without a fee ha
 var cdMeta = call({ action: 'listMeta', token: aliTok }).customers.filter(function (c) { return c.id === cdCust.id; })[0];
 check(cdMeta && cdMeta.deliveryFees && cdMeta.deliveryFees[fixedProduct.entity.id] === 2, 'the branch sees the fees, so the form can show them as it fills in');
 close(ctx.sumBreakdowns_([cdNet, cdNet]).creditDeliveryFees, 200, 'the fee adds up when handoffs are combined');
+close(ctx.sumBreakdowns_([cdNet, cdNet]).creditDeliveryUnpaid, 200, 'and so does the fee taken off again');
 close(ctx.sumBreakdowns_([cdNet, cdNet]).creditCommissions, 100, 'and so does the commission');
 check(cdMeta.commissions && cdMeta.commissions[fixedProduct.entity.id] === 1, 'the branch sees the commissions too');
 
@@ -2933,7 +2947,8 @@ check(call({ action: 'voidCostLine', token: adminTok, id: pfXl.line.id, reason: 
 check(call({ action: 'setProductCost', token: pfAccTok, productId: pfP1.id, unitCost: 14, from: '2026-03-11' }).error === 'forbidden', 'the accountant does not set costs');
 check(call({ action: 'setProductCost', token: adminTok, productId: pfP1.id, unitCost: 14, from: '2099-01-01' }).error === 'future_date', 'a cost cannot start in the future');
 check(call({ action: 'setProductCost', token: adminTok, productId: pfP1.id, unitCost: -1, from: '2026-03-11' }).error === 'invalid_cost', 'nor be negative');
-var pfSc = call({ action: 'setProductCost', token: adminTok, productId: pfP1.id, unitCost: 14, from: '2026-03-11' });
+check(call({ action: 'setProductCost', token: adminTok, productId: pfP1.id, unitCost: 14, from: '2026-03-11' }).error === 'past_needs_reason', 'a cost from a past date is a correction, and needs its reason');
+var pfSc = call({ action: 'setProductCost', token: adminTok, productId: pfP1.id, unitCost: 14, from: '2026-03-11', reason: 'typed wrong in March' });
 check(pfSc.ok && pfSc.product.unitCost === 14, 'a unit cost is set from a date, and becomes the product\'s cost');
 close(pfNode(pfReport(), 'company').cogs, 1500 + 750 + 20 * 14 + 450, 'sales from that date cost 14, the earlier ones still 15');
 var pfHist = (call({ action: 'listCosts', token: pfAccTok }).productCosts || []).filter(function (r) { return r.productId === pfP1.id; });
@@ -2941,7 +2956,7 @@ check(pfHist.length === 2 && pfHist.map(function (r) { return r.from + ':' + r.u
 // a cost cleared to follow the stock item
 var pfAnchor = pfEnt('product', { name: 'PF Anchor', type: 'goods', unitPrice: 30, unitCost: 15 });
 var pfChild = pfEnt('product', { name: 'PF Child', type: 'goods', unitPrice: 30, unitCost: 20, stockOf: pfAnchor.id, stockEffect: 'sell_full' });
-check(call({ action: 'setProductCost', token: adminTok, productId: pfChild.id, unitCost: 0, from: '2026-01-01' }).ok, 'a product\'s own cost is cleared from the start of the year');
+check(call({ action: 'setProductCost', token: adminTok, productId: pfChild.id, unitCost: 0, from: '2026-01-01', reason: 'follows its stock item' }).ok, 'a product\'s own cost is cleared from the start of the year');
 var pfBeforeChild = pfNode(pfReport(), 'company').cogs;
 check(call({ action: 'createDailyEntry', token: adminTok, date: '2026-03-13', sourceType: 'store', sourceId: pfStB.id, productId: pfChild.id, qty: 10, unitPrice: 30, cashSales: 300 }).ok, 'and it is sold');
 close(pfNode(pfReport(), 'company').cogs - pfBeforeChild, 150, 'its sale then costs what its stock item costs');
@@ -3060,7 +3075,7 @@ function clientFn_(name) {
 }
 var vm = require('vm');
 var clientCtx = vm.createContext({ t: function (k) { return k; }, money: function (n) { return Number(n || 0).toFixed(2); }, vatRateClient_: function () { return 0.15; } });
-['entryAmt_', 'cashCalcRows_', 'brkParts_'].forEach(function (n) {
+['vatRateFor_', 'entryAmt_', 'cashCalcRows_', 'brkParts_'].forEach(function (n) {
   var src = clientFn_(n);
   check(!!src, 'the screen function ' + n + ' exists');
   if (src) vm.runInContext(src, clientCtx);
@@ -3068,7 +3083,8 @@ var clientCtx = vm.createContext({ t: function (k) { return k; }, money: functio
 var mixed = [
   { sourceType: 'car', cashSales: 920, deliveryFeeBankAmount: 115, expenseAmount: 50, bankTransferAmount: 100, channelDeliveryFee: 30, channelCommission: 10 },
   { sourceType: 'pos', cashSales: 200, posSales: 300, directDepositAmount: 80 },
-  { sourceType: 'store', cashSales: 1500, creditSales: 200, creditDeliveryFee: 12, creditCommission: 4, otherCash: 35 }];
+  { sourceType: 'store', cashSales: 1500, creditSales: 200, creditDeliveryFee: 12, creditCommission: 4, otherCash: 35 },
+  { sourceType: 'store', cashSales: 800, creditSales: 100, creditDeliveryFee: 20, creditCommission: 3, creditFeeRule: 2 }];
 if (clientCtx.entryAmt_) close(mixed.reduce(function (a, e) { return a + clientCtx.entryAmt_(e).net; }, 0), ctx.computeNet_(mixed).netCashOwed, 'each entry\'s net on the screens adds up to the server\'s net');
 function rowsAddUp_(b, label) {
   if (!clientCtx.brkParts_ || !clientCtx.cashCalcRows_) return check(false, label + ': no brkParts_');
@@ -3292,6 +3308,83 @@ if (pvSrc.every(Boolean)) {
   check(pvParts.some(function (p) { return p.productId === 'x:a:aOther:scrap'; }), 'and so is another collection');
   check(clientCtx.pvSources_(pvParts).length === 3, 'counted, the day is still three transactions');
 }
+
+console.log('--- a VAT change never rewrites a day already saved ---');
+var vtNew = ctx.nonSalesFields_({});
+check(vtNew.vatRate === 0.15 && vtNew.creditFeeRule === 2, 'every new day carries the VAT rate and the fee rule it was saved under');
+var vtStamped = { sourceType: 'car', cashSales: 1150, deliveryFeeBankAmount: 115, vatRate: 0.15, date: '2026-09-01' };
+var vtBefore = ctx.computeNet_([vtStamped]).netCashOwed;
+check(call({ action: 'adminSetConfig', token: adminTok, data: { vatRate: 0.2 } }).ok, 'the VAT rate changes');
+close(ctx.computeNet_([vtStamped]).netCashOwed, vtBefore, 'a day saved with the old rate keeps its figure');
+var vtUnstamped = { sourceType: 'car', cashSales: 1150, deliveryFeeBankAmount: 115, date: '2026-09-01' };
+close(ctx.computeNet_([vtUnstamped]).netCashOwed, vtBefore, 'a day saved before rates were stamped takes the rate of its own date');
+var vtToday = { sourceType: 'car', cashSales: 1150, deliveryFeeBankAmount: 115, date: ctx.todayRiyadh_() };
+close(ctx.computeNet_([vtToday]).vatOnDelivery, 115 / 1.2 * 0.2, 'a day from today on takes the new rate');
+check(ctx.nonSalesFields_({ date: '2026-09-01' }).vatRate === 0.15, 'a past day entered late is stamped with the rate of its own date, not today\'s');
+check(ctx.nonSalesFields_({ date: ctx.todayRiyadh_() }).vatRate === 0.2, 'and today\'s day with today\'s');
+check(call({ action: 'adminSetConfig', token: adminTok, data: { vatRate: 0.15 } }).ok, 'and back');
+close(ctx.computeNet_([vtUnstamped]).netCashOwed, vtBefore, 'going back the same day leaves the history as it was');
+var vtMeta = call({ action: 'listMeta', token: aliTok }).config;
+check(Array.isArray(vtMeta.vatHistory), 'the screens get the VAT history too, to work out old days the same way');
+
+console.log('--- every change to a price, cost, delivery fee or commission is kept, old and new ---');
+var rhP = call({ action: 'adminSaveEntity', token: adminTok, kind: 'product', data: { name: 'RH Gas', type: 'goods', unitPrice: 20, unitCost: 10 } }).entity;
+check(call({ action: 'adminSaveEntity', token: adminTok, kind: 'product', id: rhP.id, data: { unitPrice: 22 } }).ok, 'a price changes');
+check(call({ action: 'adminSaveEntity', token: adminTok, kind: 'product', id: rhP.id, data: { unitCost: 11 } }).ok, 'a cost changes');
+var rhC = call({ action: 'adminSaveEntity', token: adminTok, kind: 'customer', data: { name: 'عميل سجل الأسعار', city: 'Riyadh', deliveryFees: (function () { var m = {}; m[rhP.id] = 2; return m; })() } }).entity;
+check(call({ action: 'adminSaveEntity', token: adminTok, kind: 'customer', id: rhC.id, data: { deliveryFees: (function () { var m = {}; m[rhP.id] = 3; return m; })(), commissions: (function () { var m = {}; m[rhP.id] = 1; return m; })() } }).ok, 'a customer\'s delivery fee and commission change');
+ctx.importCustomers_([{ name: 'عميل سجل الأسعار', commission: 2, delivery: '' }], { update: true, userId: admin.id });
+var rhH = call({ action: 'getRateHistory', token: adminTok, kind: 'product', id: rhP.id });
+function rhRow(list, field, from, to) { return (list || []).some(function (r) { return r.field === field && Number(r.from) === from && Number(r.to) === to; }); }
+check(rhH.ok && rhRow(rhH.changes, 'unitPrice', 20, 22), 'the price change is kept, old and new');
+check(rhH.ok && rhRow(rhH.changes, 'unitCost', 10, 11), 'and the cost change');
+check(rhH.ok && rhH.changes.every(function (r) { return r.by && r.at; }), 'each with who and when');
+var rhCH = call({ action: 'getRateHistory', token: adminTok, kind: 'customer', id: rhC.id });
+check(rhCH.ok && rhRow(rhCH.changes, 'deliveryFees', 2, 3) && rhCH.changes.some(function (r) { return r.productId === rhP.id; }), 'a customer\'s delivery fee change is kept, by item');
+check(rhCH.ok && rhRow(rhCH.changes, 'commissions', 0, 1), 'a commission set for the first time is kept too');
+check(rhCH.ok && rhRow(rhCH.changes, 'commissions', 1, 2), 'and the customer sheet\'s change');
+check(call({ action: 'getRateHistory', token: aliTok, kind: 'product', id: rhP.id }).error === 'forbidden', 'a branch manager does not read the history');
+var rhAcc = call({ action: 'getRateHistory', token: pfAccTok, kind: 'product', id: rhP.id });
+check(rhAcc.ok && rhRow(rhAcc.changes, 'unitCost', 10, 11), 'the accountant reads it, costs included');
+var rhPf = call({ action: 'getRateHistory', token: adminTok, kind: 'product', id: pfP1.id });
+check(rhPf.ok && rhPf.changes.some(function (r) { return r.field === 'unitCost' && r.reason === 'typed wrong in March' && r.fromDate === '2026-03-11'; }), 'a cost correction keeps its reason and its date');
+var rhLocked = call({ action: 'adminSaveEntity', token: adminTok, kind: 'product', data: { name: 'RH Locked', type: 'goods', unitPrice: 20, priceLocked: true, unitCost: 10 } }).entity;
+var rhBefore = call({ action: 'getRateHistory', token: adminTok, kind: 'product', id: rhLocked.id }).changes.length;
+check(call({ action: 'setProductCost', token: adminTok, productId: rhLocked.id, unitCost: 12, from: ctx.todayRiyadh_() }).ok, 'a priced, fixed product gets a new cost');
+var rhAfter = call({ action: 'getRateHistory', token: adminTok, kind: 'product', id: rhLocked.id }).changes;
+check(rhAfter.length === rhBefore + 1 && rhAfter[0].field === 'unitCost', 'and the history gains that one change only, not its price again (got ' + (rhAfter.length - rhBefore) + ')');
+var rhZero = call({ action: 'adminSaveEntity', token: adminTok, kind: 'product', data: { name: 'RH Zero', type: 'goods' } }).entity;
+call({ action: 'adminSaveEntity', token: adminTok, kind: 'product', id: rhZero.id, data: { unitCost: 0 } });
+check(!call({ action: 'getRateHistory', token: adminTok, kind: 'product', id: rhZero.id }).changes.some(function (r) { return r.field === 'unitCost'; }), 'a cost saved as 0 where there was none is not a change');
+
+console.log('--- a save never takes its record id from the form ---');
+var sxZone = call({ action: 'adminSaveEntity', token: adminTok, kind: 'zone', data: { city: 'Riyadh', name: 'SX one' } }).entity;
+var sxTry = call({ action: 'adminSaveEntity', token: adminTok, kind: 'zone', data: { city: 'Riyadh', name: 'SX two', id: sxZone.id } });
+check(sxTry.ok && sxTry.entity.id !== sxZone.id && ctx.getById_(SHEETS.ZONES, sxZone.id).name === 'SX one', 'an id in the form makes a new record; the old one is untouched');
+
+console.log('--- security: whoever raised a dispute never settles it ---');
+// a handover pending for someone else; the admin flags it on their behalf
+var scH = ctx.writeRow(SHEETS.HANDOFFS, { kind: 'car_to_location', fromUserId: 'sc-from', toUserId: 'sc-to', amount: 500, status: 'pending', breakdown: { carCash: 500, netCashOwed: 500 } });
+check(call({ action: 'disputeHandoff', token: adminTok, id: scH.id, note: 'checking' }).ok, 'an admin may flag a handover for its receiver');
+check(ctx.getById_(SHEETS.HANDOFFS, scH.id).disputedBy === admin.id, 'the flag records who raised it');
+check(call({ action: 'resolveDispute', token: adminTok, id: scH.id, resolution: 'confirm', receivedAmount: 1 }).error === 'conflict_of_interest', 'and the same admin cannot settle it at an amount of their own');
+check(call({ action: 'resolveDispute', token: financeTok, id: scH.id, resolution: 'confirm' }).ok, 'another manager can');
+var scLarge = ctx.writeRow(SHEETS.HANDOFFS, { kind: 'car_to_location', fromUserId: 'sc-from', toUserId: 'sc-to', amount: 900, status: 'confirmed', confirmedBy: 'sc-to', resolvedBy: admin.id, requiresSecondApproval: true });
+check(call({ action: 'acknowledgeSecondApproval', token: adminTok, id: scLarge.id }).error === 'conflict_of_interest', 'whoever settled a large handover does not give its second approval');
+
+console.log('--- security: a day names a real, active item ---');
+var scStore = ctx.readSheet(SHEETS.STORES)[0];
+['__proto__', 'constructor', 'not-a-product'].forEach(function (bad) {
+  var r = call({ action: 'createDailyEntry', token: adminTok, date: ctx.todayRiyadh_(), sourceType: 'store', sourceId: scStore.id, productId: bad, qty: 1, unitPrice: 1, cashSales: 1 });
+  check(r.error === 'invalid_product', 'an item id of ' + JSON.stringify(bad) + ' is refused (got ' + (r.error || 'saved') + ')');
+});
+
+console.log('--- security: a fresh test round keeps the audit trail and waits for open handovers ---');
+check(ctx.TRANSACTIONAL_SHEETS_.indexOf(SHEETS.AUDIT) < 0, 'the audit trail is never archived away');
+var scOpen = ctx.writeRow(SHEETS.HANDOFFS, { kind: 'car_to_location', fromUserId: 'sc-from', toUserId: 'sc-to', amount: 10, status: 'pending' });
+var scArc = call({ action: 'adminArchiveTransactions', token: adminTok, confirm: 'ARCHIVE' });
+check(scArc.error === 'cash_in_flight' || scArc.error === 'live_locked', 'nothing is archived while a handover is open (got ' + (scArc.error || 'archived') + ')');
+scOpen.status = 'rejected'; ctx.writeRow(SHEETS.HANDOFFS, scOpen);
 
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);

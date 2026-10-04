@@ -197,16 +197,21 @@ function actionSetProductCost_(req, user) {
   if (!isFinite(cost) || cost < 0 || cost > COST_MAX_AMOUNT_) return { ok: false, error: 'invalid_cost' };
   if (!invDateOk_(from)) return { ok: false, error: 'invalid_date' };
   if (from > todayRiyadh_()) return { ok: false, error: 'future_date' };
+  // a cost applies from today on; reaching back re-costs sales already made, so
+  // it is a correction and must say why (the user, 2026-10-04)
+  var reason = String(req.reason || '').trim().slice(0, 300);
+  if (from < todayRiyadh_() && !reason) return { ok: false, error: 'past_needs_reason' };
   cost = Math.round(cost * 10000) / 10000;
   return costLocked_(function () {
     var p = getById_(SHEETS.PRODUCTS, req.productId);
     if (!p) return { ok: false, error: 'not_found' };
     if (p.type === 'services') return { ok: false, error: 'not_inventory' };
-    var was = Number(p.unitCost || 0);
+    var was = Number(p.unitCost || 0), pBefore = JSON.parse(JSON.stringify(p));
     productCostFrom_(p.id, was, cost, from, user.id);
     p.unitCost = cost;
     p = writeRow(SHEETS.PRODUCTS, p);
-    logAudit_('product_cost_set', user.id, p.id + ' ' + cost + ' ' + from);
+    rateChanges_('product', pBefore, p, user.id, { fromDate: from, reason: reason, via: 'set_cost' });
+    logAudit_('product_cost_set', user.id, p.id + ' ' + cost + ' ' + from + (reason ? ' (' + reason + ')' : ''));
     return { ok: true, product: p, history: readSheet(SHEETS.PRODUCT_COSTS).filter(function (r) { return r.productId === p.id && !r.voided; }) };
   });
 }
@@ -596,7 +601,7 @@ function costFinishT_(T) {
 }
 
 function profitCompute_(from, to, basis, vatIncl) {
-  var div = vatIncl ? 1 + vatRate_() : 1;
+  var vatHist = vatHistory_();
   var maps = costMaps_(), productsById = Object.create(null), typeById = Object.create(null), hist = costHistory_();
   readSheet(SHEETS.PRODUCTS).forEach(function (p) { productsById[p.id] = p; });
   readSheet(SHEETS.COST_TYPES).forEach(function (t) { typeById[t.id] = t; });
@@ -636,6 +641,8 @@ function profitCompute_(from, to, basis, vatIncl) {
   readSheet(SHEETS.ENTRIES).forEach(function (e) {
     if (e.voided || !e.date || e.date < from || e.date > to) return;
     var u = unit(costUnitOf_(e, maps.posById, maps.unitRow)), T = u.T, b = bIdx[byMonth ? e.date.slice(0, 7) : e.date];
+    // VAT inside the prices at the rate the day was saved with
+    var div = vatIncl ? 1 + entryVatRate_(e, vatHist) : 1;
     var gross = Number(e.cashSales || 0) + Number(e.posSales || 0), net = gross / div;
     var deliv = (Number(e.channelDeliveryFee || 0) + Number(e.creditDeliveryFee || 0)) / div;
     var com = Number(e.channelCommission || 0) + Number(e.creditCommission || 0), exp = Number(e.expenseAmount || 0);

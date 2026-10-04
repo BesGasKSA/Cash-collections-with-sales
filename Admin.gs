@@ -838,7 +838,8 @@ function saveEntity_(req, user) {
   if (!sheetName) return { ok: false, error: 'invalid_kind' };
   var d = req.data || {};
   // a record's number is the system's, never the form's
-  var dc = {}; safeOwnKeys_(d).forEach(function (k2) { if (k2 !== 'code') dc[k2] = d[k2]; }); d = dc;
+  // (nor its id or stamps: a form id would overwrite another record, 2026-10-04 review)
+  var dc = {}; safeOwnKeys_(d).forEach(function (k2) { if (['code', 'id', 'createdAt', 'updatedAt'].indexOf(k2) < 0) dc[k2] = d[k2]; }); d = dc;
   if (kind === 'location' && d.lat != null && d.lat !== '' && d.lng != null && d.lng !== '') { d.lat = Number(d.lat); d.lng = Number(d.lng); }
 
   var obj = req.id ? getById_(sheetName, req.id) : null;
@@ -869,6 +870,8 @@ function saveEntity_(req, user) {
   // a product's unit cost before this save (null for a new product), so the
   // sales already made keep the cost they were sold at (noteProductCost_)
   var costBefore = kind === 'product' && req.id ? Number(obj.unitCost || 0) : null;
+  // prices, fees and commissions before the save, for their history
+  var rateBefore = hasOwn_(RATE_FIELDS_, kind) ? (req.id ? JSON.parse(JSON.stringify(obj)) : {}) : null;
   safeOwnKeys_(d).forEach(function (k) { obj[k] = d[k]; });
   if (obj.active === undefined) obj.active = true;
   if ((kind === 'customer' || kind === 'city') && obj.name) obj.name = String(obj.name).replace(/\s+/g, ' ').trim();
@@ -876,9 +879,68 @@ function saveEntity_(req, user) {
 
   var saved = writeRow(sheetName, obj);
   if (kind === 'product') noteProductCost_(saved, costBefore, user.id);
+  if (rateBefore) rateChanges_(kind, rateBefore, saved, user.id, { via: req.importing ? 'import' : 'save' });
   logAudit_('admin_save_' + kind, user.id, saved.id);
   if (!req.noTranslate) fillTranslations_(translatableOf_(saved));
   return { ok: true, entity: saved };
+}
+
+// ---------- Price and rate history (2026-10-04) ----------
+// Every change to a price, a cost, a delivery fee or a driver's commission is
+// kept, old and new, with who and when (the user: "any update should not
+// impact the old data and should have history"). A saved day carries the
+// amounts it was worked out with, so a change never rewrites it; this sheet
+// is the record of what stood when. Maps (fees and commissions per item)
+// are compared item by item.
+var RATE_FIELDS_ = { product: ['unitPrice', 'priceLocked', 'unitCost'], customer: ['deliveryFees', 'commissions'], channel: ['deliveryFees', 'commissions'] };
+function rateVal_(v) { if (v === undefined || v === null || v === '') return null; var n = Number(v); return isFinite(n) ? Math.round(n * 10000) / 10000 : String(v); }
+function rateChanges_(kind, before, after, userId, extra) {
+  if (!hasOwn_(RATE_FIELDS_, kind) || !after) return [];
+  before = before || {}; extra = extra || {};
+  var found = [];
+  RATE_FIELDS_[kind].forEach(function (f) {
+    var a = before[f], b = after[f];
+    if (f === 'priceLocked') { if (!!a !== !!b) found.push({ field: f, productId: null, from: !!a, to: !!b }); return; }
+    if ((a && typeof a === 'object') || (b && typeof b === 'object')) {
+      var am = a && typeof a === 'object' ? a : {}, bm = b && typeof b === 'object' ? b : {}, keys = Object.create(null);
+      safeOwnKeys_(am).forEach(function (k) { keys[k] = 1; });
+      safeOwnKeys_(bm).forEach(function (k) { keys[k] = 1; });
+      Object.keys(keys).forEach(function (pid) {
+        var x = rateVal_(hasOwn_(am, pid) ? am[pid] : null), y = rateVal_(hasOwn_(bm, pid) ? bm[pid] : null);
+        if (x == null) x = 0; if (y == null) y = 0;
+        if (String(x) !== String(y)) found.push({ field: f, productId: pid, from: x, to: y });
+      });
+      return;
+    }
+    var x1 = rateVal_(a), y1 = rateVal_(b);
+    if (x1 == null) x1 = 0; if (y1 == null) y1 = 0;
+    if (String(x1) !== String(y1)) found.push({ field: f, productId: null, from: x1, to: y1 });
+  });
+  var at = new Date().toISOString();
+  var rows = found.map(function (c) {
+    return { id: Utilities.getUuid(), kind: kind, recordId: after.id, recordName: String(after.name || after.label || ''), field: c.field, productId: c.productId,
+      from: c.from, to: c.to, fromDate: extra.fromDate || todayRiyadh_(), reason: extra.reason || '', via: extra.via || 'save', by: userId || 'system', at: at };
+  });
+  if (extra.collect) Array.prototype.push.apply(extra.collect, rows);
+  else rateChangesWrite_(rows, userId);
+  return rows;
+}
+function rateChangesWrite_(rows, userId) {
+  if (!rows.length) return;
+  try { costAppendMany_(SHEETS.RATE_CHANGES, rows); }
+  catch (e) {
+    logAudit_('rate_history_unwritten', userId || 'system', rows.map(function (r) { return r.kind + ':' + r.recordId + ' ' + r.field + (r.productId ? '[' + r.productId + ']' : '') + ' ' + r.from + '>' + r.to; }).join('; ').slice(0, 4000));
+  }
+}
+// A record's history, newest first. Company-wide roles read it; a cost only
+// for those who read costs.
+function actionGetRateHistory_(req, user) {
+  if (!isCompanyWide_(user.role)) return { ok: false, error: 'forbidden' };
+  if (!hasOwn_(RATE_FIELDS_, req.kind)) return { ok: false, error: 'invalid_kind' };
+  var seeCost = costCanRead_(user);
+  var rows = readSheet(SHEETS.RATE_CHANGES).filter(function (r) { return r.kind === req.kind && r.recordId === req.id && (seeCost || r.field !== 'unitCost'); })
+    .sort(function (a, b) { return String(b.at).localeCompare(String(a.at)); });
+  return { ok: true, changes: rows };
 }
 
 // ---------- Translations ----------
@@ -1016,7 +1078,19 @@ function actionAdminSetConfig_(req, user) {
   // "start a fresh round" can never be run against real data.
   if (d.liveLocked === false && cfg.liveLocked === true) return { ok: false, error: 'live_locked' };
   if (d.liveLocked === true) { cfg.liveLocked = true; cfg.liveLockedAt = new Date().toISOString(); cfg.liveLockedBy = user.id; }
-  if (d.vatRate != null) cfg.vatRate = Number(d.vatRate);
+  // a day saved before the change keeps being worked out at the rate of its
+  // own date: the old rate is kept with the last day it stood (vatRateOn_).
+  // A second change the same day keeps the first record.
+  if (d.vatRate != null) {
+    var vatWas = typeof cfg.vatRate === 'number' ? cfg.vatRate : 0.15;
+    if (Number(d.vatRate) !== vatWas) {
+      var vatUntil = Utilities.formatDate(new Date(Date.now() - 86400000), 'Asia/Riyadh', 'yyyy-MM-dd');
+      var vh = Array.isArray(cfg.vatHistory) ? cfg.vatHistory.slice() : [];
+      if (!vh.length || String(vh[vh.length - 1].until) < vatUntil) vh.push({ rate: vatWas, until: vatUntil });
+      cfg.vatHistory = vh;
+    }
+    cfg.vatRate = Number(d.vatRate);
+  }
   if (d.senderName != null) cfg.senderName = String(d.senderName);
   if (d.staleThresholdHours != null) cfg.staleThresholdHours = Number(d.staleThresholdHours);
   if (d.heldThresholdHours != null) cfg.heldThresholdHours = Number(d.heldThresholdHours);
@@ -1076,14 +1150,18 @@ function setupFirstAdmin() {
 // round stays in the workbook under a dated name.
 var TRANSACTIONAL_SHEETS_ = [
   SHEETS.ENTRIES, SHEETS.HANDOFFS, SHEETS.AREA_BULK_BATCHES,
-  SHEETS.BANK_LINES, SHEETS.RISK_ITEMS, SHEETS.AUDIT
+  SHEETS.BANK_LINES, SHEETS.RISK_ITEMS
 ];
+// The audit trail is not in the list (security review 2026-10-04): a fresh round
+// must never hide who did what.
 
 function actionAdminArchiveTransactions_(req, user) {
   requireManager_(user);
   // A word the caller has to type, so this can never be one stray tap.
   if (String(req.confirm || '') !== 'ARCHIVE') return { ok: false, error: 'confirm_required' };
   if (config_().liveLocked === true) return { ok: false, error: 'live_locked' };
+  // cash on its way would vanish with the round
+  if (readSheet(SHEETS.HANDOFFS).some(function (h) { return ['pending', 'pending_deputy', 'disputed'].indexOf(h.status) >= 0; })) return { ok: false, error: 'cash_in_flight' };
 
   var ss = spreadsheet_();
   var stamp = Utilities.formatDate(new Date(), 'Asia/Riyadh', 'yyyy-MM-dd_HHmmss');
@@ -1329,9 +1407,10 @@ function applyCustomerRates_(c, rates, goods) {
 }
 function importCustomers_(rows, opts) {
   opts = opts || {};
-  var created = [], skipped = [], updated = [];
+  var created = [], skipped = [], updated = [], changes = [];
   var goods = null;
   var lock = LockService.getScriptLock();
+  try {
   for (var i = 0; i < rows.length; i++) {
     var r = typeof rows[i] === 'string' ? { name: rows[i] } : (rows[i] || {});
     var name = String(r.name || '').replace(/\s+/g, ' ').trim();
@@ -1346,7 +1425,13 @@ function importCustomers_(rows, opts) {
       freshenExec_();
       var dup = customerDuplicateOf_(name, null);
       if (dup) {
-        if (opts.update && hasRates) { applyCustomerRates_(dup, rates, goods); updated.push(writeRow(SHEETS.CUSTOMERS, dup)); }
+        if (opts.update && hasRates) {
+          var dupBefore = JSON.parse(JSON.stringify(dup));
+          applyCustomerRates_(dup, rates, goods);
+          var upd = writeRow(SHEETS.CUSTOMERS, dup);
+          updated.push(upd);
+          rateChanges_('customer', dupBefore, upd, opts.userId, { via: 'customer_sheet', collect: changes });
+        }
         else skipped.push({ row: i, name: name, code: dup.code, reason: 'duplicate' });
         continue;
       }
@@ -1354,9 +1439,19 @@ function importCustomers_(rows, opts) {
       if (r.city) c.city = String(r.city).trim();
       if (r.phone) c.phone = String(r.phone).trim();
       if (hasRates) applyCustomerRates_(c, rates, goods);
-      created.push(writeRow(SHEETS.CUSTOMERS, c));
+      var made = writeRow(SHEETS.CUSTOMERS, c);
+      created.push(made);
+      if (hasRates) rateChanges_('customer', {}, made, opts.userId, { via: 'customer_sheet', collect: changes });
     } finally {
       try { lock.releaseLock(); } catch (e) {}
+    }
+  }
+  } finally {
+    // the history in one sheet call, not one per customer, under the lock, and
+    // also for the rows saved before a failure part-way
+    if (changes.length) {
+      lock.waitLock(30000);
+      try { freshenExec_(); rateChangesWrite_(changes, opts.userId); } finally { try { lock.releaseLock(); } catch (e) {} }
     }
   }
   return { created: created, skipped: skipped, updated: updated };
@@ -1368,7 +1463,7 @@ function actionAdminImportCustomers_(req, user) {
   if (!rows.length) return { ok: false, error: 'invalid_input' };
   // each row takes the lock and re-reads the list: 500 finish well inside one run
   if (rows.length > 500) return { ok: false, error: 'too_many_rows' };
-  var res = importCustomers_(rows, { update: req.update === true });
+  var res = importCustomers_(rows, { update: req.update === true, userId: user.id });
   // the names show in English and Urdu too: the new ones and the ones the sheet updated
   fillTranslations_([].concat.apply([], res.created.concat(res.updated).map(translatableOf_)));
   logAudit_('admin_import_customers', user.id, res.created.length + ' created, ' + res.updated.length + ' updated, ' + res.skipped.length + ' skipped');
@@ -1456,6 +1551,6 @@ function actionMeta_(req, user) {
     clusters: clusters, zones: zones, products: products, users: users,
     incomeItems: incomeItems, expenseItems: expenseItems, customers: customers, cities: cities, channels: channels,
     translations: readSheet(SHEETS.TRANSLATIONS).map(function (r) { return { src: r.src, en: r.en || '', ur: r.ur || '', auto: r.auto !== false }; }),
-    config: { vatRate: vatRate_(), staleThresholdHours: staleThresholdHours_(), heldThresholdHours: heldThresholdHours_(), secondApprovalThreshold: secondApprovalThreshold_(), areaManagerBulkUploadEnabled: areaManagerBulkUploadEnabled_(), posSalesEnabled: posSalesEnabled_(), salesIncludeVat: salesIncludeVat_(), liveLocked: config_().liveLocked === true, liveLockedAt: config_().liveLockedAt || null }
+    config: { vatRate: vatRate_(), vatHistory: vatHistory_(), staleThresholdHours: staleThresholdHours_(), heldThresholdHours: heldThresholdHours_(), secondApprovalThreshold: secondApprovalThreshold_(), areaManagerBulkUploadEnabled: areaManagerBulkUploadEnabled_(), posSalesEnabled: posSalesEnabled_(), salesIncludeVat: salesIncludeVat_(), liveLocked: config_().liveLocked === true, liveLockedAt: config_().liveLockedAt || null }
   };
 }

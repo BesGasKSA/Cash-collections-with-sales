@@ -285,6 +285,12 @@ function settleChannel_(r) {
 }
 
 function checkNonSalesFields_(r, siblingCash) {
+  // the item the line sold, when it names one: a real, active product (security
+  // review 2026-10-04: "__proto__" as an item broke the stock report for good)
+  if (r.productId != null && r.productId !== '') {
+    var lineProduct = typeof r.productId === 'string' ? getById_(SHEETS.PRODUCTS, r.productId) : null;
+    if (!lineProduct || lineProduct.active === false) return 'invalid_product';
+  }
   var creditErr = settleCredit_(r) || settleChannel_(r);
   if (creditErr) return creditErr;
   var other = Number(r.otherCash || 0);
@@ -318,12 +324,12 @@ function checkNonSalesFields_(r, siblingCash) {
     if (!String(r.directDepositRef || '').trim()) return 'deposit_needs_reference';
     // You can only bank cash you actually hold: everything this entry adds
     // to the hand, minus what it already takes out.
-    var vat = vatRate_();
+    var vat = vatRateOn_(r.date);
     var delivery = Number(r.deliveryFeeBankAmount || 0);
     // `siblingCash` is the cash on the OTHER rows of the same submission for
     // the same source and date: one real day gets split across several rows
     // in product mode, and the deposit rides on the first of them.
-    var inHand = Number(r.cashSales || 0) - Number(r.creditSales || 0) - Number(r.creditCommission || 0) + Number(r.creditDeliveryFee || 0) + Number(r.channelDeliveryFee || 0) - Number(r.channelCommission || 0) - transfer + Number(siblingCash || 0) + other
+    var inHand = Number(r.cashSales || 0) - Number(r.creditSales || 0) - Number(r.creditCommission || 0) + Number(r.channelDeliveryFee || 0) - Number(r.channelCommission || 0) - transfer + Number(siblingCash || 0) + other
       - delivery + (delivery > 0 ? (delivery / (1 + vat)) * vat : 0) - exp;
     if (dep > inHand + 0.005) return 'deposit_exceeds_cash';
   }
@@ -336,13 +342,13 @@ function checkNonSalesFields_(r, siblingCash) {
 function siblingCash_(rows, index) {
   var me = rows[index] || {};
   var sum = 0;
-  var vat = vatRate_();
+  var vat = vatRateOn_(me.date);
   for (var i = 0; i < rows.length; i++) {
     if (i === index) continue;
     var o = rows[i] || {};
     if (o.sourceType === me.sourceType && o.sourceId === me.sourceId && o.date === me.date) {
       var dl = Number(o.deliveryFeeBankAmount || 0);
-      sum += Number(o.cashSales || 0) - Number(o.creditSales || 0) - Number(o.creditCommission || 0) + Number(o.creditDeliveryFee || 0) + Number(o.channelDeliveryFee || 0) - Number(o.channelCommission || 0) - Number(o.bankTransferAmount || 0)
+      sum += Number(o.cashSales || 0) - Number(o.creditSales || 0) - Number(o.creditCommission || 0) + Number(o.channelDeliveryFee || 0) - Number(o.channelCommission || 0) - Number(o.bankTransferAmount || 0)
         + Number(o.otherCash || 0) - Number(o.expenseAmount || 0) - dl + (dl > 0 ? (dl / (1 + vat)) * vat : 0)
         - Number(o.directDepositAmount || 0);
     }
@@ -422,7 +428,11 @@ function nonSalesFields_(r) {
     channelQtys: r.channelQtys || null,
     channelDeliveryFee: Number(r.channelDeliveryFee || 0),
     channelCommission: Number(r.channelCommission || 0),
-    channelComRates: r.channelComRates || null
+    channelComRates: r.channelComRates || null,
+    // the rules the day was worked out by (2026-10-04): a later change never rewrites it
+    creditFeeRule: 2,
+    // the rate in force on the day's own date: a past day entered late keeps it
+    vatRate: vatRateOn_(r.date)
   };
 }
 
@@ -793,8 +803,16 @@ function entrySalesTotal_(e) {
 function computeNet_(entries) {
   var storeCash = 0, carCash = 0, posCash = 0, deliveryFee = 0, posSales = 0, creditSales = 0;
   var otherCash = 0, expenses = 0, directDeposit = 0, bankTransfers = 0, creditDeliveryFees = 0, creditCommissions = 0;
-  var channelDeliveryFees = 0, channelCommissions = 0;
+  var channelDeliveryFees = 0, channelCommissions = 0, creditDeliveryUnpaid = 0, vatOnDelivery = 0, vatHist = vatHistory_();
   entries.forEach(function (e) {
+    // The credit customer's delivery fee is earned but paid later with the goods,
+    // never in cash: from 2026-10-04 it is shown with the sales AND taken off
+    // again (the user: "we add it in sales but did not deduct it again"). A day
+    // saved before then keeps the figure it was handed over with.
+    if (Number(e.creditFeeRule) >= 2) creditDeliveryUnpaid += Number(e.creditDeliveryFee || 0);
+    // each day at the VAT rate it was saved with
+    var dFee = Number(e.deliveryFeeBankAmount || 0);
+    if (dFee > 0) { var vr = entryVatRate_(e, vatHist); vatOnDelivery += dFee / (1 + vr) * vr; }
     channelDeliveryFees += Number(e.channelDeliveryFee || 0);
     channelCommissions += Number(e.channelCommission || 0);
     creditDeliveryFees += Number(e.creditDeliveryFee || 0);
@@ -815,18 +833,16 @@ function computeNet_(entries) {
     else if (e.sourceType === 'car') carCash += Number(e.cashSales || 0);
     else if (e.sourceType === 'pos') posCash += Number(e.cashSales || 0);
   });
-  var vat = vatRate_();
-  var vatOnDelivery = deliveryFee > 0 ? (deliveryFee / (1 + vat)) * vat : 0;
   // a customer's bank transfer is inside the sales figure like a credit
   // sale, but the money went straight to the bank: it comes off too
   var netCashOwed = storeCash + carCash + posCash + otherCash - deliveryFee + vatOnDelivery - expenses - directDeposit - creditSales - bankTransfers - creditCommissions
-    // a credit customer's delivery fee is only ever added (the user, 2026-09-29)
-    + creditDeliveryFees + channelDeliveryFees - channelCommissions;
+    // a credit customer's delivery fee: added, and on a day saved from 2026-10-04 taken off again
+    + creditDeliveryFees - creditDeliveryUnpaid + channelDeliveryFees - channelCommissions;
   return {
     storeCash: storeCash, carCash: carCash, posCash: posCash, deliveryFee: deliveryFee,
     posSales: posSales, creditSales: creditSales, vatOnDelivery: vatOnDelivery,
     otherCash: otherCash, expenses: expenses, directDeposit: directDeposit, bankTransfers: bankTransfers,
-    creditDeliveryFees: creditDeliveryFees, creditCommissions: creditCommissions,
+    creditDeliveryFees: creditDeliveryFees, creditDeliveryUnpaid: creditDeliveryUnpaid, creditCommissions: creditCommissions,
     channelDeliveryFees: channelDeliveryFees, channelCommissions: channelCommissions, netCashOwed: netCashOwed
   };
 }
@@ -839,7 +855,7 @@ function computeNet_(entries) {
 // way to see what it was made of.
 function sumBreakdowns_(breakdowns) {
   var out = { storeCash: 0, carCash: 0, posCash: 0, deliveryFee: 0, posSales: 0, creditSales: 0, vatOnDelivery: 0,
-    otherCash: 0, expenses: 0, directDeposit: 0, bankTransfers: 0, creditDeliveryFees: 0, creditCommissions: 0, channelDeliveryFees: 0, channelCommissions: 0,
+    otherCash: 0, expenses: 0, directDeposit: 0, bankTransfers: 0, creditDeliveryFees: 0, creditDeliveryUnpaid: 0, creditCommissions: 0, channelDeliveryFees: 0, channelCommissions: 0,
     shortfall: 0, netCashOwed: 0 };
   breakdowns.forEach(function (b) {
     if (!b) return;
@@ -848,6 +864,7 @@ function sumBreakdowns_(breakdowns) {
     out.channelCommissions += Number(b.channelCommissions || 0);
     out.creditCommissions += Number(b.creditCommissions || 0);
     out.creditDeliveryFees += Number(b.creditDeliveryFees || 0);
+    out.creditDeliveryUnpaid += Number(b.creditDeliveryUnpaid || 0);
     out.bankTransfers += Number(b.bankTransfers || 0);
     out.storeCash += Number(b.storeCash || 0);
     out.carCash += Number(b.carCash || 0);
@@ -1294,27 +1311,29 @@ function actionAreaBulkBatchDetail_(req, user) {
 
   var entries = readSheet(SHEETS.ENTRIES).filter(function (e) { return e.batchId === batch.id; });
   var products = readSheet(SHEETS.PRODUCTS);
-  var productById = {};
+  var productById = Object.create(null);
   products.forEach(function (p) { productById[p.id] = p; });
 
-  var vatRate = vatRate_();
-  var byProductMap = {};
+  var vatHist = vatHistory_();
+  var byProductMap = Object.create(null);
   entries.forEach(function (e) {
     var key = e.productId || '__unspecified__';
-    if (!byProductMap[key]) byProductMap[key] = { productId: e.productId || null, qty: 0, subtotal: 0 };
+    if (!byProductMap[key]) byProductMap[key] = { productId: e.productId || null, qty: 0, subtotal: 0, base: 0 };
     // Every bulk-upload row routes its qty*unitPrice subtotal into exactly
     // one of these four fields depending on paymentMethod (see
     // actionBulkSubmitAreaBatch_/renderAreaBulk) — summing all four per
     // entry recovers that same subtotal without re-deriving it from
     // qty*unitPrice, so it still works even if either was left blank.
-    byProductMap[key].subtotal += Number(e.cashSales || 0) + Number(e.posSales || 0) + Number(e.creditSales || 0) + Number(e.deliveryFeeBankAmount || 0);
+    var sub = Number(e.cashSales || 0) + Number(e.posSales || 0) + Number(e.creditSales || 0) + Number(e.deliveryFeeBankAmount || 0);
+    byProductMap[key].subtotal += sub;
+    byProductMap[key].base += sub / (1 + entryVatRate_(e, vatHist));
     byProductMap[key].qty += Number(e.qty || 0);
   });
   var byProduct = Object.keys(byProductMap).map(function (key) {
     var bucket = byProductMap[key];
     var p = bucket.productId ? productById[bucket.productId] : null;
-    var base = bucket.subtotal / (1 + vatRate);
-    var vat = base * vatRate;
+    var base = bucket.base;
+    var vat = bucket.subtotal - bucket.base;
     return {
       productId: bucket.productId, name: p ? p.name : null, type: p ? p.type : null,
       qty: bucket.qty, subtotal: bucket.subtotal, base: base, vat: vat
@@ -1642,7 +1661,7 @@ function actionAcknowledgeSecondApproval_(req, user) {
   // every admin/finance account), so the confirmer must be blocked here
   // explicitly, same reasoning as the fromUserId/toUserId guard on
   // actionResolveDispute_.
-  if (h.confirmedBy === user.id) return { ok: false, error: 'conflict_of_interest' };
+  if (h.confirmedBy === user.id || h.resolvedBy === user.id) return { ok: false, error: 'conflict_of_interest' };
   h.secondApprovedBy = user.id;
   h.secondApprovedAt = new Date().toISOString();
   writeRow(SHEETS.HANDOFFS, h);
@@ -1660,6 +1679,8 @@ function actionDisputeHandoff_(req, user) {
   h.status = 'disputed';
   h.disputeNote = req.note || '';
   h.disputedAt = new Date().toISOString();
+  // who raised it: they may not settle it too (security review 2026-10-04)
+  h.disputedBy = user.id;
   writeRow(SHEETS.HANDOFFS, h);
   logAudit_(h.toUserId === user.id ? 'dispute_handoff' : 'admin_dispute_on_behalf', user.id, h.id);
   notifyDispute_(h);
@@ -1686,6 +1707,9 @@ function actionResolveDispute_(req, user) {
   // (e.g. also holds a store/cluster assignment) may not rule on its own
   // dispute — route it to a different admin.
   if (h.fromUserId === user.id || h.toUserId === user.id || h.createdBy === user.id) return { ok: false, error: 'conflict_of_interest' };
+  // an admin who flagged a handover on someone's behalf and then settled it
+  // would have confirmed it alone, at any amount (security review 2026-10-04)
+  if (h.disputedBy === user.id) return { ok: false, error: 'conflict_of_interest' };
 
   var flagLarge = false;
   if (req.resolution === 'confirm') {

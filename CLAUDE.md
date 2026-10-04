@@ -1415,6 +1415,45 @@ Asked for by the user in one afternoon, all in `renderEntries` unless noted.
   once, kept in `localStorage.bgc_otd` under `OTD_V_`, bump it when the file
   changes). No event or no network: the saying.
 
+## No change of rate rewrites a saved day; the credit fee comes off again (2026-10-04)
+
+The user, word for word in spirit: "any update shouldn't impact the old data and
+should have history for the numbers changes in all areas; it's very sensitive".
+
+- **The credit customer's delivery fee** (`creditDeliveryFee`, worked out by
+  `settleCredit_`) is earned but paid later with the goods, never in cash. It
+  used to be only added to the cash owed (the user on 2026-09-29); on
+  2026-10-04 the user said it must come off again. A day saved from then on
+  carries `creditFeeRule: 2`, and for it `computeNet_` adds the fee and deducts
+  it again (`creditDeliveryUnpaid` in every breakdown, summed by
+  `sumBreakdowns_`). The client mirrors it: `entryAmt_().creditFeeOff`, EQ part
+  `dCreditDelivery` (in `EQ_DEDUCT_`), `brkParts_().creditFeeOff`, a line in
+  `cashCalcRows_`, the handover document and the day card. A day saved before
+  carries no rule and keeps the figure it was handed over with. The deposit
+  check (`inHand`, `siblingCash_`) no longer counts the fee as cash. Do not
+  "simplify" the rule away: removing the stamp would rewrite old handovers'
+  arithmetic in every report.
+- **Each day keeps its VAT rate.** `nonSalesFields_` (every entry path) stamps
+  `vatRate` and `creditFeeRule`. An older unstamped day takes the rate in force
+  on its date (`vatRateOn_`, `config.vatHistory` [{rate, until}], written by
+  `actionAdminSetConfig_` when the rate changes; a second change the same day
+  keeps the first record). `computeNet_` works VAT on delivery per day; the
+  profit report divides by the day's own rate; the client uses `vatRateFor_`
+  (meta carries `vatHistory`).
+- **Prices, fees and commissions** were already copied onto each day when it is
+  saved (`unitPrice`, `creditDeliveryFee`, `creditCommission`,
+  `channelDeliveryFee`, `channelCommission`), so changing them never touched a
+  saved day. Their **history** is new: `rate_changes` (`rateChanges_`, Admin.gs)
+  keeps every change to product `unitPrice`/`priceLocked`/`unitCost`, customer
+  `deliveryFees`/`commissions`/`prices` and channel `deliveryFees`/`commissions`
+  per item, old and new, who, when, `fromDate`, `reason`, `via`. Written by
+  `saveEntity_`, the customer sheet import (one sheet call for the whole sheet)
+  and `setProductCost`. `getRateHistory {kind, id}`: company-wide roles; cost
+  rows only for cost readers. Shown on a product, customer or channel profile,
+  with Excel/PDF. A new field that moves money needs adding to `RATE_FIELDS_`.
+- `saveEntity_` ignores `id`, `createdAt`, `updatedAt` from the form (a form id
+  could overwrite another record; security review 2026-10-04).
+
 ## Refusals name their field; sidebar title; tab icon (2026-10-04)
 
 - **No form refusal says only "missing or invalid data" any more.** The user
@@ -1507,7 +1546,9 @@ sales as entered (cash + card; credit is inside)
   `productCostFrom_`: `product_costs` keeps `{productId, unitCost, from}`,
   records dated that day or later are superseded (kept, `voided`), and the first
   change also writes the cost that stood until then (`from: 2000-01-01`). So a
-  correction reaches back by choosing the date the cost should have started. A
+  correction reaches back by choosing the date the cost should have started,
+  and since 2026-10-04 a past date needs a `reason` (`past_needs_reason`); the
+  reason is kept in `rate_changes`. A
   sale older than the first record takes the first cost known, so entering unit
   costs today costs the past too. A history value of 0 falls through to the
   stock item the product draws from (`emptyCost` for `sell_empty`).

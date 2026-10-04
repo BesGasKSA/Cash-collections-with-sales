@@ -61,7 +61,9 @@ var SHEETS = {
   // unit cost over time
   COST_TYPES: 'cost_types',
   COST_LINES: 'cost_lines',
-  PRODUCT_COSTS: 'product_costs'
+  PRODUCT_COSTS: 'product_costs',
+  // every change to a price, a cost, a delivery fee or a commission, old and new (2026-10-04)
+  RATE_CHANGES: 'rate_changes'
 };
 
 var IDLE_MS = 12 * 3600 * 1000;      // 12h idle session expiry
@@ -329,6 +331,19 @@ function vatRate_() {
   var c = config_();
   return typeof c.vatRate === 'number' ? c.vatRate : 0.15;
 }
+// The VAT rate a day is worked out at (2026-10-04): no change of rate rewrites a
+// day already saved. A day saved from now on carries its own rate (vatRate);
+// an older one takes the rate in force on its date, from the history a VAT
+// change writes (config.vatHistory, oldest first: {rate, until} is the rate that
+// stood up to and including that day).
+function vatHistory_() { var h = config_().vatHistory; return Array.isArray(h) ? h : []; }
+function vatRateOn_(date, hist) {
+  hist = hist || vatHistory_();
+  var d = String(date || '');
+  if (d) for (var i = 0; i < hist.length; i++) if (d <= String(hist[i].until)) return Number(hist[i].rate);
+  return vatRate_();
+}
+function entryVatRate_(e, hist) { return typeof e.vatRate === 'number' && isFinite(e.vatRate) ? e.vatRate : vatRateOn_(e.date, hist); }
 
 // All system emails go through this one choke point. If MicrosoftMail.gs is
 // deployed and its GRAPH_* script properties are set, mail goes out from the
@@ -720,6 +735,7 @@ function route_(req) {
     voidCostLine: function () { return actionVoidCostLine_(req, user); },
     importCostLines: function () { return actionImportCostLines_(req, user); },
     setProductCost: function () { return withMeta_(actionSetProductCost_(req, user), req, user); },
+    getRateHistory: function () { return actionGetRateHistory_(req, user); },
     getCostReport: function () { return actionCostReport_(req, user); },
     getProfitReport: function () { return actionProfitReport_(req, user); },
 
