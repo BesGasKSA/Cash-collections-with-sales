@@ -13,7 +13,7 @@ var RISK_STATUSES = ['open', 'in_progress', 'resolved'];
 
 function actionCreateRiskItem_(req, user) {
   if (RISK_TYPES.indexOf(req.type) < 0) return { ok: false, error: 'invalid_type' };
-  if (!req.title) return { ok: false, error: 'invalid_input' };
+  if (!String(req.title || '').trim()) return { ok: false, error: 'title_required' };
   var severity = RISK_SEVERITIES.indexOf(req.severity) >= 0 ? req.severity : 'medium';
 
   var item = {

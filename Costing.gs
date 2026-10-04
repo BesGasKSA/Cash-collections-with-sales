@@ -193,8 +193,10 @@ function productCostFrom_(productId, was, now, from, userId) {
 function actionSetProductCost_(req, user) {
   requireManager_(user);
   var from = String(req.from == null ? '' : req.from), cost = Number(req.unitCost);
-  if (typeof req.unitCost !== 'number' && !(typeof req.unitCost === 'string' && /^\s*\d+(\.\d+)?\s*$/.test(req.unitCost))) return { ok: false, error: 'invalid_input' };
-  if (!isFinite(cost) || cost < 0 || cost > COST_MAX_AMOUNT_ || !invDateOk_(from) || from > todayRiyadh_()) return { ok: false, error: 'invalid_input' };
+  if (typeof req.unitCost !== 'number' && !(typeof req.unitCost === 'string' && /^\s*\d+(\.\d+)?\s*$/.test(req.unitCost))) return { ok: false, error: 'invalid_cost' };
+  if (!isFinite(cost) || cost < 0 || cost > COST_MAX_AMOUNT_) return { ok: false, error: 'invalid_cost' };
+  if (!invDateOk_(from)) return { ok: false, error: 'invalid_date' };
+  if (from > todayRiyadh_()) return { ok: false, error: 'future_date' };
   cost = Math.round(cost * 10000) / 10000;
   return costLocked_(function () {
     var p = getById_(SHEETS.PRODUCTS, req.productId);
@@ -268,16 +270,16 @@ function costCheckLine_(r) {
     if (typeof r.asset !== 'object' || Array.isArray(r.asset)) return { error: 'invalid_input' };
     var cost = costAmount_(r.asset.cost), life = Number(r.asset.lifeMonths);
     var residual = r.asset.residual == null || r.asset.residual === '' ? 0 : Number(r.asset.residual);
-    if (cost == null || !isFinite(residual) || residual < 0 || residual >= cost || !(life >= 1 && life <= 600) || Math.floor(life) !== life) return { error: 'invalid_input' };
+    if (cost == null || !isFinite(residual) || residual < 0 || residual >= cost || !(life >= 1 && life <= 600) || Math.floor(life) !== life) return { error: 'invalid_asset' };
     amount = Math.round((cost - residual) / life * 100) / 100;
-    if (!(amount > 0)) return { error: 'invalid_input' };
+    if (!(amount > 0)) return { error: 'invalid_asset' };
     asset = { cost: cost, residual: Math.round(residual * 100) / 100, lifeMonths: life };
     var last = costMonthIndex_(from) + life - 1;
     if (last > costMonthIndex_('2099-12')) return { error: 'invalid_month' };
     to = costMonthOf_(last); oneOff = false;
   } else {
     amount = costAmount_(r.amount);
-    if (amount == null) return { error: 'invalid_input' };
+    if (amount == null) return { error: 'amount_required' };
   }
   var emp = null;
   if (r.employeeUserId) {
@@ -361,13 +363,13 @@ function actionChangeCostLine_(req, user) {
   requireManager_(user);
   var from = String(req.fromMonth == null ? '' : req.fromMonth), amount = costAmount_(req.amount);
   if (!costMonthOk_(from)) return { ok: false, error: 'invalid_month' };
-  if (amount == null) return { ok: false, error: 'invalid_input' };
+  if (amount == null) return { ok: false, error: 'amount_required' };
   return costLocked_(function () {
     var old = getById_(SHEETS.COST_LINES, req.id);
     if (!old) return { ok: false, error: 'not_found' };
     if (old.voided) return { ok: false, error: 'already_voided' };
     // depreciation follows its asset and a one-month cost is one month: void and enter again
-    if (old.asset || old.oneOff) return { ok: false, error: 'invalid_input' };
+    if (old.asset || old.oneOff) return { ok: false, error: 'line_fixed' };
     if (from < old.fromMonth || (old.toMonth && from > old.toMonth)) return { ok: false, error: 'invalid_month' };
     if (amount === Number(old.amount)) return { ok: false, error: 'duplicate_line' };
     var res = costChange_(old, from, amount, user);
@@ -385,7 +387,7 @@ function actionEndCostLine_(req, user) {
     if (!line) return { ok: false, error: 'not_found' };
     if (line.voided) return { ok: false, error: 'already_voided' };
     // a one-month cost is its month: void it and enter it again
-    if (line.oneOff) return { ok: false, error: 'invalid_input' };
+    if (line.oneOff) return { ok: false, error: 'line_fixed' };
     if (to < line.fromMonth) return { ok: false, error: 'invalid_month' };
     // an ended line may stop earlier, never run on past its end unless nothing
     // else of its kind runs there; depreciation never outlives its asset
@@ -405,7 +407,7 @@ function actionEndCostLine_(req, user) {
 function actionVoidCostLine_(req, user) {
   requireManager_(user);
   var reason = String(req.reason || '').trim();
-  if (!reason) return { ok: false, error: 'invalid_input' };
+  if (!reason) return { ok: false, error: 'reason_required' };
   return costLocked_(function () {
     var line = getById_(SHEETS.COST_LINES, req.id);
     if (!line) return { ok: false, error: 'not_found' };
@@ -525,9 +527,9 @@ function costMaps_() {
 function actionCostReport_(req, user) {
   requireCostRead_(user);
   var mf = String(req.monthFrom == null ? '' : req.monthFrom), mt = String(req.monthTo == null ? '' : req.monthTo);
-  if (!costMonthOk_(mf) || !costMonthOk_(mt) || mf > mt) return { ok: false, error: 'invalid_input' };
+  if (!costMonthOk_(mf) || !costMonthOk_(mt) || mf > mt) return { ok: false, error: 'invalid_period' };
   var a = costMonthIndex_(mf), b = costMonthIndex_(mt);
-  if (b - a + 1 > 36) return { ok: false, error: 'invalid_input' };
+  if (b - a + 1 > 36) return { ok: false, error: 'period_too_long' };
   var months = [];
   for (var i = a; i <= b; i++) months.push(costMonthOf_(i));
   var maps = costMaps_(), typeById = Object.create(null);
@@ -762,8 +764,9 @@ function actionProfitReport_(req, user) {
   var today = todayRiyadh_();
   var from = req.dateFrom ? String(req.dateFrom) : today.slice(0, 8) + '01', to = req.dateTo ? String(req.dateTo) : today;
   var basis = req.basis == null || req.basis === '' ? 'sales' : String(req.basis);
-  if (!invDateOk_(from) || !invDateOk_(to) || from > to || COST_BASES_.indexOf(basis) < 0) return { ok: false, error: 'invalid_input' };
-  if (costDaysBetween_(from, to) > 1100) return { ok: false, error: 'invalid_input' };
+  if (COST_BASES_.indexOf(basis) < 0) return { ok: false, error: 'invalid_input' };
+  if (!invDateOk_(from) || !invDateOk_(to) || from > to) return { ok: false, error: 'invalid_period' };
+  if (costDaysBetween_(from, to) > 1100) return { ok: false, error: 'period_too_long' };
   var vatIncl = salesIncludeVat_();
   var res = profitCompute_(from, to, basis, vatIncl);
   res.ok = true; res.dateFrom = from; res.dateTo = to; res.basis = basis; res.vatIncluded = vatIncl; res.vatRate = vatRate_();
