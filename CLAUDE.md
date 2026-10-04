@@ -152,6 +152,16 @@ collectors.
   mirrored client-side as `normName_`). `adminImportCustomers` adds new names and reports
   skips; the Customers screen imports a pasted list or an Excel/CSV file (SheetJS from
   cdnjs, loaded on demand). A used customer cannot be deleted (`has_children`).
+  **A customer sheet may carry rates (2026-10-04)**: `customerRowsFromCells_` finds the
+  header row in the first six rows (name `العميل`/customer, `العمولة`/commission,
+  `التوصيل`/delivery, city, phone). Commission and delivery fee are SAR **per unit**
+  (what `settleCredit_` multiplies by the quantity), set on every product that is not a
+  service (`applyCustomerRates_`). With `update:true` a customer already on file is
+  overwritten (`updated`), a blank keeps that amount, a negative or non-numeric one refuses
+  the row. The preview marks such rows "Will be updated". New and updated names go to
+  `fillTranslations_`, so the list shows in English and Urdu straight away (hand-made
+  translations are never overwritten). The company's sheet said "%" in the request but
+  holds plain numbers 0-24; they were taken as SAR per unit.
   **The company's customer list is not in this repo** (it is public): it ships as
   `CustomerSeed.js` (`var CUSTOMER_SEED_ = [...]`), created only in the Apps Script clasp
   folder, imported once by `seedCustomersOnce_` (flag `SEEDED_CUSTOMERS`).
