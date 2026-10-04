@@ -2725,6 +2725,124 @@ check(cyN.opening === 1593, 'the next day opens with the day\'s ending (got ' + 
 check(call({ action: 'importInventoryDay', token: noorTok, locationId: dpLoc.id, date: '2026-09-29', ref: 'tr', moves: [{ productId: cyIron.id, state: 'full', kind: 'transfer_out', qty: 10 }, { productId: cyIron.id, state: 'empty', kind: 'transfer_in', qty: 2 }] }).ok, 'transfers out of and into the branch are movements too');
 check(call({ action: 'adminSaveEntity', token: adminTok, kind: 'product', id: cyIron.id, data: { cylinder: false } }).error === 'has_stock', 'a cylinder item with stock cannot stop being one');
 
+console.log('--- every way a sale is entered reaches the stock, once (2026-10-05) ---');
+var scLoc = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: 'Riyadh', name: 'Scenario Branch', clusterId: cluster.entity.id, collectorUserId: musa.id } }).entity;
+function scUser(n, role) { return call({ action: 'adminCreateUser', token: adminTok, data: { name: n, email: n.toLowerCase().replace(/\W+/g, '.') + '@bestgas.sa', role: role } }).user; }
+var scMgr = scUser('Sc Manager', 'store_manager'), scMgr2 = scUser('Sc Manager Two', 'store_manager'), scDrv = scUser('Sc Driver', 'driver');
+var scStore = call({ action: 'adminSaveEntity', token: adminTok, kind: 'store', data: { locationId: scLoc.id, name: 'Scenario Store', storeManagerUserId: scMgr.id } }).entity;
+var scCar = call({ action: 'adminSaveEntity', token: adminTok, kind: 'car', data: { locationId: scLoc.id, label: 'Scenario Car', driverUserId: scDrv.id } }).entity;
+var scPos = call({ action: 'adminSaveEntity', token: adminTok, kind: 'pos', data: { ownerType: 'car', ownerId: scCar.id, label: 'Scenario POS', posId: '15599001', assignedUserId: scDrv.id } }).entity;
+var scOther = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: 'Riyadh', name: 'Scenario Other', clusterId: cluster.entity.id, collectorUserId: musa.id } }).entity;
+var scOtherStore = call({ action: 'adminSaveEntity', token: adminTok, kind: 'store', data: { locationId: scOther.id, name: 'Scenario Other Store', storeManagerUserId: scMgr2.id } }).entity;
+check(scLoc && scLoc.id && scStore && scStore.id && scCar && scCar.id && scPos && scPos.id && scOtherStore && scOtherStore.id, 'a branch with a store, a car and its POS machine');
+function scProd(d) { var r = call({ action: 'adminSaveEntity', token: adminTok, kind: 'product', data: d }); check(r.ok, 'product ' + d.name + (r.ok ? '' : ': ' + r.error)); return r.entity || {}; }
+var scGas = scProd({ name: 'Sc Gas Exchange', type: 'goods', unitPrice: 37, unitCost: 11.5, emptyCost: 140, cylinder: true, stockName: 'Sc cylinders' });
+var scEmptySale = scProd({ name: 'Sc Empty Cylinder Sale', type: 'goods', unitPrice: 186, stockOf: scGas.id, stockEffect: 'sell_empty' });
+var scFullSale = scProd({ name: 'Sc Full Cylinder Sale', type: 'goods', unitPrice: 220, stockOf: scGas.id, stockEffect: 'sell_full' });
+var scReg = scProd({ name: 'Sc Regulator', type: 'goods', unitPrice: 45, unitCost: 28 });
+var scSvc = scProd({ name: 'Sc Delivery', type: 'services', unitPrice: 5 });
+var scCust = saveCustomer({ name: 'Scenario Restaurant' }).entity;
+[{ productId: scGas.id, state: 'full', qty: 100 }, { productId: scGas.id, state: 'empty', qty: 50 }, { productId: scReg.id, qty: 20 }].forEach(function (o) {
+  var r = call({ action: 'addInventoryMove', token: adminTok, locationId: scLoc.id, productId: o.productId, state: o.state, kind: 'opening', qty: o.qty, date: '2026-09-01' });
+  check(r.ok, 'opening count ' + (r.error || ''));
+});
+function scRow(rep, pid, st) { return ((rep && rep.rows) || []).filter(function (r) { return r.productId === pid && (r.state || '') === (st || ''); })[0] || {}; }
+function scRep(from, to) { return call({ action: 'getInventoryReport', token: financeTok, dateFrom: from || '2026-09-01', dateTo: to || '2026-09-30', locationId: scLoc.id }); }
+function scLine(o) { var r = { date: '2026-09-02', sourceType: 'store', sourceId: scStore.id, submissionId: o.sub || 'sc-1' }; Object.keys(o).forEach(function (k) { if (k !== 'sub') r[k] = o[k]; }); return r; }
+
+// 1. the entry form's product lines: cash, card, a service, and a credit customer inside them
+var sc1 = call({ action: 'importDailyEntries', token: adminTok, rows: [
+  scLine({ productId: scGas.id, qty: 10, unitPrice: 37, cashSales: 370, creditSales: 148, creditCustomerId: scCust.id, creditItems: [{ productId: scGas.id, qty: 4, unitPrice: 37 }] }),
+  scLine({ productId: scReg.id, qty: 2, unitPrice: 45, posSales: 90 }),
+  scLine({ productId: scSvc.id, qty: 3, unitPrice: 5, cashSales: 15 })] });
+check(sc1.ok && sc1.created === 3, 'a day of product lines with a credit customer inside them is saved (' + JSON.stringify(sc1.results || sc1.error) + ')');
+var r1 = scRep();
+check(scRow(r1, scGas.id, 'full').sales === 10, 'the 10 exchanged go out of the full ones once; the 4 on credit are part of them (got ' + scRow(r1, scGas.id, 'full').sales + ')');
+check(scRow(r1, scGas.id, 'empty').exchangeIn === 10, 'and 10 empties come back');
+check(scRow(r1, scReg.id).sales === 2, 'a line paid by card is a sale like cash');
+check(!scRow(r1, scSvc.id).productId, 'a service line has no stock');
+
+// 2. a credit customer taking more than the lines sold, or an item no line sold, is refused whole
+var sc2 = call({ action: 'importDailyEntries', token: adminTok, rows: [
+  scLine({ sub: 'sc-2', productId: scGas.id, qty: 2, unitPrice: 37, cashSales: 74, creditSales: 185, creditCustomerId: scCust.id, creditItems: [{ productId: scGas.id, qty: 5, unitPrice: 37 }] })] });
+check(sc2.error === 'credit_over_lines', 'credit for 5 when the lines sold 2 is refused (got ' + JSON.stringify(sc2.error || sc2.results) + ')');
+var sc2b = call({ action: 'importDailyEntries', token: adminTok, rows: [
+  scLine({ sub: 'sc-2b', productId: scGas.id, qty: 2, unitPrice: 37, cashSales: 74 }),
+  scLine({ sub: 'sc-2b', creditSales: 45, creditCustomerId: scCust.id, creditItems: [{ productId: scReg.id, qty: 1, unitPrice: 45 }] })] });
+check(sc2b.error === 'credit_over_lines', 'and so is credit for an item no line sold (got ' + JSON.stringify(sc2b.error || sc2b.results) + ')');
+check(scRow(scRep(), scGas.id, 'full').sales === 10, 'nothing of a refused day is written');
+var sc2c = call({ action: 'createDailyEntry', token: adminTok, date: '2026-09-02', sourceType: 'store', sourceId: scStore.id, productId: scReg.id, qty: 1, unitPrice: 45, cashSales: 45, creditSales: 90, creditCustomerId: scCust.id, creditItems: [{ productId: scReg.id, qty: 2, unitPrice: 45 }] });
+check(sc2c.error === 'credit_over_lines', 'one line on its own follows the same rule (got ' + sc2c.error + ')');
+
+// 3. part of a line through Souq Gas is still that line's quantity, once
+var sc3 = call({ action: 'importDailyEntries', token: adminTok, rows: [scLine({ sub: 'sc-3', sourceType: 'car', sourceId: scCar.id, productId: scGas.id, qty: 6, unitPrice: 37, cashSales: 222, channelQtys: (function () { var o = {}; o[souq.entity.id] = 4; return o; })() })] });
+check(sc3.ok && sc3.created === 1, 'a car line with 4 of 6 through Souq Gas is saved (' + JSON.stringify(sc3.results || sc3.error) + ')');
+
+// 4. an amount typed without a quantity cannot move the stock: it is flagged
+check(call({ action: 'createDailyEntry', token: adminTok, date: '2026-09-04', sourceType: 'store', sourceId: scStore.id, productId: scGas.id, cashSales: 500 }).ok, 'an amount-only sale is accepted');
+// 5. the products that draw from the cylinder item
+var sc5 = call({ action: 'importDailyEntries', token: adminTok, rows: [
+  scLine({ sub: 'sc-5', date: '2026-09-05', sourceType: 'pos', sourceId: scPos.id, productId: scEmptySale.id, qty: 2, unitPrice: 186, cashSales: 372 }),
+  scLine({ sub: 'sc-5', date: '2026-09-05', sourceType: 'pos', sourceId: scPos.id, productId: scFullSale.id, qty: 3, unitPrice: 220, cashSales: 660 })] });
+check(sc5.created === 2, 'empty and full cylinder sales on the POS machine are saved (' + JSON.stringify(sc5.results || sc5.error) + ')');
+// 6. a voided day gives its units back
+var sc6 = call({ action: 'createDailyEntry', token: adminTok, date: '2026-09-06', sourceType: 'store', sourceId: scStore.id, productId: scReg.id, qty: 5, unitPrice: 45, cashSales: 225 });
+check(sc6.ok && call({ action: 'voidEntries', token: adminTok, ids: [sc6.entry.id], reason: 'typed twice' }).ok, 'a wrong day is voided');
+// 7. the area manager's batch counts while it waits, and a rejected one gives the units back
+var sc7 = call({ action: 'bulkSubmitAreaBatch', token: saraTok, clusterId: cluster.entity.id, rows: [{ date: '2026-09-07', sourceType: 'pos', sourceId: scPos.id, productId: scGas.id, qty: 7, unitPrice: 37, cashSales: 259 }] });
+check(sc7.ok, 'the area manager submits a batch (' + (sc7.error || JSON.stringify(sc7.results || '')) + ')');
+check(scRow(scRep(), scGas.id, 'full').sales === 10 + 6 + 3 + 7, 'its 7 leave the stock while the deputy has it (got ' + scRow(scRep(), scGas.id, 'full').sales + ')');
+check(sc7.ok && call({ action: 'deputyRejectBatch', token: deputyTok, id: sc7.batch.id, note: 'wrong day' }).ok, 'the deputy rejects it');
+// 8. a credit row from the area file is its own sale, counted once
+var sc8 = call({ action: 'bulkSubmitAreaBatch', token: saraTok, clusterId: cluster.entity.id, rows: [{ date: '2026-09-08', sourceType: 'pos', sourceId: scPos.id, productId: scGas.id, qty: 5, unitPrice: 37, cashSales: 185, creditSales: 185, creditCustomerId: scCust.id, creditItems: [{ productId: scGas.id, qty: 5, unitPrice: 37 }] }] });
+check(sc8.ok, 'an area credit row is accepted (' + (sc8.error || JSON.stringify(sc8.results || '')) + ')');
+// 9. before the count, and at another branch, nothing moves here
+call({ action: 'createDailyEntry', token: adminTok, date: '2026-08-30', sourceType: 'store', sourceId: scStore.id, productId: scReg.id, qty: 4, unitPrice: 45, cashSales: 180 });
+call({ action: 'createDailyEntry', token: adminTok, date: '2026-09-09', sourceType: 'store', sourceId: scOtherStore.id, productId: scReg.id, qty: 9, unitPrice: 45, cashSales: 405 });
+
+var rAll = scRep(), gF = scRow(rAll, scGas.id, 'full'), gE = scRow(rAll, scGas.id, 'empty'), rg = scRow(rAll, scReg.id);
+check(gF.sales === 24 && gF.ending === 76, 'full: 100 - 10 form - 6 car - 3 sold full - 5 area credit = 76; the rejected batch is back (got sales ' + gF.sales + ', ending ' + gF.ending + ')');
+check(gE.exchangeIn === 21 && gE.sales === 2 && gE.ending === 69, 'empty: 50 + 21 back from exchanges - 2 sold empty = 69 (got ' + [gE.exchangeIn, gE.sales, gE.ending].join('/') + ')');
+check(rg.sales === 2 && rg.ending === 18, 'regulator: 20 - 2; the voided day, the sale before the count and the other branch do not count (got ' + rg.sales + '/' + rg.ending + ')');
+check(gF.salesWithoutQty === 1 && Math.abs(gF.salesWithoutQtyAmount - 500) < 0.005, 'the amount-only sale is flagged with its amount');
+var srcs = Object.keys(gF.salesBySource || {});
+check(srcs.indexOf('store:' + scStore.id) >= 0 && srcs.indexOf('car:' + scCar.id) >= 0 && srcs.indexOf('pos:' + scPos.id) >= 0, 'each sale is put to the store, car or POS machine that made it');
+var rLater = scRep('2026-09-10', '2026-09-30');
+check(scRow(rLater, scGas.id, 'full').opening === 76 && scRow(rLater, scGas.id, 'empty').opening === 69, 'a later period opens where the earlier one ended');
+check(Math.abs(gF.endingValue - 76 * (11.5 + 140)) < 0.005, 'a full cylinder is valued as the gas plus the cylinder: 76 x 151.50 (got ' + gF.endingValue + ')');
+check(Math.abs(gE.endingValue - 69 * 140) < 0.005, 'an empty one at the cylinder cost (got ' + gE.endingValue + ')');
+var scById = {}; ctx.readSheet(ctx.SHEETS.PRODUCTS).forEach(function (p) { scById[p.id] = p; });
+check(Math.abs(ctx.costOfProduct_(scById[scFullSale.id], '2026-09-05', {}, scById) - 151.5) < 0.005, 'a full cylinder sold costs the gas and the cylinder');
+check(Math.abs(ctx.costOfProduct_(scById[scEmptySale.id], '2026-09-05', {}, scById) - 140) < 0.005, 'an empty one the cylinder');
+check(ctx.TRANSACTIONAL_SHEETS_.indexOf(ctx.SHEETS.INV_MOVES) >= 0, 'starting a fresh round archives the stock movements with the sales they balance against');
+// the live stock: one call, the stock on hand right now at every branch in reach
+var live = call({ action: 'getInventoryLive', token: financeTok, locationId: scLoc.id });
+check(live.ok && live.asOf, 'the live stock answers with the moment it was read (' + (live.error || '') + ')');
+check(live.ok && scRow(live, scGas.id, 'full').ending === 76 && scRow(live, scReg.id).ending === 18, 'and shows what is on hand now, every movement and sale so far included');
+check(call({ action: 'getInventoryLive', token: dpTok }).error === 'forbidden', 'a driver sees no live stock');
+
+console.log('--- a batch the deputy rejects is corrected and sent again as the same batch (2026-10-05) ---');
+var rsRows = call({ action: 'areaBatchRows', token: saraTok, id: sc7.batch.id });
+check(rsRows.ok && rsRows.rows.length === 1 && rsRows.rows[0].productId === scGas.id && rsRows.rows[0].qty === 7, 'the area manager gets the rejected batch\'s lines back to correct (' + (rsRows.error || '') + ')');
+check(rsRows.ok && rsRows.batch.rejectionNote === 'wrong day', 'with the deputy\'s reason');
+check(call({ action: 'areaBatchRows', token: deputyTok, id: sc7.batch.id }).error === 'forbidden', 'only its author corrects it');
+check(call({ action: 'areaBatchRows', token: saraTok, id: sc8.batch.id }).error === 'not_rejected', 'a batch still waiting is not reopened');
+var rsFix = rsRows.ok ? rsRows.rows.map(function (r) { var o = JSON.parse(JSON.stringify(r)); o.qty = 4; o.cashSales = 4 * 37; return o; }) : [];
+var rsDry = call({ action: 'bulkSubmitAreaBatch', token: saraTok, clusterId: cluster.entity.id, rows: rsFix, resubmitOf: sc7.batch.id, dryRun: true });
+check(rsDry.ok && Math.abs(rsDry.batch.breakdown.netCashOwed - 148) < 0.005, 'the corrected lines preview at 4 x 37 = 148 (' + (rsDry.error || JSON.stringify(rsDry.results || '')) + ')');
+var rsSent = call({ action: 'bulkSubmitAreaBatch', token: saraTok, clusterId: cluster.entity.id, rows: rsFix, resubmitOf: sc7.batch.id });
+check(rsSent.ok && rsSent.batch.id === sc7.batch.id, 'sending it again keeps the same batch, no new one (' + (rsSent.error || '') + ')');
+check(rsSent.ok && rsSent.batch.status === 'pending_deputy' && rsSent.batch.revision === 2, 'back with the deputy as its second version');
+check(rsSent.ok && rsSent.batch.history && rsSent.batch.history.length === 1 && rsSent.batch.history[0].rejectionNote === 'wrong day' && Math.abs(rsSent.batch.history[0].netCashOwed - 259) < 0.005, 'the first version and why it was rejected stay on the batch');
+var rsMine = call({ action: 'listAreaBulkBatches', token: saraTok }).batches.filter(function (b) { return b.id === sc7.batch.id; });
+check(rsMine.length === 1, 'the list shows it once');
+var rsDet = call({ action: 'areaBulkBatchDetail', token: deputyTok, id: sc7.batch.id });
+check(rsDet.ok && rsDet.byProduct.length === 1 && rsDet.byProduct[0].qty === 4, 'the deputy sees the corrected lines only (got ' + JSON.stringify(rsDet.byProduct && rsDet.byProduct.map(function (p) { return p.qty; })) + ')');
+check(scRow(scRep(), scGas.id, 'full').sales === 24 + 4, 'the stock takes the corrected 4, never the rejected 7 again');
+check(call({ action: 'bulkSubmitAreaBatch', token: saraTok, clusterId: cluster.entity.id, rows: rsFix, resubmitOf: sc7.batch.id }).error === 'not_rejected', 'a batch already sent again cannot be sent twice');
+check(call({ action: 'bulkSubmitAreaBatch', token: saraTok, clusterId: cluster.entity.id, rows: rsFix, resubmitOf: 'nope' }).error === 'not_found', 'nor a batch that does not exist');
+check(call({ action: 'deputyApproveBatch', token: deputyTok, id: sc7.batch.id }).ok, 'and the deputy approves the corrected batch as usual');
+
 console.log('--- costing: cost types are master data, seeded once ---');
 var pfMeta = call({ action: 'listMeta', token: adminTok });
 check(pfMeta.ok && Array.isArray(pfMeta.costTypes) && pfMeta.costTypes.length >= 30, 'the cost types are seeded (got ' + (pfMeta.costTypes || []).length + ')');

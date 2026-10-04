@@ -284,6 +284,31 @@ function settleChannel_(r) {
   return null;
 }
 
+// A credit customer's units are part of the day's product lines (the cash
+// figure holds them, and the credit comes off it), so on a day typed by
+// product the credit may not name more of an item than the lines sold of it,
+// nor an item no line sold: those units would leave no trace in the stock.
+// A day typed as amounts only (no quantity anywhere) is not checked here; its
+// sales show in the stock as sales without a quantity. (2026-10-05)
+function creditOverLines_(rows) {
+  var lines = Object.create(null), credit = Object.create(null), byProduct = Object.create(null);
+  rows.forEach(function (r) {
+    r = r || {};
+    var g = r.sourceType + '|' + r.sourceId + '|' + r.date;
+    if (r.productId && Number(r.qty) > 0) {
+      byProduct[g] = true;
+      lines[g + '|' + r.productId] = (lines[g + '|' + r.productId] || 0) + Number(r.qty);
+    }
+    if (Array.isArray(r.creditItems)) r.creditItems.forEach(function (it) {
+      if (it && it.productId && Number(it.qty) > 0) credit[g + '|' + it.productId] = (credit[g + '|' + it.productId] || 0) + Number(it.qty);
+    });
+  });
+  return Object.keys(credit).some(function (k) {
+    var g = k.split('|').slice(0, 3).join('|');
+    return byProduct[g] && credit[k] > (lines[k] || 0) + 1e-9;
+  });
+}
+
 function checkNonSalesFields_(r, siblingCash) {
   // the item the line sold, when it names one: a real, active product (security
   // review 2026-10-04: "__proto__" as an item broke the stock report for good)
@@ -549,6 +574,7 @@ function actionCreateEntry_(req, user) {
     !deliveryNeedsSale_(req.sourceType, req.sourceId, req.date, req.cashSales, req.posSales, false, req.creditSales)) {
     return { ok: false, error: 'delivery_without_sale' };
   }
+  if (creditOverLines_([req])) return { ok: false, error: 'credit_over_lines' };
   var nonSalesErr = checkNonSalesFields_(req) || checkDepositSlip_(req, user, scope.locationId);
   if (nonSalesErr) return { ok: false, error: nonSalesErr };
 
@@ -604,6 +630,7 @@ function actionImportEntries_(req, user) {
   var rows = Array.isArray(req.rows) ? req.rows : [];
   if (!rows.length) return { ok: false, error: 'invalid_input' };
   if (rows.length > 500) return { ok: false, error: 'too_many_rows' };
+  if (creditOverLines_(rows)) return { ok: false, error: 'credit_over_lines' };
 
   // "Product mode" on the client splits one real-world sale into several
   // rows in the same submission (e.g. a cash-tagged goods line plus a
@@ -1167,6 +1194,16 @@ function actionBulkSubmitAreaBatch_(req, user) {
     return { ok: false, error: 'forbidden' };
   }
 
+  // A batch the deputy rejected is corrected and sent again as itself
+  // (2026-10-05): same id, its next version, the rejected version kept on it.
+  var prior = null;
+  if (req.resubmitOf) {
+    prior = getById_(SHEETS.AREA_BULK_BATCHES, req.resubmitOf);
+    var priorErr = resubmitError_(prior, user);
+    if (priorErr) return { ok: false, error: priorErr };
+    if (prior.clusterId !== cluster.id) return { ok: false, error: 'forbidden' };
+  }
+
   var rows = Array.isArray(req.rows) ? req.rows : [];
   if (!rows.length) return { ok: false, error: 'invalid_input' };
   if (rows.length > 500) return { ok: false, error: 'too_many_rows' };
@@ -1209,8 +1246,9 @@ function actionBulkSubmitAreaBatch_(req, user) {
     prepared.push({ row: r, locationId: scope.locationId });
   }
   if (errors.length) return { ok: false, error: 'invalid_rows', results: errors };
+  if (creditOverLines_(rows)) return { ok: false, error: 'credit_over_lines' };
 
-  var batchId = Utilities.getUuid();
+  var batchId = prior ? prior.id : Utilities.getUuid();
   var isDryRun = !!req.dryRun;
   var entries = prepared.map(function (p) {
     var r = p.row;
@@ -1266,8 +1304,35 @@ function actionBulkSubmitAreaBatch_(req, user) {
     resultHandoffId: null
   };
 
+  if (prior) {
+    batch.createdAt = prior.createdAt;
+    batch.resubmittedAt = new Date().toISOString();
+    batch.revision = Number(prior.revision || 1) + 1;
+    batch.history = (prior.history || []).concat([{
+      revision: Number(prior.revision || 1), entryIds: prior.entryIds, netCashOwed: prior.breakdown ? prior.breakdown.netCashOwed : 0,
+      rejectionNote: prior.rejectionNote || '', rejectedBy: prior.deputyActedBy || null, rejectedAt: prior.deputyActedAt || null,
+      submittedAt: prior.resubmittedAt || prior.createdAt
+    }]);
+  }
+
   if (isDryRun) {
     return { ok: true, dryRun: true, batch: batch };
+  }
+
+  if (prior) {
+    // two taps on "send again" must not both go through
+    var lock = LockService.getScriptLock();
+    lock.waitLock(30000);
+    try {
+      var fresh = getById_(SHEETS.AREA_BULK_BATCHES, prior.id);
+      var freshErr = resubmitError_(fresh, user);
+      if (freshErr) return { ok: false, error: freshErr };
+      entries.forEach(function (e) { writeRow(SHEETS.ENTRIES, e); });
+      writeRow(SHEETS.AREA_BULK_BATCHES, batch);
+    } finally { try { lock.releaseLock(); } catch (e) {} }
+    logAudit_('resubmit_area_batch', user.id, batch.id + ' v' + batch.revision);
+    notifyDeputyPendingBatch_(batch);
+    return { ok: true, batch: batch };
   }
 
   entries.forEach(function (e) { writeRow(SHEETS.ENTRIES, e); });
@@ -1275,6 +1340,33 @@ function actionBulkSubmitAreaBatch_(req, user) {
   logAudit_('bulk_submit_area_batch', user.id, batch.id);
   notifyDeputyPendingBatch_(batch);
   return { ok: true, batch: batch };
+}
+
+// Why a batch cannot be corrected and sent again by this person, or null.
+function resubmitError_(batch, user) {
+  if (!batch) return 'not_found';
+  if (batch.uploadedBy !== user.id && user.role !== 'admin') return 'forbidden';
+  if (batch.status !== 'deputy_rejected') return 'not_rejected';
+  return null;
+}
+// The fields an area row is sent with; the rest of an entry is worked out again.
+var BATCH_ROW_FIELDS_ = ['date', 'sourceType', 'sourceId', 'productId', 'qty', 'unitPrice', 'cashSales', 'posSales', 'creditSales',
+  'creditCustomerId', 'channelQtys', 'channelComRates', 'deliveryFeeBankAmount', 'deliveryNote', 'otherCash', 'otherCashItemId',
+  'otherCashReason', 'expenseAmount', 'expenseItemId', 'expenseReason', 'directDepositAmount', 'directDepositRef', 'directDepositNote',
+  'directDepositPosId', 'bankTransferAmount', 'cylindersOut', 'cylindersIn', 'note'];
+function actionAreaBatchRows_(req, user) {
+  var batch = getById_(SHEETS.AREA_BULK_BATCHES, req.id);
+  var err = resubmitError_(batch, user);
+  if (err) return { ok: false, error: err };
+  var byId = Object.create(null);
+  readSheet(SHEETS.ENTRIES).forEach(function (e) { byId[e.id] = e; });
+  var rows = (batch.entryIds || []).map(function (id) { return byId[id]; }).filter(Boolean).map(function (e) {
+    var r = {};
+    BATCH_ROW_FIELDS_.forEach(function (k) { if (e[k] != null && e[k] !== '' && e[k] !== 0) r[k] = e[k]; });
+    if (e.creditItems) r.creditItems = e.creditItems.map(function (it) { return { productId: it.productId, qty: it.qty, unitPrice: it.unitPrice }; });
+    return r;
+  });
+  return { ok: true, batch: batch, rows: rows };
 }
 
 function actionListAreaBulkBatches_(req, user) {
@@ -1309,7 +1401,10 @@ function actionAreaBulkBatchDetail_(req, user) {
     return { ok: false, error: 'forbidden' };
   }
 
-  var entries = readSheet(SHEETS.ENTRIES).filter(function (e) { return e.batchId === batch.id; });
+  // the current version's lines: a corrected batch keeps its rejected lines under the same batchId
+  var mine = Object.create(null);
+  (batch.entryIds || []).forEach(function (id) { mine[id] = true; });
+  var entries = readSheet(SHEETS.ENTRIES).filter(function (e) { return e.batchId === batch.id && mine[e.id]; });
   var products = readSheet(SHEETS.PRODUCTS);
   var productById = Object.create(null);
   products.forEach(function (p) { productById[p.id] = p; });

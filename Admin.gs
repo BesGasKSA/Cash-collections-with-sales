@@ -1158,7 +1158,10 @@ function setupFirstAdmin() {
 // round stays in the workbook under a dated name.
 var TRANSACTIONAL_SHEETS_ = [
   SHEETS.ENTRIES, SHEETS.HANDOFFS, SHEETS.AREA_BULK_BATCHES,
-  SHEETS.BANK_LINES, SHEETS.RISK_ITEMS
+  SHEETS.BANK_LINES, SHEETS.RISK_ITEMS,
+  // the stock movements balance against the sales: one without the other would
+  // leave every branch's stock with purchases and no sales (2026-10-05)
+  SHEETS.INV_MOVES
 ];
 // The audit trail is not in the list (security review 2026-10-04): a fresh round
 // must never hide who did what.

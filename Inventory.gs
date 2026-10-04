@@ -173,6 +173,18 @@ function actionVoidInventoryMove_(req, user) {
   } finally { try { lock.releaseLock(); } catch (e) {} }
 }
 
+// The stock on hand right now: every movement and sale up to this moment, at
+// every branch in reach (or one). Never served from the response cache.
+function actionInventoryLive_(req, user) {
+  var today = todayRiyadh_();
+  var res = actionInventoryReport_({ dateFrom: today, dateTo: today, locationId: req.locationId || null }, user);
+  if (!res.ok) return res;
+  res.asOf = new Date().toISOString();
+  res.live = true;
+  delete res.moves;                  // the live card shows stock, not the day's movements
+  return res;
+}
+
 function actionInventoryReport_(req, user) {
   var scope = invReadBranches_(user);
   if (scope === false) return { ok: false, error: 'forbidden' };
@@ -203,7 +215,8 @@ function actionInventoryReport_(req, user) {
     if (!rows[k]) {
       var op = openingOf[k] || null, p = products[productId];
       rows[k] = { locationId: locId, productId: productId, state: state || null, cylinder: !!p.cylinder, stockName: p.stockName || '',
-        unitCost: state === 'empty' ? Number(p.emptyCost || 0) : Number(p.unitCost || 0),
+        // a full cylinder is the gas and the cylinder it is in; an empty one the cylinder
+        unitCost: state === 'empty' ? Number(p.emptyCost || 0) : state === 'full' ? Number(p.unitCost || 0) + Number(p.emptyCost || 0) : Number(p.unitCost || 0),
         opening: 0, purchases: 0, returns: 0, exchangeIn: 0, transfersIn: 0, sales: 0, damaged: 0, refillOut: 0, transfersOut: 0,
         salesWithoutQty: 0, salesWithoutQtyAmount: 0, salesBySource: {},
         openingDate: op ? op.date : null, noOpening: !op || op.date > to };

@@ -236,7 +236,12 @@ function costOfProduct_(p, date, hist, byId) {
   }
   if (own > 0) return own;
   var a = p.stockOf ? byId[p.stockOf] : null;
-  if (a && a.id !== p.id) return p.stockEffect === 'sell_empty' ? Number(a.emptyCost || 0) : costOfProduct_(a, date, hist, Object.create(null));
+  if (a && a.id !== p.id) {
+    if (p.stockEffect === 'sell_empty') return Number(a.emptyCost || 0);
+    var gas = costOfProduct_(a, date, hist, Object.create(null));
+    // a full cylinder sold outright leaves with its cylinder; an exchange keeps it
+    return p.stockEffect === 'sell_full' ? gas + Number(a.emptyCost || 0) : gas;
+  }
   return 0;
 }
 

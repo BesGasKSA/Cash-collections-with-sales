@@ -746,6 +746,7 @@ function route_(req) {
     addInventoryMove: function () { return actionAddInventoryMove_(req, user); },
     voidInventoryMove: function () { return actionVoidInventoryMove_(req, user); },
     getInventoryReport: function () { return actionInventoryReport_(req, user); },
+    getInventoryLive: function () { return actionInventoryLive_(req, user); },
     importInventoryDay: function () { return actionImportInventoryDay_(req, user); },
 
     // costing and profitability (see Costing.gs)
@@ -792,6 +793,7 @@ function route_(req) {
     bulkSubmitAreaBatch: function () { return actionBulkSubmitAreaBatch_(req, user); },
     listAreaBulkBatches: function () { return actionListAreaBulkBatches_(req, user); },
     areaBulkBatchDetail: function () { return actionAreaBulkBatchDetail_(req, user); },
+    areaBatchRows: function () { return actionAreaBatchRows_(req, user); },
     deputyApproveBatch: function () { return withCashLock_(function () { return actionDeputyApproveBatch_(req, user); }); },
     deputyRejectBatch: function () { return withCashLock_(function () { return actionDeputyRejectBatch_(req, user); }); },
 

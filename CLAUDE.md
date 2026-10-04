@@ -1443,8 +1443,9 @@ Asked for by the user in one afternoon, all in `renderEntries` unless noted.
   drafts older than 3 days are swept for every account on the device.
 - `tests/mock-backend-server.js` listens on 127.0.0.1 only and serves nothing
   outside the app folder (it served the whole disk to the local network before).
-- Still open, waiting on the user: purging commits 82065ba (a real POS holder)
-  and 1a0f0ef (a real branch total) from the public history.
+- The public history was rewritten on 2026-10-04 with the user's approval: the
+  real POS holder and branch total are gone from every commit (backup bundle in
+  `_archive/history-purge-2026-10-04/`).
 
 ## No change of rate rewrites a saved day; the credit fee comes off again (2026-10-04)
 
@@ -1513,6 +1514,42 @@ should have history for the numbers changes in all areas; it's very sensitive".
   Safari and link previews ignore a `data:` icon; manifest `short_name` "Cash
   Collection" (the label under the home-screen icon); Open Graph card
   `assets/og-card.png` (logo with "Cash Collection" under it, 1200x630).
+
+## Stock and sales checked against the branch sheets; live stock; a rejected batch is corrected (2026-10-05)
+
+- **The branch sheets' formula** (every sheet of `TG.xlsx`): full end = full opening +
+  full purchases - full sales; empty end = full opening + empty opening - empty sales -
+  full end, i.e. empties + exchanges back - refills - cylinders sold. `Inventory.gs` is
+  exactly that core. The sheets themselves differ branch to branch: none counts
+  "نقل من الفرع" (transfer in), only some count transfers out (and a full one sent out
+  raises the empties there), a purchase typed in the empty column means a refill in one
+  sheet, new full cylinders in another and new empties in a third (the app: new
+  empties), and one sheet's 5 kg empty formula reads the wazfa columns. A difference
+  on the stock panel after a transfer is the sheet, not the app.
+- **Credit inside the lines**: `creditOverLines_` refuses a day typed by product whose
+  credit names more of an item than its lines sold, or an item no line sold
+  (`credit_over_lines`): those units would leave no trace in the stock. Amount-only
+  days are not checked (their sales show as "without quantity"). Form, file import,
+  single entry and area batch.
+- Every sale path into the stock is one test section ("every way a sale is entered
+  reaches the stock"): card, cash, Souq Gas part, credit, service, amount-only,
+  empty/full cylinder sales, void, pending and rejected batch, area credit row, before
+  the count, another branch, later periods.
+- A full cylinder is valued (and a `sell_full` sale costed when it has no cost of its
+  own) as gas + cylinder (`unitCost + emptyCost`); an empty at `emptyCost`. Both read
+  the current `emptyCost`, so changing it moves past values (known, as before).
+- The fresh-round archive takes `inventory_moves` with the sales.
+- **Live stock**: `getInventoryLive` (today's report = on hand now, no move list, not
+  cached) feeds `invLiveCard_`: on Home for stock roles and above the Inventory
+  screen's period bar. Quiet refresh every minute, skipped in a hidden tab; a newer
+  request wins.
+- **A rejected area batch is corrected, not rebuilt**: `areaBatchRows {id}` gives its
+  author (or an admin) the lines back; `bulkSubmitAreaBatch` with `resubmitOf` sends
+  them as the same batch, `revision` +1, the rejected version kept in `history`
+  (lines, net, reason, who, when). Old entries stay voided; the detail and the deputy
+  read the batch's own `entryIds`. Screen: "Correct and send again" on the batch
+  list opens `#abFix` (quantity, price, amount, remove line), or a corrected file is
+  uploaded while correcting. The deputy's card shows the version and the last reason.
 
 ## Costing and profitability (2026-10-01, `Costing.gs`)
 
