@@ -3188,5 +3188,78 @@ check(w5.alt && w5.alt !== w5.quote, 'an event sign-in carries another saying fo
 var abxLen = clientFn_('abxTemplate_').length;
 check(abxLen > 0 && abxLen < 20000, 'the helper reads a function holding a regex literal and stops at its end (got ' + abxLen + ' characters)');
 
+console.log('--- imports read cells as people type them in Excel ---');
+var impCtx = vm.createContext({ String: String, Number: Number, Math: Math, RegExp: RegExp });
+['cellNorm_', 'csvDelim_', 'parseCsv_', 'headerCell_'].forEach(function (n) {
+  var src = clientFn_(n); check(!!src, 'the import helper ' + n + ' exists'); if (src) vm.runInContext(src, impCtx);
+});
+if (impCtx.cellNorm_) {
+  var cn = impCtx.cellNorm_;
+  check(cn('1,234.50') === '1234.50', 'a figure with a thousand separator loses it (got ' + cn('1,234.50') + ')');
+  check(cn('12,500') === '12500' && cn('1,000,000') === '1000000', 'several groups too');
+  check(cn('١٢٣٤٫٥') === '1234.5' && cn('١٬٢٣٤٫٥٠') === '1234.50', 'Arabic digits and separators become a plain figure');
+  check(cn('۱۲۳') === '123', 'Persian/Urdu digits too');
+  check(cn('750 SAR') === '750' && cn('ر.س 1,200') === '1200', 'a currency word next to the figure is dropped');
+  check(cn('-45.5') === '-45.5', 'a minus sign stays');
+  check(cn('2026/10/3') === '2026-10-03' && cn('2026-1-9') === '2026-01-09', 'a date typed year first becomes yyyy-mm-dd');
+  check(cn('3/10/2026') === '2026-10-03', 'day first when it could be either (as dates are written here)');
+  check(cn('10/25/2026') === '2026-10-25', 'month first only when the second part can only be a day');
+  check(cn('0501234567') === '0501234567' && cn('+966501234567') === '+966501234567', 'phone numbers and codes with a leading zero or plus stay exactly as typed');
+  check(cn('Truck-1') === 'Truck-1' && cn('سيارة ١') === 'سيارة ١' && cn('POS 1,2') === 'POS 1,2', 'names and labels stay as typed, Arabic digits in a name included');
+  check(cn('2,5') === '2,5' && cn('1.234,50') === '1.234,50', 'something that is not clearly one figure is left for the import to reject');
+  check(cn('  ') === '' && cn(null) === '' && cn(42) === '42', 'blank and real numbers');
+}
+if (impCtx.csvDelim_ && impCtx.parseCsv_) {
+  check(impCtx.csvDelim_('date;sourceType;cashSales\n2026-10-03;car;"1.234,5"') === ';', 'a CSV saved with semicolons is read with semicolons');
+  check(impCtx.csvDelim_('date,cashSales\n2026-10-03,"1,234"') === ',' && impCtx.csvDelim_('date\tcashSales\n1\t2') === '\t', 'commas and tabs are recognised');
+  var pc = impCtx.parseCsv_('\uFEFFdate;cashSales\r\n2026-10-03;"1 234"\r\n', ';');
+  check(pc.length === 2 && pc[0][0] === 'date' && pc[1][1] === '1 234', 'a BOM at the start is dropped and the semicolon file splits into columns');
+}
+if (impCtx.headerCell_) {
+  var hc = impCtx.headerCell_(['Date', ' cash sales ', 'SOURCE_TYPE', 'note']);
+  check(hc(['2026-10-03', '900', 'car', 'x'], 'cashSales') === '900' && hc(['2026-10-03', '900', 'car', 'x'], 'sourceType') === 'car' && hc(['2026-10-03'], 'date') === '2026-10-03',
+    'a header in other capitals, with spaces or underscores, still finds its column');
+  check(hc(['a'], 'missing') === '', 'a column that is not there is empty');
+}
+
+console.log('--- a customer sheet sets the commission and delivery fee for every product ---');
+var crGoods = ctx.readSheet(SHEETS.PRODUCTS).filter(function (p) { return p.type !== 'services' && p.active !== false; });
+var crServices = ctx.readSheet(SHEETS.PRODUCTS).filter(function (p) { return p.type === 'services'; });
+check(crGoods.length > 0, 'there are goods to price (' + crGoods.length + ')');
+var crAdminUser = ctx.getById_(SHEETS.USERS, admin.id);
+var crOld = ctx.importCustomers_([{ name: 'عميل الأسعار القديم' }]).created[0];
+check(!!crOld, 'an existing customer to overwrite');
+var cr1 = ctx.actionAdminImportCustomers_({ update: true, rows: [
+  { name: 'عميل الأسعار القديم', commission: 1, delivery: 2 },
+  { name: 'عميل الأسعار الجديد', commission: 0, delivery: 1 },
+  { name: 'عميل بسعر سالب', commission: -1, delivery: 1 }
+] }, crAdminUser);
+check(cr1.ok, 'the sheet is accepted');
+var crOldNow = ctx.getById_(SHEETS.CUSTOMERS, crOld.id);
+check(crGoods.every(function (p) { return crOldNow.commissions && crOldNow.commissions[p.id] === 1 && crOldNow.deliveryFees && crOldNow.deliveryFees[p.id] === 2; }),
+  'the existing customer now takes 1 commission and 2 delivery on every product');
+check(crServices.every(function (p) { return !crOldNow.deliveryFees || crOldNow.deliveryFees[p.id] == null; }), 'a service is not charged a per-unit delivery fee');
+check((cr1.updated || []).some(function (u) { return u.id === crOld.id; }), 'and is reported as updated');
+var crNew = (cr1.created || []).filter(function (c) { return c.name === 'عميل الأسعار الجديد'; })[0];
+check(crNew && crNew.commissions && crNew.deliveryFees && crGoods.every(function (p) { return crNew.commissions[p.id] === 0 && crNew.deliveryFees[p.id] === 1; }), 'a new customer is created with its amounts');
+check((cr1.skipped || []).some(function (k) { return k.name === 'عميل بسعر سالب' && k.reason === 'invalid_input'; }), 'a negative amount is refused, that row only');
+var cr2 = ctx.actionAdminImportCustomers_({ rows: [{ name: 'عميل الأسعار القديم', commission: 5, delivery: 5 }] }, crAdminUser);
+check(cr2.ok && (cr2.skipped || []).some(function (k) { return k.reason === 'duplicate'; }) && (ctx.getById_(SHEETS.CUSTOMERS, crOld.id).commissions || {})[crGoods[0].id] === 1,
+  'without overwrite an existing customer is left as it is');
+var cr3 = ctx.actionAdminImportCustomers_({ update: true, rows: [{ name: 'عميل الأسعار القديم', commission: 3, delivery: '' }] }, crAdminUser);
+var crOld3 = ctx.getById_(SHEETS.CUSTOMERS, crOld.id);
+check(cr3.ok && crOld3.commissions && crOld3.deliveryFees && crOld3.commissions[crGoods[0].id] === 3 && crOld3.deliveryFees[crGoods[0].id] === 2, 'a blank amount leaves that one unchanged');
+check(ctx.importCustomers_([{ name: 'عميل بسعر نصي', commission: 'abc' }], { update: true }).skipped.length === 1, 'an amount that is not a number is refused');
+
+console.log('--- the customer sheet is read with its header, wherever it starts ---');
+['customerRowsFromCells_'].forEach(function (n) { var src = clientFn_(n); check(!!src, n + ' exists'); if (src) vm.runInContext(src, impCtx); });
+if (impCtx.customerRowsFromCells_) {
+  var crRows = impCtx.customerRowsFromCells_([['', 'التطبيق على كل المنتجات', ''], ['العميل', 'العمولة', 'التوصيل'], ['مخبز تجريبي', 0, 1], ['مطعم تجريبي', '1', '٢'], ['', '', '']]);
+  check(crRows.length === 2 && crRows[0].name === 'مخبز تجريبي', 'the title row and the header row are not customers (got ' + crRows.map(function (r) { return r.name; }).join(', ') + ')');
+  check(crRows[0].commission === 0 && crRows[0].delivery === 1 && crRows[1].commission === 1 && crRows[1].delivery === 2, 'the commission and delivery columns are read, Arabic digits included');
+  var crPlain = impCtx.customerRowsFromCells_([['مخبز أ'], ['مطعم ب']]);
+  check(crPlain.length === 2 && crPlain[0].commission == null && crPlain[0].delivery == null, 'a plain list of names still works, with no amounts');
+}
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);
