@@ -1415,6 +1415,35 @@ Asked for by the user in one afternoon, all in `renderEntries` unless noted.
   once, kept in `localStorage.bgc_otd` under `OTD_V_`, bump it when the file
   changes). No event or no network: the saying.
 
+## Refusals name their field; sidebar title; tab icon (2026-10-04)
+
+- **No form refusal says only "missing or invalid data" any more.** The user
+  saw it creating a driver with no email and no iqama and could not tell what
+  was wrong. Every check a person can reach from a screen returns its own code
+  (`name_required`, `login_required`, `role_required`, `city_required`,
+  `branch_required`, `label_required`, `owner_required`, `invalid_amount`,
+  `amount_required`, `invalid_qty`, `invalid_price`, `price_needed`,
+  `invalid_cost`, `invalid_vat`, `invalid_setting`, `group_required`,
+  `invalid_stock_link`, `invalid_state`, `source_required`, `invalid_period`,
+  `period_too_long`, `title_required`, `line_fixed`, `invalid_asset`), each with
+  an ar/en/ur message in `ERROR_KEYS_`. `invalid_input` is left only on guards
+  against malformed requests no screen sends. A new refusal needs its code, its
+  three messages, and an `ERR_FIELD_` entry if a form field holds it.
+- `markErrField_(scope, res)` outlines the field behind a refusal (`.f-bad`,
+  `data-k` keys or `#ids`) until it is changed; `missingCode_(kind, scope)`
+  checks a master-data form's `REQUIRED_ASSIGNMENTS_` before sending, and the
+  user form checks name and email-or-iqama itself.
+- **Sidebar title trap:** `.sb-brand .t1` is painted by a `background-clip:text`
+  gradient 260% wide. With `no-repeat` the gradient left the last 16% of the
+  title unpainted at both ends of its animation, which in Arabic is the start
+  ("إدارة" vanished). It must stay `repeat-x`. Menu labels are full white, 15px,
+  700, with a text shadow; the effects behind them were toned down by about half.
+- **Tab, home screen and shared links:** title `Cash Collection | Best Gas`; real
+  icon files in `assets/` (`node tools/make-app-icons.js --assets`), because
+  Safari and link previews ignore a `data:` icon; manifest `short_name` "Cash
+  Collection" (the label under the home-screen icon); Open Graph card
+  `assets/og-card.png` (logo with "Cash Collection" under it, 1200x630).
+
 ## Costing and profitability (2026-10-01, `Costing.gs`)
 
 The user asked for monthly expense profiles per car and per store (every
