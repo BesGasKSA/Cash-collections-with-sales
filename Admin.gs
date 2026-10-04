@@ -1295,28 +1295,62 @@ function findCustomer_(text) {
 
 // Adds each new name once. A name already on file, or repeated earlier in the
 // same list, is skipped and reported with the number it already has.
-function importCustomers_(rows) {
-  var created = [], skipped = [];
+// A row may also carry the driver's commission and the delivery fee per unit
+// (2026-10-03, from the company's customer sheet "applies to every product"):
+// each is set for every product that is not a service. A blank leaves that
+// one as it was; a negative or non-numeric amount refuses the row. With
+// opts.update an existing customer is overwritten with the row's amounts
+// (reported in updated) instead of being skipped as a duplicate.
+function customerRate_(v) {
+  if (v === undefined || v === null || String(v).trim() === '') return { none: true };
+  var n = Number(String(v).replace(/,/g, '').trim());
+  if (!isFinite(n) || n < 0 || n > 100000) return { bad: true };
+  return { value: Math.round(n * 100) / 100 };
+}
+function applyCustomerRates_(c, rates, goods) {
+  [['commissions', rates.commission], ['deliveryFees', rates.delivery]].forEach(function (p) {
+    if (p[1].none) return;
+    var map = Object.create(null);
+    var was = c[p[0]] && typeof c[p[0]] === 'object' ? c[p[0]] : {};
+    safeOwnKeys_(was).forEach(function (k) { map[k] = was[k]; });
+    goods.forEach(function (g) { map[g.id] = p[1].value; });
+    var plain = {}; Object.keys(map).forEach(function (k) { plain[k] = map[k]; });
+    c[p[0]] = plain;
+  });
+}
+function importCustomers_(rows, opts) {
+  opts = opts || {};
+  var created = [], skipped = [], updated = [];
+  var goods = null;
   var lock = LockService.getScriptLock();
   for (var i = 0; i < rows.length; i++) {
     var r = typeof rows[i] === 'string' ? { name: rows[i] } : (rows[i] || {});
     var name = String(r.name || '').replace(/\s+/g, ' ').trim();
     if (!name) { skipped.push({ row: i, name: '', code: null, reason: 'invalid_input' }); continue; }
+    var rates = { commission: customerRate_(r.commission), delivery: customerRate_(r.delivery) };
+    if (rates.commission.bad || rates.delivery.bad) { skipped.push({ row: i, name: name, code: null, reason: 'invalid_input' }); continue; }
+    var hasRates = !rates.commission.none || !rates.delivery.none;
+    if (hasRates && !goods) goods = readSheet(SHEETS.PRODUCTS).filter(function (p) { return p.type !== 'services'; });
     // one lock per row: the duplicate check, the number and the write together
     lock.waitLock(30000);
     try {
       freshenExec_();
       var dup = customerDuplicateOf_(name, null);
-      if (dup) { skipped.push({ row: i, name: name, code: dup.code, reason: 'duplicate' }); continue; }
+      if (dup) {
+        if (opts.update && hasRates) { applyCustomerRates_(dup, rates, goods); updated.push(writeRow(SHEETS.CUSTOMERS, dup)); }
+        else skipped.push({ row: i, name: name, code: dup.code, reason: 'duplicate' });
+        continue;
+      }
       var c = { id: Utilities.getUuid(), code: nextCode_('customer'), name: name, active: true };
       if (r.city) c.city = String(r.city).trim();
       if (r.phone) c.phone = String(r.phone).trim();
+      if (hasRates) applyCustomerRates_(c, rates, goods);
       created.push(writeRow(SHEETS.CUSTOMERS, c));
     } finally {
       try { lock.releaseLock(); } catch (e) {}
     }
   }
-  return { created: created, skipped: skipped };
+  return { created: created, skipped: skipped, updated: updated };
 }
 
 function actionAdminImportCustomers_(req, user) {
@@ -1325,9 +1359,9 @@ function actionAdminImportCustomers_(req, user) {
   if (!rows.length) return { ok: false, error: 'invalid_input' };
   // each row takes the lock and re-reads the list: 500 finish well inside one run
   if (rows.length > 500) return { ok: false, error: 'too_many_rows' };
-  var res = importCustomers_(rows);
-  logAudit_('admin_import_customers', user.id, res.created.length + ' created, ' + res.skipped.length + ' skipped');
-  return { ok: true, created: res.created, skipped: res.skipped };
+  var res = importCustomers_(rows, { update: req.update === true });
+  logAudit_('admin_import_customers', user.id, res.created.length + ' created, ' + res.updated.length + ' updated, ' + res.skipped.length + ' skipped');
+  return { ok: true, created: res.created, updated: res.updated, skipped: res.skipped };
 }
 
 // The company's customer list ships in CustomerSeed.js, a file that exists in
