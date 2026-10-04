@@ -1360,6 +1360,8 @@ function actionAdminImportCustomers_(req, user) {
   // each row takes the lock and re-reads the list: 500 finish well inside one run
   if (rows.length > 500) return { ok: false, error: 'too_many_rows' };
   var res = importCustomers_(rows, { update: req.update === true });
+  // the names show in English and Urdu too: the new ones and the ones the sheet updated
+  fillTranslations_([].concat.apply([], res.created.concat(res.updated).map(translatableOf_)));
   logAudit_('admin_import_customers', user.id, res.created.length + ' created, ' + res.updated.length + ' updated, ' + res.skipped.length + ' skipped');
   return { ok: true, created: res.created, updated: res.updated, skipped: res.skipped };
 }

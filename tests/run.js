@@ -3243,6 +3243,10 @@ check((cr1.updated || []).some(function (u) { return u.id === crOld.id; }), 'and
 var crNew = (cr1.created || []).filter(function (c) { return c.name === 'عميل الأسعار الجديد'; })[0];
 check(crNew && crNew.commissions && crNew.deliveryFees && crGoods.every(function (p) { return crNew.commissions[p.id] === 0 && crNew.deliveryFees[p.id] === 1; }), 'a new customer is created with its amounts');
 check((cr1.skipped || []).some(function (k) { return k.name === 'عميل بسعر سالب' && k.reason === 'invalid_input'; }), 'a negative amount is refused, that row only');
+var crTr = {}; ctx.readSheet(SHEETS.TRANSLATIONS).forEach(function (r) { crTr[r.src] = r; });
+check(crTr['عميل الأسعار الجديد'] && crTr['عميل الأسعار الجديد'].en && crTr['عميل الأسعار الجديد'].ur, 'an imported customer gets its English and Urdu name');
+check(crTr['عميل الأسعار القديم'] && crTr['عميل الأسعار القديم'].ur, 'so does a customer the sheet updated');
+check(!crTr['عميل بسعر سالب'], 'a refused row is not translated');
 var cr2 = ctx.actionAdminImportCustomers_({ rows: [{ name: 'عميل الأسعار القديم', commission: 5, delivery: 5 }] }, crAdminUser);
 check(cr2.ok && (cr2.skipped || []).some(function (k) { return k.reason === 'duplicate'; }) && (ctx.getById_(SHEETS.CUSTOMERS, crOld.id).commissions || {})[crGoods[0].id] === 1,
   'without overwrite an existing customer is left as it is');
