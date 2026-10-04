@@ -196,10 +196,14 @@ http.createServer(function (req, res) {
   }
   var reqPath = req.url.split('?')[0];
   if (reqPath === '/') reqPath = '/index.html';
-  var filePath = path.join(ROOT, reqPath);
+  // only files inside the app folder (security review 2026-10-04: ../ reached the whole disk)
+  try { reqPath = decodeURIComponent(reqPath); } catch (e) { res.writeHead(400); res.end('bad path'); return; }
+  var rootDir = path.resolve(ROOT), filePath = path.resolve(rootDir, '.' + path.sep + path.normalize(reqPath));
+  if (filePath.indexOf(rootDir + path.sep) !== 0) { res.writeHead(403); res.end('forbidden'); return; }
   fs.readFile(filePath, function (err, data) {
     if (err) { res.writeHead(404); res.end('not found'); return; }
     res.writeHead(200, { 'Content-Type': MIME[path.extname(filePath)] || 'application/octet-stream' });
     res.end(data);
   });
-}).listen(PORT, function () { console.log('serving on :' + PORT); });
+  // this machine only: never the local network (security review 2026-10-04)
+}).listen(PORT, '127.0.0.1', function () { console.log('serving on 127.0.0.1:' + PORT); });

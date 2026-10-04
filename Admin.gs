@@ -449,6 +449,7 @@ function actionAdminUpdateUser_(req, user) {
     if (!email && !(d.iqamaId !== undefined ? d.iqamaId : target.iqamaId)) return { ok: false, error: 'login_required' };
     var existing = email ? userByEmail_(email) : null;
     if (existing && existing.id !== target.id) return { ok: false, error: 'email_exists' };
+    if (String(target.email || '').trim().toLowerCase() !== email.toLowerCase()) bumpEpoch_(target);
     target.email = email;
   }
   var roleChange = d.role != null && d.role !== target.role;
@@ -485,7 +486,9 @@ function actionAdminUpdateUser_(req, user) {
 // easy to read out and type on a phone: no 0/o, 1/l/i
 function readablePassword_() {
   var abc = 'abcdefghjkmnpqrstuvwxyz23456789', out = '';
-  for (var i = 0; i < 10; i++) out += abc.charAt(Math.floor(Math.random() * abc.length));
+  // from UUID randomness, not Math.random (security review 2026-10-04)
+  var hex = (Utilities.getUuid() + Utilities.getUuid() + Utilities.getUuid()).replace(/-/g, '');
+  for (var i = 0; i < 10; i++) out += abc.charAt(parseInt(hex.substr(i * 4, 4), 16) % abc.length);
   return out;
 }
 function createIqamaUser_(d, iq, user) {
@@ -525,6 +528,7 @@ function actionAdminImportUsers_(req, user) {
   return { ok: true, created: created, total: rows.length, results: results };
 }
 
+var RESET_TTL_MS_ = 3 * 86400000;
 function actionAdminResetPassword_(req, user) {
   requireAdmin_(user);
   var target = getById_(SHEETS.USERS, req.id);
@@ -532,8 +536,10 @@ function actionAdminResetPassword_(req, user) {
   if (!String(target.email || '').trim()) {
     // nothing to email: the admin reads the new password off the screen
     var t2 = readablePassword_(), s2 = randomSalt_();
-    target.salt = s2; target.pass = hashPw_(t2, s2); target.mustChangePw = true;
-    delete target.resetPass; delete target.resetSalt; delete target.resetExpires;
+    // like "forgot password" (security review 2026-10-04): the current one keeps
+    // working, the temporary one lasts three days and is changed at first use
+    target.resetSalt = s2; target.resetPass = hashPw_(t2, s2); target.resetExpires = Date.now() + RESET_TTL_MS_;
+    bumpEpoch_(target);
     writeRow(SHEETS.USERS, target);
     logAudit_('admin_reset_password', user.id, target.id);
     return { ok: true, tempPassword: t2 };
@@ -543,9 +549,11 @@ function actionAdminResetPassword_(req, user) {
   if (target.inviteStatus === 'invited') return actionAdminResendInvite_(req, user);
   var temp = randomPassword_();
   var salt = randomSalt_();
-  target.salt = salt;
-  target.pass = hashPw_(temp, salt);
-  target.mustChangePw = true;
+  // the emailed temporary sign-in expires and does not replace the current one
+  target.resetSalt = salt;
+  target.resetPass = hashPw_(temp, salt);
+  target.resetExpires = Date.now() + RESET_TTL_MS_;
+  bumpEpoch_(target);   // the person's sessions end
   writeRow(SHEETS.USERS, target);
   sendInvite_(target, temp);
   logAudit_('admin_reset_password', user.id, target.id);
@@ -1141,7 +1149,7 @@ function setupFirstAdmin() {
   };
   writeRow(SHEETS.USERS, admin);
   sendInvite_(admin, temp);
-  Logger.log('First admin created: ' + ADMIN_EMAIL + ' — temp password also emailed: ' + temp);
+  Logger.log('First admin created for ' + ADMIN_EMAIL + '; the temporary sign-in was emailed, not logged.');
 }
 
 // ---------- Starting a fresh test round ----------
@@ -1531,6 +1539,12 @@ function actionMeta_(req, user) {
   // what a unit costs the company is not a driver's, a counter worker's or a collector's to read
   if (['driver', 'branch_worker', 'collector'].indexOf(user.role) >= 0) {
     products = products.map(function (p) { var o = {}; safeOwnKeys_(p).forEach(function (k) { if (k !== 'unitCost' && k !== 'emptyCost') o[k] = p[k]; }); return o; });
+  }
+  if (isCompanyWide_(user.role) && user.role !== 'admin' && user.role !== 'finance') {
+    // the deputy, the accountant and operations see people, not their sign-in
+    // names or iqama numbers (security review 2026-10-04)
+    pos = pos.map(function (p) { var o = {}; safeOwnKeys_(p).forEach(function (k) { if (k !== 'holderIqama') o[k] = p[k]; }); return o; });
+    users = users.map(function (u) { var o = {}; safeOwnKeys_(u).forEach(function (k) { if (k !== 'email' && k !== 'iqamaId') o[k] = u[k]; }); return o; });
   }
   if (!isCompanyWide_(user.role)) {
     // holders' iqama numbers are private, and they are sign-in names

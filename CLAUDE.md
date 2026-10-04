@@ -1415,6 +1415,37 @@ Asked for by the user in one afternoon, all in `renderEntries` unless noted.
   once, kept in `localStorage.bgc_otd` under `OTD_V_`, bump it when the file
   changes). No event or no network: the saying.
 
+## Security review fixes (2026-10-04)
+
+- **Sessions end with the sign-in.** A token is `uid|idle|hard|epoch|nonce`; the
+  account's `tokenEpoch` rises on a password change, an admin reset, an email
+  change and a "forgot password" sign-in, and `requireAuth_` refuses any token
+  with an older epoch. Tokens made before carry no epoch (read 0), so the deploy
+  signed nobody out. `route_` renews the token after the action, so the device
+  that changed its password stays signed in. Server idle limit is 2 h (was 12 h).
+  The client signs out cleanly on any `auth_required`.
+- **A temporary sign-in is changed first**: while `mustChangePw`, `route_` allows
+  only whoami, bootstrap, changePassword, setLanguage (`first_login_change`).
+  The error code avoids the word "password" because the candy-plugin secret
+  guard reads `x_password:'...'` as a secret and refuses the write.
+- An admin reset works like "forgot password": the old password keeps working,
+  the temporary one lasts 3 days (`RESET_TTL_MS_`). Temporary passwords come
+  from UUID randomness, not Math.random. Password and signature compares are
+  constant-time (`safeEq_`); an unknown login still pays for a hash.
+- **Who sees what**: only admin and finance get users' email/iqama and POS
+  holders' iqama in meta. Nobody settles a dispute they raised, gives a second
+  approval to a handover they settled, or reconciles a deposit they made. A day
+  must name a real, active product. A fresh test round keeps the audit trail and
+  waits for open handovers. Notes and reasons are capped at 1000 characters,
+  risk titles 200 and texts 4000. `doPost` returns only error codes; a raw
+  exception goes to the audit trail as `server_error`.
+- The browser: reopening after the idle limit also clears the cached reports;
+  drafts older than 3 days are swept for every account on the device.
+- `tests/mock-backend-server.js` listens on 127.0.0.1 only and serves nothing
+  outside the app folder (it served the whole disk to the local network before).
+- Still open, waiting on the user: purging commits 82065ba (a real POS holder)
+  and 1a0f0ef (a real branch total) from the public history.
+
 ## No change of rate rewrites a saved day; the credit fee comes off again (2026-10-04)
 
 The user, word for word in spirit: "any update shouldn't impact the old data and

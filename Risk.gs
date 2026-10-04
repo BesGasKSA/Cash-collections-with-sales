@@ -19,8 +19,8 @@ function actionCreateRiskItem_(req, user) {
   var item = {
     id: Utilities.getUuid(),
     type: req.type,
-    title: String(req.title),
-    description: String(req.description || ''),
+    title: String(req.title).trim().slice(0, 200),
+    description: String(req.description || '').slice(0, 4000),
     severity: severity,
     status: 'open',
     reportedBy: user.id,

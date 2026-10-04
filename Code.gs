@@ -66,7 +66,8 @@ var SHEETS = {
   RATE_CHANGES: 'rate_changes'
 };
 
-var IDLE_MS = 12 * 3600 * 1000;      // 12h idle session expiry
+var IDLE_MS = 2 * 3600 * 1000;   // was 12h; the screens sign out after 10 idle minutes (security review 2026-10-04)
+var IDLE_MS_WAS_12H = true;      // 12h idle session expiry
 var HARD_MS = 7 * 24 * 3600 * 1000;  // 7 day hard cap
 var LOCK_FAILS = 8;
 var LOCK_WINDOW_SEC = 15 * 60;
@@ -449,18 +450,32 @@ function hashPw_(pw, salt) {
 
 function verifyPw_(pw, salt, stored) {
   if (!stored) return false;
-  return hashPw_(pw, salt) === stored;
+  return safeEq_(hashPw_(pw, salt), stored);
+}
+// compares in the same time however early two strings differ
+function safeEq_(a, b) {
+  a = String(a); b = String(b);
+  var diff = a.length ^ b.length, n = Math.max(a.length, b.length);
+  for (var i = 0; i < n; i++) diff |= (a.charCodeAt(i) || 0) ^ (b.charCodeAt(i) || 0);
+  return diff === 0;
 }
 
 function randomPassword_() {
-  return Utilities.getUuid().split('-')[0] + Math.floor(Math.random() * 900 + 100);
+  // about 120 bits from two UUIDs; Math.random was guessable (security review 2026-10-04)
+  return (Utilities.getUuid() + Utilities.getUuid()).replace(/-/g, '').slice(0, 16);
 }
 
 // ---------- Session tokens ----------
+// uid|idle expiry|hard expiry|epoch. The epoch is the account's tokenEpoch when
+// the token was made: a password change, a reset or an email change raises it,
+// and every older token stops working (security review 2026-10-04). A token from
+// before this has no epoch, read as 0, so nobody is signed out by the deploy.
+function epochOf_(u) { return Number(u && u.tokenEpoch || 0); }
+function bumpEpoch_(u) { u.tokenEpoch = epochOf_(u) + 1; }
 
-function issueToken_(uid) {
+function issueToken_(uid, epoch) {
   var now = Date.now();
-  var payload = uid + '|' + (now + IDLE_MS) + '|' + (now + HARD_MS);
+  var payload = uid + '|' + (now + IDLE_MS) + '|' + (now + HARD_MS) + '|' + Number(epoch || 0) + '|' + Utilities.getUuid().slice(0, 8);
   var sig = sign_(payload);
   return Utilities.base64EncodeWebSafe(payload) + '.' + sig;
 }
@@ -473,17 +488,17 @@ function authToken_(token) {
   try {
     payload = Utilities.newBlob(Utilities.base64DecodeWebSafe(parts[0])).getDataAsString();
   } catch (e) { return null; }
-  if (sign_(payload) !== parts[1]) return null;
+  if (!safeEq_(sign_(payload), parts[1])) return null;
   var bits = payload.split('|');
-  var uid = bits[0], exp = Number(bits[1]), hardExp = Number(bits[2]);
+  var uid = bits[0], exp = Number(bits[1]), hardExp = Number(bits[2]), epoch = Number(bits[3] || 0);
   var now = Date.now();
   if (!uid || now > exp || now > hardExp) return null;
-  return { uid: uid, hardExp: hardExp };
+  return { uid: uid, hardExp: hardExp, epoch: epoch };
 }
 
-function renewToken_(uid, hardExp) {
+function renewToken_(uid, hardExp, epoch) {
   var now = Date.now();
-  var payload = uid + '|' + (now + IDLE_MS) + '|' + hardExp;
+  var payload = uid + '|' + (now + IDLE_MS) + '|' + hardExp + '|' + Number(epoch || 0) + '|' + Utilities.getUuid().slice(0, 8);   // every token unique
   var sig = sign_(payload);
   return Utilities.base64EncodeWebSafe(payload) + '.' + sig;
 }
@@ -607,7 +622,10 @@ function doPost(e) {
   try {
     return json_(route_(req));
   } catch (err) {
-    return json_({ ok: false, error: String(err && err.message || err) });
+    var msg = String(err && err.message || err);
+    // an error code reaches the client; a raw exception is kept in the audit trail
+    if (!/^[a-z_]+$/.test(msg)) { try { logAudit_('server_error', 'system', msg.slice(0, 500)); } catch (e2) {} msg = 'server_error'; }
+    return json_({ ok: false, error: msg });
   }
 }
 
@@ -620,6 +638,7 @@ function requireAuth_(req) {
   if (!claim) throw new Error('auth_required');
   var user = getById_(SHEETS.USERS, claim.uid);
   if (!user || user.active === false) throw new Error('auth_required');
+  if (claim.epoch !== epochOf_(user)) throw new Error('auth_required');
   return { user: user, hardExp: claim.hardExp };
 }
 
@@ -690,7 +709,9 @@ function route_(req) {
   var session = requireAuth_(req);
   var user = session.user;
   runOneTimeMigrations_();
-  var newToken = renewToken_(user.id, session.hardExp);
+  var newToken = renewToken_(user.id, session.hardExp, epochOf_(user));
+  // a temporary sign-in is changed before anything else (security review 2026-10-04)
+  if (user.mustChangePw && ['whoami', 'bootstrap', 'changePassword', 'setLanguage'].indexOf(action) < 0) return { ok: false, error: 'first_login_change', token: newToken };
 
   var handlers = {
     // self-service
@@ -825,7 +846,8 @@ function route_(req) {
       cachePutBig_(cache, respKey, JSON.stringify(toCache), RESP_CACHE_TTL_SEC);
     } catch (e) { /* oversized or unavailable cache must never fail a request */ }
   }
-  result.token = newToken;
+  // after the action: a changed sign-in raises the epoch, and this device keeps its session
+  result.token = renewToken_(user.id, session.hardExp, epochOf_(user));
   return result;
 }
 
@@ -847,6 +869,7 @@ function actionLogin_(req) {
   // one for an hour; whichever is used first ends it.
   var viaReset = !!(user && user.active !== false && user.resetPass && Number(user.resetExpires || 0) > Date.now() &&
     !verifyPw_(pw, user.salt, user.pass) && verifyPw_(pw, user.resetSalt, user.resetPass));
+  if (!user) hashPw_(pw, randomSalt_());   // the same work either way, so the timing tells nothing
   if (!user || user.active === false || (!viaReset && !verifyPw_(pw, user.salt, user.pass))) {
     noteFail_(lockKey);
     return { ok: false, error: 'invalid_credentials' };
@@ -856,6 +879,7 @@ function actionLogin_(req) {
     user.salt = user.resetSalt;
     user.pass = user.resetPass;
     user.mustChangePw = true;
+    bumpEpoch_(user);   // whoever else was signed in is not any more
   }
   delete user.resetPass; delete user.resetSalt; delete user.resetExpires;
   if (user.inviteStatus !== 'active') {
@@ -868,7 +892,7 @@ function actionLogin_(req) {
   var previousLoginAt = user.lastLoginAt || null;
   user.lastLoginAt = new Date().toISOString();
   writeRow(SHEETS.USERS, user);
-  var token = issueToken_(user.id);
+  var token = issueToken_(user.id, epochOf_(user));
   logAudit_('login', user.id, null);
   // Reference data rides along with the login reply, so the client can
   // render straight away instead of making a second round trip for listMeta.
@@ -897,11 +921,14 @@ function actionForgotPassword_(req) {
   cache.put(throttleKey, '1', 30);
   // Anyone can call this, so it has a ceiling of its own: cycling through
   // staff addresses must not use up the day's email quota.
+  var user = userByEmail_(login);
+  if (!user || user.active === false) return { ok: true };
+  // the ceiling counts real accounts only, so a flood of made-up addresses
+  // cannot block everyone's recovery (security review 2026-10-04)
   var hourKey = 'fp_hour_' + Math.floor(Date.now() / 3600000);
   var sentThisHour = Number(cache.get(hourKey) || 0);
   if (sentThisHour >= 40) return { ok: true, throttled: true };
   cache.put(hourKey, String(sentThisHour + 1), 3600);
-  var user = userByEmail_(login);
   if (user && user.active !== false && user.inviteStatus === 'invited') {
     // never accepted: send the invitation again rather than a temp password.
     // The link always points at the live app: this path needs no sign-in, so
@@ -943,6 +970,7 @@ function actionChangePassword_(req, user) {
   user.salt = salt;
   user.pass = hashPw_(req.newPassword, salt);
   user.mustChangePw = false;
+  bumpEpoch_(user);   // every other sign-in ends; this device gets a fresh token
   writeRow(SHEETS.USERS, user);
   logAudit_('change_password', user.id, null);
   return { ok: true };

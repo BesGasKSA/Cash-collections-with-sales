@@ -405,20 +405,20 @@ function nonSalesFields_(r) {
   return {
     otherCash: Number(r.otherCash || 0),
     otherCashItemId: Number(r.otherCash || 0) > 0 ? r.otherCashItemId : null,
-    otherCashReason: Number(r.otherCash || 0) > 0 ? String(r.otherCashReason || '').trim() : '',
+    otherCashReason: Number(r.otherCash || 0) > 0 ? String(r.otherCashReason || '').trim().slice(0, 1000) : '',
     expenseAmount: Number(r.expenseAmount || 0),
     expenseItemId: Number(r.expenseAmount || 0) > 0 ? r.expenseItemId : null,
-    expenseReason: Number(r.expenseAmount || 0) > 0 ? String(r.expenseReason || '').trim() : '',
+    expenseReason: Number(r.expenseAmount || 0) > 0 ? String(r.expenseReason || '').trim().slice(0, 1000) : '',
     directDepositAmount: Number(r.directDepositAmount || 0),
     directDepositRef: Number(r.directDepositAmount || 0) > 0 ? String(r.directDepositRef || '').trim() : '',
     // What the deposit was for, in the depositor's own words. The company
     // calls these deposits "الموازنات", which is what the form suggests.
-    directDepositNote: Number(r.directDepositAmount || 0) > 0 ? String(r.directDepositNote || '').trim() : '',
+    directDepositNote: Number(r.directDepositAmount || 0) > 0 ? String(r.directDepositNote || '').trim().slice(0, 1000) : '',
     directDepositPosId: Number(r.directDepositAmount || 0) > 0 ? (r.directDepositPosId || null) : null,
     directDepositPhotoId: Number(r.directDepositAmount || 0) > 0 ? (r.directDepositPhotoId || null) : null,
     bankTransferAmount: Number(r.bankTransferAmount || 0),
     // what a delivery-fee line was for, and who owes a credit sale
-    deliveryNote: Number(r.deliveryFeeBankAmount || 0) > 0 ? String(r.deliveryNote || '').trim() : '',
+    deliveryNote: Number(r.deliveryFeeBankAmount || 0) > 0 ? String(r.deliveryNote || '').trim().slice(0, 1000) : '',
     creditCustomer: Number(r.creditSales || 0) > 0 ? String(r.creditCustomer || '').trim() : '',
     creditCustomerId: Number(r.creditSales || 0) > 0 ? (r.creditCustomerId || null) : null,
     creditItems: Number(r.creditSales || 0) > 0 && r.creditItems && r.creditItems.length ? r.creditItems : null,
@@ -582,7 +582,7 @@ function actionCreateEntry_(req, user) {
     // physical-inventory counts (see CLAUDE.md "Cylinder tracking").
     cylindersOut: Number(req.cylindersOut || 0),
     cylindersIn: Number(req.cylindersIn || 0),
-    note: req.note || '',
+    note: String(req.note || '').slice(0, 1000),
     // rows saved together from one form share this, so the list can show
     // them as the one day's entry they are
     submissionId: req.submissionId ? String(req.submissionId).slice(0, 64) : null,
@@ -660,7 +660,7 @@ function actionImportEntries_(req, user) {
       unitPrice: r.unitPrice != null && r.unitPrice !== '' ? Number(r.unitPrice) : null,
       cylindersOut: Number(r.cylindersOut || 0),
       cylindersIn: Number(r.cylindersIn || 0),
-      note: r.note || '',
+      note: String(r.note || '').slice(0, 1000),
       submissionId: r.submissionId ? String(r.submissionId).slice(0, 64) : null,
       consumedBy: null
     };
@@ -1230,7 +1230,7 @@ function actionBulkSubmitAreaBatch_(req, user) {
       unitPrice: r.unitPrice != null && r.unitPrice !== '' ? Number(r.unitPrice) : null,
       cylindersOut: Number(r.cylindersOut || 0),
       cylindersIn: Number(r.cylindersIn || 0),
-      note: r.note || '',
+      note: String(r.note || '').slice(0, 1000),
       batchId: batchId,
       consumedBy: batchId,
       voided: false

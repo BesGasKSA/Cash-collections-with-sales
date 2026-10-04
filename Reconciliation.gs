@@ -122,6 +122,8 @@ function actionManualMatchReconciliation_(req, user) {
   if (!line || !deposit) return { ok: false, error: 'not_found' };
   if (line.status !== 'unmatched') return { ok: false, error: 'line_already_matched' };
   if (deposit.kind !== 'deposit' || deposit.reconciled || deposit.status === 'voided') return { ok: false, error: 'deposit_not_eligible' };
+  // nobody reconciles a deposit they made themselves (security review 2026-10-04)
+  if (deposit.fromUserId === user.id || deposit.createdBy === user.id) return { ok: false, error: 'conflict_of_interest' };
   linkReconciliation_(line, deposit, user);
   logAudit_('manual_match_reconciliation', user.id, line.id + ' -> ' + deposit.id);
   return { ok: true };

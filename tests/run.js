@@ -2499,7 +2499,9 @@ var bw = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Test 
 check(bw.ok && bw.user.role === 'branch_worker', 'the branch worker role exists');
 var bwPos = call({ action: 'adminSaveEntity', token: adminTok, kind: 'pos', data: { ownerType: 'store', ownerId: store.entity.id, label: 'Counter POS', posId: '15500001', assignedUserId: bw.user.id } });
 check(bwPos.ok, 'a store POS device is linked to the branch worker');
-var bwTok = call({ action: 'login', email: '2888000111', password: bw.tempPassword }).token;
+// a temporary sign-in is changed first, as the app makes everyone do (2026-10-04)
+function tempLogin(id, temp) { var t0 = call({ action: 'login', email: id, password: temp }).token; var ch = call({ action: 'changePassword', token: t0, newPassword: 'Changed#2026' }); return ch.token || t0; }
+var bwTok = tempLogin('2888000111', bw.tempPassword);
 var bwEntry = call({ action: 'createDailyEntry', token: bwTok, date: '2026-09-20', sourceType: 'pos', sourceId: bwPos.entity.id, cashSales: 120 });
 check(bwEntry.ok, 'the branch worker enters the day for their own device');
 check(call({ action: 'createDailyEntry', token: bwTok, date: '2026-09-20', sourceType: 'pos', sourceId: pos.entity.id, cashSales: 5 }).error === 'forbidden', 'but not for somebody else\'s device');
@@ -2514,7 +2516,7 @@ var noorTok = acceptInvite('noor@bestgas.sa');
 var dpLoc = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: 'Riyadh', name: 'Driver POS Test', clusterId: cluster.entity.id, collectorUserId: musa.id } }).entity;
 call({ action: 'adminSaveEntity', token: adminTok, kind: 'store', data: { locationId: dpLoc.id, name: 'Driver POS Store', storeManagerUserId: noor.id } });
 var dpDriver = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Driver With POS', iqamaId: '2666000111', role: 'driver' } });
-var dpTok = call({ action: 'login', email: '2666000111', password: dpDriver.tempPassword }).token;
+var dpTok = tempLogin('2666000111', dpDriver.tempPassword);
 var dpCar = call({ action: 'adminSaveEntity', token: adminTok, kind: 'car', data: { locationId: dpLoc.id, label: 'Driver With POS', driverUserId: dpDriver.user.id } }).entity;
 var dpPos = call({ action: 'adminSaveEntity', token: adminTok, kind: 'pos', data: { ownerType: 'car', ownerId: dpCar.id, label: 'Car POS', posId: '15500002', assignedUserId: dpDriver.user.id } }).entity;
 var noorShop = call({ action: 'createDailyEntry', token: noorTok, date: '2026-09-22', sourceType: 'store', sourceId: call({ action: 'listMeta', token: adminTok }).stores.filter(function (s) { return s.locationId === dpLoc.id; })[0].id, cashSales: 200 });
@@ -3385,6 +3387,53 @@ var scOpen = ctx.writeRow(SHEETS.HANDOFFS, { kind: 'car_to_location', fromUserId
 var scArc = call({ action: 'adminArchiveTransactions', token: adminTok, confirm: 'ARCHIVE' });
 check(scArc.error === 'cash_in_flight' || scArc.error === 'live_locked', 'nothing is archived while a handover is open (got ' + (scArc.error || 'archived') + ')');
 scOpen.status = 'rejected'; ctx.writeRow(SHEETS.HANDOFFS, scOpen);
+
+console.log('--- security: a password change ends every older sign-in ---');
+call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Session Tester', email: 'sess.fx@bestgas.sa', role: 'accountant' } });
+var seTok1 = acceptInvite('sess.fx@bestgas.sa');
+var seTok2 = login('sess.fx@bestgas.sa', 'RealPass#1').token;
+check(!!call({ action: 'whoami', token: seTok2 }).user, 'a second device is signed in');
+var seCh = call({ action: 'changePassword', token: seTok1, currentPassword: 'RealPass#1', newPassword: 'NewPass#123' });
+check(seCh.ok && !!seCh.token, 'the password changes');
+check(!!call({ action: 'whoami', token: seCh.token }).user, 'the device that changed it stays signed in');
+check(call({ action: 'whoami', token: seTok2 }).error === 'auth_required', 'every other sign-in ends');
+check(call({ action: 'whoami', token: seTok1 }).error === 'auth_required', 'and so does the token it had before');
+var seUser = ctx.readSheet(SHEETS.USERS).filter(function (u) { return u.email === 'sess.fx@bestgas.sa'; })[0];
+check(call({ action: 'adminResetPassword', token: adminTok, id: seUser.id }).ok, 'an admin resets the password');
+check(call({ action: 'whoami', token: seCh.token }).error === 'auth_required', 'and the person\'s sessions end with it');
+var seOld = (function () { var p = admin.id + '|' + (Date.now() + 3600000) + '|' + (Date.now() + 86400000); return ctx.Utilities.base64EncodeWebSafe(p) + '.' + ctx.sign_(p); })();
+check(!!call({ action: 'whoami', token: seOld }).user, 'a sign-in made before this update keeps working');
+
+console.log('--- security: a temporary password is changed before anything else ---');
+var tpNew = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Temp Driver', iqamaId: '2111222333', role: 'driver' } });
+check(tpNew.ok && !!tpNew.tempPassword, 'an iqama account starts with a temporary password');
+var tpTok = login('2111222333', tpNew.tempPassword).token;
+check(!!tpTok, 'it signs in with it');
+check(call({ action: 'listEntries', token: tpTok }).error === 'first_login_change', 'and can do nothing but change it');
+check(!!call({ action: 'whoami', token: tpTok }).user, 'the app still knows who is signed in');
+var tpCh = call({ action: 'changePassword', token: tpTok, newPassword: 'Driver#2026' });
+check(tpCh.ok, 'the new password is set');
+check(call({ action: 'listEntries', token: tpCh.token }).ok, 'then the app opens');
+
+console.log('--- security: email and iqama numbers reach only the admin and finance ---');
+var mmDeputy = call({ action: 'listMeta', token: deputyTok });
+check(mmDeputy.ok && mmDeputy.users.every(function (u) { return !u.email && !u.iqamaId; }), 'the deputy sees people, not their email or iqama');
+check(mmDeputy.pos.every(function (p) { return !p.holderIqama; }), 'nor a device holder\'s iqama');
+var mmAdmin = call({ action: 'listMeta', token: adminTok });
+check(mmAdmin.users.some(function (u) { return u.email; }), 'the admin still does');
+
+console.log('--- security: nobody matches their own deposit to the bank ---');
+var rcDep = ctx.writeRow(SHEETS.HANDOFFS, { kind: 'deposit', fromUserId: finance.id, amount: 321, status: 'completed', createdAt: new Date().toISOString() });
+var rcLine = ctx.writeRow(SHEETS.BANK_LINES, { date: ctx.todayRiyadh_(), amount: 321, reference: 'SELF', status: 'unmatched' });
+check(call({ action: 'manualMatchReconciliation', token: financeTok, lineId: rcLine.id, handoffId: rcDep.id }).error === 'conflict_of_interest', 'finance does not reconcile a deposit they made');
+
+console.log('--- security: free text has a ceiling ---');
+var ltStore = ctx.readSheet(SHEETS.STORES)[0];
+var ltLong = new Array(5001).join('x');
+var ltE = call({ action: 'createDailyEntry', token: adminTok, date: ctx.todayRiyadh_(), sourceType: 'store', sourceId: ltStore.id, cashSales: 5, note: ltLong });
+check(ltE.ok && ltE.entry.note.length <= 1000, 'a note is kept to 1000 characters');
+var ltR = call({ action: 'createRiskItem', token: adminTok, type: ctx.RISK_TYPES[0], title: ltLong, description: ltLong + ltLong });
+check(ltR.ok && ltR.item.title.length <= 200 && ltR.item.description.length <= 4000, 'a report\'s title and text too');
 
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);
