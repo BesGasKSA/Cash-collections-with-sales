@@ -3265,5 +3265,33 @@ if (impCtx.customerRowsFromCells_) {
   check(crPlain.length === 2 && crPlain[0].commission == null && crPlain[0].delivery == null, 'a plain list of names still works, with no amounts');
 }
 
+console.log('--- the pivot splits a row: the product keeps its sale, each deduction is a line of its own ---');
+function clientVar_(name, end) {
+  var at = clientHtml.indexOf('\nvar ' + name + ' = ');
+  if (at < 0) return '';
+  var stop = clientHtml.indexOf(end, at);
+  return stop < 0 ? '' : clientHtml.slice(at, stop + end.length);
+}
+var pvSrc = [clientVar_('EQ_PARTS_', '\n};'), clientVar_('PV_SPLIT_', '\n];'), clientFn_('eqTotals_'), clientFn_('pvSplit_'), clientFn_('pvSources_')];
+check(pvSrc.every(Boolean), 'the pivot functions exist');
+if (pvSrc.every(Boolean)) {
+  vm.runInContext(pvSrc.join('\n'), clientCtx);
+  // the day the user showed: every deduction saved on the first product's row
+  var pvDay = [
+    { id: 'e1', productId: 'gas', cashSales: 31376, directDepositAmount: 9000, expenseAmount: 300, expenseItemId: 'fuel', creditSales: 2000, creditCommission: 57, bankTransferAmount: 500 },
+    { id: 'e2', productId: 'fiber', cashSales: 925 },
+    { id: 'e3', productId: 'reg', cashSales: 45, otherCash: 20, otherCashItemId: 'scrap' }];
+  var pvWhole = clientCtx.eqTotals_(pvDay), pvParts = clientCtx.pvSplit_(pvDay), pvAll = clientCtx.eqTotals_(pvParts);
+  ['sales', 'additions', 'deductions', 'net'].forEach(function (m) { close(pvAll[m], pvWhole[m], 'the split rows keep the ' + m); });
+  var pvGas = clientCtx.eqTotals_(pvParts.filter(function (p) { return p.productId === 'gas'; }));
+  close(pvGas.deductions, 0, 'the first product no longer carries the deductions of the day');
+  close(pvGas.sales, 31376, 'and keeps its own sale');
+  var pvBanked = pvParts.filter(function (p) { return p.productId === 'x:d:dBanked'; });
+  check(pvBanked.length === 1 && clientCtx.eqTotals_(pvBanked).deductions === 9000, 'the الموازنة is a line of its own');
+  check(pvParts.some(function (p) { return p.productId === 'x:d:dExpense:fuel'; }), 'an expense is named by its item');
+  check(pvParts.some(function (p) { return p.productId === 'x:a:aOther:scrap'; }), 'and so is another collection');
+  check(clientCtx.pvSources_(pvParts).length === 3, 'counted, the day is still three transactions');
+}
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);
