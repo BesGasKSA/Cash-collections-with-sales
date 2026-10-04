@@ -91,7 +91,10 @@ function actionAdminCreateUser_(req, user) {
   requireAdmin_(user);
   var d = req.data || {};
   var email = String(d.email || '').trim(), iq = normIqama_(d.iqamaId);
-  if (!String(d.name || '').trim() || (!email && !iq) || !validRole_(d.role)) return { ok: false, error: 'invalid_input' };
+  if (!String(d.name || '').trim()) return { ok: false, error: 'name_required' };
+  // an email sends an invitation; an iqama number gives a temporary password
+  if (!email && !iq) return { ok: false, error: 'login_required' };
+  if (!validRole_(d.role)) return { ok: false, error: 'role_required' };
   if (email && userByEmail_(email)) return { ok: false, error: 'email_exists' };
   if (iq && userByIqama_(iq)) return { ok: false, error: 'iqama_exists' };
   if (!email) return createIqamaUser_(d, iq, user);
@@ -429,13 +432,13 @@ function actionAdminUpdateUser_(req, user) {
   if (!target) return { ok: false, error: 'not_found' };
   var d = req.data || {};
   if (d.name != null) {
-    if (!String(d.name).trim()) return { ok: false, error: 'invalid_input' };
+    if (!String(d.name).trim()) return { ok: false, error: 'name_required' };
     target.name = d.name;
   }
   if (d.iqamaId !== undefined) {
     var iqn = normIqama_(d.iqamaId);
     // without email the iqama number is how this person signs in
-    if (!iqn && !String(d.email != null ? d.email : target.email || '').trim()) return { ok: false, error: 'invalid_input' };
+    if (!iqn && !String(d.email != null ? d.email : target.email || '').trim()) return { ok: false, error: 'login_required' };
     var iqOwner = iqn ? userByIqama_(iqn) : null;
     if (iqOwner && iqOwner.id !== target.id) return { ok: false, error: 'iqama_exists' };
     d.iqamaId = iqn || null;
@@ -443,7 +446,7 @@ function actionAdminUpdateUser_(req, user) {
   if (d.email != null) {
     var email = String(d.email).trim();
     // an account signing in by iqama may have no email
-    if (!email && !(d.iqamaId !== undefined ? d.iqamaId : target.iqamaId)) return { ok: false, error: 'invalid_input' };
+    if (!email && !(d.iqamaId !== undefined ? d.iqamaId : target.iqamaId)) return { ok: false, error: 'login_required' };
     var existing = email ? userByEmail_(email) : null;
     if (existing && existing.id !== target.id) return { ok: false, error: 'email_exists' };
     target.email = email;
@@ -463,7 +466,7 @@ function actionAdminUpdateUser_(req, user) {
   }
   if (roleChange && userAssignments_(target.id).length) return { ok: false, error: 'user_has_assignments' };
   if (d.role != null) {
-    if (!validRole_(d.role)) return { ok: false, error: 'invalid_input' };
+    if (!validRole_(d.role)) return { ok: false, error: 'role_required' };
     target.role = d.role;
   }
   if (d.language != null) { target.language = d.language; target.languageChosen = true; }
@@ -599,7 +602,7 @@ function perUnitRatesError_(d) {
       var pv = map[pk[pi]];
       if (pv === '' || pv == null) { delete map[pk[pi]]; continue; }
       if (!getById_(SHEETS.PRODUCTS, pk[pi])) return 'invalid_product';
-      if (!isFinite(Number(pv)) || Number(pv) < 0) return 'invalid_input';
+      if (!isFinite(Number(pv)) || Number(pv) < 0) return 'invalid_amount';
       map[pk[pi]] = Math.round(Number(pv) * 100) / 100;
     }
   }
@@ -608,7 +611,7 @@ function perUnitRatesError_(d) {
 
 function validateEntity_(kind, d) {
   if (kind === 'customer') {
-    if (!String(d.name || '').trim()) return 'invalid_input';
+    if (!String(d.name || '').trim()) return 'name_required';
     if (customerDuplicateOf_(d.name, d.id)) return 'duplicate_customer';
     // the customer's delivery fee per unit, product by product; it is added
     // to their credit lines on its own (special prices were dropped 2026-09-29)
@@ -616,16 +619,17 @@ function validateEntity_(kind, d) {
     return perUnitRatesError_(d);
   }
   if (kind === 'channel') {
-    if (!String(d.name || '').trim()) return 'invalid_input';
+    if (!String(d.name || '').trim()) return 'name_required';
     return perUnitRatesError_(d);
   }
   if (kind === 'city') {
-    if (!String(d.name || '').trim()) return 'invalid_input';
+    if (!String(d.name || '').trim()) return 'name_required';
     if (cityDuplicateOf_(d.name, d.id)) return 'duplicate_city';
     return null;
   }
   if (kind === 'location') {
-    if (!d.city || !d.name) return 'invalid_input';
+    if (!d.city) return 'city_required';
+    if (!d.name) return 'name_required';
     // a map position is both numbers, in range, or neither
     var hasLat = d.lat != null && d.lat !== '', hasLng = d.lng != null && d.lng !== '';
     if (hasLat || hasLng) {
@@ -648,7 +652,8 @@ function validateEntity_(kind, d) {
       if (manages) return 'user_in_other_area';
     }
   } else if (kind === 'store') {
-    if (!d.locationId || !d.name) return 'invalid_input';
+    if (!d.locationId) return 'branch_required';
+    if (!d.name) return 'name_required';
     // A branch with no manager has nobody to hand its cash to.
     if (!d.storeManagerUserId) return 'manager_required';
     var loc = getById_(SHEETS.LOCATIONS, d.locationId);
@@ -661,12 +666,14 @@ function validateEntity_(kind, d) {
     }
     if (!userHasRole_(d.storeManagerUserId, 'store_manager')) return 'wrong_role';
   } else if (kind === 'car') {
-    if (!d.locationId || !d.label) return 'invalid_input';
+    if (!d.locationId) return 'branch_required';
+    if (!d.label) return 'label_required';
     if (!d.driverUserId) return 'driver_required';
     if (!userHasRole_(d.driverUserId, 'driver')) return 'wrong_role';
     if (!getById_(SHEETS.LOCATIONS, d.locationId)) return 'invalid_location';
   } else if (kind === 'pos') {
-    if (!d.ownerType || !d.ownerId || !d.label) return 'invalid_input';
+    if (!d.ownerType || !d.ownerId) return 'owner_required';
+    if (!d.label) return 'label_required';
     // Somebody carries every machine, and their name is who the cash on it
     // is traced to.
     // a user account, or (for the many cashiers without one) a name and iqama
@@ -677,7 +684,7 @@ function validateEntity_(kind, d) {
     var ownerSheet = d.ownerType === 'store' ? SHEETS.STORES : SHEETS.CARS;
     if (!getById_(ownerSheet, d.ownerId)) return 'invalid_owner';
   } else if (kind === 'cluster') {
-    if (!d.name) return 'invalid_input';
+    if (!d.name) return 'name_required';
     // An area needs its manager. Collectors belong to its branches now; a
     // collector still set on the area (saved before that change) keeps
     // serving the branches that have none of their own.
@@ -697,35 +704,36 @@ function validateEntity_(kind, d) {
     });
     if (taken) return 'user_in_other_area';
   } else if (kind === 'zone') {
-    if (!d.city || !d.name) return 'invalid_input';
+    if (!d.city) return 'city_required';
+    if (!d.name) return 'name_required';
   } else if (kind === 'product') {
-    if (!d.name) return 'invalid_input';
+    if (!d.name) return 'name_required';
     // A fixed price is only meaningful if there is a price: unitPrice is
     // optional, but locking one that was never set would leave the entry
     // form with a read-only empty box nobody can fill.
-    if (d.unitPrice != null && d.unitPrice !== '' && !(Number(d.unitPrice) >= 0)) return 'invalid_input';
-    if (d.priceLocked && !(Number(d.unitPrice) > 0)) return 'invalid_input';
+    if (d.unitPrice != null && d.unitPrice !== '' && !(Number(d.unitPrice) >= 0)) return 'invalid_price';
+    if (d.priceLocked && !(Number(d.unitPrice) > 0)) return 'price_needed';
     // what one unit of an inventory item costs the company, for stock value
-    if (d.unitCost != null && d.unitCost !== '' && !(isFinite(Number(d.unitCost)) && Number(d.unitCost) >= 0)) return 'invalid_input';
+    if (d.unitCost != null && d.unitCost !== '' && !(isFinite(Number(d.unitCost)) && Number(d.unitCost) >= 0)) return 'invalid_cost';
     // an item is kept in stock (goods) or is a service; nothing else
-    if (d.type != null && d.type !== '' && d.type !== 'goods' && d.type !== 'services') return 'invalid_input';
+    if (d.type != null && d.type !== '' && d.type !== 'goods' && d.type !== 'services') return 'invalid_type';
     // Cylinders (2026-09-30): a cylinder item keeps full and empty counts; a
     // product may draw its stock from one (the iron empty-cylinder sale draws
     // from the iron exchange), one level only, with its effect on the counts.
-    if (d.stockEffect != null && d.stockEffect !== '' && ['exchange', 'sell_empty', 'sell_full'].indexOf(d.stockEffect) < 0) return 'invalid_input';
+    if (d.stockEffect != null && d.stockEffect !== '' && ['exchange', 'sell_empty', 'sell_full'].indexOf(d.stockEffect) < 0) return 'invalid_stock_link';
     if (d.stockOf) {
-      if (d.cylinder || d.stockOf === d.id) return 'invalid_input';
+      if (d.cylinder || d.stockOf === d.id) return 'invalid_stock_link';
       var anchor = getById_(SHEETS.PRODUCTS, d.stockOf);
-      if (!anchor || anchor.stockOf || anchor.type === 'services') return 'invalid_input';
-      if (d.id && readSheet(SHEETS.PRODUCTS).some(function (p) { return p.stockOf === d.id && p.id !== d.id; })) return 'invalid_input';
+      if (!anchor || anchor.stockOf || anchor.type === 'services') return 'invalid_stock_link';
+      if (d.id && readSheet(SHEETS.PRODUCTS).some(function (p) { return p.stockOf === d.id && p.id !== d.id; })) return 'invalid_stock_link';
     }
   } else if (kind === 'income_item' || kind === 'expense_item') {
-    if (!d.name) return 'invalid_input';
+    if (!d.name) return 'name_required';
   } else if (kind === 'cost_type') {
     // the catalogue of costs (Costing.gs): what it is called, the family it
     // reports under, and whether it moves with activity
-    if (!String(d.name || '').trim()) return 'invalid_input';
-    if (COST_GROUPS_.indexOf(d.group) < 0) return 'invalid_input';
+    if (!String(d.name || '').trim()) return 'name_required';
+    if (COST_GROUPS_.indexOf(d.group) < 0) return 'group_required';
     if (d.nature != null && d.nature !== '' && d.nature !== 'fixed' && d.nature !== 'variable') return 'invalid_input';
   } else {
     return 'invalid_kind';
@@ -998,11 +1006,12 @@ function actionAdminSetConfig_(req, user) {
   var cfg = config_();
   var d = req.data || {};
   var before = JSON.stringify(cfg);
-  if (d.vatRate != null && (!(Number(d.vatRate) >= 0) || Number(d.vatRate) >= 1)) return { ok: false, error: 'invalid_input' };
+  // a rate, not a percentage: 0.15 is 15%
+  if (d.vatRate != null && (!(Number(d.vatRate) >= 0) || Number(d.vatRate) >= 1)) return { ok: false, error: 'invalid_vat' };
   ['staleThresholdHours', 'heldThresholdHours', 'secondApprovalThreshold'].forEach(function (k) {
     if (d[k] != null && !(Number(d[k]) >= 0)) d.__bad = true;
   });
-  if (d.__bad) return { ok: false, error: 'invalid_input' };
+  if (d.__bad) return { ok: false, error: 'invalid_setting' };
   // Going live is one way: once on, nothing in the app turns it off, so
   // "start a fresh round" can never be run against real data.
   if (d.liveLocked === false && cfg.liveLocked === true) return { ok: false, error: 'live_locked' };
@@ -1326,9 +1335,9 @@ function importCustomers_(rows, opts) {
   for (var i = 0; i < rows.length; i++) {
     var r = typeof rows[i] === 'string' ? { name: rows[i] } : (rows[i] || {});
     var name = String(r.name || '').replace(/\s+/g, ' ').trim();
-    if (!name) { skipped.push({ row: i, name: '', code: null, reason: 'invalid_input' }); continue; }
+    if (!name) { skipped.push({ row: i, name: '', code: null, reason: 'name_required' }); continue; }
     var rates = { commission: customerRate_(r.commission), delivery: customerRate_(r.delivery) };
-    if (rates.commission.bad || rates.delivery.bad) { skipped.push({ row: i, name: name, code: null, reason: 'invalid_input' }); continue; }
+    if (rates.commission.bad || rates.delivery.bad) { skipped.push({ row: i, name: name, code: null, reason: 'invalid_amount' }); continue; }
     var hasRates = !rates.commission.none || !rates.delivery.none;
     if (hasRates && !goods) goods = readSheet(SHEETS.PRODUCTS).filter(function (p) { return p.type !== 'services'; });
     // one lock per row: the duplicate check, the number and the write together

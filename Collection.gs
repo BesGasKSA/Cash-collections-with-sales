@@ -175,7 +175,8 @@ function settleCredit_(r) {
       var p = it.productId ? getById_(SHEETS.PRODUCTS, it.productId) : null;
       if (!p || p.active === false) return 'invalid_product';
       var q = Number(it.qty), up = Number(it.unitPrice);
-      if (!isFinite(q) || q <= 0 || !isFinite(up) || up < 0) return 'invalid_input';
+      if (!isFinite(q) || q <= 0) return 'invalid_qty';
+      if (!isFinite(up) || up < 0) return 'invalid_price';
       if (p.priceLocked && p.unitPrice != null && p.unitPrice !== '' && Math.abs(up - Number(p.unitPrice)) > 0.005) return 'price_locked';
       var amt = Math.round(q * up * 100) / 100;
       clean.push({ productId: p.id, qty: q, unitPrice: up, amount: amt });
@@ -240,7 +241,7 @@ function settleChannel_(r) {
     for (var j = 0; j < ok.length; j++) {
       if (ov[ok[j]] === '' || ov[ok[j]] == null) continue;
       var rate = Number(ov[ok[j]]);
-      if (!isFinite(rate) || rate < 0 || rate > 100000) return 'invalid_input';
+      if (!isFinite(rate) || rate < 0 || rate > 100000) return 'invalid_amount';
       ovClean[ok[j]] = Math.round(rate * 1000) / 1000;
     }
     if (!Object.keys(ovClean).length) ovClean = null;
@@ -252,7 +253,7 @@ function settleChannel_(r) {
     if (keys.length > 10) return 'invalid_input';
     for (var i = 0; i < keys.length; i++) {
       var cq = Number(map[keys[i]]);
-      if (!isFinite(cq) || cq < 0) return 'invalid_input';
+      if (!isFinite(cq) || cq < 0) return 'invalid_qty';
       if (!(cq > 0)) continue;
       var c0 = getById_(SHEETS.CHANNELS, keys[i]);
       if (!c0 || c0.active === false) return 'invalid_channel';
@@ -287,11 +288,11 @@ function checkNonSalesFields_(r, siblingCash) {
   var creditErr = settleCredit_(r) || settleChannel_(r);
   if (creditErr) return creditErr;
   var other = Number(r.otherCash || 0);
-  if (other < 0 || Number(r.expenseAmount || 0) < 0 || Number(r.directDepositAmount || 0) < 0) return 'invalid_input';
+  if (other < 0 || Number(r.expenseAmount || 0) < 0 || Number(r.directDepositAmount || 0) < 0) return 'invalid_amount';
   // a customer's transfer straight into the company account: in the sales
   // figure, but never cash in hand
   var transfer = Number(r.bankTransferAmount || 0);
-  if (!isFinite(transfer) || transfer < 0) return 'invalid_input';
+  if (!isFinite(transfer) || transfer < 0) return 'invalid_amount';
   if (other > 0) {
     var inc = r.otherCashItemId ? getById_(SHEETS.INCOME_ITEMS, r.otherCashItemId) : null;
     if (!inc || inc.active === false) return 'invalid_income_item';
@@ -310,7 +311,7 @@ function checkNonSalesFields_(r, siblingCash) {
   for (var ni = 0; ni < nums.length; ni++) {
     if (nums[ni] == null || nums[ni] === '') continue;
     var nv = Number(nums[ni]);
-    if (!isFinite(nv) || nv < 0) return 'invalid_input';
+    if (!isFinite(nv) || nv < 0) return 'invalid_amount';
   }
   var dep = Number(r.directDepositAmount || 0);
   if (dep > 0) {
@@ -528,7 +529,7 @@ function directDepositOf_(entryId) {
 }
 
 function actionCreateEntry_(req, user) {
-  if (!req.date || !req.sourceType || !req.sourceId) return { ok: false, error: 'invalid_input' };
+  if (!req.date || !req.sourceType || !req.sourceId) return { ok: false, error: 'source_required' };
   var scope = checkEntryScope_(user, req.sourceType, req.sourceId);
   if (!scope.ok) return { ok: false, error: scope.error };
   var dateErr = entryDateError_(req.sourceType, req.sourceId, req.date);
@@ -610,7 +611,7 @@ function actionImportEntries_(req, user) {
   for (var i = 0; i < rows.length; i++) {
     var r = rows[i] || {};
     if (!r.date || !r.sourceType || !r.sourceId) {
-      results.push({ row: i, ok: false, error: 'invalid_input' });
+      results.push({ row: i, ok: false, error: 'source_required' });
       continue;
     }
     var scope = checkEntryScope_(user, r.sourceType, r.sourceId);
@@ -1165,7 +1166,7 @@ function actionBulkSubmitAreaBatch_(req, user) {
   for (var i = 0; i < rows.length; i++) {
     var r = rows[i] || {};
     if (!r.date || !r.sourceType || !r.sourceId) {
-      errors.push({ row: i, error: 'invalid_input' });
+      errors.push({ row: i, error: 'source_required' });
       continue;
     }
     var scope = checkClusterBulkEntryScope_(user, cluster.id, r.sourceType, r.sourceId);
@@ -1507,7 +1508,7 @@ function actionConfirmHandoff_(req, user) {
   var declared = Number(h.amount);
   var received = req.receivedAmount === undefined || req.receivedAmount === null || req.receivedAmount === ''
     ? declared : Number(req.receivedAmount);
-  if (!isFinite(received) || received < 0) return { ok: false, error: 'invalid_input' };
+  if (!isFinite(received) || received < 0) return { ok: false, error: 'invalid_amount' };
   var shortfall = Math.round((declared - received) * 100) / 100;
 
   h.receivedAmount = received;
@@ -1693,7 +1694,7 @@ function actionResolveDispute_(req, user) {
     var declared = Number(h.amount);
     var received = req.receivedAmount === undefined || req.receivedAmount === null || req.receivedAmount === ''
       ? declared : Number(req.receivedAmount);
-    if (!isFinite(received) || received < 0) return { ok: false, error: 'invalid_input' };
+    if (!isFinite(received) || received < 0) return { ok: false, error: 'invalid_amount' };
     var shortfall = Math.round((declared - received) * 100) / 100;
     h.receivedAmount = received;
     if (Math.abs(shortfall) > 0.01) {

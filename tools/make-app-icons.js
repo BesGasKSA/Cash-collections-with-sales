@@ -114,6 +114,16 @@ var src = decodePng(Buffer.from(m[1], 'base64'));
 var favicon = makeIcon(src, 64, 0.22, 0.07).toString('base64');   // rounded tile for browser tabs
 var touch = makeIcon(src, 180, 0, 0.12).toString('base64');        // full square: iOS/Android apply their own mask
 
+// --assets: real icon files beside the page (2026-10-04). Safari and link
+// previews ignore a data: icon, so the tab, the home screen and a shared link
+// read these; the inline one stays for a copy opened from disk.
+if (process.argv.indexOf('--assets') >= 0) {
+  var dir = path.join(__dirname, '..', 'assets');
+  [['favicon-32.png', 32, 0.22, 0.07], ['icon-192.png', 192, 0.22, 0.07], ['icon-512.png', 512, 0, 0.12], ['apple-touch-icon.png', 180, 0, 0.12]]
+    .forEach(function (f) { fs.writeFileSync(path.join(dir, f[0]), makeIcon(src, f[1], f[2], f[3])); console.log('wrote assets/' + f[0]); });
+  process.exit(0);
+}
+
 if (process.argv.indexOf('--write') < 0) {
   process.stdout.write(JSON.stringify({ favicon: favicon.length, touch: touch.length }) + '\n');
   if (process.argv[2]) {

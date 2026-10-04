@@ -71,14 +71,15 @@ function invLocFor_(user, locationId) {
 // cylinder, a known kind, a positive quantity, a real past date
 function invCheckMove_(m, date) {
   var kind = String(m.kind || ''), qty = invQty_(m.qty);
-  if (INV_KINDS_.indexOf(kind) < 0 || qty == null) return { error: 'invalid_input' };
+  if (INV_KINDS_.indexOf(kind) < 0) return { error: 'invalid_kind' };
+  if (qty == null) return { error: 'invalid_qty' };
   var product = getById_(SHEETS.PRODUCTS, m.productId);
-  if (!product || product.active === false) return { error: 'invalid_input' };
+  if (!product || product.active === false) return { error: 'invalid_product' };
   if (product.type === 'services') return { error: 'not_inventory' };
   if (product.stockOf) return { error: 'use_stock_item' };
   var st = m.state == null ? '' : String(m.state);
-  if (product.cylinder ? INV_STATES_.indexOf(st) < 0 : st !== '') return { error: 'invalid_input' };
-  if (!invDateOk_(date)) return { error: 'invalid_input' };
+  if (product.cylinder ? INV_STATES_.indexOf(st) < 0 : st !== '') return { error: 'invalid_state' };
+  if (!invDateOk_(date)) return { error: 'invalid_date' };
   if (date > todayRiyadh_()) return { error: 'future_date' };
   return { move: { productId: product.id, state: st || null, kind: kind, qty: qty, note: String(m.note || '').slice(0, 300) } };
 }
@@ -152,7 +153,7 @@ function actionImportInventoryDay_(req, user) {
 // admin and finance, and the area manager over that branch, may too.
 function actionVoidInventoryMove_(req, user) {
   var reason = String(req.reason || '').trim();
-  if (!reason) return { ok: false, error: 'invalid_input' };
+  if (!reason) return { ok: false, error: 'reason_required' };
   var lock = LockService.getScriptLock();
   lock.waitLock(30000);
   try {
@@ -178,7 +179,7 @@ function actionInventoryReport_(req, user) {
   var today = todayRiyadh_();
   var from = req.dateFrom ? String(req.dateFrom) : today.slice(0, 8) + '01';
   var to = req.dateTo ? String(req.dateTo) : today;
-  if (!invDateOk_(from) || !invDateOk_(to) || from > to) return { ok: false, error: 'invalid_input' };
+  if (!invDateOk_(from) || !invDateOk_(to) || from > to) return { ok: false, error: 'invalid_period' };
   function inScope(locId) {
     if (req.locationId && locId !== req.locationId) return false;
     return !scope || scope.indexOf(locId) >= 0;

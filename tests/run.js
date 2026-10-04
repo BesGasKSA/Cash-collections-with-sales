@@ -363,7 +363,7 @@ console.log('--- zones: pure geography, separate from cluster (employee assignme
 var zoneRiyadhEast = call({ action: 'adminSaveEntity', token: adminTok, kind: 'zone', data: { city: 'Riyadh', name: 'East' } });
 check(zoneRiyadhEast.ok, 'admin creates a zone');
 var zoneNoCity = call({ action: 'adminSaveEntity', token: adminTok, kind: 'zone', data: { name: 'No city' } });
-check(!zoneNoCity.ok && zoneNoCity.error === 'invalid_input', 'zone requires both city and name');
+check(!zoneNoCity.ok && zoneNoCity.error === 'city_required', 'zone requires both city and name');
 
 var zonedLocation = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: 'Riyadh', name: 'Yasmeen Branch', clusterId: cluster.entity.id, zoneId: zoneRiyadhEast.entity.id } });
 check(zonedLocation.ok && zonedLocation.entity.zoneId === zoneRiyadhEast.entity.id, 'a location can optionally carry a zoneId, independent of its clusterId (cluster still the money-chain assignment)');
@@ -851,7 +851,7 @@ var selfEmailNoop = call({ action: 'adminUpdateUser', token: adminTok, id: editT
 check(selfEmailNoop.ok, 'saving a user with their own unchanged email is not treated as a conflict with themself');
 
 var blankNameRejected = call({ action: 'adminUpdateUser', token: adminTok, id: editTarget.id, data: { name: '   ' } });
-check(!blankNameRejected.ok && blankNameRejected.error === 'invalid_input', 'a blank name is rejected, not silently saved');
+check(!blankNameRejected.ok && blankNameRejected.error === 'name_required', 'a blank name is rejected, not silently saved');
 
 var storeManagerEditUser = call({ action: 'adminUpdateUser', token: aliTok, id: editTarget.id, data: { name: 'Hijack' } });
 check(!storeManagerEditUser.ok && storeManagerEditUser.error === 'forbidden', 'only admin can edit another user\'s profile');
@@ -964,7 +964,7 @@ var deputy = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'D
 check(deputy.ok, 'admin can create a deputy_operations_manager user');
 var deputyTok = acceptInvite('deputy@bestgas.sa');
 var badRole = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Bad', email: 'bad@bestgas.sa', role: 'made_up_role' } });
-check(!badRole.ok && badRole.error === 'invalid_input', 'validRole_ still rejects a garbage role — no regression from adding the new one');
+check(!badRole.ok && badRole.error === 'role_required', 'validRole_ still rejects a garbage role — no regression from adding the new one');
 
 console.log('--- toggle gating, both directions ---');
 var metaOff = call({ action: 'listMeta', token: adminTok });
@@ -1344,14 +1344,14 @@ console.log('--- master data: non-sales collection items and expense items ---')
 var incomeItem = call({ action: 'adminSaveEntity', token: adminTok, kind: 'income_item', data: { name: 'تحصيل مبيعات آجلة' } });
 var expenseItem = call({ action: 'adminSaveEntity', token: adminTok, kind: 'expense_item', data: { name: 'وقود' } });
 check(incomeItem.ok && expenseItem.ok, 'admin can create a collection item and an expense item');
-check(call({ action: 'adminSaveEntity', token: adminTok, kind: 'income_item', data: { name: '' } }).error === 'invalid_input', 'an item needs a name');
+check(call({ action: 'adminSaveEntity', token: adminTok, kind: 'income_item', data: { name: '' } }).error === 'name_required', 'an item needs a name');
 check(call({ action: 'adminSaveEntity', token: aliTok, kind: 'expense_item', data: { name: 'Sneaky' } }).error === 'forbidden', 'only admin keeps the master data');
 var incomeId = incomeItem.entity.id, expenseId = expenseItem.entity.id;
 
 console.log('--- product price: fixed or editable per product ---');
 var fixedProduct = call({ action: 'adminSaveEntity', token: adminTok, kind: 'product', data: { name: 'أسطوانة 12.5kg', type: 'goods', unitPrice: 45, priceLocked: true } });
 check(fixedProduct.ok && fixedProduct.entity.priceLocked === true && fixedProduct.entity.unitPrice === 45, 'a product can carry a fixed price');
-check(call({ action: 'adminSaveEntity', token: adminTok, kind: 'product', data: { name: 'Bad', priceLocked: true } }).error === 'invalid_input', 'a price cannot be locked when there is no price to lock');
+check(call({ action: 'adminSaveEntity', token: adminTok, kind: 'product', data: { name: 'Bad', priceLocked: true } }).error === 'price_needed', 'a price cannot be locked when there is no price to lock');
 var openProduct = call({ action: 'adminSaveEntity', token: adminTok, kind: 'product', data: { name: 'خدمة توصيل', type: 'services', unitPrice: 20 } });
 check(openProduct.ok && !openProduct.entity.priceLocked, 'and a product can keep an editable suggested price');
 
@@ -1538,7 +1538,7 @@ var fd = new Date(today + 'T12:00:00Z'); fd.setUTCDate(fd.getUTCDate() + 2); var
 var fut = call({ action: 'createDailyEntry', token: ctlBmTok, date: future, sourceType: 'store', sourceId: ctlStore.id, cashSales: 100 });
 check(!fut.ok && fut.error === 'future_date', 'an entry dated in the future is refused');
 var neg = call({ action: 'createDailyEntry', token: ctlBmTok, date: today, sourceType: 'store', sourceId: ctlStore.id, cashSales: -500 });
-check(!neg.ok && neg.error === 'invalid_input', 'a negative sale is refused (it would quietly cut what is owed)');
+check(!neg.ok && neg.error === 'invalid_amount', 'a negative sale is refused (it would quietly cut what is owed)');
 var badDate = call({ action: 'createDailyEntry', token: ctlBmTok, date: '24/09/2026', sourceType: 'store', sourceId: ctlStore.id, cashSales: 100 });
 check(!badDate.ok && badDate.error === 'invalid_date', 'a malformed date is refused');
 
@@ -1620,8 +1620,8 @@ check(call({ action: 'adminUpdateUser', token: adminTok, id: admin.id, data: { a
 check(call({ action: 'adminUpdateUser', token: adminTok, id: admin.id, data: { role: 'finance' } }).error === 'cannot_change_self', 'nor demote themselves');
 
 // --- settings ---
-check(call({ action: 'adminSetConfig', token: adminTok, data: { vatRate: 15 } }).error === 'invalid_input', 'a VAT rate of 15 (meant 0.15) is refused');
-check(call({ action: 'adminSetConfig', token: adminTok, data: { secondApprovalThreshold: -1 } }).error === 'invalid_input', 'a negative threshold is refused');
+check(call({ action: 'adminSetConfig', token: adminTok, data: { vatRate: 15 } }).error === 'invalid_vat', 'a VAT rate of 15 (meant 0.15) is refused');
+check(call({ action: 'adminSetConfig', token: adminTok, data: { secondApprovalThreshold: -1 } }).error === 'invalid_setting', 'a negative threshold is refused');
 call({ action: 'adminSetConfig', token: adminTok, data: { staleThresholdHours: 30 } });
 check(ctx.readSheet(SHEETS.AUDIT).some(function (a) { return a.action === 'admin_set_config' && /staleThresholdHours: \S+ → 30/.test(a.detail || ''); }),
   'a settings change is audited with what changed, from what to what');
@@ -2263,7 +2263,7 @@ var btNet = ctx.computeNet_([{ sourceType: 'store', cashSales: 1000, bankTransfe
 close(btNet.netCashOwed, 750, 'a 250 transfer from a customer comes off a 1,000 day');
 close(btNet.bankTransfers, 250, 'and is shown on its own line');
 close(ctx.sumBreakdowns_([btNet, btNet]).bankTransfers, 500, 'transfers add up when handoffs are combined');
-check(call({ action: 'createDailyEntry', token: aliTok, date: '2026-09-01', sourceType: 'store', sourceId: store.entity.id, cashSales: 100, bankTransferAmount: -5 }).error === 'invalid_input', 'a negative transfer is refused');
+check(call({ action: 'createDailyEntry', token: aliTok, date: '2026-09-01', sourceType: 'store', sourceId: store.entity.id, cashSales: 100, bankTransferAmount: -5 }).error === 'invalid_amount', 'a negative transfer is refused');
 var btRows = call({ action: 'importDailyEntries', token: aliTok, rows: [
   { date: '2026-09-01', sourceType: 'store', sourceId: store.entity.id, cashSales: 1000, bankTransferAmount: 300 },
   { date: '2026-09-01', sourceType: 'store', sourceId: store.entity.id, bankTransferAmount: 200 }
@@ -2310,7 +2310,7 @@ var cdSaved = call({ action: 'adminSaveEntity', token: adminTok, kind: 'customer
 check(cdSaved.ok && cdSaved.entity.commissions[fixedProduct.entity.id] === 1, 'and the driver\'s commission per unit');
 check(cdSaved.ok && cdSaved.entity.deliveryFees[fixedProduct.entity.id] === 2, 'the admin sets the customer\'s delivery fee per unit of a product');
 check(call({ action: 'adminSaveEntity', token: adminTok, kind: 'customer', id: cdCust.id, data: { deliveryFees: { nope: 5 } } }).error === 'invalid_product', 'only for products that exist');
-check(call({ action: 'adminSaveEntity', token: adminTok, kind: 'customer', id: cdCust.id, data: { deliveryFees: (function () { var p = {}; p[fixedProduct.entity.id] = -1; return p; })() } }).error === 'invalid_input', 'and never below zero');
+check(call({ action: 'adminSaveEntity', token: adminTok, kind: 'customer', id: cdCust.id, data: { deliveryFees: (function () { var p = {}; p[fixedProduct.entity.id] = -1; return p; })() } }).error === 'invalid_amount', 'and never below zero');
 function cdLine(custId, qty, price, extra) {
   var o = { action: 'createDailyEntry', token: aliTok, date: '2026-09-06', sourceType: 'store', sourceId: store.entity.id, cashSales: 5000,
     creditCustomerId: custId, creditItems: [{ productId: fixedProduct.entity.id, qty: qty, unitPrice: price }] };
@@ -2343,7 +2343,7 @@ console.log('--- a sales channel (Souq Gas) carries its own delivery fee and dri
 var chRates = function (v) { var p = {}; p[fixedProduct.entity.id] = v; return p; };
 var souq = call({ action: 'adminSaveEntity', token: adminTok, kind: 'channel', data: { name: 'Souq Gas', deliveryFees: chRates(4), commissions: chRates(1.5) } });
 check(souq.ok && /^CH-\d+$/.test(souq.entity.code || ''), 'the admin adds Souq Gas as a sales channel, with its own number');
-check(call({ action: 'adminSaveEntity', token: adminTok, kind: 'channel', data: { name: '' } }).error === 'invalid_input', 'a channel needs a name');
+check(call({ action: 'adminSaveEntity', token: adminTok, kind: 'channel', data: { name: '' } }).error === 'name_required', 'a channel needs a name');
 var chDay = call({ action: 'createDailyEntry', token: aliTok, date: '2026-09-07', sourceType: 'store', sourceId: store.entity.id,
   productId: fixedProduct.entity.id, qty: 30, unitPrice: 45, cashSales: 1350, channelId: souq.entity.id, channelDeliveryFee: 1 });
 check(chDay.ok && chDay.entry.channelId === souq.entity.id, 'a sale is recorded through the channel');
@@ -2397,7 +2397,7 @@ var impRes = call({ action: 'adminImportEntities', token: adminTok, kind: 'produ
   { data: { name: 'Imported Service', type: 'services', unitPrice: 15, priceLocked: true } }
 ] });
 check(impRes.ok && impRes.created === 2 && impRes.total === 3, 'good rows are saved and a bad one is not');
-check(impRes.results[1].ok === false && impRes.results[1].error === 'invalid_input', 'the bad row says why');
+check(impRes.results[1].ok === false && impRes.results[1].error === 'name_required', 'the bad row says why');
 check(/^PR-\d+$/.test(impRes.results[0].code || ''), 'each saved row gets its system number');
 var impUpd = call({ action: 'adminImportEntities', token: adminTok, kind: 'product', rows: [{ id: impRes.results[0].id, data: { unitPrice: 32 } }] });
 check(impUpd.ok && impUpd.updated === 1 && ctx.getById_(ctx.SHEETS.PRODUCTS, impRes.results[0].id).unitPrice === 32, 'a row naming an existing record updates it');
@@ -2461,7 +2461,7 @@ var iqLogin2 = call({ action: 'login', email: ' ٢٩٩٩٠٠٠١١١ ', password
 check(iqLogin2.ok, 'Arabic digits and stray spaces in the iqama number still sign in');
 check(call({ action: 'login', email: '2999000111', password: 'wrong-pass-1' }).error === 'invalid_credentials', 'a wrong password is refused');
 check(call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Dup', iqamaId: '2999000111', role: 'driver' } }).error === 'iqama_exists', 'an iqama number belongs to one account');
-check(call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Nothing', role: 'driver' } }).error === 'invalid_input', 'an account needs an email or an iqama number');
+check(call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Nothing', role: 'driver' } }).error === 'login_required', 'an account needs an email or an iqama number');
 check(call({ action: 'login', email: '', password: 'x' }).ok === false, 'a blank sign-in never matches an account without email');
 var iqReset = call({ action: 'adminResetPassword', token: adminTok, id: iqUser.user.id });
 check(iqReset.ok && typeof iqReset.tempPassword === 'string' && mailLog.length === mailsBeforeIq, 'a reset hands the admin a new temporary password instead of emailing');
@@ -2475,7 +2475,7 @@ var bulkUsers = call({ action: 'adminImportUsers', token: adminTok, rows: [
   { name: 'Bulk Driver C', iqamaId: 'fk 7966 999', role: 'driver' }
 ] });
 check(bulkUsers.ok && bulkUsers.created === 2, 'drivers are created in bulk (got ' + (bulkUsers.created) + ')');
-check(bulkUsers.ok && bulkUsers.results[1].error === 'iqama_exists' && bulkUsers.results[2].error === 'invalid_input', 'each refused row says why');
+check(bulkUsers.ok && bulkUsers.results[1].error === 'iqama_exists' && bulkUsers.results[2].error === 'name_required', 'each refused row says why');
 check(bulkUsers.ok && bulkUsers.results[0].tempPassword && bulkUsers.results[0].id, 'each new account comes back with its temporary password');
 check(bulkUsers.ok && call({ action: 'login', email: 'FK7966999', password: bulkUsers.results[3].tempPassword }).ok, 'a passport-style number is kept in capitals without spaces');
 check(call({ action: 'adminImportUsers', token: financeTok, rows: [{ name: 'X', iqamaId: '2999000444', role: 'driver' }] }).error === 'forbidden', 'only the admin creates accounts in bulk');
@@ -2519,13 +2519,13 @@ var lkUser = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'L
 ['2555111222', ' 2555 111 222', '2555-111-222', '٢٥٥٥١١١٢٢٢', '2555111222 ', '25551-11222', ' ٢٥٥٥ ١١١ ٢٢٢', '2555 111222'].forEach(function (v) { call({ action: 'login', email: v, password: 'wrong-guess-1' }); });
 check(call({ action: 'login', email: '2555111222', password: lkUser.tempPassword }).error === 'locked', 'wrong guesses in any spelling of one iqama number all count toward its lock');
 check(call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Bidi', iqamaId: '‏2555111222', role: 'driver' } }).error === 'iqama_exists', 'an iqama copied from Excel with a hidden direction mark is the same number');
-check(call({ action: 'adminUpdateUser', token: adminTok, id: lkUser.user.id, data: { iqamaId: '' } }).error === 'invalid_input', 'an account without email keeps its iqama number, or it could never sign in');
+check(call({ action: 'adminUpdateUser', token: adminTok, id: lkUser.user.id, data: { iqamaId: '' } }).error === 'login_required', 'an account without email keeps its iqama number, or it could never sign in');
 check(call({ action: 'forgotPassword', email: '2555111222' }).askAdmin === true, 'forgot password with an iqama number says to ask the admin');
 check(call({ action: 'adminResendInvite', token: adminTok, id: lkUser.user.id }).ok === false, 'no invitation is "sent" to an account without email');
 var pendingForSara = call({ action: 'listHandoffs', token: saraTok }).handoffs.filter(function (h) { return h.status === 'pending' && h.toUserId === sara.id; })[0];
 if (pendingForSara) {
-  check(call({ action: 'confirmHandoff', token: saraTok, id: pendingForSara.id, receivedAmount: -5 }).error === 'invalid_input', 'a negative amount received is refused');
-  check(call({ action: 'confirmHandoff', token: saraTok, id: pendingForSara.id, receivedAmount: 'abc' }).error === 'invalid_input', 'and so is one that is not a number');
+  check(call({ action: 'confirmHandoff', token: saraTok, id: pendingForSara.id, receivedAmount: -5 }).error === 'invalid_amount', 'a negative amount received is refused');
+  check(call({ action: 'confirmHandoff', token: saraTok, id: pendingForSara.id, receivedAmount: 'abc' }).error === 'invalid_amount', 'and so is one that is not a number');
 } else check(false, 'a pending handoff for the review checks');
 check(call({ action: 'adminSaveEntity', token: adminTok, kind: 'pos', data: { ownerType: 'store', ownerId: store.entity.id, label: 'Wrong Holder', assignedUserId: musa.id } }).error === 'wrong_role', 'a POS machine is held by a driver, branch worker or branch manager, not a collector');
 var dMeta = call({ action: 'listMeta', token: dpTok });
@@ -2535,7 +2535,7 @@ check(call({ action: 'listMeta', token: financeTok }).pos.some(function (p) { re
 console.log('--- inventory: opening + purchases + returns = available; less sales and damage = ending ---');
 var invP = call({ action: 'adminSaveEntity', token: adminTok, kind: 'product', data: { name: 'Inv Cylinder', type: 'goods', unitPrice: 30, unitCost: 18 } });
 check(invP.ok && invP.entity.unitCost === 18, 'an inventory item carries its cost');
-check(call({ action: 'adminSaveEntity', token: adminTok, kind: 'product', data: { name: 'Bad Cost', type: 'goods', unitCost: -1 } }).error === 'invalid_input', 'a cost cannot be negative');
+check(call({ action: 'adminSaveEntity', token: adminTok, kind: 'product', data: { name: 'Bad Cost', type: 'goods', unitCost: -1 } }).error === 'invalid_cost', 'a cost cannot be negative');
 var invSvc = call({ action: 'adminSaveEntity', token: adminTok, kind: 'product', data: { name: 'Inv Service', type: 'services' } }).entity;
 var dpStoreId = call({ action: 'listMeta', token: adminTok }).stores.filter(function (s) { return s.locationId === dpLoc.id; })[0].id;
 function mv(tok, o) { var p = { action: 'addInventoryMove', token: tok, locationId: dpLoc.id, productId: invP.entity.id }; Object.keys(o).forEach(function (k) { p[k] = o[k]; }); return call(p); }
@@ -2545,8 +2545,8 @@ check(mv(noorTok, { kind: 'purchase', qty: 50, date: '2026-09-02', note: 'PO-1' 
 check(mv(noorTok, { kind: 'return', qty: 7, date: '2026-09-03' }).ok, 'and returns from restaurants');
 var dmg = mv(noorTok, { kind: 'damage', qty: 3, date: '2026-09-04', note: 'leaking' });
 check(dmg.ok, 'and damaged items');
-check(mv(noorTok, { kind: 'purchase', qty: 0, date: '2026-09-02' }).error === 'invalid_input', 'a movement needs a quantity');
-check(mv(noorTok, { kind: 'stolen', qty: 1, date: '2026-09-02' }).error === 'invalid_input', 'and a known kind');
+check(mv(noorTok, { kind: 'purchase', qty: 0, date: '2026-09-02' }).error === 'invalid_qty', 'a movement needs a quantity');
+check(mv(noorTok, { kind: 'stolen', qty: 1, date: '2026-09-02' }).error === 'invalid_kind', 'and a known kind');
 check(mv(noorTok, { kind: 'purchase', qty: 1, date: '2099-01-01' }).error === 'future_date', 'and not a future date');
 check(call({ action: 'addInventoryMove', token: noorTok, locationId: dpLoc.id, productId: invSvc.id, kind: 'purchase', qty: 1, date: '2026-09-02' }).error === 'not_inventory', 'a service has no stock');
 check(call({ action: 'addInventoryMove', token: noorTok, locationId: location.entity.id, productId: invP.entity.id, kind: 'purchase', qty: 1, date: '2026-09-02' }).error === 'forbidden', 'a branch manager keeps only his own branch\'s stock');
@@ -2561,7 +2561,7 @@ check(inv.ok && !inv.rows.some(function (r) { return r.productId === invSvc.id; 
 var invOct = call({ action: 'getInventoryReport', token: financeTok, dateFrom: '2026-10-01', dateTo: '2026-10-31', locationId: dpLoc.id });
 var octRow = invOct.rows.filter(function (r) { return r.productId === invP.entity.id; })[0];
 check(octRow && octRow.opening === 114 && octRow.ending === 114, 'next period opens with the last period\'s ending');
-check(call({ action: 'voidInventoryMove', token: noorTok, id: dmg.move.id }).error === 'invalid_input', 'voiding a movement needs a reason');
+check(call({ action: 'voidInventoryMove', token: noorTok, id: dmg.move.id }).error === 'reason_required', 'voiding a movement needs a reason');
 check(call({ action: 'voidInventoryMove', token: noorTok, id: dmg.move.id, reason: 'counted twice' }).ok, 'the author voids a wrong movement with a reason');
 var inv2 = call({ action: 'getInventoryReport', token: financeTok, dateFrom: '2026-09-01', dateTo: '2026-09-30', locationId: dpLoc.id });
 check(inv2.rows.filter(function (r) { return r.productId === invP.entity.id; })[0].ending === 117, 'and it no longer counts');
@@ -2588,15 +2588,15 @@ call({ action: 'createDailyEntry', token: noorTok, date: '2026-09-14', sourceTyp
 var nq = call({ action: 'getInventoryReport', token: financeTok, dateFrom: '2026-09-01', dateTo: '2026-09-30', locationId: dpLoc.id }).rows.filter(function (r) { return r.productId === golP.id; })[0];
 check(nq && nq.salesWithoutQty === 1 && Math.abs(nq.salesWithoutQtyAmount - 300) < 0.005, 'a sale entered without a quantity is flagged, not silently dropped');
 [true, [5], '1e12', 1e308, 0.0001, 'abc'].forEach(function (bad) {
-  check(mv(noorTok, { productId: golP.id, kind: 'purchase', qty: bad, date: '2026-09-15' }).error === 'invalid_input', 'a quantity of ' + JSON.stringify(bad) + ' is refused');
+  check(mv(noorTok, { productId: golP.id, kind: 'purchase', qty: bad, date: '2026-09-15' }).error === 'invalid_qty', 'a quantity of ' + JSON.stringify(bad) + ' is refused');
 });
-check(mv(noorTok, { productId: golP.id, kind: 'purchase', qty: '12', date: '2026-02-31' }).error === 'invalid_input', 'a date that does not exist is refused');
+check(mv(noorTok, { productId: golP.id, kind: 'purchase', qty: '12', date: '2026-02-31' }).error === 'invalid_date', 'a date that does not exist is refused');
 var inactive = call({ action: 'adminSaveEntity', token: adminTok, kind: 'product', data: { name: 'Off Item', type: 'goods', active: false } }).entity;
-check(mv(noorTok, { productId: inactive.id, kind: 'purchase', qty: 1, date: '2026-09-15' }).error === 'invalid_input', 'an inactive item takes no movements');
-check(call({ action: 'adminSaveEntity', token: adminTok, kind: 'product', data: { name: 'Typo', type: 'service' } }).error === 'invalid_input', 'an item is either inventory or a service');
-check(call({ action: 'adminSaveEntity', token: adminTok, kind: 'product', data: { name: 'Inf', type: 'goods', unitCost: 'Infinity' } }).error === 'invalid_input', 'a cost must be a real number');
+check(mv(noorTok, { productId: inactive.id, kind: 'purchase', qty: 1, date: '2026-09-15' }).error === 'invalid_product', 'an inactive item takes no movements');
+check(call({ action: 'adminSaveEntity', token: adminTok, kind: 'product', data: { name: 'Typo', type: 'service' } }).error === 'invalid_type', 'an item is either inventory or a service');
+check(call({ action: 'adminSaveEntity', token: adminTok, kind: 'product', data: { name: 'Inf', type: 'goods', unitCost: 'Infinity' } }).error === 'invalid_cost', 'a cost must be a real number');
 check(call({ action: 'adminSaveEntity', token: adminTok, kind: 'product', id: golP.id, data: { type: 'services' } }).error === 'has_stock', 'an item with stock movements stays an inventory item');
-check(call({ action: 'getInventoryReport', token: financeTok, dateFrom: '2026-09-30', dateTo: '2026-09-01' }).error === 'invalid_input', 'a period that ends before it starts is refused');
+check(call({ action: 'getInventoryReport', token: financeTok, dateFrom: '2026-09-30', dateTo: '2026-09-01' }).error === 'invalid_period', 'a period that ends before it starts is refused');
 
 console.log('--- area Excel: every section of every POS in one upload ---');
 call({ action: 'adminSetConfig', token: adminTok, data: { areaManagerBulkUploadEnabled: true } });
@@ -2633,7 +2633,7 @@ check(ovE.ok && Math.abs(ovE.entry.channelCommission - 9) < 0.005, 'a commission
 check(ovE.ok && Math.abs(ovE.entry.channelDeliveryFee - 12) < 0.005, 'while the delivery fee keeps its standard rate');
 check(ovE.ok && ovE.entry.channelComRates && ovE.entry.channelComRates[souq.entity.id] === 2.25, 'and the rate used is kept on the entry');
 var badOv = {}; badOv[souq.entity.id] = -1;
-check(call({ action: 'createDailyEntry', token: dpTok, date: '2026-09-26', sourceType: 'pos', sourceId: dpPos.id, productId: invP.entity.id, qty: 2, unitPrice: 30, cashSales: 60, channelQtys: cqOv, channelComRates: badOv }).error === 'invalid_input', 'a negative commission is refused');
+check(call({ action: 'createDailyEntry', token: dpTok, date: '2026-09-26', sourceType: 'pos', sourceId: dpPos.id, productId: invP.entity.id, qty: 2, unitPrice: 30, cashSales: 60, channelQtys: cqOv, channelComRates: badOv }).error === 'invalid_amount', 'a negative commission is refused');
 var plainE = call({ action: 'createDailyEntry', token: dpTok, date: '2026-09-26', sourceType: 'pos', sourceId: dpPos.id, productId: invP.entity.id, qty: 5, unitPrice: 30, cashSales: 150, channelQtys: cqOv });
 check(plainE.ok && Math.abs(plainE.entry.channelCommission - 4) < 0.005, 'without a change the standard rate still applies');
 var bulkOv = call({ action: 'bulkSubmitAreaBatch', token: saraTok, clusterId: cluster.entity.id, dryRun: true,
@@ -2674,14 +2674,14 @@ var cyIron = call({ action: 'adminSaveEntity', token: adminTok, kind: 'product',
 var cyIronSell = call({ action: 'adminSaveEntity', token: adminTok, kind: 'product', data: { name: 'Cy Iron Empty Sale', type: 'goods', unitPrice: 186, stockOf: cyIron.id, stockEffect: 'sell_empty' } });
 check(cyIronSell.ok, 'a product can draw its stock from a cylinder item (' + (cyIronSell.error || '') + ')');
 cyIronSell = cyIronSell.entity;
-check(call({ action: 'adminSaveEntity', token: adminTok, kind: 'product', data: { name: 'Cy Bad', type: 'goods', cylinder: true, stockOf: cyIron.id } }).error === 'invalid_input', 'a cylinder item cannot itself draw from another');
-check(call({ action: 'adminSaveEntity', token: adminTok, kind: 'product', data: { name: 'Cy Bad2', type: 'goods', stockOf: cyIronSell.id } }).error === 'invalid_input', 'nor can a product draw from one that draws from another');
-check(call({ action: 'adminSaveEntity', token: adminTok, kind: 'product', data: { name: 'Cy Bad3', type: 'goods', stockOf: cyIron.id, stockEffect: 'melt' } }).error === 'invalid_input', 'an unknown effect is refused');
+check(call({ action: 'adminSaveEntity', token: adminTok, kind: 'product', data: { name: 'Cy Bad', type: 'goods', cylinder: true, stockOf: cyIron.id } }).error === 'invalid_stock_link', 'a cylinder item cannot itself draw from another');
+check(call({ action: 'adminSaveEntity', token: adminTok, kind: 'product', data: { name: 'Cy Bad2', type: 'goods', stockOf: cyIronSell.id } }).error === 'invalid_stock_link', 'nor can a product draw from one that draws from another');
+check(call({ action: 'adminSaveEntity', token: adminTok, kind: 'product', data: { name: 'Cy Bad3', type: 'goods', stockOf: cyIron.id, stockEffect: 'melt' } }).error === 'invalid_stock_link', 'an unknown effect is refused');
 var cyReg = call({ action: 'adminSaveEntity', token: adminTok, kind: 'product', data: { name: 'Cy Regulator', type: 'goods', unitPrice: 45 } }).entity;
 function cyMv(o) { var p = { action: 'addInventoryMove', token: noorTok, locationId: dpLoc.id }; Object.keys(o).forEach(function (k) { p[k] = o[k]; }); return call(p); }
-check(cyMv({ productId: cyIron.id, kind: 'opening', qty: 5, date: '2026-09-28' }).error === 'invalid_input', 'a cylinder movement must say full or empty');
+check(cyMv({ productId: cyIron.id, kind: 'opening', qty: 5, date: '2026-09-28' }).error === 'invalid_state', 'a cylinder movement must say full or empty');
 check(cyMv({ productId: cyIronSell.id, kind: 'purchase', qty: 5, date: '2026-09-28' }).error === 'use_stock_item', 'stock is kept on the cylinder item, not on the product that draws from it');
-check(cyMv({ productId: cyReg.id, state: 'full', kind: 'purchase', qty: 5, date: '2026-09-28' }).error === 'invalid_input', 'an item without cylinders takes no full/empty');
+check(cyMv({ productId: cyReg.id, state: 'full', kind: 'purchase', qty: 5, date: '2026-09-28' }).error === 'invalid_state', 'an item without cylinders takes no full/empty');
 var cyDay = { action: 'importInventoryDay', token: noorTok, locationId: dpLoc.id, date: '2026-09-28', ref: 'branch-sheet 2026-09-28', moves: [
   { productId: cyIron.id, state: 'full', kind: 'opening', qty: 3458 }, { productId: cyIron.id, state: 'empty', kind: 'opening', qty: 1432 },
   { productId: cyIron.id, state: 'full', kind: 'purchase', qty: 1400 }, { productId: cyReg.id, kind: 'opening', qty: 54 }] };
@@ -2718,7 +2718,7 @@ function pfType(group, word) { return pfMeta.costTypes.filter(function (c) { ret
 var pfDep = pfMeta.costTypes.filter(function (c) { return c.depreciation; })[0];
 var pfIns = pfType('vehicle', 'تأمين'), pfFuel = pfType('vehicle', 'وقود'), pfSal = pfType('staff', 'راتب'), pfRent = pfType('premises', 'إيجار'), pfGa = pfMeta.costTypes.filter(function (c) { return c.group === 'admin'; })[0];
 check(pfDep && pfIns && pfFuel && pfSal && pfRent && pfGa, 'depreciation, insurance, fuel, salary, rent and a G&A type exist');
-check(call({ action: 'adminSaveEntity', token: adminTok, kind: 'cost_type', data: { name: 'PF bad', group: 'nonsense' } }).error === 'invalid_input', 'a cost type needs a known group');
+check(call({ action: 'adminSaveEntity', token: adminTok, kind: 'cost_type', data: { name: 'PF bad', group: 'nonsense' } }).error === 'group_required', 'a cost type needs a known group');
 var pfOwn = call({ action: 'adminSaveEntity', token: adminTok, kind: 'cost_type', data: { name: 'PF Car wash', group: 'vehicle', nature: 'variable' } });
 check(pfOwn.ok && /^CST-/.test(pfOwn.entity.code), 'finance adds a cost type of its own');
 
@@ -2760,8 +2760,8 @@ check(call({ action: 'listCosts', token: pfAccTok }).ok, 'the accountant reads c
 check(pfLine(pfAccTok, { centreType: 'car', centreId: pfCarA.id, typeId: pfIns.id, amount: 100, fromMonth: '2026-03' }).error === 'forbidden', 'but only admin and finance write them');
 
 console.log('--- costing: a cost line is checked ---');
-check(pfLine(adminTok, { centreType: 'car', centreId: pfCarA.id, typeId: pfIns.id, amount: 0, fromMonth: '2026-03' }).error === 'invalid_input', 'an amount is needed');
-check(pfLine(adminTok, { centreType: 'car', centreId: pfCarA.id, typeId: pfIns.id, amount: -5, fromMonth: '2026-03' }).error === 'invalid_input', 'and it is not negative');
+check(pfLine(adminTok, { centreType: 'car', centreId: pfCarA.id, typeId: pfIns.id, amount: 0, fromMonth: '2026-03' }).error === 'amount_required', 'an amount is needed');
+check(pfLine(adminTok, { centreType: 'car', centreId: pfCarA.id, typeId: pfIns.id, amount: -5, fromMonth: '2026-03' }).error === 'amount_required', 'and it is not negative');
 check(pfLine(adminTok, { centreType: 'car', centreId: pfCarA.id, typeId: pfIns.id, amount: 100, fromMonth: '2026-13' }).error === 'invalid_month', 'a real month');
 check(pfLine(adminTok, { centreType: 'car', centreId: pfCarA.id, typeId: pfIns.id, amount: 100, fromMonth: '2026-03', toMonth: '2026-02' }).error === 'invalid_month', 'that does not end before it starts');
 check(pfLine(adminTok, { centreType: 'car', centreId: 'nope', typeId: pfIns.id, amount: 100, fromMonth: '2026-03' }).error === 'invalid_centre', 'a car that exists');
@@ -2771,7 +2771,7 @@ check(pfLine(adminTok, { centreType: 'car', centreId: pfCarA.id, typeId: 'nope',
 console.log('--- costing: the profiles ---');
 var pfDepLine = pfLine(adminTok, { centreType: 'car', centreId: pfCarA.id, typeId: pfDep.id, fromMonth: '2026-01', asset: { cost: 72000, residual: 12000, lifeMonths: 60 } });
 check(pfDepLine.ok && pfDepLine.line.amount === 1000 && pfDepLine.line.toMonth === '2030-12', 'depreciation is worked out from the asset: (72,000 - 12,000) / 60 months = 1,000 until 2030-12 (got ' + (pfDepLine.line && pfDepLine.line.amount + ' ' + pfDepLine.line.toMonth) + ')');
-check(pfLine(adminTok, { centreType: 'car', centreId: pfCarA.id, typeId: pfDep.id, fromMonth: '2026-01', asset: { cost: 100, residual: 200, lifeMonths: 12 } }).error === 'invalid_input', 'the residual cannot exceed the cost');
+check(pfLine(adminTok, { centreType: 'car', centreId: pfCarA.id, typeId: pfDep.id, fromMonth: '2026-01', asset: { cost: 100, residual: 200, lifeMonths: 12 } }).error === 'invalid_asset', 'the residual cannot exceed the cost');
 var pfSalLine = pfLine(adminTok, { centreType: 'car', centreId: pfCarA.id, typeId: pfSal.id, amount: 3100, fromMonth: '2026-03', employeeUserId: pfDr1.id });
 check(pfSalLine.ok && pfSalLine.line.employeeUserId === pfDr1.id, 'the driver\'s salary sits on his car');
 var pfRentLine = pfLine(adminTok, { centreType: 'store', centreId: pfStA.id, typeId: pfRent.id, amount: 6200, fromMonth: '2026-01' });
@@ -2837,7 +2837,7 @@ var pfEq = pfReport({ basis: 'equal' });
 close(pfNode(pfEq, 'store:' + pfStB.id).ovhCluster, 232.5, 'shared equally, each of the area\'s four stores and cars takes a quarter of its overhead');
 close(pfNode(pfEq, 'company').profit, -12750, 'the company total does not depend on the basis');
 check(pfReport({ basis: 'moon' }).error === 'invalid_input', 'an unknown basis is refused');
-check(pfReport({ dateFrom: '2026-03-31', dateTo: '2026-03-01' }).error === 'invalid_input', 'so is a range that ends before it starts');
+check(pfReport({ dateFrom: '2026-03-31', dateTo: '2026-03-01' }).error === 'invalid_period', 'so is a range that ends before it starts');
 var pfFeb = pfReport({ dateFrom: '2026-02-01', dateTo: '2026-02-28' });
 close(pfNode(pfFeb, 'company').fixed, 7200, 'February: only the lines that had started (depreciation 1,000 + rent 6,200)');
 close(pfNode(pfFeb, 'company').ovh, 0, 'no overhead line had started');
@@ -2867,7 +2867,7 @@ check(call({ action: 'changeCostLine', token: adminTok, id: pfChg.line.id, fromM
 var pfEnd = call({ action: 'endCostLine', token: adminTok, id: pfSalLine.line.id, toMonth: '2026-03' });
 check(pfEnd.ok && pfEnd.line.toMonth === '2026-03', 'a line is ended at a month');
 close(pfNode(pfReport({ dateFrom: '2026-04-01', dateTo: '2026-04-30' }), 'car:' + pfCarA.id).fixed, 1000, 'and stops counting after it');
-check(call({ action: 'voidCostLine', token: adminTok, id: pfCoLine.line.id }).error === 'invalid_input', 'voiding needs a reason');
+check(call({ action: 'voidCostLine', token: adminTok, id: pfCoLine.line.id }).error === 'reason_required', 'voiding needs a reason');
 check(call({ action: 'voidCostLine', token: pfAccTok, id: pfCoLine.line.id, reason: 'x' }).error === 'forbidden', 'and the right to write');
 check(call({ action: 'voidCostLine', token: adminTok, id: pfCoLine.line.id, reason: 'typed twice' }).ok, 'a wrong line is voided with a reason');
 close(pfNode(pfReport(), 'company').ovhCompany, 0, 'and drops out of the figures');
@@ -2903,11 +2903,11 @@ var pfCrTak = pfCrRow(function (r) { return r.source === 'takings' && r.centreId
 check(pfCrTak.amounts.join() === '0,40,0', 'what was paid out of the takings shows in its month');
 check(!(pfCr.rows || []).some(function (r) { return r.lineId === pfCoLine.line.id; }), 'a voided line is not in the report');
 check(call({ action: 'getCostReport', token: saraTok, monthFrom: '2026-02', monthTo: '2026-04' }).error === 'forbidden', 'the expenses report is not for an area manager');
-check(call({ action: 'getCostReport', token: pfAccTok, monthFrom: '2020-01', monthTo: '2026-04' }).error === 'invalid_input', 'at most 36 months at a time');
+check(call({ action: 'getCostReport', token: pfAccTok, monthFrom: '2020-01', monthTo: '2026-04' }).error === 'period_too_long', 'at most 36 months at a time');
 
 console.log('--- costing review fixes: ending a line, sheets and labelled lines, cost corrections ---');
 check(call({ action: 'endCostLine', token: adminTok, id: pfChg.ended.id, toMonth: '2026-12' }).error === 'overlap_line', 'an ended line cannot be stretched over the line that replaced it');
-check(call({ action: 'endCostLine', token: adminTok, id: pfI5.lines[0].id, toMonth: '2026-08' }).error === 'invalid_input', 'a one-month cost has no other last month');
+check(call({ action: 'endCostLine', token: adminTok, id: pfI5.lines[0].id, toMonth: '2026-08' }).error === 'line_fixed', 'a one-month cost has no other last month');
 check(call({ action: 'endCostLine', token: adminTok, id: pfDepLine.line.id, toMonth: '2031-06' }).error === 'invalid_month', 'depreciation cannot run past its asset\'s life');
 check(call({ action: 'endCostLine', token: adminTok, id: pfDepLine.line.id, toMonth: '2028-12' }).ok, 'but it can stop early (the car was sold)');
 // a sheet row carries no label: it speaks for the one running line of its type
@@ -2931,8 +2931,8 @@ check(call({ action: 'adminDeleteEntity', token: adminTok, kind: 'car', id: pfCa
 check(call({ action: 'voidCostLine', token: adminTok, id: pfXl.line.id, reason: 'wrong car' }).ok && call({ action: 'adminDeleteEntity', token: adminTok, kind: 'car', id: pfCarX.id }).ok, 'once its only line is voided it can go');
 // the unit cost from a date: a correction reaches back
 check(call({ action: 'setProductCost', token: pfAccTok, productId: pfP1.id, unitCost: 14, from: '2026-03-11' }).error === 'forbidden', 'the accountant does not set costs');
-check(call({ action: 'setProductCost', token: adminTok, productId: pfP1.id, unitCost: 14, from: '2099-01-01' }).error === 'invalid_input', 'a cost cannot start in the future');
-check(call({ action: 'setProductCost', token: adminTok, productId: pfP1.id, unitCost: -1, from: '2026-03-11' }).error === 'invalid_input', 'nor be negative');
+check(call({ action: 'setProductCost', token: adminTok, productId: pfP1.id, unitCost: 14, from: '2099-01-01' }).error === 'future_date', 'a cost cannot start in the future');
+check(call({ action: 'setProductCost', token: adminTok, productId: pfP1.id, unitCost: -1, from: '2026-03-11' }).error === 'invalid_cost', 'nor be negative');
 var pfSc = call({ action: 'setProductCost', token: adminTok, productId: pfP1.id, unitCost: 14, from: '2026-03-11' });
 check(pfSc.ok && pfSc.product.unitCost === 14, 'a unit cost is set from a date, and becomes the product\'s cost');
 close(pfNode(pfReport(), 'company').cogs, 1500 + 750 + 20 * 14 + 450, 'sales from that date cost 14, the earlier ones still 15');
@@ -3242,7 +3242,7 @@ check(crServices.every(function (p) { return !crOldNow.deliveryFees || crOldNow.
 check((cr1.updated || []).some(function (u) { return u.id === crOld.id; }), 'and is reported as updated');
 var crNew = (cr1.created || []).filter(function (c) { return c.name === 'عميل الأسعار الجديد'; })[0];
 check(crNew && crNew.commissions && crNew.deliveryFees && crGoods.every(function (p) { return crNew.commissions[p.id] === 0 && crNew.deliveryFees[p.id] === 1; }), 'a new customer is created with its amounts');
-check((cr1.skipped || []).some(function (k) { return k.name === 'عميل بسعر سالب' && k.reason === 'invalid_input'; }), 'a negative amount is refused, that row only');
+check((cr1.skipped || []).some(function (k) { return k.name === 'عميل بسعر سالب' && k.reason === 'invalid_amount'; }), 'a negative amount is refused, that row only');
 var crTr = {}; ctx.readSheet(SHEETS.TRANSLATIONS).forEach(function (r) { crTr[r.src] = r; });
 check(crTr['عميل الأسعار الجديد'] && crTr['عميل الأسعار الجديد'].en && crTr['عميل الأسعار الجديد'].ur, 'an imported customer gets its English and Urdu name');
 check(crTr['عميل الأسعار القديم'] && crTr['عميل الأسعار القديم'].ur, 'so does a customer the sheet updated');
