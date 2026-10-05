@@ -2856,6 +2856,9 @@ var mgDay = call({ action: 'importDailyEntries', token: adminTok, rows: [
   scLine({ sub: 'mg-1', date: '2026-09-14', productId: mgSvc.id, qty: 2, unitPrice: 5, cashSales: 10 })] });
 check(mgDay.ok, 'an old-shape day of sales (' + JSON.stringify(mgDay.error || '') + ')');
 check(call({ action: 'setProductCost', token: adminTok, productId: mgIron.id, unitCost: 10, from: '2026-09-13', reason: 'plant price fell' }).ok, 'the gas cost changed in the middle of the month, the old way');
+var mgCutSaved = call({ action: 'adminSaveEntity', token: adminTok, kind: 'product', id: mgCut.id, data: { unitPrice: 11 } });
+check(mgCutSaved.ok && !mgCutSaved.entity.stockEffect && !mgCutSaved.entity.stockItemId, 'before the setup an old stock-of product keeps its empty effect when saved');
+check(saveErr('product', { name: 'Mg Unit Effect', type: 'goods', stockEffect: 'unit' }) === 'invalid_stock_link' && saveErr('product', { name: 'Mg Early Link', type: 'goods', stockItemId: 'x' }) === 'invalid_stock_link', 'before the setup a product takes neither the unit effect nor an inventory item');
 
 // the figures before the setup, keyed the old way (a row per product holding stock)
 function mgCanon(v) {
@@ -2868,7 +2871,7 @@ function mgFigures(legacyOf) {
   return MG_PERIODS.map(function (p) {
     var rep = call({ action: 'getInventoryReport', token: financeTok, dateFrom: p[0], dateTo: p[1] });
     var rows = (rep.rows || []).map(function (r) {
-      var o = {}; Object.keys(r).forEach(function (k) { if (k !== 'stockItemId' && k !== 'salesByProduct') o[k] = r[k]; });
+      var o = {}; Object.keys(r).forEach(function (k) { if (['stockItemId', 'salesByProduct', 'productId', 'stockName'].indexOf(k) < 0) o[k] = r[k]; });
       o.item = legacyOf(r.stockItemId); return mgCanon(o);
     }).sort();
     return mgCanon({ ok: rep.ok, rows: rows, moves: (rep.moves || []).map(function (m) { return m.id; }), total: rep.movesTotal });
@@ -2966,6 +2969,12 @@ function lvRep() { return lvCall({ action: 'getInventoryReport', token: lvTok, d
 var lvOld = lvRep();
 function lvRow(rep, id, st) { return ((rep && rep.rows) || []).filter(function (r) { return r.stockItemId === id && (r.state || '') === (st || ''); })[0] || {}; }
 check(lvRow(lvOld, lvExch.id).ending === 598 && lvRow(lvOld, lvBody.id).ending === 662, 'before the setup the stock reads as it always has (598 and 662)');
+check(lvOld.rows.every(function (r) { return r.productId === r.stockItemId && r.stockName === ''; }), 'before the setup rows keep the old shape: productId and stockName as before');
+var lvSpare = lvEnt('product', { name: 'Lv Spare Part', type: 'goods', unitPrice: 9 });
+check(lvCall({ action: 'addInventoryMove', token: lvTok, locationId: lvLoc.id, productId: lvSpare.id, kind: 'opening', qty: 3, date: '2026-09-28' }).ok, 'a product with only a count, no sales');
+check(lvCall({ action: 'adminDeleteEntity', token: lvTok, kind: 'product', id: lvSpare.id }).error === 'has_children', 'a product holding counted stock cannot be deleted');
+function lvCogs() { var r = lvCall({ action: 'getProfitReport', token: lvTok, dateFrom: '2026-09-01', dateTo: '2026-09-30' }); var c = (r.nodes || []).filter(function (n) { return n.key === 'company'; })[0] || { T: {} }; return [r.ok, c.T.cogs, c.T.uncostedSales, c.T.gm].join('|'); }
+var lvCogsBefore = lvCogs();
 var lvSheetsBefore = mgSheets(lv);
 check(lvCall({ action: 'inventorySetupProposal', token: lvCall({ action: 'login', email: 'lv.branch.manager@bestgas.sa', password: 'x' }).token || 'none' }).ok !== true, 'nobody but a manager reads the proposal');
 var lvProp = lvCall({ action: 'inventorySetupProposal', token: lvTok });
@@ -2992,7 +3001,22 @@ var lvGone = JSON.parse(JSON.stringify(lvProp.products)).filter(function (l) { r
 var lvUnm = lvCall({ action: 'applyInventorySetup', token: lvTok, stockItems: lvProp.stockItems, products: lvGone });
 check(lvUnm.error === 'moves_unmapped' && (lvUnm.names || []).indexOf('أسطوانة حديد فارغ') >= 0, 'a product with stock counted on it must be mapped (got ' + JSON.stringify([lvUnm.error, lvUnm.names]) + ')');
 check(!lv.readSheet(lv.SHEETS.STOCK_ITEMS).length && !lvCall({ action: 'listMeta', token: lvTok }).config.stockItemsLive, 'a refused setup writes nothing');
+var lvSvc = JSON.parse(JSON.stringify(lvProp.products)).map(function (l) { if (l.productId === lvExch.id) { l.toService = true; delete l.stockItemKey; } return l; });
+check(lvCall({ action: 'applyInventorySetup', token: lvTok, stockItems: lvProp.stockItems, products: lvSvc }).error === 'has_sales', 'a product with sales cannot be made a service');
+var lvPrev = lvCall({ action: 'inventorySetupPreview', token: lvTok, stockItems: lvProp.stockItems, products: lvProp.products });
+function lvPv(st) { return ((lvPrev && lvPrev.lines) || []).filter(function (x) { return x.locationId === lvLoc.id && x.stockItemKey === lvIronKey && x.state === st; })[0] || {}; }
+check(lvPrev.ok && lvPv('full').before === 598 && lvPv('full').after === 598, 'the preview shows iron full 598 -> 598 (got ' + JSON.stringify(lvPrev.error || lvPv('full')) + ')');
+check(lvPv('empty').before === 662 && lvPv('empty').after === 2115, 'and iron empty 662 -> 2115 (got ' + JSON.stringify(lvPv('empty')) + ')');
+lvProp.stockItems.forEach(function (s) { if (s.key === lvIronKey) s.gasCost = 11; });
+// a confirm that stops half-way (the script dies) and is confirmed again
+var lvRealWrite = lv.writeRow, lvProdWrites = 0;
+lv.writeRow = function (name, obj) { if (name === lv.SHEETS.PRODUCTS && ++lvProdWrites === 3) throw new Error('script stopped'); return lvRealWrite(name, obj); };
+var lvHalf = lvCall({ action: 'applyInventorySetup', token: lvTok, stockItems: lvProp.stockItems, products: lvProp.products });
+lv.writeRow = lvRealWrite;
+check(!lvHalf.ok && lv.readSheet(lv.SHEETS.STOCK_ITEMS).length > 0 && !lvCall({ action: 'listMeta', token: lvTok }).config.stockItemsLive, 'a confirm that stopped half-way leaves the setup unapplied');
 var lvApply = lvCall({ action: 'applyInventorySetup', token: lvTok, stockItems: lvProp.stockItems, products: lvProp.products });
+var lvKeys = lv.readSheet(lv.SHEETS.STOCK_ITEMS).map(function (s) { return s.setupKey; });
+check(lvKeys.length === lvProp.stockItems.length && lvKeys.every(function (k, i) { return lvKeys.indexOf(k) === i; }), 'confirmed again it finishes without a second set of items (' + lvKeys.length + ' of ' + lvProp.stockItems.length + ')');
 check(lvApply.ok, 'the proposal is confirmed (' + JSON.stringify(lvApply.error ? [lvApply.error, lvApply.names] : '') + ')');
 var lvIron = lvApply.stockItemIds ? lvApply.stockItemIds[lvIronKey] : null;
 var lvNew = lvRep();
@@ -3004,6 +3028,15 @@ check(lv.getById_(lv.SHEETS.PRODUCTS, lvDel.id).type === 'services', 'the delive
 check(lvCall({ action: 'addInventoryMove', token: lvTok, locationId: lvLoc.id, stockItemId: lvIron, state: 'full', kind: 'opening', qty: 10, date: '2026-09-29' }).error === 'opening_exists', 'the count already on file is iron full\'s opening: a second one is refused');
 check(lvCall({ action: 'importInventoryDay', token: lvTok, locationId: lvLoc.id, date: '2026-09-29', ref: 'lv-sheet', moves: [{ stockItemId: lvIron, state: 'empty', kind: 'opening', qty: 10 }] }).error === 'opening_exists', 'and so is one from a branch sheet');
 check(lvCall({ action: 'listMeta', token: lvTok }).stockItems.length === lvProp.stockItems.length, 'the items are on file with their numbers');
+var lvAdminId = lv.readSheet(lv.SHEETS.USERS).filter(function (u) { return u.email === 'lv.admin@bestgas.sa'; })[0].id;
+check(lv.readSheet(lv.SHEETS.AUDIT).filter(function (a) { return a.action === 'migrate_stock_item'; }).every(function (a) { return a.userId === lvAdminId; }), 'the setup is audited under the manager who confirmed it');
+check(lvCogs() === lvCogsBefore, 'September profit and cost of goods are the same after a setup that typed a gas cost of 11 (' + lvCogsBefore + ' / ' + lvCogs() + ')');
+var lvLock1 = lvCall({ action: 'adminSaveEntity', token: lvTok, kind: 'product', id: lvBody.id, data: { stockEffect: 'sell_full' } });
+check(lvLock1.error === 'stock_link_locked', 'a sales item with history keeps its link: sell_empty to sell_full is refused (got ' + lvLock1.error + ')');
+check(lvRow(lvRep(), lvIron, 'full').opening === 2051, 'and iron full still opens at 2051');
+check(lvCall({ action: 'adminSaveEntity', token: lvTok, kind: 'product', id: lvExch.id, data: { stockItemId: '' } }).error === 'stock_link_locked', 'nor can its link be cleared');
+check(lvCall({ action: 'adminSaveEntity', token: lvTok, kind: 'product', id: lvExch.id, data: { unitPrice: 38 } }).ok, 'an edit that leaves the link alone is fine');
+check(lvCall({ action: 'adminSaveEntity', token: lvTok, kind: 'product', id: lvExch.id, data: { type: 'services' } }).error === 'stock_link_locked', 'and turning it into a service is refused too');
 
 console.log('--- LPG: inventory items are not sales items ---');
 var siMgr = scUser('Si Manager', 'store_manager');
@@ -3017,6 +3050,8 @@ check(/^STK-\d{4}$/.test(siIron.code || ''), 'an inventory item gets its own num
 check(siIron.boxSize === 35 && siIron.gasCost === 11 && siIron.cylinderCost === 140 && !siFiber.boxSize, 'a cylinder item keeps its box, gas cost and cylinder cost');
 var siWasher = siEnt('stock_item', { name: 'Si Washer', kind: 'unit', unitCost: 3, gasCost: 9, cylinderCost: 9, boxSize: 35 });
 check(siWasher.unitCost === 3 && !siWasher.gasCost && !siWasher.cylinderCost && !siWasher.boxSize, 'a unit item keeps no gas, cylinder or box');
+check(call({ action: 'adminSaveEntity', token: adminTok, kind: 'stock_item', id: siWasher.id, data: { active: false } }).ok, 'an inventory item is deactivated');
+['opening', 'damage', 'transfer_out'].forEach(function (k, i) { var r = call({ action: 'addInventoryMove', token: adminTok, locationId: siLoc.id, stockItemId: siWasher.id, kind: k, qty: k === 'opening' ? 10 : 1, date: '2026-09-0' + (i + 1) }); check(r.ok, 'a deactivated item still takes its ' + k + ' (' + (r.error || '') + ')'); });
 check(saveErr('stock_item', { name: 'Si Bad Kind', kind: 'gas' }) === 'invalid_stock_kind', 'an inventory item is a cylinder or a unit');
 check(saveErr('stock_item', { kind: 'unit' }) === 'name_required', 'and has a name');
 check(saveErr('stock_item', { name: 'Si Bad Cost', kind: 'cylinder', gasCost: -1 }) === 'invalid_cost', 'a cost cannot be negative');
@@ -3083,7 +3118,7 @@ check(siFF.sales === 3 && siFF.ending === 27, 'fiber full: 30 - 3 swapped = 27 (
 check(!siFE.exchangeIn && siFE.ending === 5, 'no fiber empty comes back');
 check(siRG.purchases === 6 && siRG.sales === 4 && siRG.ending === 22, 'regulators: 20 + 6 bought - 4 sold = 22 (got ' + siRG.ending + ')');
 var siProdIds = ctx.readSheet(ctx.SHEETS.PRODUCTS).map(function (p) { return p.id; });
-check((si1.rows || []).length === 5 && si1.rows.every(function (r) { return r.stockItemId && siProdIds.indexOf(r.stockItemId) < 0 && !('productId' in r); }), 'every row is an inventory item; no row is named after a sales item');
+check((si1.rows || []).length === 6 && si1.rows.every(function (r) { return r.stockItemId && siProdIds.indexOf(r.stockItemId) < 0 && !('productId' in r); }), 'every row is an inventory item; no row is named after a sales item');
 check(siIF.itemName === 'أسطوانة حديد' && siIF.cylinder === true && siRG.cylinder === false, 'rows carry the item\'s own name and kind');
 check(siIF.salesBySource['store:' + siStore.id] === 10, 'the sales stay with the store that made them');
 check(siIF.salesByProduct[spExch.id] === 10 && siIE.salesByProduct[spBody.id] === 2 && siFF.salesByProduct[spSwap.id] === 3, 'and each row says which sales item sold it');

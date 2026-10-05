@@ -39,7 +39,8 @@ var ENTITY_CHILDREN = {
   // a product with existing sales history stays selectable in entry forms
   // (deactivate instead) but blocking delete protects the report from
   // orphaned productIds it can no longer label.
-  product: [{ sheet: SHEETS.ENTRIES, field: 'productId' }],
+  // a product holding stock counted on it before the inventory items (old moves) stays too
+  product: [{ sheet: SHEETS.ENTRIES, field: 'productId' }, { sheet: SHEETS.INV_MOVES, field: 'productId' }],
   // same reasoning as product: an item already used by an entry stays
   // selectable history, so deactivate rather than delete.
   income_item: [{ sheet: SHEETS.ENTRIES, field: 'otherCashItemId' }],
@@ -732,7 +733,10 @@ function validateEntity_(kind, d) {
     // Cylinders (2026-09-30): a cylinder item keeps full and empty counts; a
     // product may draw its stock from one (the iron empty-cylinder sale draws
     // from the iron exchange), one level only, with its effect on the counts.
-    if (d.stockEffect != null && d.stockEffect !== '' && ['exchange', 'sell_empty', 'sell_full', 'unit'].indexOf(d.stockEffect) < 0) return 'invalid_stock_link';
+    // before the setup a product takes exactly what it always took: no unit effect, no inventory item
+    var liveSI = stockItemsLive_();
+    if (d.stockEffect != null && d.stockEffect !== '' && (liveSI ? ['exchange', 'sell_empty', 'sell_full', 'unit'] : ['exchange', 'sell_empty', 'sell_full']).indexOf(d.stockEffect) < 0) return 'invalid_stock_link';
+    if (!liveSI && (d.stockItemId || d.returnItemId)) return 'invalid_stock_link';
     // Inventory items (LPG Task 1b): a sales item names the item it moves and
     // how; a cylinder item is exchanged or sold empty or full, a unit item
     // sold in units, a service moves nothing. An exchange may take back
@@ -744,10 +748,10 @@ function validateEntity_(kind, d) {
     }
     if (d.returnItemId) {
       var rb = getById_(SHEETS.STOCK_ITEMS, d.returnItemId);
-      if (!rb || rb.kind !== 'cylinder' || rb.active === false || !si || si.kind !== 'cylinder' || d.stockEffect !== 'exchange') return 'invalid_return_link';
+      if (!rb || rb.kind !== 'cylinder' || !si || si.kind !== 'cylinder' || d.stockEffect !== 'exchange') return 'invalid_return_link';
     }
     // the old way a product held stock (before the inventory items are set up)
-    if (stockItemsLive_()) return null;
+    if (liveSI) return null;
     if (d.stockOf) {
       if (d.cylinder || d.stockOf === d.id) return 'invalid_stock_link';
       var anchor = getById_(SHEETS.PRODUCTS, d.stockOf);
@@ -898,6 +902,11 @@ function stockItemClean_(src) {
   else if (d.kind === 'cylinder') d.unitCost = '';
   return d;
 }
+// a sales item with sales in units, or stock counted on it before the inventory items
+function productHasStockHistory_(id) {
+  return readSheet(SHEETS.ENTRIES).some(function (e) { return !e.voided && e.productId === id && Number(e.qty || 0) > 0; }) ||
+    readSheet(SHEETS.INV_MOVES).some(function (m) { return !m.voided && m.productId === id && !m.stockItemId; });
+}
 // an inventory item with movements (old ones on its sales items too) or sales items on it
 function stockItemInUse_(id) {
   var linked = Object.create(null), any = false;
@@ -963,6 +972,10 @@ function saveEntity_(req, user) {
   if (err === 'duplicate_customer') return { ok: false, error: err, code: customerDuplicateOf_(merged.name, merged.id).code };
   if (err) return { ok: false, error: err };
   if (req.id) {
+    // after the setup a sales item with sales or old counts keeps its stock link: changing it
+    // would move every past figure. A wrong link is fixed with a new sales item (and this
+    // one deactivated) or a dated count (fix round 1, 2026-10-05).
+    if (kind === 'product' && stockItemsLive_() && ['stockItemId', 'stockEffect', 'returnItemId'].some(function (k) { return String(merged[k] || '') !== String(obj[k] || ''); }) && productHasStockHistory_(obj.id)) return { ok: false, error: 'stock_link_locked' };
     // an item with stock movements stays an inventory item, or its history would vanish
     if (kind === 'product' && merged.type === 'services' && obj.type !== 'services' && invHasMoves_(obj.id)) return { ok: false, error: 'has_stock' };
     // full and empty counts would lose their meaning

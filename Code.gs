@@ -752,6 +752,7 @@ function route_(req) {
     getInventoryLive: function () { return actionInventoryLive_(req, user); },
     importInventoryDay: function () { return actionImportInventoryDay_(req, user); },
     inventorySetupProposal: function () { return actionInventorySetupProposal_(req, user); },
+    inventorySetupPreview: function () { return actionInventorySetupPreview_(req, user); },
     applyInventorySetup: function () { return withMeta_(actionApplyInventorySetup_(req, user), req, user); },
 
     // costing and profitability (see Costing.gs)

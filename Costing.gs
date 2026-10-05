@@ -315,6 +315,8 @@ function costOfProduct_(p, date, hist, byId, items) {
   // a downgrade swap (dearer cylinder taken back) never books a negative cost
   sum = Math.max(0, Math.round(sum * 10000) / 10000);
   if (vals.some(function (v) { return v.known; })) return sum;
+  // an item made by the setup did not exist before its day: what the sales item cost then stands, even 0
+  if (it.fromSetup && it.since && date < String(it.since)) return legacyCostOfProduct_(p, date, hist, byId || Object.create(null));
   var legacyInputs = (hist[p.id] && hist[p.id].length) || Number(p.unitCost || 0) > 0 || (p.stockOf && byId && byId[p.stockOf]);
   if (legacyInputs) {
     var l = legacyCostOfProduct_(p, date, hist, byId || Object.create(null));

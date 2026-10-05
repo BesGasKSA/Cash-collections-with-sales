@@ -76,12 +76,14 @@ function invEffectState_(effect) { return effect === 'sell_empty' ? 'empty' : 'f
 // How every movement and sale finds the stock it moves: the inventory item and
 // (for a cylinder) full or empty. Before the setup a product holding stock is
 // its own item, exactly as the stock was read until then.
-function invStockCtx_() {
-  var live = stockItemsLive_();
+// `ov` {products, items} reads the stock as a setup plan would (the setup's preview).
+function invStockCtx_(ov) {
+  var live = ov ? true : stockItemsLive_();
   var products = Object.create(null), items = Object.create(null), legacyIn = Object.create(null), virt = Object.create(null);
-  readSheet(SHEETS.PRODUCTS).forEach(function (p) { products[p.id] = p; });
+  if (ov) { products = ov.products; items = ov.items; }
+  else readSheet(SHEETS.PRODUCTS).forEach(function (p) { products[p.id] = p; });
   var moves = readSheet(SHEETS.INV_MOVES);
-  if (live) readSheet(SHEETS.STOCK_ITEMS).forEach(function (s) { items[s.id] = s; });
+  if (live && !ov) readSheet(SHEETS.STOCK_ITEMS).forEach(function (s) { items[s.id] = s; });
   else {
     // an item switched to a service after its stock history keeps its rows
     var hasMoves = Object.create(null);
@@ -163,7 +165,8 @@ function invCheckMove_(m, date, sc) {
     // stock is kept on inventory items, never on a sales item
     if (!m.stockItemId) return { error: m.productId ? 'use_stock_item' : 'invalid_stock_item' };
     it = hasOwn_(sc.items, String(m.stockItemId)) ? sc.items[m.stockItemId] : null;
-    if (!it || it.active === false) return { error: 'invalid_stock_item' };
+    // a deactivated item still takes counts, damage and transfers (corrections); it is only not sold
+    if (!it) return { error: 'invalid_stock_item' };
     key = { stockItemId: it.id };
   } else {
     var product = getById_(SHEETS.PRODUCTS, m.productId);
@@ -292,7 +295,7 @@ function invUnitValue_(it, state, date, hist) {
   return state === 'empty' ? cyl : stockItemCostOn_(it, 'gasCost', date, hist).v + cyl;
 }
 
-function actionInventoryReport_(req, user) {
+function actionInventoryReport_(req, user, scOverride) {
   var scope = invReadBranches_(user);
   if (scope === false) return { ok: false, error: 'forbidden' };
   var today = todayRiyadh_();
@@ -303,7 +306,7 @@ function actionInventoryReport_(req, user) {
     if (req.locationId && locId !== req.locationId) return false;
     return !scope || scope.indexOf(locId) >= 0;
   }
-  var sc = invStockCtx_(), hist = sc.live ? costHistory_() : null;
+  var sc = scOverride || invStockCtx_(), hist = sc.live ? costHistory_() : null;
   var allMoves = sc.moves;
 
   // each branch-and-item starts on its opening count's day
@@ -324,6 +327,8 @@ function actionInventoryReport_(req, user) {
         opening: 0, purchases: 0, newCylinders: 0, returns: 0, exchangeIn: 0, transfersIn: 0, sales: 0, damaged: 0, refillOut: 0, transfersOut: 0,
         salesWithoutQty: 0, salesWithoutQtyAmount: 0, salesBySource: {}, salesByProduct: {},
         openingDate: op ? op.date : null, noOpening: !op || op.date > to };
+      // before the setup a row keeps its old shape too, for a client that has not reloaded
+      if (!sc.live) { rows[k].productId = it.id; rows[k].stockName = sc.products[it.id] ? (sc.products[it.id].stockName || '') : ''; }
       order.push(k);
     }
     return rows[k];
@@ -428,6 +433,8 @@ function inventorySetupProposal_() {
     if (sell && g) return { item: cylItem(g), effect: 'sell_empty' };
     return { item: addItem('own:' + p.id, { name: p.name, kind: 'unit', unitCost: Number(p.unitCost || 0) }), effect: 'unit' };
   }
+  var withSales = Object.create(null);
+  readSheet(SHEETS.ENTRIES).forEach(function (e) { if (!e.voided && e.productId && Number(e.qty || 0) > 0) withSales[e.productId] = true; });
   var guessed = Object.create(null);
   products.forEach(function (p) { if (p.type !== 'services' && !p.stockOf) guessed[p.id] = guess(p); });
   // a product drawing from another (the old link) follows it
@@ -440,6 +447,7 @@ function inventorySetupProposal_() {
   products.forEach(function (p) {
     if (p.type === 'services') return;
     var g = guessed[p.id];
+    if (g.toService && withSales[p.id]) { plan.push({ productId: p.id, name: p.name, toService: false, hasSales: true }); return; }
     if (g.toService) { plan.push({ productId: p.id, name: p.name, toService: true }); return; }
     var line = { productId: p.id, name: p.name, stockItemKey: g.item.key, stockEffect: g.effect, toService: false };
     if (g.effect === 'exchange' && p.returnOf && guessed[p.returnOf] && guessed[p.returnOf].item && guessed[p.returnOf].item.kind === 'cylinder' && guessed[p.returnOf].item.key !== g.item.key) line.returnItemKey = guessed[p.returnOf].item.key;
@@ -452,7 +460,7 @@ function inventorySetupProposal_() {
     }
     plan.push(line);
   });
-  var res = { stockItems: items, products: plan };
+  var res = { stockItems: items, products: plan, withSales: Object.keys(withSales) };
   var chk = inventorySetupCheck_(res);
   res.legacyMoves = chk.legacyMoves; res.conflicts = chk.conflicts;
   return res;
@@ -477,7 +485,7 @@ function inventorySetupCheck_(plan) {
     var x = per[m.productId] = per[m.productId] || { productId: m.productId, name: names[m.productId] || '', count: 0, maps: { stockItemKey: k, state: st }, openings: [] };
     x.count++;
     if (m.kind === 'opening') {
-      x.openings.push({ locationId: m.locationId, qty: Number(m.qty || 0), state: st });
+      x.openings.push({ locationId: m.locationId, qty: Number(m.qty || 0), state: st, rawState: m.state || null });
       var ok = m.locationId + '|' + k + '|' + (st || '');
       (openings[ok] = openings[ok] || { locationId: m.locationId, stockItemKey: k, state: st, productIds: [] });
       if (openings[ok].productIds.indexOf(m.productId) < 0) openings[ok].productIds.push(m.productId);
@@ -492,7 +500,49 @@ function actionInventorySetupProposal_(req, user) {
   requireManager_(user);
   if (stockItemsLive_()) return { ok: false, error: 'already_applied' };
   var p = inventorySetupProposal_();
-  return { ok: true, stockItems: p.stockItems, products: p.products, legacyMoves: p.legacyMoves, conflicts: p.conflicts };
+  return { ok: true, stockItems: p.stockItems, products: p.products, legacyMoves: p.legacyMoves, conflicts: p.conflicts, withSales: p.withSales };
+}
+
+// What the setup would change, branch by branch: each stock line's ending now,
+// read the old way and read with the plan. The empties rise by the exchanges
+// recorded since the count, because their empties now come back.
+function actionInventorySetupPreview_(req, user) {
+  requireManager_(user);
+  if (stockItemsLive_()) return { ok: false, error: 'already_applied' };
+  var plan = { stockItems: req.stockItems, products: req.products };
+  var v = inventorySetupValidate_(plan);
+  if (v.error) return { ok: false, error: v.error, name: v.name || null };
+  var items = Object.create(null), lineOf = Object.create(null), products = Object.create(null);
+  readSheet(SHEETS.STOCK_ITEMS).forEach(function (s) { items[s.id] = s; });
+  Object.keys(v.items).forEach(function (key) { var d = v.items[key], o = {}; safeOwnKeys_(d).forEach(function (k) { o[k] = d[k]; }); o.id = key; items[key] = o; });
+  readSheet(SHEETS.PRODUCTS).forEach(function (p) { var o = {}; safeOwnKeys_(p).forEach(function (k) { o[k] = p[k]; }); products[p.id] = o; });
+  v.lines.forEach(function (l) {
+    var o = products[l.product.id];
+    if (l.toService) { o.type = 'services'; o.stockItemId = ''; o.stockEffect = ''; o.returnItemId = ''; return; }
+    if (!l.itemKey && !l.itemId) { o.stockItemId = ''; return; }
+    o.stockItemId = l.itemKey || l.itemId; o.stockEffect = l.effect; o.returnItemId = l.backKey || l.backId || '';
+    lineOf[o.id] = o;
+  });
+  var today = todayRiyadh_();
+  var before = actionInventoryReport_({ dateFrom: today, dateTo: today }, user);
+  var after = actionInventoryReport_({ dateFrom: today, dateTo: today }, user, invStockCtx_({ products: products, items: items }));
+  if (!before.ok || !after.ok) return { ok: false, error: before.error || after.error };
+  var lines = Object.create(null), order = [];
+  function line(loc, key, st) {
+    var k = loc + '|' + key + '|' + (st || '');
+    if (!lines[k]) { lines[k] = { locationId: loc, stockItemKey: key, state: st || null, name: items[key] ? items[key].name : '', before: null, after: null }; order.push(k); }
+    return lines[k];
+  }
+  after.rows.forEach(function (r) { var x = line(r.locationId, r.stockItemId, r.state); if (!r.noOpening) x.after = r.ending; });
+  before.rows.forEach(function (r) {
+    // an old row was a product: it lands where that product's counts land
+    var p = lineOf[r.stockItemId], it = p ? items[p.stockItemId] : null;
+    if (!it || r.noOpening) return;
+    var st = it.kind === 'cylinder' ? (r.state && products[r.stockItemId] && products[r.stockItemId].cylinder ? r.state : invEffectState_(p.stockEffect)) : null;
+    var x = line(r.locationId, it.id, st);
+    x.before = Math.round(((x.before || 0) + r.ending) * 1000) / 1000;
+  });
+  return { ok: true, lines: order.map(function (k) { return lines[k]; }) };
 }
 
 // The plan checked line by line. Returns {error, key|productId} or {items, lines}.
@@ -513,7 +563,11 @@ function inventorySetupValidate_(plan) {
     var l = plan.products[j] || {}, p = l.productId ? getById_(SHEETS.PRODUCTS, l.productId) : null;
     if (!p || hasOwn_(seen, p.id)) return { error: 'invalid_product', index: j };
     seen[p.id] = true;
-    if (l.toService === true) { lines.push({ product: p, toService: true }); continue; }
+    if (l.toService === true) {
+      // a sales item that sold is not turned into a service: its past sales would leave the stock
+      if (readSheet(SHEETS.ENTRIES).some(function (e) { return !e.voided && e.productId === p.id && Number(e.qty || 0) > 0; })) return { error: 'has_sales', productId: p.id, name: p.name };
+      lines.push({ product: p, toService: true }); continue;
+    }
     var it = null, itKey = l.stockItemKey != null && l.stockItemKey !== '' ? String(l.stockItemKey) : '';
     if (itKey) it = hasOwn_(items, itKey) ? items[itKey] : null;
     else if (l.stockItemId) it = hasOwn_(existing, String(l.stockItemId)) ? existing[l.stockItemId] : null;
@@ -535,29 +589,36 @@ function inventorySetupValidate_(plan) {
 // translation), each sales item's link, and the service-like items made
 // services. Moves and entries are never touched. Returns the rows written.
 // The caller holds the script lock.
-function migrateStockItems_(plan) {
+function migrateStockItems_(plan, userId) {
+  userId = userId || 'system';
   var v = inventorySetupValidate_(plan);
   if (v.error) return v;
   var chk = inventorySetupCheck_(plan);
   if (chk.conflicts.length) return { error: 'opening_conflict', conflicts: chk.conflicts, names: chk.conflicts[0].names };
   if (chk.unmapped.length) return { error: 'moves_unmapped', productIds: chk.unmapped, names: chk.unmapped.map(function (id) { var p = getById_(SHEETS.PRODUCTS, id); return p ? p.name : id; }) };
   var today = todayRiyadh_(), at = new Date().toISOString(), ids = Object.create(null), written = 0, names = [];
+  // a confirm that stopped half-way left some items: they are reused, never written twice
+  var done = Object.create(null);
+  readSheet(SHEETS.STOCK_ITEMS).forEach(function (s) { if (s.fromSetup && s.setupKey != null) done[String(s.setupKey)] = s; });
   Object.keys(v.items).forEach(function (key) {
+    if (done[key]) { ids[key] = done[key].id; names = names.concat(translatableOf_(done[key])); return; }
     var d = v.items[key];
     d.id = Utilities.getUuid(); d.code = nextCode_('stock_item'); d.since = today; d.fromSetup = true; d.setupKey = key; d.createdAt = at;
     var s = writeRow(SHEETS.STOCK_ITEMS, d);
     ids[key] = s.id; written++; names = names.concat(translatableOf_(s));
-    logAudit_('migrate_stock_item', 'system', s.id + ' ' + s.code + ' ' + s.name);
+    logAudit_('migrate_stock_item', userId, s.id + ' ' + s.code + ' ' + s.name);
   });
   v.lines.forEach(function (l) {
     var p = l.product;
+    var was = { type: p.type, stockItemId: p.stockItemId, stockEffect: p.stockEffect, returnItemId: p.returnItemId };
     if (l.toService) { p.type = 'services'; p.stockItemId = ''; p.stockEffect = ''; p.returnItemId = ''; }
     else if (l.itemKey || l.itemId) {
       p.stockItemId = l.itemKey ? ids[l.itemKey] : l.itemId; p.stockEffect = l.effect;
       p.returnItemId = l.backKey ? ids[l.backKey] : (l.backId || '');
     } else return;
+    if (was.type === p.type && String(was.stockItemId || '') === String(p.stockItemId || '') && String(was.stockEffect || '') === String(p.stockEffect || '') && String(was.returnItemId || '') === String(p.returnItemId || '')) return;   // already linked by the stopped run
     writeRow(SHEETS.PRODUCTS, p); written++;
-    logAudit_('migrate_stock_item', 'system', p.id + (l.toService ? ' -> service' : ' -> ' + p.stockItemId + ' ' + p.stockEffect));
+    logAudit_('migrate_stock_item', userId, p.id + (l.toService ? ' -> service' : ' -> ' + p.stockItemId + ' ' + p.stockEffect));
   });
   return { ok: true, written: written, names: names, stockItemIds: ids };
 }
@@ -570,7 +631,7 @@ function actionApplyInventorySetup_(req, user) {
   try {
     freshenExec_();
     if (stockItemsLive_()) return { ok: false, error: 'already_applied' };
-    res = migrateStockItems_({ stockItems: req.stockItems, products: req.products });
+    res = migrateStockItems_({ stockItems: req.stockItems, products: req.products }, user.id);
     if (!res.ok) return { ok: false, error: res.error, key: res.key || null, productId: res.productId || null, name: res.name || null, names: res.names || null, conflicts: res.conflicts || null, index: res.index != null ? res.index : null };
     setScriptProp_(INV_SETUP_FLAG_, new Date().toISOString());
     logAudit_('inventory_setup', user.id, Object.keys(res.stockItemIds).length + ' items, ' + res.written + ' rows');
