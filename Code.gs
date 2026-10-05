@@ -29,6 +29,9 @@ var SHEETS = {
   TRANSLATIONS: 'translations',
   // stock movements typed in by hand: opening, purchase, return, damage (Inventory.gs)
   INV_MOVES: 'inventory_moves',
+  // what a branch holds and counts (LPG Task 1b): cylinder items full and empty,
+  // unit items in units; the products (sales items) name the item they move
+  STOCK_ITEMS: 'stock_items',
   // Pure geography (Country[KSA, implicit]/City/Zone), independent of
   // Cluster — Cluster is an employee's management assignment (cluster
   // manager + collector) and can cut across zones; Zone is just a label
@@ -749,6 +752,9 @@ function route_(req) {
     getInventoryReport: function () { return actionInventoryReport_(req, user); },
     getInventoryLive: function () { return actionInventoryLive_(req, user); },
     importInventoryDay: function () { return actionImportInventoryDay_(req, user); },
+    inventorySetupProposal: function () { return actionInventorySetupProposal_(req, user); },
+    inventorySetupPreview: function () { return actionInventorySetupPreview_(req, user); },
+    applyInventorySetup: function () { return withMeta_(actionApplyInventorySetup_(req, user), req, user); },
 
     // costing and profitability (see Costing.gs)
     listCosts: function () { return actionListCosts_(req, user); },
@@ -758,6 +764,7 @@ function route_(req) {
     voidCostLine: function () { return actionVoidCostLine_(req, user); },
     importCostLines: function () { return actionImportCostLines_(req, user); },
     setProductCost: function () { return withMeta_(actionSetProductCost_(req, user), req, user); },
+    setStockItemCost: function () { return withMeta_(actionSetStockItemCost_(req, user), req, user); },
     getRateHistory: function () { return actionGetRateHistory_(req, user); },
     getCostReport: function () { return actionCostReport_(req, user); },
     getProfitReport: function () { return actionProfitReport_(req, user); },

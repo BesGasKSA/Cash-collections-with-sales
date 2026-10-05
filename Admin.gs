@@ -18,7 +18,9 @@ var ENTITY_SHEET = {
   customer: SHEETS.CUSTOMERS,
   city: SHEETS.CITIES,
   channel: SHEETS.CHANNELS,
-  cost_type: SHEETS.COST_TYPES
+  cost_type: SHEETS.COST_TYPES,
+  // what a branch holds and counts (LPG Task 1b): the sales items name it
+  stock_item: SHEETS.STOCK_ITEMS
 };
 
 // child sheet + the field on the child that points at the parent, used to
@@ -37,7 +39,8 @@ var ENTITY_CHILDREN = {
   // a product with existing sales history stays selectable in entry forms
   // (deactivate instead) but blocking delete protects the report from
   // orphaned productIds it can no longer label.
-  product: [{ sheet: SHEETS.ENTRIES, field: 'productId' }],
+  // a product holding stock counted on it before the inventory items (old moves) stays too
+  product: [{ sheet: SHEETS.ENTRIES, field: 'productId' }, { sheet: SHEETS.INV_MOVES, field: 'productId' }],
   // same reasoning as product: an item already used by an entry stays
   // selectable history, so deactivate rather than delete.
   income_item: [{ sheet: SHEETS.ENTRIES, field: 'otherCashItemId' }],
@@ -47,7 +50,9 @@ var ENTITY_CHILDREN = {
   // a channel with sales on it stays on file (deactivate instead)
   channel: [{ sheet: SHEETS.ENTRIES, field: 'channelId' }],
   // a city is referenced by name, not id — see actionAdminDeleteEntity_
-  city: []
+  city: [],
+  // an inventory item with movements, or one a sales item sells from or takes back, stays on file
+  stock_item: [{ sheet: SHEETS.INV_MOVES, field: 'stockItemId' }, { sheet: SHEETS.PRODUCTS, field: 'stockItemId' }, { sheet: SHEETS.PRODUCTS, field: 'returnItemId' }]
 };
 
 function requireAdmin_(user) {
@@ -728,12 +733,57 @@ function validateEntity_(kind, d) {
     // Cylinders (2026-09-30): a cylinder item keeps full and empty counts; a
     // product may draw its stock from one (the iron empty-cylinder sale draws
     // from the iron exchange), one level only, with its effect on the counts.
-    if (d.stockEffect != null && d.stockEffect !== '' && ['exchange', 'sell_empty', 'sell_full'].indexOf(d.stockEffect) < 0) return 'invalid_stock_link';
+    // before the setup a product takes exactly what it always took: no unit effect, no inventory item
+    var liveSI = stockItemsLive_();
+    if (d.stockEffect != null && d.stockEffect !== '' && (liveSI || (d.id && getById_(SHEETS.PRODUCTS, d.id) && getById_(SHEETS.PRODUCTS, d.id).stockEffect === d.stockEffect) ? ['exchange', 'sell_empty', 'sell_full', 'unit'] : ['exchange', 'sell_empty', 'sell_full']).indexOf(d.stockEffect) < 0) return 'invalid_stock_link';
+    // (a confirm that stopped half-way may have linked it already: what is stored is kept)
+    var stored = !liveSI && d.id ? getById_(SHEETS.PRODUCTS, d.id) : null;
+    function keeps(k) { return stored && String(stored[k] || '') === String(d[k] || ''); }
+    if (!liveSI && ((d.stockItemId && !keeps('stockItemId')) || (d.returnItemId && !keeps('returnItemId')))) return 'invalid_stock_link';
+    // Inventory items (LPG Task 1b): a sales item names the item it moves and
+    // how; a cylinder item is exchanged or sold empty or full, a unit item
+    // sold in units, a service moves nothing. An exchange may take back
+    // another cylinder item's empty (empty iron in, full fiber out).
+    var si = d.stockItemId ? getById_(SHEETS.STOCK_ITEMS, d.stockItemId) : null;
+    if (d.stockItemId) {
+      if (!si || d.type === 'services') return 'invalid_stock_link';
+      if (si.kind === 'cylinder' ? ['exchange', 'sell_empty', 'sell_full'].indexOf(d.stockEffect) < 0 : d.stockEffect !== 'unit') return 'invalid_stock_link';
+    }
+    if (d.returnItemId) {
+      var rb = getById_(SHEETS.STOCK_ITEMS, d.returnItemId);
+      if (!rb || rb.kind !== 'cylinder' || !si || si.kind !== 'cylinder' || d.stockEffect !== 'exchange') return 'invalid_return_link';
+    }
+    // the old way a product held stock (before the inventory items are set up)
+    if (liveSI) return null;
     if (d.stockOf) {
       if (d.cylinder || d.stockOf === d.id) return 'invalid_stock_link';
       var anchor = getById_(SHEETS.PRODUCTS, d.stockOf);
       if (!anchor || anchor.stockOf || anchor.type === 'services') return 'invalid_stock_link';
       if (d.id && readSheet(SHEETS.PRODUCTS).some(function (p) { return p.stockOf === d.id && p.id !== d.id; })) return 'invalid_stock_link';
+    }
+    // LPG (2026-10-05): an exchange may take back another cylinder type than the one it
+    // sends out (empty iron in, full fiber out); a box holds a whole number of cylinders
+    if (d.returnOf) {
+      var back = getById_(SHEETS.PRODUCTS, d.returnOf);
+      if (!back || back.active === false || !back.cylinder || !d.stockOf || (d.stockEffect || 'exchange') !== 'exchange') return 'invalid_return_link';
+    }
+    if (d.boxSize != null && d.boxSize !== '') {
+      var bx = Number(d.boxSize);
+      if (!d.cylinder || !(isFinite(bx) && bx === Math.floor(bx) && bx >= 1 && bx <= 1000)) return 'invalid_box_size';
+    }
+  } else if (kind === 'stock_item') {
+    // what a branch holds and counts: a cylinder (full and empty, a box size,
+    // the gas and the cylinder priced apart) or a unit item
+    if (!String(d.name || '').trim()) return 'name_required';
+    if (d.kind !== 'cylinder' && d.kind !== 'unit') return 'invalid_stock_kind';
+    var cf = ['gasCost', 'cylinderCost', 'unitCost'];
+    for (var ci = 0; ci < cf.length; ci++) {
+      var cv = d[cf[ci]];
+      if (cv != null && cv !== '' && !(isFinite(Number(cv)) && Number(cv) >= 0 && Number(cv) <= COST_MAX_AMOUNT_)) return 'invalid_cost';
+    }
+    if (d.boxSize != null && d.boxSize !== '') {
+      var sbx = Number(d.boxSize);
+      if (d.kind !== 'cylinder' || !(isFinite(sbx) && sbx === Math.floor(sbx) && sbx >= 1 && sbx <= 1000)) return 'invalid_box_size';
     }
   } else if (kind === 'income_item' || kind === 'expense_item') {
     if (!d.name) return 'name_required';
@@ -840,6 +890,33 @@ function actionAdminImportEntities_(req, user) {
   return { ok: true, created: created, updated: updated, total: rows.length, results: results };
 }
 
+// An inventory item's fields made plain: numbers as numbers, and only the
+// fields its kind has (a unit item has no gas, cylinder or box; a cylinder no unit cost).
+function stockItemClean_(src) {
+  var d = {};
+  safeOwnKeys_(src || {}).forEach(function (k) { d[k] = src[k]; });
+  d.name = String(d.name == null ? '' : d.name).replace(/\s+/g, ' ').trim();
+  ['boxSize', 'gasCost', 'cylinderCost', 'unitCost'].forEach(function (k) {
+    if (d[k] == null || d[k] === '') { d[k] = ''; return; }
+    var n = Number(d[k]);
+    if (isFinite(n)) d[k] = n;
+  });
+  if (d.kind === 'unit') { d.boxSize = ''; d.gasCost = ''; d.cylinderCost = ''; }
+  else if (d.kind === 'cylinder') d.unitCost = '';
+  return d;
+}
+// a sales item with sales in units, or stock counted on it before the inventory items
+function productHasStockHistory_(id) {
+  return readSheet(SHEETS.ENTRIES).some(function (e) { return !e.voided && e.productId === id && Number(e.qty || 0) > 0; }) ||
+    readSheet(SHEETS.INV_MOVES).some(function (m) { return !m.voided && m.productId === id && !m.stockItemId; });
+}
+// an inventory item with movements (old ones on its sales items too) or sales items on it
+function stockItemInUse_(id) {
+  var linked = Object.create(null), any = false;
+  readSheet(SHEETS.PRODUCTS).forEach(function (p) { if (p.stockItemId === id || p.returnItemId === id) { linked[p.id] = true; any = true; } });
+  return any || readSheet(SHEETS.INV_MOVES).some(function (m) { return !m.voided && (m.stockItemId === id || (!m.stockItemId && linked[m.productId])); });
+}
+
 function saveEntity_(req, user) {
   var kind = req.kind;
   var sheetName = hasOwn_(ENTITY_SHEET, kind) ? ENTITY_SHEET[kind] : null;
@@ -863,14 +940,51 @@ function saveEntity_(req, user) {
   var merged = {};
   safeOwnKeys_(obj).forEach(function (k0) { merged[k0] = obj[k0]; });
   safeOwnKeys_(d).forEach(function (k1) { merged[k1] = d[k1]; });
+  // a returned cylinder type means nothing once the product stops drawing from a stock item (or stops
+  // being an exchange without the form naming one), and a box size nothing once it is no cylinder
+  if (kind === 'product' && merged.returnOf && (!merged.stockOf || (!d.returnOf && (merged.stockEffect || 'exchange') !== 'exchange'))) { merged.returnOf = ''; d.returnOf = ''; }
+  if (kind === 'product' && !merged.cylinder && merged.boxSize != null && merged.boxSize !== '') { merged.boxSize = ''; d.boxSize = ''; }
+  function setBoth(k, v) { merged[k] = v; d[k] = v; }
+  var stockBefore = kind === 'stock_item' && req.id ? JSON.parse(JSON.stringify(obj)) : null;
+  if (kind === 'product' && stockItemsLive_()) {
+    // the old stock fields leave the sales item once inventory items exist: kept on
+    // the rows saved before, never taken from a form
+    ['cylinder', 'stockName', 'emptyCost', 'stockOf', 'returnOf', 'boxSize'].forEach(function (k) { if (hasOwn_(d, k)) { delete d[k]; merged[k] = obj[k]; } });
+    if (merged.type === 'services') {
+      // a service moves no stock (one sent with a link is refused below)
+      if (!(hasOwn_(d, 'stockItemId') && d.stockItemId)) { setBoth('stockItemId', ''); setBoth('stockEffect', ''); setBoth('returnItemId', ''); }
+    } else if (!merged.stockItemId) {
+      // no inventory item: nothing hangs on it
+      if (merged.stockEffect) setBoth('stockEffect', '');
+      if (merged.returnItemId) setBoth('returnItemId', '');
+    } else {
+      var lnk = getById_(SHEETS.STOCK_ITEMS, merged.stockItemId);
+      if (lnk && (merged.stockEffect == null || merged.stockEffect === '')) setBoth('stockEffect', lnk.kind === 'cylinder' ? 'exchange' : 'unit');
+      // an item taken back means nothing once the sales item stops being an exchange
+      if (merged.returnItemId && !hasOwn_(d, 'returnItemId') && merged.stockEffect !== 'exchange') setBoth('returnItemId', '');
+    }
+  }
+  if (kind === 'stock_item') {
+    // the system's own fields are never the form's
+    ['since', 'fromSetup', 'setupKey'].forEach(function (k) { if (hasOwn_(d, k)) { delete d[k]; merged[k] = obj[k]; } });
+    var cleaned = stockItemClean_(merged);
+    ['kind', 'boxSize', 'gasCost', 'cylinderCost', 'unitCost'].forEach(function (k) { if (cleaned[k] !== obj[k] || hasOwn_(d, k)) setBoth(k, cleaned[k]); });
+    if (!obj.since) setBoth('since', todayRiyadh_());
+  }
   var err = validateEntity_(kind, merged);
   if (err === 'duplicate_customer') return { ok: false, error: err, code: customerDuplicateOf_(merged.name, merged.id).code };
   if (err) return { ok: false, error: err };
   if (req.id) {
+    // after the setup a sales item with sales or old counts keeps its stock link: changing it
+    // would move every past figure. A wrong link is fixed with a new sales item (and this
+    // one deactivated) or a dated count (fix round 1, 2026-10-05).
+    if (kind === 'product' && stockItemsLive_() && ['stockItemId', 'stockEffect', 'returnItemId'].some(function (k) { return String(merged[k] || '') !== String(obj[k] || ''); }) && productHasStockHistory_(obj.id)) return { ok: false, error: 'stock_link_locked' };
     // an item with stock movements stays an inventory item, or its history would vanish
     if (kind === 'product' && merged.type === 'services' && obj.type !== 'services' && invHasMoves_(obj.id)) return { ok: false, error: 'has_stock' };
     // full and empty counts would lose their meaning
     if (kind === 'product' && !!merged.cylinder !== !!obj.cylinder && invHasMoves_(obj.id)) return { ok: false, error: 'has_stock' };
+    // an inventory item with movements or sales items keeps its kind (full and empty would lose their meaning)
+    if (kind === 'stock_item' && merged.kind !== obj.kind && stockItemInUse_(obj.id)) return { ok: false, error: 'has_stock' };
     var flightErr = inFlightError_(kind, obj, merged);
     if (flightErr) return { ok: false, error: flightErr };
   }
@@ -887,6 +1001,7 @@ function saveEntity_(req, user) {
 
   var saved = writeRow(sheetName, obj);
   if (kind === 'product') noteProductCost_(saved, costBefore, user.id);
+  if (kind === 'stock_item') noteStockItemCost_(saved, stockBefore, user.id);
   if (rateBefore) rateChanges_(kind, rateBefore, saved, user.id, { via: req.importing ? 'import' : 'save' });
   logAudit_('admin_save_' + kind, user.id, saved.id);
   if (!req.noTranslate) fillTranslations_(translatableOf_(saved));
@@ -900,7 +1015,7 @@ function saveEntity_(req, user) {
 // amounts it was worked out with, so a change never rewrites it; this sheet
 // is the record of what stood when. Maps (fees and commissions per item)
 // are compared item by item.
-var RATE_FIELDS_ = { product: ['unitPrice', 'priceLocked', 'unitCost'], customer: ['deliveryFees', 'commissions'], channel: ['deliveryFees', 'commissions'] };
+var RATE_FIELDS_ = { product: ['unitPrice', 'priceLocked', 'unitCost'], customer: ['deliveryFees', 'commissions'], channel: ['deliveryFees', 'commissions'], stock_item: ['gasCost', 'cylinderCost', 'unitCost'] };
 function rateVal_(v) { if (v === undefined || v === null || v === '') return null; var n = Number(v); return isFinite(n) ? Math.round(n * 10000) / 10000 : String(v); }
 function rateChanges_(kind, before, after, userId, extra) {
   if (!hasOwn_(RATE_FIELDS_, kind) || !after) return [];
@@ -946,7 +1061,7 @@ function actionGetRateHistory_(req, user) {
   if (!isCompanyWide_(user.role)) return { ok: false, error: 'forbidden' };
   if (!hasOwn_(RATE_FIELDS_, req.kind)) return { ok: false, error: 'invalid_kind' };
   var seeCost = costCanRead_(user);
-  var rows = readSheet(SHEETS.RATE_CHANGES).filter(function (r) { return r.kind === req.kind && r.recordId === req.id && (seeCost || r.field !== 'unitCost'); })
+  var rows = readSheet(SHEETS.RATE_CHANGES).filter(function (r) { return r.kind === req.kind && r.recordId === req.id && (seeCost || ['unitCost', 'gasCost', 'cylinderCost'].indexOf(r.field) < 0); })
     .sort(function (a, b) { return String(b.at).localeCompare(String(a.at)); });
   return { ok: true, changes: rows };
 }
@@ -1288,7 +1403,7 @@ function cityDuplicateOf_(name, selfId) {
 // script lock.
 var CODE_PREFIX_ = {
   location: 'BR', cluster: 'AR', city: 'CT', zone: 'ZN', store: 'ST', car: 'CR', pos: 'POS',
-  product: 'PR', income_item: 'INC', expense_item: 'EXP', customer: 'CUS', user: 'EMP', channel: 'CH', cost_type: 'CST'
+  product: 'PR', income_item: 'INC', expense_item: 'EXP', customer: 'CUS', user: 'EMP', channel: 'CH', cost_type: 'CST', stock_item: 'STK'
 };
 function codeSheet_(kind) { return kind === 'user' ? SHEETS.USERS : ENTITY_SHEET[kind]; }
 function isCodedSheet_(name) {
@@ -1537,11 +1652,14 @@ function actionMeta_(req, user) {
   var customers = readSheet(SHEETS.CUSTOMERS);
   var channels = readSheet(SHEETS.CHANNELS);
   var cities = readSheet(SHEETS.CITIES);
+  // the inventory items the branches count (LPG Task 1b)
+  var stockItems = readSheet(SHEETS.STOCK_ITEMS);
   var users = readSheet(SHEETS.USERS).map(publicUser_);
 
   // what a unit costs the company is not a driver's, a counter worker's or a collector's to read
   if (['driver', 'branch_worker', 'collector'].indexOf(user.role) >= 0) {
     products = products.map(function (p) { var o = {}; safeOwnKeys_(p).forEach(function (k) { if (k !== 'unitCost' && k !== 'emptyCost') o[k] = p[k]; }); return o; });
+    stockItems = stockItems.map(function (s) { var o = {}; safeOwnKeys_(s).forEach(function (k) { if (k !== 'unitCost' && k !== 'gasCost' && k !== 'cylinderCost') o[k] = s[k]; }); return o; });
   }
   if (isCompanyWide_(user.role) && user.role !== 'admin' && user.role !== 'finance') {
     // the deputy, the accountant and operations see people, not their sign-in
@@ -1565,9 +1683,9 @@ function actionMeta_(req, user) {
   return {
     ok: true, costTypes: costTypes,
     locations: locations, stores: stores, cars: cars, pos: pos,
-    clusters: clusters, zones: zones, products: products, users: users,
+    clusters: clusters, zones: zones, products: products, stockItems: stockItems, users: users,
     incomeItems: incomeItems, expenseItems: expenseItems, customers: customers, cities: cities, channels: channels,
     translations: readSheet(SHEETS.TRANSLATIONS).map(function (r) { return { src: r.src, en: r.en || '', ur: r.ur || '', auto: r.auto !== false }; }),
-    config: { vatRate: vatRate_(), vatHistory: vatHistory_(), staleThresholdHours: staleThresholdHours_(), heldThresholdHours: heldThresholdHours_(), secondApprovalThreshold: secondApprovalThreshold_(), areaManagerBulkUploadEnabled: areaManagerBulkUploadEnabled_(), posSalesEnabled: posSalesEnabled_(), salesIncludeVat: salesIncludeVat_(), liveLocked: config_().liveLocked === true, liveLockedAt: config_().liveLockedAt || null }
+    config: { vatRate: vatRate_(), vatHistory: vatHistory_(), staleThresholdHours: staleThresholdHours_(), heldThresholdHours: heldThresholdHours_(), secondApprovalThreshold: secondApprovalThreshold_(), areaManagerBulkUploadEnabled: areaManagerBulkUploadEnabled_(), posSalesEnabled: posSalesEnabled_(), salesIncludeVat: salesIncludeVat_(), liveLocked: config_().liveLocked === true, liveLockedAt: config_().liveLockedAt || null, stockItemsLive: stockItemsLive_() }
   };
 }
