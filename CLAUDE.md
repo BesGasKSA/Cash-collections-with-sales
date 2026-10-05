@@ -1551,6 +1551,22 @@ should have history for the numbers changes in all areas; it's very sensitive".
   list opens `#abFix` (quantity, price, amount, remove line), or a corrected file is
   uploaded while correcting. The deputy's card shows the version and the last reason.
 
+## What each collector must collect: collector > area > branch > day > request (2026-10-05)
+
+- `collectPivotTree_(handoffs, meta)` (pure, tested in `tests/run.js`) groups the
+  `cluster_to_collector` handovers the screen already holds; `collectPivotCard_`
+  draws it with the inventory tree's `pv-*` classes (own prefix `cpv-`; **`cp_` is the
+  cost-profile screen's prefix, `cp_title`/`cp_hint` collided once**). Columns: waiting
+  for the deputy (`pending_deputy`), waiting to be received (`pending`), received not
+  deposited (`confirmed`, no `consumedBy`), deposited (`consumedBy` points at a live
+  deposit made inside the chosen period), to collect = deputy + pending, oldest open
+  day (amber past the stale threshold, red past twice it). Returned and disputed
+  requests are only counts on their collector, area and branch; rejected ones nothing.
+- Mounted on the Handoffs screen under the waiting cards for collector, admin, finance,
+  deputy, accountant and operations roles, and on Home for collectors (opens on his
+  branches). Tapping a request opens its own handover row (`cpOpenRequest_`). Read-only:
+  no new server action, scoping is `listHandoffs`'s own.
+
 ## Costing and profitability (2026-10-01, `Costing.gs`)
 
 The user asked for monthly expense profiles per car and per store (every

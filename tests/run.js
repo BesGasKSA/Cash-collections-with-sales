@@ -3697,5 +3697,68 @@ check(ltE.ok && ltE.entry.note.length <= 1000, 'a note is kept to 1000 character
 var ltR = call({ action: 'createRiskItem', token: adminTok, type: ctx.RISK_TYPES[0], title: ltLong, description: ltLong + ltLong });
 check(ltR.ok && ltR.item.title.length <= 200 && ltR.item.description.length <= 4000, 'a report\'s title and text too');
 
+console.log('--- the collector pivot: collector > area > branch > day > request ---');
+var cpCtx = vm.createContext({});
+var cpSrc = clientFn_('collectPivotTree_');
+check(!!cpSrc, 'collectPivotTree_ exists');
+if (cpSrc) vm.runInContext(cpSrc, cpCtx);
+if (cpCtx.collectPivotTree_) {
+  var cpLoc = { b1: { clusterId: 'A1' }, b2: { clusterId: 'A1' }, b3: { clusterId: 'A2' } };
+  function cpH(id, to, loc, status, amount, day, extra) {
+    return Object.assign({ id: id, kind: 'cluster_to_collector', toUserId: to, fromUserId: 'am' + loc, locationId: loc, clusterId: cpLoc[loc].clusterId, status: status, amount: amount, createdAt: day + 'T09:00:00.000Z' }, extra || {});
+  }
+  var cpList = [
+    cpH('h1', 'c1', 'b1', 'pending_deputy', 100, '2026-10-01'),
+    cpH('h2', 'c1', 'b1', 'pending', 200, '2026-10-02'),
+    cpH('h3', 'c1', 'b1', 'confirmed', 50, '2026-10-02'),
+    cpH('h4', 'c1', 'b2', 'pending', 350, '2026-10-03'),
+    cpH('h5', 'c1', 'b2', 'returned', 999, '2026-10-03'),
+    cpH('h6', 'c2', 'b3', 'confirmed', 80, '2026-10-01', { consumedBy: 'd1' }),
+    cpH('h7', 'c2', 'b3', 'pending', 40, '2026-10-04'),
+    cpH('h8', 'c2', 'b3', 'confirmed', 25, '2026-09-20', { consumedBy: 'd3' }),
+    cpH('h9', 'c1', 'b2', 'rejected', 77, '2026-10-03'),
+    { id: 'x1', kind: 'location_to_cluster', toUserId: 'am', locationId: 'b1', status: 'pending', amount: 5000, createdAt: '2026-10-03T09:00:00.000Z' },
+    { id: 'd1', kind: 'deposit', fromUserId: 'c2', amount: 80, status: 'completed', createdAt: '2026-10-04T09:00:00.000Z', sourceHandoffIds: ['h6'] },
+    { id: 'd3', kind: 'deposit', fromUserId: 'c2', amount: 25, status: 'completed', createdAt: '2026-09-21T09:00:00.000Z', sourceHandoffIds: ['h8'] }];
+  var cpMeta = { locOf: function (id) { return cpLoc[id] || {}; }, dayOf: function (iso) { return String(iso).slice(0, 10); }, from: '2026-10-01', to: '2026-10-31' };
+  var cpTree = cpCtx.collectPivotTree_(cpList, cpMeta);
+  check(cpTree.roots.length === 2, 'two collectors at the top');
+  check(cpTree.roots[0].key === 'c1' && cpTree.roots[1].key === 'c2', 'the collector with more to collect comes first');
+  var c1 = cpTree.roots[0], c2 = cpTree.roots[1];
+  close(c1.T.deputy, 100, 'c1 waits on the deputy for 100');
+  close(c1.T.pending, 550, 'c1 has 550 to receive');
+  close(c1.T.held, 50, 'c1 holds 50 not yet deposited');
+  close(c1.T.toCollect, 650, 'to collect = deputy + pending');
+  close(c2.T.deposited, 80, 'a deposit in the period counts for its collector');
+  close(c2.T.toCollect, 40, 'c2 has 40 to collect');
+  check(c1.T.oldest === '2026-10-01' && c2.T.oldest === '2026-10-04', 'the oldest open day');
+  check(c1.returned === 1 && c2.returned === 0, 'a returned request is a count');
+  close(cpTree.total.toCollect, 690, 'the grand total to collect');
+  close(cpTree.total.deposited, 80, 'a deposit outside the period is not counted');
+  var cpOk = true, cpLvls = [];
+  (function walk(n, depth) {
+    cpLvls[depth] = n.lvl;
+    if (!n.kids || !n.kids.length) return;
+    ['deputy', 'pending', 'held', 'deposited', 'toCollect'].forEach(function (k) {
+      var s = n.kids.reduce(function (a, c) { return a + c.T[k]; }, 0);
+      if (Math.abs(s - n.T[k]) > 0.004) cpOk = false;
+    });
+    var rs = n.kids.reduce(function (a, c) { return a + (c.returned || 0); }, 0);
+    if ((n.lvl === 'collector' || n.lvl === 'area') && rs !== n.returned) cpOk = false;
+    for (var i = 1; i < n.kids.length; i++) if (n.lvl === 'collector' || n.lvl === 'area') { if (n.kids[i - 1].T.toCollect < n.kids[i].T.toCollect - 0.004) cpOk = false; }
+    n.kids.forEach(function (k) { walk(k, depth + 1); });
+  })(c1, 0);
+  check(c1.kids[0].kids[0].key === 'b2', 'the branch with more to collect comes first');
+check(cpOk, 'every level adds up to its children, returned counts roll up, and each level sorts by amount to collect');
+  check(cpLvls.join('>') === 'collector>area>branch>day>request', 'levels run collector > area > branch > day > request: ' + cpLvls.join('>'));
+  var cpB2 = c1.kids[0].kids.filter(function (b) { return b.key === 'b2'; })[0];
+  check(cpB2 && cpB2.returned === 1 && cpB2.T.toCollect === 350 && cpB2.kids.length === 1 && cpB2.kids[0].kids.length === 1, 'a returned or rejected request is not a row and adds nothing; the branch counts it');
+  check(cpB2.kids[0].kids[0].h.id === 'h4', 'the request row carries its handoff');
+  var cpOnly = cpCtx.collectPivotTree_(cpList.filter(function (h) { return h.toUserId === 'c2' || h.fromUserId === 'c2'; }), cpMeta);
+  check(cpOnly.roots.length === 1 && cpOnly.roots[0].key === 'c2', 'a collector\'s own list gives only his tree');
+  var cpEmpty = cpCtx.collectPivotTree_([], cpMeta);
+  check(cpEmpty.roots.length === 0 && cpEmpty.total.toCollect === 0, 'nothing in, nothing out');
+}
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);
