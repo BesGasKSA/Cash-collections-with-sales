@@ -3372,6 +3372,23 @@ var clientCtx = vm.createContext({ t: function (k) { return k; }, money: functio
   check(!!src, 'the screen function ' + n + ' exists');
   if (src) vm.runInContext(src, clientCtx);
 });
+console.log('--- the screen swaps a name typed in any language into the screen language ---');
+var vm = require('vm');
+var trCli = vm.createContext({ state: { lang: 'en', meta: null }, TRX_: { meta: null, lang: null, map: null, re: null, reL: null, lmap: null }, PLATE_: {}, document: { documentElement: {} } });
+['trSrcLang_', 'plateLatin_', 'latinPart_', 'trNames_', 'trMap_', 'trText_'].forEach(function (n) { var src = clientFn_(n); check(!!src, 'client function ' + n + ' exists'); vm.runInContext(src, trCli); });
+trCli.state.meta = { products: [{ name: 'Heavy Regulator' }, { name: 'منظم ثقيل' }, { name: 'گیس سلنڈر' }], translations: [
+  { src: 'Heavy Regulator', ar: 'منظم شديد', en: 'Heavy Regulator', ur: 'بھاری ریگولیٹر', srcLang: 'en' },
+  { src: 'منظم ثقيل', ar: 'منظم ثقيل', en: 'Heavy regulator A', ur: 'بھاری ریگولیٹر اے', srcLang: 'ar' },
+  { src: 'گیس سلنڈر', ar: 'اسطوانة غاز', en: 'Gas cylinder', ur: 'گیس سلنڈر', srcLang: 'ur' }] };
+check(vm.runInContext("trSrcLang_('Heavy Regulator') + trSrcLang_('گیس سلنڈر') + trSrcLang_('منظم ثقيل') + trSrcLang_('النسيم Al-Naseem')", trCli) === 'enurarnull', 'the typed language is told by script and by Urdu-only letters');
+function trIn(lang, text) { trCli.state.lang = lang; return vm.runInContext('trText_(' + JSON.stringify(text) + ')', trCli); }
+check(trIn('en', 'Total: منظم ثقيل and گیس سلنڈر') === 'Total: Heavy regulator A and Gas cylinder', 'English screen: Arabic and Urdu names become English');
+check(trIn('ar', 'Heavy Regulator / گیس سلنڈر') === 'منظم شديد / اسطوانة غاز', 'Arabic screen: English and Urdu names become Arabic');
+check(trIn('ur', 'heavy regulator, منظم ثقيل, گیس سلنڈر') === 'بھاری ریگولیٹر, بھاری ریگولیٹر اے, گیس سلنڈر', 'Urdu screen: English (any case) and Arabic names become Urdu');
+check(trIn('ar', 'Heavy Regulators') === 'Heavy Regulators', 'a longer Latin word is not cut');
+
+check(clientHtml.indexOf('html[dir="rtl"]{--fx:-1;}') > 0, 'one direction variable mirrors the arrows in Arabic and Urdu');
+['.ho-chev svg.ic2{','.el-more svg{','.ln-chev svg{','.eqx-step.fold .eqx-go svg{'].forEach(function (sel) { var at = clientHtml.indexOf(sel); check(at > 0 && clientHtml.slice(at, clientHtml.indexOf('}', at)).indexOf('scaleX(var(--fx))') > 0, 'the closed arrow of ' + sel.replace('{','') + ' follows the reading direction'); });
 var mixed = [
   { sourceType: 'car', cashSales: 920, deliveryFeeBankAmount: 115, expenseAmount: 50, bankTransferAmount: 100, channelDeliveryFee: 30, channelCommission: 10 },
   { sourceType: 'pos', cashSales: 200, posSales: 300, directDepositAmount: 80 },

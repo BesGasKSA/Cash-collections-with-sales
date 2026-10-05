@@ -1328,6 +1328,10 @@ through `trText_` too. The live list's hand-made translations are built by
 `bestgas-cash-collection/translations/build-live-translations.js` (private:
 real customer names).
 
+**Any language in, every language out (2026-10-05).** A translations row is keyed by the name as typed: `{src, ar, en, ur, srcLang, auto}`. `srcLang` comes from `srcLangOf_` (Admin.gs, mirrored by `trSrcLang_` in the client): Latin letters = en, Arabic script with an Urdu-only letter (ٹ ڈ ڑ ں ے ہ ھ گ چ پ ژ ک ی) = ur, other Arabic script = ar; a mixed name ("النسيم Al-Naseem") is still left to `latinPart_`. `fillTranslations_` translates from the source language to the other two (`machineTranslate_(list, to, from)`); fields are `TR_FIELDS_` (name, label, city, stockName, holderName). The client map is built per screen language from the row's column for that language (`trMap_`, an Arabic-script regex and a case-insensitive Latin one); `title`/`placeholder`/`aria-label` are swapped too. `translationsCatchUpOnce_` (flag `TRANSLATIONS_ALL_KINDS_V2`, 300 names a run, retried hourly while Translate fails) gives every existing name of every kind its other languages after the deploy. Admin → الترجمات has an Arabic column too; the source language's own box is read-only.
+
+**Fold and navigate arrows (2026-10-05).** One variable: `--fx` (1, or -1 under `html[dir="rtl"]`). A closed row's chevron is `scaleX(var(--fx))` (en right, ar/ur left), an open one `rotate(90deg)` (down); back arrows and `‹ ›` separators mirror in RTL (`crumbSep_()` for text). Do not write per-screen `rotate(-90deg)` arrows.
+
 ## The entry screen's cycle, folding lines, draft and update check (2026-10-01)
 
 Asked for by the user in one afternoon, all in `renderEntries` unless noted.
