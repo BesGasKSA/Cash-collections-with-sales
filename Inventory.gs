@@ -607,13 +607,12 @@ function migrateStockItems_(plan, userId) {
     var dn = done[keys[ki]], pn = v.items[keys[ki]];
     if (dn && (normalizeName_(dn.name) !== normalizeName_(pn.name) || dn.kind !== pn.kind)) return { error: 'setup_mismatch', key: keys[ki], name: pn.name };
   }
-  var dated = Object.create(null);
-  readSheet(SHEETS.PRODUCT_COSTS).forEach(function (r) { if (!r.voided && r.stockItemId) dated[r.stockItemId] = true; });
   Object.keys(v.items).forEach(function (key) {
     if (done[key]) {
       var re = done[key], pl = v.items[key], ch = false;
-      // the confirmed plan's costs and box stand, unless the item already has dated costs of its own
-      if (!dated[re.id]) ['boxSize', 'gasCost', 'cylinderCost', 'unitCost'].forEach(function (f) { if (String(re[f] == null ? '' : re[f]) !== String(pl[f] == null ? '' : pl[f])) { re[f] = pl[f]; ch = true; } });
+      // the confirmed plan's costs and box size stand: the setup is not live yet, so nobody
+      // could have dated a cost on this item and there is no cost history to keep
+      ['boxSize', 'gasCost', 'cylinderCost', 'unitCost'].forEach(function (f) { if (String(re[f] == null ? '' : re[f]) !== String(pl[f] == null ? '' : pl[f])) { re[f] = pl[f]; ch = true; } });
       if (ch) { re.since = today; writeRow(SHEETS.STOCK_ITEMS, re); written++; }
       ids[key] = re.id; names = names.concat(translatableOf_(re)); return;
     }
