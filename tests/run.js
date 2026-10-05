@@ -4359,5 +4359,188 @@ PENDING_KINDS_CHECK: {
 var paTot = call({ action: 'myPendingActions', token: paBm.tok });
 check(paTot.total === paTot.items.length, 'the total is the number of rows listed (the bell)');
 
+console.log('--- every entry\'s journey: getJourney from entries, handovers and area batches ---');
+call({ action: 'adminSetConfig', token: adminTok, data: { areaManagerBulkUploadEnabled: true } });
+function jrMake(role, name, mail) {
+  var u = call({ action: 'adminCreateUser', token: adminTok, data: { name: name, email: mail, role: role } }).user;
+  return { u: u, tok: acceptInvite(mail) };
+}
+var jrMgr = jrMake('cluster_manager', 'Jr Area Manager', 'jrmgr.fx@bestgas.sa');
+var jrMgrB = jrMake('cluster_manager', 'Jr Other Area Manager', 'jrmgrb.fx@bestgas.sa');
+var jrCol = jrMake('collector', 'Jr Collector', 'jrcol.fx@bestgas.sa');
+var jrBm = jrMake('store_manager', 'Jr Branch Manager', 'jrbm.fx@bestgas.sa');
+var jrBm2 = jrMake('store_manager', 'Jr Second Branch Manager', 'jrbm2.fx@bestgas.sa');
+var jrDrv = jrMake('driver', 'Jr Driver', 'jrdrv.fx@bestgas.sa');
+var jrArea = call({ action: 'adminSaveEntity', token: adminTok, kind: 'cluster', data: { name: 'Jr Area', clusterManagerUserId: jrMgr.u.id } }).entity;
+call({ action: 'adminSaveEntity', token: adminTok, kind: 'cluster', data: { name: 'Jr Other Area', clusterManagerUserId: jrMgrB.u.id } });
+var jrLoc = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: 'Tabuk', name: 'Jr Branch One', clusterId: jrArea.id, collectorUserId: jrCol.u.id } }).entity;
+var jrLoc2 = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: 'Tabuk', name: 'Jr Branch Two', clusterId: jrArea.id, collectorUserId: jrCol.u.id } }).entity;
+var jrStore = call({ action: 'adminSaveEntity', token: adminTok, kind: 'store', data: { locationId: jrLoc.id, name: 'Jr Store One', storeManagerUserId: jrBm.u.id } }).entity;
+var jrStore2 = call({ action: 'adminSaveEntity', token: adminTok, kind: 'store', data: { locationId: jrLoc2.id, name: 'Jr Store Two', storeManagerUserId: jrBm2.u.id } }).entity;
+var jrCar = call({ action: 'adminSaveEntity', token: adminTok, kind: 'car', data: { locationId: jrLoc.id, label: 'Jr Truck', driverUserId: jrDrv.u.id } }).entity;
+check(jrStore && jrStore2 && jrCar && jrLoc2, 'the journey world is built');
+var jrToday = ctx.todayRiyadh_();
+function jrJ(tok, what) { return call(Object.assign({ action: 'getJourney', token: tok }, what)); }
+function jrKeys(r) { return (r.steps || []).map(function (s) { return s.k; }); }
+function jrLast(r) { return (r.steps || [])[(r.steps || []).length - 1] || {}; }
+function jrStep(r, k, n) { return (r.steps || []).filter(function (s) { return s.k === k; })[n || 0]; }
+function jrEntry(tok, id) { return call({ action: 'listEntries', token: tok }).entries.filter(function (e) { return e.id === id; })[0]; }
+
+check(!ctx.CACHEABLE_READ_ACTIONS_.getJourney, 'a journey is never served from the response cache');
+check(call({ action: 'getJourney' }).error === 'auth_required', 'it needs a signed-in user');
+
+// a day entered, not handed over
+var jrE1 = call({ action: 'createDailyEntry', token: jrDrv.tok, date: jrToday, sourceType: 'car', sourceId: jrCar.id, cashSales: 500 });
+check(jrE1.ok && !!jrE1.entry.createdAt, 'a new entry records when it was entered');
+var jrSnap = function () { var o = {}; Object.keys(SHEETS).forEach(function (k) { o[k] = JSON.stringify(ctx.readSheet(SHEETS[k])); }); return JSON.stringify(o); };
+var jrBefore = jrSnap();
+var j0 = jrJ(jrDrv.tok, { entryId: jrE1.entry.id });
+check(j0.ok && JSON.stringify(jrKeys(j0)) === JSON.stringify(['entered', 'open_car']), 'an open car day: entered, then waiting to be handed to the branch manager (' + jrKeys(j0) + ')');
+check(jrStep(j0, 'entered').byName === 'Jr Driver' && !!jrStep(j0, 'entered').at && jrStep(j0, 'entered').st === 'done', 'the entry step names who and when');
+check(jrLast(j0).st === 'wait', 'and the next step is shown as waiting');
+check(jrSnap() === jrBefore, 'reading a journey writes nothing');
+check(jrEntry(jrDrv.tok, jrE1.entry.id).stage.k === 'open_car', 'the entries list carries the same current step');
+
+// car handed to the branch manager
+var jrH1 = call({ action: 'createHandoff', token: jrDrv.tok, kind: 'car_to_location', carId: jrCar.id });
+check(jrH1.ok, 'the driver hands the car over');
+var j1 = jrJ(jrDrv.tok, { entryId: jrE1.entry.id });
+check(JSON.stringify(jrKeys(j1)) === JSON.stringify(['entered', 'car_sent', 'recv_wait']), 'then: entered, car handed, waiting for the branch manager (' + jrKeys(j1) + ')');
+check(jrStep(j1, 'car_sent').amount === 500 && jrStep(j1, 'recv_wait').toName === 'Jr Branch Manager', 'with the amount, and who it waits for');
+var st1 = jrEntry(jrDrv.tok, jrE1.entry.id).stage;
+check(st1.k === 'recv_wait' && st1.st === 'wait' && st1.toName === 'Jr Branch Manager', 'the list says: waiting for the branch manager to receive it');
+check(call({ action: 'confirmHandoff', token: jrBm.tok, id: jrH1.handoff.id }).ok, 'the branch manager receives it');
+check(jrKeys(jrJ(jrDrv.tok, { entryId: jrE1.entry.id })).join() === 'entered,car_sent,received,pass_wait', 'received, then waiting for him to pass it on');
+
+// the branch adds its own day and hands over to the area manager
+var jrE2 = call({ action: 'createDailyEntry', token: jrBm.tok, date: jrToday, sourceType: 'store', sourceId: jrStore.id, cashSales: 300 });
+var jrH2 = call({ action: 'createHandoff', token: jrBm.tok, kind: 'location_to_cluster', locationId: jrLoc.id });
+check(jrH2.ok && jrH2.handoff.amount === 800, 'the branch hands 800 to the area manager');
+check(call({ action: 'confirmHandoff', token: jrMgr.tok, id: jrH2.handoff.id }).ok, 'the area manager receives it');
+check(jrLast(jrJ(jrDrv.tok, { entryId: jrE1.entry.id })).k === 'pass_wait', 'the area manager now holds it');
+
+// the request to the collector: returned once, corrected, validated
+var jrR1 = call({ action: 'createHandoff', token: jrMgr.tok, kind: 'cluster_to_collector', clusterId: jrArea.id, locationId: jrLoc.id });
+check(jrR1.ok, 'the area manager sends the request');
+check(jrKeys(jrJ(jrBm.tok, { entryId: jrE2.entry.id })).join() === 'entered,branch_sent,received,area_sent,deputy_wait', 'with the deputy: sent, waiting for validation');
+call({ action: 'deputyReturnHandoff', token: walidTok, id: jrR1.handoff.id, reason: 'figure looks wrong' });
+var j2 = jrJ(jrMgr.tok, { entryId: jrE1.entry.id });
+check(jrKeys(j2).join() === 'entered,car_sent,received,branch_sent,received,area_sent,deputy_returned,fix_wait', 'returned: the deputy\'s step and the wait for the correction (' + jrKeys(j2) + ')');
+check(jrStep(j2, 'deputy_returned').reason === 'figure looks wrong' && jrStep(j2, 'deputy_returned').st === 'bad' && jrStep(j2, 'deputy_returned').byName === 'Walid (Deputy)', 'it carries the reason, in red, and who returned it');
+var jrR2 = call({ action: 'createHandoff', token: jrMgr.tok, kind: 'cluster_to_collector', clusterId: jrArea.id, locationId: jrLoc.id, resubmitOf: jrR1.handoff.id, correctionNote: 'recounted' });
+check(jrR2.ok && jrR2.handoff.revision === 2, 'he corrects and sends version 2');
+var j3 = jrJ(jrMgr.tok, { entryId: jrE1.entry.id });
+check(jrKeys(j3).join() === 'entered,car_sent,received,branch_sent,received,area_sent,deputy_returned,area_resent,deputy_wait', 'version 2 follows the return (' + jrKeys(j3) + ')');
+check(jrStep(j3, 'area_resent').rev === 2 && jrStep(j3, 'area_resent').note === 'recounted', 'version number and his note');
+// the same journey from the old, returned version
+check(jrKeys(jrJ(jrMgr.tok, { handoffId: jrR1.handoff.id })).join().indexOf('area_resent') > 0, 'asked from the returned version it still leads to the resent one');
+check(call({ action: 'deputyValidateHandoff', token: walidTok, id: jrR2.handoff.id }).ok, 'the deputy validates version 2');
+check(jrKeys(jrJ(jrMgr.tok, { entryId: jrE1.entry.id })).slice(-2).join() === 'deputy_ok,recv_wait', 'validated, now waiting for the collector');
+// collector receives short by 10
+var jrC = call({ action: 'confirmHandoff', token: jrCol.tok, id: jrR2.handoff.id, receivedAmount: 790 });
+check(jrC.ok && jrC.handoff.shortfall === 10, 'the collector receives 790 of 800');
+var j4 = jrJ(jrMgr.tok, { entryId: jrE1.entry.id });
+var jrRecvC = jrStep(j4, 'received', 2);
+check(jrRecvC && jrRecvC.byName === 'Jr Collector' && jrRecvC.amount === 790 && jrRecvC.short === 10, 'the collector\'s step shows 790 and the shortfall of 10');
+check(jrLast(j4).k === 'pass_wait' && jrLast(j4).toName === 'Jr Collector', 'then he is to deposit it');
+// the deposit and the bank match
+var jrD = call({ action: 'recordDeposit', token: jrCol.tok, bankReference: 'JR-REF-77' });
+check(jrD.ok && jrD.handoff.amount === 790, 'the collector deposits 790');
+var j5 = jrJ(adminTok, { entryId: jrE1.entry.id });
+check(jrLast(j5).k === 'match_wait' && jrStep(j5, 'deposited').ref === 'JR-REF-77' && jrStep(j5, 'deposited').amount === 790, 'deposited with its bank reference, waiting for the statement');
+check(call({ action: 'importBankStatement', token: financeTok, rows: [{ date: jrToday, amount: 790, reference: 'JR-BANK-LINE' }] }).ok && !!ctx.getById_(SHEETS.HANDOFFS, jrD.handoff.id).reconciled, 'finance imports the statement and the deposit matches');
+var jrFull = jrJ(jrMgr.tok, { entryId: jrE1.entry.id });
+check(jrKeys(jrFull).join() === 'entered,car_sent,received,branch_sent,received,area_sent,deputy_returned,area_resent,deputy_ok,received,deposited,matched', 'the whole journey of the first entry, in order (' + jrKeys(jrFull) + ')');
+check(jrFull.steps.every(function (s) { return s.st !== 'wait'; }) && jrLast(jrFull).st === 'done' && jrLast(jrFull).byName === 'Fatima (Finance)', 'nothing is left waiting, and it names who matched it');
+check(jrFull.steps.every(function (s) { return !!s.at && !!s.byName; }), 'every step has a time and a person');
+for (var jrI = 1; jrI < jrFull.steps.length; jrI++) { if (new Date(jrFull.steps[jrI].at) < new Date(jrFull.steps[jrI - 1].at)) { check(false, 'steps run in time order (step ' + jrI + ')'); break; } }
+check(jrEntry(jrMgr.tok, jrE1.entry.id).stage.k === 'matched', 'the list now says: matched to the bank');
+
+// from the middle: the branch handover leads down to its entries and up to the bank
+var jrMid = jrJ(jrBm.tok, { handoffId: jrH2.handoff.id });
+check(jrMid.ok && jrKeys(jrMid).indexOf('src_entries') >= 0 && jrKeys(jrMid).indexOf('matched') > 0, 'the branch handover\'s journey reaches down to the entries and up to the bank match (' + jrKeys(jrMid) + ')');
+check(jrKeys(jrMid).indexOf('src_entries') < jrKeys(jrMid).indexOf('branch_sent'), 'the sources come first');
+check(jrKeys(jrMid).indexOf('deputy_returned') > 0 && jrStep(jrMid, 'area_resent').rev === 2, 'including the return and version 2');
+var jrDep = jrJ(jrCol.tok, { handoffId: jrD.handoff.id });
+check(jrDep.ok && jrLast(jrDep).k === 'matched' && jrKeys(jrDep).indexOf('src_handoff') >= 0, 'the deposit leads down to the area request it banked and ends at the match');
+
+// scope
+check(jrJ(jrBm2.tok, { entryId: jrE1.entry.id }).error === 'forbidden', 'another branch\'s manager cannot see this entry\'s journey');
+check(jrJ(jrBm2.tok, { handoffId: jrH2.handoff.id }).error === 'forbidden', 'nor its handover\'s');
+check(jrJ(jrMgrB.tok, { entryId: jrE1.entry.id }).error === 'forbidden', 'another area\'s manager cannot');
+check(jrJ(jrCol.tok, { entryId: jrE1.entry.id }).error === 'forbidden', 'a collector cannot see an entry\'s journey (he does not see entries)');
+check(jrJ(jrMgr.tok, { handoffId: 'no-such-id' }).error === 'not_found' && jrJ(jrMgr.tok, {}).error === 'invalid_input', 'unknown and missing ids are refused');
+check(jrJ(adminTok, { entryId: jrE1.entry.id }).ok && jrJ(walidTok, { handoffId: jrH2.handoff.id }).ok, 'company-wide roles see them');
+// the driver sees his own steps' amounts, not the others'
+var jrDv = jrJ(jrDrv.tok, { entryId: jrE1.entry.id });
+check(jrKeys(jrDv).join() === jrKeys(jrFull).join(), 'the driver sees every step of his entry\'s journey');
+check(jrStep(jrDv, 'car_sent').amount === 500 && jrStep(jrDv, 'branch_sent').amount == null && jrStep(jrDv, 'received', 2).amount == null && jrStep(jrDv, 'received', 2).short == null,
+  'but only the amounts of the handover he took part in');
+check(jrStep(jrDv, 'deposited').amount == null && !jrStep(jrDv, 'deposited').ref && !!jrStep(jrDv, 'deposited').byName && jrStep(jrDv, 'received', 2).byName === 'Jr Collector',
+  'and the later steps still say who and when, without the deposit\'s figures');
+check(jrStep(jrDv, 'deputy_returned').reason === 'figure looks wrong', 'a return\'s reason is not an amount and stays');
+check(jrJ(jrCol.tok, { handoffId: jrR2.handoff.id }).steps.filter(function (s) { return s.k === 'src_entries'; }).every(function (s) { return s.amount == null; }), 'the collector\'s view of the sources shows no entry amounts');
+
+// a cancelled entry stops at the cancellation
+var jrE3 = call({ action: 'createDailyEntry', token: jrBm2.tok, date: jrToday, sourceType: 'store', sourceId: jrStore2.id, cashSales: 77 });
+check(call({ action: 'voidEntries', token: jrBm2.tok, ids: [jrE3.entry.id], reason: 'typed twice' }).ok, 'an entry is cancelled');
+var jrV = jrJ(jrBm2.tok, { entryId: jrE3.entry.id });
+check(jrKeys(jrV).join() === 'entered,voided' && jrLast(jrV).reason === 'typed twice' && jrLast(jrV).st === 'bad' && jrLast(jrV).byName === 'Jr Second Branch Manager', 'cancelled: it stops there with the reason');
+check(jrEntry(jrBm2.tok, jrE3.entry.id).stage.k === 'voided', 'and the list says cancelled');
+
+// a disputed handover, rejected: the attempt stays in the journey and the entry is open again
+var jrE4 = call({ action: 'createDailyEntry', token: jrBm2.tok, date: jrToday, sourceType: 'store', sourceId: jrStore2.id, cashSales: 120 });
+var jrH4 = call({ action: 'createHandoff', token: jrBm2.tok, kind: 'location_to_cluster', locationId: jrLoc2.id });
+check(jrH4.ok, 'branch two hands over 120');
+check(call({ action: 'disputeHandoff', token: jrMgr.tok, id: jrH4.handoff.id, note: 'counted 100 only' }).ok, 'the area manager disputes it');
+var jrDj = jrJ(jrBm2.tok, { entryId: jrE4.entry.id });
+check(jrKeys(jrDj).join() === 'entered,branch_sent,disputed,settle_wait' && jrStep(jrDj, 'disputed').reason === 'counted 100 only' && jrStep(jrDj, 'disputed').st === 'bad', 'disputed: the reason, and waiting for it to be settled (' + jrKeys(jrDj) + ')');
+check(call({ action: 'resolveDispute', token: adminTok, id: jrH4.handoff.id, resolution: 'reject', note: 'recount tomorrow' }).ok, 'the dispute is rejected');
+var jrRj = jrJ(jrBm2.tok, { entryId: jrE4.entry.id });
+check(jrKeys(jrRj).join() === 'entered,branch_sent,disputed,settled_rejected,open_branch' && jrStep(jrRj, 'settled_rejected').reason === 'recount tomorrow' && jrStep(jrRj, 'settled_rejected').st === 'bad' && jrLast(jrRj).st === 'wait',
+  'rejected: the earlier attempt stays, and the entry waits to be handed over again (' + jrKeys(jrRj) + ')');
+
+// a day banked at the source
+var jrE5 = call({ action: 'createDailyEntry', token: jrBm.tok, date: jrToday, sourceType: 'store', sourceId: jrStore.id, cashSales: 200, directDepositAmount: 200, directDepositRef: 'DD-JR-1',
+  directDepositPhotoId: call({ action: 'uploadEntryPhoto', token: jrBm.tok, fileBase64: 'iVBORw0KGgo=', fileName: 'slip.png', fileMime: 'image/png' }).fileId });
+check(jrE5.ok, 'a day banked at the source (الموازنة)');
+var jrDd = jrJ(jrBm.tok, { entryId: jrE5.entry.id });
+check(jrKeys(jrDd).join() === 'entered,direct_deposit,match_wait' && jrStep(jrDd, 'direct_deposit').ref === 'DD-JR-1', 'entered, banked with its reference, waiting for the statement; nothing left to hand over (' + jrKeys(jrDd) + ')');
+
+// an area-manager batch: uploaded, rejected, corrected, approved, received
+var jrBRows = [{ date: jrToday, sourceType: 'store', sourceId: jrStore.id, cashSales: 650 }];
+var jrB = call({ action: 'bulkSubmitAreaBatch', token: jrMgr.tok, clusterId: jrArea.id, rows: jrBRows });
+check(jrB.ok, 'the area manager uploads a day');
+var jrBEntry = call({ action: 'listEntries', token: jrMgr.tok }).entries.filter(function (e) { return e.batchId === jrB.batch.id; })[0];
+var jrBj = jrJ(jrMgr.tok, { entryId: jrBEntry.id });
+check(jrKeys(jrBj).join() === 'batch_up,batch_wait' && jrStep(jrBj, 'batch_up').byName === 'Jr Area Manager' && jrStep(jrBj, 'batch_up').amount === 650, 'uploaded, waiting for the deputy (' + jrKeys(jrBj) + ')');
+check(call({ action: 'deputyRejectBatch', token: walidTok, id: jrB.batch.id, note: 'wrong store' }).ok, 'the deputy rejects it');
+var jrBr = jrJ(jrMgr.tok, { entryId: jrBEntry.id });
+check(jrKeys(jrBr).join() === 'batch_up,batch_rej,batch_fix' && jrStep(jrBr, 'batch_rej').reason === 'wrong store' && jrStep(jrBr, 'batch_rej').byName === 'Walid (Deputy)', 'rejected with the reason, waiting for the correction (' + jrKeys(jrBr) + ')');
+var jrB2 = call({ action: 'bulkSubmitAreaBatch', token: jrMgr.tok, clusterId: jrArea.id, rows: jrBRows, resubmitOf: jrB.batch.id });
+check(jrB2.ok && jrB2.batch.revision === 2, 'corrected and sent again as version 2');
+check(call({ action: 'deputyApproveBatch', token: walidTok, id: jrB.batch.id }).ok, 'the deputy approves it');
+var jrBHo = ctx.readSheet(SHEETS.HANDOFFS).filter(function (h) { return h.viaBulkBatch === jrB.batch.id; })[0];
+check(call({ action: 'confirmHandoff', token: jrCol.tok, id: jrBHo.id }).ok, 'the collector receives it');
+var jrNewE = call({ action: 'listEntries', token: jrMgr.tok }).entries.filter(function (e) { return e.batchId === jrB.batch.id && !e.voided; })[0];
+var jrBf = jrJ(jrMgr.tok, { entryId: jrNewE.id });
+check(jrKeys(jrBf).join() === 'batch_up,batch_rej,batch_resent,batch_ok,received,pass_wait', 'uploaded, rejected, resent, approved, received, waiting to be banked (' + jrKeys(jrBf) + ')');
+check(jrStep(jrBf, 'batch_resent').rev === 2 && jrStep(jrBf, 'batch_ok').byName === 'Walid (Deputy)' && jrStep(jrBf, 'received').byName === 'Jr Collector' && jrStep(jrBf, 'received').amount === 650, 'version 2, the approver, the collector and the amount');
+check(jrKeys(jrJ(jrMgr.tok, { entryId: jrBEntry.id })).join() === jrKeys(jrBf).join(), 'the rejected version\'s own entry shows the same journey');
+check(jrJ(jrMgr.tok, { batchId: jrB.batch.id }).ok && jrKeys(jrJ(jrMgr.tok, { batchId: jrB.batch.id })).indexOf('batch_ok') > 0, 'the batch itself has the journey too');
+check(jrJ(jrMgrB.tok, { batchId: jrB.batch.id }).error === 'forbidden', 'another area manager cannot see the batch\'s');
+check(jrJ(jrCol.tok, { handoffId: jrBHo.id }).steps.some(function (s) { return s.k === 'batch_up'; }), 'the collector\'s handover shows the batch it came from');
+
+// a client that shows it
+check(/function journeyView_\(/.test(clientHtml), 'the client has the one timeline component');
+check(/api\('getJourney'/.test(clientFn_('handoffItem')) || /jrLoad_\(/.test(clientFn_('handoffItem')), 'the handover row loads the journey');
+['jr_title', 'jr_entered', 'jr_voided', 'jr_direct_deposit', 'jr_car_sent', 'jr_branch_sent', 'jr_area_sent', 'jr_deputy_wait', 'jr_deputy_ok', 'jr_deputy_returned',
+  'jr_fix_wait', 'jr_area_resent', 'jr_superseded', 'jr_recv_wait', 'jr_received', 'jr_disputed', 'jr_settle_wait', 'jr_settled_ok', 'jr_settled_rejected',
+  'jr_pass_wait_car_to_location', 'jr_pass_wait_location_to_cluster', 'jr_pass_wait_cluster_to_collector', 'jr_deposited', 'jr_match_wait', 'jr_matched', 'jr_batch_up', 'jr_batch_resent', 'jr_batch_rej', 'jr_batch_wait', 'jr_batch_ok', 'jr_batch_nocash',
+  'jr_batch_fix', 'jr_open_car', 'jr_open_branch', 'jr_open_area', 'jr_src_handoff', 'jr_src_entries', 'jr_src_more', 'jr_short', 'jr_over', 'jr_loading', 'jr_failed', 'jr_retry', 'jr_reason', 'jr_note', 'jr_ref'
+].forEach(function (k) {
+  check(clientHtml.split(k + ':').length - 1 === 3, 'the client words "' + k + '" in all three languages');
+});
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);

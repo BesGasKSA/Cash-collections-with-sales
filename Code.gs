@@ -728,6 +728,7 @@ function route_(req) {
     // reference data
     listDashboard: function () { return actionDashboard_(req, user); },
     myPendingActions: function () { return actionMyPendingActions_(req, user); },
+    getJourney: function () { return actionGetJourney_(req, user); },
     getDashboardAll: function () { return actionDashboardAll_(req, user); },
     listMeta: function () { return actionMeta_(req, user); },
 

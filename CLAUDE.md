@@ -1572,6 +1572,40 @@ should have history for the numbers changes in all areas; it's very sensitive".
 - **Client** (`refreshPending_`, `pendOpen_`, `pendHeroPaint_`, `pendGo_`): `renderShell` refreshes the list on every draw (one request at a time) and opens the popup once per sign-in (sessionStorage `bgc_pendShown_<id>`, cleared at login and logout). The bell reopens it; the home hero lists the first four rows and "and N more"; "Nothing needs your attention" shows only for an empty list. Go sets `HO_OPEN_` / `FIX_OPEN_` / `PEND_FIX_BATCH_` first, then `goScreen_(screen, true)` (the second argument keeps `HO_OPEN_`). `myPendingActions` is in `READ_ACTIONS`, or every refresh would wipe the screen cache. An older script without the action falls back to the old dashboard count (`legacyNotifCount_`).
 - A returned request's cash is back with the area manager, so he sees both returned_fix and send_ready for it.
 
+## Every entry's journey: status history (2026-10-05)
+
+- **One read-only walk, nothing stored.** `getJourney {entryId | handoffId | batchId}`
+  (`actionGetJourney_`, Collection.gs, next to `actionMyPendingActions_`; in the client's
+  `READ_ACTIONS`, never in the response cache) follows the links the rows already carry:
+  entry `consumedBy` (handover or batch), a handover's own `consumedBy` up to the deposit,
+  `resubmitOf`/`resubmittedAs` for the area request's versions, a batch's `history`, `entryIds`
+  and `resultHandoffIds`, a deposit's `reconciled`/`reconciledLineId`. It answers
+  `{steps:[{k, st: done|bad|wait, at, by, byName, to, toName, amount, short, ref, reason, note, rev, loc}]}`.
+  `jrCtx_` indexes the sheets once per request; `jrEntrySteps_`, `jrHandoffSteps_`,
+  `jrBatchSteps_`, `jrPath_` (versions, then up to the bank) and `jrDown_` (a handover's sources,
+  one condensed step each) build it.
+- **Scope is the screens' own.** An entry is visible by `listEntries`' rules, a handover by
+  `listHandoffs`', a batch by `listAreaBulkBatches`'; otherwise `forbidden`. A step that belongs to a
+  handover the viewer is not part of keeps its actor and time, a return's reason, but loses amount,
+  shortfall and bank reference. Keep `jrVisibleEntry_` in step with `actionListEntries_`.
+- **The list says the same thing.** `listEntries` puts `stage` on every entry (the journey's last
+  step), so a card's one-line status can never disagree with its History. A bad row never breaks the
+  list (try/catch). Entries now carry `createdAt` (all three creation paths); older ones show their
+  day only.
+- **Earlier attempts stay.** A returned request is reached through `bySource` (its sources were
+  released, so `consumedBy` no longer points at it); a handover rejected after a dispute stays in
+  the journey of the entries and handovers it released, then the next wait follows. A line of a
+  rejected batch version follows its batch (it is in no handover).
+- **Client.** `journeyView_(steps)` is the one timeline (classes `jr-*`; logical properties, so the
+  rail sits on the right in ar/ur); `jrLoad_(host, what, {fallback})` asks every time a fold opens.
+  Entries: `.el-stage` line under the card, a History fold in the detail. Handovers: the History tab of
+  `handoffItem` (falls back to `handoffAuditTrail_` if the request fails). The step the journey has
+  reached pulses, what waits is hollow, red is a return, dispute, rejection or cancellation. Strings
+  `jr_*` in all three languages; `jrFill_` fills repeated placeholders.
+- **Trap, found while testing:** an API-made entry with no `submissionId` groups with its siblings
+  by the minute it was created (`entryGroups_`), so rows of different states share one card. The
+  form always sets `submissionId`; give scripted entries one too.
+
 ## Costing and profitability (2026-10-01, `Costing.gs`)
 
 The user asked for monthly expense profiles per car and per store (every
