@@ -2954,6 +2954,47 @@
     .lg3d-coin{transform:rotateY(-12deg) rotateX(4deg);}
     .lg3d-bubbles{display:none;}
   }
+  /* ---- what is waiting on the signed-in person: welcome popup, hero list (2026-10-05) ---- */
+  .pa-ov{position:fixed;inset:0;z-index:95;display:flex;align-items:center;justify-content:center;padding:16px;}
+  .pa-bg{position:absolute;inset:0;background:rgba(18,24,19,.46);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);animation:paFade .22s ease both;}
+  .pa-card{position:relative;width:min(560px,100%);max-height:min(86vh,720px);display:flex;flex-direction:column;background:var(--card);border-radius:var(--radius-lg);box-shadow:var(--shadow-lg);overflow:hidden;animation:paRise .28s cubic-bezier(.2,.8,.2,1) both;}
+  .pa-top{display:flex;align-items:center;gap:14px;padding:20px 22px 14px;background:linear-gradient(135deg,var(--green) 0%,var(--green-dark) 100%);color:#fff;}
+  .pa-bell{flex:none;width:46px;height:46px;border-radius:50%;background:rgba(255,255,255,.16);display:flex;align-items:center;justify-content:center;}
+  .pa-bell .ic2{width:24px;height:24px;stroke:#fff;fill:none;}
+  .pa-hi{font-size:13px;font-weight:700;opacity:.82;}
+  .pa-top h2{margin:2px 0 0;font-size:19px;line-height:1.35;color:#fff;border:0;padding:0;}
+  .pa-list{overflow:auto;padding:8px 14px;display:flex;flex-direction:column;gap:2px;}
+  .pa-row{display:flex;align-items:center;gap:12px;padding:11px 8px;border-bottom:1px solid var(--border-soft);}
+  .pa-row:last-child{border-bottom:0;}
+  .pa-ic{flex:none;width:36px;height:36px;border-radius:10px;background:var(--green-pale);display:flex;align-items:center;justify-content:center;}
+  .pa-ic .ic2{width:19px;height:19px;stroke:var(--green-dark);}
+  .pa-row[data-kind="dispute_open"] .pa-ic,.pa-row[data-kind="risk_high"] .pa-ic,.pa-row[data-kind="batch_rejected"] .pa-ic,.pa-row[data-kind="returned_fix"] .pa-ic{background:var(--danger-bg);}
+  .pa-row[data-kind="dispute_open"] .pa-ic .ic2,.pa-row[data-kind="risk_high"] .pa-ic .ic2,.pa-row[data-kind="batch_rejected"] .pa-ic .ic2,.pa-row[data-kind="returned_fix"] .pa-ic .ic2{stroke:var(--danger);}
+  .pa-tx{min-width:0;flex:1;display:flex;flex-direction:column;gap:2px;}
+  .pa-s{font-size:14px;font-weight:700;line-height:1.4;color:var(--text);}
+  .pa-tx small{font-size:12px;color:var(--muted);}
+  .pa-amt{flex:none;font-size:14px;font-variant-numeric:tabular-nums;color:var(--green-dark);}
+  button.pa-go{flex:none;background:var(--green);color:#fff;border:0;border-radius:999px;padding:8px 16px;font:inherit;font-size:13px;font-weight:800;cursor:pointer;min-height:36px;}
+  button.pa-go:hover{background:var(--green-dark);}
+  .pa-foot{padding:12px 18px 16px;display:flex;justify-content:flex-end;border-top:1px solid var(--border-soft);}
+  .pa-ov.out .pa-card{animation:paSink .2s ease both;} .pa-ov.out .pa-bg{animation:paFadeOut .2s ease both;}
+  @keyframes paFade{from{opacity:0}to{opacity:1}} @keyframes paFadeOut{from{opacity:1}to{opacity:0}}
+  @keyframes paRise{from{opacity:0;transform:translateY(14px) scale(.98)}to{opacity:1;transform:none}}
+  @keyframes paSink{from{opacity:1;transform:none}to{opacity:0;transform:translateY(10px)}}
+  .hero .hero-pend{grid-column:1/-1;position:relative;z-index:1;display:flex;flex-direction:column;gap:8px;margin-top:2px;}
+  .hero .hero-pend .pa-row{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.14);border-radius:14px;padding:9px 12px;}
+  .hero .hero-pend .pa-ic{background:rgba(255,255,255,.18);width:32px;height:32px;}
+  .hero .hero-pend .pa-ic .ic2{stroke:#fff;}
+  .hero .hero-pend .pa-s{color:#fff;font-size:13.5px;} .hero .hero-pend .pa-tx small{color:rgba(255,255,255,.78);} .hero .hero-pend .pa-amt{color:#fff;}
+  .hero .hero-pend button.pa-go{background:var(--cream);color:var(--green-deep);box-shadow:none;padding:6px 14px;min-height:32px;}
+  .hero .hero-pend button.pa-go:hover{background:#fff;}
+  .hero button.pa-more{all:unset;cursor:pointer;align-self:flex-start;font-size:12.5px;font-weight:800;color:var(--cream);text-decoration:underline;padding:2px 4px;}
+  @media (max-width:700px){
+    .pa-ov{align-items:flex-end;padding:0;}
+    .pa-card{width:100%;max-height:88vh;border-radius:var(--radius-lg) var(--radius-lg) 0 0;animation-name:paSheet;}
+    @keyframes paSheet{from{transform:translateY(100%)}to{transform:none}}
+    .pa-row{flex-wrap:wrap;} .pa-tx{flex-basis:calc(100% - 60px);} .pa-amt{margin-inline-start:48px;} button.pa-go{margin-inline-start:auto;}
+  }
   @media (prefers-reduced-motion:reduce){ *,*::before,*::after{animation:none!important;transition:none!important;} }
 </style>
 </head>
@@ -3883,7 +3924,7 @@ function stopLoading(){
 var READ_ACTIONS = { getRateHistory:1, whoami:1, bootstrap:1, listMeta:1, listDashboard:1, getDashboardAll:1, listEntries:1, listHandoffs:1,
   getSalesReport:1, getShortfallByEntrant:1, getDashboardComparison:1, getHeldCashTrend:1, listAudit:1, getFile:1,
   getReconciliation:1, listRiskItems:1, listAreaBulkBatches:1, areaBulkBatchDetail:1, login:1, forgotPassword:1, setLanguage:1,
-  listCosts:1, getCostReport:1, getProfitReport:1, getInventoryLive:1, getInventoryReport:1, areaBatchRows:1 };
+  listCosts:1, getCostReport:1, getProfitReport:1, getInventoryLive:1, getInventoryReport:1, areaBatchRows:1, myPendingActions:1 };
 
 function api(action, payload, opts){
   payload = payload || {};
@@ -4173,6 +4214,8 @@ function doLogin(){
     if (res.previousLoginAt) localStorage.setItem('bgc_lastLogin', res.previousLoginAt);
     else localStorage.removeItem('bgc_lastLogin');
     state.justLoggedIn = true;
+    state.pendKicked = false; state.pend = null;
+    try { sessionStorage.removeItem('bgc_pendShown_' + res.user.id); } catch (e) {}
     state.idleOut = null;
     idleMark_(true);
     try { var loginKey = 'bgc_loginN_' + res.user.id; localStorage.setItem(loginKey, String(Number(localStorage.getItem(loginKey) || 0) + 1)); } catch (e) {}
@@ -4608,7 +4651,11 @@ function logout(){
   // an open document or drill-down lives outside #app: it goes too
   try { drawerClose_(); } catch (e) {}
   var sheet = qs('.bt-sheet'); if (sheet) sheet.remove();
+  var pendUser = state.user && state.user.id;
   state.token=''; state.user=null; state.meta=null;
+  state.pend = null; state.pendKicked = false; setNotifCount(0);
+  try { if (pendUser) sessionStorage.removeItem('bgc_pendShown_' + pendUser); } catch (e) {}
+  pendClose_();
   // the next person starts on their own home page, with nothing kept from this one
   state.screen = 'home'; plDirty_();
   localStorage.removeItem('bgc_token');
@@ -4909,7 +4956,7 @@ function sbSpot_(sb){
   sb.addEventListener('pointerleave', function(){ sb.classList.remove('lit'); });
 }
 
-function goScreen_(screen){
+function goScreen_(screen, keepOpen){
   if (state.screen === screen) { var sb = qs('#screenBody'); if (sb) window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
   drawerClose_();
   // Direction of travel through the tab order, so the new screen slides in
@@ -4918,7 +4965,7 @@ function goScreen_(screen){
   state.navDir = order.indexOf(screen) >= order.indexOf(state.screen) ? 1 : -1;
   try { if (navigator.vibrate && window.matchMedia('(max-width:700px)').matches) navigator.vibrate(8); } catch (e) {}
   state.screen = screen;
-  HO_OPEN_ = null;
+  if (!keepOpen) HO_OPEN_ = null;
   render();
   window.scrollTo(0, 0);
 }
@@ -4996,7 +5043,7 @@ function renderShell(){
     '</div>' +
   '</div>');
   col.appendChild(tb);
-  qs('#notifBell', tb).addEventListener('click', function(){ goScreen_('handoffs'); });
+  qs('#notifBell', tb).addEventListener('click', function(){ pendOpen_(); });
   qs('#menuBtn', tb).addEventListener('click', openMobileMenu_);
 
   var main = el('<main></main>');
@@ -5022,6 +5069,9 @@ function renderShell(){
   if (state.lastAnimatedScreen !== state.screen) { state.lastAnimatedScreen = state.screen; watchEntrance_(body); }
   var renderers = { home: renderHome, dashboard: renderDashboard, entries: renderEntries, areaBulk: renderAreaBulk, deputyReview: renderDeputyReview, handoffs: renderHandoffs, report: renderReport, reconciliation: renderReconciliation, inventory: renderInventory, profit: renderProfit, risk: renderRisk, admin: renderAdmin, users: renderAdmin };
   (renderers[state.screen] || renderHome)(body);
+  // the bell, the hero and (once per sign-in) the welcome popup read one list
+  refreshPending_(state.pendKicked ? null : { popup: true });
+  state.pendKicked = true;
 }
 
 // The More sheet: every screen of the role as a grid of tiles, rising from the
@@ -5191,7 +5241,6 @@ function loadMetaAndRender(){
     // trip to Apps Script on every single login for most users, who land
     // on Home. Only screens that don't otherwise touch dashboard data need
     // this fallback fetch.
-    if (state.screen !== 'home' && state.screen !== 'handoffs') refreshNotifCount();
   });
 }
 
@@ -5209,13 +5258,223 @@ function setNotifCount(n){
   qsa('[data-notif-pill]').forEach(function(p){ p.textContent = n; p.hidden = n === 0; });
 }
 
-function refreshNotifCount(){
+// What is waiting on the signed-in person (2026-10-05): one server list
+// (myPendingActions) drives the welcome popup, the bell and the home hero, so
+// the three can never disagree. Each row names what is waiting and has a Go
+// button that opens the screen (and the row or panel) where it is done.
+(function(){
+  var add = {
+    en: {
+      pa_one:'You have 1 thing waiting for you', pa_many:'You have {n} things waiting for you',
+      pa_none:'Nothing needs your attention right now', pa_go:'Go', pa_later:'Later', pa_close:'Close',
+      pa_more:'and {n} more', pa_all:'View all', pa_bell:'Things waiting for you',
+      pa_confirm_receipt:'Confirm that you received this cash',
+      pa_deputy_validate:'A request to validate before it reaches the collector',
+      pa_deputy_batch:'An uploaded batch to approve or reject',
+      pa_returned_fix:'A request the deputy sent back for correction',
+      pa_batch_rejected:'Your uploaded batch was rejected: correct it and send it again',
+      pa_send_ready:'Cash ready to send to the next level ({n})',
+      pa_car_handover:'Your car day is not handed over yet ({n})',
+      pa_dispute_open:'A dispute is waiting to be settled',
+      pa_second_approval:'A large handover needs a second approval',
+      pa_deposit_due:'Cash in your hands, ready to deposit in the bank ({n})',
+      pa_risk_high:'{n} high-severity risks are open'
+    },
+    ar: {
+      pa_one:'لديك إجراء واحد بانتظارك', pa_many:'لديك {n} من الإجراءات بانتظارك',
+      pa_none:'لا يوجد ما يحتاج انتباهك الآن', pa_go:'انتقل', pa_later:'لاحقًا', pa_close:'إغلاق',
+      pa_more:'و{n} أخرى', pa_all:'عرض الكل', pa_bell:'ما ينتظرك',
+      pa_confirm_receipt:'أكّد استلام هذا المبلغ',
+      pa_deputy_validate:'طلب يحتاج اعتمادك قبل أن يصل إلى المُحصّل',
+      pa_deputy_batch:'دفعة مرفوعة بانتظار اعتمادك أو رفضها',
+      pa_returned_fix:'طلب أعاده نائب مدير العمليات للتصحيح',
+      pa_batch_rejected:'رُفضت دفعتك المرفوعة: صحّحها وأرسلها من جديد',
+      pa_send_ready:'مبلغ جاهز للإرسال إلى المستوى التالي ({n})',
+      pa_car_handover:'يوم سيارتك لم يُسلَّم بعد ({n})',
+      pa_dispute_open:'نزاع بانتظار الفصل فيه',
+      pa_second_approval:'تسليم كبير يحتاج موافقة ثانية',
+      pa_deposit_due:'مبلغ بحوزتك جاهز للإيداع في البنك ({n})',
+      pa_risk_high:'{n} من المخاطر العالية الخطورة مفتوحة'
+    },
+    ur: {
+      pa_one:'آپ کا 1 کام منتظر ہے', pa_many:'آپ کے {n} کام منتظر ہیں',
+      pa_none:'ابھی کسی چیز پر توجہ درکار نہیں', pa_go:'جائیں', pa_later:'بعد میں', pa_close:'بند کریں',
+      pa_more:'اور {n} مزید', pa_all:'سب دیکھیں', pa_bell:'آپ کے منتظر کام',
+      pa_confirm_receipt:'اس رقم کی وصولی کی تصدیق کریں',
+      pa_deputy_validate:'ایک درخواست جسے کلکٹر تک پہنچنے سے پہلے آپ کی منظوری چاہیے',
+      pa_deputy_batch:'اپ لوڈ کیا گیا بیچ منظوری یا مسترد کرنے کا منتظر ہے',
+      pa_returned_fix:'ڈپٹی نے ایک درخواست درستی کے لیے واپس بھیجی',
+      pa_batch_rejected:'آپ کا اپ لوڈ کیا گیا بیچ مسترد ہوا: درست کر کے دوبارہ بھیجیں',
+      pa_send_ready:'اگلی سطح پر بھیجنے کے لیے رقم تیار ({n})',
+      pa_car_handover:'آپ کی گاڑی کا دن ابھی حوالے نہیں ہوا ({n})',
+      pa_dispute_open:'ایک تنازع فیصلے کا منتظر ہے',
+      pa_second_approval:'ایک بڑی حوالگی کو دوسری منظوری چاہیے',
+      pa_deposit_due:'آپ کے پاس رقم بینک میں جمع کرانے کے لیے تیار ({n})',
+      pa_risk_high:'{n} زیادہ شدت کے خطرات کھلے ہیں'
+    }
+  };
+  Object.keys(add).forEach(function(lang){
+    Object.keys(add[lang]).forEach(function(k){ L[lang][k] = add[lang][k]; });
+  });
+})();
+
+// kind -> icon, screen, and what to open there
+var PEND_ICON_ = { confirm_receipt:'wallet', deputy_validate:'check', deputy_batch:'doc', returned_fix:'back', batch_rejected:'back',
+  send_ready:'paperPlane', car_handover:'paperPlane', dispute_open:'alert', second_approval:'check', deposit_due:'bank', risk_high:'alert' };
+var PEND_SCREEN_ = { confirm_receipt:'handoffs', deputy_validate:'deputyReview', deputy_batch:'deputyReview', returned_fix:'handoffs',
+  batch_rejected:'areaBulk', send_ready:'handoffs', car_handover:'handoffs', dispute_open:'handoffs', second_approval:'handoffs',
+  deposit_due:'handoffs', risk_high:'risk' };
+// a rejected batch the area upload screen should open for correction, once
+var PEND_FIX_BATCH_ = null;
+
+function pendFill_(str, vars){
+  Object.keys(vars).forEach(function(k){ str = str.split('{' + k + '}').join(vars[k]); });
+  return str;
+}
+function pendPlace_(it){
+  var l = it.locationId ? byId(state.meta && state.meta.locations, it.locationId) : null;
+  return l ? l.name : '';
+}
+function pendKey_(){ return 'bgc_pendShown_' + (state.user ? state.user.id : ''); }
+
+// One row: icon, what is waiting (and where), the amount, and a Go button.
+function pendRow_(it, compact){
+  var amt = it.amount != null && Number(it.amount) > 0 && it.kind !== 'risk_high'
+    ? '<b class="pa-amt"><bdi dir="ltr">' + money(it.amount) + '</bdi></b>' : '';
+  var place = pendPlace_(it);
+  var row = el('<div class="pa-row" data-kind="' + esc(it.kind) + '">' +
+    '<span class="pa-ic">' + icon_(PEND_ICON_[it.kind] || 'alert') + '</span>' +
+    '<span class="pa-tx"><span class="pa-s">' + esc(pendFill_(t('pa_' + it.kind), { n: it.count || 1 })) + '</span>' +
+      (place ? '<small>' + esc(place) + '</small>' : '') + '</span>' +
+    amt +
+    '<button type="button" class="pa-go">' + esc(t('pa_go')) + '</button>' +
+  '</div>');
+  qs('.pa-go', row).addEventListener('click', function(){ pendGo_(it); });
+  return row;
+}
+
+// Go: open the screen, with the row or panel the item is about already open.
+function pendGo_(it){
+  pendClose_();
+  var scr = PEND_SCREEN_[it.kind] || 'handoffs';
+  if (!navItemsForRole_().some(function(n){ return n[0] === scr; })) scr = 'handoffs';
+  var scroll = null;
+  if (it.kind === 'confirm_receipt' || it.kind === 'dispute_open' || it.kind === 'second_approval') { HO_OPEN_ = it.refId; scroll = '.ho-item.open'; }
+  else if (it.kind === 'returned_fix') { FIX_OPEN_ = it.refId; scroll = '#hoFix'; }
+  else if (it.kind === 'batch_rejected') { PEND_FIX_BATCH_ = it.refId; scroll = '#abFix'; }
+  else if (it.kind === 'deposit_due') scroll = '#hDeposit';
+  if (state.screen === scr) render(); else goScreen_(scr, true);
+  if (scroll) pendScroll_(scroll, 0);
+}
+// the screen draws after its data arrives: look for the target a few times
+function pendScroll_(sel, n){
+  var node = qs(sel);
+  if (node) { try { node.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (e) {} return; }
+  if (n < 20) setTimeout(function(){ pendScroll_(sel, n + 1); }, 250);
+}
+
+function pendClose_(){
+  var ov = qs('.pa-ov');
+  if (!ov) return;
+  document.removeEventListener('keydown', ov._onKey);
+  ov.classList.add('out');
+  setTimeout(function(){ ov.remove(); }, 200);
+}
+
+// The welcome popup: centred on a desktop, a bottom sheet on a phone.
+function pendOpen_(){
+  if (!state.user || qs('.pa-ov')) return;
+  var p = state.pend, items = (p && p.items) || [];
+  var n = items.length;
+  var ov = el('<div class="pa-ov" role="dialog" aria-modal="true" aria-labelledby="paTitle">' +
+    '<div class="pa-bg"></div>' +
+    '<div class="pa-card">' +
+      '<div class="pa-top"><span class="pa-bell">' + icon_(n ? 'bell' : 'check') + '</span><div>' +
+        '<div class="pa-hi">' + esc(timeGreeting() + '، ' + state.user.name) + '</div>' +
+        '<h2 id="paTitle">' + esc(n ? (n === 1 ? t('pa_one') : pendFill_(t('pa_many'), { n: n })) : t('pa_none')) + '</h2>' +
+      '</div></div>' +
+      '<div class="pa-list"></div>' +
+      '<div class="pa-foot"><button type="button" class="btn secondary pa-later">' + esc(t(n ? 'pa_later' : 'pa_close')) + '</button></div>' +
+    '</div></div>');
+  var list = qs('.pa-list', ov);
+  if (!n) list.hidden = true;
+  items.forEach(function(it){ list.appendChild(pendRow_(it)); });
+  function onKey(e){ if (e.key === 'Escape') pendClose_(); }
+  ov._onKey = onKey;
+  document.addEventListener('keydown', onKey);
+  qs('.pa-bg', ov).addEventListener('click', pendClose_);
+  qs('.pa-later', ov).addEventListener('click', pendClose_);
+  document.body.appendChild(ov);
+  var first = qs('.pa-go', ov) || qs('.pa-later', ov);
+  setTimeout(function(){ try { first.focus({ preventScroll: true }); } catch (e) {} }, 60);
+}
+
+// Fetch the list. opts.popup: this is the first load after signing in, so show
+// the popup once if anything is waiting. Always updates the bell and the hero.
+function refreshPending_(opts){
   if (!state.user) return;
-  api('listDashboard', {}).then(function(res){
+  var uid = state.user.id;
+  // one request at a time; a popup asked for meanwhile is kept for the answer
+  if (state.pendBusy) { if (opts && opts.popup) state.pendWant = true; return; }
+  state.pendBusy = true;
+  if (opts && opts.popup) state.pendWant = true;
+  api('myPendingActions', {}, { silent: true }).then(function(res){
+    state.pendBusy = false;
+    var want = state.pendWant; state.pendWant = false;
+    if (!state.user || state.user.id !== uid) return;
+    if (!res || !res.ok) {
+      if (res && res.error === 'unknown_action') legacyNotifCount_();
+      return;
+    }
+    state.pend = { items: res.items || [], total: res.total != null ? res.total : (res.items || []).length };
+    setNotifCount(state.pend.total);
+    pendHeroPaint_();
+    if (want && state.pend.total) {
+      var shown = false;
+      try { shown = !!sessionStorage.getItem(pendKey_()); sessionStorage.setItem(pendKey_(), '1'); } catch (e) {}
+      if (!shown) pendOpen_();
+    }
+  });
+}
+
+// The home hero: how many things wait, the first four as rows, and "and N
+// more". Redrawn whenever the list is refreshed.
+function pendHeroPaint_(){
+  var hero = qs('.hero');
+  if (!hero || !state.pend) return;
+  var p = state.pend, items = p.items || [], total = p.total || 0;
+  var cta = qs('.cta', hero), host = qs('.hero-pend', hero);
+  if (!cta || !host) return;
+  if (total) {
+    cta.innerHTML = '<div class="big num">' + total + '</div><div class="cap">' + esc(t('home_actionsWaiting')) + '</div>' +
+      '<button type="button" id="heroCta">' + esc(t(p.legacy ? 'home_actionCta' : 'pa_all')) + '</button>';
+    qs('#heroCta', cta).addEventListener('click', function(){ if (p.legacy) goScreen_('handoffs'); else pendOpen_(); });
+  } else {
+    cta.innerHTML = '<div class="big">' + icon_('check').replace('<svg', '<svg style="width:40px;height:40px;stroke:#fff;fill:none;stroke-width:2.4"') + '</div><div class="cap">' + esc(t('home_actionNone')) + '</div>';
+  }
+  host.innerHTML = '';
+  items.slice(0, 4).forEach(function(it){ host.appendChild(pendRow_(it, true)); });
+  if (items.length > 4) {
+    var more = el('<button type="button" class="pa-more">' + esc(pendFill_(t('pa_more'), { n: items.length - 4 })) + '</button>');
+    more.addEventListener('click', pendOpen_);
+    host.appendChild(more);
+  }
+  host.hidden = !items.length;
+}
+
+// An older script without myPendingActions: count the way the bell used to.
+function legacyNotifCount_(){
+  api('listDashboard', {}, { silent: true }).then(function(res){
     if (!res.ok) return;
     var n = (res.pendingForMe||[]).length + (res.openDisputes||[]).length;
+    state.pend = { items: [], total: n, legacy: true };
     setNotifCount(n);
+    pendHeroPaint_();
   });
+}
+
+function refreshNotifCount(){
+  refreshPending_();
 }
 
 function byId(list, id){ for(var i=0;i<(list||[]).length;i++) if(list[i].id===id) return list[i]; return null; }
@@ -7817,7 +8076,6 @@ function renderHome(body){
   function drawHome(res, report, handoffs){
     if(!res.ok){ body.innerHTML = '<div class="msg err">'+esc(errMsg_(res))+'</div>'; return; }
     var pendingN = (res.pendingForMe||[]).length, disputeN = (res.openDisputes||[]).length;
-    setNotifCount(pendingN + disputeN);
     body.innerHTML = '';
 
     var entries = report ? (report.entries || []) : null;
@@ -7840,7 +8098,6 @@ function renderHome(body){
       var myAreas = ((state.meta && state.meta.clusters) || []).filter(function(c){ return c.clusterManagerUserId === state.user.id; });
       if (myAreas.length) chips.push(t('org_area') + ': ' + myAreas.map(function(c){ return c.name; }).join('، '));
     } else if (city) chips.push(t('home_city') + ': ' + city);
-    var actionN = pendingN + disputeN;
     var hero = el('<div class="hero'+(splash?' splash':'')+'">' +
       '<div style="position:relative;z-index:1;min-width:0;">' +
         '<div class="hi">'+esc(timeGreeting())+'</div>' +
@@ -7849,15 +8106,12 @@ function renderHome(body){
         '<div class="meta">'+chips.map(function(c){ return '<span>'+esc(c)+'</span>'; }).join('')+'</div>' +
         '<figure class="hero-wis" hidden></figure>' +
       '</div>' +
-      '<div class="cta">' +
-        (actionN
-          ? '<div class="big num">'+actionN+'</div><div class="cap">'+esc(t('home_actionsWaiting'))+'</div><button type="button" id="heroCta">'+esc(t('home_actionCta'))+'</button>'
-          : '<div class="big">'+icon_('check').replace('<svg','<svg style="width:40px;height:40px;stroke:#fff;fill:none;stroke-width:2.4"')+'</div><div class="cap">'+esc(t('home_actionNone'))+'</div>') +
-      '</div>' +
+      '<div class="cta"></div>' +
+      '<div class="hero-pend" hidden></div>' +
     '</div>');
     body.appendChild(hero);
-    var cta = qs('#heroCta', hero);
-    if (cta) cta.addEventListener('click', function(){ goScreen_('handoffs'); });
+    // what is waiting on this person: the list refreshed by renderShell, drawn at once if known
+    pendHeroPaint_();
     heroWisdom_(qs('.hero-wis', hero));
 
     // a day typed but not saved (an idle sign-out keeps it): one tap back to it
@@ -11730,6 +11984,8 @@ function renderAreaBulk(body){
         wireProductDetailToggle_(row, b.id);
         var fixBtn = qs('.abfOpen', row);
         if (fixBtn) fixBtn.addEventListener('click', function(){ abfOpen_(b); });
+        // sent here by the pending list: open its correction straight away, once
+        if (fixBtn && PEND_FIX_BATCH_ === b.id) { PEND_FIX_BATCH_ = null; abfOpen_(b); }
       });
     });
   }
@@ -12878,7 +13134,6 @@ function renderHandoffs(body){
     var disputed = visible.filter(function(h){ return h.status==='disputed'; });
     // a disputed one has its own card for admin and finance: not listed twice
     var history = visible.filter(function(h){ return pending.indexOf(h)<0 && !((role==='admin'||role==='finance') && h.status==='disputed'); });
-    setNotifCount(pending.length + ((role==='admin'||role==='finance') ? disputed.length : 0));
 
     if (pending.length){
       var pc = el('<div class="card ho-wait no-collapse"><h2 class="ho-h">'+esc(t('handoff_pending'))+' <span class="rp-n">'+pending.length+'</span></h2><div id="pList"></div></div>');

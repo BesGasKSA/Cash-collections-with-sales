@@ -1566,6 +1566,11 @@ should have history for the numbers changes in all areas; it's very sensitive".
   deputy, accountant and operations roles, and on Home for collectors (opens on his
   branches). Tapping a request opens its own handover row (`cpOpenRequest_`). Read-only:
   no new server action, scoping is `listHandoffs`'s own.
+## What is waiting on a person: welcome popup, bell, home hero (2026-10-05)
+
+- **One list, three views.** `myPendingActions` (Collection.gs `actionMyPendingActions_`, never in the response cache, writes nothing) returns `{items,total}` for the signed-in user; `PENDING_KINDS_` is the order. Kinds: confirm_receipt, deputy_validate, deputy_batch, returned_fix, batch_rejected, send_ready, car_handover, dispute_open, second_approval, deposit_due, risk_high. Each is scoped like the screen it points to (the deputy item goes to an admin only while no active deputy exists; disputes and second approvals never to a party; a returned request only while `resendError_` allows the resend). `total` is the number of rows, and the bell shows that.
+- **Client** (`refreshPending_`, `pendOpen_`, `pendHeroPaint_`, `pendGo_`): `renderShell` refreshes the list on every draw (one request at a time) and opens the popup once per sign-in (sessionStorage `bgc_pendShown_<id>`, cleared at login and logout). The bell reopens it; the home hero lists the first four rows and "and N more"; "Nothing needs your attention" shows only for an empty list. Go sets `HO_OPEN_` / `FIX_OPEN_` / `PEND_FIX_BATCH_` first, then `goScreen_(screen, true)` (the second argument keeps `HO_OPEN_`). `myPendingActions` is in `READ_ACTIONS`, or every refresh would wipe the screen cache. An older script without the action falls back to the old dashboard count (`legacyNotifCount_`).
+- A returned request's cash is back with the area manager, so he sees both returned_fix and send_ready for it.
 
 ## Costing and profitability (2026-10-01, `Costing.gs`)
 
