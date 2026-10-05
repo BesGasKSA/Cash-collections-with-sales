@@ -2569,39 +2569,39 @@ check(call({ action: 'addInventoryMove', token: noorTok, locationId: location.en
 check(call({ action: 'addInventoryMove', token: dpTok, locationId: dpLoc.id, productId: invP.entity.id, kind: 'purchase', qty: 1, date: '2026-09-02' }).error === 'forbidden', 'a driver keeps no stock records');
 check(call({ action: 'createDailyEntry', token: noorTok, date: '2026-09-05', sourceType: 'store', sourceId: dpStoreId, productId: invP.entity.id, qty: 40, unitPrice: 30, cashSales: 1200 }).ok, 'a sale is entered as always');
 var inv = call({ action: 'getInventoryReport', token: financeTok, dateFrom: '2026-09-01', dateTo: '2026-09-30', locationId: dpLoc.id });
-var invRow = inv.ok && inv.rows.filter(function (r) { return r.productId === invP.entity.id; })[0];
+var invRow = inv.ok && inv.rows.filter(function (r) { return r.stockItemId === invP.entity.id; })[0];
 check(invRow && invRow.opening === 100 && invRow.purchases === 50 && invRow.returns === 7 && invRow.available === 157, 'opening 100 + purchases 50 + returns 7 = available 157');
 check(invRow && invRow.sales === 40 && invRow.damaged === 3 && invRow.ending === 114, 'available 157 less sales 40 (from the system) and damage 3 = ending 114');
 check(invRow && invRow.unitCost === 18 && Math.abs(invRow.endingValue - 114 * 18) < 0.005, 'the ending stock is valued at cost');
-check(inv.ok && !inv.rows.some(function (r) { return r.productId === invSvc.id; }), 'services never appear in the stock');
+check(inv.ok && !inv.rows.some(function (r) { return r.stockItemId === invSvc.id; }), 'services never appear in the stock');
 var invOct = call({ action: 'getInventoryReport', token: financeTok, dateFrom: '2026-10-01', dateTo: '2026-10-31', locationId: dpLoc.id });
-var octRow = invOct.rows.filter(function (r) { return r.productId === invP.entity.id; })[0];
+var octRow = invOct.rows.filter(function (r) { return r.stockItemId === invP.entity.id; })[0];
 check(octRow && octRow.opening === 114 && octRow.ending === 114, 'next period opens with the last period\'s ending');
 check(call({ action: 'voidInventoryMove', token: noorTok, id: dmg.move.id }).error === 'reason_required', 'voiding a movement needs a reason');
 check(call({ action: 'voidInventoryMove', token: noorTok, id: dmg.move.id, reason: 'counted twice' }).ok, 'the author voids a wrong movement with a reason');
 var inv2 = call({ action: 'getInventoryReport', token: financeTok, dateFrom: '2026-09-01', dateTo: '2026-09-30', locationId: dpLoc.id });
-check(inv2.rows.filter(function (r) { return r.productId === invP.entity.id; })[0].ending === 117, 'and it no longer counts');
+check(inv2.rows.filter(function (r) { return r.stockItemId === invP.entity.id; })[0].ending === 117, 'and it no longer counts');
 check(call({ action: 'getInventoryReport', token: noorTok, dateFrom: '2026-09-01', dateTo: '2026-09-30' }).rows.every(function (r) { return r.locationId === dpLoc.id; }), 'a branch manager sees only his branch');
 check(call({ action: 'getInventoryReport', token: dpTok }).error === 'forbidden', 'a driver sees no stock report');
 var invShort = call({ action: 'createDailyEntry', token: noorTok, date: '2026-09-06', sourceType: 'store', sourceId: dpStoreId, productId: invP.entity.id, qty: 200, unitPrice: 30, cashSales: 6000 });
 var inv3 = call({ action: 'getInventoryReport', token: financeTok, dateFrom: '2026-09-01', dateTo: '2026-09-30', locationId: dpLoc.id });
-var r3 = inv3.rows.filter(function (r) { return r.productId === invP.entity.id; })[0];
+var r3 = inv3.rows.filter(function (r) { return r.stockItemId === invP.entity.id; })[0];
 check(invShort.ok && r3.short === true && r3.ending === -83, 'selling more than the stock is flagged as short');
 
 console.log('--- inventory review fixes: go-live, validation, voids ---');
 var golP = call({ action: 'adminSaveEntity', token: adminTok, kind: 'product', data: { name: 'GoLive Item', type: 'goods', unitPrice: 10, unitCost: 6 } }).entity;
 ['2026-09-10', '2026-09-11', '2026-09-12'].forEach(function (d) { call({ action: 'createDailyEntry', token: noorTok, date: d, sourceType: 'store', sourceId: dpStoreId, productId: golP.id, qty: 20, unitPrice: 10, cashSales: 200 }); });
 check(mv(noorTok, { productId: golP.id, kind: 'opening', qty: 100, date: '2026-09-12' }).ok, 'a branch counts its stock after months of sales');
-var gl = call({ action: 'getInventoryReport', token: financeTok, dateFrom: '2026-09-01', dateTo: '2026-09-30', locationId: dpLoc.id }).rows.filter(function (r) { return r.productId === golP.id; })[0];
+var gl = call({ action: 'getInventoryReport', token: financeTok, dateFrom: '2026-09-01', dateTo: '2026-09-30', locationId: dpLoc.id }).rows.filter(function (r) { return r.stockItemId === golP.id; })[0];
 check(gl && gl.opening === 100 && gl.sales === 20 && gl.ending === 80 && !gl.short, 'sales before the opening count are not taken off it; the count day\'s own sales are (got ' + JSON.stringify(gl && [gl.opening, gl.sales, gl.ending]) + ')');
-var glEarly = call({ action: 'getInventoryReport', token: financeTok, dateFrom: '2026-08-01', dateTo: '2026-08-31', locationId: dpLoc.id }).rows.filter(function (r) { return r.productId === golP.id; })[0];
+var glEarly = call({ action: 'getInventoryReport', token: financeTok, dateFrom: '2026-08-01', dateTo: '2026-08-31', locationId: dpLoc.id }).rows.filter(function (r) { return r.stockItemId === golP.id; })[0];
 check(!glEarly || (glEarly.noOpening && !glEarly.short), 'a period before the count reads "no opening yet", never short');
 var noCount = call({ action: 'adminSaveEntity', token: adminTok, kind: 'product', data: { name: 'Never Counted', type: 'goods' } }).entity;
 call({ action: 'createDailyEntry', token: noorTok, date: '2026-09-13', sourceType: 'store', sourceId: dpStoreId, productId: noCount.id, qty: 5, unitPrice: 10, cashSales: 50 });
-var nc = call({ action: 'getInventoryReport', token: financeTok, dateFrom: '2026-09-01', dateTo: '2026-09-30', locationId: dpLoc.id }).rows.filter(function (r) { return r.productId === noCount.id; })[0];
+var nc = call({ action: 'getInventoryReport', token: financeTok, dateFrom: '2026-09-01', dateTo: '2026-09-30', locationId: dpLoc.id }).rows.filter(function (r) { return r.stockItemId === noCount.id; })[0];
 check(nc && nc.noOpening && !nc.short, 'an item nobody has counted yet says so instead of reading short');
 call({ action: 'createDailyEntry', token: noorTok, date: '2026-09-14', sourceType: 'store', sourceId: dpStoreId, productId: golP.id, cashSales: 300 });
-var nq = call({ action: 'getInventoryReport', token: financeTok, dateFrom: '2026-09-01', dateTo: '2026-09-30', locationId: dpLoc.id }).rows.filter(function (r) { return r.productId === golP.id; })[0];
+var nq = call({ action: 'getInventoryReport', token: financeTok, dateFrom: '2026-09-01', dateTo: '2026-09-30', locationId: dpLoc.id }).rows.filter(function (r) { return r.stockItemId === golP.id; })[0];
 check(nq && nq.salesWithoutQty === 1 && Math.abs(nq.salesWithoutQtyAmount - 300) < 0.005, 'a sale entered without a quantity is flagged, not silently dropped');
 [true, [5], '1e12', 1e308, 0.0001, 'abc'].forEach(function (bad) {
   check(mv(noorTok, { productId: golP.id, kind: 'purchase', qty: bad, date: '2026-09-15' }).error === 'invalid_qty', 'a quantity of ' + JSON.stringify(bad) + ' is refused');
@@ -2638,7 +2638,7 @@ check(xb.creditCommissions >= 0, 'and the customer\'s commission is worked out f
 var xlReal = call({ action: 'bulkSubmitAreaBatch', token: saraTok, clusterId: cluster.entity.id, rows: xlRows });
 check(xlReal.ok && xlReal.batch.status === 'pending_deputy', 'the file goes to the deputy for approval');
 close(xlReal.batch.breakdown.netCashOwed, xb.netCashOwed, 'and the real submission computes exactly what the preview showed');
-var xlInv = call({ action: 'getInventoryReport', token: financeTok, dateFrom: '2026-09-24', dateTo: '2026-09-24', locationId: dpLoc.id }).rows.filter(function (r) { return r.productId === invP.entity.id; })[0];
+var xlInv = call({ action: 'getInventoryReport', token: financeTok, dateFrom: '2026-09-24', dateTo: '2026-09-24', locationId: dpLoc.id }).rows.filter(function (r) { return r.stockItemId === invP.entity.id; })[0];
 check(xlInv && xlInv.sales === 15, 'stock counts the 10 sold and the 5 on credit once each (got ' + (xlInv && xlInv.sales) + ')');
 
 console.log('--- the Souq Gas driver commission can be changed on the day\'s line ---');
@@ -2713,14 +2713,14 @@ call({ action: 'createDailyEntry', token: noorTok, date: '2026-09-28', sourceTyp
 call({ action: 'createDailyEntry', token: noorTok, date: '2026-09-28', sourceType: 'store', sourceId: cyStore, productId: cyIronSell.id, qty: 4, unitPrice: 186, cashSales: 744 });
 call({ action: 'createDailyEntry', token: noorTok, date: '2026-09-28', sourceType: 'store', sourceId: cyStore, productId: cyReg.id, qty: 3, unitPrice: 45, cashSales: 135 });
 var cyRep = call({ action: 'getInventoryReport', token: financeTok, dateFrom: '2026-09-28', dateTo: '2026-09-28', locationId: dpLoc.id });
-function cyRow(pid, st) { return (cyRep.rows || []).filter(function (r) { return r.productId === pid && (r.state || '') === (st || ''); })[0] || {}; }
+function cyRow(pid, st) { return (cyRep.rows || []).filter(function (r) { return r.stockItemId === pid && (r.state || '') === (st || ''); })[0] || {}; }
 var cyFull = cyRow(cyIron.id, 'full'), cyEmpty = cyRow(cyIron.id, 'empty');
 check(cyFull.ending === 3293, 'full iron: 3458 + 1400 refilled - 1565 exchanged = 3293, as the sheet (got ' + cyFull.ending + ')');
 check(cyEmpty.ending === 1593, 'empty iron: 1432 - 1400 sent to refill + 1565 back from exchanges - 4 sold = 1593, as the sheet (got ' + cyEmpty.ending + ')');
 check(cyEmpty.refillOut === 1400 && cyEmpty.exchangeIn === 1565 && cyEmpty.sales === 4, 'and each part shows on its own column');
 check(cyRow(cyReg.id).ending === 51, 'an item without cylinders counts as before (got ' + cyRow(cyReg.id).ending + ')');
 var cyNext = call({ action: 'getInventoryReport', token: financeTok, dateFrom: '2026-09-29', dateTo: '2026-09-29', locationId: dpLoc.id });
-var cyN = (cyNext.rows || []).filter(function (r) { return r.productId === cyIron.id && r.state === 'empty'; })[0] || {};
+var cyN = (cyNext.rows || []).filter(function (r) { return r.stockItemId === cyIron.id && r.state === 'empty'; })[0] || {};
 check(cyN.opening === 1593, 'the next day opens with the day\'s ending (got ' + cyN.opening + ')');
 check(call({ action: 'importInventoryDay', token: noorTok, locationId: dpLoc.id, date: '2026-09-29', ref: 'tr', moves: [{ productId: cyIron.id, state: 'full', kind: 'transfer_out', qty: 10 }, { productId: cyIron.id, state: 'empty', kind: 'transfer_in', qty: 2 }] }).ok, 'transfers out of and into the branch are movements too');
 check(call({ action: 'adminSaveEntity', token: adminTok, kind: 'product', id: cyIron.id, data: { cylinder: false } }).error === 'has_stock', 'a cylinder item with stock cannot stop being one');
@@ -2746,7 +2746,12 @@ var scCust = saveCustomer({ name: 'Scenario Restaurant' }).entity;
   var r = call({ action: 'addInventoryMove', token: adminTok, locationId: scLoc.id, productId: o.productId, state: o.state, kind: 'opening', qty: o.qty, date: '2026-09-01' });
   check(r.ok, 'opening count ' + (r.error || ''));
 });
-function scRow(rep, pid, st) { return ((rep && rep.rows) || []).filter(function (r) { return r.productId === pid && (r.state || '') === (st || ''); })[0] || {}; }
+// a sales item's stock row: the inventory item it is linked to (before the move to
+// inventory items, the product holding the stock is its own item)
+function scRow(rep, pid, st) {
+  var p = ctx.getById_(ctx.SHEETS.PRODUCTS, pid), sid = (p && p.stockItemId) || pid;
+  return ((rep && rep.rows) || []).filter(function (r) { return r.stockItemId === sid && (r.state || '') === (st || ''); })[0] || {};
+}
 function scRep(from, to) { return call({ action: 'getInventoryReport', token: financeTok, dateFrom: from || '2026-09-01', dateTo: to || '2026-09-30', locationId: scLoc.id }); }
 function scLine(o) { var r = { date: '2026-09-02', sourceType: 'store', sourceId: scStore.id, submissionId: o.sub || 'sc-1' }; Object.keys(o).forEach(function (k) { if (k !== 'sub') r[k] = o[k]; }); return r; }
 
@@ -2821,50 +2826,331 @@ check(live.ok && live.asOf, 'the live stock answers with the moment it was read 
 check(live.ok && scRow(live, scGas.id, 'full').ending === 76 && scRow(live, scReg.id).ending === 18, 'and shows what is on hand now, every movement and sale so far included');
 check(call({ action: 'getInventoryLive', token: dpTok }).error === 'forbidden', 'a driver sees no live stock');
 
-console.log('--- LPG: cross-type exchange, boxes, new cylinders ---');
-var lxIron = scProd({ name: 'Lx Iron Exchange', type: 'goods', unitPrice: 37, unitCost: 11, emptyCost: 140, cylinder: true, stockName: 'Lx iron', boxSize: 35 });
-var lxFiber = scProd({ name: 'Lx Fiber Exchange', type: 'goods', unitPrice: 37, unitCost: 11, emptyCost: 400, cylinder: true, stockName: 'Lx fiber' });
-var lxUp = scProd({ name: 'Lx Iron to Fiber', type: 'goods', unitPrice: 297, stockOf: lxFiber.id, stockEffect: 'exchange', returnOf: lxIron.id });
-check(call({ action: 'adminSaveEntity', token: adminTok, kind: 'product', data: { name: 'Lx Bad Return', type: 'goods', stockOf: lxFiber.id, stockEffect: 'sell_empty', returnOf: lxIron.id } }).error === 'invalid_return_link', 'a return type needs an exchange');
-check(call({ action: 'adminSaveEntity', token: adminTok, kind: 'product', data: { name: 'Lx Bad Return2', type: 'goods', stockOf: lxFiber.id, stockEffect: 'exchange', returnOf: scReg.id } }).error === 'invalid_return_link', 'and must be a cylinder item');
-check(call({ action: 'adminSaveEntity', token: adminTok, kind: 'product', data: { name: 'Lx Bad Box', type: 'goods', cylinder: true, stockName: 'x', boxSize: -3 } }).error === 'invalid_box_size', 'a box holds a whole positive number');
-[[lxIron, 'full', 50], [lxIron, 'empty', 20], [lxFiber, 'full', 30], [lxFiber, 'empty', 5]].forEach(function (o) {
-  check(call({ action: 'addInventoryMove', token: adminTok, locationId: scLoc.id, productId: o[0].id, state: o[1], kind: 'opening', qty: o[2], date: '2026-09-01' }).ok, 'lx opening');
+console.log('--- LPG: setting up inventory items keeps every figure when each stock is mapped to its own item (2026-10-05) ---');
+// Still before the setup: the old shape, written through the old actions. A
+// product held the stock: two cylinder types, a cross-type swap, a body sale, a box
+// size, new cylinders and a refill, a hose sold by the cut.
+var mgIron = scProd({ name: 'Mg Iron Exchange', type: 'goods', unitPrice: 37, unitCost: 11, emptyCost: 140, cylinder: true, stockName: 'Mg iron', boxSize: 35 });
+var mgFiber = scProd({ name: 'Mg Fiber Exchange', type: 'goods', unitPrice: 37, unitCost: 11, emptyCost: 400, cylinder: true });
+var mgSwap = scProd({ name: 'Mg Iron to Fiber', type: 'goods', unitPrice: 297, stockOf: mgFiber.id, stockEffect: 'exchange', returnOf: mgIron.id });
+var mgBody = scProd({ name: 'Mg Iron Body Sale', type: 'goods', unitPrice: 186, stockOf: mgIron.id, stockEffect: 'sell_empty' });
+var mgHose = scProd({ name: 'Mg Hose', type: 'goods', unitPrice: 20, unitCost: 8 });
+var mgCut = scProd({ name: 'Mg Hose Cut', type: 'goods', unitPrice: 10, stockOf: mgHose.id });
+var mgSvc = scProd({ name: 'Mg Delivery', type: 'services', unitPrice: 5 });
+function mgMv(pid, st, kind, qty, date, extra) {
+  var p = { action: 'addInventoryMove', token: adminTok, locationId: scLoc.id, productId: pid, state: st, kind: kind, qty: qty, date: date };
+  Object.keys(extra || {}).forEach(function (k) { p[k] = extra[k]; });
+  var r = call(p); check(r.ok, 'an old-shape ' + kind + ' (' + (r.error || '') + ')'); return r;
+}
+mgMv(mgIron.id, 'full', 'opening', 60, '2026-09-01'); mgMv(mgIron.id, 'empty', 'opening', 25, '2026-09-01');
+mgMv(mgFiber.id, 'full', 'opening', 30, '2026-09-01'); mgMv(mgFiber.id, 'empty', 'opening', 4, '2026-09-01');
+mgMv(mgHose.id, null, 'opening', 40, '2026-09-01');
+mgMv(mgIron.id, 'full', 'purchase', 35, '2026-09-11'); mgMv(mgIron.id, 'full', 'purchase', 20, '2026-09-11', { newCylinders: true });
+var mgVoided = mgMv(mgHose.id, null, 'damage', 3, '2026-09-12');
+check(call({ action: 'voidInventoryMove', token: adminTok, id: mgVoided.move.id, reason: 'counted twice' }).ok, 'an old-shape move voided');
+var mgDay = call({ action: 'importDailyEntries', token: adminTok, rows: [
+  scLine({ sub: 'mg-1', date: '2026-09-14', productId: mgSwap.id, qty: 3, unitPrice: 297, cashSales: 891 }),
+  scLine({ sub: 'mg-1', date: '2026-09-14', productId: mgBody.id, qty: 2, unitPrice: 186, cashSales: 372 }),
+  scLine({ sub: 'mg-1', date: '2026-09-14', productId: mgIron.id, qty: 9, unitPrice: 37, cashSales: 333 }),
+  scLine({ sub: 'mg-1', date: '2026-09-14', productId: mgCut.id, qty: 4, unitPrice: 10, cashSales: 40 }),
+  scLine({ sub: 'mg-1', date: '2026-09-14', productId: mgSvc.id, qty: 2, unitPrice: 5, cashSales: 10 })] });
+check(mgDay.ok, 'an old-shape day of sales (' + JSON.stringify(mgDay.error || '') + ')');
+check(call({ action: 'setProductCost', token: adminTok, productId: mgIron.id, unitCost: 10, from: '2026-09-13', reason: 'plant price fell' }).ok, 'the gas cost changed in the middle of the month, the old way');
+
+// the figures before the setup, keyed the old way (a row per product holding stock)
+function mgCanon(v) {
+  if (Array.isArray(v)) return '[' + v.map(mgCanon).join(',') + ']';
+  if (v && typeof v === 'object') return '{' + Object.keys(v).sort().map(function (k) { return JSON.stringify(k) + ':' + mgCanon(v[k]); }).join(',') + '}';
+  return JSON.stringify(v === undefined ? null : v);
+}
+var MG_PERIODS = [['2026-08-01', '2026-08-31'], ['2026-09-01', '2026-09-30'], ['2026-09-14', '2026-09-14'], ['2026-09-28', '2026-09-28'], ['2026-10-01', '2026-10-31']];
+function mgFigures(legacyOf) {
+  return MG_PERIODS.map(function (p) {
+    var rep = call({ action: 'getInventoryReport', token: financeTok, dateFrom: p[0], dateTo: p[1] });
+    var rows = (rep.rows || []).map(function (r) {
+      var o = {}; Object.keys(r).forEach(function (k) { if (k !== 'stockItemId' && k !== 'salesByProduct') o[k] = r[k]; });
+      o.item = legacyOf(r.stockItemId); return mgCanon(o);
+    }).sort();
+    return mgCanon({ ok: rep.ok, rows: rows, moves: (rep.moves || []).map(function (m) { return m.id; }), total: rep.movesTotal });
+  });
+}
+function mgProfit() {
+  return [['2026-08-01', '2026-08-31'], ['2026-09-01', '2026-09-30'], ['2026-09-14', '2026-09-14']].map(function (p) {
+    var r = call({ action: 'getProfitReport', token: adminTok, dateFrom: p[0], dateTo: p[1] }); delete r.token; return mgCanon(r);
+  });
+}
+function mgSheets(c) { c = c || ctx; return [c.SHEETS.INV_MOVES, c.SHEETS.ENTRIES].map(function (s) { return mgCanon(c.readSheet(s)); }); }
+var mgFigBefore = mgFigures(function (id) { return id; });
+var mgProfitBefore = mgProfit();
+var mgSheetsBefore = mgSheets();
+check(mgFigBefore.every(function (f) { return f.indexOf('"ok":true') >= 0; }) && JSON.parse(mgProfitBefore[1]).ok, 'the reports answer before the setup');
+check(!call({ action: 'listMeta', token: adminTok }).config.stockItemsLive, 'the inventory items are not set up yet');
+// each product that held stock becomes an item of its own; what drew from it follows it
+function mgFaithfulPlan() {
+  var ps = ctx.readSheet(ctx.SHEETS.PRODUCTS), by = {}, hasMv = {};
+  ps.forEach(function (p) { by[p.id] = p; });
+  ctx.readSheet(ctx.SHEETS.INV_MOVES).forEach(function (m) { if (!m.voided) hasMv[m.productId] = true; });
+  function holder(p) { return p.cylinder || !(p.stockOf && by[p.stockOf] && (by[p.stockOf].type !== 'services' || hasMv[p.stockOf])); }
+  var items = [], lines = [];
+  ps.forEach(function (p) {
+    if (p.type === 'services' || !holder(p)) return;
+    items.push(p.cylinder ? { key: 'p:' + p.id, name: p.stockName || p.name, kind: 'cylinder', boxSize: p.boxSize || '', gasCost: p.unitCost || 0, cylinderCost: p.emptyCost || 0 }
+      : { key: 'p:' + p.id, name: p.name, kind: 'unit', unitCost: p.unitCost || 0 });
+  });
+  ps.forEach(function (p) {
+    if (p.type === 'services') return;
+    var a = holder(p) ? p : by[p.stockOf], eff = a.cylinder ? (p.stockEffect || 'exchange') : 'unit';
+    var l = { productId: p.id, stockItemKey: 'p:' + a.id, stockEffect: eff };
+    if (eff === 'exchange' && p.returnOf && by[p.returnOf] && by[p.returnOf].cylinder && p.returnOf !== a.id) l.returnItemKey = 'p:' + p.returnOf;
+    lines.push(l);
+  });
+  return { stockItems: items, products: lines };
+}
+var mgPlan = mgFaithfulPlan();
+check(call({ action: 'applyInventorySetup', token: dpTok, stockItems: mgPlan.stockItems, products: mgPlan.products }).error === 'forbidden', 'only admin and finance confirm the setup');
+var mgApplied = call({ action: 'applyInventorySetup', token: adminTok, stockItems: mgPlan.stockItems, products: mgPlan.products });
+check(mgApplied.ok, 'the setup is confirmed (' + JSON.stringify(mgApplied.error ? [mgApplied.error, mgApplied.names] : '') + ')');
+check(call({ action: 'applyInventorySetup', token: adminTok, stockItems: mgPlan.stockItems, products: mgPlan.products }).error === 'already_applied', 'and only once');
+check(call({ action: 'inventorySetupProposal', token: adminTok }).error === 'already_applied', 'nothing is proposed once it is done');
+var mgItems = ctx.readSheet(ctx.SHEETS.STOCK_ITEMS);
+function mgItemOf(pid) { return mgItems.filter(function (s) { return s.setupKey === 'p:' + pid; })[0] || {}; }
+var mgLegacyOf = function (id) { var s = mgItems.filter(function (x) { return x.id === id; })[0]; return s ? String(s.setupKey).slice(2) : 'unknown:' + id; };
+var mgFigAfter = mgFigures(mgLegacyOf);
+MG_PERIODS.forEach(function (p, i) {
+  check(mgFigAfter[i] === mgFigBefore[i], 'stock ' + p[0] + ' to ' + p[1] + ': every figure, value, flag and movement is what it was before the setup');
 });
-check(call({ action: 'importDailyEntries', token: adminTok, rows: [scLine({ sub: 'lx-1', date: '2026-09-10', productId: lxUp.id, qty: 3, unitPrice: 297, cashSales: 891 })] }).ok, 'three customers swap iron for fiber');
-var lx1 = scRep();
-check(scRow(lx1, lxFiber.id, 'full').sales === 3, 'three full fiber leave (got ' + scRow(lx1, lxFiber.id, 'full').sales + ')');
-check(scRow(lx1, lxIron.id, 'empty').exchangeIn === 3 && !scRow(lx1, lxFiber.id, 'empty').exchangeIn, 'three empty IRON come back, no fiber empty');
-check(call({ action: 'addInventoryMove', token: adminTok, locationId: scLoc.id, productId: lxIron.id, state: 'full', kind: 'purchase', qty: 70, newCylinders: true, date: '2026-09-11' }).ok, 'seventy brand-new full cylinders bought');
-check(call({ action: 'addInventoryMove', token: adminTok, locationId: scLoc.id, productId: lxIron.id, state: 'full', kind: 'purchase', qty: 35, date: '2026-09-11' }).ok, 'and one box refilled at the plant');
-var lx2 = scRep();
-check(scRow(lx2, lxIron.id, 'full').purchases === 105 && scRow(lx2, lxIron.id, 'empty').refillOut === 35, 'only the refilled box took empties (refillOut ' + scRow(lx2, lxIron.id, 'empty').refillOut + ')');
-check(scRow(lx2, lxIron.id, 'full').newCylinders === 70, 'the new cylinders are counted as such');
-check(call({ action: 'addInventoryMove', token: adminTok, locationId: scLoc.id, productId: lxIron.id, state: 'empty', kind: 'damage', qty: 1, newCylinders: true, date: '2026-09-11' }).error === 'invalid_new_cylinders', 'the flag belongs to a full purchase only');
-var lxById = {}; ctx.readSheet(ctx.SHEETS.PRODUCTS).forEach(function (p) { lxById[p.id] = p; });
-check(Math.abs(ctx.costOfProduct_(lxById[lxUp.id], '2026-09-10', {}, lxById) - (11 + 400 - 140)) < 0.005, 'the swap costs the gas plus the dearer cylinder the customer leaves with: 11 + 400 - 140 (got ' + ctx.costOfProduct_(lxById[lxUp.id], '2026-09-10', {}, lxById) + ')');
-check(call({ action: 'importInventoryDay', token: adminTok, locationId: scLoc.id, date: '2026-09-12', ref: 'lx-day', moves: [{ productId: lxIron.id, state: 'full', kind: 'purchase', qty: 20, newCylinders: true }] }).ok, 'a sheet day may carry new cylinders too');
-check(call({ action: 'importInventoryDay', token: adminTok, locationId: scLoc.id, date: '2026-09-12', ref: 'lx-day2', moves: [{ productId: lxIron.id, state: 'empty', kind: 'return', qty: 2, newCylinders: true }] }).error === 'invalid_new_cylinders', 'and refuses the flag elsewhere');
-// fix round 1
-var lxMixed = scProd({ name: 'Lx Mixed Swap', type: 'goods', unitPrice: 200, stockOf: lxFiber.id, stockEffect: 'exchange', returnOf: lxIron.id });
-var lxUnlink = call({ action: 'adminSaveEntity', token: adminTok, kind: 'product', id: lxMixed.id, data: { stockOf: '', returnOf: lxIron.id } });
-check(lxUnlink.ok && !lxUnlink.entity.returnOf, 'unlinking the stock item drops the returned type too (' + (lxUnlink.error || '') + ')');
-var lxDown = scProd({ name: 'Lx Fiber to Iron', type: 'goods', unitPrice: 30, stockOf: lxIron.id, stockEffect: 'exchange', returnOf: lxFiber.id });
-var lxById2 = {}; ctx.readSheet(ctx.SHEETS.PRODUCTS).forEach(function (p) { lxById2[p.id] = p; });
-check(ctx.costOfProduct_(lxById2[lxDown.id], '2026-09-10', {}, lxById2) === 0, 'a downgrade swap never books a negative cost (got ' + ctx.costOfProduct_(lxById2[lxDown.id], '2026-09-10', {}, lxById2) + ')');
-check(call({ action: 'addInventoryMove', token: adminTok, locationId: scLoc.id, productId: lxIron.id, state: 'full', kind: 'purchase', qty: 1, newCylinders: 'true', date: '2026-09-11' }).error === 'invalid_new_cylinders', 'the flag is true or false, never a string');
-check(call({ action: 'addInventoryMove', token: adminTok, locationId: scLoc.id, productId: lxIron.id, state: 'full', kind: 'purchase', qty: 1, newCylinders: false, date: '2026-09-11' }).ok, 'false is the same as absent');
-var lxBox = scProd({ name: 'Lx Box Item', type: 'goods', cylinder: true, stockName: 'Lx box', boxSize: 35 });
-check(lxBox.boxSize === 35, 'a box of 35 is accepted and stored');
-var lxBoxOff = call({ action: 'adminSaveEntity', token: adminTok, kind: 'product', id: lxBox.id, data: { cylinder: false } });
-check(lxBoxOff.ok && !lxBoxOff.entity.boxSize, 'a product that stops being a cylinder keeps no box size (' + (lxBoxOff.error || '') + ')');
-var lxNoOpen = scProd({ name: 'Lx Never Counted', type: 'goods', cylinder: true, stockName: 'Lx none' });
-var lxSwap2 = scProd({ name: 'Lx Fiber for Never', type: 'goods', unitPrice: 250, stockOf: lxFiber.id, stockEffect: 'exchange', returnOf: lxNoOpen.id });
-check(call({ action: 'importDailyEntries', token: adminTok, rows: [scLine({ sub: 'lx-2', date: '2026-09-13', productId: lxSwap2.id, qty: 2, unitPrice: 250, cashSales: 500 })] }).ok, 'a swap whose returned type was never counted here is saved');
-var lx3 = scRep();
-check(scRow(lx3, lxFiber.id, 'full').sales === 5, 'the full side still deducts (got ' + scRow(lx3, lxFiber.id, 'full').sales + ')');
-var lxNE = scRow(lx3, lxNoOpen.id, 'empty');
-check(lxNE.noOpening === true && !lxNE.short, 'and the returned type reads no opening yet, never short');
+var mgProfitAfter = mgProfit();
+check(mgProfitAfter.every(function (x, i) { return x === mgProfitBefore[i]; }), 'the profit report for past periods is unchanged by the setup');
+var mgSheetsAfter = mgSheets();
+check(mgSheetsAfter[0] === mgSheetsBefore[0], 'no movement row is changed');
+check(mgSheetsAfter[1] === mgSheetsBefore[1], 'no day entry row is changed');
+var mgProducts = ctx.readSheet(ctx.SHEETS.PRODUCTS);
+check(mgProducts.every(function (p) { return p.type === 'services' ? !p.stockItemId : !!p.stockItemId; }), 'every goods product has an inventory item, no service has one');
+var mgI = mgItemOf(mgIron.id), mgF = mgItemOf(mgFiber.id), mgH = mgItemOf(mgHose.id);
+check(mgI.kind === 'cylinder' && mgI.name === 'Mg iron' && mgI.gasCost === 10 && mgI.cylinderCost === 140 && mgI.boxSize === 35, 'a cylinder item with its name, gas cost, cylinder cost and box size');
+check(mgF.kind === 'cylinder' && mgF.name === 'Mg Fiber Exchange' && mgH.kind === 'unit' && mgH.unitCost === 8, 'and the others as planned');
+function mgP(id) { return ctx.getById_(ctx.SHEETS.PRODUCTS, id); }
+check(mgP(mgSwap.id).stockItemId === mgF.id && mgP(mgSwap.id).returnItemId === mgI.id && mgP(mgBody.id).stockEffect === 'sell_empty', 'the swap takes back the iron item; the body sale sells the iron empty');
+check(mgItems.every(function (s) { return /^STK-\d{4}$/.test(s.code || '') && s.fromSetup === true; }), 'every item is numbered STK');
+check(ctx.readSheet(ctx.SHEETS.AUDIT).some(function (a) { return a.action === 'inventory_setup'; }) && ctx.readSheet(ctx.SHEETS.AUDIT).some(function (a) { return a.action === 'migrate_stock_item'; }), 'the setup is in the audit trail');
+var mgRepNew = scRep();
+check((mgRepNew.moves || []).every(function (m) { return !!m.stockItemId; }), 'old movements are read with their inventory item');
+check(call({ action: 'addInventoryMove', token: adminTok, locationId: scLoc.id, productId: mgHose.id, kind: 'purchase', qty: 1, date: '2026-09-15' }).error === 'use_stock_item', 'from now on a move naming a product is refused');
+check(call({ action: 'addInventoryMove', token: adminTok, locationId: scLoc.id, stockItemId: mgI.id, state: 'full', kind: 'opening', qty: 1, date: '2026-09-15' }).error === 'opening_exists', 'and the old opening count is the item\'s opening: it is entered once');
+check(mgRepNew.rows.every(function (r) { return !('productId' in r); }), 'report rows name inventory items only');
+
+console.log('--- LPG: the live products are set up once, from a proposal the manager confirms ---');
+// The live data: plain goods products, the branch counted full iron on the
+// exchange item and empty iron on the body sale. A fresh system, made-up people.
+var lv = harness.buildContext();
+function lvCall(payload) { try { return lv.route_(payload); } catch (e) { return { ok: false, error: String(e && e.message || e) }; } }
+(function () { var salt = lv.randomSalt_(); lv.writeRow(lv.SHEETS.USERS, { id: lv.Utilities.getUuid(), name: 'Lv Admin', email: 'lv.admin@bestgas.sa', role: 'admin', active: true, language: 'en', salt: salt, pass: lv.hashPw_('Bootstrap#1', salt), mustChangePw: false }); })();
+var lvTok = lvCall({ action: 'login', email: 'lv.admin@bestgas.sa', password: 'Bootstrap#1' }).token;
+function lvEnt(kind, d) { var r = lvCall({ action: 'adminSaveEntity', token: lvTok, kind: kind, data: d }); check(r.ok, 'live shape: ' + kind + ' ' + (d.name || d.label || '') + (r.ok ? '' : ': ' + r.error)); return r.entity || {}; }
+function lvUser(n, role) { return lvCall({ action: 'adminCreateUser', token: lvTok, data: { name: n, email: n.toLowerCase().replace(/\W+/g, '.') + '@bestgas.sa', role: role } }).user || {}; }
+var lvAm = lvUser('Lv Area Manager', 'cluster_manager'), lvCol = lvUser('Lv Collector', 'collector'), lvBm = lvUser('Lv Branch Manager', 'store_manager');
+var lvArea = lvEnt('cluster', { name: 'Lv Area', clusterManagerUserId: lvAm.id });
+var lvLoc = lvEnt('location', { city: 'Riyadh', name: 'Lv Branch', clusterId: lvArea.id, collectorUserId: lvCol.id });
+var lvStore = lvEnt('store', { locationId: lvLoc.id, name: 'Lv Store', storeManagerUserId: lvBm.id });
+var LV_NAMES = [['استبدال غاز', 37, 'exchange'], ['أسطوانة حديد فارغ', 186], ['أستبدال فايبر', 37, 'exchange'], ['أستبدال وذفه', 37], ['بيع وذفه', 409.89], ['أستبدال 5 كجم', 16.82],
+  ['بيع 5كجم', 340], ['منظم 50 روافد'], ['منظم ضغط عالي'], ['منظم 50 مللي بار شركة'], ['منظم 90 مللي بار شركة'], ['منظم 22 / 90'], ['لي أحمر 11'], ['توصيل']];
+var lvP = LV_NAMES.map(function (x) { var d = { name: x[0], type: 'goods' }; if (x[1]) d.unitPrice = x[1]; if (x[2]) d.stockEffect = x[2]; return lvEnt('product', d); });
+var lvExch = lvP[0], lvBody = lvP[1], lvDel = lvP[13];
+check(lvCall({ action: 'addInventoryMove', token: lvTok, locationId: lvLoc.id, productId: lvExch.id, kind: 'opening', qty: 2051, date: '2026-09-28' }).ok, 'the branch counted 2051 on the exchange item');
+check(lvCall({ action: 'addInventoryMove', token: lvTok, locationId: lvLoc.id, productId: lvBody.id, kind: 'opening', qty: 666, date: '2026-09-28' }).ok, 'and 666 on the body sale');
+var lvDay = lvCall({ action: 'importDailyEntries', token: lvTok, rows: [
+  { date: '2026-09-28', sourceType: 'store', sourceId: lvStore.id, submissionId: 'lv-1', productId: lvExch.id, qty: 1453, unitPrice: 37, cashSales: 53761 },
+  { date: '2026-09-28', sourceType: 'store', sourceId: lvStore.id, submissionId: 'lv-1', productId: lvBody.id, qty: 4, unitPrice: 186, cashSales: 744 }] });
+check(lvDay.ok, 'a day of 1453 exchanges and 4 body sales (' + JSON.stringify(lvDay.error || lvDay.results || '') + ')');
+function lvRep() { return lvCall({ action: 'getInventoryReport', token: lvTok, dateFrom: '2026-09-28', dateTo: '2026-09-30', locationId: lvLoc.id }); }
+var lvOld = lvRep();
+function lvRow(rep, id, st) { return ((rep && rep.rows) || []).filter(function (r) { return r.stockItemId === id && (r.state || '') === (st || ''); })[0] || {}; }
+check(lvRow(lvOld, lvExch.id).ending === 598 && lvRow(lvOld, lvBody.id).ending === 662, 'before the setup the stock reads as it always has (598 and 662)');
+var lvSheetsBefore = mgSheets(lv);
+check(lvCall({ action: 'inventorySetupProposal', token: lvCall({ action: 'login', email: 'lv.branch.manager@bestgas.sa', password: 'x' }).token || 'none' }).ok !== true, 'nobody but a manager reads the proposal');
+var lvProp = lvCall({ action: 'inventorySetupProposal', token: lvTok });
+check(lvProp.ok, 'the proposal is read (' + (lvProp.error || '') + ')');
+function lvLine(pid) { return (lvProp.products || []).filter(function (l) { return l.productId === pid; })[0] || {}; }
+function lvItem(key) { return (lvProp.stockItems || []).filter(function (s) { return s.key === key; })[0] || {}; }
+var lvIronKey = lvLine(lvExch.id).stockItemKey;
+check(lvItem(lvIronKey).kind === 'cylinder' && /حديد/.test(lvItem(lvIronKey).name), 'an exchange naming no cylinder type is the iron cylinder (' + lvItem(lvIronKey).name + ')');
+check(lvLine(lvExch.id).stockEffect === 'exchange' && lvLine(lvBody.id).stockItemKey === lvIronKey && lvLine(lvBody.id).stockEffect === 'sell_empty', 'the empty iron sale sells the iron empty');
+check(lvLine(lvP[2].id).stockEffect === 'exchange' && lvItem(lvLine(lvP[2].id).stockItemKey).kind === 'cylinder' && lvLine(lvP[2].id).stockItemKey !== lvIronKey, 'fiber is its own cylinder item');
+check(lvLine(lvP[3].id).stockItemKey === lvLine(lvP[4].id).stockItemKey && lvLine(lvP[4].id).stockEffect === 'sell_empty', 'the wazfa exchange and the wazfa sale share one item');
+check(lvLine(lvP[5].id).stockItemKey === lvLine(lvP[6].id).stockItemKey && lvLine(lvP[5].id).stockItemKey !== lvLine(lvP[2].id).stockItemKey, 'the 5 kg exchange and sale share their own item');
+check([7, 8, 9, 10, 11, 12].every(function (i) { var l = lvLine(lvP[i].id); return l.stockEffect === 'unit' && lvItem(l.stockItemKey).kind === 'unit' && lvItem(l.stockItemKey).name === lvP[i].name; }), 'each regulator and the hose are unit items named after themselves');
+check(lvLine(lvDel.id).toService === true, 'the delivery becomes a service');
+var lvLm = function (pid) { return (lvProp.legacyMoves || []).filter(function (m) { return m.productId === pid; })[0] || { maps: {} }; };
+check(lvLm(lvExch.id).maps.stockItemKey === lvIronKey && lvLm(lvExch.id).maps.state === 'full' && lvLm(lvExch.id).openings[0].qty === 2051, 'the 2051 counted on the exchange land on iron full');
+check(lvLm(lvBody.id).maps.stockItemKey === lvIronKey && lvLm(lvBody.id).maps.state === 'empty' && lvLm(lvBody.id).openings[0].qty === 666, 'the 666 counted on the body sale land on iron empty');
+check((lvProp.conflicts || []).length === 0, 'no two counts land on one item');
+// a mapping that lands two counts on iron full is refused, naming both
+var lvBad = JSON.parse(JSON.stringify(lvProp.products)).map(function (l) { if (l.productId === lvBody.id) l.stockEffect = 'sell_full'; return l; });
+var lvConf = lvCall({ action: 'applyInventorySetup', token: lvTok, stockItems: lvProp.stockItems, products: lvBad });
+check(lvConf.error === 'opening_conflict' && (lvConf.names || []).indexOf('استبدال غاز') >= 0 && (lvConf.names || []).indexOf('أسطوانة حديد فارغ') >= 0, 'two openings on one item and state are refused, naming the products (got ' + JSON.stringify([lvConf.error, lvConf.names]) + ')');
+var lvGone = JSON.parse(JSON.stringify(lvProp.products)).filter(function (l) { return l.productId !== lvBody.id; });
+var lvUnm = lvCall({ action: 'applyInventorySetup', token: lvTok, stockItems: lvProp.stockItems, products: lvGone });
+check(lvUnm.error === 'moves_unmapped' && (lvUnm.names || []).indexOf('أسطوانة حديد فارغ') >= 0, 'a product with stock counted on it must be mapped (got ' + JSON.stringify([lvUnm.error, lvUnm.names]) + ')');
+check(!lv.readSheet(lv.SHEETS.STOCK_ITEMS).length && !lvCall({ action: 'listMeta', token: lvTok }).config.stockItemsLive, 'a refused setup writes nothing');
+var lvApply = lvCall({ action: 'applyInventorySetup', token: lvTok, stockItems: lvProp.stockItems, products: lvProp.products });
+check(lvApply.ok, 'the proposal is confirmed (' + JSON.stringify(lvApply.error ? [lvApply.error, lvApply.names] : '') + ')');
+var lvIron = lvApply.stockItemIds ? lvApply.stockItemIds[lvIronKey] : null;
+var lvNew = lvRep();
+check(lvRow(lvNew, lvIron, 'full').ending === 598, 'iron full: 2051 - 1453 exchanged = 598 (got ' + lvRow(lvNew, lvIron, 'full').ending + ')');
+check(lvRow(lvNew, lvIron, 'empty').ending === 2115, 'iron empty: 666 - 4 sold + 1453 empties back from the exchanges = 2115 (got ' + lvRow(lvNew, lvIron, 'empty').ending + ')');
+check(mgSheets(lv)[0] === lvSheetsBefore[0] && mgSheets(lv)[1] === lvSheetsBefore[1], 'no movement or entry row is changed by the setup');
+check(lvCall({ action: 'applyInventorySetup', token: lvTok, stockItems: lvProp.stockItems, products: lvProp.products }).error === 'already_applied', 'a second confirm is refused');
+check(lv.getById_(lv.SHEETS.PRODUCTS, lvDel.id).type === 'services', 'the delivery is a service now');
+check(lvCall({ action: 'addInventoryMove', token: lvTok, locationId: lvLoc.id, stockItemId: lvIron, state: 'full', kind: 'opening', qty: 10, date: '2026-09-29' }).error === 'opening_exists', 'the count already on file is iron full\'s opening: a second one is refused');
+check(lvCall({ action: 'importInventoryDay', token: lvTok, locationId: lvLoc.id, date: '2026-09-29', ref: 'lv-sheet', moves: [{ stockItemId: lvIron, state: 'empty', kind: 'opening', qty: 10 }] }).error === 'opening_exists', 'and so is one from a branch sheet');
+check(lvCall({ action: 'listMeta', token: lvTok }).stockItems.length === lvProp.stockItems.length, 'the items are on file with their numbers');
+
+console.log('--- LPG: inventory items are not sales items ---');
+var siMgr = scUser('Si Manager', 'store_manager');
+var siLoc = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: 'Riyadh', name: 'Ledger Branch', clusterId: cluster.entity.id, collectorUserId: musa.id } }).entity;
+var siStore = call({ action: 'adminSaveEntity', token: adminTok, kind: 'store', data: { locationId: siLoc.id, name: 'Ledger Store', storeManagerUserId: siMgr.id } }).entity;
+function siEnt(kind, d) { var r = call({ action: 'adminSaveEntity', token: adminTok, kind: kind, data: d }); check(r.ok, kind + ' ' + d.name + (r.ok ? '' : ': ' + r.error)); return r.entity || {}; }
+var siIron = siEnt('stock_item', { name: 'أسطوانة حديد', kind: 'cylinder', boxSize: 35, gasCost: 11, cylinderCost: 140 });
+var siFiber = siEnt('stock_item', { name: 'أسطوانة فايبر', kind: 'cylinder', cylinderCost: 400 });
+var siReg = siEnt('stock_item', { name: 'منظم', kind: 'unit', unitCost: 28 });
+check(/^STK-\d{4}$/.test(siIron.code || ''), 'an inventory item gets its own number (got ' + siIron.code + ')');
+check(siIron.boxSize === 35 && siIron.gasCost === 11 && siIron.cylinderCost === 140 && !siFiber.boxSize, 'a cylinder item keeps its box, gas cost and cylinder cost');
+var siWasher = siEnt('stock_item', { name: 'Si Washer', kind: 'unit', unitCost: 3, gasCost: 9, cylinderCost: 9, boxSize: 35 });
+check(siWasher.unitCost === 3 && !siWasher.gasCost && !siWasher.cylinderCost && !siWasher.boxSize, 'a unit item keeps no gas, cylinder or box');
+check(saveErr('stock_item', { name: 'Si Bad Kind', kind: 'gas' }) === 'invalid_stock_kind', 'an inventory item is a cylinder or a unit');
+check(saveErr('stock_item', { kind: 'unit' }) === 'name_required', 'and has a name');
+check(saveErr('stock_item', { name: 'Si Bad Cost', kind: 'cylinder', gasCost: -1 }) === 'invalid_cost', 'a cost cannot be negative');
+check(saveErr('stock_item', { name: 'Si Bad Box', kind: 'cylinder', boxSize: -3 }) === 'invalid_box_size', 'a box holds a whole positive number');
+check(saveErr('stock_item', { name: 'Si Bad Box2', kind: 'cylinder', boxSize: 2.5 }) === 'invalid_box_size', 'of cylinders');
+check(!!trOf('أسطوانة حديد'), 'a new item name is sent for English and Urdu');
+
+var spExch = siEnt('product', { name: 'استبدال غاز', type: 'goods', unitPrice: 37, stockItemId: siIron.id, stockEffect: 'exchange' });
+var spBody = siEnt('product', { name: 'بيع أسطوانة حديد', type: 'goods', unitPrice: 186, stockItemId: siIron.id, stockEffect: 'sell_empty' });
+var spSwap = siEnt('product', { name: 'تبديل حديد بفايبر', type: 'goods', unitPrice: 297, stockItemId: siFiber.id, stockEffect: 'exchange', returnItemId: siIron.id });
+var spReg = siEnt('product', { name: 'منظم', type: 'goods', unitPrice: 45, stockItemId: siReg.id, stockEffect: 'unit' });
+var spDel = siEnt('product', { name: 'توصيل', type: 'services', unitPrice: 5 });
+var spFull = siEnt('product', { name: 'Si Full Iron Sale', type: 'goods', unitPrice: 220, stockItemId: siIron.id, stockEffect: 'sell_full' });
+var spDown = siEnt('product', { name: 'Si Fiber to Iron', type: 'goods', unitPrice: 30, stockItemId: siIron.id, stockEffect: 'exchange', returnItemId: siFiber.id });
+check(!spDel.stockItemId && !spDel.stockEffect, 'a service has no stock link');
+check(saveErr('product', { name: 'Si Bad Svc', type: 'services', stockItemId: siReg.id, stockEffect: 'unit' }) === 'invalid_stock_link', 'and cannot be given one');
+check(saveErr('product', { name: 'Si Bad Link', type: 'goods', stockItemId: siReg.id, stockEffect: 'exchange' }) === 'invalid_stock_link', 'a product on a unit item cannot be an exchange');
+check(saveErr('product', { name: 'Si Bad Link2', type: 'goods', stockItemId: siIron.id, stockEffect: 'unit' }) === 'invalid_stock_link', 'nor one on a cylinder item counted in units');
+check(saveErr('product', { name: 'Si Bad Link3', type: 'goods', stockItemId: 'nope', stockEffect: 'unit' }) === 'invalid_stock_link', 'and the item must exist');
+check(saveErr('product', { name: 'Si Bad Return', type: 'goods', stockItemId: siFiber.id, stockEffect: 'sell_empty', returnItemId: siIron.id }) === 'invalid_return_link', 'a returned item needs an exchange');
+check(saveErr('product', { name: 'Si Bad Return2', type: 'goods', stockItemId: siFiber.id, stockEffect: 'exchange', returnItemId: siReg.id }) === 'invalid_return_link', 'and must be a cylinder item');
+var spDefault = siEnt('product', { name: 'Si Default Effect', type: 'goods', stockItemId: siReg.id });
+check(spDefault.stockEffect === 'unit', 'a unit item\'s sales item counts units without saying so');
+var spOld = siEnt('product', { name: 'Si Old Fields', type: 'goods', cylinder: true, stockName: 'x', emptyCost: 9, stockOf: spExch.id, returnOf: spExch.id, boxSize: 35 });
+check(!spOld.cylinder && !spOld.stockName && !spOld.emptyCost && !spOld.stockOf && !spOld.returnOf && !spOld.boxSize, 'a sales item no longer takes cylinder, stock name, empty cost, stock-of, return-of or box size');
+// unlinking the item drops what hung on it; a new effect without a returned item drops it
+var spMixed = siEnt('product', { name: 'Si Mixed Swap', type: 'goods', stockItemId: siFiber.id, stockEffect: 'exchange', returnItemId: siIron.id });
+var spUnlink = call({ action: 'adminSaveEntity', token: adminTok, kind: 'product', id: spMixed.id, data: { stockItemId: '', returnItemId: siIron.id } });
+check(spUnlink.ok && !spUnlink.entity.returnItemId && !spUnlink.entity.stockEffect, 'unlinking the inventory item drops the returned item and the effect (' + (spUnlink.error || '') + ')');
+var spMixed2 = siEnt('product', { name: 'Si Mixed Swap 2', type: 'goods', stockItemId: siFiber.id, stockEffect: 'exchange', returnItemId: siIron.id });
+var spReEff = call({ action: 'adminSaveEntity', token: adminTok, kind: 'product', id: spMixed2.id, data: { stockEffect: 'sell_full' } });
+check(spReEff.ok && !spReEff.entity.returnItemId, 'a sales item that stops being an exchange keeps no returned item (' + (spReEff.error || '') + ')');
+var spToSvc = call({ action: 'adminSaveEntity', token: adminTok, kind: 'product', id: spDefault.id, data: { type: 'services' } });
+check(spToSvc.ok && !spToSvc.entity.stockItemId && !spToSvc.entity.stockEffect, 'a sales item made a service drops its stock link');
+
+function siMv(o) { var p = { action: 'addInventoryMove', token: adminTok, locationId: siLoc.id }; Object.keys(o).forEach(function (k) { p[k] = o[k]; }); return call(p); }
+check(siMv({ productId: spExch.id, state: 'full', kind: 'opening', qty: 1, date: '2026-09-01' }).error === 'use_stock_item', 'a move naming a sales item is refused: stock is kept on inventory items');
+check(siMv({ stockItemId: 'nope', kind: 'opening', qty: 1, date: '2026-09-01' }).error === 'invalid_stock_item', 'a move names a real inventory item');
+check(siMv({ stockItemId: siIron.id, kind: 'opening', qty: 1, date: '2026-09-01' }).error === 'invalid_state', 'a cylinder item says full or empty');
+check(siMv({ stockItemId: siReg.id, state: 'full', kind: 'opening', qty: 1, date: '2026-09-01' }).error === 'invalid_state', 'a unit item does not');
+[[siIron, 'full', 100], [siIron, 'empty', 50], [siFiber, 'full', 30], [siFiber, 'empty', 5], [siReg, null, 20]].forEach(function (o) {
+  var r = siMv({ stockItemId: o[0].id, state: o[1], kind: 'opening', qty: o[2], date: '2026-09-01' });
+  check(r.ok && r.move.stockItemId === o[0].id && !r.move.productId, 'opening count on ' + o[0].name + ' ' + (o[1] || '') + ' (' + (r.error || '') + ')');
+});
+check(siMv({ stockItemId: siIron.id, state: 'full', kind: 'opening', qty: 5, date: '2026-09-02' }).error === 'opening_exists', 'one opening per branch, item and full or empty');
+check(siMv({ stockItemId: siReg.id, kind: 'purchase', qty: 6, date: '2026-09-03' }).ok, 'a purchase on an inventory item');
+check(call({ action: 'addInventoryMove', token: noorTok, locationId: siLoc.id, stockItemId: siReg.id, kind: 'purchase', qty: 1, date: '2026-09-03' }).error === 'forbidden', 'a branch manager keeps only his own branch\'s stock');
+
+function siLine(o) { var r = { date: '2026-09-20', sourceType: 'store', sourceId: siStore.id, submissionId: o.sub || 'si-1' }; Object.keys(o).forEach(function (k) { if (k !== 'sub') r[k] = o[k]; }); return r; }
+var siDay = call({ action: 'importDailyEntries', token: adminTok, rows: [
+  siLine({ productId: spExch.id, qty: 10, unitPrice: 37, cashSales: 370 }),
+  siLine({ productId: spBody.id, qty: 2, unitPrice: 186, cashSales: 372 }),
+  siLine({ productId: spSwap.id, qty: 3, unitPrice: 297, cashSales: 891 }),
+  siLine({ productId: spReg.id, qty: 4, unitPrice: 45, cashSales: 180 }),
+  siLine({ productId: spDel.id, qty: 2, unitPrice: 5, cashSales: 10 })] });
+check(siDay.ok && siDay.created === 5, 'a day of 10 exchanges, 2 body sales, 3 swaps, 4 regulators and a delivery (' + JSON.stringify(siDay.error || siDay.results || '') + ')');
+function siRep(from, to) { return call({ action: 'getInventoryReport', token: financeTok, dateFrom: from || '2026-09-01', dateTo: to || '2026-09-30', locationId: siLoc.id }); }
+function siRow(rep, id, st) { return ((rep && rep.rows) || []).filter(function (r) { return r.stockItemId === id && (r.state || '') === (st || ''); })[0] || {}; }
+var si1 = siRep();
+var siIF = siRow(si1, siIron.id, 'full'), siIE = siRow(si1, siIron.id, 'empty'), siFF = siRow(si1, siFiber.id, 'full'), siFE = siRow(si1, siFiber.id, 'empty'), siRG = siRow(si1, siReg.id);
+check(siIF.sales === 10 && siIF.ending === 90, 'iron full: 100 - 10 exchanged = 90 (got ' + siIF.sales + '/' + siIF.ending + ')');
+check(siIE.exchangeIn === 13 && siIE.sales === 2 && siIE.ending === 61, 'iron empty: 50 + 10 back from exchanges + 3 iron back from the swaps - 2 bodies sold = 61 (got ' + [siIE.exchangeIn, siIE.sales, siIE.ending].join('/') + ')');
+check(siFF.sales === 3 && siFF.ending === 27, 'fiber full: 30 - 3 swapped = 27 (got ' + siFF.ending + ')');
+check(!siFE.exchangeIn && siFE.ending === 5, 'no fiber empty comes back');
+check(siRG.purchases === 6 && siRG.sales === 4 && siRG.ending === 22, 'regulators: 20 + 6 bought - 4 sold = 22 (got ' + siRG.ending + ')');
+var siProdIds = ctx.readSheet(ctx.SHEETS.PRODUCTS).map(function (p) { return p.id; });
+check((si1.rows || []).length === 5 && si1.rows.every(function (r) { return r.stockItemId && siProdIds.indexOf(r.stockItemId) < 0 && !('productId' in r); }), 'every row is an inventory item; no row is named after a sales item');
+check(siIF.itemName === 'أسطوانة حديد' && siIF.cylinder === true && siRG.cylinder === false, 'rows carry the item\'s own name and kind');
+check(siIF.salesBySource['store:' + siStore.id] === 10, 'the sales stay with the store that made them');
+check(siIF.salesByProduct[spExch.id] === 10 && siIE.salesByProduct[spBody.id] === 2 && siFF.salesByProduct[spSwap.id] === 3, 'and each row says which sales item sold it');
+check(Math.abs(siIF.endingValue - 90 * 151) < 0.005 && Math.abs(siIE.endingValue - 61 * 140) < 0.005 && Math.abs(siRG.endingValue - 22 * 28) < 0.005, 'full = gas + cylinder, empty = cylinder, units at their cost');
+
+// Task 1 on inventory items: new cylinders, a refill by the box, sheet days
+check(siMv({ stockItemId: siIron.id, state: 'full', kind: 'purchase', qty: 70, newCylinders: true, date: '2026-09-21' }).ok, 'seventy brand-new full cylinders bought');
+check(siMv({ stockItemId: siIron.id, state: 'full', kind: 'purchase', qty: 35, date: '2026-09-21' }).ok, 'and one box refilled at the plant');
+var si2 = siRep();
+check(siRow(si2, siIron.id, 'full').purchases === 105 && siRow(si2, siIron.id, 'empty').refillOut === 35, 'only the refilled box took empties (refillOut ' + siRow(si2, siIron.id, 'empty').refillOut + ')');
+check(siRow(si2, siIron.id, 'full').newCylinders === 70, 'the new cylinders are counted as such');
+check(siMv({ stockItemId: siIron.id, state: 'empty', kind: 'damage', qty: 1, newCylinders: true, date: '2026-09-21' }).error === 'invalid_new_cylinders', 'the flag belongs to a full purchase only');
+check(siMv({ stockItemId: siReg.id, kind: 'purchase', qty: 1, newCylinders: true, date: '2026-09-21' }).error === 'invalid_new_cylinders', 'of a cylinder item');
+check(siMv({ stockItemId: siIron.id, state: 'full', kind: 'purchase', qty: 1, newCylinders: 'true', date: '2026-09-21' }).error === 'invalid_new_cylinders', 'the flag is true or false, never a string');
+check(siMv({ stockItemId: siIron.id, state: 'full', kind: 'purchase', qty: 1, newCylinders: false, date: '2026-09-21' }).ok, 'false is the same as absent');
+check(call({ action: 'importInventoryDay', token: adminTok, locationId: siLoc.id, date: '2026-09-22', ref: 'si-day', moves: [{ stockItemId: siIron.id, state: 'full', kind: 'purchase', qty: 20, newCylinders: true }, { stockItemId: siReg.id, kind: 'transfer_in', qty: 2 }] }).ok, 'a sheet day goes in on inventory items, new cylinders too');
+check(call({ action: 'importInventoryDay', token: adminTok, locationId: siLoc.id, date: '2026-09-22', ref: 'si-day2', moves: [{ stockItemId: siIron.id, state: 'empty', kind: 'return', qty: 2, newCylinders: true }] }).error === 'invalid_new_cylinders', 'and refuses the flag elsewhere');
+check(call({ action: 'importInventoryDay', token: adminTok, locationId: siLoc.id, date: '2026-09-22', ref: 'si-day3', moves: [{ productId: spExch.id, state: 'full', kind: 'purchase', qty: 1 }] }).error === 'use_stock_item', 'and a sales item');
+var siBox = siEnt('stock_item', { name: 'Si Box Item', kind: 'cylinder', boxSize: 35 });
+var siBoxOff = call({ action: 'adminSaveEntity', token: adminTok, kind: 'stock_item', id: siBox.id, data: { kind: 'unit' } });
+check(siBoxOff.ok && !siBoxOff.entity.boxSize, 'an item that stops being a cylinder keeps no box size (' + (siBoxOff.error || '') + ')');
+check(call({ action: 'adminSaveEntity', token: adminTok, kind: 'stock_item', id: siIron.id, data: { kind: 'unit' } }).error === 'has_stock', 'a cylinder item with stock cannot stop being one');
+// a swap whose returned item was never counted at the branch
+var siNever = siEnt('stock_item', { name: 'Si Never Counted', kind: 'cylinder' });
+var spNever = siEnt('product', { name: 'Si Fiber for Never', type: 'goods', unitPrice: 250, stockItemId: siFiber.id, stockEffect: 'exchange', returnItemId: siNever.id });
+check(call({ action: 'importDailyEntries', token: adminTok, rows: [siLine({ sub: 'si-2', date: '2026-09-23', productId: spNever.id, qty: 2, unitPrice: 250, cashSales: 500 })] }).ok, 'a swap whose returned item was never counted here is saved');
+var si3 = siRep();
+check(siRow(si3, siFiber.id, 'full').sales === 5, 'the full side still deducts (got ' + siRow(si3, siFiber.id, 'full').sales + ')');
+var siNE = siRow(si3, siNever.id, 'empty');
+check(siNE.noOpening === true && !siNE.short, 'and the returned item reads no opening yet, never short');
+
+// the cost of a sales item comes from its inventory item and effect
+function siCost(p, d) { var by = {}; ctx.readSheet(ctx.SHEETS.PRODUCTS).forEach(function (x) { by[x.id] = x; }); return ctx.costOfProduct_(by[p.id], d, ctx.costHistory_(), by); }
+close(siCost(spExch, '2026-09-20'), 11, 'an exchange costs the gas');
+close(siCost(spBody, '2026-09-20'), 140, 'a body sale costs the cylinder');
+close(siCost(spFull, '2026-09-20'), 151, 'a full cylinder sold costs the gas and the cylinder');
+close(siCost(spSwap, '2026-09-20'), 0 + 400 - 140, 'the swap costs the fiber gas (none set) plus the dearer cylinder the customer leaves with, less the iron one that came back');
+close(siCost(spDown, '2026-09-20'), 0, 'a downgrade swap never books a negative cost');
+close(siCost(spReg, '2026-09-20'), 28, 'a regulator costs its unit cost');
+var siToday = ctx.todayRiyadh_();
+var siCogsBefore = (call({ action: 'getProfitReport', token: adminTok, dateFrom: '2026-09-01', dateTo: '2026-09-30' }).nodes || []).filter(function (n) { return n.key === 'company'; })[0].T.cogs;
+var siValBefore = siRow(siRep(), siIron.id, 'full').endingValue;
+var siCh = call({ action: 'adminSaveEntity', token: adminTok, kind: 'stock_item', id: siIron.id, data: { gasCost: 12 } });
+check(siCh.ok && siCh.entity.gasCost === 12, 'the gas price of the iron item changes today (' + (siCh.error || '') + ')');
+close(siCost(spExch, siToday), 12, 'from today an exchange costs the new gas price');
+close(siCost(spExch, '2026-09-20'), 11, 'a sale made before keeps the cost it was made at');
+close(siCost(spFull, '2026-09-20'), 151, 'and so does a full cylinder sold then (gas and cylinder both dated)');
+close((call({ action: 'getProfitReport', token: adminTok, dateFrom: '2026-09-01', dateTo: '2026-09-30' }).nodes || []).filter(function (n) { return n.key === 'company'; })[0].T.cogs, siCogsBefore, 'the profit of a period that ended before the change does not move');
+close(siRow(siRep(), siIron.id, 'full').endingValue, siValBefore, 'nor does the value of its stock');
+check(call({ action: 'getRateHistory', token: adminTok, kind: 'stock_item', id: siIron.id }).changes.some(function (r) { return r.field === 'gasCost' && Number(r.from) === 11 && Number(r.to) === 12; }), 'the change is kept in the price history');
+check(call({ action: 'setStockItemCost', token: adminTok, stockItemId: siReg.id, field: 'unitCost', cost: 30, from: '2026-09-21' }).error === 'past_needs_reason', 'a cost from a past date is a correction and needs its reason');
+check(call({ action: 'setStockItemCost', token: dpTok, stockItemId: siReg.id, field: 'unitCost', cost: 30, from: siToday }).error === 'forbidden', 'a driver sets no costs');
+check(call({ action: 'setStockItemCost', token: adminTok, stockItemId: siReg.id, field: 'gasCost', cost: 30, from: siToday }).error === 'invalid_cost', 'a unit item has no gas cost');
+check(call({ action: 'setStockItemCost', token: adminTok, stockItemId: siReg.id, field: 'unitCost', cost: 30, from: '2099-01-01' }).error === 'future_date', 'nor a cost from the future');
+var siSet = call({ action: 'setStockItemCost', token: adminTok, stockItemId: siReg.id, field: 'unitCost', cost: 30, from: '2026-09-21', reason: 'supplier invoice' });
+check(siSet.ok && siSet.stockItem.unitCost === 30, 'a cost is set from a date (' + (siSet.error || '') + ')');
+close(siCost(spReg, '2026-09-20'), 28, 'a regulator sold before that date keeps 28');
+close(siCost(spReg, '2026-09-22'), 30, 'one sold after costs 30');
+var siDrv = call({ action: 'listMeta', token: dpTok });
+check(siDrv.ok && siDrv.stockItems.length >= 3 && siDrv.stockItems.every(function (s) { return s.gasCost === undefined && s.cylinderCost === undefined && s.unitCost === undefined; }), 'a driver gets the inventory items without their costs');
+check(call({ action: 'listMeta', token: financeTok }).stockItems.some(function (s) { return s.id === siIron.id && s.gasCost === 12; }), 'finance gets them with their costs');
+var siSpare = siEnt('stock_item', { name: 'Si Spare', kind: 'unit' });
+check(call({ action: 'adminDeleteEntity', token: adminTok, kind: 'stock_item', id: siIron.id }).error === 'has_children', 'an inventory item with movements stays on file');
+check(call({ action: 'adminDeleteEntity', token: adminTok, kind: 'stock_item', id: siNever.id }).error === 'has_children', 'and so does one a sales item takes back');
+check(call({ action: 'adminDeleteEntity', token: adminTok, kind: 'stock_item', id: siSpare.id }).ok, 'an unused one can go');
+var siLive = call({ action: 'getInventoryLive', token: financeTok, locationId: siLoc.id });
+check(siLive.ok && siLive.rows.every(function (r) { return !!r.stockItemId && !('productId' in r); }), 'the live stock is by inventory item too');
 
 console.log('--- a batch the deputy rejects is corrected and sent again as the same batch (2026-10-05) ---');
 var rsRows = call({ action: 'areaBatchRows', token: saraTok, id: sc7.batch.id });
@@ -3118,9 +3404,10 @@ check(pfSc.ok && pfSc.product.unitCost === 14, 'a unit cost is set from a date, 
 close(pfNode(pfReport(), 'company').cogs, 1500 + 750 + 20 * 14 + 450, 'sales from that date cost 14, the earlier ones still 15');
 var pfHist = (call({ action: 'listCosts', token: pfAccTok }).productCosts || []).filter(function (r) { return r.productId === pfP1.id; });
 check(pfHist.length === 2 && pfHist.map(function (r) { return r.from + ':' + r.unitCost; }).sort().join() === '2000-01-01:15,2026-03-11:14', 'the history keeps what stood before and drops the later cost it replaced (got ' + pfHist.map(function (r) { return r.from + ':' + r.unitCost; }).join() + ')');
-// a cost cleared to follow the stock item
-var pfAnchor = pfEnt('product', { name: 'PF Anchor', type: 'goods', unitPrice: 30, unitCost: 15 });
-var pfChild = pfEnt('product', { name: 'PF Child', type: 'goods', unitPrice: 30, unitCost: 20, stockOf: pfAnchor.id, stockEffect: 'sell_full' });
+// a cost cleared to follow the inventory item (2026-10-05: the item holds the dated cost)
+var pfAnchor = pfEnt('stock_item', { name: 'PF Stock', kind: 'unit', unitCost: 15 });
+check(call({ action: 'setStockItemCost', token: adminTok, stockItemId: pfAnchor.id, field: 'unitCost', cost: 15, from: '2026-01-01', reason: 'cost known since January' }).ok, 'the inventory item\'s cost is dated from the start of the year');
+var pfChild = pfEnt('product', { name: 'PF Child', type: 'goods', unitPrice: 30, unitCost: 20, stockItemId: pfAnchor.id, stockEffect: 'unit' });
 check(call({ action: 'setProductCost', token: adminTok, productId: pfChild.id, unitCost: 0, from: '2026-01-01', reason: 'follows its stock item' }).ok, 'a product\'s own cost is cleared from the start of the year');
 var pfBeforeChild = pfNode(pfReport(), 'company').cogs;
 check(call({ action: 'createDailyEntry', token: adminTok, date: '2026-03-13', sourceType: 'store', sourceId: pfStB.id, productId: pfChild.id, qty: 10, unitPrice: 30, cashSales: 300 }).ok, 'and it is sold');

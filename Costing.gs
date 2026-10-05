@@ -223,10 +223,110 @@ function costHistory_() {
   });
   return h;
 }
-// what one unit cost on a day: the history when there is one (a sale older
-// than the first record takes the first cost known), else the product's own
-// cost, else the cost of the stock item it draws from
-function costOfProduct_(p, date, hist, byId) {
+// ---------- an inventory item's costs over time (LPG Task 1b, 2026-10-05) ----------
+// A cylinder item has a gas cost (filling one) and a cylinder cost (the empty
+// body); a unit item a unit cost. Each is dated in product_costs under
+// `stk:<id>#gas|cyl|unit`, so a change never re-costs a day already sold.
+var STK_COST_FIELDS_ = { gasCost: 'gas', cylinderCost: 'cyl', unitCost: 'unit' };
+function stockCostKey_(id, field) { return 'stk:' + id + '#' + STK_COST_FIELDS_[field]; }
+function stockItemsById_() { var m = Object.create(null); readSheet(SHEETS.STOCK_ITEMS).forEach(function (s) { m[s.id] = s; }); return m; }
+// one cost of an item on a day: the record in force (known), else the first
+// record (a day older than every record), else the item's own figure
+function stockItemCostOn_(it, field, date, hist) {
+  hist = hist || costHistory_();
+  var list = hist[stockCostKey_(it.id, field)];
+  if (list && list.length) {
+    var v = null;
+    for (var i = 0; i < list.length; i++) if (String(list[i].from) <= date) v = Number(list[i].unitCost || 0);
+    if (v != null) return { v: v, known: true };
+    return { v: Number(list[0].unitCost || 0), known: false };
+  }
+  return { v: Number(it[field] || 0), known: false };
+}
+// A cost from a date on: records dated that day or later are superseded (kept,
+// voided). The first change also writes the cost that stood until then: since
+// the item was created, or for an item made by the setup, since the setup day
+// (the days before it keep the sales items' own cost history).
+function stockItemCostFrom_(it, field, was, now, from, userId) {
+  var key = stockCostKey_(it.id, field), at = new Date().toISOString(), kept = 0;
+  readSheet(SHEETS.PRODUCT_COSTS).forEach(function (r) {
+    if (r.productId !== key || r.voided) return;
+    if (String(r.from) >= from) { r.voided = true; r.voidedAt = at; r.voidedBy = userId; writeRow(SHEETS.PRODUCT_COSTS, r); }
+    else kept++;
+  });
+  var wasFrom = it.fromSetup && it.since ? String(it.since) : '2000-01-01';
+  if (!kept && wasFrom < from && (was > 0 || it.fromSetup)) writeRow(SHEETS.PRODUCT_COSTS, { productId: key, stockItemId: it.id, field: field, unitCost: was, from: wasFrom, at: at, by: userId });
+  writeRow(SHEETS.PRODUCT_COSTS, { productId: key, stockItemId: it.id, field: field, unitCost: now, from: from, at: at, by: userId });
+}
+// saveEntity_ calls this when an item's costs change: from today on
+function noteStockItemCost_(saved, before, userId) {
+  if (!before) return;
+  Object.keys(STK_COST_FIELDS_).forEach(function (f) {
+    var was = Number(before[f] || 0), now = Number(saved[f] || 0);
+    if (was !== now) stockItemCostFrom_(saved, f, was, now, todayRiyadh_(), userId);
+  });
+}
+// A cost of an inventory item from a date (a past date corrects, with a reason)
+function actionSetStockItemCost_(req, user) {
+  requireManager_(user);
+  var field = String(req.field || ''), from = String(req.from == null ? '' : req.from), cost = Number(req.cost);
+  if (!hasOwn_(STK_COST_FIELDS_, field)) return { ok: false, error: 'invalid_cost' };
+  if (typeof req.cost !== 'number' && !(typeof req.cost === 'string' && /^\s*\d+(\.\d+)?\s*$/.test(req.cost))) return { ok: false, error: 'invalid_cost' };
+  if (!isFinite(cost) || cost < 0 || cost > COST_MAX_AMOUNT_) return { ok: false, error: 'invalid_cost' };
+  if (!invDateOk_(from)) return { ok: false, error: 'invalid_date' };
+  if (from > todayRiyadh_()) return { ok: false, error: 'future_date' };
+  var reason = String(req.reason || '').trim().slice(0, 300);
+  if (from < todayRiyadh_() && !reason) return { ok: false, error: 'past_needs_reason' };
+  cost = Math.round(cost * 10000) / 10000;
+  return costLocked_(function () {
+    var it = getById_(SHEETS.STOCK_ITEMS, req.stockItemId);
+    if (!it) return { ok: false, error: 'not_found' };
+    if ((it.kind === 'cylinder') !== (field !== 'unitCost')) return { ok: false, error: 'invalid_cost' };
+    var before = JSON.parse(JSON.stringify(it));
+    stockItemCostFrom_(it, field, Number(it[field] || 0), cost, from, user.id);
+    it[field] = cost;
+    it = writeRow(SHEETS.STOCK_ITEMS, it);
+    rateChanges_('stock_item', before, it, user.id, { fromDate: from, reason: reason, via: 'set_cost' });
+    logAudit_('stock_item_cost_set', user.id, it.id + ' ' + field + ' ' + cost + ' ' + from + (reason ? ' (' + reason + ')' : ''));
+    var keys = Object.keys(STK_COST_FIELDS_).map(function (f) { return stockCostKey_(it.id, f); });
+    return { ok: true, stockItem: it, history: readSheet(SHEETS.PRODUCT_COSTS).filter(function (r) { return keys.indexOf(r.productId) >= 0 && !r.voided; }) };
+  });
+}
+
+// What one unit of a sales item cost on a day. Once the inventory items are
+// set up, it comes from the item and the effect, dated: exchange = gas (+ the
+// cylinder going out - the one coming back, floored at 0, for another type),
+// sell_empty = cylinder, sell_full = gas + cylinder, unit = unit cost. On a day
+// the item has no record for yet, the sales item's own cost history (the old
+// way, below) still decides, so profit for past days does not move.
+function costOfProduct_(p, date, hist, byId, items) {
+  if (!p || !p.stockItemId || !stockItemsLive_()) return legacyCostOfProduct_(p, date, hist, byId);
+  items = items || stockItemsById_();
+  var it = items[p.stockItemId];
+  if (!it) return legacyCostOfProduct_(p, date, hist, byId);
+  hist = hist || costHistory_();
+  var cyl = it.kind === 'cylinder';
+  var eff = cyl ? (['exchange', 'sell_empty', 'sell_full'].indexOf(p.stockEffect) >= 0 ? p.stockEffect : 'exchange') : 'unit';
+  var back = eff === 'exchange' && p.returnItemId && items[p.returnItemId] && items[p.returnItemId].kind === 'cylinder' && p.returnItemId !== it.id ? items[p.returnItemId] : null;
+  var parts = eff === 'unit' ? [[it, 'unitCost', 1]] : eff === 'sell_empty' ? [[it, 'cylinderCost', 1]] : eff === 'sell_full' ? [[it, 'gasCost', 1], [it, 'cylinderCost', 1]]
+    : back ? [[it, 'gasCost', 1], [it, 'cylinderCost', 1], [back, 'cylinderCost', -1]] : [[it, 'gasCost', 1]];
+  var vals = parts.map(function (x) { return stockItemCostOn_(x[0], x[1], date, hist); });
+  var sum = 0; vals.forEach(function (v, i) { sum += v.v * parts[i][2]; });
+  // a downgrade swap (dearer cylinder taken back) never books a negative cost
+  sum = Math.max(0, Math.round(sum * 10000) / 10000);
+  if (vals.some(function (v) { return v.known; })) return sum;
+  var legacyInputs = (hist[p.id] && hist[p.id].length) || Number(p.unitCost || 0) > 0 || (p.stockOf && byId && byId[p.stockOf]);
+  if (legacyInputs) {
+    var l = legacyCostOfProduct_(p, date, hist, byId || Object.create(null));
+    if (l > 0 || (it.since && date < String(it.since))) return l;
+  }
+  return sum;
+}
+// what one unit cost on a day, the old way: the history when there is one (a
+// sale older than the first record takes the first cost known), else the
+// product's own cost, else the cost of the product it draws from
+function legacyCostOfProduct_(p, date, hist, byId) {
+  hist = hist || Object.create(null); byId = byId || Object.create(null);
   var list = hist[p.id], own = Number(p.unitCost || 0);
   if (list && list.length) {
     var c = Number(list[0].unitCost || 0);
@@ -238,7 +338,7 @@ function costOfProduct_(p, date, hist, byId) {
   var a = p.stockOf ? byId[p.stockOf] : null;
   if (a && a.id !== p.id) {
     if (p.stockEffect === 'sell_empty') return Number(a.emptyCost || 0);
-    var gas = costOfProduct_(a, date, hist, Object.create(null));
+    var gas = legacyCostOfProduct_(a, date, hist, Object.create(null));
     // an exchange that takes back another cylinder type: the customer leaves with this
     // type's cylinder and the branch keeps theirs, so the difference of the two is a cost
     var back = p.stockEffect === 'exchange' && p.returnOf ? byId[p.returnOf] : null;
@@ -612,7 +712,7 @@ function costFinishT_(T) {
 
 function profitCompute_(from, to, basis, vatIncl) {
   var vatHist = vatHistory_();
-  var maps = costMaps_(), productsById = Object.create(null), typeById = Object.create(null), hist = costHistory_();
+  var maps = costMaps_(), productsById = Object.create(null), typeById = Object.create(null), hist = costHistory_(), stkItems = stockItemsById_();
   readSheet(SHEETS.PRODUCTS).forEach(function (p) { productsById[p.id] = p; });
   readSheet(SHEETS.COST_TYPES).forEach(function (t) { typeById[t.id] = t; });
 
@@ -659,7 +759,7 @@ function profitCompute_(from, to, basis, vatIncl) {
     var qty = Number(e.qty || 0), p = e.productId ? productsById[e.productId] : null, cogs = 0;
     if (p && p.type === 'services') { /* a service has no cost of goods */ }
     else if (p && qty > 0) {
-      var c = costOfProduct_(p, e.date, hist, productsById);
+      var c = costOfProduct_(p, e.date, hist, productsById, stkItems);
       if (c > 0) cogs = qty * c;
       else if (net > 0) { T.uncostedSales += net; noCost[p.id] = true; }
     } else if (net > 0) T.uncostedSales += net;   // a sale typed as an amount only cannot be costed
