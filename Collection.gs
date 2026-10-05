@@ -2523,14 +2523,36 @@ function actionSalesReport_(req, user) {
   var byCustMap = {};
   entries.forEach(function (e) {
     if (!e.creditCustomerId || !(Number(e.creditSales || 0) > 0)) return;
-    var row = byCustMap[e.creditCustomerId] || (byCustMap[e.creditCustomerId] = { customerId: e.creditCustomerId, creditSales: 0, count: 0 });
+    var row = byCustMap[e.creditCustomerId] || (byCustMap[e.creditCustomerId] = { customerId: e.creditCustomerId, creditSales: 0, count: 0, qty: 0, itemMap: Object.create(null), linesWithoutQty: 0, deliveryFee: 0, commission: 0 });
     row.creditSales += Number(e.creditSales || 0);
     row.count++;
+    row.deliveryFee += Number(e.creditDeliveryFee || 0);
+    row.commission += Number(e.creditCommission || 0);
+    // quantities come from creditItems only; a line with an amount and no
+    // items has an unknown quantity, counted apart and never as zero
+    var got = false;
+    (e.creditItems || []).forEach(function (it) {
+      var q = Number(it.qty || 0);
+      if (!(q > 0)) return;
+      got = true;
+      var x = row.itemMap[it.productId] || (row.itemMap[it.productId] = { productId: it.productId, qty: 0, amount: 0 });
+      x.qty += q;
+      x.amount += it.amount != null ? Number(it.amount) : q * Number(it.unitPrice || 0);
+      row.qty += q;
+    });
+    if (!got) row.linesWithoutQty++;
   });
   var customerRows = Object.keys(byCustMap).map(function (id) {
     var c = custById[id] || {};
     var row = byCustMap[id];
     row.creditSales = Math.round(row.creditSales * 100) / 100;
+    row.deliveryFee = Math.round(row.deliveryFee * 100) / 100;
+    row.commission = Math.round(row.commission * 100) / 100;
+    row.items = Object.keys(row.itemMap).map(function (pid) {
+      var x = row.itemMap[pid], p = productById[pid];
+      return { productId: pid, name: p ? p.name : null, qty: x.qty, amount: Math.round(x.amount * 100) / 100 };
+    }).sort(function (a, b) { return b.qty - a.qty; });
+    delete row.itemMap;
     row.code = c.code || null;
     row.name = c.name || null;
     return row;

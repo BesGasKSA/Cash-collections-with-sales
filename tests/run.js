@@ -2210,6 +2210,46 @@ var ccRow = (ccRep.byCustomer || []).filter(function (r) { return r.customerId =
 check(ccRow && ccRow.creditSales === 60 + 50 + 95 + 60 + 40 && ccRow.code === ccCust.code, 'and totals the credit each customer owes');
 check(call({ action: 'adminDeleteEntity', token: adminTok, kind: 'customer', id: ccCust.id }).error === 'has_children', 'a customer with credit history cannot be deleted');
 
+console.log('--- the report says how many units each credit customer took ---');
+var cqA = saveCustomer({ name: 'Qty Customer Alpha' }).entity;
+var cqB = saveCustomer({ name: 'Qty Customer Beta' }).entity;
+var cqHose = call({ action: 'adminSaveEntity', token: adminTok, kind: 'product', data: { name: 'Hose Qty Test', type: 'goods', unitPrice: 10, active: true } }).entity;
+var cqDay = ctx.todayRiyadh_();
+var cqEntries = [
+  ccEntry({ creditSales: 95, creditCustomerId: cqA.id, creditItems: [{ productId: ccLocked.id, qty: 3, unitPrice: 20 }, { productId: ccFree.id, qty: 1, unitPrice: 35 }] }),
+  ccEntry({ creditCustomerId: cqA.id, creditItems: [{ productId: ccFree.id, qty: 2, unitPrice: 30 }] }),
+  ccEntry({ creditSales: 100, creditCustomerId: cqB.id, creditItems: [{ productId: ccLocked.id, qty: 5, unitPrice: 20 }] }),
+  ccEntry({ creditSales: 40, creditCustomerId: cqB.id, creditItems: [{ productId: cqHose.id, qty: 4, unitPrice: 10 }] })];
+check(cqEntries.every(function (r) { return r.ok; }), 'four credit days with items saved (got ' + JSON.stringify(cqEntries.map(function (r) { return r.ok || r.error; })) + ')');
+// a file row that names the customer and an amount but no items: the quantity is not known
+var cqFile = call({ action: 'importDailyEntries', token: aliTok, rows: [
+  { date: cqDay, sourceType: 'store', sourceId: store.entity.id, cashSales: 100, creditSales: 40, creditCustomer: cqA.code }] });
+check(cqFile.ok && cqFile.created === 1, 'and an amount-only file row for the same customer');
+var cqRep = call({ action: 'getSalesReport', token: adminTok });
+function cqRow(id) { return (cqRep.byCustomer || []).filter(function (r) { return r.customerId === id; })[0] || {}; }
+function cqItem(row, pid) { return (row.items || []).filter(function (i) { return i.productId === pid; })[0] || {}; }
+var cqRowA = cqRow(cqA.id), cqRowB = cqRow(cqB.id);
+check(cqRowA.qty === 6 && cqRowB.qty === 9, 'each customer\'s quantity is the sum of its credit items (' + cqRowA.qty + ', ' + cqRowB.qty + ')');
+check(cqItem(cqRowA, ccLocked.id).qty === 3 && cqItem(cqRowA, ccLocked.id).amount === 60 && cqItem(cqRowA, ccFree.id).qty === 3 && cqItem(cqRowA, ccFree.id).amount === 95,
+  'per item: quantity and amount (a customer\'s item over two days adds up)');
+check(cqItem(cqRowB, ccLocked.id).qty === 5 && cqItem(cqRowB, cqHose.id).qty === 4 && cqItem(cqRowB, cqHose.id).amount === 40 && cqItem(cqRowB, cqHose.id).name === 'Hose Qty Test',
+  'the second customer\'s items, named');
+check(cqRowA.linesWithoutQty === 1 && cqRowB.linesWithoutQty === 0, 'a line with an amount and no items is counted, never as zero units (' + cqRowA.linesWithoutQty + ', ' + cqRowB.linesWithoutQty + ')');
+check(cqRowA.creditSales === 95 + 60 + 40 && cqRowA.count === 3, 'the amount still includes the amount-only line');
+check(cqRowA.deliveryFee === 0 && cqRowA.commission === 0, 'the delivery fee and commission carry on the row');
+var cqSumQty = 0, cqSumItems = 0, cqSumAmt = 0;
+(cqRep.byCustomer || []).forEach(function (r) {
+  cqSumQty += r.qty; r.items.forEach(function (i) { cqSumItems += i.qty; cqSumAmt += i.amount; });
+  check(r.items.reduce(function (a, i) { return a + i.qty; }, 0) === r.qty, 'a customer\'s items add up to its quantity (' + r.name + ')');
+});
+var cqRawQty = 0, cqRawAmt = 0;
+cqRep.entries.forEach(function (e) { (e.creditItems || []).forEach(function (i) { cqRawQty += i.qty; cqRawAmt += i.amount; }); });
+check(cqSumQty === cqRawQty && cqSumItems === cqRawQty && cqSumAmt === cqRawAmt, 'the totals equal the sum of every creditItems line (' + cqSumQty + ' of ' + cqRawQty + ')');
+var cqOne = call({ action: 'getSalesReport', token: adminTok, customerId: cqB.id });
+check((cqOne.byCustomer || []).length === 1 && cqOne.byCustomer[0].qty === 9, 'filtered to one customer the quantity is the same');
+check(cqRep.entries.length === call({ action: 'getSalesReport', token: adminTok }).entries.length && computeNetUnchanged_(), 'the report changes no entry');
+function computeNetUnchanged_() { return ctx.computeNet_([cqEntries[0].entry]).netCashOwed === ctx.computeNet_([{ sourceType: 'store', cashSales: 500, creditSales: 95 }]).netCashOwed; }
+
 console.log('--- every record gets a system number with its own prefix ---');
 var sqPrefix = { location: 'BR', cluster: 'AR', city: 'CT', zone: 'ZN', store: 'ST', car: 'CR', pos: 'POS', product: 'PR', income_item: 'INC', expense_item: 'EXP', customer: 'CUS' };
 var sqArea = call({ action: 'adminSaveEntity', token: adminTok, kind: 'cluster', data: { name: 'Seq Area', clusterManagerUserId: mk('Seq Manager', 'seqmgr.fx@bestgas.sa', 'cluster_manager').id } }).entity;
