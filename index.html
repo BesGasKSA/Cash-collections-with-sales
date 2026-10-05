@@ -9146,12 +9146,13 @@ function listFilters_(opts){
 
   // how the list is ordered: by date always, by amount where rows carry one
   var sorts = [['new', 'sort_new'], ['old', 'sort_old']].concat(opts.sortAmount === false ? [] : [['high', 'sort_high'], ['low', 'sort_low']]);
-  var node = el('<section class="card lf">' +
+  // opts.open: the fields show from the start (Handoffs: users could not find them folded)
+  var node = el('<section class="card lf'+(opts.open ? ' open' : '')+'">' +
     '<div class="lf-head"><button type="button" class="lf-toggle">'+icon_('search')+'<span>'+esc(t('lf_title'))+'</span><span class="lf-count"></span>'+icon_('chevron')+'</button>' +
       '<span class="lf-results" aria-live="polite"></span>' +
       '<label class="lf-sort"><span>'+esc(t('sort_by'))+'</span><select class="lfSort">' + sorts.map(function(o){ return '<option value="'+o[0]+'">'+esc(t(o[1]))+'</option>'; }).join('') + '</select></label>' +
       '<button type="button" class="lf-clear" hidden>'+esc(t('lf_clear'))+'</button></div>' +
-    '<div class="lf-body" hidden><div class="grid">'+parts.join('')+'</div></div>' +
+    '<div class="lf-body"'+(opts.open ? '' : ' hidden')+'><div class="grid">'+parts.join('')+'</div></div>' +
   '</section>');
 
   var body = qs('.lf-body', node), toggle = qs('.lf-toggle', node), clear = qs('.lf-clear', node);
@@ -13086,6 +13087,7 @@ function renderHandoffs(body){
     // is a handoff, not "a handoff in the third card".
     var hFilter = listFilters_({
       fields: ['text','date','area','branch','payment','movement','status','person','amount'],
+      open: true,
       status: [['pending_deputy', t('handoff_pending_deputy')], ['returned', t('handoff_returned')], ['pending', t('handoff_pending')], ['confirmed', t('handoff_confirmed')],
         ['disputed', t('handoff_disputed')], ['rejected', t('handoff_rejected')], ['deposit', t('st_deposited')]],
       people: (state.meta.users||[]).map(function(u){ return [u.id, u.name]; }),
