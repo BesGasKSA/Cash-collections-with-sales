@@ -36,6 +36,10 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
+  /* Fold and navigate arrows (2026-10-05), one rule set: a closed row's arrow points the way
+     the content reads from (en right, ar/ur left) = scaleX(var(--fx)); an open row's points down. */
+  :root{--fx:1;}
+  html[dir="rtl"]{--fx:-1;}
   :root{
     --green:#4D6D51; --green-dark:#3b5540; --green-pale:#e7ede8; --cream:#F2EEE4;
     --bg:#f6f5f1; --card:#ffffff; --text:#20241f; --muted:#767b71; --muted-2:#98988f;
@@ -860,6 +864,7 @@
   html[dir="rtl"] .dr-h .back svg{transform:scaleX(-1);}
   .dr-crumbs{display:flex;gap:6px;flex-wrap:wrap;padding:8px 16px 0;font-size:11.5px;color:var(--muted);}
   .dr-crumbs span+span::before{content:'›';margin-inline-end:6px;opacity:.6;}
+  html[dir="rtl"] .dr-crumbs span+span::before{content:'‹';}
   .dr-b{flex:1;overflow-y:auto;padding:16px;overscroll-behavior:contain;}
   .dr-f{padding:12px 16px calc(12px + env(safe-area-inset-bottom));background:var(--card);border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:10px;font-weight:800;}
   .dr-f .lb{font-size:12.5px;color:var(--muted);font-weight:700;}
@@ -1412,8 +1417,8 @@
   .ho-st em{font-style:normal;font-size:10.5px;font-weight:700;white-space:nowrap;}
   .ho-st em.neg{color:var(--danger);} .ho-st em.pos{color:var(--ok);}
   .ho-when{font-size:10.5px;color:var(--muted-2);white-space:nowrap;text-align:end;}
-  .ho-chev svg.ic2{width:15px;height:15px;opacity:.5;display:block;transform:rotate(90deg);transition:transform .2s cubic-bezier(.2,.8,.2,1);}
-  .ho-item.open .ho-chev svg.ic2{transform:rotate(-90deg);opacity:.8;}
+  .ho-chev svg.ic2{width:15px;height:15px;opacity:.5;display:block;transform:scaleX(var(--fx));transition:transform .2s cubic-bezier(.2,.8,.2,1);}
+  .ho-item.open .ho-chev svg.ic2{transform:rotate(90deg);opacity:.8;}
   .ho-body{padding:4px 14px 14px;border-top:1px dashed var(--border);animation:lnFold .18s ease both;}
   .ho-body[hidden]{display:none;}
   .ho-body.ho-closing{animation:hoOut .16s cubic-bezier(.3,0,1,.3) both;}
@@ -1493,8 +1498,8 @@
   .el-badge.approved{background:var(--green-pale);color:var(--green-dark);}
   .el-badge.voided{background:color-mix(in srgb, var(--danger) 9%, transparent);color:var(--danger);}
   .el-more{width:32px;height:32px;border-radius:10px;border:1px solid var(--border-soft);background:var(--bg);display:grid;place-items:center;cursor:pointer;color:var(--muted);}
-  .el-more svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2.4;transition:transform .2s ease;transform:rotate(90deg);}
-  .el-row.open .el-more svg{transform:rotate(-90deg);}
+  .el-more svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2.4;transition:transform .2s ease;transform:scaleX(var(--fx));}
+  .el-row.open .el-more svg{transform:rotate(90deg);}
   .el-detail{grid-column:1 / -1;border-top:1px dashed var(--border);padding-top:10px;margin-top:4px;cursor:default;}
   .el-lines{list-style:none;margin:0 0 8px;padding:0;display:flex;flex-direction:column;gap:4px;}
   .el-lines.off{opacity:.55;}
@@ -1894,10 +1899,10 @@
   html[dir="rtl"] .eqx-go svg{transform:scaleX(-1);}
   /* under the label (past the sign) and under the figure (clear of the arrow) */
   .eqx-lines{display:flex;flex-direction:column;padding:0 0 8px;padding-inline-start:30px;padding-inline-end:24px;}
-  /* folded parts (2026-10-04): the arrow points down while shut, up while open */
+  /* folded parts: the arrow points the reading way while shut, down while open */
   .eqx-step.fold:not(.open) .eqx-lines{display:none;}
-  .eqx-step.fold .eqx-go svg{transform:rotate(90deg);transition:transform .18s ease;}
-  .eqx-step.fold.open .eqx-go svg{transform:rotate(-90deg);}
+  .eqx-step.fold .eqx-go svg{transform:scaleX(var(--fx));transition:transform .18s ease;}
+  .eqx-step.fold.open .eqx-go svg{transform:rotate(90deg);}
   .eqx-step.fold.open > .eqx-main{background:var(--bg);}
   .eqx-all{all:unset;box-sizing:border-box;cursor:pointer;align-self:flex-start;margin:4px 6px 0;font-size:12px;font-weight:700;color:var(--green);text-decoration:underline;text-underline-offset:3px;}
   .eqx-allTog{all:unset;box-sizing:border-box;cursor:pointer;font-size:12px;font-weight:700;color:var(--green);border:1px solid var(--border);border-radius:999px;padding:5px 12px;background:var(--card);}
@@ -2019,6 +2024,7 @@
   .pv-sub{display:flex;flex-wrap:wrap;align-items:center;gap:4px;margin:4px 0 0;font-size:12px;color:var(--muted);}
   .pv-sub span{background:var(--bg);border-radius:6px;padding:1px 8px;font-weight:700;color:var(--text);}
   .pv-sub i{font-style:normal;opacity:.6;}
+  html[dir="rtl"] .pv-sub i{display:inline-block;transform:scaleX(-1);}
   .pv-cfg{border:1px solid var(--border-soft);border-radius:12px;margin:0 0 10px;background:var(--bg);}
   .pv-cfg summary{display:flex;align-items:center;gap:8px;padding:9px 12px;cursor:pointer;font-weight:700;font-size:13px;list-style:none;}
   .pv-cfg summary::-webkit-details-marker{display:none;}
@@ -2681,7 +2687,7 @@
   .ln-what{min-width:0;display:flex;flex-direction:column;line-height:1.35;}
   .ln-name{font-size:13.5px;overflow-wrap:anywhere;} .ln-detail{font-size:11.5px;color:var(--muted);}
   .ln-amt{font-weight:800;font-size:14.5px;white-space:nowrap;}
-  .ln-chev svg{width:15px;height:15px;opacity:.5;transform:rotate(90deg);display:block;}
+  .ln-chev svg{width:15px;height:15px;opacity:.5;transform:scaleX(var(--fx));display:block;}
   .ln-sum .lnRemove{margin-inline-end:6px;flex:none;}
   .ln-head{display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:12px;font-weight:800;color:var(--muted);}
   .ln-foot{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:8px;flex-wrap:wrap;}
@@ -3833,10 +3839,23 @@ setLang(state.lang);
 // Latin part in English. This works on the drawn page, text nodes only, so
 // form values, ids and everything sent to the server stay Arabic; an element
 // marked data-notr is left alone.
-var TRX_ = { meta: null, lang: null, map: null, re: null };
+var TRX_ = { meta: null, lang: null, map: null, re: null, reL: null, lmap: null };
+// the language a name was typed in (mirrors srcLangOf_ in Admin.gs): en for Latin
+// letters, ur for Arabic script with an Urdu-only letter, ar for other Arabic
+// script, null for a mixed name or a plate's lone letters
+function trSrcLang_(s){
+  s = String(s == null ? '' : s).trim();
+  if (!s) return null;
+  var latin = /[A-Za-z]/.test(s), arab = /[\u0600-\u06FF]/.test(s);
+  if (latin && arab) return null;
+  if (latin) return /[A-Za-z]{2,}/.test(s) ? 'en' : null;
+  if (!/[\u0600-\u06FF]{2,}/.test(s)) return null;
+  return /[\u0679\u0688\u0691\u06BA\u06D2\u06D3\u06C1\u06BE\u06AF\u0686\u067E\u0698\u06A9\u06CC]/.test(s) ? 'ur' : 'ar';
+}
 var PLATE_ = { 'ا':'A','أ':'A','إ':'A','آ':'A','ب':'B','ح':'J','د':'D','ر':'R','س':'S','ص':'X','ط':'T','ع':'E','ق':'G','ك':'K','ل':'L','م':'Z','ن':'N','ه':'H','و':'U','ى':'V','ي':'V' };
 // a Saudi plate's letters: two or three single letters with spaces between;
 // the English row reads them in the opposite order
+function crumbSep_(){ return dirFor(state.lang) === 'rtl' ? ' ‹ ' : ' › '; }
 function plateLatin_(s){
   return String(s).replace(/(^|[^\u0600-\u06FF])([\u0621-\u064A](?: [\u0621-\u064A]){1,2})(?![\u0600-\u06FF])/g, function(m, pre, g){
     var ls = g.split(' ');
@@ -3855,35 +3874,47 @@ function trNames_(meta){
   var out = [];
   Object.keys(meta || {}).forEach(function(k){
     if (!Array.isArray(meta[k]) || k === 'translations') return;
-    meta[k].forEach(function(e){ ['name','label','city'].forEach(function(fk){ var v = e && e[fk]; if (typeof v === 'string' && /[\u0600-\u06FF]/.test(v)) out.push(v.trim()); }); });
+    meta[k].forEach(function(e){ ['name','label','city','stockName','holderName'].forEach(function(fk){ var v = e && e[fk]; if (typeof v === 'string' && (/[\u0600-\u06FF]/.test(v) || trSrcLang_(v))) out.push(v.trim()); }); });
   });
   return out;
 }
 function trMap_(){
   var meta = state.meta, lang = state.lang;
-  if (!meta || lang === 'ar') return null;
-  if (TRX_.meta === meta && TRX_.lang === lang) return TRX_;
-  var map = {};
-  (meta.translations || []).forEach(function(r){ var v = r && r[lang]; if (r.src && v) map[String(r.src).trim()] = v; });
-  if (lang === 'en') trNames_(meta).forEach(function(n){ if (!map[n]) { var lp = latinPart_(n); if (lp) map[n] = lp; } });
+  if (!meta) return null;
+  if (TRX_.meta === meta && TRX_.lang === lang) return TRX_.re || TRX_.reL ? TRX_ : null;
+  var map = {}, lmap = {};
+  // a row is keyed by the name as typed, in any language; the screen's own
+  // language column (or the name itself, if it was typed in that language) wins
+  (meta.translations || []).forEach(function(r){
+    var v = r && r[lang], k = r && r.src ? String(r.src).trim() : '';
+    if (!k || !v || (r.srcLang || 'ar') === lang) return;
+    if (/[\u0600-\u06FF]/.test(k)) map[k] = v; else lmap[k.toLowerCase()] = v;
+  });
+  if (lang === 'en') trNames_(meta).forEach(function(n){ if (!map[n] && /[\u0600-\u06FF]/.test(n)) { var lp = latinPart_(n); if (lp) map[n] = lp; } });
   var keys = Object.keys(map).filter(function(k){ return map[k] !== k && /[\u0600-\u06FF]/.test(k); })
     .sort(function(a, b){ return b.length - a.length; });
   var re = keys.length ? new RegExp('(^|[^\u0621-\u064A\u066E-\u06D3\u06FA-\u06FF])(' + keys.map(function(k){ return k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }).join('|') + ')(?![\u0621-\u064A\u066E-\u06D3\u06FA-\u06FF])', 'g') : null;
-  TRX_ = { meta: meta, lang: lang, map: map, re: re };
-  return TRX_;
+  var lkeys = Object.keys(lmap).filter(function(k){ return lmap[k] !== k; }).sort(function(a, b){ return b.length - a.length; });
+  var reL = lkeys.length ? new RegExp('(^|[^A-Za-z0-9])(' + lkeys.map(function(k){ return k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }).join('|') + ')(?![A-Za-z0-9])', 'gi') : null;
+  TRX_ = { meta: meta, lang: lang, map: map, re: re, reL: reL, lmap: lmap };
+  return re || reL ? TRX_ : null;
 }
 // one string in the viewer's language (exports use it too)
 function trText_(v){
-  if (typeof v !== 'string' || !/[\u0600-\u06FF]/.test(v)) return v;
+  if (typeof v !== 'string') return v;
+  var arab = /[\u0600-\u06FF]/.test(v), latin = /[A-Za-z]/.test(v);
+  if (!arab && !latin) return v;
   var d = trMap_();
-  if (!d || !d.re) return v;
-  return v.replace(d.re, function(m, pre, k){ return pre + d.map[k]; });
+  if (!d) return v;
+  if (arab && d.re) v = v.replace(d.re, function(m, pre, k){ return pre + d.map[k]; });
+  if (latin && d.reL) v = v.replace(d.reL, function(m, pre, k){ var r = d.lmap[k.toLowerCase()]; return pre + (r == null ? k : r); });
+  return v;
 }
 var trSeen_ = typeof WeakMap === 'function' ? new WeakMap() : null;
 function trSkipEl_(x){ return x.hasAttribute('data-notr') || /^(SCRIPT|STYLE|TEXTAREA)$/.test(x.tagName); }
 function trTextNode_(n){
   var v = n.nodeValue;
-  if (!v || !/[\u0600-\u06FF]/.test(v) || (trSeen_ && trSeen_.get(n) === v)) return;
+  if (!v || !/[\u0600-\u06FFA-Za-z]/.test(v) || (trSeen_ && trSeen_.get(n) === v)) return;
   var out = trText_(v);
   if (trSeen_) trSeen_.set(n, out);
   if (out !== v) n.nodeValue = out;
@@ -3900,6 +3931,14 @@ function trNode_(root){
   var list = [], n;
   while ((n = w.nextNode())) list.push(n);
   list.forEach(trTextNode_);
+  // a name in a tooltip, a placeholder or a screen-reader label (the dropdown's
+  // title carries the full value); never an input's value
+  var attrEls = root.querySelectorAll ? root.querySelectorAll('[title],[placeholder],[aria-label]') : [];
+  for (var i = 0; i < attrEls.length; i++) {
+    var ae = attrEls[i];
+    if (ae.closest && ae.closest('[data-notr]')) continue;
+    ['title', 'placeholder', 'aria-label'].forEach(function(an){ var av = ae.getAttribute(an); if (av) { var tv = trText_(av); if (tv !== av) ae.setAttribute(an, tv); } });
+  }
 }
 (function trWatch_(){
   if (typeof MutationObserver !== 'function') return;
@@ -5979,7 +6018,7 @@ function levelDrillView_(part, entries, depth, scope){
     depth++;
   }
   var label = t(EQ_PARTS_[part].label);
-  var where = scope.map(function(x){ return x.name; }).join(' › ') || t('eq_allCompany');
+  var where = scope.map(function(x){ return x.name; }).join(crumbSep_()) || t('eq_allCompany');
   return {
     title: label, sub: where, crumb: scope.length ? scope[scope.length - 1].name : label,
     render: function(body, foot){
@@ -6693,7 +6732,7 @@ function pivotCard_(entries, opts){
     outline.push(null);
     return { rows: rows, outline: outline };
   }
-  var levelsNote = function(){ return st.dims.map(function(d){ return t('lv_' + d); }).join(' › ') + (card._note ? '  ·  ' + card._note : ''); };
+  var levelsNote = function(){ return st.dims.map(function(d){ return t('lv_' + d); }).join(crumbSep_()) + (card._note ? '  ·  ' + card._note : ''); };
   var bar = el('<div class="ex-bar"><button type="button" class="ex-btn">'+icon_('doc')+'<span>'+esc(t('ex_button'))+'</span></button>' +
     '<button type="button" class="ex-btn">'+icon_('printer')+'<span>'+esc(t('ex_pdf'))+'</span></button></div>');
   qs('.pv-head', card).appendChild(bar);
@@ -17591,9 +17630,10 @@ function renderAdminTranslations(content){
   trNames_(meta).concat(Object.keys(have)).forEach(function(n){
     if (seen[n]) return; seen[n] = 1;
     var r = have[n] || null, lp = latinPart_(n);
-    rows.push({ src: n, en: r ? r.en : '', ur: r ? r.ur : '', auto: r ? r.auto : null, latin: lp });
+    var sl = r && r.srcLang ? r.srcLang : (trSrcLang_(n) || 'ar');
+    rows.push({ src: n, sl: sl, ar: sl === 'ar' ? n : (r ? r.ar : ''), en: sl === 'en' ? n : (r ? r.en : ''), ur: sl === 'ur' ? n : (r ? r.ur : ''), auto: r ? r.auto : null, latin: lp });
   });
-  rows.sort(function(a, b){ return a.src.localeCompare(b.src, 'ar'); });
+  rows.sort(function(a, b){ return a.src.localeCompare(b.src, a.sl === 'en' && b.sl === 'en' ? 'en' : 'ar'); });
   function stateOf(r){ return r.auto === false ? 'manual' : r.auto ? 'auto' : r.latin ? 'latin' : 'missing'; }
   var card = el('<div class="card trx" data-notr><h2>'+esc(t('admin_translations'))+'</h2>' +
     '<p class="muted trx-hint">'+esc(t('tr_hint'))+'</p>' +
@@ -17604,14 +17644,15 @@ function renderAdminTranslations(content){
     '<button class="btn secondary" id="trFill">'+esc(t('tr_fill'))+'</button>' +
     '<button class="btn" id="trSave" disabled>'+esc(t('tr_save'))+'</button></div>' +
     '<div id="trMsg"></div>' +
-    '<div class="tbl-scroll"><table class="rp-table trx-table" data-noexport><thead><tr><th>'+esc(t('tr_ar'))+'</th><th>English</th><th>اردو</th><th>'+esc(t('tr_state'))+'</th></tr></thead><tbody></tbody></table></div></div>');
+    '<div class="tbl-scroll"><table class="rp-table trx-table" data-noexport><thead><tr><th>'+esc(t('tr_ar'))+'</th><th>العربية</th><th>English</th><th>اردو</th><th>'+esc(t('tr_state'))+'</th></tr></thead><tbody></tbody></table></div></div>');
   content.appendChild(card);
   var tb = qs('tbody', card), dirty = {};
   rows.forEach(function(r, i){
     var st = stateOf(r);
     var tr = el('<tr data-i="'+i+'" data-st="'+st+'"><td class="trx-src" dir="rtl">'+esc(r.src)+'</td>' +
-      '<td><input class="trx-en" dir="ltr" value="'+esc(r.en || '')+'" placeholder="'+esc(r.latin || '')+'"></td>' +
-      '<td><input class="trx-ur" dir="rtl" value="'+esc(r.ur || '')+'"></td>' +
+      '<td><input class="trx-ar" dir="rtl" value="'+esc(r.ar || '')+'"'+(r.sl === 'ar' ? ' readonly' : '')+'></td>' +
+      '<td><input class="trx-en" dir="ltr" value="'+esc(r.en || '')+'" placeholder="'+esc(r.latin || '')+'"'+(r.sl === 'en' ? ' readonly' : '')+'></td>' +
+      '<td><input class="trx-ur" dir="rtl" value="'+esc(r.ur || '')+'"'+(r.sl === 'ur' ? ' readonly' : '')+'></td>' +
       '<td><span class="trx-st trx-'+st+'">'+esc(t('tr_st_'+st))+'</span></td></tr>');
     tb.appendChild(tr);
     qsa('input', tr).forEach(function(inp){ inp.addEventListener('input', function(){
@@ -17624,7 +17665,7 @@ function renderAdminTranslations(content){
     var q = normName_(qs('#trQ', card).value || ''), fv = qs('#trF', card).value, n = 0;
     qsa('tbody tr', card).forEach(function(tr){
       var r = rows[+tr.getAttribute('data-i')], st = tr.getAttribute('data-st');
-      var hit = (!q || normName_(r.src + ' ' + (r.en || '') + ' ' + (r.ur || '')).indexOf(q) >= 0) &&
+      var hit = (!q || normName_(r.src + ' ' + (r.ar || '') + ' ' + (r.en || '') + ' ' + (r.ur || '')).indexOf(q) >= 0) &&
         (fv === 'all' || (fv === 'missing' ? (st === 'missing' || st === 'latin') : st === fv));
       tr.hidden = !hit; if (hit) n++;
     });
@@ -17641,7 +17682,7 @@ function renderAdminTranslations(content){
   qs('#trSave', card).addEventListener('click', function(){
     var btn = this, list = Object.keys(dirty).map(function(i){
       var tr = qs('tr[data-i="'+i+'"]', card);
-      return { src: rows[i].src, en: qs('.trx-en', tr).value.trim(), ur: qs('.trx-ur', tr).value.trim() };
+      return { src: rows[i].src, ar: qs('.trx-ar', tr).value.trim(), en: qs('.trx-en', tr).value.trim(), ur: qs('.trx-ur', tr).value.trim() };
     });
     if (!list.length) return;
     btn.disabled = true;

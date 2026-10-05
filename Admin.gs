@@ -1072,12 +1072,22 @@ function actionGetRateHistory_(req, user) {
 // A name that already carries Latin letters ("النسيم Al-Naseem") is left to
 // the client, which shows its Latin part. A failed translation never fails
 // the save; adminFillTranslations catches the gaps up later.
-var TR_FIELDS_ = ['name', 'label', 'city'];
-function needsTranslation_(s) {
+var TR_FIELDS_ = ['name', 'label', 'city', 'stockName', 'holderName'];
+// Which language a name was typed in: 'en' (Latin letters), 'ur' (Arabic script
+// with an Urdu-only letter), 'ar' (other Arabic script). A name mixing Latin and
+// Arabic letters ("النسيم Al-Naseem") returns null: it already carries its own
+// Latin part and is left to the client. A plate's single letters are not a word.
+var URDU_LETTERS_ = /[ٹڈڑںےۓہھگچپژکی]/;
+function srcLangOf_(s) {
   s = String(s == null ? '' : s).trim();
-  // an Arabic word, not just a plate's single letters ("أ ص ن 1062")
-  return !!s && /[؀-ۿ]{2,}/.test(s) && !/[A-Za-z]/.test(s);
+  if (!s) return null;
+  var latin = /[A-Za-z]/.test(s), arab = /[؀-ۿ]/.test(s);
+  if (latin && arab) return null;
+  if (latin) return /[A-Za-z]{2,}/.test(s) ? 'en' : null;
+  if (!/[؀-ۿ]{2,}/.test(s)) return null;
+  return URDU_LETTERS_.test(s) ? 'ur' : 'ar';
 }
+function needsTranslation_(s) { return !!srcLangOf_(s); }
 function translatableOf_(obj) {
   return TR_FIELDS_.map(function (k) { return obj && obj[k]; }).filter(needsTranslation_).map(function (s) { return String(s).trim(); });
 }
@@ -1089,19 +1099,24 @@ function translationIndex_() {
 // one request per chunk of lines, so an import of a hundred names is a few
 // calls, not two hundred; a chunk whose line count comes back different is
 // done one line at a time instead
-function machineTranslate_(list, lang) {
+function machineTranslate_(list, to, from) {
+  from = from || 'ar';
   var out = [], i = 0;
   while (i < list.length) {
     var chunk = [], size = 0;
     while (i < list.length && chunk.length < 80 && size + list[i].length < 4500) { chunk.push(list[i]); size += list[i].length + 1; i++; }
     if (!chunk.length) { chunk.push(list[i]); i++; }
-    var lines = String(LanguageApp.translate(chunk.join('\n'), 'ar', lang)).split('\n');
-    if (lines.length !== chunk.length) lines = chunk.map(function (s) { return String(LanguageApp.translate(s, 'ar', lang)); });
+    var lines = String(LanguageApp.translate(chunk.join('\n'), from, to)).split('\n');
+    if (lines.length !== chunk.length) lines = chunk.map(function (s) { return String(LanguageApp.translate(s, from, to)); });
     lines.forEach(function (l) { out.push(String(l).trim()); });
   }
   return out;
 }
-function fillTranslations_(srcs) {
+// A row is keyed by the name as typed: {src, ar, en, ur, srcLang, auto}. The
+// source language's own column holds the typed text; the other two are filled
+// by Google Translate. Rows from before srcLang existed are Arabic-sourced.
+// opts.max limits one run (the catch-up goes in slices).
+function fillTranslations_(srcs, opts) {
   var idx = translationIndex_(), seen = {}, todo = [];
   (srcs || []).forEach(function (s) {
     if (!needsTranslation_(s)) return;
@@ -1109,12 +1124,27 @@ function fillTranslations_(srcs) {
     if (seen[s] || hasOwn_(idx, s)) return;
     seen[s] = true; todo.push(s);
   });
+  if (opts && opts.max && todo.length > opts.max) todo = todo.slice(0, opts.max);
   if (!todo.length) return 0;
-  var en, ur;
-  try { en = machineTranslate_(todo, 'en'); ur = machineTranslate_(todo, 'ur'); }
-  catch (e) { return 0; }
-  todo.forEach(function (s, i) { writeRow(SHEETS.TRANSLATIONS, { src: s, en: en[i] || '', ur: ur[i] || '', auto: true }); });
-  return todo.length;
+  var rows = [];
+  try {
+    ['ar', 'en', 'ur'].forEach(function (lang) {
+      var group = todo.filter(function (s) { return srcLangOf_(s) === lang; });
+      if (!group.length) return;
+      var got = {};
+      ['ar', 'en', 'ur'].forEach(function (to) {
+        if (to === lang) return;
+        got[to] = machineTranslate_(group, to, lang);
+      });
+      group.forEach(function (s, i) {
+        var row = { src: s, ar: '', en: '', ur: '', srcLang: lang, auto: true };
+        ['ar', 'en', 'ur'].forEach(function (l) { row[l] = l === lang ? s : (got[l][i] || ''); });
+        rows.push(row);
+      });
+    });
+  } catch (e) { return 0; }
+  rows.forEach(function (r) { writeRow(SHEETS.TRANSLATIONS, r); });
+  return rows.length;
 }
 // every name in master data, for filling the gaps in one go
 function allTranslatable_() {
@@ -1129,10 +1159,25 @@ function actionAdminFillTranslations_(req, user) {
   logAudit_('admin_fill_translations', user.id, String(added));
   return { ok: true, added: added };
 }
-// {src, en, ur} or {rows:[...]}: a blank en/ur keeps what is there
+// Once after the deploy every name of every kind gets the other two languages,
+// so nobody has to press the button. 300 names a run; done only when nothing is
+// missing, and a run that added nothing (Translate down) waits an hour.
+function translationsCatchUpOnce_() {
+  var flag = 'TRANSLATIONS_ALL_KINDS_V2', props = scriptProps_();
+  if (props[flag]) return;
+  var tried = props[flag + '_TRIED'];
+  if (tried && Date.now() - new Date(tried).getTime() < 3600000) return;
+  var names = allTranslatable_();
+  var added = fillTranslations_(names, { max: 300 });
+  if (!added) setScriptProp_(flag + '_TRIED', new Date().toISOString());
+  var idx = translationIndex_();
+  var left = names.some(function (s) { return !hasOwn_(idx, String(s).trim()); });
+  if (!left) setScriptProp_(flag, new Date().toISOString());
+}
+// {src, ar, en, ur} or {rows:[...]}: a blank column keeps what is there
 function actionAdminSaveTranslation_(req, user) {
   requireManager_(user);
-  var rows = Array.isArray(req.rows) ? req.rows : [{ src: req.src, en: req.en, ur: req.ur }];
+  var rows = Array.isArray(req.rows) ? req.rows : [{ src: req.src, ar: req.ar, en: req.en, ur: req.ur }];
   if (!rows.length || rows.length > 1000) return { ok: false, error: 'invalid_input' };
   for (var i = 0; i < rows.length; i++) {
     if (!rows[i] || !String(rows[i].src || '').trim()) return { ok: false, error: 'invalid_input' };
@@ -1140,11 +1185,13 @@ function actionAdminSaveTranslation_(req, user) {
   var idx = translationIndex_(), n = 0;
   rows.forEach(function (r) {
     var src = String(r.src).trim();
-    var row = hasOwn_(idx, src) ? idx[src] : { src: src, en: '', ur: '' };
-    var en = String(r.en == null ? '' : r.en).trim(), ur = String(r.ur == null ? '' : r.ur).trim();
-    if (!en && !ur && row.id) return;
-    if (en) row.en = en;
-    if (ur) row.ur = ur;
+    var row = hasOwn_(idx, src) ? idx[src] : { src: src, ar: '', en: '', ur: '' };
+    if (!row.srcLang) row.srcLang = srcLangOf_(src) || 'ar';
+    var vals = {};
+    ['ar', 'en', 'ur'].forEach(function (l) { vals[l] = l === row.srcLang ? '' : String(r[l] == null ? '' : r[l]).trim(); });
+    if (!vals.ar && !vals.en && !vals.ur && row.id) return;
+    ['ar', 'en', 'ur'].forEach(function (l) { if (vals[l]) row[l] = vals[l]; });
+    row[row.srcLang] = src;
     row.auto = false;
     idx[src] = writeRow(SHEETS.TRANSLATIONS, row);
     n++;
@@ -1487,6 +1534,7 @@ function runOneTimeMigrations_() {
   seedCustomersOnce_();
   backfillCodesOnce_();
   seedCostTypesOnce_();
+  translationsCatchUpOnce_();
   // the app became Best Gas Collections; the sender name saved at setup still
   // said the old default (a name someone chose is kept)
   runOnce_('SENDER_RENAMED', function () {
@@ -1685,7 +1733,7 @@ function actionMeta_(req, user) {
     locations: locations, stores: stores, cars: cars, pos: pos,
     clusters: clusters, zones: zones, products: products, stockItems: stockItems, users: users,
     incomeItems: incomeItems, expenseItems: expenseItems, customers: customers, cities: cities, channels: channels,
-    translations: readSheet(SHEETS.TRANSLATIONS).map(function (r) { return { src: r.src, en: r.en || '', ur: r.ur || '', auto: r.auto !== false }; }),
+    translations: readSheet(SHEETS.TRANSLATIONS).map(function (r) { return { src: r.src, ar: r.ar || '', en: r.en || '', ur: r.ur || '', srcLang: r.srcLang || 'ar', auto: r.auto !== false }; }),
     config: { vatRate: vatRate_(), vatHistory: vatHistory_(), staleThresholdHours: staleThresholdHours_(), heldThresholdHours: heldThresholdHours_(), secondApprovalThreshold: secondApprovalThreshold_(), areaManagerBulkUploadEnabled: areaManagerBulkUploadEnabled_(), posSalesEnabled: posSalesEnabled_(), salesIncludeVat: salesIncludeVat_(), liveLocked: config_().liveLocked === true, liveLockedAt: config_().liveLockedAt || null, stockItemsLive: stockItemsLive_() }
   };
 }
