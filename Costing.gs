@@ -239,6 +239,10 @@ function costOfProduct_(p, date, hist, byId) {
   if (a && a.id !== p.id) {
     if (p.stockEffect === 'sell_empty') return Number(a.emptyCost || 0);
     var gas = costOfProduct_(a, date, hist, Object.create(null));
+    // an exchange that takes back another cylinder type: the customer leaves with this
+    // type's cylinder and the branch keeps theirs, so the difference of the two is a cost
+    var back = p.stockEffect === 'exchange' && p.returnOf ? byId[p.returnOf] : null;
+    if (back && back.id !== a.id) return gas + Number(a.emptyCost || 0) - Number(back.emptyCost || 0);
     // a full cylinder sold outright leaves with its cylinder; an exchange keeps it
     return p.stockEffect === 'sell_full' ? gas + Number(a.emptyCost || 0) : gas;
   }

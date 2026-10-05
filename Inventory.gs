@@ -79,9 +79,12 @@ function invCheckMove_(m, date) {
   if (product.stockOf) return { error: 'use_stock_item' };
   var st = m.state == null ? '' : String(m.state);
   if (product.cylinder ? INV_STATES_.indexOf(st) < 0 : st !== '') return { error: 'invalid_state' };
+  // brand-new cylinders bought: counted in, but no empties went out to be filled
+  var fresh = m.newCylinders === true;
+  if (fresh && !(kind === 'purchase' && product.cylinder && st === 'full')) return { error: 'invalid_new_cylinders' };
   if (!invDateOk_(date)) return { error: 'invalid_date' };
   if (date > todayRiyadh_()) return { error: 'future_date' };
-  return { move: { productId: product.id, state: st || null, kind: kind, qty: qty, note: String(m.note || '').slice(0, 300) } };
+  return { move: { productId: product.id, state: st || null, kind: kind, qty: qty, newCylinders: fresh, note: String(m.note || '').slice(0, 300) } };
 }
 function invOpeningKey_(locId, productId, state) { return locId + '|' + productId + '|' + (state || ''); }
 function invOpenings_() {
@@ -103,7 +106,7 @@ function actionAddInventoryMove_(req, user) {
     if (c.move.kind === 'opening' && invOpenings_()[invOpeningKey_(lf.loc.id, c.move.productId, c.move.state)]) return { ok: false, error: 'opening_exists' };
     var move = writeRow(SHEETS.INV_MOVES, {
       locationId: lf.loc.id, productId: c.move.productId, state: c.move.state, kind: c.move.kind, qty: c.move.qty, date: date,
-      note: c.move.note, enteredBy: user.id, createdAt: new Date().toISOString(), voided: false
+      newCylinders: c.move.newCylinders, note: c.move.note, enteredBy: user.id, createdAt: new Date().toISOString(), voided: false
     });
     logAudit_('inventory_' + c.move.kind, user.id, move.id);
     return { ok: true, move: move };
@@ -142,7 +145,7 @@ function actionImportInventoryDay_(req, user) {
     var now = new Date().toISOString();
     var written = checked.map(function (m) {
       return writeRow(SHEETS.INV_MOVES, { locationId: lf.loc.id, productId: m.productId, state: m.state, kind: m.kind, qty: m.qty, date: date,
-        note: m.note, importRef: ref, enteredBy: user.id, createdAt: now, voided: false });
+        newCylinders: m.newCylinders, note: m.note, importRef: ref, enteredBy: user.id, createdAt: now, voided: false });
     });
     logAudit_('inventory_import', user.id, lf.loc.id + ' ' + date + ' (' + written.length + ')');
     return { ok: true, moves: written };
@@ -217,7 +220,7 @@ function actionInventoryReport_(req, user) {
       rows[k] = { locationId: locId, productId: productId, state: state || null, cylinder: !!p.cylinder, stockName: p.stockName || '',
         // a full cylinder is the gas and the cylinder it is in; an empty one the cylinder
         unitCost: state === 'empty' ? Number(p.emptyCost || 0) : state === 'full' ? Number(p.unitCost || 0) + Number(p.emptyCost || 0) : Number(p.unitCost || 0),
-        opening: 0, purchases: 0, returns: 0, exchangeIn: 0, transfersIn: 0, sales: 0, damaged: 0, refillOut: 0, transfersOut: 0,
+        opening: 0, purchases: 0, newCylinders: 0, returns: 0, exchangeIn: 0, transfersIn: 0, sales: 0, damaged: 0, refillOut: 0, transfersOut: 0,
         salesWithoutQty: 0, salesWithoutQtyAmount: 0, salesBySource: {},
         openingDate: op ? op.date : null, noOpening: !op || op.date > to };
       order.push(k);
@@ -241,8 +244,12 @@ function actionInventoryReport_(req, user) {
     var r = row(m.locationId, m.productId, st), q = Number(m.qty || 0);
     if (m.kind === 'opening') { if (!r.noOpening) r.opening += q; return; }
     post(r, m.date, MOVE_FIELD_[m.kind], q);
-    // a full purchase is a refill: as many empties went out to be filled
-    if (p.cylinder && st === 'full' && m.kind === 'purchase') post(row(m.locationId, m.productId, 'empty'), m.date, 'refillOut', q);
+    // a full purchase is a refill: as many empties went out to be filled; brand-new cylinders
+    // (newCylinders) sent none, and are counted on their own within the period
+    if (p.cylinder && st === 'full' && m.kind === 'purchase') {
+      if (m.newCylinders === true) { if (!r.noOpening && m.date >= r.openingDate && m.date >= from) r.newCylinders += q; }
+      else post(row(m.locationId, m.productId, 'empty'), m.date, 'refillOut', q);
+    }
   });
   readSheet(SHEETS.ENTRIES).forEach(function (e) {
     if (e.voided || !e.productId || !products[e.productId] || !inScope(e.locationId) || !e.date || e.date > to) return;
@@ -250,7 +257,9 @@ function actionInventoryReport_(req, user) {
     var sp = products[e.productId], anchor = sp.stockOf && products[sp.stockOf] ? products[sp.stockOf] : sp;
     var effect = anchor.cylinder ? (sp.stockEffect || 'exchange') : 'unit';
     var r = row(e.locationId, anchor.id, effect === 'unit' ? null : effect === 'sell_empty' ? 'empty' : 'full'), q = Number(e.qty || 0);
-    if (q && effect === 'exchange') post(row(e.locationId, anchor.id, 'empty'), e.date, 'exchangeIn', q);
+    // the empty that comes back may be another type than the full one that left (iron in, fiber out)
+    var backId = sp.returnOf && products[sp.returnOf] && products[sp.returnOf].cylinder ? sp.returnOf : anchor.id;
+    if (q && effect === 'exchange') post(row(e.locationId, backId, 'empty'), e.date, 'exchangeIn', q);
     if (!q) {
       // a sale typed as an amount only: counted as a warning, not as units
       var amt = Number(e.cashSales || 0) + Number(e.posSales || 0);
@@ -266,7 +275,7 @@ function actionInventoryReport_(req, user) {
   });
   var out = order.map(function (k) {
     var r = rows[k];
-    ['opening', 'purchases', 'returns', 'exchangeIn', 'transfersIn', 'sales', 'damaged', 'refillOut', 'transfersOut'].forEach(function (f) { r[f] = Math.round(r[f] * 1000) / 1000; });
+    ['opening', 'purchases', 'newCylinders', 'returns', 'exchangeIn', 'transfersIn', 'sales', 'damaged', 'refillOut', 'transfersOut'].forEach(function (f) { r[f] = Math.round(r[f] * 1000) / 1000; });
     r.salesWithoutQtyAmount = Math.round(r.salesWithoutQtyAmount * 100) / 100;
     r.available = Math.round((r.opening + r.purchases + r.returns + r.exchangeIn + r.transfersIn) * 1000) / 1000;
     r.ending = Math.round((r.available - r.sales - r.damaged - r.refillOut - r.transfersOut) * 1000) / 1000;

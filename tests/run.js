@@ -2821,6 +2821,31 @@ check(live.ok && live.asOf, 'the live stock answers with the moment it was read 
 check(live.ok && scRow(live, scGas.id, 'full').ending === 76 && scRow(live, scReg.id).ending === 18, 'and shows what is on hand now, every movement and sale so far included');
 check(call({ action: 'getInventoryLive', token: dpTok }).error === 'forbidden', 'a driver sees no live stock');
 
+console.log('--- LPG: cross-type exchange, boxes, new cylinders ---');
+var lxIron = scProd({ name: 'Lx Iron Exchange', type: 'goods', unitPrice: 37, unitCost: 11, emptyCost: 140, cylinder: true, stockName: 'Lx iron', boxSize: 35 });
+var lxFiber = scProd({ name: 'Lx Fiber Exchange', type: 'goods', unitPrice: 37, unitCost: 11, emptyCost: 400, cylinder: true, stockName: 'Lx fiber' });
+var lxUp = scProd({ name: 'Lx Iron to Fiber', type: 'goods', unitPrice: 297, stockOf: lxFiber.id, stockEffect: 'exchange', returnOf: lxIron.id });
+check(call({ action: 'adminSaveEntity', token: adminTok, kind: 'product', data: { name: 'Lx Bad Return', type: 'goods', stockOf: lxFiber.id, stockEffect: 'sell_empty', returnOf: lxIron.id } }).error === 'invalid_return_link', 'a return type needs an exchange');
+check(call({ action: 'adminSaveEntity', token: adminTok, kind: 'product', data: { name: 'Lx Bad Return2', type: 'goods', stockOf: lxFiber.id, stockEffect: 'exchange', returnOf: scReg.id } }).error === 'invalid_return_link', 'and must be a cylinder item');
+check(call({ action: 'adminSaveEntity', token: adminTok, kind: 'product', data: { name: 'Lx Bad Box', type: 'goods', cylinder: true, stockName: 'x', boxSize: -3 } }).error === 'invalid_box_size', 'a box holds a whole positive number');
+[[lxIron, 'full', 50], [lxIron, 'empty', 20], [lxFiber, 'full', 30], [lxFiber, 'empty', 5]].forEach(function (o) {
+  check(call({ action: 'addInventoryMove', token: adminTok, locationId: scLoc.id, productId: o[0].id, state: o[1], kind: 'opening', qty: o[2], date: '2026-09-01' }).ok, 'lx opening');
+});
+check(call({ action: 'importDailyEntries', token: adminTok, rows: [scLine({ sub: 'lx-1', date: '2026-09-10', productId: lxUp.id, qty: 3, unitPrice: 297, cashSales: 891 })] }).ok, 'three customers swap iron for fiber');
+var lx1 = scRep();
+check(scRow(lx1, lxFiber.id, 'full').sales === 3, 'three full fiber leave (got ' + scRow(lx1, lxFiber.id, 'full').sales + ')');
+check(scRow(lx1, lxIron.id, 'empty').exchangeIn === 3 && !scRow(lx1, lxFiber.id, 'empty').exchangeIn, 'three empty IRON come back, no fiber empty');
+check(call({ action: 'addInventoryMove', token: adminTok, locationId: scLoc.id, productId: lxIron.id, state: 'full', kind: 'purchase', qty: 70, newCylinders: true, date: '2026-09-11' }).ok, 'seventy brand-new full cylinders bought');
+check(call({ action: 'addInventoryMove', token: adminTok, locationId: scLoc.id, productId: lxIron.id, state: 'full', kind: 'purchase', qty: 35, date: '2026-09-11' }).ok, 'and one box refilled at the plant');
+var lx2 = scRep();
+check(scRow(lx2, lxIron.id, 'full').purchases === 105 && scRow(lx2, lxIron.id, 'empty').refillOut === 35, 'only the refilled box took empties (refillOut ' + scRow(lx2, lxIron.id, 'empty').refillOut + ')');
+check(scRow(lx2, lxIron.id, 'full').newCylinders === 70, 'the new cylinders are counted as such');
+check(call({ action: 'addInventoryMove', token: adminTok, locationId: scLoc.id, productId: lxIron.id, state: 'empty', kind: 'damage', qty: 1, newCylinders: true, date: '2026-09-11' }).error === 'invalid_new_cylinders', 'the flag belongs to a full purchase only');
+var lxById = {}; ctx.readSheet(ctx.SHEETS.PRODUCTS).forEach(function (p) { lxById[p.id] = p; });
+check(Math.abs(ctx.costOfProduct_(lxById[lxUp.id], '2026-09-10', {}, lxById) - (11 + 400 - 140)) < 0.005, 'the swap costs the gas plus the dearer cylinder the customer leaves with: 11 + 400 - 140 (got ' + ctx.costOfProduct_(lxById[lxUp.id], '2026-09-10', {}, lxById) + ')');
+check(call({ action: 'importInventoryDay', token: adminTok, locationId: scLoc.id, date: '2026-09-12', ref: 'lx-day', moves: [{ productId: lxIron.id, state: 'full', kind: 'purchase', qty: 20, newCylinders: true }] }).ok, 'a sheet day may carry new cylinders too');
+check(call({ action: 'importInventoryDay', token: adminTok, locationId: scLoc.id, date: '2026-09-12', ref: 'lx-day2', moves: [{ productId: lxIron.id, state: 'empty', kind: 'return', qty: 2, newCylinders: true }] }).error === 'invalid_new_cylinders', 'and refuses the flag elsewhere');
+
 console.log('--- a batch the deputy rejects is corrected and sent again as the same batch (2026-10-05) ---');
 var rsRows = call({ action: 'areaBatchRows', token: saraTok, id: sc7.batch.id });
 check(rsRows.ok && rsRows.rows.length === 1 && rsRows.rows[0].productId === scGas.id && rsRows.rows[0].qty === 7, 'the area manager gets the rejected batch\'s lines back to correct (' + (rsRows.error || '') + ')');

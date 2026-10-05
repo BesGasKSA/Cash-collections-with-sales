@@ -735,6 +735,16 @@ function validateEntity_(kind, d) {
       if (!anchor || anchor.stockOf || anchor.type === 'services') return 'invalid_stock_link';
       if (d.id && readSheet(SHEETS.PRODUCTS).some(function (p) { return p.stockOf === d.id && p.id !== d.id; })) return 'invalid_stock_link';
     }
+    // LPG (2026-10-05): an exchange may take back another cylinder type than the one it
+    // sends out (empty iron in, full fiber out); a box holds a whole number of cylinders
+    if (d.returnOf) {
+      var back = getById_(SHEETS.PRODUCTS, d.returnOf);
+      if (!back || back.active === false || !back.cylinder || !d.stockOf || (d.stockEffect || 'exchange') !== 'exchange') return 'invalid_return_link';
+    }
+    if (d.boxSize != null && d.boxSize !== '') {
+      var bx = Number(d.boxSize);
+      if (!d.cylinder || !(isFinite(bx) && bx === Math.floor(bx) && bx >= 1 && bx <= 1000)) return 'invalid_box_size';
+    }
   } else if (kind === 'income_item' || kind === 'expense_item') {
     if (!d.name) return 'name_required';
   } else if (kind === 'cost_type') {
@@ -863,6 +873,8 @@ function saveEntity_(req, user) {
   var merged = {};
   safeOwnKeys_(obj).forEach(function (k0) { merged[k0] = obj[k0]; });
   safeOwnKeys_(d).forEach(function (k1) { merged[k1] = d[k1]; });
+  // a link to the returned cylinder type means nothing once the product stops drawing from a stock item
+  if (kind === 'product' && !merged.stockOf && merged.returnOf && !d.returnOf) { merged.returnOf = ''; d.returnOf = ''; }
   var err = validateEntity_(kind, merged);
   if (err === 'duplicate_customer') return { ok: false, error: err, code: customerDuplicateOf_(merged.name, merged.id).code };
   if (err) return { ok: false, error: err };
