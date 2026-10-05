@@ -127,6 +127,10 @@ var olayaLoc = branchStore.Olaya ? branchStore.Olaya.locationId : null;
 if (olayaLoc) {
   call({ action: 'addInventoryMove', token: adminTok, locationId: olayaLoc, productId: lpgSeed[0].id, kind: 'opening', qty: 120, date: '2026-09-01' });
   call({ action: 'addInventoryMove', token: adminTok, locationId: olayaLoc, productId: lpgSeed[1].id, kind: 'opening', qty: 40, date: '2026-09-01' });
+  // a day of 30 exchanges and 2 body sales, so the setup's before/after shows the empties coming back
+  call({ action: 'importDailyEntries', token: adminTok, rows: [
+    { date: '2026-09-02', sourceType: 'store', sourceId: branchStore.Olaya.id, submissionId: 'seed-lpg-1', productId: lpgSeed[0].id, qty: 30, unitPrice: 37, cashSales: 1110 },
+    { date: '2026-09-02', sourceType: 'store', sourceId: branchStore.Olaya.id, submissionId: 'seed-lpg-1', productId: lpgSeed[1].id, qty: 2, unitPrice: 186, cashSales: 372 }] });
 }
 
 // Area-manager bulk upload is off by default (see CLAUDE.md) — enabled here
