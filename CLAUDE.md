@@ -1987,3 +1987,9 @@ product lines for the same source/date.
 
 - No PWA/offline install or custom subdomain
 - No free-form peer-to-peer transfers outside the defined chain
+
+## Credit quantity in the reports (2026-10-05)
+
+- `byCustomer` rows carry `qty`, `items [{productId,name,qty,amount}]`, `linesWithoutQty`, `deliveryFee`, `commission`; quantities come from `creditItems` only. A line with an amount and no items has an unknown quantity: counted in `linesWithoutQty`, shown as a dash, never as 0.
+- Client: `creditRollup_(entries)` feeds the Customers tab (qty total, one qty column per item, lines without qty) and the customer profile (units, items table); pivot has the `customer` level and the `creditQty` figure (`eqTotals_().creditQty`). `pvSplit_` splits the credit amount per item and keeps the day's sale off the customer, so customer > item > day adds up.
+
