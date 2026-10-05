@@ -1716,7 +1716,6 @@ check(rsV2.handoff.locationId === rsB1.loc.id && rsV2.handoff.clusterId === rsAr
 var rsOld = rsHandoff(rsV1.handoff.id);
 check(rsOld.status === 'returned' && rsOld.amount === 1000 && rsOld.resubmittedAs === rsV2.handoff.id, 'the returned request stays returned at 1000 and points to its next version');
 var rsOldAfter = JSON.parse(JSON.stringify(rsOld)), rsOldBefore = JSON.parse(rsV1Before); delete rsOldAfter.resubmittedAs; delete rsOldAfter.updatedAt; delete rsOldBefore.updatedAt;
-console.log(rsV1Before, JSON.stringify(rsOldAfter));
 check(JSON.stringify(rsOldAfter) === JSON.stringify(rsOldBefore), 'the returned row is unchanged apart from resubmittedAs (and its updatedAt stamp)');
 check(JSON.stringify(rsV2.handoff.history[0].perLocation) === JSON.stringify(rsOld.perLocation) && rsOld.perLocation.length === 1, 'the history keeps the old version\'s branch lines');
 check(rsV2.handoff.sourceEntryIds.length === 1 && ctx.readSheet(SHEETS.ENTRIES).filter(function (e) { return e.id === rsV2.handoff.sourceEntryIds[0]; })[0].consumedBy === rsV2.handoff.id &&
@@ -1775,7 +1774,6 @@ call({ action: 'deputyReturnHandoff', token: walidTok, id: rsA1.handoff.id, reas
 call({ action: 'voidEntries', token: rsMgrTok, ids: [rsE4.entry.id], reason: 'retyped' });
 var rsE4b = rsEnter(rsB4, 200);
 var rsA2 = rsSend(rsB4, { resubmitOf: rsA1.handoff.id, correctionNote: 'same figure, retyped' });
-function rsShape(x, loc) { return JSON.stringify({ b: x.breakdown, p: x.perLocation, a: x.amount }).split(loc).join('L'); }
 check(rsA2.ok && JSON.stringify(rsA2.handoff.breakdown) === JSON.stringify(rsN1.handoff.breakdown), 'a resent request\'s breakdown equals a normal send of the same cash');
 check(rsA2.ok && JSON.stringify(rsA2.handoff.perLocation).split(rsB4.loc.id).join('L') === JSON.stringify(rsN1.handoff.perLocation).split(rsB5.loc.id).join('L'), 'and so do its branch lines');
 check(rsHandoff(rsH4).consumedBy === rsA2.handoff.id && rsHandoff(rsH4).status === 'confirmed', 'the held branch handover is spoken for by the new request');
