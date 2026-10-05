@@ -3408,6 +3408,39 @@ if (clientCtx.brkParts_) {
   var ddParts = clientCtx.brkParts_({ storeCash: 0, carCash: 0, posCash: 0, deliveryFee: 0, posSales: 0, creditSales: 0, vatOnDelivery: 0, otherCash: 0, expenses: 0, directDeposit: 0, netCashOwed: 750 });
   check(!ddParts.short, 'a الموازنة banked at the branch (a breakdown that only carries its amount) draws no short or over line');
 }
+// ---- credit quantity on the screens ----
+check(/PV_DIMS_ = \[[^\]]*'customer'/.test(clientHtml) && /PV_MEASURES_ = \[[^\]]*'creditQty'/.test(clientHtml), 'the pivot offers the customer level and the credit quantity figure');
+var cqCtx = vm.createContext({ t: function (k) { return k; }, state: { meta: { customers: [{ id: 'c1', name: 'Customer One', code: 'CUS-1' }] } }, byId: function (l, id) { return (l || []).filter(function (x) { return x.id === id; })[0]; },
+  productName_: function (id) { return id; }, userName: function (x) { return x; }, lvKey_: function () { return '_'; }, lvName_: function () { return ''; }, money: function (n) { return n; } });
+vm.runInContext(clientHtml.slice(clientHtml.indexOf('\nvar EQ_PARTS_'), clientHtml.indexOf('\nfunction eqNonZero_')), cqCtx);
+['vatRateFor_', 'entryAmt_', 'creditRollup_'].forEach(function (n) { var s = clientFn_(n); check(!!s, 'the screen function ' + n + ' exists'); if (s) vm.runInContext(s, cqCtx); });
+var cqSplitSrc = clientHtml.slice(clientHtml.indexOf('\nvar PV_SPLIT_ = ['), clientHtml.indexOf('\nfunction pvSources_'));
+vm.runInContext(cqSplitSrc, cqCtx);
+['pvKey_', 'pvName_', 'pvOwner_', 'pvOwnerName_'].forEach(function (n) { var s = clientFn_(n); if (s) vm.runInContext(s, cqCtx); });
+var cqScreenRows = cqRep.entries;
+if (cqCtx.creditRollup_) {
+  var roll = cqCtx.creditRollup_(cqScreenRows);
+  var rollA = roll.filter(function (r) { return r.id === cqA.id; })[0] || {};
+  check(rollA.qty === cqRowA.qty && rollA.noQty === cqRowA.linesWithoutQty && rollA.items[ccFree.id].qty === 3 && Math.round(rollA.items[ccFree.id].amount) === 95, 'the screens\' credit roll-up agrees with the server\'s byCustomer');
+  check(roll.reduce(function (a, r) { return a + r.qty; }, 0) === cqSumQty, 'and its quantities add up to the server\'s total');
+}
+if (cqCtx.pvSplit_ && cqCtx.eqTotals_) {
+  var cqPlain = cqCtx.eqTotals_(cqScreenRows).creditQty, cqSplit = cqCtx.eqTotals_(cqCtx.pvSplit_(cqScreenRows)).creditQty;
+  check(cqPlain === cqSumQty && cqSplit === cqSumQty, 'the pivot\'s credit quantity counts each unit once, split by product or not (' + cqPlain + ', ' + cqSplit + ')');
+  var cqAmt = cqCtx.eqTotals_(cqCtx.pvSplit_(cqScreenRows)).dCredit, cqAmtPlain = cqCtx.eqTotals_(cqScreenRows).dCredit;
+  close(cqAmt, cqAmtPlain, 'and splitting it per item leaves the credit amount unchanged');
+  var cqCustKeys = cqCtx.pvSplit_(cqScreenRows).filter(function (r) { return Number(r.creditSales) > 0; }).map(function (r) { return cqCtx.pvKey_ ? cqCtx.pvKey_('customer', r) : ''; });
+  check(cqCustKeys.indexOf(cqA.id) >= 0 && cqCustKeys.indexOf(cqB.id) >= 0, 'a credit part is keyed by its customer');
+  var cqSaleKeys = cqCtx.pvSplit_([cqScreenRows[0]]).filter(function (r) { return r.cashSales > 0 || r.__src === cqScreenRows[0]; })[0];
+  check(cqSaleKeys && cqCtx.pvKey_('customer', cqSaleKeys) === '_', 'the day\'s own sale stays off the customer, only the credit lines are his');
+}
+['cq_qtyOf', 'cq_noQty', 'pv_creditQty', 'lv_customer', 'lv_noCustomer', 'cq_items', 'cq_unitsTaken'].forEach(function (k) {
+  var n = (clientHtml.match(new RegExp('\\b' + k + ':', 'g')) || []).length;
+  check(n === 3, 'the string ' + k + ' is in ar, en and ur (found ' + n + ')');
+});
+check(/creditRollup_\(/.test(clientFn_('reportTabs_')) && /creditRollup_\(/.test(clientFn_('renderAdminProfile')), 'the customer tab and the customer profile both use creditRollup_');
+check(/pv_creditQty/.test(clientFn_('exColKinds_')) && /cq_noQty/.test(clientFn_('exColKinds_')), 'the Excel export treats the credit quantity columns as whole numbers');
+check(/pv_creditQty/.test(clientFn_('pivotCard_')) || /pv_creditQty/.test(clientFn_('pvLabel_')), 'the pivot labels its credit quantity column');
 check(/brkParts_\(/.test(clientFn_('breakdownGrid')), 'the handover card draws its statement from brkParts_');
 check(/brkParts_\(/.test(clientFn_('handoffDocView_')), 'the handover document draws its statement from brkParts_');
 var rhSrc = clientFn_('renderHandoffs');
