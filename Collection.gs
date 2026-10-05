@@ -1074,7 +1074,22 @@ function createClusterHandoff_(req, user) {
   var areaLocIds = readSheet(SHEETS.LOCATIONS).filter(function (l) { return l.clusterId === cluster.id; })
     .map(function (l) { return l.id; });
   if (req.locationId && areaLocIds.indexOf(req.locationId) < 0) return { ok: false, error: 'not_found' };
-  function wanted(locId) { return !req.locationId || locId === req.locationId; }
+
+  // A returned request is corrected and sent again as its next version
+  // (2026-10-05): the returned row stays as it is (only resubmittedAs is
+  // written on it), the new one carries the history.
+  var prior = null, onlyLoc = req.locationId || null, correctionNote = '';
+  if (req.resubmitOf) {
+    prior = getById_(SHEETS.HANDOFFS, req.resubmitOf);
+    var priorErr = resendError_(prior, cluster, user);
+    if (priorErr) return { ok: false, error: priorErr };
+    if (prior.locationId && req.locationId && req.locationId !== prior.locationId) return { ok: false, error: 'invalid_location' };
+    if (!prior.locationId && req.locationId) return { ok: false, error: 'invalid_location' };
+    correctionNote = String(req.correctionNote || '').trim();
+    if (!correctionNote || correctionNote.length > 1000) return { ok: false, error: 'note_required' };
+    onlyLoc = prior.locationId || null;
+  }
+  function wanted(locId) { return !onlyLoc || locId === onlyLoc; }
 
   var held = readSheet(SHEETS.HANDOFFS).filter(function (h) {
     return h.kind === 'location_to_cluster' && h.clusterId === cluster.id && h.status === 'confirmed' && !h.consumedBy && wanted(h.locationId);
@@ -1085,7 +1100,7 @@ function createClusterHandoff_(req, user) {
   var ownEntries = readSheet(SHEETS.ENTRIES).filter(function (e) {
     return !e.consumedBy && !e.voided && e.enteredBy === cluster.clusterManagerUserId && areaLocIds.indexOf(e.locationId) >= 0 && wanted(e.locationId);
   });
-  if (!held.length && !ownEntries.length) return { ok: false, error: 'no_held_cash' };
+  if (!held.length && !ownEntries.length) return { ok: false, error: prior ? 'nothing_owed' : 'no_held_cash' };
 
   var groups = {}, order = [];
   function group(locId) {
@@ -1136,14 +1151,55 @@ function createClusterHandoff_(req, user) {
       status: 'pending_deputy',
       createdAt: new Date().toISOString()
     };
+    if (prior) {
+      handoff.resubmitOf = prior.id;
+      handoff.revision = Number(prior.revision || 1) + 1;
+      handoff.correctionNote = correctionNote;
+      handoff.history = (prior.history || []).concat([{
+        revision: Number(prior.revision || 1), amount: prior.amount, perLocation: prior.perLocation || [],
+        returnReason: prior.returnReason || '', returnedBy: prior.deputyReturnedBy || null,
+        returnedAt: prior.deputyReturnedAt || null, correctionNote: prior.correctionNote || ''
+      }]);
+    }
     writeRow(SHEETS.HANDOFFS, handoff);
     p.g.held.forEach(function (h) { h.consumedBy = handoff.id; writeRow(SHEETS.HANDOFFS, h); });
     p.g.own.forEach(function (e) { e.consumedBy = handoff.id; writeRow(SHEETS.ENTRIES, e); });
-    logAudit_('create_handoff_cluster', user.id, handoff.id);
+    // any other returned request of this branch and area manager can no longer
+    // be resent: the cash it released is in this one now
+    readSheet(SHEETS.HANDOFFS).forEach(function (r) {
+      if (r.kind === 'cluster_to_collector' && r.status === 'returned' && !r.resubmittedAs && !r.supersededBy &&
+        r.locationId === p.g.locationId && r.fromUserId === handoff.fromUserId && (!prior || r.id !== prior.id)) {
+        r.supersededBy = handoff.id;
+        writeRow(SHEETS.HANDOFFS, r);
+      }
+    });
+    if (prior && !prior.resubmittedAs) { prior.resubmittedAs = handoff.id; writeRow(SHEETS.HANDOFFS, prior); }
+    logAudit_(prior ? 'area_handoff_resubmit' : 'create_handoff_cluster', user.id, handoff.id);
     notifyDeputyPendingHandoff_(handoff);
     return handoff;
   });
   return { ok: true, handoff: handoffs[0], handoffs: handoffs };
+}
+
+// Why a returned area request cannot be corrected and sent again by this
+// person, or null. The returned row is never edited: the only thing written on
+// it is resubmittedAs (or supersededBy when a normal request took its cash).
+function resendError_(prior, cluster, user) {
+  if (!prior || prior.kind !== 'cluster_to_collector') return 'not_found';
+  if (prior.clusterId !== cluster.id) return 'forbidden';
+  if (user.role !== 'admin' && prior.fromUserId !== user.id) return 'forbidden';
+  if (prior.status !== 'returned') return 'not_returned';
+  if (prior.resubmittedAs) return 'already_resubmitted';
+  if (prior.supersededBy) return 'superseded';
+  // its branch handovers or entries already went into another request
+  var gone = (prior.sourceHandoffIds || []).some(function (id) {
+    var sh = getById_(SHEETS.HANDOFFS, id);
+    return sh && sh.consumedBy;
+  }) || (prior.sourceEntryIds || []).some(function (id) {
+    var e = getById_(SHEETS.ENTRIES, id);
+    return e && !e.voided && e.consumedBy;
+  });
+  return gone ? 'superseded' : null;
 }
 
 // ---------- Area-manager bulk upload -> Deputy Operations Manager approval ----------
@@ -1738,8 +1794,10 @@ function notifyDeputyPendingHandoff_(h) {
     return u.active !== false && u.email && (u.role === 'deputy_operations_manager' || u.role === 'admin');
   });
   var subject = 'طلب تسليم من مدير منطقة بانتظار تحققك / Area handover awaiting your validation';
+  if (h.resubmitOf) subject = 'طلب تسليم مصحَّح (النسخة ' + h.revision + ') بانتظار تحققك / Corrected area handover (version ' + h.revision + ') awaiting your validation';
+  var note = h.resubmitOf ? '\n\nملاحظة التصحيح / Correction note: ' + h.correctionNote : '';
   var body = 'طلب مدير المنطقة ' + (getById_(SHEETS.USERS, h.fromUserId) || {}).name + ' تسليم ' + Number(h.amount).toFixed(2) +
-    ' للمُحصّل، ويحتاج تحققك قبل وصوله إليه.\n\nAn area manager\'s handover of ' + Number(h.amount).toFixed(2) + ' to the collector needs your validation before it reaches them.';
+    ' للمُحصّل، ويحتاج تحققك قبل وصوله إليه.\n\nAn area manager\'s handover of ' + Number(h.amount).toFixed(2) + ' to the collector needs your validation before it reaches them.' + note;
   to.forEach(function (u) { try { sendMail_(u.email, subject, body); } catch (e) { /* best-effort */ } });
 }
 

@@ -1662,6 +1662,94 @@ check(ctx.readSheet(SHEETS.AUDIT).some(function (a) { return a.action === 'deput
   ctx.readSheet(SHEETS.AUDIT).some(function (a) { return a.action === 'deputy_validate_handoff' && a.detail === dpC2.handoff.id; }),
   'both decisions are in the audit trail');
 
+console.log('--- a returned area request is corrected and sent again ---');
+var rsMgr = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Rs Area Manager', email: 'rsmgr.fx@bestgas.sa', role: 'cluster_manager' } }).user;
+var rsMgr2 = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Rs Other Area Manager', email: 'rsmgr2.fx@bestgas.sa', role: 'cluster_manager' } }).user;
+var rsCol = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Rs Collector', email: 'rscol.fx@bestgas.sa', role: 'collector' } }).user;
+var rsCol2 = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Rs Second Collector', email: 'rscol2.fx@bestgas.sa', role: 'collector' } }).user;
+var rsMgrTok = acceptInvite('rsmgr.fx@bestgas.sa'), rsMgr2Tok = acceptInvite('rsmgr2.fx@bestgas.sa'), rsCol2Tok = acceptInvite('rscol2.fx@bestgas.sa');
+var rsArea = call({ action: 'adminSaveEntity', token: adminTok, kind: 'cluster', data: { name: 'Rs Area', clusterManagerUserId: rsMgr.id } }).entity;
+var rsArea2 = call({ action: 'adminSaveEntity', token: adminTok, kind: 'cluster', data: { name: 'Rs Other Area', clusterManagerUserId: rsMgr2.id } }).entity;
+function rsBranch(n) {
+  var bm = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Rs Branch Manager ' + n, email: 'rsbm' + n + '.fx@bestgas.sa', role: 'store_manager' } }).user;
+  var loc = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: 'Jubail', name: 'Rs Branch ' + n, clusterId: rsArea.id, collectorUserId: rsCol.id } }).entity;
+  var st = call({ action: 'adminSaveEntity', token: adminTok, kind: 'store', data: { locationId: loc.id, name: 'Rs Store ' + n, storeManagerUserId: bm.id } }).entity;
+  return { loc: loc, store: st };
+}
+var rsB1 = rsBranch(1), rsB2 = rsBranch(2), rsB3 = rsBranch(3);
+function rsEnter(b, cash, extra) {
+  return call(Object.assign({ action: 'createDailyEntry', token: rsMgrTok, date: ctx.todayRiyadh_(), sourceType: 'store', sourceId: b.store.id, cashSales: cash }, extra || {}));
+}
+function rsHandoff(id) { return ctx.readSheet(SHEETS.HANDOFFS).filter(function (h) { return h.id === id; })[0]; }
+function rsSend(b, extra) {
+  return call(Object.assign({ action: 'createHandoff', token: rsMgrTok, kind: 'cluster_to_collector', clusterId: rsArea.id, locationId: b.loc.id }, extra || {}));
+}
+
+// branch 1: the main journey
+var rsE1 = rsEnter(rsB1, 1000);
+var rsV1 = rsSend(rsB1);
+check(rsV1.ok && rsV1.handoff.status === 'pending_deputy' && rsV1.handoff.amount === 1000, 'the area manager sends his own 1000 for the branch');
+check(call({ action: 'createHandoff', token: rsMgrTok, kind: 'cluster_to_collector', clusterId: rsArea.id, locationId: rsB1.loc.id, resubmitOf: rsV1.handoff.id, correctionNote: 'x' }).error === 'not_returned',
+  'a request still with the deputy cannot be resent (not_returned)');
+check(call({ action: 'deputyReturnHandoff', token: walidTok, id: rsV1.handoff.id, reason: 'wrong amount' }).ok, 'the deputy returns it: wrong amount');
+check(rsSend(rsB1, { resubmitOf: rsV1.handoff.id }).error === 'note_required', 'resending without a note is refused (note_required)');
+check(rsSend(rsB1, { resubmitOf: rsV1.handoff.id, correctionNote: '   ' }).error === 'note_required', 'a blank note too');
+check(rsSend(rsB1, { resubmitOf: rsV1.handoff.id, correctionNote: new Array(1002).join('x') }).error === 'note_required', 'and a note over 1000 characters');
+check(rsSend(rsB2, { resubmitOf: rsV1.handoff.id, correctionNote: 'other branch' }).error === 'invalid_location', 'it can only be resent for the branch it was returned for');
+check(call({ action: 'createHandoff', token: rsMgr2Tok, kind: 'cluster_to_collector', clusterId: rsArea2.id, resubmitOf: rsV1.handoff.id, correctionNote: 'mine now' }).error === 'forbidden',
+  'another area manager cannot resend it');
+check(call({ action: 'createHandoff', token: rsMgr2Tok, kind: 'cluster_to_collector', clusterId: rsArea.id, locationId: rsB1.loc.id, resubmitOf: rsV1.handoff.id, correctionNote: 'mine now' }).error === 'forbidden',
+  'nor through the first area');
+// a collector who changed since the return: the resend goes to the current one
+check(call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', id: rsB1.loc.id, data: { collectorUserId: rsCol2.id } }).ok, 'the branch gets another collector after the return');
+// correct the figure: cancel the entry, enter the right one
+check(call({ action: 'voidEntries', token: rsMgrTok, ids: [rsE1.entry.id], reason: 'typo' }).ok, 'the area manager cancels his entry (typo)');
+rsEnter(rsB1, 900);
+var rsV2 = rsSend(rsB1, { resubmitOf: rsV1.handoff.id, correctionNote: 'corrected to 900' });
+check(rsV2.ok && rsV2.handoff.status === 'pending_deputy' && rsV2.handoff.amount === 900, 'the corrected request opens waiting for the deputy, at 900 (the cancelled entry is out)');
+check(rsV2.handoff.revision === 2 && rsV2.handoff.resubmitOf === rsV1.handoff.id && rsV2.handoff.correctionNote === 'corrected to 900', 'it is version 2 and carries the note');
+check(rsV2.handoff.history.length === 1 && rsV2.handoff.history[0].amount === 1000 && rsV2.handoff.history[0].returnReason === 'wrong amount' &&
+  rsV2.handoff.history[0].revision === 1 && rsV2.handoff.history[0].returnedBy === walid.id && !!rsV2.handoff.history[0].returnedAt, 'its history holds version 1: 1000 and the reason');
+check(rsV2.handoff.toUserId === rsCol2.id, 'it goes to the branch\'s current collector');
+check(rsV2.handoff.locationId === rsB1.loc.id && rsV2.handoff.clusterId === rsArea.id && rsV2.handoff.fromUserId === rsMgr.id, 'same branch, area and sender');
+var rsOld = rsHandoff(rsV1.handoff.id);
+check(rsOld.status === 'returned' && rsOld.amount === 1000 && rsOld.resubmittedAs === rsV2.handoff.id, 'the returned request stays returned at 1000 and points to its next version');
+check(rsSend(rsB1, { resubmitOf: rsV1.handoff.id, correctionNote: 'again' }).error === 'already_resubmitted', 'the same request cannot be resent twice');
+check(ctx.readSheet(SHEETS.AUDIT).some(function (a) { return a.action === 'area_handoff_resubmit' && a.detail === rsV2.handoff.id; }), 'the resend is in the audit trail');
+check(ctx._debug.mailLog.some(function (m) { return /corrected to 900/.test(m.body); }), 'the deputy is told it is a correction, with the note');
+// version 2 comes back again, version 3 carries both
+check(call({ action: 'deputyReturnHandoff', token: walidTok, id: rsV2.handoff.id, reason: 'still off' }).ok, 'the deputy returns version 2');
+var rsV3 = rsSend(rsB1, { resubmitOf: rsV2.handoff.id, correctionNote: 'recounted, 900 is right' });
+check(rsV3.ok && rsV3.handoff.revision === 3 && rsV3.handoff.amount === 900 && rsV3.handoff.history.length === 2, 'version 3 carries both earlier versions');
+check(rsV3.handoff.history[0].returnReason === 'wrong amount' && rsV3.handoff.history[1].returnReason === 'still off' && rsV3.handoff.history[1].amount === 900 && rsV3.handoff.history[1].correctionNote === 'corrected to 900',
+  'in order, each with its reason and note');
+check(rsHandoff(rsV2.handoff.id).resubmittedAs === rsV3.handoff.id, 'version 2 points to version 3');
+var rsVal = call({ action: 'deputyValidateHandoff', token: walidTok, id: rsV3.handoff.id, note: 'ok' });
+check(rsVal.ok && rsVal.handoff.status === 'pending' && rsVal.handoff.toUserId === rsCol2.id, 'the deputy validates version 3 as usual');
+check(call({ action: 'confirmHandoff', token: rsCol2Tok, id: rsV3.handoff.id }).ok, 'and the collector confirms it');
+
+// branch 2: nothing to send stays resendable
+var rsE2 = rsEnter(rsB2, 500);
+var rsW1 = rsSend(rsB2);
+call({ action: 'deputyReturnHandoff', token: walidTok, id: rsW1.handoff.id, reason: 'recount' });
+call({ action: 'voidEntries', token: rsMgrTok, ids: [rsE2.entry.id], reason: 'wrong day' });
+check(rsSend(rsB2, { resubmitOf: rsW1.handoff.id, correctionNote: 'nothing left' }).error === 'nothing_owed', 'with nothing left for the branch the resend is refused');
+rsEnter(rsB2, 100, { expenseAmount: 150, expenseItemId: expenseId, expenseReason: 'fuel' });
+check(rsSend(rsB2, { resubmitOf: rsW1.handoff.id, correctionNote: 'net is negative' }).error === 'nothing_owed', 'a branch that nets to less than nothing is refused too');
+check(!rsHandoff(rsW1.handoff.id).resubmittedAs, 'and the returned request is untouched');
+rsEnter(rsB2, 400);
+var rsW2 = rsSend(rsB2, { resubmitOf: rsW1.handoff.id, correctionNote: 'added the afternoon' });
+check(rsW2.ok && rsW2.handoff.amount === 350, 'it can still be resent once there is cash: 100 - 150 + 400');
+
+// branch 3: an unrelated normal request takes the cash
+var rsE3 = rsEnter(rsB3, 300);
+var rsX1 = rsSend(rsB3);
+call({ action: 'deputyReturnHandoff', token: walidTok, id: rsX1.handoff.id, reason: 'check' });
+var rsX2 = rsSend(rsB3);
+check(rsX2.ok && rsX2.handoff.amount === 300 && !rsX2.handoff.resubmitOf, 'a normal request for the same branch is allowed while one is returned');
+check(rsHandoff(rsX1.handoff.id).supersededBy === rsX2.handoff.id, 'the returned one is marked as superseded');
+check(rsSend(rsB3, { resubmitOf: rsX1.handoff.id, correctionNote: 'late' }).error === 'superseded', 'and can no longer be resent (superseded)');
+
 console.log('--- the deputy sees everything, acts only in their own step ---');
 var dEntries = call({ action: 'listEntries', token: walidTok });
 check(dEntries.ok && dEntries.entries.length === call({ action: 'listEntries', token: adminTok }).entries.length, 'the deputy sees every branch\'s entries');
