@@ -585,6 +585,7 @@ function actionCreateEntry_(req, user) {
     sourceId: req.sourceId,
     locationId: scope.locationId,
     enteredBy: user.id,
+    createdAt: new Date().toISOString(),
     productId: req.productId || null,
     cashSales: Number(req.cashSales || 0),
     deliveryFeeBankAmount: Number(req.deliveryFeeBankAmount || 0),
@@ -678,6 +679,7 @@ function actionImportEntries_(req, user) {
       sourceId: r.sourceId,
       locationId: scope.locationId,
       enteredBy: user.id,
+    createdAt: new Date().toISOString(),
       productId: r.productId || null,
       cashSales: Number(r.cashSales || 0),
       deliveryFeeBankAmount: Number(r.deliveryFeeBankAmount || 0),
@@ -751,6 +753,12 @@ function actionListEntries_(req, user) {
       : null;
     e.canVoid = e.lockState === 'open' && !e.voidBlock;
   });
+  // where each one stands now, from the same walk the journey uses, so the list
+  // and the timeline cannot disagree (never lets a bad row break the list)
+  try {
+    var jc = jrCtx_(user);
+    rows.forEach(function (e) { try { var sg = jrStage_(jc, e); if (sg) e.stage = sg; } catch (x) { /* the list still stands */ } });
+  } catch (x) { /* the list still stands */ }
   return { ok: true, entries: rows };
 }
 
@@ -1316,6 +1324,7 @@ function actionBulkSubmitAreaBatch_(req, user) {
       sourceId: r.sourceId,
       locationId: p.locationId,
       enteredBy: user.id,
+    createdAt: new Date().toISOString(),
       productId: r.productId || null,
       cashSales: Number(r.cashSales || 0),
       deliveryFeeBankAmount: Number(r.deliveryFeeBankAmount || 0),
@@ -2341,6 +2350,311 @@ function actionMyPendingActions_(req, user) {
     return new Date(a.since || 0) - new Date(b.since || 0);
   });
   return { ok: true, items: items, total: items.length };
+}
+
+// ---------- Every entry's journey (2026-10-05) ----------
+// One read-only walk over the links the records already carry, so a person can
+// open an entry, a handover or an area batch and see its whole path as steps:
+// who did what and when, the reason where it was returned, disputed or
+// cancelled, and what it is waiting for now. Nothing is stored for it.
+//   entry -> consumedBy (a handover or a batch) -> that handover's consumedBy ...
+//   handover -> sourceEntryIds / sourceHandoffIds (down), consumedBy (up)
+//   area request versions -> resubmitOf / resubmittedAs
+//   batch -> history, entryIds, resultHandoffIds
+//   deposit -> reconciled / reconciledAt / reconciledLineId
+// A step is { k, st: done | bad | wait, at, by, byName, to, toName, amount, short,
+// ref, reason, note, rev, loc }. A step is a person's action (done), a refusal
+// (bad: returned, disputed, rejected, cancelled) or what comes next (wait).
+// Scope is the screens' own: a person gets the journey of what they may already
+// see (listEntries / listHandoffs / listAreaBulkBatches), and a step that belongs
+// to a handover they are not part of keeps its actor and time but loses its figures.
+var JR_MAX_DEPTH_ = 12;
+var JR_MAX_SOURCES_ = 8;
+
+function jrCtx_(user) {
+  var c = { user: user, hById: Object.create(null), eById: Object.create(null), bById: Object.create(null), uById: Object.create(null),
+    locById: Object.create(null), clusterById: Object.create(null), storeByLoc: Object.create(null), carById: Object.create(null),
+    byEntry: Object.create(null), bySource: Object.create(null), siblings: Object.create(null), memo: Object.create(null), lines: null, posMap: null,
+    myLocs: Object.create(null), myStore: null, handoffs: readSheet(SHEETS.HANDOFFS), entries: readSheet(SHEETS.ENTRIES) };
+  c.handoffs.forEach(function (h) {
+    c.hById[h.id] = h;
+    if (h.kind !== 'deposit' || h.direct) (h.sourceEntryIds || []).forEach(function (id) { (c.byEntry[id] = c.byEntry[id] || []).push(h); });
+    (h.sourceHandoffIds || []).forEach(function (id) { (c.bySource[id] = c.bySource[id] || []).push(h); });
+  });
+  c.entries.forEach(function (e) {
+    c.eById[e.id] = e;
+    if (e.submissionId) (c.siblings[e.submissionId] = c.siblings[e.submissionId] || []).push(e);
+  });
+  readSheet(SHEETS.AREA_BULK_BATCHES).forEach(function (b) { c.bById[b.id] = b; });
+  readSheet(SHEETS.USERS).forEach(function (u) { c.uById[u.id] = u; });
+  readSheet(SHEETS.LOCATIONS).forEach(function (l) { c.locById[l.id] = l; });
+  readSheet(SHEETS.CLUSTERS).forEach(function (cl) { c.clusterById[cl.id] = cl; });
+  readSheet(SHEETS.STORES).forEach(function (s) { c.storeByLoc[s.locationId] = s; });
+  readSheet(SHEETS.CARS).forEach(function (car) { c.carById[car.id] = car; });
+  if (user.role === 'cluster_manager') {
+    Object.keys(c.locById).forEach(function (id) {
+      var cl = c.clusterById[c.locById[id].clusterId];
+      if (cl && cl.clusterManagerUserId === user.id) c.myLocs[id] = true;
+    });
+  } else if (user.role === 'store_manager') {
+    c.myStore = storeOfManager_(user.id);
+  }
+  return c;
+}
+function jrName_(c, id) { var u = id ? c.uById[id] : null; return u ? u.name : ''; }
+function jrVisibleEntry_(c, e) {
+  var u = c.user;
+  if (isCompanyWide_(u.role)) return true;
+  if (u.role === 'cluster_manager') return c.myLocs[e.locationId] === true;
+  if (u.role === 'store_manager') return !!c.myStore && e.locationId === c.myStore.locationId;
+  if (u.role === 'driver' || u.role === 'branch_worker') return e.enteredBy === u.id;
+  return false;
+}
+function jrVisibleHandoff_(c, h) { return isCompanyWide_(c.user.role) || h.fromUserId === c.user.id || h.toUserId === c.user.id; }
+function jrVisibleBatch_(c, b) {
+  if (c.user.role === 'cluster_manager') return b.uploadedBy === c.user.id;
+  return c.user.role === 'deputy_operations_manager' || isCompanyWide_(c.user.role);
+}
+function jrStep_(c, k, st, o) {
+  var s = { k: k, st: st };
+  o = o || {};
+  Object.keys(o).forEach(function (key) { if (o[key] != null && o[key] !== '') s[key] = o[key]; });
+  if (s.by) s.byName = jrName_(c, s.by);
+  if (s.to) s.toName = jrName_(c, s.to);
+  return s;
+}
+function jrLatest_(c, h) {
+  var n = 0;
+  while (h.resubmittedAs && c.hById[h.resubmittedAs] && n++ < 20) h = c.hById[h.resubmittedAs];
+  return h;
+}
+// an area request's versions, oldest first, ending at h
+function jrVersions_(c, h) {
+  var list = [h], seen = {}, cur = h;
+  seen[h.id] = true;
+  while (cur.resubmitOf && c.hById[cur.resubmitOf] && !seen[cur.resubmitOf]) {
+    cur = c.hById[cur.resubmitOf]; seen[cur.id] = true; list.unshift(cur);
+  }
+  return list;
+}
+function jrMatchSteps_(c, dep) {
+  if (dep.status === 'voided') return [jrStep_(c, 'voided', 'bad', { at: dep.voidedAt, by: dep.voidedBy, reason: dep.voidReason })];
+  if (dep.reconciled) {
+    if (!c.lines) { c.lines = Object.create(null); readSheet(SHEETS.BANK_LINES).forEach(function (l) { c.lines[l.id] = l; }); }
+    var line = dep.reconciledLineId ? c.lines[dep.reconciledLineId] : null;
+    return [jrStep_(c, 'matched', 'done', { at: dep.reconciledAt, by: line ? line.matchedBy : null })];
+  }
+  return [jrStep_(c, 'match_wait', 'wait', {})];
+}
+// the steps of one handover on its own
+function jrHandoffSteps_(c, h, o) {
+  o = o || {};
+  var vis = jrVisibleHandoff_(c, h), steps = [];
+  var declared = h.originalAmount != null ? h.originalAmount : h.amount;
+  if (h.kind === 'deposit') {
+    steps.push(jrStep_(c, h.direct ? 'direct_deposit' : 'deposited', 'done', { at: h.confirmedAt || h.createdAt, by: h.fromUserId,
+      amount: vis ? h.amount : null, ref: vis ? h.bankReference : null, loc: h.locationId }));
+    return steps.concat(jrMatchSteps_(c, h));
+  }
+  var sentKey = { car_to_location: 'car_sent', location_to_cluster: 'branch_sent' }[h.kind] || 'area_sent';
+  if (!h.viaBulkBatch) {
+    if (o.resent) steps.push(jrStep_(c, 'area_resent', 'done', { at: h.createdAt, by: h.fromUserId, rev: h.revision, note: h.correctionNote, amount: vis ? declared : null, loc: h.locationId }));
+    else steps.push(jrStep_(c, sentKey, 'done', { at: h.createdAt, by: h.fromUserId, to: h.toUserId, amount: vis ? declared : null, loc: h.locationId }));
+  }
+  if (h.kind === 'cluster_to_collector' && !h.viaBulkBatch) {
+    if (h.status === 'pending_deputy') { steps.push(jrStep_(c, 'deputy_wait', 'wait', {})); return steps; }
+    if (h.status === 'returned') {
+      steps.push(jrStep_(c, 'deputy_returned', 'bad', { at: h.deputyReturnedAt, by: h.deputyReturnedBy, reason: h.returnReason }));
+      if (h.supersededBy && !h.resubmittedAs) steps.push(jrStep_(c, 'superseded', 'done', {}));
+      else if (!h.resubmittedAs) steps.push(jrStep_(c, 'fix_wait', 'wait', { to: h.fromUserId }));
+      return steps;
+    }
+    if (h.deputyValidatedAt) steps.push(jrStep_(c, 'deputy_ok', 'done', { at: h.deputyValidatedAt, by: h.deputyValidatedBy }));
+  }
+  var received = h.receivedAmount != null ? h.receivedAmount : h.amount;
+  var short = Number(h.shortfall || 0) ? h.shortfall : null;
+  if (h.status === 'pending') { steps.push(jrStep_(c, 'recv_wait', 'wait', { to: h.toUserId })); return steps; }
+  if (h.status === 'disputed') {
+    steps.push(jrStep_(c, 'disputed', 'bad', { at: h.disputedAt, by: h.disputedBy || h.toUserId, reason: h.disputeNote }));
+    steps.push(jrStep_(c, 'settle_wait', 'wait', {}));
+    return steps;
+  }
+  if (h.disputedAt) steps.push(jrStep_(c, 'disputed', 'bad', { at: h.disputedAt, by: h.disputedBy || h.toUserId, reason: h.disputeNote }));
+  if (h.resolvedAt) {
+    if (h.status === 'rejected') steps.push(jrStep_(c, 'settled_rejected', 'bad', { at: h.resolvedAt, by: h.resolvedBy, reason: h.resolutionNote }));
+    else steps.push(jrStep_(c, 'settled_ok', 'done', { at: h.resolvedAt, by: h.resolvedBy, amount: vis ? received : null, short: vis ? short : null, reason: h.resolutionNote }));
+  } else if (h.confirmedAt) {
+    steps.push(jrStep_(c, 'received', 'done', { at: h.confirmedAt, by: h.confirmedBy || h.toUserId, amount: vis ? received : null, short: vis ? short : null }));
+  }
+  return steps;
+}
+// an area batch up to the deputy's decision
+function jrBatchSteps_(c, b) {
+  var vis = jrVisibleBatch_(c, b), steps = [];
+  (b.history || []).forEach(function (v) {
+    steps.push(jrStep_(c, 'batch_up', 'done', { at: v.submittedAt, by: b.uploadedBy, rev: v.revision, amount: vis ? v.netCashOwed : null }));
+    steps.push(jrStep_(c, 'batch_rej', 'bad', { at: v.rejectedAt, by: v.rejectedBy, reason: v.rejectionNote }));
+  });
+  var rev = Number(b.revision || 1);
+  var amount = vis && b.breakdown ? b.breakdown.netCashOwed : null;
+  if (rev > 1) steps.push(jrStep_(c, 'batch_resent', 'done', { at: b.resubmittedAt || b.createdAt, by: b.uploadedBy, rev: rev, amount: amount }));
+  else steps.push(jrStep_(c, 'batch_up', 'done', { at: b.createdAt, by: b.uploadedBy, amount: amount }));
+  if (b.status === 'deputy_approved') steps.push(jrStep_(c, 'batch_ok', 'done', { at: b.deputyActedAt, by: b.deputyActedBy }));
+  else if (b.status === 'deputy_rejected') {
+    steps.push(jrStep_(c, 'batch_rej', 'bad', { at: b.deputyActedAt, by: b.deputyActedBy, reason: b.rejectionNote }));
+    steps.push(jrStep_(c, 'batch_fix', 'wait', { to: b.uploadedBy }));
+  } else steps.push(jrStep_(c, 'batch_wait', 'wait', {}));
+  return steps;
+}
+function jrVersionSteps_(c, h) {
+  var out = [];
+  jrVersions_(c, h).forEach(function (v, i) { out = out.concat(jrHandoffSteps_(c, v, { resent: i > 0 })); });
+  return out;
+}
+// a handover and everything after it: its versions, then the handover that took
+// its cash, up to the bank
+function jrPath_(c, h, o) {
+  o = o || {};
+  h = jrLatest_(c, h);
+  var key = h.id + '|' + (o.skipBatch ? 1 : 0) + '|' + (o.depth || 0);
+  if (c.memo[key]) return c.memo[key];
+  var out = [];
+  if (h.viaBulkBatch && !o.skipBatch && c.bById[h.viaBulkBatch]) out = out.concat(jrBatchSteps_(c, c.bById[h.viaBulkBatch]));
+  out = out.concat(jrVersionSteps_(c, h));
+  if (h.status === 'confirmed' && h.kind !== 'deposit') {
+    var parent = h.consumedBy ? c.hById[h.consumedBy] : null;
+    if (parent && (o.depth || 0) < JR_MAX_DEPTH_) out = out.concat(jrPath_(c, parent, { depth: (o.depth || 0) + 1 }));
+    else {
+      // not taken up (any more): earlier requests that were returned or rejected
+      // released it, and they stay in its journey
+      var seen = Object.create(null);
+      (c.bySource[h.id] || []).map(function (p) { return jrLatest_(c, p); }).filter(function (p) {
+        if (seen[p.id] || (p.status !== 'rejected' && p.status !== 'returned')) return false;
+        return (seen[p.id] = true);
+      }).sort(function (a, b) { return new Date(a.createdAt) - new Date(b.createdAt); }).forEach(function (p) {
+        out = out.concat(jrVersionSteps_(c, p));
+      });
+      if (!out.length || out[out.length - 1].st !== 'wait') out.push(jrStep_(c, 'pass_wait', 'wait', { to: h.toUserId, kind: h.kind }));
+    }
+  }
+  c.memo[key] = out;
+  return out;
+}
+// what a handover is made of, one condensed step per source, lowest first
+function jrDown_(c, h, out, depth) {
+  if (depth > JR_MAX_DEPTH_ || out.length >= 40) return;
+  var srcs = (h.sourceHandoffIds || []).map(function (id) { return c.hById[id]; }).filter(Boolean);
+  srcs.slice(0, JR_MAX_SOURCES_).forEach(function (s) {
+    jrDown_(c, s, out, depth + 1);
+    out.push(jrStep_(c, 'src_handoff', 'done', { kind: s.kind, at: s.confirmedAt || s.createdAt, by: s.fromUserId, to: s.toUserId,
+      amount: jrVisibleHandoff_(c, s) ? s.amount : null, loc: s.locationId }));
+  });
+  if (srcs.length > JR_MAX_SOURCES_) out.push(jrStep_(c, 'src_more', 'done', { n: srcs.length - JR_MAX_SOURCES_ }));
+  var es = (h.sourceEntryIds || []).map(function (id) { return c.eById[id]; }).filter(Boolean);
+  if (es.length) {
+    var seen = es.map(function (e) { return e.createdAt; }).filter(Boolean).sort()[0];
+    var allVisible = es.every(function (e) { return jrVisibleEntry_(c, e); });
+    out.push(jrStep_(c, 'src_entries', 'done', { n: es.length, at: seen, day: es.map(function (e) { return e.date; }).sort()[0], by: es[0].enteredBy,
+      amount: allVisible ? computeNet_(es).netCashOwed : null, loc: es[0].locationId }));
+  }
+}
+function jrOpenKey_(c, e) {
+  if (!c.posMap) c.posMap = posById_();
+  var store = c.storeByLoc[e.locationId], loc = c.locById[e.locationId], area = loc ? c.clusterById[loc.clusterId] : null;
+  var carId = entryCarId_(e, c.posMap);
+  if (carId && !(store && e.enteredBy === store.storeManagerUserId)) return { k: 'open_car', to: c.carById[carId] ? c.carById[carId].driverUserId : e.enteredBy };
+  if (area && e.enteredBy === area.clusterManagerUserId) return { k: 'open_area', to: area.clusterManagerUserId };
+  return { k: 'open_branch', to: store ? store.storeManagerUserId : null };
+}
+function jrEntrySteps_(c, e) {
+  var steps = [];
+  var group = e.submissionId && c.siblings[e.submissionId] ? c.siblings[e.submissionId].filter(function (x) { return !x.voided && jrVisibleEntry_(c, x); }) : (e.voided ? [] : [e]);
+  var net = group.length ? computeNet_(group).netCashOwed : 0;
+  var batch = e.batchId ? c.bById[e.batchId] : null;
+  var cancelled = e.voided && e.voidReason;
+  // a line of a rejected version is not in any handover: it follows its batch
+  if (batch && !cancelled && e.voided) return jrBatchJourney_(c, batch);
+  if (batch && !cancelled) steps = steps.concat(jrBatchSteps_(c, batch));
+  else steps.push(jrStep_(c, 'entered', 'done', { at: e.createdAt, day: e.date, by: e.enteredBy, amount: group.length ? net : null, loc: e.locationId }));
+  if (cancelled) { steps.push(jrStep_(c, 'voided', 'bad', { at: e.voidedAt, by: e.voidedBy, reason: e.voidReason })); return steps; }
+  var dep = null, firsts = [];
+  (c.byEntry[e.id] || []).forEach(function (h) { if (h.kind === 'deposit') { if (h.direct && h.status !== 'voided') dep = h; } else firsts.push(h); });
+  if (dep) {
+    steps.push(jrStep_(c, 'direct_deposit', 'done', { at: dep.confirmedAt || dep.createdAt, by: dep.fromUserId, amount: e.directDepositAmount, ref: e.directDepositRef, loc: dep.locationId }));
+    if (dep.reconciled) jrMatchSteps_(c, dep).forEach(function (s) { steps.push(s); });
+  }
+  var main = e.consumedBy ? c.hById[e.consumedBy] : null;
+  var mainIds = Object.create(null);
+  if (main) jrVersions_(c, jrLatest_(c, main)).forEach(function (v) { mainIds[v.id] = true; });
+  firsts.sort(function (a, b) { return new Date(a.createdAt) - new Date(b.createdAt); });
+  firsts.forEach(function (h) {
+    if (mainIds[h.id]) return;
+    // an earlier attempt: rejected after a dispute, or returned and waiting for its correction
+    jrHandoffSteps_(c, h, {}).forEach(function (s) { steps.push(s); });
+  });
+  if (main) {
+    steps = steps.concat(jrPath_(c, main, { skipBatch: true }));
+  } else if (batch && batch.status === 'deputy_approved' && e.consumedBy === batch.id) {
+    steps.push(jrStep_(c, 'batch_nocash', 'done', {}));
+  } else if (!e.voided && net > 0.005 && !(batch && batch.status !== 'deputy_approved') && !steps.some(function (s) { return s.st === 'wait'; })) {
+    var open = jrOpenKey_(c, e);
+    steps.push(jrStep_(c, open.k, 'wait', { to: open.to }));
+  }
+  // a banked-at-source day waits for the bank statement only when nothing else is pending
+  if (dep && !dep.reconciled && !steps.some(function (s) { return s.st === 'wait'; })) steps.push(jrStep_(c, 'match_wait', 'wait', {}));
+  return steps;
+}
+function jrStage_(c, e) {
+  var steps = jrEntrySteps_(c, e), last = steps[steps.length - 1];
+  if (!last) return null;
+  var s = { k: last.k, st: last.st };
+  if (last.at) s.at = last.at;
+  if (last.byName) s.byName = last.byName;
+  if (last.toName) s.toName = last.toName;
+  if (last.rev) s.rev = last.rev;
+  if (last.kind) s.kind = last.kind;
+  return s;
+}
+
+// the batch's own steps, and for an approved one the handovers it produced
+function jrBatchJourney_(c, b) {
+  var steps = jrBatchSteps_(c, b);
+  if (b.status === 'deputy_approved') {
+    var results = (b.resultHandoffIds || []).map(function (id) { return c.hById[id]; }).filter(Boolean)
+      .sort(function (x, y) { return new Date(x.createdAt) - new Date(y.createdAt); });
+    if (!results.length) steps.push(jrStep_(c, 'batch_nocash', 'done', {}));
+    results.forEach(function (r) {
+      jrPath_(c, r, { skipBatch: true }).forEach(function (s) { var cp = Object.assign({}, s); if (!cp.loc) cp.loc = r.locationId; steps.push(cp); });
+    });
+  }
+  return steps;
+}
+
+function actionGetJourney_(req, user) {
+  var c = jrCtx_(user), steps = [], subject;
+  if (req.entryId) {
+    var e = c.eById[req.entryId];
+    if (!e) return { ok: false, error: 'not_found' };
+    if (!jrVisibleEntry_(c, e)) return { ok: false, error: 'forbidden' };
+    subject = { type: 'entry', id: e.id };
+    steps = jrEntrySteps_(c, e);
+  } else if (req.handoffId) {
+    var h = c.hById[req.handoffId];
+    if (!h) return { ok: false, error: 'not_found' };
+    if (!jrVisibleHandoff_(c, h)) return { ok: false, error: 'forbidden' };
+    subject = { type: 'handoff', id: h.id };
+    var down = [];
+    h = jrLatest_(c, h);
+    jrDown_(c, h, down, 0);
+    steps = down.concat(jrPath_(c, h, {}));
+  } else if (req.batchId) {
+    var b = c.bById[req.batchId];
+    if (!b) return { ok: false, error: 'not_found' };
+    if (!jrVisibleBatch_(c, b)) return { ok: false, error: 'forbidden' };
+    subject = { type: 'batch', id: b.id };
+    steps = jrBatchJourney_(c, b);
+  } else return { ok: false, error: 'invalid_input' };
+  return { ok: true, subject: subject, steps: steps };
 }
 
 // The dashboard screen used to fire three separate web-app requests
