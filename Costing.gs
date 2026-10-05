@@ -242,7 +242,8 @@ function costOfProduct_(p, date, hist, byId) {
     // an exchange that takes back another cylinder type: the customer leaves with this
     // type's cylinder and the branch keeps theirs, so the difference of the two is a cost
     var back = p.stockEffect === 'exchange' && p.returnOf ? byId[p.returnOf] : null;
-    if (back && back.id !== a.id) return gas + Number(a.emptyCost || 0) - Number(back.emptyCost || 0);
+    // floored at 0: a downgrade swap (dearer cylinder taken back) must not book a negative cost
+    if (back && back.id !== a.id) return Math.max(0, gas + Number(a.emptyCost || 0) - Number(back.emptyCost || 0));
     // a full cylinder sold outright leaves with its cylinder; an exchange keeps it
     return p.stockEffect === 'sell_full' ? gas + Number(a.emptyCost || 0) : gas;
   }

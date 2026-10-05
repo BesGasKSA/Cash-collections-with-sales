@@ -80,6 +80,7 @@ function invCheckMove_(m, date) {
   var st = m.state == null ? '' : String(m.state);
   if (product.cylinder ? INV_STATES_.indexOf(st) < 0 : st !== '') return { error: 'invalid_state' };
   // brand-new cylinders bought: counted in, but no empties went out to be filled
+  if (m.newCylinders != null && m.newCylinders !== true && m.newCylinders !== false) return { error: 'invalid_new_cylinders' };
   var fresh = m.newCylinders === true;
   if (fresh && !(kind === 'purchase' && product.cylinder && st === 'full')) return { error: 'invalid_new_cylinders' };
   if (!invDateOk_(date)) return { error: 'invalid_date' };

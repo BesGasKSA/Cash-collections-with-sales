@@ -2845,6 +2845,26 @@ var lxById = {}; ctx.readSheet(ctx.SHEETS.PRODUCTS).forEach(function (p) { lxByI
 check(Math.abs(ctx.costOfProduct_(lxById[lxUp.id], '2026-09-10', {}, lxById) - (11 + 400 - 140)) < 0.005, 'the swap costs the gas plus the dearer cylinder the customer leaves with: 11 + 400 - 140 (got ' + ctx.costOfProduct_(lxById[lxUp.id], '2026-09-10', {}, lxById) + ')');
 check(call({ action: 'importInventoryDay', token: adminTok, locationId: scLoc.id, date: '2026-09-12', ref: 'lx-day', moves: [{ productId: lxIron.id, state: 'full', kind: 'purchase', qty: 20, newCylinders: true }] }).ok, 'a sheet day may carry new cylinders too');
 check(call({ action: 'importInventoryDay', token: adminTok, locationId: scLoc.id, date: '2026-09-12', ref: 'lx-day2', moves: [{ productId: lxIron.id, state: 'empty', kind: 'return', qty: 2, newCylinders: true }] }).error === 'invalid_new_cylinders', 'and refuses the flag elsewhere');
+// fix round 1
+var lxMixed = scProd({ name: 'Lx Mixed Swap', type: 'goods', unitPrice: 200, stockOf: lxFiber.id, stockEffect: 'exchange', returnOf: lxIron.id });
+var lxUnlink = call({ action: 'adminSaveEntity', token: adminTok, kind: 'product', id: lxMixed.id, data: { stockOf: '', returnOf: lxIron.id } });
+check(lxUnlink.ok && !lxUnlink.entity.returnOf, 'unlinking the stock item drops the returned type too (' + (lxUnlink.error || '') + ')');
+var lxDown = scProd({ name: 'Lx Fiber to Iron', type: 'goods', unitPrice: 30, stockOf: lxIron.id, stockEffect: 'exchange', returnOf: lxFiber.id });
+var lxById2 = {}; ctx.readSheet(ctx.SHEETS.PRODUCTS).forEach(function (p) { lxById2[p.id] = p; });
+check(ctx.costOfProduct_(lxById2[lxDown.id], '2026-09-10', {}, lxById2) === 0, 'a downgrade swap never books a negative cost (got ' + ctx.costOfProduct_(lxById2[lxDown.id], '2026-09-10', {}, lxById2) + ')');
+check(call({ action: 'addInventoryMove', token: adminTok, locationId: scLoc.id, productId: lxIron.id, state: 'full', kind: 'purchase', qty: 1, newCylinders: 'true', date: '2026-09-11' }).error === 'invalid_new_cylinders', 'the flag is true or false, never a string');
+check(call({ action: 'addInventoryMove', token: adminTok, locationId: scLoc.id, productId: lxIron.id, state: 'full', kind: 'purchase', qty: 1, newCylinders: false, date: '2026-09-11' }).ok, 'false is the same as absent');
+var lxBox = scProd({ name: 'Lx Box Item', type: 'goods', cylinder: true, stockName: 'Lx box', boxSize: 35 });
+check(lxBox.boxSize === 35, 'a box of 35 is accepted and stored');
+var lxBoxOff = call({ action: 'adminSaveEntity', token: adminTok, kind: 'product', id: lxBox.id, data: { cylinder: false } });
+check(lxBoxOff.ok && !lxBoxOff.entity.boxSize, 'a product that stops being a cylinder keeps no box size (' + (lxBoxOff.error || '') + ')');
+var lxNoOpen = scProd({ name: 'Lx Never Counted', type: 'goods', cylinder: true, stockName: 'Lx none' });
+var lxSwap2 = scProd({ name: 'Lx Fiber for Never', type: 'goods', unitPrice: 250, stockOf: lxFiber.id, stockEffect: 'exchange', returnOf: lxNoOpen.id });
+check(call({ action: 'importDailyEntries', token: adminTok, rows: [scLine({ sub: 'lx-2', date: '2026-09-13', productId: lxSwap2.id, qty: 2, unitPrice: 250, cashSales: 500 })] }).ok, 'a swap whose returned type was never counted here is saved');
+var lx3 = scRep();
+check(scRow(lx3, lxFiber.id, 'full').sales === 5, 'the full side still deducts (got ' + scRow(lx3, lxFiber.id, 'full').sales + ')');
+var lxNE = scRow(lx3, lxNoOpen.id, 'empty');
+check(lxNE.noOpening === true && !lxNE.short, 'and the returned type reads no opening yet, never short');
 
 console.log('--- a batch the deputy rejects is corrected and sent again as the same batch (2026-10-05) ---');
 var rsRows = call({ action: 'areaBatchRows', token: saraTok, id: sc7.batch.id });

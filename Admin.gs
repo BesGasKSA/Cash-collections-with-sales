@@ -873,8 +873,10 @@ function saveEntity_(req, user) {
   var merged = {};
   safeOwnKeys_(obj).forEach(function (k0) { merged[k0] = obj[k0]; });
   safeOwnKeys_(d).forEach(function (k1) { merged[k1] = d[k1]; });
-  // a link to the returned cylinder type means nothing once the product stops drawing from a stock item
-  if (kind === 'product' && !merged.stockOf && merged.returnOf && !d.returnOf) { merged.returnOf = ''; d.returnOf = ''; }
+  // a returned cylinder type means nothing once the product stops drawing from a stock item (or stops
+  // being an exchange without the form naming one), and a box size nothing once it is no cylinder
+  if (kind === 'product' && merged.returnOf && (!merged.stockOf || (!d.returnOf && (merged.stockEffect || 'exchange') !== 'exchange'))) { merged.returnOf = ''; d.returnOf = ''; }
+  if (kind === 'product' && !merged.cylinder && merged.boxSize != null && merged.boxSize !== '') { merged.boxSize = ''; d.boxSize = ''; }
   var err = validateEntity_(kind, merged);
   if (err === 'duplicate_customer') return { ok: false, error: err, code: customerDuplicateOf_(merged.name, merged.id).code };
   if (err) return { ok: false, error: err };
