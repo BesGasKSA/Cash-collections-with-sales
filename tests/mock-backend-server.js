@@ -116,6 +116,18 @@ multiLocations.forEach(function (row) {
 // every row would fail product lookup.
 var cylinderProduct = call({ action: 'adminSaveEntity', token: adminTok, kind: 'product', data: { name: 'LPG Cylinder 12kg', type: 'goods', active: true } }).entity;
 var deliveryProduct = call({ action: 'adminSaveEntity', token: adminTok, kind: 'product', data: { name: 'Delivery Fee', type: 'services', active: true } }).entity;
+// LPG Task 1b: sales items shaped like the live ones (plain goods, the branch's
+// counts typed on the sales items standing for full and empty iron), so the
+// Inventory screen's one-time "Set up inventory items" has a proposal to show.
+// The setup is left unapplied on purpose; sign in as admin and run it.
+var lpgSeed = [['استبدال غاز', 37], ['أسطوانة حديد فارغ', 186], ['أستبدال فايبر', 37], ['منظم ضغط عالي', 45], ['توصيل', 5]].map(function (x) {
+  return call({ action: 'adminSaveEntity', token: adminTok, kind: 'product', data: { name: x[0], type: 'goods', unitPrice: x[1], active: true } }).entity;
+});
+var olayaLoc = branchStore.Olaya ? branchStore.Olaya.locationId : null;
+if (olayaLoc) {
+  call({ action: 'addInventoryMove', token: adminTok, locationId: olayaLoc, productId: lpgSeed[0].id, kind: 'opening', qty: 120, date: '2026-09-01' });
+  call({ action: 'addInventoryMove', token: adminTok, locationId: olayaLoc, productId: lpgSeed[1].id, kind: 'opening', qty: 40, date: '2026-09-01' });
+}
 
 // Area-manager bulk upload is off by default (see CLAUDE.md) — enabled here
 // so the seeded scenario is immediately usable for testing that path too.
