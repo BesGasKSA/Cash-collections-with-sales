@@ -2575,7 +2575,9 @@ var trCalls = tr.log.length;
 call({ action: 'adminSaveEntity', token: adminTok, kind: 'product', id: trProd.entity.id, data: { unitPrice: 9 } });
 check(tr.log.length === trCalls, 'a name already translated is not sent again');
 call({ action: 'adminSaveEntity', token: adminTok, kind: 'product', data: { name: 'Plain English Name', type: 'goods' } });
-check(tr.log.length === trCalls && !trOf('Plain English Name'), 'a name with no Arabic needs nothing');
+check(trOf('Plain English Name') && trOf('Plain English Name').srcLang === 'en' && trOf('Plain English Name').ar === 'AR:Plain English Name' && trOf('Plain English Name').ur === 'UR:Plain English Name' && trOf('Plain English Name').en === 'Plain English Name', 'an English name gets its Arabic and Urdu');
+check(tr.log.some(function (x) { return x.text === 'Plain English Name' && x.from === 'en' && x.to === 'ar'; }) && tr.log.some(function (x) { return x.text === 'Plain English Name' && x.from === 'en' && x.to === 'ur'; }), 'translated from English, not from Arabic');
+trCalls = tr.log.length;
 call({ action: 'adminSaveEntity', token: adminTok, kind: 'zone', data: { city: 'Riyadh', name: 'النسيم Al-Naseem' } });
 check(tr.log.length === trCalls, 'nor one that already carries its English');
 
@@ -2606,6 +2608,32 @@ check(trImp.ok && trOf('صنف مستورد ثان') && trOf('صنف مستور�
 check(tr.log.length === 2, 'in one request per language, not one per row (got ' + tr.log.length + ')');
 call({ action: 'adminSaveEntity', token: adminTok, kind: 'zone', data: { city: 'مدينة المنطقة', name: 'Zone T' } });
 check(trOf('مدينة المنطقة'), 'a city typed on a record is translated along with its name');
+var urCust = call({ action: 'adminSaveEntity', token: adminTok, kind: 'customer', data: { name: 'ٹیسٹ گاہک' } });
+var urRow = trOf('ٹیسٹ گاہک');
+check(urCust.ok && urRow && urRow.srcLang === 'ur' && urRow.ur === 'ٹیسٹ گاہک' && urRow.ar === 'AR:ٹیسٹ گاہک' && urRow.en === 'EN:ٹیسٹ گاہک', 'an Urdu-typed customer gets Arabic and English');
+check(tr.log.some(function (x) { return x.text === 'ٹیسٹ گاہک' && x.from === 'ur' && x.to === 'ar'; }), 'translated from Urdu');
+check(trOf('منظم تجريبي').srcLang === 'ar' && trOf('منظم تجريبي').ar === 'منظم تجريبي', 'an Arabic name keeps its behaviour (srcLang ar)');
+var handEn = call({ action: 'adminSaveTranslation', token: adminTok, src: 'Hand Made Item', ar: 'صنف يدوي', ur: 'ہاتھ سے' });
+check(handEn.ok && trOf('Hand Made Item').auto === false && trOf('Hand Made Item').ar === 'صنف يدوي', 'a hand-made row for an English name is saved');
+call({ action: 'adminFillTranslations', token: adminTok });
+check(trOf('Hand Made Item').ar === 'صنف يدوي', 'and never overwritten by filling the gaps');
+check(!ctx.needsTranslation_('A 12') && !ctx.needsTranslation_('أ ص ن 1062') && !ctx.needsTranslation_('النسيم Al-Naseem'), 'a plate, a code and a mixed name are not sent');
+tr.fail = true;
+var enDown = call({ action: 'adminSaveEntity', token: adminTok, kind: 'product', data: { name: 'Offline Item', type: 'goods' } });
+check(enDown.ok && !trOf('Offline Item'), 'an English name still saves when Translate is down');
+tr.fail = false;
+// the one-time catch-up: every kind, products included, once
+var cuName = 'Catchup Widget';
+ctx.writeRow(ctx.SHEETS.PRODUCTS, { name: cuName, type: 'goods', active: true });
+ctx.writeRow(ctx.SHEETS.INCOME_ITEMS, { name: 'بند دخل قديم' });
+ctx._debug.scriptProps['TRANSLATIONS_ALL_KINDS_V2'] = undefined; delete ctx._debug.scriptProps['TRANSLATIONS_ALL_KINDS_V2'];
+ctx.resetExecMemo_(); ctx.runOneTimeMigrations_(); ctx.resetExecMemo_();
+check(trOf(cuName) && trOf(cuName).ar && trOf('بند دخل قديم') && trOf('Offline Item'), 'the catch-up covers products and the other kinds');
+var cuCalls = tr.log.length;
+ctx.writeRow(ctx.SHEETS.PRODUCTS, { name: 'Added After Catchup', type: 'goods', active: true });
+ctx.resetExecMemo_(); ctx.runOneTimeMigrations_(); ctx.resetExecMemo_();
+check(tr.log.length === cuCalls && !trOf('Added After Catchup'), 'the catch-up runs once');
+check(!!ctx.scriptProps_()['TRANSLATIONS_ALL_KINDS_V2'], 'and sets its flag');
 
 console.log('--- a driver with no email signs in with their iqama number ---');
 var mailsBeforeIq = mailLog.length;
