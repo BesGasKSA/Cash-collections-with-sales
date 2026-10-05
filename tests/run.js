@@ -3803,6 +3803,14 @@ var paDA = ctx.writeRow(SHEETS.HANDOFFS, { kind: 'car_to_location', fromUserId: 
 var paDB = ctx.writeRow(SHEETS.HANDOFFS, { kind: 'car_to_location', fromUserId: paDrv.u.id, toUserId: paBm.u.id, locationId: paLoc.id, amount: 70, status: 'pending', createdAt: '2019-01-01T00:00:00.000Z' });
 var paBmItems = paItems(paBm.tok).filter(function (i) { return i.kind === 'confirm_receipt'; });
 check(paBmItems.length === 2 && paBmItems[0].refId === paDB.id && paBmItems[1].refId === paDA.id, 'inside a kind the oldest comes first');
+PENDING_KINDS_CHECK: {
+  var paIcon = clientHtml.slice(clientHtml.indexOf('var PEND_ICON_'), clientHtml.indexOf('var PEND_FIX_BATCH_'));
+  ctx.PENDING_KINDS_.forEach(function (k) {
+    var strings = clientHtml.split('pa_' + k + ':').length - 1;
+    check(strings === 3, 'the client words "' + k + '" in all three languages');
+    check(new RegExp('\\b' + k + ':\'').test(paIcon) && paIcon.split(k + ':\'').length - 1 >= 2, 'and gives "' + k + '" an icon and a screen');
+  });
+}
 var paTot = call({ action: 'myPendingActions', token: paBm.tok });
 check(paTot.total === paTot.items.length, 'the total is the number of rows listed (the bell)');
 
