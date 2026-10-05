@@ -1700,6 +1700,7 @@ check(call({ action: 'createHandoff', token: rsMgr2Tok, kind: 'cluster_to_collec
   'another area manager cannot resend it');
 check(call({ action: 'createHandoff', token: rsMgr2Tok, kind: 'cluster_to_collector', clusterId: rsArea.id, locationId: rsB1.loc.id, resubmitOf: rsV1.handoff.id, correctionNote: 'mine now' }).error === 'forbidden',
   'nor through the first area');
+var rsV1Before = JSON.stringify(rsHandoff(rsV1.handoff.id));
 // a collector who changed since the return: the resend goes to the current one
 check(call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', id: rsB1.loc.id, data: { collectorUserId: rsCol2.id } }).ok, 'the branch gets another collector after the return');
 // correct the figure: cancel the entry, enter the right one
@@ -1714,6 +1715,12 @@ check(rsV2.handoff.toUserId === rsCol2.id, 'it goes to the branch\'s current col
 check(rsV2.handoff.locationId === rsB1.loc.id && rsV2.handoff.clusterId === rsArea.id && rsV2.handoff.fromUserId === rsMgr.id, 'same branch, area and sender');
 var rsOld = rsHandoff(rsV1.handoff.id);
 check(rsOld.status === 'returned' && rsOld.amount === 1000 && rsOld.resubmittedAs === rsV2.handoff.id, 'the returned request stays returned at 1000 and points to its next version');
+var rsOldAfter = JSON.parse(JSON.stringify(rsOld)), rsOldBefore = JSON.parse(rsV1Before); delete rsOldAfter.resubmittedAs; delete rsOldAfter.updatedAt; delete rsOldBefore.updatedAt;
+console.log(rsV1Before, JSON.stringify(rsOldAfter));
+check(JSON.stringify(rsOldAfter) === JSON.stringify(rsOldBefore), 'the returned row is unchanged apart from resubmittedAs (and its updatedAt stamp)');
+check(JSON.stringify(rsV2.handoff.history[0].perLocation) === JSON.stringify(rsOld.perLocation) && rsOld.perLocation.length === 1, 'the history keeps the old version\'s branch lines');
+check(rsV2.handoff.sourceEntryIds.length === 1 && ctx.readSheet(SHEETS.ENTRIES).filter(function (e) { return e.id === rsV2.handoff.sourceEntryIds[0]; })[0].consumedBy === rsV2.handoff.id &&
+  !ctx.readSheet(SHEETS.ENTRIES).filter(function (e) { return e.id === rsE1.entry.id; })[0].consumedBy, 'the corrected entry is spoken for by the new request; the cancelled one is not');
 check(rsSend(rsB1, { resubmitOf: rsV1.handoff.id, correctionNote: 'again' }).error === 'already_resubmitted', 'the same request cannot be resent twice');
 check(ctx.readSheet(SHEETS.AUDIT).some(function (a) { return a.action === 'area_handoff_resubmit' && a.detail === rsV2.handoff.id; }), 'the resend is in the audit trail');
 check(ctx._debug.mailLog.some(function (m) { return /corrected to 900/.test(m.body); }), 'the deputy is told it is a correction, with the note');
@@ -1749,6 +1756,57 @@ var rsX2 = rsSend(rsB3);
 check(rsX2.ok && rsX2.handoff.amount === 300 && !rsX2.handoff.resubmitOf, 'a normal request for the same branch is allowed while one is returned');
 check(rsHandoff(rsX1.handoff.id).supersededBy === rsX2.handoff.id, 'the returned one is marked as superseded');
 check(rsSend(rsB3, { resubmitOf: rsX1.handoff.id, correctionNote: 'late' }).error === 'superseded', 'and can no longer be resent (superseded)');
+
+// branches 4 and 5: the same cash, one resent and one sent normally, must give the same figures
+function rsTwin(b, n) {
+  var bmTok = acceptInvite('rsbm' + n + '.fx@bestgas.sa');
+  call({ action: 'createDailyEntry', token: bmTok, date: ctx.todayRiyadh_(), sourceType: 'store', sourceId: b.store.id, cashSales: 600, deliveryFeeBankAmount: 0 });
+  var lh = call({ action: 'createHandoff', token: bmTok, kind: 'location_to_cluster', locationId: b.loc.id });
+  call({ action: 'confirmHandoff', token: rsMgrTok, id: lh.handoff.id });
+  return lh.handoff.id;
+}
+var rsB4 = rsBranch(4), rsB5 = rsBranch(5);
+var rsH4 = rsTwin(rsB4, 4), rsH5 = rsTwin(rsB5, 5);
+var rsE4 = rsEnter(rsB4, 200), rsE5 = rsEnter(rsB5, 200);
+var rsA1 = rsSend(rsB4);
+var rsN1 = rsSend(rsB5);
+check(rsA1.ok && rsA1.handoff.amount === 800 && rsN1.ok && rsN1.handoff.amount === 800, 'a branch handover plus the area manager\'s own day: 800');
+call({ action: 'deputyReturnHandoff', token: walidTok, id: rsA1.handoff.id, reason: 'recount own day' });
+call({ action: 'voidEntries', token: rsMgrTok, ids: [rsE4.entry.id], reason: 'retyped' });
+var rsE4b = rsEnter(rsB4, 200);
+var rsA2 = rsSend(rsB4, { resubmitOf: rsA1.handoff.id, correctionNote: 'same figure, retyped' });
+function rsShape(x, loc) { return JSON.stringify({ b: x.breakdown, p: x.perLocation, a: x.amount }).split(loc).join('L'); }
+check(rsA2.ok && JSON.stringify(rsA2.handoff.breakdown) === JSON.stringify(rsN1.handoff.breakdown), 'a resent request\'s breakdown equals a normal send of the same cash');
+check(rsA2.ok && JSON.stringify(rsA2.handoff.perLocation).split(rsB4.loc.id).join('L') === JSON.stringify(rsN1.handoff.perLocation).split(rsB5.loc.id).join('L'), 'and so do its branch lines');
+check(rsHandoff(rsH4).consumedBy === rsA2.handoff.id && rsHandoff(rsH4).status === 'confirmed', 'the held branch handover is spoken for by the new request');
+check(ctx.readSheet(SHEETS.ENTRIES).filter(function (e) { return e.id === rsE4b.entry.id; })[0].consumedBy === rsA2.handoff.id &&
+  !ctx.readSheet(SHEETS.ENTRIES).filter(function (e) { return e.id === rsE4.entry.id; })[0].consumedBy, 'likewise the retyped entry, and not the cancelled one');
+
+// branch 6: an admin may resend on the area manager's behalf
+var rsB6 = rsBranch(6);
+rsEnter(rsB6, 150);
+var rsY1 = rsSend(rsB6);
+call({ action: 'deputyReturnHandoff', token: walidTok, id: rsY1.handoff.id, reason: 'admin will fix' });
+var rsY2 = call({ action: 'createHandoff', token: adminTok, kind: 'cluster_to_collector', clusterId: rsArea.id, locationId: rsB6.loc.id, resubmitOf: rsY1.handoff.id, correctionNote: 'resent by admin' });
+check(rsY2.ok && rsY2.handoff.fromUserId === rsMgr.id && rsY2.handoff.createdBy === admin.id && rsY2.handoff.revision === 2, 'an admin can resend for the area manager, who stays the sender');
+
+// branch 7: superseded by the consumed-source check alone
+var rsB7 = rsBranch(7);
+var rsE7 = rsEnter(rsB7, 120);
+var rsZ1 = rsSend(rsB7);
+call({ action: 'deputyReturnHandoff', token: walidTok, id: rsZ1.handoff.id, reason: 'hold on' });
+var rsE7row = ctx.readSheet(SHEETS.ENTRIES).filter(function (e) { return e.id === rsE7.entry.id; })[0];
+rsE7row.consumedBy = 'some-other-request';
+ctx.writeRow(SHEETS.ENTRIES, rsE7row);
+check(!rsHandoff(rsZ1.handoff.id).supersededBy, 'no supersededBy mark on the returned request');
+check(rsSend(rsB7, { resubmitOf: rsZ1.handoff.id, correctionNote: 'try' }).error === 'superseded', 'yet its cash being spoken for elsewhere refuses the resend (superseded)');
+
+// a request made before per-branch requests is not resent
+ctx.writeRow(SHEETS.HANDOFFS, { id: 'rs-legacy-1', kind: 'cluster_to_collector', status: 'returned', clusterId: rsArea.id, fromUserId: rsMgr.id, createdBy: rsMgr.id, toUserId: rsCol.id,
+  amount: 100, sourceEntryIds: [], sourceHandoffIds: [], consumedBy: null, createdAt: new Date().toISOString() });
+check(rsSend(rsB1, { resubmitOf: 'rs-legacy-1', correctionNote: 'old' }).error === 'legacy_request', 'a returned request with no branch (made before branch-by-branch handovers) cannot be resent (legacy_request)');
+check(call({ action: 'createHandoff', token: rsMgrTok, kind: 'cluster_to_collector', clusterId: rsArea.id, resubmitOf: 'rs-legacy-1', correctionNote: 'old' }).error === 'legacy_request', 'with or without a branch named');
+check(ctx._debug.mailLog.some(function (m) { return /Previous version: 800\.00/.test(m.body) && /recount own day/.test(m.body) && /same figure, retyped/.test(m.body); }), 'the deputy\'s email gives the previous amount, the return reason and the note');
 
 console.log('--- the deputy sees everything, acts only in their own step ---');
 var dEntries = call({ action: 'listEntries', token: walidTok });

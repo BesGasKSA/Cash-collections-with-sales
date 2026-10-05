@@ -1083,11 +1083,10 @@ function createClusterHandoff_(req, user) {
     prior = getById_(SHEETS.HANDOFFS, req.resubmitOf);
     var priorErr = resendError_(prior, cluster, user);
     if (priorErr) return { ok: false, error: priorErr };
-    if (prior.locationId && req.locationId && req.locationId !== prior.locationId) return { ok: false, error: 'invalid_location' };
-    if (!prior.locationId && req.locationId) return { ok: false, error: 'invalid_location' };
+    if (req.locationId && req.locationId !== prior.locationId) return { ok: false, error: 'invalid_location' };
     correctionNote = String(req.correctionNote || '').trim();
     if (!correctionNote || correctionNote.length > 1000) return { ok: false, error: 'note_required' };
-    onlyLoc = prior.locationId || null;
+    onlyLoc = prior.locationId;
   }
   function wanted(locId) { return !onlyLoc || locId === onlyLoc; }
 
@@ -1189,6 +1188,8 @@ function resendError_(prior, cluster, user) {
   if (prior.clusterId !== cluster.id) return 'forbidden';
   if (user.role !== 'admin' && prior.fromUserId !== user.id) return 'forbidden';
   if (prior.status !== 'returned') return 'not_returned';
+  // made before per-branch requests: it spans several branches, so it is not resent
+  if (!prior.locationId) return 'legacy_request';
   if (prior.resubmittedAs) return 'already_resubmitted';
   if (prior.supersededBy) return 'superseded';
   // its branch handovers or entries already went into another request
@@ -1795,7 +1796,12 @@ function notifyDeputyPendingHandoff_(h) {
   });
   var subject = 'طلب تسليم من مدير منطقة بانتظار تحققك / Area handover awaiting your validation';
   if (h.resubmitOf) subject = 'طلب تسليم مصحَّح (النسخة ' + h.revision + ') بانتظار تحققك / Corrected area handover (version ' + h.revision + ') awaiting your validation';
-  var note = h.resubmitOf ? '\n\nملاحظة التصحيح / Correction note: ' + h.correctionNote : '';
+  var note = '';
+  if (h.resubmitOf) {
+    var was = (h.history || [])[(h.history || []).length - 1] || {};
+    note = '\n\nالنسخة السابقة: ' + Number(was.amount || 0).toFixed(2) + ' — سبب الإعادة: ' + (was.returnReason || '') + '\nملاحظة التصحيح: ' + h.correctionNote +
+      '\n\nPrevious version: ' + Number(was.amount || 0).toFixed(2) + ' — returned because: ' + (was.returnReason || '') + '\nCorrection note: ' + h.correctionNote;
+  }
   var body = 'طلب مدير المنطقة ' + (getById_(SHEETS.USERS, h.fromUserId) || {}).name + ' تسليم ' + Number(h.amount).toFixed(2) +
     ' للمُحصّل، ويحتاج تحققك قبل وصوله إليه.\n\nAn area manager\'s handover of ' + Number(h.amount).toFixed(2) + ' to the collector needs your validation before it reaches them.' + note;
   to.forEach(function (u) { try { sendMail_(u.email, subject, body); } catch (e) { /* best-effort */ } });
