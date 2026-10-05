@@ -142,7 +142,9 @@ function buildContext() {
   function toBuf(x) { return Buffer.isBuffer(x) ? x : Buffer.from(x); }
 
   var Utilities = {
-    getUuid: function () { idCounter++; return 'uuid-' + idCounter + '-' + crypto.randomBytes(4).toString('hex'); },
+    // shaped like the real one: the server keeps the first 8 characters as a
+    // token's random part, and a counter prefix made those equal past 999
+    getUuid: function () { idCounter++; return crypto.randomUUID(); },
     computeHmacSha256Signature: function (payload, key) {
       return Array.from(crypto.createHmac('sha256', toBuf(key)).update(toBuf(payload)).digest());
     },
