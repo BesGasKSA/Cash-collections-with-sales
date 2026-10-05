@@ -2238,6 +2238,111 @@ function actionDashboard_(req, user) {
   return result;
 }
 
+// ---------- Everything waiting on the signed-in person (2026-10-05) ----------
+// One read-only list for the welcome popup, the bell and the home hero. Each
+// item points at a screen that already exists and is scoped exactly like it:
+// a person is told only about what they may act on. Nothing is written.
+// kind order below is the order the client lists them in.
+var PENDING_KINDS_ = ['confirm_receipt', 'deputy_validate', 'deputy_batch', 'returned_fix', 'batch_rejected',
+  'send_ready', 'car_handover', 'dispute_open', 'second_approval', 'deposit_due', 'risk_high'];
+function actionMyPendingActions_(req, user) {
+  var items = [];
+  function add(kind, o) { o.kind = kind; items.push(o); }
+  var handoffs = readSheet(SHEETS.HANDOFFS);
+  var isMoney = user.role === 'admin' || user.role === 'finance';
+  var users = readSheet(SHEETS.USERS);
+  var activeDeputy = users.some(function (u) { return u.role === 'deputy_operations_manager' && u.active !== false; });
+  var isDeputy = user.role === 'deputy_operations_manager' || (user.role === 'admin' && !activeDeputy);
+  var clusters = readSheet(SHEETS.CLUSTERS);
+
+  handoffs.forEach(function (h) {
+    if (h.status === 'pending' && h.toUserId === user.id) {
+      add('confirm_receipt', { count: 1, amount: Number(h.amount || 0), refId: h.id, locationId: h.locationId || null, since: h.createdAt });
+    }
+    if (isDeputy && h.kind === 'cluster_to_collector' && h.status === 'pending_deputy' && !deputyHandoffGuard_(h, user)) {
+      add('deputy_validate', { count: 1, amount: Number(h.amount || 0), refId: h.id, locationId: h.locationId || null, since: h.createdAt });
+    }
+    if (h.kind === 'cluster_to_collector' && h.status === 'returned' && h.fromUserId === user.id &&
+        !h.resubmittedAs && !h.supersededBy && h.locationId) {
+      var cl = clusters.filter(function (c) { return c.id === h.clusterId; })[0];
+      if (cl && !resendError_(h, cl, user)) add('returned_fix', { count: 1, amount: Number(h.amount || 0), refId: h.id, locationId: h.locationId, since: h.deputyReturnedAt || h.createdAt });
+    }
+    if (isMoney && h.status === 'disputed' && h.fromUserId !== user.id && h.toUserId !== user.id && h.disputedBy !== user.id) {
+      add('dispute_open', { count: 1, amount: Number(h.amount || 0), refId: h.id, locationId: h.locationId || null, since: h.disputedAt || h.createdAt });
+    }
+    if (isMoney && h.requiresSecondApproval && !h.secondApprovedBy && h.confirmedBy !== user.id && h.resolvedBy !== user.id) {
+      add('second_approval', { count: 1, amount: Number(h.amount || 0), refId: h.id, locationId: h.locationId || null, since: h.confirmedAt || h.createdAt });
+    }
+  });
+
+  var batches = readSheet(SHEETS.AREA_BULK_BATCHES);
+  batches.forEach(function (b) {
+    var net = Number((b.breakdown || {}).netCashOwed || 0);
+    if (isDeputy && b.status === 'pending_deputy' && b.uploadedBy !== user.id) {
+      add('deputy_batch', { count: 1, amount: net, refId: b.id, since: b.createdAt });
+    }
+    if (b.status === 'deputy_rejected' && b.uploadedBy === user.id) {
+      add('batch_rejected', { count: 1, amount: net, refId: b.id, since: b.deputyActedAt || b.createdAt });
+    }
+  });
+
+  // cash ready to pass up: confirmed handovers held, and the person's own open entries
+  var entries = null;
+  function openEntries_() {
+    if (!entries) entries = readSheet(SHEETS.ENTRIES).filter(function (e) { return !e.consumedBy && !e.voided; });
+    return entries;
+  }
+  function ready_(held, own) {
+    var amount = held.reduce(function (s, h) { return s + Number(h.amount || 0); }, 0) + (own.length ? computeNet_(own).netCashOwed : 0);
+    var since = held.map(function (h) { return h.confirmedAt || h.createdAt; }).concat(own.map(function (e) { return e.createdAt; })).filter(Boolean).sort()[0];
+    return { count: held.length + own.length, amount: amount, since: since };
+  }
+  if (user.role === 'cluster_manager') {
+    var myLocs = {};
+    readSheet(SHEETS.LOCATIONS).forEach(function (l) {
+      if (clusters.some(function (c) { return c.id === l.clusterId && c.clusterManagerUserId === user.id; })) myLocs[l.id] = true;
+    });
+    var heldC = handoffs.filter(function (h) { return h.kind === 'location_to_cluster' && h.status === 'confirmed' && h.toUserId === user.id && !h.consumedBy; });
+    var ownC = openEntries_().filter(function (e) { return e.enteredBy === user.id && myLocs[e.locationId]; });
+    var rc = ready_(heldC, ownC);
+    if (rc.count && rc.amount > 0) add('send_ready', rc);
+  } else if (user.role === 'store_manager') {
+    var posMap = posById_();
+    var heldS = handoffs.filter(function (h) { return h.kind === 'car_to_location' && h.status === 'confirmed' && h.toUserId === user.id && !h.consumedBy; });
+    var ownS = openEntries_().filter(function (e) { return e.enteredBy === user.id && !entryCarId_(e, posMap); });
+    var rs = ready_(heldS, ownS);
+    if (rs.count && rs.amount > 0) add('send_ready', rs);
+  } else if (user.role === 'driver') {
+    var myCars = {};
+    readSheet(SHEETS.CARS).forEach(function (c) { if (c.driverUserId === user.id) myCars[c.id] = true; });
+    var pm = posById_();
+    var ownD = openEntries_().filter(function (e) { var cid = entryCarId_(e, pm); return cid && myCars[cid]; });
+    if (ownD.length) {
+      var net = computeNet_(ownD).netCashOwed;
+      if (net > 0) add('car_handover', { count: ownD.length, amount: net, since: ownD.map(function (e) { return e.createdAt; }).filter(Boolean).sort()[0] });
+    }
+  } else if (user.role === 'collector') {
+    var heldK = handoffs.filter(function (h) { return h.kind !== 'deposit' && h.status === 'confirmed' && h.toUserId === user.id && !h.consumedBy; });
+    if (heldK.length) add('deposit_due', {
+      count: heldK.length,
+      amount: heldK.reduce(function (s, h) { return s + Number(h.amount || 0); }, 0),
+      since: heldK.map(function (h) { return h.confirmedAt || h.createdAt; }).filter(Boolean).sort()[0]
+    });
+  }
+
+  if (isMoney) {
+    var risks = readSheet(SHEETS.RISK_ITEMS).filter(function (r) { return r.severity === 'high' && r.status === 'open'; });
+    if (risks.length) add('risk_high', { count: risks.length, since: risks.map(function (r) { return r.createdAt; }).filter(Boolean).sort()[0] });
+  }
+
+  items.sort(function (a, b) {
+    var k = PENDING_KINDS_.indexOf(a.kind) - PENDING_KINDS_.indexOf(b.kind);
+    if (k) return k;
+    return new Date(a.since || 0) - new Date(b.since || 0);
+  });
+  return { ok: true, items: items, total: items.length };
+}
+
 // The dashboard screen used to fire three separate web-app requests
 // (getSalesReport + listHandoffs + listDashboard) in parallel from the
 // client. Each Apps Script web-app invocation carries its own fixed

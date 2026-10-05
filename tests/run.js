@@ -3697,5 +3697,114 @@ check(ltE.ok && ltE.entry.note.length <= 1000, 'a note is kept to 1000 character
 var ltR = call({ action: 'createRiskItem', token: adminTok, type: ctx.RISK_TYPES[0], title: ltLong, description: ltLong + ltLong });
 check(ltR.ok && ltR.item.title.length <= 200 && ltR.item.description.length <= 4000, 'a report\'s title and text too');
 
+console.log('--- every action waiting on a person is listed for them ---');
+var paSnap = function () { var o = {}; Object.keys(SHEETS).forEach(function (k) { o[k] = JSON.stringify(ctx.readSheet(SHEETS[k])); }); return JSON.stringify(o); };
+function paMake(role, name, mail) {
+  var u = call({ action: 'adminCreateUser', token: adminTok, data: { name: name, email: mail, role: role } }).user;
+  return { u: u, tok: acceptInvite(mail) };
+}
+function paItems(tok) { var r = call({ action: 'myPendingActions', token: tok }); check(r.ok, 'myPendingActions answers'); return r.items || []; }
+function paFind(items, kind, refId) { return items.filter(function (i) { return i.kind === kind && (!refId || i.refId === refId); })[0]; }
+var paMgr = paMake('cluster_manager', 'Pa Area Manager', 'pamgr.fx@bestgas.sa');
+var paMgr2 = paMake('cluster_manager', 'Pa Other Area Manager', 'pamgr2.fx@bestgas.sa');
+var paCol = paMake('collector', 'Pa Collector', 'pacol.fx@bestgas.sa');
+var paBm = paMake('store_manager', 'Pa Branch Manager', 'pabm.fx@bestgas.sa');
+var paDrv = paMake('driver', 'Pa Driver', 'padrv.fx@bestgas.sa');
+var paIdle = paMake('driver', 'Pa Idle Driver', 'paidle.fx@bestgas.sa');
+var paArea = call({ action: 'adminSaveEntity', token: adminTok, kind: 'cluster', data: { name: 'Pa Area', clusterManagerUserId: paMgr.u.id } }).entity;
+call({ action: 'adminSaveEntity', token: adminTok, kind: 'cluster', data: { name: 'Pa Other Area', clusterManagerUserId: paMgr2.u.id } });
+var paLoc = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: 'Dammam', name: 'Pa Olaya', clusterId: paArea.id, collectorUserId: paCol.u.id } }).entity;
+var paStore = call({ action: 'adminSaveEntity', token: adminTok, kind: 'store', data: { locationId: paLoc.id, name: 'Pa Store', storeManagerUserId: paBm.u.id } }).entity;
+var paCar = call({ action: 'adminSaveEntity', token: adminTok, kind: 'car', data: { locationId: paLoc.id, label: 'Pa Truck', driverUserId: paDrv.u.id } }).entity;
+check(paLoc && paStore && paCar, 'the pending-actions world is built');
+check(!ctx.CACHEABLE_READ_ACTIONS_.myPendingActions, 'the list is never served from the response cache');
+check(paItems(paIdle.tok).length === 0 && call({ action: 'myPendingActions', token: paIdle.tok }).total === 0, 'a person with nothing waiting gets an empty list');
+check(call({ action: 'myPendingActions' }).error === 'auth_required', 'it needs a signed-in user');
+
+// ready cash: the area manager enters a branch day himself
+call({ action: 'createDailyEntry', token: paMgr.tok, date: ctx.todayRiyadh_(), sourceType: 'store', sourceId: paStore.id, cashSales: 1000 });
+var paBefore = paSnap();
+var paReady = paFind(paItems(paMgr.tok), 'send_ready');
+check(paReady && paReady.amount === 1000 && paReady.count === 1, 'the area manager has 1000 ready to send, counted once');
+check(paSnap() === paBefore, 'reading the list wrote nothing');
+check(!paFind(paItems(paMgr2.tok), 'send_ready'), 'another area manager is not told about it');
+
+// a driver's open car day waits for his own handover
+call({ action: 'createDailyEntry', token: paDrv.tok, date: ctx.todayRiyadh_(), sourceType: 'car', sourceId: paCar.id, cashSales: 400 });
+var paCh = paFind(paItems(paDrv.tok), 'car_handover');
+check(paCh && paCh.amount === 400, 'the driver is told his car day is not handed over yet (400)');
+check(!paFind(paItems(paBm.tok), 'car_handover'), 'the branch manager is not');
+
+// the area manager sends; the deputy has it to validate
+var paSent = call({ action: 'createHandoff', token: paMgr.tok, kind: 'cluster_to_collector', clusterId: paArea.id, locationId: paLoc.id });
+check(paSent.ok && paSent.handoff.status === 'pending_deputy', 'the request is with the deputy');
+var paDep = paFind(paItems(walidTok), 'deputy_validate', paSent.handoff.id);
+check(paDep && paDep.amount === 1000 && paDep.locationId === paLoc.id && paDep.since, 'the deputy has it to validate, with amount, branch and age');
+check(!paFind(paItems(adminTok), 'deputy_validate', paSent.handoff.id), 'the admin is not asked while an active deputy exists');
+check(!paFind(paItems(paMgr.tok), 'deputy_validate'), 'the area manager does not validate his own');
+check(!paFind(paItems(paCol.tok), 'confirm_receipt', paSent.handoff.id), 'the collector cannot confirm it before the deputy');
+var paDeps = ctx.readSheet(SHEETS.USERS).filter(function (u) { return u.role === 'deputy_operations_manager'; });
+paDeps.forEach(function (d) { ctx.writeRow(SHEETS.USERS, Object.assign({}, d, { active: false })); });
+check(!!paFind(paItems(adminTok), 'deputy_validate', paSent.handoff.id), 'with no active deputy the admin is asked instead');
+paDeps.forEach(function (d) { ctx.writeRow(SHEETS.USERS, d); });
+
+// returned: the area manager must correct it
+check(call({ action: 'deputyReturnHandoff', token: walidTok, id: paSent.handoff.id, reason: 'slip missing' }).ok, 'the deputy returns it');
+var paFix = paFind(paItems(paMgr.tok), 'returned_fix', paSent.handoff.id);
+check(paFix && paFix.locationId === paLoc.id && paFix.amount === 1000, 'the area manager is told to correct it, with the branch');
+check(!paFind(paItems(walidTok), 'deputy_validate', paSent.handoff.id), 'and it left the deputy\'s list');
+check(!paFind(paItems(paMgr2.tok), 'returned_fix'), 'another area manager is not told');
+var paBefore2 = paSnap(); paItems(paMgr.tok); check(paSnap() === paBefore2, 'still writes nothing');
+var paResent = call({ action: 'createHandoff', token: paMgr.tok, kind: 'cluster_to_collector', clusterId: paArea.id, locationId: paLoc.id, resubmitOf: paSent.handoff.id, correctionNote: 'slip attached' });
+check(paResent.ok, 'he sends it again');
+check(!paFind(paItems(paMgr.tok), 'returned_fix'), 'a request already resent stops being listed');
+
+// validated: the collector confirms, then banks
+check(call({ action: 'deputyValidateHandoff', token: walidTok, id: paResent.handoff.id }).ok, 'the deputy validates the new version');
+var paConf = paFind(paItems(paCol.tok), 'confirm_receipt', paResent.handoff.id);
+check(paConf && paConf.amount === 1000, 'the collector has it to confirm');
+check(call({ action: 'confirmHandoff', token: paCol.tok, id: paResent.handoff.id }).ok, 'he confirms receipt');
+var paDue = paFind(paItems(paCol.tok), 'deposit_due');
+check(!paFind(paItems(paCol.tok), 'confirm_receipt', paResent.handoff.id) && paDue && paDue.amount === 1000, 'then he holds 1000 to deposit, and the confirmation is gone');
+
+// batches: the deputy approves them, the uploader corrects a rejected one
+var paB1 = ctx.writeRow(SHEETS.AREA_BULK_BATCHES, { clusterId: paArea.id, uploadedBy: paMgr.u.id, status: 'pending_deputy', entryIds: [], breakdown: { netCashOwed: 750 }, createdAt: new Date().toISOString() });
+var paB2 = ctx.writeRow(SHEETS.AREA_BULK_BATCHES, { clusterId: paArea.id, uploadedBy: paMgr.u.id, status: 'deputy_rejected', entryIds: [], breakdown: { netCashOwed: 300 }, rejectionNote: 'wrong day', createdAt: new Date().toISOString() });
+var paBd = paFind(paItems(walidTok), 'deputy_batch', paB1.id);
+check(paBd && paBd.amount === 750, 'the deputy has the uploaded batch to approve (750)');
+check(!paFind(paItems(walidTok), 'deputy_batch', paB2.id), 'not the rejected one');
+var paBr = paFind(paItems(paMgr.tok), 'batch_rejected', paB2.id);
+check(paBr && paBr.amount === 300, 'the uploader is told his batch was rejected');
+check(!paFind(paItems(paMgr.tok), 'batch_rejected', paB1.id), 'only the rejected one');
+check(!paFind(paItems(paMgr2.tok), 'batch_rejected') && !paFind(paItems(walidTok), 'batch_rejected'), 'nobody else is');
+
+// disputes and second approval: admin and finance, never a party
+var paD1 = ctx.writeRow(SHEETS.HANDOFFS, { kind: 'car_to_location', fromUserId: paDrv.u.id, toUserId: paBm.u.id, disputedBy: paBm.u.id, locationId: paLoc.id, amount: 90, status: 'disputed', createdAt: new Date().toISOString() });
+var paD2 = ctx.writeRow(SHEETS.HANDOFFS, { kind: 'cluster_to_collector', fromUserId: finance.id, toUserId: paCol.u.id, disputedBy: paCol.u.id, amount: 55, status: 'disputed', createdAt: new Date().toISOString() });
+check(!!paFind(paItems(adminTok), 'dispute_open', paD1.id) && !!paFind(paItems(adminTok), 'dispute_open', paD2.id), 'the admin sees both disputes');
+check(!!paFind(paItems(financeTok), 'dispute_open', paD1.id) && !paFind(paItems(financeTok), 'dispute_open', paD2.id), 'finance sees the one it is not part of, not its own');
+check(!paFind(paItems(paBm.tok), 'dispute_open') && !paFind(paItems(paCol.tok), 'dispute_open'), 'the parties are not asked to settle it');
+var paS = ctx.writeRow(SHEETS.HANDOFFS, { kind: 'cluster_to_collector', fromUserId: paMgr.u.id, toUserId: paCol.u.id, confirmedBy: finance.id, amount: 9000, status: 'confirmed', consumedBy: 'x', requiresSecondApproval: true, createdAt: new Date().toISOString() });
+check(!!paFind(paItems(adminTok), 'second_approval', paS.id) && !paFind(paItems(financeTok), 'second_approval', paS.id), 'a second approval goes to someone other than the confirmer');
+check(!paFind(paItems(paCol.tok), 'second_approval'), 'and not to the collector');
+ctx.writeRow(SHEETS.HANDOFFS, Object.assign({}, paS, { secondApprovedBy: admin.id }));
+check(!paFind(paItems(adminTok), 'second_approval', paS.id), 'once acknowledged it leaves the list');
+
+// risk
+var paRisk = call({ action: 'createRiskItem', token: paBm.tok, type: 'risk', title: 'Pa gas smell', severity: 'high' });
+check(paRisk.ok && !!paFind(paItems(adminTok), 'risk_high') && paFind(paItems(adminTok), 'risk_high').count >= 1, 'an open high risk is on the admin\'s list');
+check(!paFind(paItems(paBm.tok), 'risk_high') && !paFind(paItems(paCol.tok), 'risk_high'), 'branch staff are not asked to handle it');
+
+// order and a handoff the collector must confirm directly
+var paKinds = ['confirm_receipt', 'deputy_validate', 'deputy_batch', 'returned_fix', 'batch_rejected', 'send_ready', 'car_handover', 'dispute_open', 'second_approval', 'deposit_due', 'risk_high'];
+var paAdminItems = paItems(adminTok);
+check(paAdminItems.every(function (i, n) { return n === 0 || paKinds.indexOf(paAdminItems[n - 1].kind) <= paKinds.indexOf(i.kind); }), 'kinds come in the table\'s order');
+var paDA = ctx.writeRow(SHEETS.HANDOFFS, { kind: 'car_to_location', fromUserId: paDrv.u.id, toUserId: paBm.u.id, locationId: paLoc.id, amount: 60, status: 'pending', createdAt: '2020-01-01T00:00:00.000Z' });
+var paDB = ctx.writeRow(SHEETS.HANDOFFS, { kind: 'car_to_location', fromUserId: paDrv.u.id, toUserId: paBm.u.id, locationId: paLoc.id, amount: 70, status: 'pending', createdAt: '2019-01-01T00:00:00.000Z' });
+var paBmItems = paItems(paBm.tok).filter(function (i) { return i.kind === 'confirm_receipt'; });
+check(paBmItems.length === 2 && paBmItems[0].refId === paDB.id && paBmItems[1].refId === paDA.id, 'inside a kind the oldest comes first');
+var paTot = call({ action: 'myPendingActions', token: paBm.tok });
+check(paTot.total === paTot.items.length, 'the total is the number of rows listed (the bell)');
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);
