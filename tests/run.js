@@ -3038,6 +3038,49 @@ check(lvCall({ action: 'adminSaveEntity', token: lvTok, kind: 'product', id: lvE
 check(lvCall({ action: 'adminSaveEntity', token: lvTok, kind: 'product', id: lvExch.id, data: { unitPrice: 38 } }).ok, 'an edit that leaves the link alone is fine');
 check(lvCall({ action: 'adminSaveEntity', token: lvTok, kind: 'product', id: lvExch.id, data: { type: 'services' } }).error === 'stock_link_locked', 'and turning it into a service is refused too');
 
+console.log('--- LPG: a confirm that stopped half-way is resumed only with the same items ---');
+var l2 = harness.buildContext();
+function l2Call(payload) { try { return l2.route_(payload); } catch (e) { return { ok: false, error: String(e && e.message || e) }; } }
+(function () { var salt = l2.randomSalt_(); l2.writeRow(l2.SHEETS.USERS, { id: l2.Utilities.getUuid(), name: 'L2 Admin', email: 'l2.admin@bestgas.sa', role: 'admin', active: true, language: 'en', salt: salt, pass: l2.hashPw_('Bootstrap#1', salt), mustChangePw: false }); })();
+var l2Tok = l2Call({ action: 'login', email: 'l2.admin@bestgas.sa', password: 'Bootstrap#1' }).token;
+function l2Ent(kind, d) { var r = l2Call({ action: 'adminSaveEntity', token: l2Tok, kind: kind, data: d }); check(r.ok, 'resume shape: ' + kind + ' ' + (d.name || d.label || '') + (r.ok ? '' : ': ' + r.error)); return r.entity || {}; }
+function l2User(n, role) { return l2Call({ action: 'adminCreateUser', token: l2Tok, data: { name: n, email: n.toLowerCase().replace(/\W+/g, '.') + '@bestgas.sa', role: role } }).user || {}; }
+var l2Area = l2Ent('cluster', { name: 'L2 Area', clusterManagerUserId: l2User('L2 Area Manager', 'cluster_manager').id });
+var l2Loc = l2Ent('location', { city: 'Riyadh', name: 'L2 Branch', clusterId: l2Area.id, collectorUserId: l2User('L2 Collector', 'collector').id });
+var l2Exch = l2Ent('product', { name: 'استبدال غاز', type: 'goods', unitPrice: 37 });
+var l2Wash = l2Ent('product', { name: 'L2 Washer Pack', type: 'goods', unitPrice: 4 });
+var l2Cap = l2Ent('product', { name: 'L2 Cap Pack', type: 'goods', unitPrice: 2 });
+check(l2Call({ action: 'addInventoryMove', token: l2Tok, locationId: l2Loc.id, productId: l2Exch.id, kind: 'opening', qty: 100, date: '2026-09-28' }).ok, 'resume shape: an old count');
+var l2Prop = l2Call({ action: 'inventorySetupProposal', token: l2Tok });
+// the manager adds two items of their own and moves the washer and cap packs onto them
+function l2Plan(items) {
+  var p = JSON.parse(JSON.stringify(l2Prop));
+  items.forEach(function (x, i) { p.stockItems.push({ key: 'new:' + (i + 1), name: x.name, kind: 'unit', unitCost: x.cost }); });
+  p.products.forEach(function (l) { items.forEach(function (x, i) { if (l.productId === x.pid) { l.stockItemKey = 'new:' + (i + 1); l.stockEffect = 'unit'; } }); });
+  return p;
+}
+var l2First = l2Plan([{ name: 'L2 Washer', cost: 3, pid: l2Wash.id }, { name: 'L2 Cap', cost: 1, pid: l2Cap.id }]);
+var l2Real = l2.writeRow, l2Writes = 0;
+l2.writeRow = function (name, obj) { if (name === l2.SHEETS.PRODUCTS && ++l2Writes === 2) throw new Error('script stopped'); return l2Real(name, obj); };
+check(!l2Call({ action: 'applyInventorySetup', token: l2Tok, stockItems: l2First.stockItems, products: l2First.products }).ok, 'the first confirm stops half-way');
+l2.writeRow = l2Real;
+var l2Linked = l2.readSheet(l2.SHEETS.PRODUCTS).filter(function (p) { return p.stockItemId; })[0];
+check(!!l2Linked && l2Call({ action: 'adminSaveEntity', token: l2Tok, kind: 'product', id: l2Linked.id, data: { unitPrice: 41 } }).ok, 'a product the stopped run already linked can still be saved');
+// the page is opened again: the same two items, in the other order
+var l2Swapped = l2Plan([{ name: 'L2 Cap', cost: 1, pid: l2Cap.id }, { name: 'L2 Washer', cost: 3, pid: l2Wash.id }]);
+var l2Mis = l2Call({ action: 'applyInventorySetup', token: l2Tok, stockItems: l2Swapped.stockItems, products: l2Swapped.products });
+check(l2Mis.error === 'setup_mismatch', 'items that do not match what the stopped run wrote are refused (got ' + l2Mis.error + ')');
+check(!l2Call({ action: 'listMeta', token: l2Tok }).config.stockItemsLive, 'and nothing is applied');
+// confirmed with the same items, a new cost on one of them
+var l2Again = l2Plan([{ name: 'L2 Washer', cost: 5, pid: l2Wash.id }, { name: 'L2 Cap', cost: 1, pid: l2Cap.id }]);
+var l2Done = l2Call({ action: 'applyInventorySetup', token: l2Tok, stockItems: l2Again.stockItems, products: l2Again.products });
+check(l2Done.ok, 'the same items confirmed again finish the setup (' + (l2Done.error || '') + ')');
+var l2Items = l2.readSheet(l2.SHEETS.STOCK_ITEMS);
+function l2ItemNamed(n) { return l2Items.filter(function (x) { return x.name === n; }); }
+check(l2Items.length === l2Again.stockItems.length && l2ItemNamed('L2 Washer').length === 1 && l2ItemNamed('L2 Cap').length === 1, 'no item is written twice');
+check(l2.getById_(l2.SHEETS.PRODUCTS, l2Wash.id).stockItemId === l2ItemNamed('L2 Washer')[0].id && l2.getById_(l2.SHEETS.PRODUCTS, l2Cap.id).stockItemId === l2ItemNamed('L2 Cap')[0].id, 'each pack is linked to its own item');
+check(l2ItemNamed('L2 Washer')[0].unitCost === 5, 'a reused item takes the cost of the plan that was confirmed (got ' + l2ItemNamed('L2 Washer')[0].unitCost + ')');
+
 console.log('--- LPG: inventory items are not sales items ---');
 var siMgr = scUser('Si Manager', 'store_manager');
 var siLoc = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: 'Riyadh', name: 'Ledger Branch', clusterId: cluster.entity.id, collectorUserId: musa.id } }).entity;

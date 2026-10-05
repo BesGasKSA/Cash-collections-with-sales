@@ -735,8 +735,11 @@ function validateEntity_(kind, d) {
     // from the iron exchange), one level only, with its effect on the counts.
     // before the setup a product takes exactly what it always took: no unit effect, no inventory item
     var liveSI = stockItemsLive_();
-    if (d.stockEffect != null && d.stockEffect !== '' && (liveSI ? ['exchange', 'sell_empty', 'sell_full', 'unit'] : ['exchange', 'sell_empty', 'sell_full']).indexOf(d.stockEffect) < 0) return 'invalid_stock_link';
-    if (!liveSI && (d.stockItemId || d.returnItemId)) return 'invalid_stock_link';
+    if (d.stockEffect != null && d.stockEffect !== '' && (liveSI || (d.id && getById_(SHEETS.PRODUCTS, d.id) && getById_(SHEETS.PRODUCTS, d.id).stockEffect === d.stockEffect) ? ['exchange', 'sell_empty', 'sell_full', 'unit'] : ['exchange', 'sell_empty', 'sell_full']).indexOf(d.stockEffect) < 0) return 'invalid_stock_link';
+    // (a confirm that stopped half-way may have linked it already: what is stored is kept)
+    var stored = !liveSI && d.id ? getById_(SHEETS.PRODUCTS, d.id) : null;
+    function keeps(k) { return stored && String(stored[k] || '') === String(d[k] || ''); }
+    if (!liveSI && ((d.stockItemId && !keeps('stockItemId')) || (d.returnItemId && !keeps('returnItemId')))) return 'invalid_stock_link';
     // Inventory items (LPG Task 1b): a sales item names the item it moves and
     // how; a cylinder item is exchanged or sold empty or full, a unit item
     // sold in units, a service moves nothing. An exchange may take back

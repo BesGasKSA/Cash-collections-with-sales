@@ -600,8 +600,23 @@ function migrateStockItems_(plan, userId) {
   // a confirm that stopped half-way left some items: they are reused, never written twice
   var done = Object.create(null);
   readSheet(SHEETS.STOCK_ITEMS).forEach(function (s) { if (s.fromSetup && s.setupKey != null) done[String(s.setupKey)] = s; });
+  // ... but only the same item: a page opened again numbers its own new items afresh, so a key
+  // alone could land on another item. Same name and kind, or the confirm is refused whole.
+  var keys = Object.keys(v.items);
+  for (var ki = 0; ki < keys.length; ki++) {
+    var dn = done[keys[ki]], pn = v.items[keys[ki]];
+    if (dn && (normalizeName_(dn.name) !== normalizeName_(pn.name) || dn.kind !== pn.kind)) return { error: 'setup_mismatch', key: keys[ki], name: pn.name };
+  }
+  var dated = Object.create(null);
+  readSheet(SHEETS.PRODUCT_COSTS).forEach(function (r) { if (!r.voided && r.stockItemId) dated[r.stockItemId] = true; });
   Object.keys(v.items).forEach(function (key) {
-    if (done[key]) { ids[key] = done[key].id; names = names.concat(translatableOf_(done[key])); return; }
+    if (done[key]) {
+      var re = done[key], pl = v.items[key], ch = false;
+      // the confirmed plan's costs and box stand, unless the item already has dated costs of its own
+      if (!dated[re.id]) ['boxSize', 'gasCost', 'cylinderCost', 'unitCost'].forEach(function (f) { if (String(re[f] == null ? '' : re[f]) !== String(pl[f] == null ? '' : pl[f])) { re[f] = pl[f]; ch = true; } });
+      if (ch) { re.since = today; writeRow(SHEETS.STOCK_ITEMS, re); written++; }
+      ids[key] = re.id; names = names.concat(translatableOf_(re)); return;
+    }
     var d = v.items[key];
     d.id = Utilities.getUuid(); d.code = nextCode_('stock_item'); d.since = today; d.fromSetup = true; d.setupKey = key; d.createdAt = at;
     var s = writeRow(SHEETS.STOCK_ITEMS, d);
