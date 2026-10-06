@@ -785,6 +785,11 @@ function validateEntity_(kind, d) {
       var sbx = Number(d.boxSize);
       if (d.kind !== 'cylinder' || !(isFinite(sbx) && sbx === Math.floor(sbx) && sbx >= 1 && sbx <= 1000)) return 'invalid_box_size';
     }
+    // kg of gas in one filled cylinder, so gas can be read in kg as well as in charges
+    if (d.fillKg != null && d.fillKg !== '') {
+      var fk = Number(d.fillKg);
+      if (d.kind !== 'cylinder' || !(isFinite(fk) && fk > 0 && fk <= 100)) return 'invalid_fill_kg';
+    }
   } else if (kind === 'income_item' || kind === 'expense_item') {
     if (!d.name) return 'name_required';
   } else if (kind === 'cost_type') {
@@ -896,12 +901,12 @@ function stockItemClean_(src) {
   var d = {};
   safeOwnKeys_(src || {}).forEach(function (k) { d[k] = src[k]; });
   d.name = String(d.name == null ? '' : d.name).replace(/\s+/g, ' ').trim();
-  ['boxSize', 'gasCost', 'cylinderCost', 'unitCost'].forEach(function (k) {
+  ['boxSize', 'gasCost', 'cylinderCost', 'unitCost', 'fillKg'].forEach(function (k) {
     if (d[k] == null || d[k] === '') { d[k] = ''; return; }
     var n = Number(d[k]);
     if (isFinite(n)) d[k] = n;
   });
-  if (d.kind === 'unit') { d.boxSize = ''; d.gasCost = ''; d.cylinderCost = ''; }
+  if (d.kind === 'unit') { d.boxSize = ''; d.gasCost = ''; d.cylinderCost = ''; d.fillKg = ''; }
   else if (d.kind === 'cylinder') d.unitCost = '';
   return d;
 }
@@ -968,7 +973,7 @@ function saveEntity_(req, user) {
     // the system's own fields are never the form's
     ['since', 'fromSetup', 'setupKey'].forEach(function (k) { if (hasOwn_(d, k)) { delete d[k]; merged[k] = obj[k]; } });
     var cleaned = stockItemClean_(merged);
-    ['kind', 'boxSize', 'gasCost', 'cylinderCost', 'unitCost'].forEach(function (k) { if (cleaned[k] !== obj[k] || hasOwn_(d, k)) setBoth(k, cleaned[k]); });
+    ['kind', 'boxSize', 'gasCost', 'cylinderCost', 'unitCost', 'fillKg'].forEach(function (k) { if (cleaned[k] !== obj[k] || hasOwn_(d, k)) setBoth(k, cleaned[k]); });
     if (!obj.since) setBoth('since', todayRiyadh_());
   }
   var err = validateEntity_(kind, merged);

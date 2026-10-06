@@ -4600,6 +4600,48 @@ check(/api\('getJourney'/.test(clientFn_('handoffItem')) || /jrLoad_\(/.test(cli
   check(clientHtml.split(k + ':').length - 1 === 3, 'the client words "' + k + '" in all three languages');
 });
 
+console.log('--- LPG: the refill cycle with the plant, gas and cylinders, the stock card ---');
+var rcMgr = scUser('Rc Manager', 'store_manager');
+var rcLoc = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: 'Riyadh', name: 'Refill Branch', clusterId: cluster.entity.id, collectorUserId: musa.id } }).entity;
+var rcStore = call({ action: 'adminSaveEntity', token: adminTok, kind: 'store', data: { locationId: rcLoc.id, name: 'Refill Store', storeManagerUserId: rcMgr.id } }).entity;
+var rcIron = call({ action: 'adminSaveEntity', token: adminTok, kind: 'stock_item', data: { name: 'Rc Iron', kind: 'cylinder', boxSize: 35, gasCost: 11, cylinderCost: 140 } }).entity;
+var rcReg = call({ action: 'adminSaveEntity', token: adminTok, kind: 'stock_item', data: { name: 'Rc Regulator', kind: 'unit', unitCost: 20 } }).entity;
+var rcExch = call({ action: 'adminSaveEntity', token: adminTok, kind: 'product', data: { name: 'Rc Exchange', type: 'goods', unitPrice: 37, stockItemId: rcIron.id, stockEffect: 'exchange' } }).entity;
+function rcMv(o) { var p = { action: 'addInventoryMove', token: adminTok, locationId: rcLoc.id, stockItemId: rcIron.id }; Object.keys(o).forEach(function (k) { p[k] = o[k]; }); return call(p); }
+check(rcMv({ state: 'full', kind: 'opening', qty: 10, date: '2026-09-01' }).ok && rcMv({ state: 'empty', kind: 'opening', qty: 5, date: '2026-09-01' }).ok, 'opening: 10 filled, 5 empty');
+var rcOut = rcMv({ kind: 'refill_out', qty: 4, date: '2026-09-02' });
+check(rcOut.ok && rcOut.move.state === 'empty' && /^STM-\d{4}-\d{6}$/.test(rcOut.move.txNo || ''), '4 empties sent to the plant, numbered as a stock move (' + (rcOut.error || rcOut.move.txNo) + ')');
+var rcOver = rcMv({ kind: 'refill_in', qty: 6, date: '2026-09-03' });
+check(rcOver.error === 'refill_over_sent' && rcOver.atPlant === 4, 'receiving 6 filled when 4 are at the plant is refused, saying 4 are there');
+check(rcMv({ kind: 'refill_in', state: 'empty', qty: 1, date: '2026-09-03' }).error === 'invalid_state', 'a receipt is of filled cylinders');
+check(call({ action: 'addInventoryMove', token: adminTok, locationId: rcLoc.id, stockItemId: rcReg.id, kind: 'refill_out', qty: 1, date: '2026-09-02' }).error === 'refill_cylinder_only', 'only cylinders go to the plant');
+check(rcMv({ kind: 'refill_in', qty: 3, date: '2026-09-03' }).ok, '3 come back filled');
+var rcDay = call({ action: 'createDailyEntry', token: adminTok, date: '2026-09-04', sourceType: 'store', sourceId: rcStore.id, productId: rcExch.id, qty: 2, unitPrice: 37, cashSales: 74, submissionId: 'rc-day' });
+check(rcDay.ok, 'a day of 2 exchanges (' + (rcDay.error || '') + ')');
+var rcRep = call({ action: 'getInventoryReport', token: financeTok, dateFrom: '2026-09-01', dateTo: '2026-09-30', locationId: rcLoc.id });
+var rcFull = (rcRep.rows || []).filter(function (r) { return r.stockItemId === rcIron.id && r.state === 'full'; })[0] || {}, rcEmpty = (rcRep.rows || []).filter(function (r) { return r.stockItemId === rcIron.id && r.state === 'empty'; })[0] || {};
+check(rcFull.fromPlant === 3 && rcFull.sales === 2 && rcFull.ending === 11, 'filled: 10 + 3 from the plant - 2 exchanged = 11 (got ' + [rcFull.fromPlant, rcFull.sales, rcFull.ending].join('/') + ')');
+check(rcEmpty.toPlant === 4 && rcEmpty.exchangeIn === 2 && rcEmpty.ending === 3, 'empty: 5 - 4 to the plant + 2 back from exchanges = 3 (got ' + [rcEmpty.toPlant, rcEmpty.exchangeIn, rcEmpty.ending].join('/') + ')');
+var rcCyl = (rcRep.cylSummary || []).filter(function (c) { return c.stockItemId === rcIron.id; })[0] || {};
+check(rcCyl.gas === 11 && rcCyl.empty === 3 && rcCyl.atPlant === 1 && rcCyl.bodies === 15, 'gas 11, empty 3, at the plant 1, cylinders 15 (got ' + JSON.stringify([rcCyl.gas, rcCyl.empty, rcCyl.atPlant, rcCyl.bodies]) + ')');
+check(rcCyl.bodies === rcCyl.filled + rcCyl.empty + rcCyl.atPlant && rcCyl.gas === rcCyl.filled, 'cylinders = filled + empty + at the plant; gas = filled');
+check(Math.round((rcCyl.filledValue + rcCyl.emptyValue + rcCyl.atPlantValue) * 100) === Math.round((11 * 11 + 15 * 140) * 100), 'value: 11 gas x 11 + 15 cylinders x 140 = 2,221.00 (got ' + (rcCyl.filledValue + rcCyl.emptyValue + rcCyl.atPlantValue) + ')');
+var rcPl = (rcRep.plant || []).filter(function (p) { return p.stockItemId === rcIron.id; })[0] || {};
+check(rcPl.sent === 4 && rcPl.received === 3 && rcPl.atPlant === 1 && rcPl.oldest === '2026-09-02', 'at the plant: 4 sent, 3 back, 1 out since 2 September');
+var rcVoid = call({ action: 'voidInventoryMove', token: adminTok, id: rcOut.move.id, reason: 'test' });
+check(rcVoid.error === 'refill_received', 'a dispatch whose cylinders came back cannot be cancelled');
+// the stock card
+var rcCard = call({ action: 'getStockLedger', token: financeTok, locationId: rcLoc.id, stockItemId: rcIron.id });
+check(rcCard.ok && rcCard.lines.length === 5, 'the stock card lists 5 movements: 2 opening counts, sent, received, the day (' + (rcCard.error || rcCard.lines.length) + ')');
+check(rcCard.lines.map(function (l) { return l.kind; }).join() === 'opening,opening,refill_out,refill_in,sale', 'in the order they happened (' + (rcCard.lines || []).map(function (l) { return l.kind; }) + ')');
+var rcLast = rcCard.lines[rcCard.lines.length - 1];
+check(rcLast.bal.full === 11 && rcLast.bal.empty === 3 && rcLast.bal.plant === 1 && rcLast.bal.gas === 11 && rcLast.bal.bodies === 15, 'and ends where the report ends: filled 11, empty 3, at the plant 1, gas 11, cylinders 15');
+check(rcLast.d.full === -2 && rcLast.d.empty === 2 && /^DAY-/.test(rcLast.txNo) && rcLast.by === admin.id, 'the day\'s line: 2 filled out, 2 empties in, its number and who');
+var rcCard2 = call({ action: 'getStockLedger', token: financeTok, locationId: rcLoc.id, stockItemId: rcIron.id, dateFrom: '2026-09-03' });
+check(rcCard2.opening.full === 10 && rcCard2.opening.empty === 1 && rcCard2.opening.plant === 4 && rcCard2.lines.length === 2, 'from 3 September it opens at filled 10, empty 1, at the plant 4, then 2 lines');
+check(call({ action: 'getStockLedger', token: financeTok, stockItemId: rcIron.id }).error === 'branch_required', 'a stock card is of one branch');
+check(call({ action: 'getStockLedger', token: noorTok, locationId: rcLoc.id, stockItemId: rcIron.id }).error === 'forbidden', 'another branch\'s manager cannot read it');
+
 console.log('--- every transaction has a number: PREFIX-YEAR-NNNNNN, a day\'s rows share one ---');
 // the warm-up ping in the translations section above ran the one-time pass:
 // the rows saved before it were numbered then, every row since by writeRow

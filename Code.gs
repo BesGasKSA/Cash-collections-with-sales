@@ -855,6 +855,7 @@ function route_(req) {
     voidInventoryMove: function () { return actionVoidInventoryMove_(req, user); },
     getInventoryReport: function () { return actionInventoryReport_(req, user); },
     getInventoryLive: function () { return actionInventoryLive_(req, user); },
+    getStockLedger: function () { return actionStockLedger_(req, user); },
     importInventoryDay: function () { return actionImportInventoryDay_(req, user); },
     inventorySetupProposal: function () { return actionInventorySetupProposal_(req, user); },
     inventorySetupPreview: function () { return actionInventorySetupPreview_(req, user); },

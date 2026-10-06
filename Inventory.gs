@@ -28,7 +28,14 @@
 // After it, a movement saved before names a product: it belongs to that
 // product's inventory item, in the state its effect implies (exchange or
 // sell_full: full; sell_empty: empty). Nothing already saved is rewritten.
-var INV_KINDS_ = ['opening', 'purchase', 'return', 'damage', 'transfer_in', 'transfer_out'];
+// The refill cycle (2026-10-06): a branch sends its empties to the plant
+// (refill_out: empty −N, at the plant +N) and receives them back filled
+// (refill_in: filled +N, at the plant −N). A receipt never exceeds what that
+// branch has at the plant for that item; an extra cylinder is new cylinders or
+// a transfer. A full purchase saved before the cycle existed stays a one-step
+// refill, read as it always was.
+var INV_KINDS_ = ['opening', 'purchase', 'return', 'damage', 'transfer_in', 'transfer_out', 'refill_out', 'refill_in'];
+var INV_REFILL_STATE_ = { refill_out: 'empty', refill_in: 'full' };
 var INV_STATES_ = ['full', 'empty'];
 var INV_EFFECTS_ = ['exchange', 'sell_empty', 'sell_full'];
 var INV_MAX_QTY_ = 1000000;
@@ -178,6 +185,12 @@ function invCheckMove_(m, date, sc) {
   }
   var cyl = it.kind === 'cylinder';
   var st = m.state == null ? '' : String(m.state);
+  // the refill cycle moves cylinders only: empties out, filled back
+  if (hasOwn_(INV_REFILL_STATE_, kind)) {
+    if (!cyl) return { error: 'refill_cylinder_only' };
+    if (st && st !== INV_REFILL_STATE_[kind]) return { error: 'invalid_state' };
+    st = INV_REFILL_STATE_[kind];
+  }
   if (cyl ? INV_STATES_.indexOf(st) < 0 : st !== '') return { error: 'invalid_state' };
   // brand-new cylinders bought: counted in, but no empties went out to be filled
   if (m.newCylinders != null && m.newCylinders !== true && m.newCylinders !== false) return { error: 'invalid_new_cylinders' };
@@ -188,6 +201,24 @@ function invCheckMove_(m, date, sc) {
   var move = { state: st || null, kind: kind, qty: qty, newCylinders: fresh, note: String(m.note || '').slice(0, 300) };
   if (key.stockItemId) move.stockItemId = key.stockItemId; else move.productId = key.productId;
   return { move: move, itemId: it.id };
+}
+// What a branch has at the plant for one item: empties sent up to a day, less
+// every filled one received back (any day), and when the oldest still out left.
+function invPlant_(sc, locId, itemId, uptoDate) {
+  var sent = 0, back = 0, outs = [];
+  sc.moves.forEach(function (m) {
+    if (m.voided || m.locationId !== locId || !hasOwn_(INV_REFILL_STATE_, m.kind)) return;
+    var tg = sc.moveTarget(m); if (!tg || tg.item.id !== itemId) return;
+    var q = Number(m.qty || 0);
+    if (m.kind === 'refill_out') { if (!uptoDate || m.date <= uptoDate) { sent += q; outs.push({ date: m.date, qty: q }); } }
+    else back += q;
+  });
+  // first in, first out: the receipts close the oldest dispatches first
+  outs.sort(function (a, b) { return String(a.date).localeCompare(String(b.date)); });
+  var left = back, oldest = null;
+  for (var i = 0; i < outs.length; i++) { if (left >= outs[i].qty) { left -= outs[i].qty; continue; } oldest = outs[i].date; break; }
+  var r = function (x) { return Math.round(x * 1000) / 1000; };
+  return { sent: r(sent), received: r(back), atPlant: r(sent - back), oldest: oldest };
 }
 function invMoveRow_(locId, c, date, user, extra) {
   var row = { locationId: locId, state: c.state, kind: c.kind, qty: c.qty, date: date, newCylinders: c.newCylinders, note: c.note,
@@ -208,6 +239,11 @@ function actionAddInventoryMove_(req, user) {
   try {
     freshenExec_();
     if (c.move.kind === 'opening' && invOpenings_()[invOpeningKey_(lf.loc.id, c.itemId, c.move.state)]) return { ok: false, error: 'opening_exists' };
+    // filled cylinders come back only for empties this branch sent
+    if (c.move.kind === 'refill_in') {
+      var pl = invPlant_(invStockCtx_(), lf.loc.id, c.itemId, date);
+      if (c.move.qty > pl.atPlant + 0.0005) return { ok: false, error: 'refill_over_sent', atPlant: pl.atPlant };
+    }
     var move = writeRow(SHEETS.INV_MOVES, invMoveRow_(lf.loc.id, c.move, date, user));
     logAudit_('inventory_' + c.move.kind, user.id, move.id);
     return { ok: true, move: move };
@@ -267,6 +303,11 @@ function actionVoidInventoryMove_(req, user) {
     var allowed = user.role === 'admin' || user.role === 'finance' ||
       (inScope && (m.enteredBy === user.id || user.role === 'cluster_manager'));
     if (!allowed) return { ok: false, error: 'forbidden' };
+    // a dispatch whose cylinders already came back cannot be taken away from under them
+    if (m.kind === 'refill_out') {
+      var sc0 = invStockCtx_(), tg0 = sc0.moveTarget(m);
+      if (tg0) { var p0 = invPlant_(sc0, m.locationId, tg0.item.id, null); if (p0.atPlant - Number(m.qty || 0) < -0.0005) return { ok: false, error: 'refill_received' }; }
+    }
     m.voided = true; m.voidReason = reason.slice(0, 300); m.voidedBy = user.id; m.voidedAt = new Date().toISOString();
     writeRow(SHEETS.INV_MOVES, m);
     logAudit_('inventory_void', user.id, m.id);
@@ -324,7 +365,7 @@ function actionInventoryReport_(req, user, scOverride) {
       var op = openingOf[k] || null;
       rows[k] = { locationId: locId, stockItemId: it.id, state: state || null, cylinder: it.kind === 'cylinder', itemName: it.name || '',
         unitCost: Math.round(Number(invUnitValue_(it, state, to, hist) || 0) * 10000) / 10000,
-        opening: 0, purchases: 0, newCylinders: 0, returns: 0, exchangeIn: 0, transfersIn: 0, sales: 0, damaged: 0, refillOut: 0, transfersOut: 0,
+        opening: 0, purchases: 0, newCylinders: 0, returns: 0, exchangeIn: 0, transfersIn: 0, fromPlant: 0, sales: 0, damaged: 0, refillOut: 0, toPlant: 0, transfersOut: 0,
         salesWithoutQty: 0, salesWithoutQtyAmount: 0, salesBySource: {}, salesByProduct: {},
         openingDate: op ? op.date : null, noOpening: !op || op.date > to };
       // before the setup a row keeps its old shape too, for a client that has not reloaded
@@ -333,14 +374,14 @@ function actionInventoryReport_(req, user, scOverride) {
     }
     return rows[k];
   }
-  var IN_ = { purchases: 1, returns: 1, exchangeIn: 1, transfersIn: 1 };
+  var IN_ = { purchases: 1, returns: 1, exchangeIn: 1, transfersIn: 1, fromPlant: 1 };
   // add a quantity dated d to the period it belongs to
   function post(r, d, field, q) {
     if (r.noOpening || d < r.openingDate || d > to) return;
     if (d < from) { r.opening += IN_[field] ? q : -q; return; }
     r[field] += q;
   }
-  var MOVE_FIELD_ = { purchase: 'purchases', 'return': 'returns', damage: 'damaged', transfer_in: 'transfersIn', transfer_out: 'transfersOut' };
+  var MOVE_FIELD_ = { purchase: 'purchases', 'return': 'returns', damage: 'damaged', transfer_in: 'transfersIn', transfer_out: 'transfersOut', refill_out: 'toPlant', refill_in: 'fromPlant' };
   var moves = [];
   allMoves.forEach(function (m) {
     var t = sc.moveTarget(m);
@@ -386,18 +427,129 @@ function actionInventoryReport_(req, user, scOverride) {
   });
   var out = order.map(function (k) {
     var r = rows[k];
-    ['opening', 'purchases', 'newCylinders', 'returns', 'exchangeIn', 'transfersIn', 'sales', 'damaged', 'refillOut', 'transfersOut'].forEach(function (f) { r[f] = Math.round(r[f] * 1000) / 1000; });
+    ['opening', 'purchases', 'newCylinders', 'returns', 'exchangeIn', 'transfersIn', 'fromPlant', 'sales', 'damaged', 'refillOut', 'toPlant', 'transfersOut'].forEach(function (f) { r[f] = Math.round(r[f] * 1000) / 1000; });
     r.salesWithoutQtyAmount = Math.round(r.salesWithoutQtyAmount * 100) / 100;
-    r.available = Math.round((r.opening + r.purchases + r.returns + r.exchangeIn + r.transfersIn) * 1000) / 1000;
-    r.ending = Math.round((r.available - r.sales - r.damaged - r.refillOut - r.transfersOut) * 1000) / 1000;
+    r.available = Math.round((r.opening + r.purchases + r.returns + r.exchangeIn + r.transfersIn + r.fromPlant) * 1000) / 1000;
+    r.ending = Math.round((r.available - r.sales - r.damaged - r.refillOut - r.toPlant - r.transfersOut) * 1000) / 1000;
     r.short = !r.noOpening && r.ending < 0;
-    ['opening', 'purchases', 'returns', 'exchangeIn', 'transfersIn', 'available', 'sales', 'damaged', 'refillOut', 'transfersOut', 'ending'].forEach(function (f) {
+    ['opening', 'purchases', 'returns', 'exchangeIn', 'transfersIn', 'fromPlant', 'available', 'sales', 'damaged', 'refillOut', 'toPlant', 'transfersOut', 'ending'].forEach(function (f) {
       r[f + 'Value'] = Math.round(r[f] * r.unitCost * 100) / 100;
     });
     return r;
   });
+  // At the plant, and gas and cylinders, per branch and cylinder type (2026-10-06):
+  // gas = filled; cylinders = filled + empty at the branch + at the plant.
+  var cyl = Object.create(null), cylOrder = [];
+  out.forEach(function (r) {
+    if (!r.cylinder) return;
+    var k = r.locationId + '|' + r.stockItemId;
+    if (!cyl[k]) { cyl[k] = { locationId: r.locationId, stockItemId: r.stockItemId, itemName: r.itemName, filled: 0, empty: 0, noOpening: false, filledValue: 0, emptyValue: 0 }; cylOrder.push(k); }
+    var c = cyl[k];
+    if (r.noOpening) c.noOpening = true;
+    if (r.state === 'full') { c.filled = r.ending; c.filledValue = r.endingValue; } else { c.empty = r.ending; c.emptyValue = r.endingValue; }
+  });
+  // a branch with empties out at the plant but no row in the period still shows them
+  sc.moves.forEach(function (m) {
+    if (m.voided || !hasOwn_(INV_REFILL_STATE_, m.kind) || !inScope(m.locationId) || m.date > to) return;
+    var tg = sc.moveTarget(m); if (!tg) return;
+    var k = m.locationId + '|' + tg.item.id;
+    if (!cyl[k]) { cyl[k] = { locationId: m.locationId, stockItemId: tg.item.id, itemName: tg.item.name || '', filled: 0, empty: 0, noOpening: true, filledValue: 0, emptyValue: 0 }; cylOrder.push(k); }
+  });
+  var plant = [], cylSummary = cylOrder.map(function (k) {
+    var c = cyl[k], it = sc.item(c.stockItemId) || sc.items[c.stockItemId] || null, p = invPlant_(sc, c.locationId, c.stockItemId, to);
+    var bodyCost = it ? Math.round(Number(invUnitValue_(it, 'empty', to, hist) || 0) * 10000) / 10000 : 0;
+    c.atPlant = p.atPlant; c.plantSent = p.sent; c.plantReceived = p.received; c.plantOldest = p.oldest;
+    c.gas = c.filled; c.bodies = Math.round((c.filled + c.empty + p.atPlant) * 1000) / 1000;
+    c.atPlantValue = Math.round(p.atPlant * bodyCost * 100) / 100;
+    c.gasKg = it && Number(it.fillKg) > 0 ? Math.round(c.gas * Number(it.fillKg) * 1000) / 1000 : null;
+    if (p.sent || p.received) plant.push({ locationId: c.locationId, stockItemId: c.stockItemId, sent: p.sent, received: p.received, atPlant: p.atPlant, oldest: p.oldest, value: c.atPlantValue });
+    return c;
+  });
   moves.sort(function (a, b) { return String(b.date).localeCompare(String(a.date)) || String(b.createdAt).localeCompare(String(a.createdAt)); });
-  return { ok: true, dateFrom: from, dateTo: to, rows: out, moves: moves.slice(0, 2000), movesTotal: moves.length, stockItemsLive: sc.live };
+  return { ok: true, dateFrom: from, dateTo: to, rows: out, cylSummary: cylSummary, plant: plant, moves: moves.slice(0, 2000), movesTotal: moves.length, stockItemsLive: sc.live };
+}
+
+// ---------- The stock card (2026-10-06) ----------
+// One branch and one inventory item: every movement in the order it happened
+// (the opening count, sales and exchanges from the day entries, purchases,
+// empties sent to the plant and filled received, transfers, returns, damage),
+// each with its number, who and when, what it did to filled, empty and at the
+// plant, and the balances after it: filled, empty, at the plant, gas, cylinders.
+// The same rules as actionInventoryReport_, so the card's last line is the
+// report's ending. Nothing before the opening count counts.
+function actionStockLedger_(req, user) {
+  var scope = invReadBranches_(user);
+  if (scope === false) return { ok: false, error: 'forbidden' };
+  var locId = String(req.locationId || ''), itemId = String(req.stockItemId || req.productId || '');
+  if (!locId || !getById_(SHEETS.LOCATIONS, locId)) return { ok: false, error: 'branch_required' };
+  if (scope && scope.indexOf(locId) < 0) return { ok: false, error: 'forbidden' };
+  var today = todayRiyadh_();
+  var from = req.dateFrom ? String(req.dateFrom) : '2020-01-01', to = req.dateTo ? String(req.dateTo) : today;
+  if (!invDateOk_(from) || !invDateOk_(to) || from > to) return { ok: false, error: 'invalid_period' };
+  var sc = invStockCtx_(), it = sc.item(itemId);
+  if (!it) return { ok: false, error: 'invalid_stock_item' };
+  var cyl = it.kind === 'cylinder';
+  // the opening count: per state for a cylinder, one for a unit item
+  var openings = Object.create(null);
+  sc.moves.forEach(function (m) {
+    if (m.voided || m.kind !== 'opening' || m.locationId !== locId) return;
+    var tg = sc.moveTarget(m); if (tg && tg.item.id === it.id) openings[tg.state || ''] = m;
+  });
+  var openDate = Object.keys(openings).map(function (k) { return openings[k].date; }).sort()[0] || null;
+  var ev = [];
+  function push(o) { ev.push(o); }
+  sc.moves.forEach(function (m) {
+    if (m.voided || m.locationId !== locId || m.date > to) return;
+    var tg = sc.moveTarget(m); if (!tg || tg.item.id !== it.id) return;
+    var q = Number(m.qty || 0), s = tg.state, d = { full: 0, empty: 0, plant: 0, unit: 0 };
+    if (m.kind === 'opening') { if (cyl) d[s] = q; else d.unit = q; }
+    else if (m.kind === 'refill_out') { d.empty = -q; d.plant = q; }
+    else if (m.kind === 'refill_in') { d.full = q; d.plant = -q; }
+    else {
+      var sign = ({ purchase: 1, 'return': 1, transfer_in: 1, damage: -1, transfer_out: -1 })[m.kind] || 0;
+      if (cyl) d[s] += sign * q; else d.unit += sign * q;
+      // a full purchase saved before the cycle existed is a one-step refill: as many empties went
+      if (cyl && s === 'full' && m.kind === 'purchase' && m.newCylinders !== true) d.empty -= q;
+    }
+    push({ date: m.date, at: m.createdAt || '', kind: m.kind, newCylinders: m.newCylinders === true, txNo: m.txNo || '', by: m.enteredBy, note: m.note || '', moveId: m.id, d: d, opening: m.kind === 'opening' });
+  });
+  readSheet(SHEETS.ENTRIES).forEach(function (e) {
+    if (e.voided || !e.productId || e.locationId !== locId || !e.date || e.date > to) return;
+    var link = sc.saleLink(e.productId); if (!link) return;
+    var q = Number(e.qty || 0); if (!q) return;
+    var d = { full: 0, empty: 0, plant: 0, unit: 0 }, mine = false;
+    if (link.item.id === it.id) {
+      mine = true;
+      if (link.effect === 'unit') d.unit -= q;
+      else if (link.effect === 'sell_empty') d.empty -= q;
+      else d.full -= q;
+    }
+    if (link.effect === 'exchange' && link.back.id === it.id) { mine = true; d.empty += q; }
+    if (!mine) return;
+    push({ date: e.date, at: e.createdAt || '', kind: 'sale', effect: link.effect, productId: e.productId, txNo: e.txNo ? e.txNo + (Number(e.txLine) > 1 ? '/' + e.txLine : '') : '',
+      by: e.enteredBy, sourceType: e.sourceType, sourceId: e.sourceId, entryId: e.id, d: d });
+  });
+  // the count opens the day; within a day, in the order the rows were saved
+  ev.sort(function (a, b) { return String(a.date).localeCompare(String(b.date)) || (b.opening ? 1 : 0) - (a.opening ? 1 : 0) || String(a.at).localeCompare(String(b.at)); });
+  var bal = { full: 0, empty: 0, plant: 0, unit: 0 }, lines = [], openBal = null, r3 = function (x) { return Math.round(x * 1000) / 1000; };
+  ev.forEach(function (x) {
+    // before the opening count only the plant moves (empties sent before it are still out)
+    var counted = openDate && x.date >= openDate;
+    if (!counted && !(x.d.plant)) return;
+    if (!counted) x.d = { full: 0, empty: 0, plant: x.d.plant, unit: 0 };
+    if (x.date < from) { ['full', 'empty', 'plant', 'unit'].forEach(function (k) { bal[k] += x.d[k]; }); return; }
+    if (!openBal) openBal = { full: r3(bal.full), empty: r3(bal.empty), plant: r3(bal.plant), unit: r3(bal.unit) };
+    ['full', 'empty', 'plant', 'unit'].forEach(function (k) { bal[k] += x.d[k]; x.d[k] = r3(x.d[k]); });
+    x.bal = { full: r3(bal.full), empty: r3(bal.empty), plant: r3(bal.plant), unit: r3(bal.unit) };
+    if (cyl) { x.bal.gas = x.bal.full; x.bal.bodies = r3(bal.full + bal.empty + bal.plant); }
+    delete x.opening;
+    lines.push(x);
+  });
+  if (!openBal) openBal = { full: r3(bal.full), empty: r3(bal.empty), plant: r3(bal.plant), unit: r3(bal.unit) };
+  if (cyl) { openBal.gas = openBal.full; openBal.bodies = r3(openBal.full + openBal.empty + openBal.plant); }
+  var endBal = lines.length ? lines[lines.length - 1].bal : openBal;
+  return { ok: true, locationId: locId, stockItemId: it.id, itemName: it.name || '', cylinder: cyl, fillKg: Number(it.fillKg || 0) || null,
+    dateFrom: from, dateTo: to, openingDate: openDate, noOpening: !openDate, opening: openBal, ending: endBal, lines: lines.slice(-3000), linesTotal: lines.length };
 }
 
 // ---------- Setting up the inventory items (once, confirmed by a manager) ----------
