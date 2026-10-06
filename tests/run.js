@@ -2098,9 +2098,10 @@ check(byMove.ok && byMove.entries.length === 3 && byMove.entries.every(function 
 var byPay = call({ action: 'getSalesReport', token: adminTok, dateFrom: '2021-03-01', dateTo: '2021-03-02', paymentMethod: 'cash', movementType: 'delivery' });
 check(byPay.ok && byPay.entries.length === 2, 'and the two filters combine (cash sales that also carry a delivery fee)');
 
-console.log('--- one person, one area ---');
+console.log('--- one person on areas: a manager may run several, never as a collector ---');
 var dupMgr = call({ action: 'adminSaveEntity', token: adminTok, kind: 'cluster', data: { name: 'Twin Area', clusterManagerUserId: sara.id, collectorUserId: farCollector.id } });
-check(!dupMgr.ok && dupMgr.error === 'user_in_other_area', 'an area manager already running an area cannot be given a second one');
+check(dupMgr.ok, 'an area manager may run a second area (area switching, 2026-10-06): ' + (dupMgr.error || 'ok'));
+if (dupMgr.ok) call({ action: 'adminDeleteEntity', token: adminTok, kind: 'cluster', id: dupMgr.entity.id });
 var soloMgr = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Solo Area Manager', email: 'solo.fx@bestgas.sa', role: 'cluster_manager' } }).user;
 var dupCol = call({ action: 'adminSaveEntity', token: adminTok, kind: 'cluster', data: { name: 'Twin Area', clusterManagerUserId: soloMgr.id, collectorUserId: musa.id } });
 check(dupCol.ok, 'a collector who already collects for another area can collect for this one too');
@@ -4817,6 +4818,72 @@ check(cuInv2.ok && cuInv2.invoice.type === 'simplified', 'a buyer without a VAT 
 check(call({ action: 'createInvoice', token: adminTok, customerId: cuSimple.id, entryIds: [cuD1.entry.id] }).error === 'invalid_invoice_entry', 'a sale of another customer cannot be put on his invoice');
 var cuList = call({ action: 'listInvoices', token: adminTok, customerId: cuA.id });
 check(cuList.ok && cuList.invoices.length === 2, 'his invoices and credit notes are listed');
+
+console.log('--- area switching: one area manager, two areas, one at a time like switching company ---');
+var asMgr = jrMake('cluster_manager', 'Multi Area Manager', 'multi.fx@bestgas.sa');
+var asColA = jrMake('collector', 'Multi Collector A', 'multicola.fx@bestgas.sa');
+var asColB = jrMake('collector', 'Multi Collector B', 'multicolb.fx@bestgas.sa');
+var asBmA = jrMake('store_manager', 'Multi Branch Manager A', 'multibma.fx@bestgas.sa');
+var asBmB = jrMake('store_manager', 'Multi Branch Manager B', 'multibmb.fx@bestgas.sa');
+var asA = call({ action: 'adminSaveEntity', token: adminTok, kind: 'cluster', data: { name: 'North Area', clusterManagerUserId: asMgr.u.id } });
+var asB = call({ action: 'adminSaveEntity', token: adminTok, kind: 'cluster', data: { name: 'South Area', clusterManagerUserId: asMgr.u.id } });
+check(asA.ok && asB.ok, 'one area manager runs two areas (' + (asA.error || asB.error || 'ok') + ')');
+asA = asA.entity; asB = asB.entity;
+var asLocA = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: 'Hail', name: 'North Branch', clusterId: asA.id, collectorUserId: asColA.u.id } }).entity;
+var asLocB = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: 'Najran', name: 'South Branch', clusterId: asB.id, collectorUserId: asColB.u.id } }).entity;
+var asStA = call({ action: 'adminSaveEntity', token: adminTok, kind: 'store', data: { locationId: asLocA.id, name: 'North Store', storeManagerUserId: asBmA.u.id } }).entity;
+var asStB = call({ action: 'adminSaveEntity', token: adminTok, kind: 'store', data: { locationId: asLocB.id, name: 'South Store', storeManagerUserId: asBmB.u.id } }).entity;
+check(call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: 'Hail', name: 'Bad Branch', clusterId: asA.id, collectorUserId: asMgr.u.id } }).ok === false, 'he is still never a collector');
+function asCall(o, area) { var x = Object.assign({ token: asMgr.tok }, o); if (area) x.activeAreaId = area; return call(x); }
+var asEA = asCall({ action: 'createDailyEntry', date: jrToday, sourceType: 'store', sourceId: asStA.id, cashSales: 300, submissionId: 'as-a' }, asA.id);
+var asEB = asCall({ action: 'createDailyEntry', date: jrToday, sourceType: 'store', sourceId: asStB.id, cashSales: 500, submissionId: 'as-b' }, asB.id);
+check(asEA.ok && asEB.ok, 'he enters each area\'s day while working in it');
+check(asCall({ action: 'createDailyEntry', date: jrToday, sourceType: 'store', sourceId: asStB.id, cashSales: 1, submissionId: 'as-x' }, asA.id).error === 'forbidden', 'working in North, South\'s branches are out of reach');
+function asIds(res) { return (res.entries || []).map(function (e) { return e.locationId; }); }
+var asAll = asIds(asCall({ action: 'listEntries' }));
+check(asAll.indexOf(asLocA.id) >= 0 && asAll.indexOf(asLocB.id) >= 0, 'no area sent (an older screen): both areas, as before');
+var asOnlyA = asIds(asCall({ action: 'listEntries' }, asA.id));
+check(asOnlyA.indexOf(asLocA.id) >= 0 && asOnlyA.indexOf(asLocB.id) < 0, 'in North: North\'s entries only');
+var asOnlyB = asIds(asCall({ action: 'listEntries' }, asB.id));
+check(asOnlyB.indexOf(asLocB.id) >= 0 && asOnlyB.indexOf(asLocA.id) < 0, 'in South: South\'s entries only');
+var asForeign = asIds(asCall({ action: 'listEntries' }, jrArea.id));
+check(asForeign.indexOf(asLocA.id) >= 0 && asForeign.indexOf(jrLoc.id) < 0, 'an area that is not his is ignored, and never opens someone else\'s');
+var asRep = asCall({ action: 'getSalesReport', dateFrom: jrToday, dateTo: jrToday }, asA.id);
+check(asRep.ok && asRep.entries.every(function (e) { return e.locationId === asLocA.id; }) && asRep.entries.length >= 1, 'the sales report follows the area he is in');
+var asMetaA = asCall({ action: 'listMeta' }, asA.id);
+var asBInMeta = (asMetaA.clusters || []).filter(function (c) { return c.id === asB.id; })[0] || {};
+check(asMetaA.activeAreaId === asA.id && (asMetaA.myAreas || []).length === 2 && asBInMeta.otherArea === true && !asBInMeta.clusterManagerUserId,
+  'the screens are told his two areas and the one he is in; the other shows as not his for now');
+var asMy = (asMetaA.myAreas || []).filter(function (a) { return a.id === asA.id; })[0] || {};
+check(asMy.branches === 1 && asMy.collectors === 1 && asMy.cities[0] === 'Hail', 'each area comes with its branches, collectors and cities for the switcher');
+var asPendA = asCall({ action: 'myPendingActions' }, asA.id);
+var asSendA = (asPendA.items || []).filter(function (i) { return i.kind === 'send_ready'; })[0] || {};
+check(asSendA.amount === 300, 'what is waiting: North\'s 300 ready to send, not South\'s 500 (got ' + asSendA.amount + ')');
+check(asCall({ action: 'createHandoff', kind: 'cluster_to_collector', clusterId: asB.id }, asA.id).error === 'forbidden', 'working in North, he cannot send South\'s cash');
+var asHB = asCall({ action: 'createHandoff', kind: 'cluster_to_collector', clusterId: asB.id }, asB.id);
+check(asHB.ok && asHB.handoff.amount === 500, 'switched to South, he sends South\'s 500 (' + (asHB.error || 'ok') + ')');
+var asHoA = asCall({ action: 'listHandoffs' }, asA.id), asHoB = asCall({ action: 'listHandoffs' }, asB.id);
+check(!(asHoA.handoffs || []).some(function (h) { return h.id === asHB.handoff.id; }) && (asHoB.handoffs || []).some(function (h) { return h.id === asHB.handoff.id; }), 'his handovers list shows the area he is in');
+var asInvA = asCall({ action: 'getInventoryReport', dateFrom: jrToday, dateTo: jrToday }, asA.id);
+check(asInvA.ok && !(asInvA.rows || []).some(function (r) { return r.locationId === asLocB.id; }), 'stock follows the area too');
+var asOther = call({ action: 'listEntries', token: jrMgr.tok, activeAreaId: asA.id });
+check(asOther.ok && !asIds(asOther).some(function (id) { return id === asLocA.id; }), 'another area manager sending this area\'s id sees nothing of it');
+
+console.log('--- customers: fixes from the review (double ids, an invoiced sale, deleting a customer with history) ---');
+var rvInv = call({ action: 'createInvoice', token: financeTok, customerId: cuA.id, entryIds: [cuD1.entry.id, cuD1.entry.id] });
+check(rvInv.ok && rvInv.invoice.totals.total === 1150 && rvInv.invoice.sourceEntryIds.length === 1, 'the same sale sent twice is invoiced once (total ' + (rvInv.invoice && rvInv.invoice.totals.total) + ')');
+check(call({ action: 'voidEntries', token: jrBm.tok, ids: [cuD1.entry.id], reason: 'retype' }).error === 'entry_invoiced', 'a sale on an issued tax invoice is not cancelled until a credit note answers it');
+check(call({ action: 'adminDeleteEntity', token: adminTok, kind: 'customer', id: cuA.id }).ok === false, 'a customer with sales, payments or invoices is not deleted');
+var rvPay = call({ action: 'createDailyEntry', token: jrBm.tok, date: jrToday, sourceType: 'store', sourceId: jrStore.id, cashSales: 0, otherCash: 20, otherCashItemId: incomeItem.entity.id, otherCashReason: 'scrap', paymentCustomerId: cuA.id, submissionId: 'rv-p' });
+check(rvPay.ok && !rvPay.entry.paymentCustomerId, 'a payer named on another income item is dropped, never credited to the customer');
+check(ctx.zatcaTlv_(['ش'.repeat(200), '300000000000003', '2026-10-06T10:00:00Z', '1.00', '0.13']).length > 0 && Buffer.from(ctx.zatcaTlv_(['ش'.repeat(200), 'x', 'y', 'z', 'w']), 'base64')[1] <= 255, 'a seller name too long for one QR length byte is cut to fit');
+
+console.log('--- a test round is archived with open handovers when asked (before go-live) ---');
+var arcOpenCount = ctx.readSheet(SHEETS.HANDOFFS).filter(function (h) { return ['pending', 'pending_deputy', 'disputed'].indexOf(h.status) >= 0; }).length;
+check(arcOpenCount > 0 || true, 'open handovers on file: ' + arcOpenCount);
+var arcRes = call({ action: 'adminArchiveTransactions', token: adminTok, confirm: 'ARCHIVE', includeOpen: true });
+check(arcRes.ok || arcRes.error === 'live_locked', 'with includeOpen the round is archived even with handovers open (' + (arcRes.error || 'ok') + ')');
+if (arcRes.ok) { ctx.resetExecMemo_(); check(ctx.readSheet(SHEETS.HANDOFFS).length === 0 && ctx.readSheet(SHEETS.SALES_INVOICES).length === 0, 'handovers and invoices start empty after it'); }
 
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);

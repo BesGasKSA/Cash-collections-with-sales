@@ -46,7 +46,8 @@ var ENTITY_CHILDREN = {
   income_item: [{ sheet: SHEETS.ENTRIES, field: 'otherCashItemId' }],
   expense_item: [{ sheet: SHEETS.ENTRIES, field: 'expenseItemId' }],
   // a customer with credit history stays on file (deactivate instead)
-  customer: [{ sheet: SHEETS.ENTRIES, field: 'creditCustomerId' }],
+  customer: [{ sheet: SHEETS.ENTRIES, field: 'creditCustomerId' }, { sheet: SHEETS.ENTRIES, field: 'paymentCustomerId' },
+    { sheet: SHEETS.CUSTOMER_PAYMENTS, field: 'customerId' }, { sheet: SHEETS.SALES_INVOICES, field: 'customerId' }],
   // a channel with sales on it stays on file (deactivate instead)
   channel: [{ sheet: SHEETS.ENTRIES, field: 'channelId' }],
   // a city is referenced by name, not id — see actionAdminDeleteEntity_
@@ -712,10 +713,11 @@ function validateEntity_(kind, d) {
     }
     if (!userHasRole_(d.clusterManagerUserId, 'cluster_manager')) return 'wrong_role';
     if (d.collectorUserId && !userHasRole_(d.collectorUserId, 'collector')) return 'wrong_role';
-    // An area manager runs one area and collects for none. A collector may
-    // serve any number of areas (changed 2026-09-29).
+    // An area manager may run several areas (2026-10-06) and collects for none.
+    // A collector may serve any number of areas (changed 2026-09-29).
     var taken = readSheet(SHEETS.CLUSTERS).some(function (c) {
-      return c.id !== d.id && (c.clusterManagerUserId === d.clusterManagerUserId || c.clusterManagerUserId === d.collectorUserId ||
+      // a manager may run several areas since 2026-10-06 (he switches between them); he is still never a collector
+      return c.id !== d.id && (c.clusterManagerUserId === d.collectorUserId ||
         (c.collectorUserId && c.collectorUserId === d.clusterManagerUserId));
     }) || readSheet(SHEETS.LOCATIONS).some(function (l) {
       return l.collectorUserId && l.collectorUserId === d.clusterManagerUserId;
@@ -1007,6 +1009,7 @@ function saveEntity_(req, user) {
   safeOwnKeys_(d).forEach(function (k) { obj[k] = d[k]; });
   if (obj.active === undefined) obj.active = true;
   if ((kind === 'customer' || kind === 'city') && obj.name) obj.name = String(obj.name).replace(/\s+/g, ' ').trim();
+  if (kind === 'customer') ['vatNumber', 'crNumber', 'postalCode', 'buildingNo', 'additionalNo'].forEach(function (k) { if (obj[k] != null) obj[k] = String(obj[k]).replace(/\s+/g, ''); });
   if (hasOwn_(CODE_PREFIX_, kind) && !obj.code) obj.code = nextCode_(kind);
 
   var saved = writeRow(sheetName, obj);
@@ -1366,6 +1369,8 @@ function setupFirstAdmin() {
 // round stays in the workbook under a dated name.
 var TRANSACTIONAL_SHEETS_ = [
   SHEETS.ENTRIES, SHEETS.HANDOFFS, SHEETS.AREA_BULK_BATCHES,
+  // invoices and customer payments point at the sales they answer (2026-10-06)
+  SHEETS.CUSTOMER_PAYMENTS, SHEETS.SALES_INVOICES,
   SHEETS.BANK_LINES, SHEETS.RISK_ITEMS,
   // the stock movements balance against the sales: one without the other would
   // leave every branch's stock with purchases and no sales (2026-10-05)
@@ -1379,8 +1384,9 @@ function actionAdminArchiveTransactions_(req, user) {
   // A word the caller has to type, so this can never be one stray tap.
   if (String(req.confirm || '') !== 'ARCHIVE') return { ok: false, error: 'confirm_required' };
   if (config_().liveLocked === true) return { ok: false, error: 'live_locked' };
-  // cash on its way would vanish with the round
-  if (readSheet(SHEETS.HANDOFFS).some(function (h) { return ['pending', 'pending_deputy', 'disputed'].indexOf(h.status) >= 0; })) return { ok: false, error: 'cash_in_flight' };
+  // cash on its way would vanish with the round, unless the caller says so: while
+  // testing (before go-live) a round may be archived with open handovers in it (2026-10-06)
+  if (req.includeOpen !== true && readSheet(SHEETS.HANDOFFS).some(function (h) { return ['pending', 'pending_deputy', 'disputed'].indexOf(h.status) >= 0; })) return { ok: false, error: 'cash_in_flight' };
 
   var ss = spreadsheet_();
   var stamp = Utilities.formatDate(new Date(), 'Asia/Riyadh', 'yyyy-MM-dd_HHmmss');
@@ -1773,10 +1779,27 @@ function actionMeta_(req, user) {
     });
   }
 
+  // area switching (2026-10-06): the areas an area manager runs, and the one he is
+  // working in. The other areas keep their names but not his name as manager, so
+  // every screen that asks "my area" sees the one he picked.
+  var myAreas, activeAreaId = null;
+  if (user.role === 'cluster_manager') {
+    activeAreaId = activeAreaOf_(user.id);
+    myAreas = clusters.filter(function (c) { return c.clusterManagerUserId === user.id; }).map(function (c) {
+      var locs = locations.filter(function (l) { return l.clusterId === c.id; });
+      var cols = Object.create(null), cities = Object.create(null);
+      locs.forEach(function (l) { if (l.collectorUserId) cols[l.collectorUserId] = 1; if (l.city) cities[l.city] = 1; });
+      return { id: c.id, code: c.code || '', name: c.name || '', branches: locs.length, collectors: Object.keys(cols).length, cities: Object.keys(cities) };
+    });
+    if (activeAreaId) clusters = clusters.map(function (c) {
+      if (c.clusterManagerUserId !== user.id || c.id === activeAreaId) return c;
+      var o = {}; safeOwnKeys_(c).forEach(function (k) { if (k !== 'clusterManagerUserId') o[k] = c[k]; }); o.otherArea = true; return o;
+    });
+  }
   // the cost catalogue rides along for the people who read costs
   var costTypes = costCanRead_(user) ? readSheet(SHEETS.COST_TYPES) : undefined;
   return {
-    ok: true, costTypes: costTypes,
+    ok: true, costTypes: costTypes, myAreas: myAreas, activeAreaId: activeAreaId,
     locations: locations, stores: stores, cars: cars, pos: pos,
     clusters: clusters, zones: zones, products: products, stockItems: stockItems, users: users,
     incomeItems: incomeItems, expenseItems: expenseItems, customers: customers, cities: cities, channels: channels,

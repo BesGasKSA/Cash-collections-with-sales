@@ -44,7 +44,10 @@ function clusterIdForHandoff_(handoff) {
 
 function clusterManagerOwnsCluster_(userId, clusterId) {
   var c = getById_(SHEETS.CLUSTERS, clusterId);
-  return !!c && c.clusterManagerUserId === userId;
+  if (!c || c.clusterManagerUserId !== userId) return false;
+  // working in one of several areas: the others are out of reach for this request
+  var area = activeAreaOf_(userId);
+  return !area || area === clusterId;
 }
 
 // Who collects a branch's cash: its own collector, or — for a branch saved
@@ -329,6 +332,7 @@ function checkNonSalesFields_(r, siblingCash) {
     if (!inc || inc.active === false) return 'invalid_income_item';
     if (!String(r.otherCashReason || '').trim()) return 'reason_required';
     // cash a credit customer paid at the branch names him, so his statement shows it (2026-10-06)
+    if (r.paymentCustomerId && inc.system !== 'customer_payment') r.paymentCustomerId = null;
     if (r.paymentCustomerId) {
       var payer = typeof r.paymentCustomerId === 'string' ? getById_(SHEETS.CUSTOMERS, r.paymentCustomerId) : null;
       if (!payer) return 'unknown_customer';
@@ -463,6 +467,8 @@ function nonSalesFields_(r) {
     channelComRates: r.channelComRates || null,
     // the rules the day was worked out by (2026-10-04): a later change never rewrites it
     creditFeeRule: 2,
+    // whether the day's prices were typed with VAT (2026-10-06): its invoice and statement read it
+    salesIncludeVat: salesIncludeVat_(),
     // the rate in force on the day's own date: a past day entered late keeps it
     vatRate: vatRateOn_(r.date)
   };
@@ -541,6 +547,8 @@ function actionVoidEntries_(req, user) {
     // take it back, so nobody else can make someone's figure disappear
     if (e.enteredBy !== user.id) return { ok: false, error: 'not_your_entry' };
     if (e.consumedBy) return { ok: false, error: 'entry_locked' };
+    // a credit sale on an issued tax invoice: a credit note first (2026-10-06)
+    if (e.creditCustomerId && invoicedEntries_()[e.id]) return { ok: false, error: 'entry_invoiced' };
     // Its الموازنة goes with it — unless Finance has already matched that
     // deposit to the bank statement: then the bank has confirmed the money
     // moved, and the day stays as it is.
@@ -1090,7 +1098,7 @@ function createLocationHandoff_(req, user) {
 function createClusterHandoff_(req, user) {
   var cluster = getById_(SHEETS.CLUSTERS, req.clusterId);
   if (!cluster) return { ok: false, error: 'not_found' };
-  if (user.role !== 'admin' && cluster.clusterManagerUserId !== user.id) return { ok: false, error: 'forbidden' };
+  if (user.role !== 'admin' && !clusterManagerOwnsCluster_(user.id, cluster.id)) return { ok: false, error: 'forbidden' };
   var areaLocIds = readSheet(SHEETS.LOCATIONS).filter(function (l) { return l.clusterId === cluster.id; })
     .map(function (l) { return l.id; });
   if (req.locationId && areaLocIds.indexOf(req.locationId) < 0) return { ok: false, error: 'not_found' };
@@ -1267,7 +1275,7 @@ function actionBulkSubmitAreaBatch_(req, user) {
   if (!areaManagerBulkUploadEnabled_()) return { ok: false, error: 'feature_disabled' };
   var cluster = getById_(SHEETS.CLUSTERS, req.clusterId);
   if (!cluster) return { ok: false, error: 'not_found' };
-  if (user.role !== 'admin' && (user.role !== 'cluster_manager' || cluster.clusterManagerUserId !== user.id)) {
+  if (user.role !== 'admin' && (user.role !== 'cluster_manager' || !clusterManagerOwnsCluster_(user.id, cluster.id))) {
     return { ok: false, error: 'forbidden' };
   }
 
@@ -1450,7 +1458,7 @@ function actionAreaBatchRows_(req, user) {
 function actionListAreaBulkBatches_(req, user) {
   var rows = readSheet(SHEETS.AREA_BULK_BATCHES);
   if (user.role === 'cluster_manager') {
-    rows = rows.filter(function (b) { return b.uploadedBy === user.id; });
+    rows = rows.filter(function (b) { return b.uploadedBy === user.id && (!activeAreaOf_(user.id) || b.clusterId === activeAreaOf_(user.id)); });
   } else if (user.role !== 'deputy_operations_manager' && !isCompanyWide_(user.role)) {
     rows = [];
   }
@@ -1981,7 +1989,7 @@ function actionRecordDeposit_(req, user) {
 function actionListHandoffs_(req, user) {
   var rows = readSheet(SHEETS.HANDOFFS);
   if (!isCompanyWide_(user.role)) {
-    rows = rows.filter(function (h) { return h.fromUserId === user.id || h.toUserId === user.id; });
+    rows = rows.filter(function (h) { return (h.fromUserId === user.id || h.toUserId === user.id) && inActiveArea_(user, h); });
   }
   if (req.status) rows = rows.filter(function (h) { return h.status === req.status; });
   if (req.kind) rows = rows.filter(function (h) { return h.kind === req.kind; });
@@ -2229,7 +2237,7 @@ function actionAdminInstallStaleTrigger_(req, user) {
 // ---------- Dashboard ----------
 
 function actionDashboard_(req, user) {
-  var handoffs = readSheet(SHEETS.HANDOFFS);
+  var handoffs = readSheet(SHEETS.HANDOFFS).filter(function (h) { return inActiveArea_(user, h); });
   var pendingForMe = handoffs.filter(function (h) {
     if (h.status === 'pending' && h.toUserId === user.id) return true;
     return user.role === 'deputy_operations_manager' && h.status === 'pending_deputy';
@@ -2269,7 +2277,7 @@ var PENDING_KINDS_ = ['confirm_receipt', 'deputy_validate', 'deputy_batch', 'ret
 function actionMyPendingActions_(req, user) {
   var items = [];
   function add(kind, o) { o.kind = kind; items.push(o); }
-  var handoffs = readSheet(SHEETS.HANDOFFS);
+  var handoffs = readSheet(SHEETS.HANDOFFS).filter(function (h) { return inActiveArea_(user, h); });
   var isMoney = user.role === 'admin' || user.role === 'finance';
   var users = readSheet(SHEETS.USERS);
   var activeDeputy = users.some(function (u) { return u.role === 'deputy_operations_manager' && u.active !== false; });
@@ -2321,9 +2329,9 @@ function actionMyPendingActions_(req, user) {
   if (user.role === 'cluster_manager') {
     var myLocs = {};
     readSheet(SHEETS.LOCATIONS).forEach(function (l) {
-      if (clusters.some(function (c) { return c.id === l.clusterId && c.clusterManagerUserId === user.id; })) myLocs[l.id] = true;
+      if (clusterManagerOwnsCluster_(user.id, l.clusterId)) myLocs[l.id] = true;
     });
-    var heldC = handoffs.filter(function (h) { return h.kind === 'location_to_cluster' && h.status === 'confirmed' && h.toUserId === user.id && !h.consumedBy; });
+    var heldC = handoffs.filter(function (h) { return h.kind === 'location_to_cluster' && h.status === 'confirmed' && h.toUserId === user.id && !h.consumedBy && inActiveArea_(user, h); });
     var ownC = openEntries_().filter(function (e) { return e.enteredBy === user.id && myLocs[e.locationId]; });
     var rc = ready_(heldC, ownC);
     if (rc.count && rc.amount > 0) add('send_ready', rc);
@@ -2406,7 +2414,7 @@ function jrCtx_(user) {
   if (user.role === 'cluster_manager') {
     Object.keys(c.locById).forEach(function (id) {
       var cl = c.clusterById[c.locById[id].clusterId];
-      if (cl && cl.clusterManagerUserId === user.id) c.myLocs[id] = true;
+      if (cl && clusterManagerOwnsCluster_(user.id, cl.id)) c.myLocs[id] = true;
     });
   } else if (user.role === 'store_manager') {
     c.myStore = storeOfManager_(user.id);

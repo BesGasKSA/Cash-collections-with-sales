@@ -80,7 +80,7 @@ function custEvents_(customerId) {
   readSheet(SHEETS.ENTRIES).forEach(function (e) {
     if (e.voided) return;
     if (e.creditCustomerId === customerId && Number(e.creditSales || 0) > 0) {
-      var goods = Number(e.creditSales || 0), fee = Number(e.creditDeliveryFee || 0);
+      var goods = custGross_(e, e.creditSales), fee = custGross_(e, e.creditDeliveryFee);
       ev.push({ date: e.date, at: e.createdAt || '', kind: 'sale', debit: r2_(goods + fee), credit: 0, goods: r2_(goods), fee: r2_(fee),
         items: e.creditItems || null, txNo: e.txNo ? e.txNo + (Number(e.txLine) > 1 ? '/' + e.txLine : '') : '', entryId: e.id,
         invoiceNo: inv[e.id] ? (inv[e.id].txNo || '') : '', invoiceId: inv[e.id] ? inv[e.id].id : null, locationId: e.locationId, by: e.enteredBy });
@@ -130,8 +130,8 @@ function actionCustomerBalances_(req, user) {
   readSheet(SHEETS.ENTRIES).forEach(function (e) {
     if (e.voided) return;
     if (e.creditCustomerId && Number(e.creditSales || 0) > 0) {
-      var r = row(e.creditCustomerId), d = Number(e.creditSales || 0) + Number(e.creditDeliveryFee || 0);
-      r.sales += Number(e.creditSales || 0); r.fees += Number(e.creditDeliveryFee || 0); r.lines++;
+      var r = row(e.creditCustomerId), g = custGross_(e, e.creditSales), gf = custGross_(e, e.creditDeliveryFee), d = g + gf;
+      r.sales += g; r.fees += gf; r.lines++;
       if (!inv[e.id]) r.uninvoiced += d;
       if (e.date > r.lastSale) r.lastSale = e.date;
     }
@@ -152,8 +152,9 @@ function actionCustomerBalances_(req, user) {
 function zatcaTlv_(fields) {
   var bytes = [];
   fields.forEach(function (v, i) {
-    var b = Utilities.newBlob(String(v)).getBytes();
-    bytes.push(i + 1); bytes.push(b.length);
+    var str = String(v), b = Utilities.newBlob(str).getBytes();
+    while (b.length > 255) { str = str.slice(0, -1); b = Utilities.newBlob(str).getBytes(); }
+    bytes.push(i + 1); bytes.push(b.length > 127 ? b.length - 256 : b.length);
     for (var j = 0; j < b.length; j++) bytes.push(b[j]);
   });
   return Utilities.base64Encode(bytes);
@@ -165,11 +166,15 @@ function actionInvoiceCandidates_(req, user) {
   var inv = invoicedEntries_();
   var list = readSheet(SHEETS.ENTRIES).filter(function (e) { return !e.voided && e.creditCustomerId === cu.id && Number(e.creditSales || 0) > 0 && !inv[e.id]; })
     .sort(function (a, b) { return String(a.date).localeCompare(String(b.date)); })
-    .map(function (e) { return { id: e.id, date: e.date, txNo: e.txNo || '', locationId: e.locationId, creditSales: r2_(e.creditSales), creditDeliveryFee: r2_(e.creditDeliveryFee), items: e.creditItems || null }; });
+    .map(function (e) { return { id: e.id, date: e.date, txNo: e.txNo || '', locationId: e.locationId, creditSales: custGross_(e, e.creditSales), creditDeliveryFee: custGross_(e, e.creditDeliveryFee), items: e.creditItems || null }; });
   return { ok: true, entries: list };
 }
+// whether a day's prices were typed with VAT: stamped on the day since 2026-10-06
+function entryInclVat_(e) { return typeof e.salesIncludeVat === 'boolean' ? e.salesIncludeVat : salesIncludeVat_(); }
+// what a credit sale costs the customer with VAT, the figure the statement and the invoice agree on
+function custGross_(e, amount) { amount = Number(amount || 0); return r2_(entryInclVat_(e) ? amount : amount * (1 + entryVatRate_(e))); }
 function invLinesOf_(e, products) {
-  var rate = entryVatRate_(e), incl = salesIncludeVat_(), lines = [];
+  var rate = entryVatRate_(e), incl = entryInclVat_(e), lines = [];
   function line(name, nameEn, productId, qty, unit, amount) {
     amount = r2_(amount);
     var ex = incl ? r2_(amount / (1 + rate)) : amount, gross = incl ? amount : r2_(amount * (1 + rate));
@@ -200,7 +205,7 @@ function actionCreateInvoice_(req, user) {
   if (!saVatOk_(co.vatNumber)) return { ok: false, error: 'company_vat_required' };
   var cu = getById_(SHEETS.CUSTOMERS, req.customerId);
   if (!cu) return { ok: false, error: 'unknown_customer' };
-  var ids = Array.isArray(req.entryIds) ? req.entryIds.map(String) : [];
+  var ids = Array.isArray(req.entryIds) ? req.entryIds.map(String).filter(function (x, i, a) { return a.indexOf(x) === i; }) : [];
   if (!ids.length || ids.length > 300) return { ok: false, error: 'invalid_input' };
   var lock = LockService.getScriptLock();
   lock.waitLock(30000);

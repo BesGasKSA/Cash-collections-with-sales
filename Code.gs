@@ -95,6 +95,33 @@ function exec_() {
   return EXEC_;
 }
 function resetExecMemo_() { EXEC_ = null; }
+
+// ---------- Area switching (2026-10-06) ----------
+// An area manager may run more than one area, and works in one at a time, the
+// way an ERP user switches company: the client sends the area it is in
+// (activeAreaId) with every request, and for that request everything the
+// manager sees and does is that area alone: branches, entries, handovers, held
+// cash, reports, stock, bulk uploads, what is waiting. The narrowing lives in
+// clusterManagerOwnsCluster_ (Collection.gs), which every area check goes
+// through, and inActiveArea_ for handovers. An area that is not his is ignored;
+// no area sent (an older client) means all of his areas, as before.
+function managedAreas_(userId) {
+  return readSheet(SHEETS.CLUSTERS).filter(function (c) { return c.clusterManagerUserId === userId; });
+}
+function setActiveArea_(user, areaId) {
+  if (!user || user.role !== 'cluster_manager' || !areaId || typeof areaId !== 'string') return;
+  if (!managedAreas_(user.id).some(function (c) { return c.id === areaId; })) return;
+  exec_().activeArea = { userId: user.id, areaId: areaId };
+}
+function activeAreaOf_(userId) {
+  var a = EXEC_ && EXEC_.activeArea;
+  return a && a.userId === userId ? a.areaId : null;
+}
+// a handover belongs to the area the manager is working in (always true for anyone else)
+function inActiveArea_(user, h) {
+  var area = user && user.role === 'cluster_manager' ? activeAreaOf_(user.id) : null;
+  return !area || clusterIdForHandoff_(h) === area;
+}
 // After waiting for the script lock, forget what this request read before:
 // another execution may have written in the meantime, and a check made on
 // those older reads (a duplicate name, the next number) would be wrong.
@@ -820,6 +847,8 @@ function route_(req) {
   var session = requireAuth_(req);
   var user = session.user;
   runOneTimeMigrations_();
+  // the area an area manager is working in, for this request only (area switching, 2026-10-06)
+  setActiveArea_(user, req.activeAreaId);
   var newToken = renewToken_(user.id, session.hardExp, epochOf_(user));
   // a temporary sign-in is changed before anything else (security review 2026-10-04)
   if (user.mustChangePw && ['whoami', 'bootstrap', 'changePassword', 'setLanguage'].indexOf(action) < 0) return { ok: false, error: 'first_login_change', token: newToken };
