@@ -6556,8 +6556,17 @@ function exEnhance_(table){
 // show; "open to level N" and a search keep a big tree readable. Excel gets
 // the whole tree with Excel's own row grouping (it folds the same way), the
 // PDF prints what is open on screen.
-var PV_DIMS_ = ['city', 'area', 'branch', 'owner', 'source', 'product', 'customer', 'date', 'enteredBy'];
-var PV_MEASURES_ = ['sales', 'cashSales', 'posSales', 'additions', 'dCredit', 'creditQty', 'dTransfer', 'dDelivery', 'dCommission', 'dExpense', 'dBanked', 'deductions', 'net', 'count'];
+var PV_DIMS_ = ['city', 'area', 'branch', 'owner', 'source', 'product', 'customer', 'date', 'enteredBy', 'status', 'tx'];
+var PV_MEASURES_ = ['sales', 'cashSales', 'posSales', 'additions', 'dCredit', 'creditQty', 'dTransfer', 'dDelivery', 'dCommission', 'dExpense', 'dBanked', 'deductions', 'net', 'stOpen', 'stSubmitted', 'stApproved', 'count'];
+// where a saved day stands (2026-10-06): open, handed over and waiting, approved
+var PV_ST_ = { stOpen: 'el_open', stSubmitted: 'el_submitted', stApproved: 'el_approved' };
+function pvStatus_(e){ var s = e.__src || e; return s.lockState || (s.voided ? 'voided' : s.consumedBy ? 'submitted' : 'open'); }
+// the net of each state, beside the equation's own totals
+function pvStatusSums_(T, list){
+  T.stOpen = 0; T.stSubmitted = 0; T.stApproved = 0;
+  list.forEach(function(e){ var st = pvStatus_(e), n = entryAmt_(e).net; if (st === 'open') T.stOpen += n; else if (st === 'approved') T.stApproved += n; else if (st === 'submitted') T.stSubmitted += n; });
+  return T;
+}
 var PV_DEF_ = { dims: ['city', 'area', 'branch', 'owner', 'source', 'product'], measures: ['sales', 'deductions', 'net', 'count'] };
 function pvState_(key, def){
   def = def || PV_DEF_;
@@ -6573,7 +6582,9 @@ function pvState_(key, def){
 function pvSave_(s, key){ try { localStorage.setItem(key || 'bgc_pv', JSON.stringify(s)); } catch (e) {} }
 // The entries screen's own pivot (2026-10-03): saved days open at branch
 // level, then the day, the store or car, the source and the product.
-var PV_ENTRIES_ = { key: 'bgc_pvEntries', def: { dims: ['branch', 'date', 'owner', 'source', 'product'], measures: ['sales', 'deductions', 'net', 'count'] } };
+// (2026-10-06) the status amounts are figures and the last level is the transaction,
+// which opens its full history; a new key so the new levels reach every viewer
+var PV_ENTRIES_ = { key: 'bgc_pvEntries2', def: { dims: ['branch', 'date', 'owner', 'source', 'tx'], measures: ['sales', 'deductions', 'net', 'stOpen', 'stSubmitted', 'stApproved', 'count'] } };
 // the store or car a figure belongs to: a POS machine's owner, or the store
 // or car itself when the day was entered for it
 function pvOwner_(e){
@@ -6652,6 +6663,8 @@ function pvKey_(dim, e){
   if (dim === 'date') return e.date || '_';
   if (dim === 'enteredBy') return e.enteredBy || '_';
   if (dim === 'customer') return e.creditCustomerId || (e.creditCustomer ? '~' + e.creditCustomer : '_');
+  if (dim === 'status') return pvStatus_(e);
+  if (dim === 'tx') { var s = e.__src || e; return s.submissionId || s.id; }
   return lvKey_(dim, e);
 }
 function pvName_(dim, key, e){
@@ -6661,9 +6674,15 @@ function pvName_(dim, key, e){
   if (dim === 'owner') return pvOwnerName_(key);
   if (dim === 'date') return key;
   if (dim === 'enteredBy') return userName(key);
+  if (dim === 'status') return t('el_' + key);
+  if (dim === 'tx') {
+    // the transaction: its number, the source, when it was saved and by whom, where it stands
+    var s = e.__src || e;
+    return [s.txNo || '', sourceName_(s), fmtStamp_(s.createdAt) || s.date, userName(s.enteredBy), t('el_' + pvStatus_(s))].filter(Boolean).join(' · ');
+  }
   return lvName_(dim, key, e);
 }
-function pvLabel_(m){ return m === 'count' ? t('rp_count') : m === 'creditQty' ? t('pv_creditQty') : t(EQ_PARTS_[m].label); }
+function pvLabel_(m){ return m === 'count' ? t('rp_count') : m === 'creditQty' ? t('pv_creditQty') : PV_ST_[m] ? t(PV_ST_[m]) : t(EQ_PARTS_[m].label); }
 // counts and quantities are whole numbers, amounts keep their halalas
 function pvFmt_(m, v){ return m === 'count' || m === 'creditQty' ? Number(v || 0).toLocaleString('en-US') : money(v); }
 function pvVal_(T, m){ return m === 'count' ? T.count : T[m]; }
@@ -6681,7 +6700,7 @@ function pvTree_(entries, dims, depth, parent){
     map[k].entries.push(e);
   });
   return order.map(function(k){
-    var n = map[k]; n.T = eqTotals_(n.entries);
+    var n = map[k]; n.T = pvStatusSums_(eqTotals_(n.entries), n.entries);
     n.T.count = pvSources_(n.entries).length;
     return n;
   }).sort(function(a, b){
@@ -6696,7 +6715,7 @@ function pivotCard_(entries, opts){
   opts = opts || {};
   var pvKey = opts.key || 'bgc_pv', pvDef = opts.def || PV_DEF_;
   var st = pvState_(pvKey, pvDef);
-  var total = eqTotals_(entries);
+  var total = pvStatusSums_(eqTotals_(entries), entries);
   var card = el('<div class="card rp-card pv-card" data-noexport="1">' +
     '<div class="rp-head pv-head"><div><h2>'+esc(opts.title || t('pv_tab'))+'</h2><p class="pv-sub"></p></div></div>' +
     '<details class="pv-cfg"><summary>'+icon_('layers')+'<span>'+esc(t('pv_customize'))+'</span></summary>' +
@@ -6818,7 +6837,10 @@ function pivotCard_(entries, opts){
   function act(tr){
     var n = tb._list[+tr.dataset.i]; if (!n) return;
     if (n.depth >= st.dims.length - 1) {
-      drawerOpen_(txListView_({ title: n.name, sub: n.tag || t('lv_' + n.dim), items: pvSources_(n.entries).map(function(e){ return entryRowData_(e, entryAmt_(e).net); }) }));
+      // a transaction opens its document with the full history; any other last level lists its rows
+      var srcs = pvSources_(n.entries);
+      if (n.dim === 'tx' && srcs.length) drawerOpen_(entryDocView_(srcs[0]));
+      else drawerOpen_(txListView_({ title: n.name, sub: n.tag || t('lv_' + n.dim), items: srcs.map(function(e){ return entryRowData_(e, entryAmt_(e).net); }) }));
       return;
     }
     n.open = !n.open;
@@ -7673,6 +7695,10 @@ function entryDocView_(e){
           tlBox.appendChild(el('<div class="tl-step todo"><div class="h">'+esc(t('st_awaitingDeposit'))+'</div></div>'));
         }
         body.appendChild(tl);
+        // every action taken on it, with its time and its user, from the server's own walk
+        var hist = el('<div class="doc-sec"><h3>'+icon_('clock')+esc(t('tx_history'))+'</h3><div class="jr-host"></div></div>');
+        body.appendChild(hist);
+        jrLoad_(qs('.jr-host', hist), { entryId: e.id });
       });
     }
   };
