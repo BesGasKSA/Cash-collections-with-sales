@@ -99,7 +99,8 @@ function buildContext() {
       return {
         getProperty: function (k) { svcCalls.getProperty++; return scriptProps.hasOwnProperty(k) ? scriptProps[k] : null; },
         getProperties: function () { svcCalls.getProperties++; var out = {}; for (var k in scriptProps) if (scriptProps.hasOwnProperty(k)) out[k] = scriptProps[k]; return out; },
-        setProperty: function (k, v) { scriptProps[k] = v; }
+        setProperty: function (k, v) { scriptProps[k] = v; },
+        setProperties: function (o) { for (var k in o) if (o.hasOwnProperty(k)) scriptProps[k] = String(o[k]); }
       };
     }
   };

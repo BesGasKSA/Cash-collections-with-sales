@@ -324,7 +324,15 @@ function txNumbersBackfill_() {
   try {
     freshenExec_();
     if (scriptProps_()[TX_FLAG_]) return 0;
-    var done = 0;
+    var done = 0, ctr = {};
+    // counters in memory, saved once at the end: a property write per number took
+    // 219 s on the live data (2026-10-06) and held the lock all that time
+    var txNext_ = function (prefix, year) {
+      var key = 'TXSEQ_' + prefix + '_' + year;
+      if (!hasOwn_(ctr, key)) ctr[key] = Number(PropertiesService.getScriptProperties().getProperty(key) || 0);
+      var s = String(++ctr[key]); while (s.length < 6) s = '0' + s;
+      return prefix + '-' + year + '-' + s;
+    };
     [SHEETS.ENTRIES, SHEETS.HANDOFFS].concat(Object.keys(TX_PREFIX_).filter(function (n) { return n !== SHEETS.ENTRIES; })).forEach(function (name) {
       var sh = sheet_(name), last = sh.getLastRow();
       if (last < 2) return;
@@ -341,6 +349,8 @@ function txNumbersBackfill_() {
       }
       if (changed) { rng.setValues(vals); bumpVersion_(name); }
     });
+    var setP = {}; Object.keys(ctr).forEach(function (k) { setP[k] = String(ctr[k]); });
+    if (Object.keys(setP).length) { PropertiesService.getScriptProperties().setProperties(setP); Object.keys(setP).forEach(function (k) { scriptProps_()[k] = setP[k]; }); }
     setScriptProp_(TX_FLAG_, new Date().toISOString());
     logAudit_('tx_numbers_backfill', 'system', String(done));
     return done;
