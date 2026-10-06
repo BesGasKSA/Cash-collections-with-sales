@@ -547,6 +547,11 @@ function actionVoidEntries_(req, user) {
     e.voided = true; e.voidedAt = at; e.voidedBy = user.id; e.voidReason = reason;
     writeRow(SHEETS.ENTRIES, e);
     logAudit_('void_entry', user.id, e.id);
+    // its slip photo is free again, so the corrected day can carry the same slip (2026-10-06)
+    if (e.directDepositPhotoId) {
+      var ph = getById_(SHEETS.ENTRY_PHOTOS, e.directDepositPhotoId);
+      if (ph && ph.usedBy === e.id) { ph.usedBy = null; writeRow(SHEETS.ENTRY_PHOTOS, ph); }
+    }
   });
   deposits.forEach(function (d) {
     d.status = 'voided'; d.voidedAt = at; d.voidedBy = user.id; d.voidReason = reason;
