@@ -1577,6 +1577,9 @@
   .eh-last-sg.s-done .el-sd{background:var(--green);border-color:var(--green);}
   .eh-none{font-size:13px;}
   .el-backbar{margin-bottom:12px;}
+  /* a transaction's number: monospace digits, quiet, always left to right */
+  .tx-no{display:inline-block;margin-inline-end:6px;padding:1px 7px;border-radius:6px;background:var(--bg);border:1px solid var(--border-soft);color:var(--muted);font:600 11.5px/1.6 ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:0;vertical-align:middle;white-space:nowrap;}
+  .el-who .tx-no{margin-bottom:3px;}
   /* the Handoffs hub (2026-10-06): three counters, the last handover, the view tabs */
   .hh-strip{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:12px;}
   .hh-k{display:flex;flex-direction:column;gap:2px;padding:10px 12px;border-radius:12px;border:1px solid var(--border-soft);background:var(--card);min-width:0;}
@@ -7595,7 +7598,7 @@ function entryDocView_(e){
         body.innerHTML = '';
         var a = entryAmt_(e), st = entryStatus_(e);
         body.appendChild(el('<div class="doc-hero">' +
-          '<div class="ty">'+icon_('doc')+esc(t('doc_entry'))+' <span class="chip">'+esc(st.label)+'</span></div>' +
+          '<div class="ty">'+icon_('doc')+esc(t('doc_entry'))+' '+txBadge_(e)+' <span class="chip">'+esc(st.label)+'</span></div>' +
           '<div class="am num">'+esc(money(a.gross))+' <small style="font-size:13px;opacity:.75;">'+esc(t('ui_sar'))+'</small></div>' +
           '<div class="meta">'+esc(t('dash_grossSales'))+' · '+esc(e.date)+'</div></div>'));
 
@@ -7658,7 +7661,7 @@ function handoffDocView_(h){
         if (!body.isConnected) return;
         body.innerHTML = '';
         body.appendChild(el('<div class="doc-hero">' +
-          '<div class="ty">'+icon_(isDeposit?'bank':'handoffs')+esc(t('kind_' + h.kind))+' '+handoffStatusChip_(h)+'</div>' +
+          '<div class="ty">'+icon_(isDeposit?'bank':'handoffs')+esc(t('kind_' + h.kind))+' '+txBadge_(h)+' '+handoffStatusChip_(h)+'</div>' +
           '<div class="am num">'+esc(money(h.amount))+' <small style="font-size:13px;opacity:.75;">'+esc(t('ui_sar'))+'</small></div>' +
           '<div class="meta">'+esc(userName(h.fromUserId))+' ← '+esc(h.toUserId ? userName(h.toUserId) : t('entity_bank'))+'</div></div>'));
 
@@ -11666,7 +11669,7 @@ function renderEntries(body){
     // where it stands now, from the same walk the History fold shows
     var stRow = live[0] || rows[0], sg = st === 'voided' ? null : stRow.stage;
     var node = el('<article class="el-row st-'+st+'">' +
-      '<div class="el-main"><span class="el-ic">'+icon_(icon)+'</span><div class="el-who"><b>'+esc(sourceName_(e0))+'</b>' +
+      '<div class="el-main"><span class="el-ic">'+icon_(icon)+'</span><div class="el-who">'+txBadge_(e0, true)+'<b>'+esc(sourceName_(e0))+'</b>' +
         '<span>'+esc(t('entry_source_'+e0.sourceType))+' · '+esc(locationName(e0.locationId))+'</span></div></div>' +
       '<div class="el-date"><b><bdi dir="ltr">'+esc(e0.date)+'</bdi></b><span>'+esc(userName(e0.enteredBy))+'</span></div>' +
       '<div class="el-fig"><span>'+esc(t('el_sales'))+'</span><b><bdi dir="ltr">'+money(sales)+'</bdi></b></div>' +
@@ -11724,7 +11727,7 @@ function renderEntries(body){
             pay: { cash: has('cashSales'), pos: has('posSales'), credit: has('creditSales'), delivery: has('deliveryFeeBankAmount'),
               other: has('otherCash'), expense: has('expenseAmount'), deposit: has('directDepositAmount') },
             // everything a person might type into the search box
-            text: rows.map(function(e){ return [e.date, t('entry_source_'+e.sourceType), sourceName_(e), locationName(e.locationId),
+            text: rows.map(function(e){ return [e.txNo, e.date, t('entry_source_'+e.sourceType), sourceName_(e), locationName(e.locationId),
               userName(e.enteredBy), productName_(e.productId), e.note, e.otherCashReason, e.expenseReason, creditNote_(e), e.deliveryNote,
               e.directDepositRef, e.directDepositNote, e.voidReason, itemName_('incomeItems', e.otherCashItemId), itemName_('expenseItems', e.expenseItemId)].join(' '); }).join(' ') + ' ' + money(sales)
           }
@@ -13154,6 +13157,9 @@ function hoAllToggle_(listEl){
   return b;
 }
 var HO_KIND_ICON_ = { car_to_location: 'truck', location_to_cluster: 'box', cluster_to_collector: 'user', deposit: 'bank' };
+// a transaction's number (2026-10-06): PREFIX-YEAR-NNNNNN, a day's line after a slash
+function txNoText_(x){ return x && x.txNo ? x.txNo + (Number(x.txLine) > 1 ? '/' + x.txLine : '') : ''; }
+function txBadge_(x, whole){ var s = whole && x ? (x.txNo || '') : txNoText_(x); return s ? '<span class="tx-no" dir="ltr">'+esc(s)+'</span>' : ''; }
 function hoSumLine_(h){
   var arrow = document.documentElement.dir === 'rtl' ? ' ← ' : ' → ';
   var who = userName(h.fromUserId) + arrow + (h.toUserId ? userName(h.toUserId) : t('entity_bank'));
@@ -13426,7 +13432,7 @@ function handoffItem(h, showConfirm, showResolve){
       // what and how much on the first line, where and who on the second,
       // where it stands and when on the third
       '<span class="ho-what">' +
-        '<b class="ho-k">'+esc(t('kind_'+h.kind))+(Number(h.revision) > 1 ? ' <em class="ho-ver">'+esc(t('batch_rev').replace('{n}', h.revision))+'</em>' : '')+'</b>' +
+        '<b class="ho-k">'+txBadge_(h)+esc(t('kind_'+h.kind))+(Number(h.revision) > 1 ? ' <em class="ho-ver">'+esc(t('batch_rev').replace('{n}', h.revision))+'</em>' : '')+'</b>' +
         '<b class="ho-amt"><bdi dir="ltr">'+money(h.amount)+'</bdi></b>' +
         '<i class="ho-who">'+esc(hoSumLine_(h))+'</i>' +
         '<span class="ho-foot"><span class="ho-st">'+statusBadge(h.status) + (hoReturnNote_(h) ? '<em class="ho-rn">'+esc(hoReturnNote_(h))+'</em>' : '') +
@@ -13961,7 +13967,7 @@ function renderHandoffs(body){
           return { cash: Number(b.storeCash||0) + Number(b.carCash||0) + Number(b.posCash||0) > 0, pos: Number(b.posSales||0) > 0,
             credit: Number(b.creditSales||0) > 0, delivery: Number(b.deliveryFee||0) > 0, other: Number(b.otherCash||0) > 0,
             expense: Number(b.expenses||0) > 0, deposit: Number(b.directDeposit||0) > 0 || h.kind === 'deposit' }; })(h.breakdown),
-        text: [userName(h.fromUserId), userName(h.toUserId), t('kind_'+h.kind), t('handoff_'+h.status),
+        text: [h.txNo, userName(h.fromUserId), userName(h.toUserId), t('kind_'+h.kind), t('handoff_'+h.status),
           locationName(h.locationId), h.bankReference, h.note, money(h.amount)].join(' ')
       };
     }

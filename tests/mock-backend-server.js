@@ -136,6 +136,8 @@ if (olayaLoc) {
 // Area-manager bulk upload is off by default (see CLAUDE.md) — enabled here
 // so the seeded scenario is immediately usable for testing that path too.
 call({ action: 'adminSetConfig', token: adminTok, data: { areaManagerBulkUploadEnabled: true } });
+// the live deploy's warm-up ping numbers every transaction once; the mock has no ping
+if (typeof ctx.txNumbersBackfill_ === 'function') { ctx.resetExecMemo_(); ctx.txNumbersBackfill_(); ctx.resetExecMemo_(); }
 
 console.log('\nSeeded. Sign in at http://localhost:' + PORT + '/ with API URL http://localhost:' + PORT + '/api\n');
 console.log('admin@bestgas.sa         / Bootstrap#1               (mustChangePw: no)');

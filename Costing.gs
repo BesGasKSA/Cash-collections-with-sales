@@ -64,10 +64,15 @@ function costAmount_(v) {
 function costAppendMany_(name, rows) {
   if (!rows.length) return [];
   var sh = sheet_(name), now = new Date().toISOString(), vals = [], out = [];
+  // transaction numbers come from a counter: take the lock unless the caller holds it
+  var lock = LockService.getScriptLock(), held = lock.hasLock ? lock.hasLock() : false;
+  if (!held) lock.waitLock(30000);
+  try {
   rows.forEach(function (obj) {
     var toStore = {};
     safeOwnKeys_(obj).forEach(function (k) { toStore[k] = obj[k]; });
     if (!toStore.id) toStore.id = Utilities.getUuid();
+    txStamp_(name, toStore);
     toStore.updatedAt = now;
     vals.push([toStore.id, JSON.stringify(toStore), now]);
     out.push(toStore);
@@ -78,6 +83,7 @@ function costAppendMany_(name, rows) {
   sh.getRange(first, 1, vals.length, 3).setValues(vals);
   bumpVersion_(name);
   return out;
+  } finally { if (!held) { try { lock.releaseLock(); } catch (e) {} } }
 }
 
 // ---------- cost types: the catalogue (entity kind cost_type) ----------

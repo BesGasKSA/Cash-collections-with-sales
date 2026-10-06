@@ -243,15 +243,19 @@ function writeRow(name, obj) {
     var json = JSON.stringify(toStore);
     var rowIndex = isNew ? -1 : findRow_(sh, obj.id);
     // a copy read before this record was numbered never erases its number
-    if (rowIndex > 0 && !toStore.code && isCodedSheet_(name)) {
+    if (rowIndex > 0 && ((!toStore.code && isCodedSheet_(name)) || (!toStore.txNo && isTxSheet_(name)))) {
       try {
         var prev = JSON.parse(sh.getRange(rowIndex, 2, 1, 1).getValues()[0][0] || '{}');
-        if (prev.code) { toStore.code = prev.code; json = JSON.stringify(toStore); }
+        if (prev.code && !toStore.code) toStore.code = prev.code;
+        if (prev.txNo && !toStore.txNo) { toStore.txNo = prev.txNo; if (prev.txLine) toStore.txLine = prev.txLine; }
+        json = JSON.stringify(toStore);
       } catch (e) {}
     }
     if (rowIndex > 0) {
       sh.getRange(rowIndex, 1, 1, 3).setValues([[obj.id, json, now]]);
     } else {
+      // a row new to the sheet (its id may have been made by the caller) gets its number
+      if (!toStore.txNo) { txStamp_(name, toStore); if (toStore.txNo) { obj.txNo = toStore.txNo; if (toStore.txLine) obj.txLine = toStore.txLine; json = JSON.stringify(toStore); } }
       sh.appendRow([obj.id, json, now]);
     }
     bumpVersion_(name);
@@ -259,6 +263,88 @@ function writeRow(name, obj) {
   } finally {
     if (!held) lock.releaseLock();
   }
+}
+
+// ---------- Transaction numbers (2026-10-06) ----------
+// Every transaction, whatever its type, carries a number of its own that is
+// never edited or reused: PREFIX-YEAR-NNNNNN, one counter per prefix per year
+// (script property TXSEQ_<prefix>_<year>). The rows of one saved day share its
+// number (DAY-2026-000123) and carry their line within it (txLine). A copy read
+// before a row was numbered never erases its number. Rows saved before numbers
+// existed are numbered once by txNumbersBackfill_ (from doGet, never inside a
+// person's request), in the order they were written.
+var TX_PREFIX_ = {
+  daily_entries: 'DAY', area_bulk_batches: 'ABU', inventory_moves: 'STM', bank_statement_lines: 'BST',
+  risk_items: 'RSK', cost_lines: 'CSL', product_costs: 'PCH', rate_changes: 'RCH', entry_photos: 'PHO'
+};
+var TX_HANDOFF_PREFIX_ = { car_to_location: 'HCB', location_to_cluster: 'HBA', cluster_to_collector: 'HAC', deposit: 'DEP' };
+var TX_FLAG_ = 'TX_NUMBERED_V1';
+function txPrefixOf_(name, obj) {
+  if (name === SHEETS.HANDOFFS) return TX_HANDOFF_PREFIX_[obj.kind] || 'HND';
+  return hasOwn_(TX_PREFIX_, name) ? TX_PREFIX_[name] : null;
+}
+function txYearOf_(obj) {
+  var d = String(obj.createdAt || obj.date || obj.updatedAt || '');
+  return /^\d{4}/.test(d) ? d.slice(0, 4) : new Date().toISOString().slice(0, 4);
+}
+// the next number for a prefix and year; the caller holds the script lock
+function txNext_(prefix, year) {
+  var key = 'TXSEQ_' + prefix + '_' + year;
+  var n = Number(PropertiesService.getScriptProperties().getProperty(key) || 0) + 1;
+  setScriptProp_(key, String(n));
+  var s = String(n); while (s.length < 6) s = '0' + s;
+  return prefix + '-' + year + '-' + s;
+}
+// stamps a new row (writeRow and costAppendMany_ call it under the lock)
+function txStamp_(name, obj) {
+  if (obj.txNo || !scriptProps_()[TX_FLAG_]) return;
+  var prefix = txPrefixOf_(name, obj); if (!prefix) return;
+  if (name === SHEETS.ENTRIES && obj.submissionId) {
+    var ex = exec_(); ex.txSub = ex.txSub || {};
+    var mem = ex.txSub[obj.submissionId];
+    if (!mem) {
+      // a day's earlier rows saved in another request: its number and its last line
+      var sib = readSheet(SHEETS.ENTRIES).filter(function (e) { return e.submissionId === obj.submissionId && e.txNo; });
+      mem = sib.length ? { no: sib[0].txNo, line: sib.reduce(function (a, e) { return Math.max(a, Number(e.txLine || 1)); }, 0) } : null;
+    }
+    if (!mem) mem = { no: txNext_(prefix, txYearOf_(obj)), line: 0 };
+    mem.line++;
+    ex.txSub[obj.submissionId] = mem;
+    obj.txNo = mem.no; obj.txLine = mem.line;
+    return;
+  }
+  obj.txNo = txNext_(prefix, txYearOf_(obj));
+}
+function isTxSheet_(name) { return name === SHEETS.HANDOFFS || hasOwn_(TX_PREFIX_, name); }
+// Numbers every transaction saved before numbers existed: one read and one write
+// of each sheet's data column, in the order the rows were written, under the lock.
+function txNumbersBackfill_() {
+  var lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  try {
+    freshenExec_();
+    if (scriptProps_()[TX_FLAG_]) return 0;
+    var done = 0;
+    [SHEETS.ENTRIES, SHEETS.HANDOFFS].concat(Object.keys(TX_PREFIX_).filter(function (n) { return n !== SHEETS.ENTRIES; })).forEach(function (name) {
+      var sh = sheet_(name), last = sh.getLastRow();
+      if (last < 2) return;
+      var rng = sh.getRange(2, 2, last - 1, 1), vals = rng.getValues(), subs = {}, changed = false;
+      for (var i = 0; i < vals.length; i++) {
+        var o; try { o = JSON.parse(vals[i][0] || '{}'); } catch (e) { continue; }
+        if (!o || o.txNo) { if (o && o.txNo && o.submissionId) subs[o.submissionId] = subs[o.submissionId] || { no: o.txNo, line: Number(o.txLine || 1) }; continue; }
+        var prefix = txPrefixOf_(name, o); if (!prefix) continue;
+        if (name === SHEETS.ENTRIES && o.submissionId) {
+          var m = subs[o.submissionId] || (subs[o.submissionId] = { no: txNext_(prefix, txYearOf_(o)), line: 0 });
+          m.line++; o.txNo = m.no; o.txLine = m.line;
+        } else o.txNo = txNext_(prefix, txYearOf_(o));
+        vals[i][0] = JSON.stringify(o); changed = true; done++;
+      }
+      if (changed) { rng.setValues(vals); bumpVersion_(name); }
+    });
+    setScriptProp_(TX_FLAG_, new Date().toISOString());
+    logAudit_('tx_numbers_backfill', 'system', String(done));
+    return done;
+  } finally { try { lock.releaseLock(); } catch (e) {} }
 }
 
 function deleteRow_(name, id) {
@@ -612,6 +698,9 @@ function doGet(e) {
   // deploy's own check rather than on a person's first tap.
   try { resetExecMemo_(); runOneTimeMigrations_(); }
   catch (err) { try { logAudit_('migration_failed', 'system', String(err && err.message || err)); } catch (e2) {} }
+  // transactions saved before numbers existed get theirs once (one bulk pass per sheet)
+  try { resetExecMemo_(); if (!scriptProps_()[TX_FLAG_]) txNumbersBackfill_(); }
+  catch (err) { try { logAudit_('tx_numbers_failed', 'system', String(err && err.message || err)); } catch (e2) {} }
   // names still without their other languages, a slice per ping
   var tr = null;
   try { resetExecMemo_(); tr = translationsCatchUpStep_(); }

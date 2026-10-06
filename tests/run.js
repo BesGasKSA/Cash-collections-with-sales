@@ -4600,5 +4600,33 @@ check(/api\('getJourney'/.test(clientFn_('handoffItem')) || /jrLoad_\(/.test(cli
   check(clientHtml.split(k + ':').length - 1 === 3, 'the client words "' + k + '" in all three languages');
 });
 
+console.log('--- every transaction has a number: PREFIX-YEAR-NNNNNN, a day\'s rows share one ---');
+// the warm-up ping in the translations section above ran the one-time pass:
+// the rows saved before it were numbered then, every row since by writeRow
+ctx.resetExecMemo_();
+check(!!ctx.scriptProps_()['TX_NUMBERED_V1'], 'the warm-up ping ran the one-time numbering');
+var txE = ctx.readSheet(SHEETS.ENTRIES), txH = ctx.readSheet(SHEETS.HANDOFFS);
+var txBad = txE.filter(function (e) { return !/^DAY-\d{4}-\d{6}$/.test(e.txNo); });
+check(txE.length > 0 && !txBad.length, 'every entry row is DAY-YYYY-NNNNNN (' + txE.length + ' rows' + (txBad.length ? '; ' + txBad.length + ' not, e.g. ' + JSON.stringify(txBad.slice(0, 2).map(function (e) { return [e.txNo, e.createdAt, e.date, e.submissionId]; })) : '') + ')');
+check(txH.every(function (h) { return /^(HCB|HBA|HAC|DEP|HND)-\d{4}-\d{6}$/.test(h.txNo) && h.txNo.indexOf({ car_to_location: 'HCB', location_to_cluster: 'HBA', cluster_to_collector: 'HAC', deposit: 'DEP' }[h.kind] || 'HND') === 0; }), 'every handover by its step: HCB car to branch, HBA branch to area, HAC area to collector, DEP deposit');
+var txSubs = {};
+txE.forEach(function (e) { if (e.submissionId) (txSubs[e.submissionId] = txSubs[e.submissionId] || []).push(e); });
+check(Object.keys(txSubs).every(function (k) { var g = txSubs[k]; return g.every(function (e) { return e.txNo === g[0].txNo; }) && g.map(function (e) { return e.txLine; }).sort().join() === g.map(function (_, i) { return i + 1; }).join(); }), 'the rows of one saved day share its number, lines 1, 2, 3…');
+var txNos = {}, txDup = false;
+txE.forEach(function (e) { if (!e.submissionId) { if (txNos[e.txNo]) txDup = true; txNos[e.txNo] = 1; } });
+txH.forEach(function (h) { if (txNos[h.txNo]) txDup = true; txNos[h.txNo] = 1; });
+check(!txDup, 'no number is given twice');
+check(ctx.txNumbersBackfill_() === 0, 'the pass runs once');
+var txNew = call({ action: 'createDailyEntry', token: jrBm.tok, date: jrToday, sourceType: 'store', sourceId: jrStore.id, cashSales: 15, submissionId: 'sub-tx-new' });
+var txMax = txE.filter(function (e) { return e.txNo.slice(0, 9) === txNew.entry.txNo.slice(0, 9); }).reduce(function (a, e) { return Math.max(a, Number(e.txNo.slice(-6))); }, 0);
+check(txNew.ok && /^DAY-\d{4}-\d{6}$/.test(txNew.entry.txNo) && Number(txNew.entry.txNo.slice(-6)) === txMax + 1 && txNew.entry.txLine === 1, 'a new day gets the next number, line 1 (' + txNew.entry.txNo + ')');
+var txSame = call({ action: 'createDailyEntry', token: jrBm.tok, date: jrToday, sourceType: 'store', sourceId: jrStore.id, cashSales: 5, submissionId: 'sub-tx-new' });
+check(txSame.entry.txNo === txNew.entry.txNo && txSame.entry.txLine === 2, 'a second row of the same day keeps the number, line 2');
+var txRow = ctx.getById_(SHEETS.ENTRIES, txNew.entry.id), txCopy = JSON.parse(JSON.stringify(txRow)); delete txCopy.txNo; delete txCopy.txLine;
+ctx.writeRow(SHEETS.ENTRIES, txCopy); ctx.resetExecMemo_();
+check(ctx.getById_(SHEETS.ENTRIES, txNew.entry.id).txNo === txNew.entry.txNo, 'a copy read before the number never erases it');
+var txRisk = call({ action: 'createRiskItem', token: jrBm.tok, type: 'risk', title: 'Test risk', description: 'made up', severity: 'low' });
+check(txRisk.ok && /^RSK-\d{4}-\d{6}$/.test(txRisk.item.txNo), 'a risk item is RSK-YYYY-NNNNNN (' + (txRisk.error || txRisk.item.txNo) + ')');
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);
