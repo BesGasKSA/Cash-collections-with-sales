@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Cash Collection | Best Gas</title>
 <meta name="description" content="Best Gas cash collection: daily sales, handovers along the chain, bank deposits and reports.">
 <!-- What a shared link shows (2026-10-04): the logo with "Cash Collection"
@@ -724,6 +724,19 @@
     .bt-scroll button svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;transition:transform .2s ease;}
     .bt-scroll button.active{color:var(--green-dark);background:var(--green-pale);}
     .bt-scroll button.active svg{transform:translateY(-1px) scale(1.08);}
+    /* the bars stay put on a real phone (2026-10-06): the page may not slide sideways
+       (clip, not hidden: hidden would end the top bar's sticking), may not bounce the
+       bars away at either end, and the top bar clears the notch in the home-screen app */
+    html,body{overflow-x:clip;overscroll-behavior-y:none;}
+    .tb{top:0;padding-inline:max(14px,env(safe-area-inset-left)) max(14px,env(safe-area-inset-right));}
+    .bt{padding-inline:max(6px,env(safe-area-inset-left)) max(6px,env(safe-area-inset-right));}
+    /* readable on a phone: nothing a person must read under 12px */
+    .bt-scroll button{font-size:11.5px;}
+    .tb-title h1{font-size:18px;}
+    .tb-title .sub{font-size:12.5px;}
+    .muted{font-size:max(12px, 1em);}
+    .tile .lb{font-size:13px;}
+    .tile .ft{font-size:12px;}
     .bt-scroll button .pill{position:absolute;top:3px;inset-inline-end:calc(50% - 20px);background:var(--c-danger);color:#fff;border-radius:999px;font-size:9.5px;font-weight:800;min-width:16px;height:16px;padding:0 4px;display:flex;align-items:center;justify-content:center;}
   }
 
@@ -1574,7 +1587,7 @@
     .el-dash .tiles{grid-template-columns:1fr 1fr;gap:8px;}
     .el-dash .tile{padding:12px;}
     .el-dash .tile .vl{font-size:19px;}
-    .el-dash .tile .ft{font-size:11px;}
+    .el-dash .tile .ft{font-size:12px;}
   }
   .el-sd{width:9px;height:9px;border-radius:50%;flex:none;border:2px solid var(--muted-2);background:transparent;}
   .el-stage.s-done .el-sd{background:var(--green);border-color:var(--green);}
