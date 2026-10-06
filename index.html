@@ -1580,6 +1580,38 @@
   /* a transaction's number: monospace digits, quiet, always left to right */
   .tx-no{display:inline-block;margin-inline-end:6px;padding:1px 7px;border-radius:6px;background:var(--bg);border:1px solid var(--border-soft);color:var(--muted);font:600 11.5px/1.6 ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:0;vertical-align:middle;white-space:nowrap;}
   .el-who .tx-no{margin-bottom:3px;}
+  /* gas and cylinders, the refill cycle, the stock card (2026-10-06) */
+  .gc-tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px;margin-bottom:12px;}
+  .gc-t{border:1px solid var(--border-soft);border-radius:14px;padding:14px;background:var(--card);display:flex;flex-direction:column;gap:10px;}
+  .gc-t.short{border-color:color-mix(in srgb,var(--c-danger) 40%,var(--border-soft));}
+  .gc-n{font-weight:800;font-size:14.5px;}
+  .gc-big{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .gc-big span{display:flex;flex-direction:column;padding:10px 12px;border-radius:12px;background:var(--green-pale);}
+  .gc-big span + span{background:var(--bg);}
+  .gc-big i{font-style:normal;font-size:12.5px;font-weight:700;color:var(--muted);}
+  .gc-big b{font-size:26px;font-weight:800;letter-spacing:-.02em;}
+  .gc-big small{font-size:12px;color:var(--muted);}
+  .gc-parts{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:13px;color:var(--muted);}
+  .gc-parts b{color:var(--text);}
+  .gc-v{font-size:12.5px;color:var(--muted);}
+  .gc-v b{color:var(--text);}
+  .rf-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+  .rf-head h2{margin-bottom:4px;}
+  .rf-acts{display:flex;gap:8px;flex-wrap:wrap;}
+  .rf-acts .btn{display:inline-flex;align-items:center;gap:6px;}
+  .rf-acts .btn svg{width:18px;height:18px;}
+  .rf-form{margin:12px 0;padding:14px;border-radius:12px;border:1px solid var(--border-soft);background:var(--bg);}
+  .rf-form h3{margin:0 0 10px;font-size:14.5px;}
+  .rf-at{margin:4px 0 10px;font-weight:700;}
+  .sc-pick{align-items:end;}
+  .sc-table td,.sc-table th{white-space:nowrap;}
+  .sc-table td:nth-child(3){white-space:normal;min-width:200px;}
+  .sc-d.pos{color:var(--c-deposit);font-weight:700;}
+  .sc-d.neg{color:var(--c-danger);font-weight:700;}
+  .sc-short{color:var(--c-danger);font-weight:800;}
+  .sc-strong{font-weight:800;}
+  .sc-open td,.sc-end td{background:var(--green-pale);font-weight:700;}
+  @media (max-width:700px){ .gc-big b{font-size:21px;} }
   /* waiting handovers grouped by city and branch (2026-10-06) */
   .ho-wsum{font-size:13px;font-weight:700;color:var(--muted);margin-inline-start:4px;}
   .hg{border:1px solid var(--border-soft);border-radius:12px;background:var(--card);margin-bottom:8px;}
@@ -15003,6 +15035,128 @@ function invLiveCard_(opts){
   setTimeout(function(){ load(); timer = setInterval(function(){ load(true); }, 60000); }, 0);
   return card;
 }
+// ---------- Gas and cylinders, the refill cycle, the stock card (2026-10-06) ----------
+// o: {res, goods, editLocs, viewLocs, canEdit, live, reload, today}
+function invSigned_(v){ v = Number(v || 0); if (Math.abs(v) < 0.0005) return ''; return (v > 0 ? '+' : '−') + invQty_(Math.abs(v)); }
+function invCylCards_(out, o){
+  var res = o.res, cylItems = o.goods.filter(function(g){ return g.cylinder; });
+  // 1. gas and cylinders: per item over the branches in view, then branch by branch
+  var cs = res.cylSummary || [];
+  var gc = el('<section class="card inv-gc no-collapse"><h2>'+esc(t('gc_title'))+'</h2><p class="muted inv-eq-hint">'+esc(t('gc_hint'))+'</p><div class="gc-tiles"></div><div class="tbl-scroll"></div></section>');
+  if (!cs.length) qs('.gc-tiles', gc).innerHTML = '<div class="muted">'+esc(t('gc_none'))+'</div>';
+  else {
+    var byItem = {}, order = [];
+    cs.forEach(function(c){ var x = byItem[c.stockItemId]; if (!x) { x = byItem[c.stockItemId] = { id: c.stockItemId, name: c.itemName, filled: 0, empty: 0, atPlant: 0, bodies: 0, kg: 0, kgKnown: true, value: 0 }; order.push(c.stockItemId); }
+      x.filled += c.filled; x.empty += c.empty; x.atPlant += c.atPlant; x.bodies += c.bodies; x.value += c.filledValue + c.emptyValue + c.atPlantValue; if (c.gasKg == null) x.kgKnown = false; else x.kg += c.gasKg; });
+    qs('.gc-tiles', gc).innerHTML = order.map(function(id){ var x = byItem[id];
+      return '<div class="gc-t'+(x.filled < 0 || x.empty < 0 ? ' short' : '')+'"><div class="gc-n">'+esc(invRowName_(id, '') || x.name)+'</div>' +
+        '<div class="gc-big"><span><i>'+esc(t('gc_gas'))+'</i><b class="num">'+invQty_(x.filled)+'</b>'+(x.kgKnown && x.kg ? '<small class="num">'+invQty_(x.kg)+' '+esc(t('gc_kg'))+'</small>' : '')+'</span>' +
+        '<span><i>'+esc(t('gc_bodies'))+'</i><b class="num">'+invQty_(x.bodies)+'</b></span></div>' +
+        '<div class="gc-parts"><span>'+esc(t('gc_filled'))+' <b class="num">'+invQty_(x.filled)+'</b></span><span>'+esc(t('gc_empty'))+' <b class="num">'+invQty_(x.empty)+'</b></span><span>'+esc(t('gc_atPlant'))+' <b class="num">'+invQty_(x.atPlant)+'</b></span></div>' +
+        (x.value ? '<div class="gc-v">'+esc(t('gc_value'))+' <b class="num">'+money(x.value)+'</b> '+esc(t('ui_sar'))+'</div>' : '') + '</div>';
+    }).join('');
+    if (cs.length > 1) qs('.tbl-scroll', gc).innerHTML = '<table class="rp-table"><thead><tr><th>'+esc(t('admin_location'))+'</th><th>'+esc(t('inv_item'))+'</th><th class="n">'+esc(t('gc_filled'))+'</th><th class="n">'+esc(t('gc_empty'))+'</th><th class="n">'+esc(t('gc_atPlant'))+'</th><th class="n">'+esc(t('gc_gas'))+'</th><th class="n">'+esc(t('gc_bodies'))+'</th></tr></thead><tbody>' +
+      cs.map(function(c){ return '<tr'+(c.noOpening ? ' class="muted"' : '')+'><td>'+esc(locationName(c.locationId))+'</td><td>'+esc(invRowName_(c.stockItemId, '') || c.itemName)+'</td><td class="n num">'+invQty_(c.filled)+'</td><td class="n num">'+invQty_(c.empty)+'</td><td class="n num">'+invQty_(c.atPlant)+'</td><td class="n num"><b>'+invQty_(c.gas)+'</b></td><td class="n num"><b>'+invQty_(c.bodies)+'</b></td></tr>'; }).join('') + '</tbody></table>';
+  }
+  out.appendChild(gc);
+
+  // 2. the refill cycle: send empties, receive filled, what is at the plant and since when
+  var plant = res.plant || [];
+  var thrD = 3, now = Date.now();
+  var rf = el('<section class="card inv-rf no-collapse"><div class="rf-head"><div><h2>'+esc(t('rf_title'))+'</h2><p class="muted inv-eq-hint">'+esc(t('rf_hint'))+'</p></div>' +
+    (o.canEdit && o.editLocs.length && cylItems.length ? '<div class="rf-acts"><button type="button" class="btn rfSend">'+icon_('paperPlane')+'<span>'+esc(t('rf_send'))+'</span></button><button type="button" class="btn secondary rfRecv">'+icon_('inventory')+'<span>'+esc(t('rf_receive'))+'</span></button></div>' : '') + '</div>' +
+    '<div class="rf-form" hidden></div><div class="tbl-scroll rf-tbl"></div></section>');
+  qs('.rf-tbl', rf).innerHTML = plant.length ? '<table class="rp-table"><thead><tr><th>'+esc(t('admin_location'))+'</th><th>'+esc(t('inv_item'))+'</th><th class="n">'+esc(t('rf_sent'))+'</th><th class="n">'+esc(t('rf_received'))+'</th><th class="n">'+esc(t('gc_atPlant'))+'</th><th>'+esc(t('rf_oldest'))+'</th></tr></thead><tbody>' +
+    plant.map(function(p){ var age = p.oldest ? Math.max(0, Math.round((Date.parse(o.today + 'T00:00:00Z') - Date.parse(p.oldest + 'T00:00:00Z')) / 864e5)) : null;
+      return '<tr><td>'+esc(locationName(p.locationId))+'</td><td>'+esc(invRowName_(p.stockItemId, ''))+'</td><td class="n num">'+invQty_(p.sent)+'</td><td class="n num">'+invQty_(p.received)+'</td><td class="n num"><b>'+invQty_(p.atPlant)+'</b></td>' +
+        '<td>'+(p.oldest && p.atPlant > 0 ? '<bdi dir="ltr">'+esc(p.oldest)+'</bdi> <span class="an-age'+(age > thrD * 2 ? ' bad' : age > thrD ? ' warn' : '')+'">'+esc(t('an_days').replace('{n}', age))+'</span>' : '—')+'</td></tr>'; }).join('') + '</tbody></table>'
+    : '<div class="muted">'+esc(t('rf_none'))+'</div>';
+  function rfForm(kind){
+    var box = qs('.rf-form', rf);
+    if (!box.hidden && box.dataset.kind === kind) { box.hidden = true; return; }
+    box.hidden = false; box.dataset.kind = kind;
+    box.innerHTML = '<h3>'+esc(t('inv_k_' + kind))+'</h3><div class="grid">' +
+      '<div class="field"><label>'+esc(t('admin_location'))+'</label><select class="rfLoc">'+o.editLocs.map(function(l){ return '<option value="'+esc(l.id)+'"'+(INV_.loc === l.id ? ' selected' : '')+'>'+esc(locationName(l.id))+'</option>'; }).join('')+'</select></div>' +
+      '<div class="field"><label>'+esc(t('inv_item'))+'</label><select class="rfItem">'+cylItems.map(function(g){ return '<option value="'+esc(g.id)+'">'+esc(g.name)+'</option>'; }).join('')+'</select></div>' +
+      '<div class="field"><label>'+esc(t('inv_qty'))+'</label><input class="rfQty" type="text" inputmode="decimal" value=""></div>' +
+      '<div class="field"><label class="inv-val"><input type="checkbox" class="rfBox"> '+esc(t('inv_inBoxes'))+'</label><div class="muted rfEq"></div></div>' +
+      '<div class="field"><label>'+esc(t('rp_date'))+'</label><input class="rfDate" type="date" value="'+o.today+'" max="'+o.today+'"></div>' +
+      '<div class="field"><label>'+esc(t('entry_note'))+'</label><input class="rfNote" maxlength="300"></div></div>' +
+      '<div class="rf-at muted"></div><button type="button" class="btn rfGo">'+esc(t('inv_save'))+'</button><div class="rfMsg"></div>';
+    function boxSize(){ var g = byId(cylItems, qs('.rfItem', box).value); return g && Number(g.boxSize) > 0 ? Number(g.boxSize) : 35; }
+    function sync(){
+      var n = numFromInput_(qs('.rfQty', box)), on = qs('.rfBox', box).checked;
+      qs('.rfEq', box).textContent = on && n > 0 ? t('inv_boxesEq').split('{n}').join(n).split('{q}').join(Math.round(n * boxSize() * 1000) / 1000) : '';
+      var p = plant.filter(function(x){ return x.locationId === qs('.rfLoc', box).value && x.stockItemId === qs('.rfItem', box).value; })[0];
+      qs('.rf-at', box).textContent = t('rf_atPlantNow').replace('{n}', invQty_(p ? p.atPlant : 0));
+    }
+    ['.rfLoc', '.rfItem', '.rfBox'].forEach(function(s){ qs(s, box).addEventListener('change', sync); });
+    qs('.rfQty', box).addEventListener('input', sync);
+    sync();
+    qs('.rfGo', box).addEventListener('click', function(){
+      var btn = this, qty = numFromInput_(qs('.rfQty', box));
+      if (!(qty > 0)) { qs('.rfMsg', box).innerHTML = '<div class="msg err">'+esc(t('inv_needQty'))+'</div>'; return; }
+      if (qs('.rfBox', box).checked) qty = Math.round(qty * boxSize() * 1000) / 1000;
+      var pick = {}; pick[o.live ? 'stockItemId' : 'productId'] = qs('.rfItem', box).value;
+      btn.disabled = true;
+      api('addInventoryMove', { locationId: qs('.rfLoc', box).value, stockItemId: pick.stockItemId, productId: pick.productId, kind: kind, qty: qty, date: qs('.rfDate', box).value, note: qs('.rfNote', box).value.trim() }).then(function(r){
+        btn.disabled = false;
+        if (!r.ok) { qs('.rfMsg', box).innerHTML = '<div class="msg err">'+esc(errMsg_(r) + (r.atPlant != null ? ' ' + t('rf_atPlantNow').replace('{n}', invQty_(r.atPlant)) : ''))+'</div>'; return; }
+        showToast_(t('rf_saved') + (r.move && r.move.txNo ? ' · ' + r.move.txNo : ''), 'ok'); o.reload();
+      });
+    });
+  }
+  var sb = qs('.rfSend', rf), rb = qs('.rfRecv', rf);
+  if (sb) sb.addEventListener('click', function(){ rfForm('refill_out'); });
+  if (rb) rb.addEventListener('click', function(){ rfForm('refill_in'); });
+  out.appendChild(rf);
+
+  // 3. the stock card: one branch, one item, every movement with the balances after it
+  var sc = el('<section class="card inv-sc no-collapse"><h2>'+esc(t('sc_title'))+'</h2><p class="muted inv-eq-hint">'+esc(t('sc_hint'))+'</p><div class="grid sc-pick">' +
+    '<div class="field"><label>'+esc(t('admin_location'))+'</label><select class="scLoc">'+o.viewLocs.map(function(l){ return '<option value="'+esc(l.id)+'"'+(INV_.loc === l.id ? ' selected' : '')+'>'+esc(locationName(l.id))+'</option>'; }).join('')+'</select></div>' +
+    '<div class="field"><label>'+esc(t('inv_item'))+'</label><select class="scItem">'+o.goods.map(function(g){ return '<option value="'+esc(g.id)+'"'+(INV_.scItem === g.id ? ' selected' : '')+'>'+esc(g.name)+'</option>'; }).join('')+'</select></div>' +
+    '<div class="field sc-go-f"><label>&nbsp;</label><button type="button" class="btn scGo">'+esc(t('sc_show'))+'</button></div></div><div class="sc-out"></div></section>');
+  function showCard(){
+    var loc = qs('.scLoc', sc).value, item = qs('.scItem', sc).value, box = qs('.sc-out', sc);
+    if (!loc || !item) { box.innerHTML = '<div class="muted">'+esc(t('sc_pick'))+'</div>'; return; }
+    INV_.scItem = item;
+    box.innerHTML = '<div class="skeleton" style="height:120px"></div>';
+    var p = { locationId: loc, dateFrom: INV_.from, dateTo: INV_.to }; p[o.live ? 'stockItemId' : 'productId'] = item;
+    api('getStockLedger', p).then(function(r){
+      if (!r.ok) { box.innerHTML = '<div class="msg err">'+esc(errMsg_(r))+'</div>'; return; }
+      var cyl = r.cylinder;
+      function moveName(l){
+        if (l.kind === 'sale') return t('sc_sale_' + l.effect) + ' · ' + productName_(l.productId) + ' · ' + sourceName_({ sourceType: l.sourceType, sourceId: l.sourceId });
+        return t('inv_k_' + l.kind) + (l.newCylinders ? ' · ' + t('sc_newCyl') : '') + (l.note ? ' · ' + l.note : '');
+      }
+      var head = cyl ? ['gc_filled', 'gc_empty', 'gc_atPlant'] : ['sc_qty'];
+      var balH = cyl ? ['gc_filled', 'gc_empty', 'gc_atPlant', 'gc_gas', 'gc_bodies'] : ['sc_bal'];
+      function dCells(d){ return cyl ? [d.full, d.empty, d.plant].map(function(v){ return '<td class="n num sc-d'+(v < 0 ? ' neg' : v > 0 ? ' pos' : '')+'">'+invSigned_(v)+'</td>'; }).join('') : '<td class="n num sc-d'+(d.unit < 0 ? ' neg' : ' pos')+'">'+invSigned_(d.unit)+'</td>'; }
+      function bCells(b){ return (cyl ? [b.full, b.empty, b.plant, b.gas, b.bodies] : [b.unit]).map(function(v, i){ return '<td class="n num'+(v < 0 ? ' sc-short' : '')+(cyl && i >= 3 ? ' sc-strong' : '')+'">'+invQty_(v)+'</td>'; }).join(''); }
+      var blank = cyl ? '<td></td><td></td><td></td>' : '<td></td>';
+      box.innerHTML = (r.noOpening ? '<div class="inv-warn">'+icon_('alert')+'<span>'+esc(t('sc_noOpening'))+'</span></div>' : '') +
+        '<div class="tbl-scroll"><table class="rp-table sc-table" data-nosort><thead><tr><th>'+esc(t('rp_date'))+'</th><th>'+esc(t('sc_no'))+'</th><th>'+esc(t('sc_move'))+'</th><th>'+esc(t('sc_by'))+'</th>' +
+          head.map(function(k){ return '<th class="n sc-dh">'+esc(t(k))+' ±</th>'; }).join('') + balH.map(function(k){ return '<th class="n">'+esc(t(k))+'</th>'; }).join('') + '</tr></thead><tbody>' +
+        '<tr class="sc-open"><td colspan="4"><b>'+esc(t('sc_opening'))+'</b></td>'+blank+bCells(r.opening)+'</tr>' +
+        (r.lines.length ? r.lines.map(function(l){
+          return '<tr><td><bdi dir="ltr">'+esc(l.date)+'</bdi></td><td>'+(l.txNo ? '<span class="tx-no" dir="ltr">'+esc(l.txNo)+'</span>' : '')+'</td><td>'+esc(moveName(l))+'</td><td>'+esc(userName(l.by))+'</td>'+dCells(l.d)+bCells(l.bal)+'</tr>';
+        }).join('') : '<tr><td colspan="'+(4 + head.length + balH.length)+'" class="muted">'+esc(t('sc_empty'))+'</td></tr>') +
+        '<tr class="sc-end"><td colspan="4"><b>'+esc(t('sc_ending'))+'</b></td>'+blank+bCells(r.ending)+'</tr></tbody></table></div>';
+      var ex = exButtons_(function(){
+        var rows = [[t('rp_date'), t('sc_no'), t('sc_move'), t('sc_by')].concat(head.map(function(k){ return t(k) + ' ±'; }), balH.map(function(k){ return t(k); }))];
+        var bv = function(b){ return cyl ? [b.full, b.empty, b.plant, b.gas, b.bodies] : [b.unit]; };
+        rows.push([t('sc_opening'), '', '', ''].concat(head.map(function(){ return ''; }), bv(r.opening)));
+        r.lines.forEach(function(l){ rows.push([l.date, l.txNo || '', moveName(l), userName(l.by)].concat(cyl ? [l.d.full, l.d.empty, l.d.plant] : [l.d.unit], bv(l.bal))); });
+        rows.push([t('sc_ending'), '', '', ''].concat(head.map(function(){ return ''; }), bv(r.ending)));
+        return [{ name: t('sc_title'), rows: rows, noBars: true }];
+      }, function(){ return t('sc_title') + ' ' + locationName(loc) + ' ' + (invRowName_(item, '') || ''); }, function(){ return { note: locationName(loc) + ' · ' + INV_.from + ' – ' + INV_.to }; });
+      box.insertBefore(ex, box.firstChild);
+    });
+  }
+  qs('.scGo', sc).addEventListener('click', showCard);
+  out.appendChild(sc);
+  if (INV_.scItem && qs('.scLoc', sc).value) showCard();
+}
 // Setting up the inventory items, once (LPG Task 1b). The server proposes items
 // and links from the product names; the manager corrects the table and sees
 // where every count on file lands ("2051 counted on X → iron — مليانة") before
@@ -15220,6 +15374,8 @@ function renderInventory(body){
       (rows.some(function(r){ return r.salesWithoutQty; }) ? '<div class="inv-warn">'+icon_('alert')+'<span>'+esc(t('inv_noQtyWarn').replace('{n}', rows.reduce(function(a, r){ return a + r.salesWithoutQty; }, 0)).replace('{amt}', money(rows.reduce(function(a, r){ return a + r.salesWithoutQtyAmount; }, 0))))+'</span></div>' : '') +
       '</section>');
     out.appendChild(eq);
+    // gas and cylinders, the refill cycle with the plant, the stock card (2026-10-06)
+    invCylCards_(out, { res: res, goods: goods, editLocs: editLocs, viewLocs: viewLocs, canEdit: canEdit, live: live, reload: load, today: today });
 
     // the tree: city › area › branch › item › who sold it
     function locOf(id){ return byId(meta.locations, id) || {}; }
