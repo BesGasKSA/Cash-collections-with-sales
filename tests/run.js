@@ -65,6 +65,9 @@ var admin = bootstrapAdmin('admin@bestgas.sa');
 var adminLogin = login('admin@bestgas.sa', 'Bootstrap#1');
 check(adminLogin.ok, 'admin login');
 var adminTok = adminLogin.token;
+// The arithmetic below was written with costs typed before VAT; the live default
+// (costs typed with VAT, 2026-10-06) has its own section near the end.
+check(call({ action: 'adminSetConfig', token: adminTok, data: { costIncludeVat: false } }).ok, 'costs read as typed before VAT for the sections that follow');
 
 console.log('--- create people ---');
 var sara = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Sara', email: 'sara@bestgas.sa', role: 'cluster_manager' } }).user;
@@ -4698,6 +4701,19 @@ var cCard = call({ action: 'getStockLedger', token: financeTok, locationId: rcLo
 var cLast = cCard.lines[cCard.lines.length - 1];
 check(cLast.bal.full === 6 && cLast.bal.empty === 7 && cLast.bal.plant === 1 && cLast.bal.cust === 1 && cLast.bal.bodies === 15, 'the stock card ends at filled 6, empty 7, at the plant 1, with customers 1, cylinders 15');
 check(cCard.lines.some(function (l) { return l.kind === 'car_load' && !l.d.full && !l.d.empty; }) && cCard.lines.some(function (l) { return l.kind === 'deposit_out' && l.d.full === -3 && l.d.cust === 3; }), 'the car load is listed with no effect, the deposit with its own');
+
+console.log('--- a unit cost is typed with VAT: cost of goods and stock values take it out ---');
+var vcBefore = call({ action: 'getInventoryReport', token: financeTok, dateFrom: '2026-09-01', dateTo: '2026-09-30', locationId: rcLoc.id });
+var vcCyl0 = (vcBefore.cylSummary || []).filter(function (c) { return c.stockItemId === rcIron.id; })[0] || {};
+check(call({ action: 'adminSetConfig', token: adminTok, data: { costIncludeVat: true } }).ok && call({ action: 'listMeta', token: adminTok }).config.costIncludeVat === true, 'the setting: costs are typed with VAT (the default), and the screens are told');
+var vcAfter = call({ action: 'getInventoryReport', token: financeTok, dateFrom: '2026-09-01', dateTo: '2026-09-30', locationId: rcLoc.id });
+var vcCyl1 = (vcAfter.cylSummary || []).filter(function (c) { return c.stockItemId === rcIron.id; })[0] || {};
+var vcT0 = vcCyl0.filledValue + vcCyl0.emptyValue + vcCyl0.atPlantValue + vcCyl0.withCustomersValue, vcT1 = vcCyl1.filledValue + vcCyl1.emptyValue + vcCyl1.atPlantValue + vcCyl1.withCustomersValue;
+check(Math.abs(vcT1 - vcT0 / 1.15) < 0.05, 'stock is valued before VAT: the same cylinders are worth their cost / 1.15 (' + vcT0 + ' → ' + vcT1 + ')');
+var vcFull = (vcAfter.rows || []).filter(function (r) { return r.stockItemId === rcIron.id && r.state === 'full'; })[0] || {};
+check(Math.abs(vcFull.unitCost - (11 + 140) / 1.15) < 0.001, 'a filled iron cylinder: (gas 11 + cylinder 140) / 1.15 = 131.3043 (got ' + vcFull.unitCost + ')');
+check(Math.round(ctx.costExVat_(115, '2026-09-10') * 1e6) / 1e6 === 100, 'a cost of 115 with VAT is 100 before it');
+check(call({ action: 'adminSetConfig', token: adminTok, data: { costIncludeVat: false } }).ok && ctx.costExVat_(115, '2026-09-10') === 115, 'and read as typed when the setting says costs are before VAT');
 
 console.log('--- every transaction has a number: PREFIX-YEAR-NNNNNN, a day\'s rows share one ---');
 // the warm-up ping in the translations section above ran the one-time pass:

@@ -437,7 +437,9 @@ function actionInventoryLive_(req, user) {
 
 // What one unit of an item in a state is worth on a day: a full cylinder is the
 // gas and the cylinder it is in, an empty one the cylinder (both dated).
-function invUnitValue_(it, state, date, hist) {
+// Stock is valued before VAT (2026-10-06): a cost typed with VAT has it taken out.
+function invUnitValue_(it, state, date, hist) { return costExVat_(invUnitValueAsTyped_(it, state, date, hist), date); }
+function invUnitValueAsTyped_(it, state, date, hist) {
   if (it.virtual) return state === 'empty' ? it.cylinderCost : state === 'full' ? it.gasCost + it.cylinderCost : it.unitCost;
   if (it.kind !== 'cylinder') return stockItemCostOn_(it, 'unitCost', date, hist).v;
   var cyl = stockItemCostOn_(it, 'cylinderCost', date, hist).v;

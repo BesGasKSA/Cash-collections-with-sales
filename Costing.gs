@@ -39,6 +39,11 @@ function costCanRead_(user) { return COST_ROLES_.indexOf(user.role) >= 0; }
 function requireCostRead_(user) { if (!costCanRead_(user)) throw new Error('forbidden'); }
 // prices as typed at the branches hold VAT unless the setting says otherwise
 function salesIncludeVat_() { return config_().salesIncludeVat !== false; }
+// A unit cost is typed with VAT (the user, 2026-10-06): cost of goods and stock
+// values take it out at the rate of the day, since input VAT is recovered.
+// On by default; Settings can say costs are typed before VAT.
+function costIncludesVat_() { return config_().costIncludeVat !== false; }
+function costExVat_(v, date, hist) { v = Number(v || 0); return costIncludesVat_() ? v / (1 + vatRateOn_(date, hist)) : v; }
 
 // ---------- months and days ----------
 function costMonthOk_(m) {
@@ -768,7 +773,7 @@ function profitCompute_(from, to, basis, vatIncl) {
     if (p && p.type === 'services') { /* a service has no cost of goods */ }
     else if (p && qty > 0) {
       var c = costOfProduct_(p, e.date, hist, productsById, stkItems);
-      if (c > 0) cogs = qty * c;
+      if (c > 0) cogs = qty * costExVat_(c, e.date, vatHist);
       else if (net > 0) { T.uncostedSales += net; noCost[p.id] = true; }
     } else if (net > 0) T.uncostedSales += net;   // a sale typed as an amount only cannot be costed
     if (gross || deliv || com || exp || qty) u.touched = true;

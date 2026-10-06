@@ -1301,10 +1301,12 @@ function actionAdminSetConfig_(req, user) {
   if (d.posSalesEnabled != null) cfg.posSalesEnabled = !!d.posSalesEnabled;
   // whether the prices typed at the branches hold VAT (profit is read without it)
   if (d.salesIncludeVat != null) cfg.salesIncludeVat = !!d.salesIncludeVat;
+  // whether unit costs are typed with VAT (cost of goods and stock values are read without it)
+  if (d.costIncludeVat != null) cfg.costIncludeVat = !!d.costIncludeVat;
   writeRow(SHEETS.CONFIG, cfg);
   // what changed, from what to what — a settings change moves money too
   var was = JSON.parse(before), diff = [];
-  ['vatRate', 'staleThresholdHours', 'heldThresholdHours', 'secondApprovalThreshold', 'areaManagerBulkUploadEnabled', 'posSalesEnabled', 'salesIncludeVat', 'liveLocked', 'senderName'].forEach(function (k) {
+  ['vatRate', 'staleThresholdHours', 'heldThresholdHours', 'secondApprovalThreshold', 'areaManagerBulkUploadEnabled', 'posSalesEnabled', 'salesIncludeVat', 'costIncludeVat', 'liveLocked', 'senderName'].forEach(function (k) {
     if (String(was[k]) !== String(cfg[k])) diff.push(k + ': ' + was[k] + ' → ' + cfg[k]);
   });
   logAudit_('admin_set_config', user.id, diff.join('; ') || 'no change');
@@ -1766,6 +1768,6 @@ function actionMeta_(req, user) {
     clusters: clusters, zones: zones, products: products, stockItems: stockItems, users: users,
     incomeItems: incomeItems, expenseItems: expenseItems, customers: customers, cities: cities, channels: channels,
     translations: readSheet(SHEETS.TRANSLATIONS).map(function (r) { return { src: r.src, ar: r.ar || '', en: r.en || '', ur: r.ur || '', srcLang: r.srcLang || 'ar', auto: r.auto !== false }; }),
-    config: { vatRate: vatRate_(), vatHistory: vatHistory_(), staleThresholdHours: staleThresholdHours_(), heldThresholdHours: heldThresholdHours_(), secondApprovalThreshold: secondApprovalThreshold_(), areaManagerBulkUploadEnabled: areaManagerBulkUploadEnabled_(), posSalesEnabled: posSalesEnabled_(), salesIncludeVat: salesIncludeVat_(), liveLocked: config_().liveLocked === true, liveLockedAt: config_().liveLockedAt || null, stockItemsLive: stockItemsLive_() }
+    config: { vatRate: vatRate_(), vatHistory: vatHistory_(), staleThresholdHours: staleThresholdHours_(), heldThresholdHours: heldThresholdHours_(), secondApprovalThreshold: secondApprovalThreshold_(), areaManagerBulkUploadEnabled: areaManagerBulkUploadEnabled_(), posSalesEnabled: posSalesEnabled_(), salesIncludeVat: salesIncludeVat_(), costIncludeVat: costIncludesVat_(), liveLocked: config_().liveLocked === true, liveLockedAt: config_().liveLockedAt || null, stockItemsLive: stockItemsLive_() }
   };
 }
