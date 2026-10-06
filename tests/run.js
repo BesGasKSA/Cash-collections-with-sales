@@ -4743,5 +4743,80 @@ check(ctx.getById_(SHEETS.ENTRIES, txNew.entry.id).txNo === txNew.entry.txNo, 'a
 var txRisk = call({ action: 'createRiskItem', token: jrBm.tok, type: 'risk', title: 'Test risk', description: 'made up', severity: 'low' });
 check(txRisk.ok && /^RSK-\d{4}-\d{6}$/.test(txRisk.item.txNo), 'a risk item is RSK-YYYY-NNNNNN (' + (txRisk.error || txRisk.item.txNo) + ')');
 
+console.log('--- customers: payments at the branch and by bank, the statement, ZATCA invoices and credit notes ---');
+var cuA = call({ action: 'adminSaveEntity', token: adminTok, kind: 'customer', data: { name: 'Invoice Customer One', city: 'Riyadh' } }).entity;
+check(call({ action: 'adminSaveEntity', token: adminTok, kind: 'customer', id: cuA.id, data: { vatNumber: '123' } }).error === 'invalid_vat_number', 'a customer VAT number is 15 digits starting and ending with 3');
+check(call({ action: 'adminSaveEntity', token: adminTok, kind: 'customer', id: cuA.id, data: { crNumber: '12' } }).error === 'invalid_cr_number', 'a commercial registration is 10 digits');
+var cuSaved = call({ action: 'adminSaveEntity', token: adminTok, kind: 'customer', id: cuA.id, data: { vatNumber: '300000000000003', crNumber: '1010000000', street: 'King Fahd', district: 'Olaya', postalCode: '12211', buildingNo: '1234' } });
+check(cuSaved.ok && cuSaved.entity.vatNumber === '300000000000003', 'the buyer VAT number, CR and national address are kept on the customer');
+// two credit days and one branch cash payment
+var cuD1 = call({ action: 'createDailyEntry', token: jrBm.tok, date: jrToday, sourceType: 'store', sourceId: jrStore.id, cashSales: 1150, creditSales: 1150, creditCustomerId: cuA.id, submissionId: 'cu-d1' });
+var cuD2 = call({ action: 'createDailyEntry', token: jrBm.tok, date: jrToday, sourceType: 'store', sourceId: jrStore.id, cashSales: 230, creditSales: 230, creditCustomerId: cuA.id, submissionId: 'cu-d2' });
+check(cuD1.ok && cuD2.ok, 'two credit sales to the customer (' + (cuD1.error || cuD2.error || 'ok') + ')');
+var cuMeta = call({ action: 'listMeta', token: adminTok });
+var cuPayItem = (cuMeta.incomeItems || []).filter(function (i) { return i.system === 'customer_payment'; })[0];
+if (!cuPayItem) { ctx.seedCustomerPaymentItemOnce_(); ctx.resetExecMemo_(); cuPayItem = ctx.readSheet(SHEETS.INCOME_ITEMS).filter(function (i) { return i.system === 'customer_payment'; })[0]; }
+check(!!cuPayItem, 'a system income item for cash a credit customer pays at a branch is made once');
+check(call({ action: 'createDailyEntry', token: jrBm.tok, date: jrToday, sourceType: 'store', sourceId: jrStore.id, cashSales: 0, otherCash: 100, otherCashItemId: cuPayItem.id, otherCashReason: 'paid', submissionId: 'cu-px' }).error === 'customer_required', 'that item needs the customer who paid');
+check(call({ action: 'createDailyEntry', token: jrBm.tok, date: jrToday, sourceType: 'store', sourceId: jrStore.id, cashSales: 0, otherCash: 100, otherCashItemId: cuPayItem.id, otherCashReason: 'paid', paymentCustomerId: 'nope', submissionId: 'cu-py' }).error === 'unknown_customer', 'and a customer on file');
+var cuCash = call({ action: 'createDailyEntry', token: jrBm.tok, date: jrToday, sourceType: 'store', sourceId: jrStore.id, cashSales: 0, otherCash: 300, otherCashItemId: cuPayItem.id, otherCashReason: 'paid part of his account', paymentCustomerId: cuA.id, submissionId: 'cu-p1' });
+check(cuCash.ok && cuCash.entry.paymentCustomerId === cuA.id, 'cash a customer paid at the branch is an other collection naming him (' + (cuCash.error || 'ok') + ')');
+// bank payments: admin and finance only, with a reference
+check(call({ action: 'recordCustomerPayment', token: jrBm.tok, customerId: cuA.id, date: jrToday, amount: 10, ref: 'x' }).error === 'forbidden', 'a branch manager cannot record a bank payment');
+check(call({ action: 'recordCustomerPayment', token: financeTok, customerId: cuA.id, date: jrToday, amount: 10 }).error === 'deposit_needs_reference', 'a bank payment needs its reference');
+check(call({ action: 'recordCustomerPayment', token: financeTok, customerId: cuA.id, date: '2999-01-01', amount: 10, ref: 'x' }).error === 'future_date', 'and cannot be dated in the future');
+var cuBank = call({ action: 'recordCustomerPayment', token: financeTok, customerId: cuA.id, date: jrToday, amount: 500, ref: 'TRF-77' });
+check(cuBank.ok && /^CPY-\d{4}-\d{6}$/.test(cuBank.payment.txNo), 'finance records a bank transfer, numbered CPY-YYYY-NNNNNN (' + (cuBank.error || cuBank.payment.txNo) + ')');
+var cuBad = call({ action: 'recordCustomerPayment', token: financeTok, customerId: cuA.id, date: jrToday, amount: 40, ref: 'WRONG' });
+check(call({ action: 'voidCustomerPayment', token: financeTok, id: cuBad.payment.id }).error === 'reason_required', 'voiding a payment needs a reason');
+check(call({ action: 'voidCustomerPayment', token: financeTok, id: cuBad.payment.id, reason: 'typed twice' }).ok, 'a wrong payment is voided, never deleted');
+// the statement
+var cuSt = call({ action: 'getCustomerStatement', token: adminTok, customerId: cuA.id });
+check(cuSt.ok && cuSt.debit === 1380 && cuSt.credit === 800 && cuSt.closing === 580, 'statement: owed 1,380, paid 300 cash + 500 bank, balance 580 (got ' + JSON.stringify([cuSt.error, cuSt.debit, cuSt.credit, cuSt.closing]) + ')');
+check(cuSt.ok && cuSt.lines.length === 4 && cuSt.lines[cuSt.lines.length - 1].balance === 580, 'one line per sale and payment, with a running balance; the voided payment is left out');
+check(cuSt.ok && cuSt.aging.d0_30 === 580, 'what is unpaid is aged: all 580 within 30 days');
+check(call({ action: 'getCustomerStatement', token: jrBm.tok, customerId: cuA.id }).error === 'forbidden', 'a branch manager does not read statements');
+var cuLater = call({ action: 'getCustomerStatement', token: adminTok, customerId: cuA.id, dateFrom: '2999-01-01', dateTo: '2999-01-02' });
+check(cuLater.ok === false || cuLater.opening === 580, 'a period after everything opens on the balance');
+var cuBal = call({ action: 'getCustomerBalances', token: financeTok });
+var cuRow = (cuBal.balances || []).filter(function (r) { return r.customerId === cuA.id; })[0] || {};
+check(cuRow.balance === 580 && cuRow.paidCash === 300 && cuRow.paidBank === 500 && cuRow.uninvoiced === 1380, 'the customers list: balance, cash and bank paid, and what is not invoiced yet');
+// invoices
+var cuCand = call({ action: 'getInvoiceCandidates', token: adminTok, customerId: cuA.id });
+check(cuCand.ok && cuCand.entries.length === 2, 'the two credit sales wait to be invoiced');
+check(call({ action: 'createInvoice', token: financeTok, customerId: cuA.id, entryIds: [cuD1.entry.id] }).error === 'company_name_required', 'no invoice before the company profile has its name');
+check(call({ action: 'adminSetConfig', token: adminTok, data: { company: { nameAr: 'شركة الاختبار', vatNumber: '123' } } }).error === 'invalid_vat_number', 'the company VAT number is checked');
+check(call({ action: 'adminSetConfig', token: adminTok, data: { company: { nameAr: 'شركة الاختبار', iban: 'SA12' } } }).error === 'invalid_iban', 'and the IBAN');
+check(call({ action: 'adminSetConfig', token: adminTok, data: { company: { nameAr: 'شركة الاختبار' } } }).ok, 'the company profile saves');
+check(call({ action: 'createInvoice', token: financeTok, customerId: cuA.id, entryIds: [cuD1.entry.id] }).error === 'company_vat_required', 'no invoice without the company VAT number');
+check(call({ action: 'adminSetConfig', token: adminTok, data: { company: { nameAr: 'شركة الاختبار', nameEn: 'Test Co', vatNumber: '300000000000003', crNumber: '1010000000', city: 'Riyadh', postalCode: '13226' } } }).ok
+  && call({ action: 'listMeta', token: jrBm.tok }).config.company.vatNumber === '300000000000003', 'with it, every screen gets the company profile');
+check(call({ action: 'createInvoice', token: jrBm.tok, customerId: cuA.id, entryIds: [cuD1.entry.id] }).error === 'forbidden', 'a branch manager does not issue invoices');
+var cuInv = call({ action: 'createInvoice', token: financeTok, customerId: cuA.id, entryIds: [cuD1.entry.id, cuD2.entry.id], note: 'September' });
+check(cuInv.ok && /^INV-\d{4}-\d{6}$/.test(cuInv.invoice.txNo), 'an invoice is numbered INV-YYYY-NNNNNN (' + (cuInv.error || cuInv.invoice.txNo) + ')');
+check(cuInv.ok && cuInv.invoice.type === 'standard' && cuInv.invoice.buyer.vatNumber === '300000000000003', 'a buyer with a VAT number gets a tax invoice (standard), his details frozen on it');
+check(cuInv.ok && cuInv.invoice.totals.total === 1380 && cuInv.invoice.totals.vat === 180 && cuInv.invoice.totals.ex === 1200, 'totals: 1,380 with VAT = 1,200 + VAT 180 (got ' + JSON.stringify(cuInv.invoice && cuInv.invoice.totals) + ')');
+// the QR: tags 1-5 in order
+var cuQr = Buffer.from(cuInv.invoice.qr, 'base64'), cuTags = [], cuI = 0;
+while (cuI < cuQr.length) { var tg = cuQr[cuI], ln = cuQr[cuI + 1]; cuTags.push([tg, cuQr.slice(cuI + 2, cuI + 2 + ln).toString('utf8')]); cuI += 2 + ln; }
+check(cuTags.length === 5 && cuTags[0][1] === 'شركة الاختبار' && cuTags[1][1] === '300000000000003' && /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ$/.test(cuTags[2][1]) && cuTags[3][1] === '1380.00' && cuTags[4][1] === '180.00',
+  'the ZATCA QR reads seller, VAT number, time, total and VAT (got ' + JSON.stringify(cuTags) + ')');
+check(call({ action: 'createInvoice', token: financeTok, customerId: cuA.id, entryIds: [cuD1.entry.id] }).error === 'already_invoiced', 'a sale is invoiced once');
+check(call({ action: 'getInvoiceCandidates', token: adminTok, customerId: cuA.id }).entries.length === 0, 'and leaves the waiting list');
+var cuSt2 = call({ action: 'getCustomerStatement', token: adminTok, customerId: cuA.id });
+check(cuSt2.lines.filter(function (l) { return l.kind === 'sale'; }).every(function (l) { return l.invoiceNo === cuInv.invoice.txNo; }), 'the statement names the invoice on each sale');
+check(call({ action: 'creditInvoice', token: financeTok, id: cuInv.invoice.id }).error === 'reason_required', 'a credit note needs a reason');
+var cuCn = call({ action: 'creditInvoice', token: financeTok, id: cuInv.invoice.id, reason: 'wrong quantity' });
+check(cuCn.ok && /^CRN-\d{4}-\d{6}$/.test(cuCn.creditNote.txNo) && cuCn.creditNote.refInvoiceNo === cuInv.invoice.txNo && cuCn.invoice.status === 'credited', 'a wrong invoice is answered by a credit note CRN-YYYY-NNNNNN naming it (' + (cuCn.error || cuCn.creditNote.txNo) + ')');
+check(call({ action: 'creditInvoice', token: financeTok, id: cuInv.invoice.id, reason: 'again' }).error === 'already_credited', 'an invoice is credited once');
+check(call({ action: 'getInvoiceCandidates', token: adminTok, customerId: cuA.id }).entries.length === 2, 'its sales can be invoiced again');
+var cuSimple = call({ action: 'adminSaveEntity', token: adminTok, kind: 'customer', data: { name: 'Walk In Customer', city: 'Riyadh' } }).entity;
+var cuD3 = call({ action: 'createDailyEntry', token: jrBm.tok, date: jrToday, sourceType: 'store', sourceId: jrStore.id, cashSales: 115, creditSales: 115, creditCustomerId: cuSimple.id, submissionId: 'cu-d3' });
+var cuInv2 = call({ action: 'createInvoice', token: adminTok, customerId: cuSimple.id, entryIds: [cuD3.entry.id] });
+check(cuInv2.ok && cuInv2.invoice.type === 'simplified', 'a buyer without a VAT number gets a simplified tax invoice');
+check(call({ action: 'createInvoice', token: adminTok, customerId: cuSimple.id, entryIds: [cuD1.entry.id] }).error === 'invalid_invoice_entry', 'a sale of another customer cannot be put on his invoice');
+var cuList = call({ action: 'listInvoices', token: adminTok, customerId: cuA.id });
+check(cuList.ok && cuList.invoices.length === 2, 'his invoices and credit notes are listed');
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);

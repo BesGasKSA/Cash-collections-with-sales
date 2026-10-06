@@ -626,6 +626,11 @@ function validateEntity_(kind, d) {
   if (kind === 'customer') {
     if (!String(d.name || '').trim()) return 'name_required';
     if (customerDuplicateOf_(d.name, d.id)) return 'duplicate_customer';
+    // what a tax invoice needs of the buyer (2026-10-06): a Saudi VAT number is 15 digits
+    // starting and ending with 3, a commercial registration 10 digits; both optional
+    if (d.vatNumber != null && String(d.vatNumber).trim() !== '' && !saVatOk_(String(d.vatNumber).trim())) return 'invalid_vat_number';
+    if (d.crNumber != null && String(d.crNumber).trim() !== '' && !saCrOk_(String(d.crNumber).trim())) return 'invalid_cr_number';
+    if (d.postalCode != null && String(d.postalCode).trim() !== '' && !/^\d{5}$/.test(String(d.postalCode).trim())) return 'invalid_postal_code';
     // the customer's delivery fee per unit, product by product; it is added
     // to their credit lines on its own (special prices were dropped 2026-09-29)
     // and the driver's commission per unit (2026-09-29)
@@ -1303,12 +1308,19 @@ function actionAdminSetConfig_(req, user) {
   if (d.salesIncludeVat != null) cfg.salesIncludeVat = !!d.salesIncludeVat;
   // whether unit costs are typed with VAT (cost of goods and stock values are read without it)
   if (d.costIncludeVat != null) cfg.costIncludeVat = !!d.costIncludeVat;
+  // the seller on every invoice (2026-10-06): the company's legal names, VAT and CR numbers, national address and bank
+  if (d.company != null) {
+    var co = companyClean_(d.company);
+    if (co.error) return { ok: false, error: co.error };
+    cfg.company = co.company;
+  }
   writeRow(SHEETS.CONFIG, cfg);
   // what changed, from what to what — a settings change moves money too
   var was = JSON.parse(before), diff = [];
   ['vatRate', 'staleThresholdHours', 'heldThresholdHours', 'secondApprovalThreshold', 'areaManagerBulkUploadEnabled', 'posSalesEnabled', 'salesIncludeVat', 'costIncludeVat', 'liveLocked', 'senderName'].forEach(function (k) {
     if (String(was[k]) !== String(cfg[k])) diff.push(k + ': ' + was[k] + ' → ' + cfg[k]);
   });
+  if (JSON.stringify(was.company || {}) !== JSON.stringify(cfg.company || {})) diff.push('company: ' + JSON.stringify(cfg.company || {}));
   logAudit_('admin_set_config', user.id, diff.join('; ') || 'no change');
   return { ok: true, config: cfg };
 }
@@ -1568,6 +1580,7 @@ function runOneTimeMigrations_() {
   seedCustomersOnce_();
   backfillCodesOnce_();
   seedCostTypesOnce_();
+  seedCustomerPaymentItemOnce_(); seedCompanyOnce_();
   // the translations catch-up is not here: it runs from doGet only (translationsCatchUpStep_)
   // the app became Best Gas Collections; the sender name saved at setup still
   // said the old default (a name someone chose is kept)
@@ -1768,6 +1781,6 @@ function actionMeta_(req, user) {
     clusters: clusters, zones: zones, products: products, stockItems: stockItems, users: users,
     incomeItems: incomeItems, expenseItems: expenseItems, customers: customers, cities: cities, channels: channels,
     translations: readSheet(SHEETS.TRANSLATIONS).map(function (r) { return { src: r.src, ar: r.ar || '', en: r.en || '', ur: r.ur || '', srcLang: r.srcLang || 'ar', auto: r.auto !== false }; }),
-    config: { vatRate: vatRate_(), vatHistory: vatHistory_(), staleThresholdHours: staleThresholdHours_(), heldThresholdHours: heldThresholdHours_(), secondApprovalThreshold: secondApprovalThreshold_(), areaManagerBulkUploadEnabled: areaManagerBulkUploadEnabled_(), posSalesEnabled: posSalesEnabled_(), salesIncludeVat: salesIncludeVat_(), costIncludeVat: costIncludesVat_(), liveLocked: config_().liveLocked === true, liveLockedAt: config_().liveLockedAt || null, stockItemsLive: stockItemsLive_() }
+    config: { vatRate: vatRate_(), vatHistory: vatHistory_(), staleThresholdHours: staleThresholdHours_(), heldThresholdHours: heldThresholdHours_(), secondApprovalThreshold: secondApprovalThreshold_(), areaManagerBulkUploadEnabled: areaManagerBulkUploadEnabled_(), posSalesEnabled: posSalesEnabled_(), salesIncludeVat: salesIncludeVat_(), costIncludeVat: costIncludesVat_(), company: companyProfile_(), liveLocked: config_().liveLocked === true, liveLockedAt: config_().liveLockedAt || null, stockItemsLive: stockItemsLive_() }
   };
 }

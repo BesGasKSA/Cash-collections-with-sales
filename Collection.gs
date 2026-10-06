@@ -328,6 +328,12 @@ function checkNonSalesFields_(r, siblingCash) {
     var inc = r.otherCashItemId ? getById_(SHEETS.INCOME_ITEMS, r.otherCashItemId) : null;
     if (!inc || inc.active === false) return 'invalid_income_item';
     if (!String(r.otherCashReason || '').trim()) return 'reason_required';
+    // cash a credit customer paid at the branch names him, so his statement shows it (2026-10-06)
+    if (r.paymentCustomerId) {
+      var payer = typeof r.paymentCustomerId === 'string' ? getById_(SHEETS.CUSTOMERS, r.paymentCustomerId) : null;
+      if (!payer) return 'unknown_customer';
+      if (payer.active === false) return 'invalid_customer';
+    } else if (inc.system === 'customer_payment') return 'customer_required';
   }
   var exp = Number(r.expenseAmount || 0);
   if (exp > 0) {
@@ -431,6 +437,7 @@ function nonSalesFields_(r) {
     otherCash: Number(r.otherCash || 0),
     otherCashItemId: Number(r.otherCash || 0) > 0 ? r.otherCashItemId : null,
     otherCashReason: Number(r.otherCash || 0) > 0 ? String(r.otherCashReason || '').trim().slice(0, 1000) : '',
+    paymentCustomerId: Number(r.otherCash || 0) > 0 ? (r.paymentCustomerId || null) : null,
     expenseAmount: Number(r.expenseAmount || 0),
     expenseItemId: Number(r.expenseAmount || 0) > 0 ? r.expenseItemId : null,
     expenseReason: Number(r.expenseAmount || 0) > 0 ? String(r.expenseReason || '').trim().slice(0, 1000) : '',
@@ -1424,7 +1431,7 @@ function resubmitError_(batch, user) {
 var BATCH_ROW_FIELDS_ = ['date', 'sourceType', 'sourceId', 'productId', 'qty', 'unitPrice', 'cashSales', 'posSales', 'creditSales',
   'creditCustomerId', 'channelQtys', 'channelComRates', 'deliveryFeeBankAmount', 'deliveryNote', 'otherCash', 'otherCashItemId',
   'otherCashReason', 'expenseAmount', 'expenseItemId', 'expenseReason', 'directDepositAmount', 'directDepositRef', 'directDepositNote',
-  'directDepositPosId', 'bankTransferAmount', 'cylindersOut', 'cylindersIn', 'note'];
+  'directDepositPosId', 'paymentCustomerId', 'bankTransferAmount', 'cylindersOut', 'cylindersIn', 'note'];
 function actionAreaBatchRows_(req, user) {
   var batch = getById_(SHEETS.AREA_BULK_BATCHES, req.id);
   var err = resubmitError_(batch, user);

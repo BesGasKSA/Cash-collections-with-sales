@@ -66,7 +66,10 @@ var SHEETS = {
   COST_LINES: 'cost_lines',
   PRODUCT_COSTS: 'product_costs',
   // every change to a price, a cost, a delivery fee or a commission, old and new (2026-10-04)
-  RATE_CHANGES: 'rate_changes'
+  RATE_CHANGES: 'rate_changes',
+  // customers (Customers.gs): payments by bank transfer, and the sales invoices and credit notes issued from the app
+  CUSTOMER_PAYMENTS: 'customer_payments',
+  SALES_INVOICES: 'sales_invoices'
 };
 
 var IDLE_MS = 2 * 3600 * 1000;   // was 12h; the screens sign out after 10 idle minutes (security review 2026-10-04)
@@ -275,12 +278,14 @@ function writeRow(name, obj) {
 // person's request), in the order they were written.
 var TX_PREFIX_ = {
   daily_entries: 'DAY', area_bulk_batches: 'ABU', inventory_moves: 'STM', bank_statement_lines: 'BST',
-  risk_items: 'RSK', cost_lines: 'CSL', product_costs: 'PCH', rate_changes: 'RCH', entry_photos: 'PHO'
+  risk_items: 'RSK', cost_lines: 'CSL', product_costs: 'PCH', rate_changes: 'RCH', entry_photos: 'PHO',
+  customer_payments: 'CPY', sales_invoices: 'INV'
 };
 var TX_HANDOFF_PREFIX_ = { car_to_location: 'HCB', location_to_cluster: 'HBA', cluster_to_collector: 'HAC', deposit: 'DEP' };
 var TX_FLAG_ = 'TX_NUMBERED_V1';
 function txPrefixOf_(name, obj) {
   if (name === SHEETS.HANDOFFS) return TX_HANDOFF_PREFIX_[obj.kind] || 'HND';
+  if (name === SHEETS.SALES_INVOICES && obj.kind === 'credit_note') return 'CRN';
   return hasOwn_(TX_PREFIX_, name) ? TX_PREFIX_[name] : null;
 }
 function txYearOf_(obj) {
@@ -856,6 +861,15 @@ function route_(req) {
     getInventoryReport: function () { return actionInventoryReport_(req, user); },
     getInventoryLive: function () { return actionInventoryLive_(req, user); },
     getStockLedger: function () { return actionStockLedger_(req, user); },
+    recordCustomerPayment: function () { return actionRecordCustomerPayment_(req, user); },
+    voidCustomerPayment: function () { return actionVoidCustomerPayment_(req, user); },
+    listCustomerPayments: function () { return actionListCustomerPayments_(req, user); },
+    getCustomerStatement: function () { return actionCustomerStatement_(req, user); },
+    getCustomerBalances: function () { return actionCustomerBalances_(req, user); },
+    getInvoiceCandidates: function () { return actionInvoiceCandidates_(req, user); },
+    createInvoice: function () { return actionCreateInvoice_(req, user); },
+    creditInvoice: function () { return actionCreditInvoice_(req, user); },
+    listInvoices: function () { return actionListInvoices_(req, user); },
     transferInventory: function () { return actionTransferInventory_(req, user); },
     carStockMove: function () { return actionCarStockMove_(req, user); },
     importInventoryDay: function () { return actionImportInventoryDay_(req, user); },
