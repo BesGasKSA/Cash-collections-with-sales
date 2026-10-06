@@ -1640,6 +1640,8 @@
   .hh-k.warn{border-color:color-mix(in srgb,var(--c-hold) 45%,var(--border-soft));background:color-mix(in srgb,var(--c-hold) 7%,var(--card));}
   .hh-k.info{border-color:color-mix(in srgb,var(--green) 35%,var(--border-soft));}
   .hh-k.bad{border-color:color-mix(in srgb,var(--c-danger) 45%,var(--border-soft));background:color-mix(in srgb,var(--c-danger) 6%,var(--card));}
+  button.hh-k{font:inherit;color:inherit;text-align:start;cursor:pointer;}
+  button.hh-k:hover{box-shadow:var(--shadow-sm);} button.hh-k:focus-visible{outline:2px solid var(--green);outline-offset:2px;}
   .ho-hub .eh-last, .ho-hub .eh-none{margin-top:12px;}
   .hh-tabs{margin-top:14px;display:inline-flex;}
   @media (max-width:700px){ .hh-strip{grid-template-columns:1fr;gap:8px;} .hh-k{flex-direction:row;align-items:baseline;gap:10px;} .hh-k span{flex:1;} .hh-k b{font-size:18px;} }
@@ -14225,11 +14227,14 @@ function renderHandoffs(body){
       .sort(function(a, b){ return String(b.updatedAt || b.createdAt).localeCompare(String(a.updatedAt || a.createdAt)); })[0];
     var sendNodes = sendForms.slice(); if (typeof tabsRow !== 'undefined' && tabsRow) sendNodes.unshift(tabsRow);
     var hoTab = 'analysis'; try { hoTab = sessionStorage.getItem('bgc_hoView') || 'analysis'; } catch (e) {}
-    function chip(label, xs, cls){ return '<div class="hh-k'+(xs.length ? ' '+cls : '')+'"><span>'+esc(label)+'</span><b class="num">'+xs.length+'</b><i class="num"><bdi dir="ltr">'+money(sumH(xs))+'</bdi></i></div>'; }
+    function chip(label, xs, cls, act){
+      var tag = act && xs.length ? 'button type="button" data-act="'+act+'"' : 'div';
+      return '<'+tag+' class="hh-k'+(xs.length ? ' '+cls : '')+(act && xs.length ? ' hh-go' : '')+'"><span>'+esc(label)+'</span><b class="num">'+xs.length+'</b><i class="num"><bdi dir="ltr">'+money(sumH(xs))+'</bdi></i></'+(tag === 'div' ? 'div' : 'button')+'>';
+    }
     var hub = el('<div class="card no-collapse el-hub ho-hub">' +
       '<div class="el-hub-head"><div><h2>'+esc(t(wideH ? 'hh_titleAll' : 'hh_title'))+'</h2><p class="muted">'+esc(t('hh_hint'))+'</p></div>' +
         (sendNodes.length ? '<div class="el-hub-acts"><button type="button" class="btn hhSend">'+icon_('paperPlane')+'<span>'+esc(t('hh_send'))+'</span></button></div>' : '') + '</div>' +
-      '<div class="hh-strip">' + chip(t('hh_toConfirm'), toConfirm, 'warn') + chip(t('hh_sentWaiting'), sentWait, 'info') + chip(t('hh_returned'), backToMe, 'bad') + '</div>' +
+      '<div class="hh-strip">' + chip(t('hh_toConfirm'), toConfirm, 'warn') + chip(t('hh_sentWaiting'), sentWait, 'info') + chip(t('hh_returned'), backToMe, 'bad', 'fix') + '</div>' +
       (lastH ? '<button type="button" class="eh-last hh-last"><span class="eh-last-k">'+esc(t('hh_last'))+'</span>' +
         '<span class="eh-last-w"><b>'+esc(t('kind_' + lastH.kind))+'</b><span>'+esc(userName(lastH.fromUserId))+' → '+esc(lastH.kind === 'deposit' ? t('entity_bank') : userName(lastH.toUserId))+' · <bdi dir="ltr">'+esc(String(lastH.createdAt || '').slice(0, 10))+'</bdi></span></span>' +
         '<span class="eh-last-n"><span>'+esc(t('an_amount'))+'</span><b class="num"><bdi dir="ltr">'+money(lastH.amount)+'</bdi></b></span>' + handoffStatusChip_(lastH) + '</button>'
@@ -14265,8 +14270,17 @@ function renderHandoffs(body){
       showHo_(false);
     });
     var sb = qs('.hhSend', hub); if (sb) sb.addEventListener('click', function(){ showHo_(true); });
-    qs('button', sendBack).addEventListener('click', function(){ showHo_(false); });
-    showHo_(false);
+    qs('button', sendBack).addEventListener('click', function(){ FIX_OPEN_ = null; showHo_(false); });
+    // "Returned to me": straight to the correction of the latest one (its panel lives in the
+    // area card of the sending view; 2026-10-06, live: the panel opened inside a hidden card)
+    var fixGo = qs('[data-act="fix"]', hub);
+    if (fixGo) fixGo.addEventListener('click', function(){
+      var last = backToMe.slice().sort(function(a, b){ return String(b.deputyReturnedAt || b.createdAt).localeCompare(String(a.deputyReturnedAt || a.createdAt)); })[0];
+      FIX_OPEN_ = last ? last.id : null; render();
+    });
+    // a correction asked for (from Home, the bell or the counter) opens on the sending view
+    showHo_(!!FIX_OPEN_ && sendNodes.length > 0);
+    if (FIX_OPEN_) setTimeout(function(){ var fx = qs('#hoFix'); if (fx) fx.scrollIntoView({ block: 'start', behavior: 'smooth' }); }, 900);
   });
 }
 
