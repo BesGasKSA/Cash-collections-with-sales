@@ -102,6 +102,80 @@ check(call({ action: 'addInventoryMove', token: adminTok, locationId: scLoc.id, 
 - [ ] **Step 4: Run** the tests. Expected: `N passed, 0 failed`.
 - [ ] **Step 5: Commit** — `git add Admin.gs Inventory.gs Costing.gs index.html tests/run.js; git commit` with message "LPG: cross-type exchange, purchases in boxes, new cylinders".
 
+### Amendment A (user, 2026-10-05): inventory items are not sales items
+
+The user: "differentiate between the sales item and the inventory item — exchange gas is a sales item; we have filled cylinders and empty ones, and we don't have exchange gas as a cylinder." Until now a *product* (e.g. «استبدال غاز») carried `cylinder` and held the stock. From here on:
+
+- **Inventory item** (entity kind `stock_item`, sheet `stock_items`, code prefix `STK`): what the branch holds and counts. Fields: `name`, `kind` (`cylinder` = counted مليانة/فارغة, or `unit`), `boxSize` (cylinder only, default 35), `gasCost` (cost to fill one; cylinder only), `cylinderCost` (value of the empty body; cylinder only), `unitCost` (unit only), `active`. Every move (opening, purchase, damage, transfer, deposit, car load/return, count) names a `stockItemId`, never a product.
+- **Sales item** (`product`, unchanged sheet): what the customer pays for. Its stock link: `stockItemId` + `stockEffect` (`exchange` | `sell_empty` | `sell_full` for a cylinder item; `unit` for a unit item; none for a service) + optional `returnItemId` (cross-type exchange: the cylinder item whose empty comes back). A product never holds stock.
+- **Reading old data without rewriting it**: a move saved before has `productId` and no `stockItemId`; it belongs to `stockItemOf_(productId)` = that product's `stockItemId`. The one-time job `migrateStockItemsOnce_` (flag `MIGRATED_STOCK_ITEMS`) creates one stock item per existing `cylinder` product (name = its `stockName`, else its name; `cylinderCost` = `emptyCost`, `gasCost` = `unitCost`, `boxSize`) and one unit stock item per other goods product that has moves or is not drawn from another, then writes `stockItemId` (+ `stockEffect`) onto every goods product: the cylinder product itself gets `exchange`, a `stockOf` product its own `stockEffect` on its anchor's new item, a plain goods product `unit`. Moves and entries are never touched. Audited `migrate_stock_item`.
+- Task 1's product fields `returnOf` and `boxSize` move: `returnOf` → product `returnItemId` (a cylinder stock item); `boxSize` → the stock item. Product `cylinder`, `stockName`, `emptyCost`, `stockOf` stay readable for the migration and old rows but leave the product form.
+- Cost of goods (`costOfProduct_`): a sales item's cost comes from its stock item and effect, dated: exchange = gasCost (+ cylinderCost of the item going out − cylinderCost of the item coming back, floored at 0, for cross-type); sell_empty = cylinderCost; sell_full = gasCost + cylinderCost; unit = unitCost. Dated history in `product_costs` keyed `stk:<id>#gas`, `stk:<id>#cyl`, `stk:<id>#unit`. A product's own legacy `unitCost` history still wins for days before the migration (`costOfProduct_` falls back to it when the stock item has no record yet).
+- **Every later task reads "productId" of a move, a row, a line, a holding or a pool entry as `stockItemId`.** Report rows become `{locationId, stockItemId, state, ...}`; `salesBySource` keeps the sales item that sold. Product fields `buysEmptyOf` (Task 3) point at a cylinder stock item.
+
+### Task 1b: Inventory items separate from sales items
+
+**Files:** `Code.gs` (SHEETS.STOCK_ITEMS, CODE_PREFIX_ `STK`, `runOneTimeMigrations_` adds the job), `Admin.gs` (ENTITY_SHEET/validateEntity_ for `stock_item`; product link validation; `ENTITY_CHILDREN` so a stock item with moves or linked products can't be deleted; `listMeta` sends `stockItems`, costs only to cost readers as today; `migrateStockItems_`), `Inventory.gs` (moves on `stockItemId`; report rows per stock item; legacy resolution), `Costing.gs` (cost from stock items, dated), `index.html` (master-data tab "الأصناف المخزنية / Inventory items / انوینٹری اشیاء", product form: stock link fields replace cylinder/stockName/emptyCost/stockOf/returnOf/boxSize; inventory screen, live card, branch-sheet stock panel and its one-tap setup all on stock items; strings ar/en/ur), `tests/run.js`, `tests/mock-backend-server.js` seed.
+
+- [ ] Tests first (new section `--- LPG: inventory items are not sales items ---`): create stock items «أسطوانة حديد» (cylinder, boxSize 35, gasCost 11, cylinderCost 140), «أسطوانة فايبر» (cylinder, cylinderCost 400), «منظم» (unit, unitCost 28); sales items «استبدال غاز» (stockItemId iron, exchange), «بيع أسطوانة حديد» (iron, sell_empty), «تبديل حديد بفايبر» (fiber, exchange, returnItemId iron), «منظم» (unit item, unit), «توصيل» (services, no link). Assert: a move naming a product id is refused `use_stock_item`; opening/purchase on the stock items work; a day selling 10 exchange + 2 body sales + 3 cross-type + 4 regulators gives iron full −10, iron empty +10 +3 −2, fiber full −3, regulator −4; report rows carry `stockItemId` and no product-named row exists; a product linked to a unit item with `stockEffect: 'exchange'` is refused `invalid_stock_link`; `returnItemId` on a non-exchange or to a unit item refused `invalid_return_link`; deleting a stock item with moves → `has_children`. Migration test: build the old shape (a `cylinder` product with moves and a `stockOf` product with sales, written the old way through the existing actions before the flag), run `ctx.migrateStockItems_()`, then the report's figures are identical to before, every goods product has a `stockItemId`, no move or entry row changed (compare JSON of both sheets before/after), and a second run changes nothing.
+- [ ] Implement per Amendment A; carry Task 1's `newCylinders`, refill skip and box entry onto stock items; move Task 1's `returnOf`/`boxSize` tests onto the new fields.
+- [ ] `node tests/run.js` all green; commit "LPG: inventory items separate from sales items".
+
+### Amendment B (user, 2026-10-05): a sale without stock is flagged the moment it is entered
+
+The user: "when we record the sales without inventory available it must be flagged directly." Still a warning, never a block (the user's earlier answer). Task 6 owns it, in addition to its daily digest:
+- **Before saving** (entry form, area Excel preview): each sales line linked to a stock item shows the branch's available figure for the stock it draws (`getInventoryLive` for that branch, cached for the form's life, minus what earlier lines of the same form take), and turns red with «لا يوجد مخزون كافٍ» when its quantity is larger.
+- **On save** (`createDailyEntry`, `importDailyEntries`, `bulkSubmitAreaBatch`, the deputy's approval): the server works out the branch's stock after the write (`invShortAfter_(locationId, stockKeys)`), stamps every new entry row whose stock went below zero with `stockShort: [{stockItemId, state, ending}]`, and returns `stockShort` in the response; the client shows it at once in red. Lists, the day card and the sales report show a «بيع بدون مخزون» chip on such rows; the inventory screen lists them ("sales recorded without stock") until a later purchase, transfer or count brings the item back to zero or above.
+- The branch's manager and area manager get the alert the same day (the Task 6 digest, triggered also right after a flagged save, still once per branch per day).
+
+### Amendment C (user, 2026-10-06): gas is the stock, the cylinder is its container
+
+The user, repeated with emphasis: "10 filled cylinders = 10 empty cylinders + 10 gas"; "the gas is the main inventory"; gas exists **only inside cylinders** (no bulk tank). So for one cylinder type at one place:
+
+- **Gas** = filled cylinders (one charge each). **Bodies** = filled + empty. Empty = bodies − gas.
+- Value: gas × gas cost of the day + bodies × cylinder cost of the day. That is exactly the sum of today's filled and empty values (filled = gas + cylinder, empty = cylinder), so nothing already valued changes.
+
+What each event does, and the two identities every test checks:
+
+| Event | Gas | Bodies |
+|---|---|---|
+| Exchange sale (تبديل) | −1 | 0 |
+| Cross-type exchange (iron in, fiber out) | fiber −1 | fiber −1, iron +1 |
+| Filled cylinder sold outright | −1 | −1 |
+| Empty body sold (بيع) | 0 | −1 |
+| Gasko refill of N | +N | 0 |
+| New cylinders bought filled | +N | +N |
+| Empty bought back from a customer (Task 3) | 0 | +N |
+| Damaged filled / damaged empty | −N / 0 | −N / −N |
+| Transfer out / in (Task 2) | −filled / +filled | −all / +all |
+| Car load / return (Task 4) | moves between branch and car, company total unchanged | same |
+| Deposit with a customer (Task 2) | see question below | company bodies unchanged, branch −N |
+
+- `gas.ending === filled.ending` and `bodies.ending === filled.ending + empty.ending` for every branch and type, every period.
+- `gasValue + bodiesValue === filledValue + emptyValue` (to the halala).
+
+**Open question for the user (asked 2026-10-06, Task 2 waits on it):** when filled cylinders go to a restaurant on deposit (عهدة), is the gas inside sold at that moment (a sales line), with only the body staying the company's? The default until answered is yes: deposit moves bodies, and the gas leaves through the day's sales line.
+
+### Task 1c: Gas and bodies on every stock screen (priority, before Task 2)
+
+**Files:** `Inventory.gs` (`actionInventoryReport_` adds `cylSummary`), `index.html` (equation card per cylinder type, live card, tree, Excel/PDF), `Admin.gs` (stock item `fillKg`, optional), `tests/run.js`.
+
+Today the equation card adds filled, empty and unit items into one figure (`sumOf(counted)` in `renderInventory`), which reads as neither gas nor bodies. The live card lists filled and empty as separate tiles with no gas/bodies line.
+
+- [ ] **Tests first** (section `--- LPG: gas is the stock, the cylinder its container ---`): one branch, iron (gasCost 11, cylinderCost 140, fillKg 12.5) and fiber, opening filled 10 / empty 5. Run the table's events in one period: 1 exchange, 1 cross-type, 1 filled sold, 1 body sold, refill 4, 2 new, 1 damaged filled, 1 damaged empty. Assert per type the `cylSummary` row: `gas`, `bodies`, `empty`, each in/out column from the table, `gasKg = gas × 12.5`; both identities for every branch and type; the value identity; a unit item has no `cylSummary` row; a branch with no opening has none either (still "not counted").
+- [ ] **Server:** `cylSummary: [{locationId, stockItemId, gasOpening, gasIn: {refill, newCyl, transferIn}, gasOut: {sold, soldFull, damaged, transferOut}, gas, bodiesOpening, bodiesIn: {newCyl, boughtBack, transferIn, exchangeOtherIn}, bodiesOut: {soldEmpty, soldFull, damaged, transferOut, exchangeOtherOut}, bodies, empty, gasValue, bodiesValue, gasKg}]`, built from the filled/empty rows already worked out (no second pass over moves or entries). The cross-type exchange is split from the same-type one in the row (`exchangeIn` by `returnItemId`), so bodies move between types correctly.
+- [ ] **Stock item** `fillKg` (optional, kg of gas in one filled cylinder, 0–100): `validateEntity_` (`invalid_fill_kg`), the item form and the setup table. Where set, gas also shows in kg and the company total in kg.
+- [ ] **Screens** (strings ar/en/ur: غاز / Gas / گیس, أسطوانات (أجسام) / Cylinders / سلنڈر):
+  - Equation card: one block per cylinder type with two lines, **Gas**: opening + refilled + new + transfers in − sold − damaged − transfers out = gas now, and **Cylinders**: opening + new + bought back + transfers in − bodies sold − filled sold − damaged − transfers out = cylinders now (of which filled / empty). Unit items keep the old equation in their own block. No figure ever adds a gas charge to a body.
+  - Live card: per type, `Gas 598 · Cylinders 1,264 (empty 666)`, kg where known, red when gas or bodies are below zero.
+  - Tree: the item level gets Gas and Cylinders columns; filled/empty stay as children.
+  - Excel/PDF: a "Gas and cylinders" sheet first.
+- [ ] Mock-server browser check at 390px and desktop in ar/en/ur, `node tests/run.js` green, review (code-review skill), then publish straight away (user, 2026-10-06: push every update): build, push `main`, clasp push + deploy, GET/POST ping, live page without console errors.
+
+### Order from here (user, 2026-10-06: "handle it as priority now")
+
+1c → 2 → 3 → 4 → 5 → 6 → 7. Each task is published live when it passes, not held for the end. Task 6's "cylinder pool" line becomes the company-wide **Cylinders** figure of 1c (branches + cars + with customers), so it is not built twice.
+
 ### Task 2: Cylinders leaving the branch — linked transfers and customer deposits
 
 **Files:**
@@ -302,6 +376,19 @@ check(pool[0].total === 19 && pool[0].withCustomers === 5, 'full 10 + empty 4 + 
 - Modify: `CLAUDE.md` (section "LPG cylinder ledger (2026-10-05)")
 - Output: `C:\Claude\bestgas-cash-collection\user-guide\inventory\دليل-المخزون.pdf` (never in the repo)
 
+- [ ] **Release test (user, 2026-10-05: "once live, test everything, especially the inventory cycle and its integrations with sales and every other function") — run for EVERY release, not only the last.**
+  - *Before deploy, on the mock server with the exact build to ship*, seeded with the live product names (PR-0001…PR-0014) and the الشفاء openings (2051 on the exchange item, 666 on the body-sale item), drive the client as admin, finance, area manager, branch manager, driver and deputy:
+    - **Setup and sales:** run the setup proposal and apply. Then enter days by product line: cash, card, credit customer inside the lines (and credit over the lines refused), Souq Gas part, amount-only (flagged, not deducted), a cancelled day (units back).
+    - **Area manager:** the area Excel through the deputy (approve; reject → correct → resend), and the branch daily sheet with its stock block saved despite a difference.
+    - **Cylinder moves:** exchange, body sale, cross-type, Gasko refill in boxes, new cylinders, buy-back (cash and empty from one line), deposit out/back, linked transfer (and voiding one side voids both), car load → car sales → evening return (the driver owes the gap), and a count with a difference.
+    - **Alerts:** a sale beyond stock flagged in the form, on save, on the day card and in the digest.
+    - **Money:** handover amounts and `netCashOwed` identical before and after any stock move; the profit report's cost of goods dated (a cost change today leaves last month as it was).
+    - **Screens:** Excel and PDF exports of the stock screen; every screen at 390px and desktop with no console error.
+  - *After deploy, on live, read-only only* (never post test sales or moves on live; the system cannot delete them):
+    - GET ping, an unauthenticated POST (`auth_required`), and `version.json` showing the new build.
+    - Signed in as the user: the setup proposal matches the live counts. After the user confirms the setup, the الشفاء figures equal the predicted ones (iron full 598; iron empty 666 − 4 + exchanges since the count).
+    - Every screen opens with no console error.
+    - The dashboard's cash and handover totals equal the figures noted just before the deploy.
 - [ ] **Step 1:** Restart the mock server (`node tests/mock-backend-server.js 8905`), sign in as admin, finance, area manager and branch manager, and exercise every new form; read the console for errors; screenshot each card at 390px and desktop.
 - [ ] **Step 2:** `node tools/obfuscate.js` and `node tools/stamp-build.js`; full `node tests/run.js` green.
 - [ ] **Step 3:** Final whole-branch review (superpowers:requesting-code-review), fix what it finds, re-run.
