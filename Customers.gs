@@ -132,14 +132,14 @@ function actionCustomerStatement_(req, user) {
 // every customer's position, for the list
 function actionCustomerBalances_(req, user) {
   if (!custCanRead_(user)) return { ok: false, error: 'forbidden' };
-  var inv = invoicedEntries_(), m = Object.create(null);
+  var bt = batchesById_(), inv = invoicedEntries_(), m = Object.create(null);
   function row(id) { return m[id] || (m[id] = { customerId: id, sales: 0, fees: 0, paidCash: 0, paidBank: 0, uninvoiced: 0, lastSale: '', lastPayment: '', lines: 0 }); }
   readSheet(SHEETS.ENTRIES).forEach(function (e) {
     if (e.voided) return;
     if (e.creditCustomerId && Number(e.creditSales || 0) > 0) {
       var r = row(e.creditCustomerId), g = custGross_(e, e.creditSales), gf = custGross_(e, e.creditDeliveryFee), d = g + gf;
       r.sales += g; r.fees += gf; r.lines++;
-      if (!inv[e.id]) r.uninvoiced += d;
+      if (!inv[e.id] && invEligible_(e, bt)) r.uninvoiced += d;
       if (e.date > r.lastSale) r.lastSale = e.date;
     }
     if (e.paymentCustomerId && Number(e.otherCash || 0) > 0) { var r1 = row(e.paymentCustomerId); r1.paidCash += Number(e.otherCash); if (e.date > r1.lastPayment) r1.lastPayment = e.date; }

@@ -5534,6 +5534,7 @@ function areaEnsure_(){
   if (ok && state.meta.activeAreaId === cur) return true;
   var want = ok ? cur : areas[0].id;
   if (state._areaTried === want) return true;   // the server would not take it: show what it sent
+  if (state._areaRetryAt && Date.now() < state._areaRetryAt) return true;   // a failed switch waits half a minute before trying again
   state._areaTried = want;
   switchArea_(want, { quiet: true });
   return false;
@@ -5565,7 +5566,7 @@ function switchArea_(id, opts){
       veil.classList.remove('on'); veil.classList.add('off');
       setTimeout(function(){ veil.remove(); }, 380);
       if (res && res.ok && !opts.quiet) showToast_(t('asw_now').replace('{x}', a ? a.name : ''), 'ok');
-      if (!(res && res.ok)) { state._areaTried = null; showToast_(errMsg_(res || {}), 'err'); }
+      if (!(res && res.ok)) { state._areaTried = null; state._areaRetryAt = Date.now() + 30000; showToast_(errMsg_(res || {}), 'err'); } else state._areaRetryAt = 0;
     }, wait);
   });
 }
@@ -5633,7 +5634,7 @@ function openAreaPicker_(anchor){
       return { id: a.id, avatar: areaInitials_(a.name), hue: areaHue_(a.id), title: a.name, sub: (a.cities || []).join('، '), find: a.code, current: a.id === cur,
         chips: [{ icon: 'pin', text: t('asw_branches').replace('{n}', a.branches) }, { icon: 'user', text: t('asw_collectors').replace('{n}', a.collectors) }].concat(a.code ? [{ text: a.code }] : []) };
     }),
-    onPick: function(id){ state._areaTried = null; switchArea_(id); }
+    onPick: function(id){ state._areaTried = null; state._areaRetryAt = 0; switchArea_(id); }
   });
 }
 var LANGS_ = [['ar', 'ع', 'العربية', 'Arabic', 'rtl'], ['en', 'En', 'English', 'English', 'ltr'], ['ur', 'اُ', 'اردو', 'Urdu', 'rtl']];
