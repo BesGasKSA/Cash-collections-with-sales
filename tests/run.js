@@ -4642,6 +4642,63 @@ check(rcCard2.opening.full === 10 && rcCard2.opening.empty === 1 && rcCard2.open
 check(call({ action: 'getStockLedger', token: financeTok, stockItemId: rcIron.id }).error === 'branch_required', 'a stock card is of one branch');
 check(call({ action: 'getStockLedger', token: noorTok, locationId: rcLoc.id, stockItemId: rcIron.id }).error === 'forbidden', 'another branch\'s manager cannot read it');
 
+console.log('--- LPG: transfers in pairs, cylinders on deposit, stock on each car ---');
+function rcRep2(to) { return call({ action: 'getInventoryReport', token: financeTok, dateFrom: '2026-09-01', dateTo: to || '2026-09-30', locationId: rcLoc.id }); }
+function rcRowOf(rep, st) { return (rep.rows || []).filter(function (r) { return r.stockItemId === rcIron.id && r.state === st; })[0] || {}; }
+function rcCylOf(rep) { return (rep.cylSummary || []).filter(function (c) { return c.stockItemId === rcIron.id; })[0] || {}; }
+var rcLoc2 = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: 'Riyadh', name: 'Refill Branch Two', clusterId: cluster.entity.id, collectorUserId: musa.id } }).entity;
+// transfers
+var trA = call({ action: 'transferInventory', token: adminTok, fromLocationId: rcLoc.id, toLocationId: rcLoc2.id, date: '2026-09-05', note: 'to branch two', lines: [{ stockItemId: rcIron.id, state: 'full', qty: 2 }] });
+check(trA.ok && trA.moves.length === 2 && trA.moves[0].linkId && trA.moves[0].linkId === trA.moves[1].linkId, 'one transfer writes both branches with one link (' + (trA.error || '') + ')');
+check(trA.moves[0].kind === 'transfer_out' && trA.moves[0].locationId === rcLoc.id && trA.moves[1].kind === 'transfer_in' && trA.moves[1].locationId === rcLoc2.id, 'out at the sender, in at the receiver');
+check(rcRowOf(rcRep2(), 'full').ending === 9, 'the sender has 11 - 2 = 9 filled');
+check(call({ action: 'transferInventory', token: adminTok, fromLocationId: rcLoc.id, toLocationId: rcLoc.id, date: '2026-09-05', lines: [{ stockItemId: rcIron.id, state: 'full', qty: 1 }] }).error === 'same_branch', 'a branch cannot send to itself');
+check(call({ action: 'transferInventory', token: noorTok, fromLocationId: rcLoc.id, toLocationId: rcLoc2.id, date: '2026-09-05', lines: [{ stockItemId: rcIron.id, state: 'full', qty: 1 }] }).error === 'forbidden', 'only who keeps the sending branch sends');
+var trV = call({ action: 'voidInventoryMove', token: adminTok, id: trA.moves[1].id, reason: 'never arrived' });
+check(trV.ok && trV.partners.length === 1 && ctx.readSheet(SHEETS.INV_MOVES).filter(function (m) { return m.linkId === trA.moves[0].linkId; }).every(function (m) { return m.voided; }), 'cancelling one side cancels its partner');
+check(rcRowOf(rcRep2(), 'full').ending === 11, 'and the sender is back to 11');
+// deposits
+var rcCust = call({ action: 'adminSaveEntity', token: adminTok, kind: 'customer', data: { name: 'Rc Restaurant' } }).entity;
+function rcDepMv(o) { var p = { action: 'addInventoryMove', token: adminTok, locationId: rcLoc.id, stockItemId: rcIron.id }; Object.keys(o).forEach(function (k) { p[k] = o[k]; }); return call(p); }
+check(rcDepMv({ kind: 'deposit_out', state: 'full', qty: 1, date: '2026-09-06' }).error === 'customer_required', 'a deposit names its customer');
+var dOut = rcDepMv({ kind: 'deposit_out', state: 'full', qty: 3, customerId: rcCust.id, date: '2026-09-06' });
+check(dOut.ok && dOut.move.customerId === rcCust.id, '3 filled on deposit with the restaurant (' + (dOut.error || '') + ')');
+var dOver = rcDepMv({ kind: 'deposit_return', state: 'empty', qty: 5, customerId: rcCust.id, date: '2026-09-07' });
+check(dOver.error === 'deposit_over_held' && dOver.held === 3, 'returning 5 when 3 are held is refused, saying 3');
+check(rcDepMv({ kind: 'deposit_return', state: 'empty', qty: 2, customerId: rcCust.id, date: '2026-09-07' }).ok, '2 come back empty');
+var dRep = rcRep2();
+var dHold = (dRep.customerHoldings || []).filter(function (h) { return h.customerId === rcCust.id && h.stockItemId === rcIron.id; })[0] || {};
+check(dHold.out === 3 && dHold.back === 2 && dHold.held === 1, 'the restaurant still holds 1 (out 3, back 2)');
+check(rcRowOf(dRep, 'full').depositOut === 3 && rcRowOf(dRep, 'full').ending === 8 && rcRowOf(dRep, 'empty').depositBack === 2 && rcRowOf(dRep, 'empty').ending === 5, 'the branch: filled 11 - 3 = 8, empty 3 + 2 = 5');
+var dCyl = rcCylOf(dRep);
+check(dCyl.withCustomers === 1 && dCyl.bodies === 15 && dCyl.bodies === dCyl.filled + dCyl.empty + dCyl.atPlant + dCyl.withCustomers, 'cylinders stay 15: filled 8 + empty 5 + at the plant 1 + with customers 1 (got ' + JSON.stringify([dCyl.filled, dCyl.empty, dCyl.atPlant, dCyl.withCustomers, dCyl.bodies]) + ')');
+check(call({ action: 'voidInventoryMove', token: adminTok, id: dOut.move.id, reason: 'test' }).error === 'deposit_returned', 'a deposit already partly returned cannot be cancelled');
+// a car's day
+var rcDrv = scUser('Rc Driver', 'driver');
+var rcCar = call({ action: 'adminSaveEntity', token: adminTok, kind: 'car', data: { label: 'Rc Car', locationId: rcLoc.id, driverUserId: rcDrv.id } }).entity;
+check(!(rcRep2().cars || []).some(function (c) { return c.carId === rcCar.id; }), 'a car never loaded is not tracked');
+check(call({ action: 'addInventoryMove', token: adminTok, locationId: rcLoc.id, stockItemId: rcIron.id, state: 'full', kind: 'car_load', qty: 1, date: '2026-09-08' }).error === 'use_car_move', 'a car load names its car (carStockMove)');
+var ldA = call({ action: 'carStockMove', token: adminTok, locationId: rcLoc.id, carId: rcCar.id, kind: 'car_load', date: '2026-09-08', lines: [{ stockItemId: rcIron.id, state: 'full', qty: 5 }] });
+check(ldA.ok && ldA.moves[0].carId === rcCar.id, 'the car is loaded with 5 filled (' + (ldA.error || '') + ')');
+check(call({ action: 'carStockMove', token: adminTok, locationId: rcLoc2.id, carId: rcCar.id, kind: 'car_load', date: '2026-09-08', lines: [{ stockItemId: rcIron.id, state: 'full', qty: 1 }] }).error === 'invalid_car', 'a car loads only at its own branch');
+check(call({ action: 'carStockMove', token: noorTok, locationId: rcLoc.id, carId: rcCar.id, kind: 'car_load', date: '2026-09-08', lines: [{ stockItemId: rcIron.id, state: 'full', qty: 1 }] }).error === 'forbidden', 'another branch\'s manager cannot load it');
+check(rcRowOf(rcRep2(), 'full').ending === 8, 'loading never changes the branch total');
+check(call({ action: 'createDailyEntry', token: adminTok, date: '2026-09-08', sourceType: 'car', sourceId: rcCar.id, productId: rcExch.id, qty: 2, unitPrice: 37, cashSales: 74, submissionId: 'rc-car-day' }).ok, 'the car exchanges 2');
+var cRep = rcRep2();
+function carOf(rep, st) { return (rep.cars || []).filter(function (c) { return c.carId === rcCar.id && c.stockItemId === rcIron.id && c.state === st; })[0] || {}; }
+check(carOf(cRep, 'full').onCar === 3 && carOf(cRep, 'empty').onCar === 2, 'the car holds 3 filled and 2 empty');
+check(rcRowOf(cRep, 'full').ending === 6 && rcRowOf(cRep, 'empty').ending === 7, 'the branch (store and cars): filled 6, empty 7');
+check(call({ action: 'carStockMove', token: adminTok, locationId: rcLoc.id, carId: rcCar.id, kind: 'car_return', date: '2026-09-08', lines: [{ stockItemId: rcIron.id, state: 'full', qty: 3 }, { stockItemId: rcIron.id, state: 'empty', qty: 1 }] }).ok, 'evening return: 3 filled, 1 empty');
+var cRep2 = rcRep2(), cCyl = rcCylOf(cRep2);
+check(carOf(cRep2, 'full').onCar === 0 && carOf(cRep2, 'empty').onCar === 1, 'one empty is still on the car: the driver owes it');
+check(rcRowOf(cRep2, 'full').ending === 6 && rcRowOf(cRep2, 'empty').ending === 7, 'returning never changes the branch total either');
+check(cCyl.inStoreFilled === 6 && cCyl.inStoreEmpty === 6 && cCyl.onCarsEmpty === 1, 'in the store: 6 filled, 6 empty; 1 empty on the car');
+check(cCyl.bodies === 15, 'cylinders are still 15');
+var cCard = call({ action: 'getStockLedger', token: financeTok, locationId: rcLoc.id, stockItemId: rcIron.id });
+var cLast = cCard.lines[cCard.lines.length - 1];
+check(cLast.bal.full === 6 && cLast.bal.empty === 7 && cLast.bal.plant === 1 && cLast.bal.cust === 1 && cLast.bal.bodies === 15, 'the stock card ends at filled 6, empty 7, at the plant 1, with customers 1, cylinders 15');
+check(cCard.lines.some(function (l) { return l.kind === 'car_load' && !l.d.full && !l.d.empty; }) && cCard.lines.some(function (l) { return l.kind === 'deposit_out' && l.d.full === -3 && l.d.cust === 3; }), 'the car load is listed with no effect, the deposit with its own');
+
 console.log('--- every transaction has a number: PREFIX-YEAR-NNNNNN, a day\'s rows share one ---');
 // the warm-up ping in the translations section above ran the one-time pass:
 // the rows saved before it were numbered then, every row since by writeRow

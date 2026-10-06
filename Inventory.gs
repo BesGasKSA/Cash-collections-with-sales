@@ -34,8 +34,13 @@
 // branch has at the plant for that item; an extra cylinder is new cylinders or
 // a transfer. A full purchase saved before the cycle existed stays a one-step
 // refill, read as it always was.
-var INV_KINDS_ = ['opening', 'purchase', 'return', 'damage', 'transfer_in', 'transfer_out', 'refill_out', 'refill_in'];
+var INV_KINDS_ = ['opening', 'purchase', 'return', 'damage', 'transfer_in', 'transfer_out', 'refill_out', 'refill_in', 'deposit_out', 'deposit_return', 'car_load', 'car_return'];
 var INV_REFILL_STATE_ = { refill_out: 'empty', refill_in: 'full' };
+// Cylinders on deposit with a customer (عهدة): out leaves the branch, return comes
+// back; a customer never returns more than he holds of an item. A car's load and
+// return move stock between the store and the car: the branch total is unchanged.
+var INV_DEPOSIT_ = { deposit_out: 1, deposit_return: 1 };
+var INV_CAR_ = { car_load: 1, car_return: 1 };
 var INV_STATES_ = ['full', 'empty'];
 var INV_EFFECTS_ = ['exchange', 'sell_empty', 'sell_full'];
 var INV_MAX_QTY_ = 1000000;
@@ -200,7 +205,26 @@ function invCheckMove_(m, date, sc) {
   if (date > todayRiyadh_()) return { error: 'future_date' };
   var move = { state: st || null, kind: kind, qty: qty, newCylinders: fresh, note: String(m.note || '').slice(0, 300) };
   if (key.stockItemId) move.stockItemId = key.stockItemId; else move.productId = key.productId;
+  // a deposit names its customer, a registered and active one
+  if (hasOwn_(INV_DEPOSIT_, kind)) {
+    var cid = String(m.customerId || '');
+    if (!cid) return { error: 'customer_required' };
+    var cu = getById_(SHEETS.CUSTOMERS, cid);
+    if (!cu) return { error: 'unknown_customer' };
+    if (cu.active === false && kind === 'deposit_out') return { error: 'invalid_customer' };
+    move.customerId = cu.id;
+  }
   return { move: move, itemId: it.id };
+}
+// What one customer holds of one item from one branch: out less back, any state.
+function invHeld_(sc, locId, itemId, customerId) {
+  var held = 0;
+  sc.moves.forEach(function (m) {
+    if (m.voided || m.locationId !== locId || m.customerId !== customerId || !hasOwn_(INV_DEPOSIT_, m.kind)) return;
+    var tg = sc.moveTarget(m); if (!tg || tg.item.id !== itemId) return;
+    held += (m.kind === 'deposit_out' ? 1 : -1) * Number(m.qty || 0);
+  });
+  return Math.round(held * 1000) / 1000;
 }
 // What a branch has at the plant for one item: empties sent up to a day, less
 // every filled one received back (any day), and when the oldest still out left.
@@ -224,6 +248,7 @@ function invMoveRow_(locId, c, date, user, extra) {
   var row = { locationId: locId, state: c.state, kind: c.kind, qty: c.qty, date: date, newCylinders: c.newCylinders, note: c.note,
     enteredBy: user.id, createdAt: new Date().toISOString(), voided: false };
   if (c.stockItemId) row.stockItemId = c.stockItemId; else row.productId = c.productId;
+  if (c.customerId) row.customerId = c.customerId;
   safeOwnKeys_(extra || {}).forEach(function (k) { row[k] = extra[k]; });
   return row;
 }
@@ -239,6 +264,13 @@ function actionAddInventoryMove_(req, user) {
   try {
     freshenExec_();
     if (c.move.kind === 'opening' && invOpenings_()[invOpeningKey_(lf.loc.id, c.itemId, c.move.state)]) return { ok: false, error: 'opening_exists' };
+    // a car's load and return go through carStockMove, which names the car
+    if (hasOwn_(INV_CAR_, c.move.kind)) return { ok: false, error: 'use_car_move' };
+    // nobody returns more than he holds
+    if (c.move.kind === 'deposit_return') {
+      var hd = invHeld_(invStockCtx_(), lf.loc.id, c.itemId, c.move.customerId);
+      if (c.move.qty > hd + 0.0005) return { ok: false, error: 'deposit_over_held', held: hd };
+    }
     // filled cylinders come back only for empties this branch sent
     if (c.move.kind === 'refill_in') {
       var pl = invPlant_(invStockCtx_(), lf.loc.id, c.itemId, date);
@@ -247,6 +279,69 @@ function actionAddInventoryMove_(req, user) {
     var move = writeRow(SHEETS.INV_MOVES, invMoveRow_(lf.loc.id, c.move, date, user));
     logAudit_('inventory_' + c.move.kind, user.id, move.id);
     return { ok: true, move: move };
+  } finally { try { lock.releaseLock(); } catch (e) {} }
+}
+
+// One transfer, both sides (2026-10-06): out at the sending branch and in at the
+// receiving one, sharing a linkId, all lines or none. Who keeps the sending
+// branch sends; the receiving branch is any other branch.
+function actionTransferInventory_(req, user) {
+  var lf = invLocFor_(user, req.fromLocationId);
+  if (lf.error) return { ok: false, error: lf.error };
+  var to = getById_(SHEETS.LOCATIONS, req.toLocationId);
+  if (!to) return { ok: false, error: 'branch_required' };
+  if (to.id === lf.loc.id) return { ok: false, error: 'same_branch' };
+  var date = String(req.date || ''), list = Array.isArray(req.lines) ? req.lines : [];
+  if (!list.length || list.length > 50) return { ok: false, error: 'invalid_input' };
+  var sc = invStockCtx_(), checked = [];
+  for (var i = 0; i < list.length; i++) {
+    var ln = list[i] || {}, c = invCheckMove_({ stockItemId: ln.stockItemId, productId: ln.productId, state: ln.state, qty: ln.qty, kind: 'transfer_out', note: req.note }, date, sc);
+    if (c.error) return { ok: false, error: c.error, index: i };
+    checked.push(c);
+  }
+  var lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  try {
+    freshenExec_();
+    var linkId = Utilities.getUuid(), moves = [];
+    checked.forEach(function (c) {
+      var outM = {}, inM = {};
+      safeOwnKeys_(c.move).forEach(function (k) { outM[k] = c.move[k]; inM[k] = c.move[k]; });
+      inM.kind = 'transfer_in';
+      moves.push(writeRow(SHEETS.INV_MOVES, invMoveRow_(lf.loc.id, outM, date, user, { linkId: linkId, toLocationId: to.id })));
+      moves.push(writeRow(SHEETS.INV_MOVES, invMoveRow_(to.id, inM, date, user, { linkId: linkId, fromLocationId: lf.loc.id })));
+    });
+    logAudit_('inventory_transfer', user.id, lf.loc.id + ' > ' + to.id + ' (' + checked.length + ')');
+    return { ok: true, moves: moves, linkId: linkId };
+  } finally { try { lock.releaseLock(); } catch (e) {} }
+}
+
+// A car's morning load or evening return: stock moves between the store and the
+// car of the same branch; the branch total is unchanged. Who keeps the branch
+// records it (not the driver himself).
+function actionCarStockMove_(req, user) {
+  var lf = invLocFor_(user, req.locationId);
+  if (lf.error) return { ok: false, error: lf.error };
+  var car = getById_(SHEETS.CARS, req.carId);
+  if (!car || car.locationId !== lf.loc.id) return { ok: false, error: 'invalid_car' };
+  var kind = String(req.kind || '');
+  if (!hasOwn_(INV_CAR_, kind)) return { ok: false, error: 'invalid_kind' };
+  var date = String(req.date || ''), list = Array.isArray(req.lines) ? req.lines : [];
+  if (!list.length || list.length > 50) return { ok: false, error: 'invalid_input' };
+  var sc = invStockCtx_(), checked = [];
+  for (var i = 0; i < list.length; i++) {
+    var ln = list[i] || {}, c = invCheckMove_({ stockItemId: ln.stockItemId, productId: ln.productId, state: ln.state, qty: ln.qty, kind: 'purchase', note: req.note }, date, sc);
+    if (c.error) return { ok: false, error: c.error, index: i };
+    c.move.kind = kind; c.move.newCylinders = false;
+    checked.push(c);
+  }
+  var lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  try {
+    freshenExec_();
+    var moves = checked.map(function (c) { return writeRow(SHEETS.INV_MOVES, invMoveRow_(lf.loc.id, c.move, date, user, { carId: car.id })); });
+    logAudit_('inventory_' + kind, user.id, car.id + ' (' + moves.length + ')');
+    return { ok: true, moves: moves };
   } finally { try { lock.releaseLock(); } catch (e) {} }
 }
 
@@ -308,10 +403,23 @@ function actionVoidInventoryMove_(req, user) {
       var sc0 = invStockCtx_(), tg0 = sc0.moveTarget(m);
       if (tg0) { var p0 = invPlant_(sc0, m.locationId, tg0.item.id, null); if (p0.atPlant - Number(m.qty || 0) < -0.0005) return { ok: false, error: 'refill_received' }; }
     }
-    m.voided = true; m.voidReason = reason.slice(0, 300); m.voidedBy = user.id; m.voidedAt = new Date().toISOString();
+    // nor a deposit whose cylinders the customer already returned
+    if (m.kind === 'deposit_out') {
+      var sc1 = invStockCtx_(), tg1 = sc1.moveTarget(m);
+      if (tg1 && invHeld_(sc1, m.locationId, tg1.item.id, m.customerId) - Number(m.qty || 0) < -0.0005) return { ok: false, error: 'deposit_returned' };
+    }
+    var stamp = { voidReason: reason.slice(0, 300), voidedBy: user.id, voidedAt: new Date().toISOString() };
+    m.voided = true; m.voidReason = stamp.voidReason; m.voidedBy = stamp.voidedBy; m.voidedAt = stamp.voidedAt;
     writeRow(SHEETS.INV_MOVES, m);
-    logAudit_('inventory_void', user.id, m.id);
-    return { ok: true, move: m };
+    // a transfer is one movement in two places: both sides go together
+    var partners = [];
+    if (m.linkId) readSheet(SHEETS.INV_MOVES).forEach(function (x) {
+      if (x.id === m.id || x.voided || x.linkId !== m.linkId) return;
+      x.voided = true; x.voidReason = stamp.voidReason; x.voidedBy = stamp.voidedBy; x.voidedAt = stamp.voidedAt;
+      writeRow(SHEETS.INV_MOVES, x); partners.push(x.id);
+    });
+    logAudit_('inventory_void', user.id, m.id + (partners.length ? ' +' + partners.join(',') : ''));
+    return { ok: true, move: m, partners: partners };
   } finally { try { lock.releaseLock(); } catch (e) {} }
 }
 
@@ -365,7 +473,7 @@ function actionInventoryReport_(req, user, scOverride) {
       var op = openingOf[k] || null;
       rows[k] = { locationId: locId, stockItemId: it.id, state: state || null, cylinder: it.kind === 'cylinder', itemName: it.name || '',
         unitCost: Math.round(Number(invUnitValue_(it, state, to, hist) || 0) * 10000) / 10000,
-        opening: 0, purchases: 0, newCylinders: 0, returns: 0, exchangeIn: 0, transfersIn: 0, fromPlant: 0, sales: 0, damaged: 0, refillOut: 0, toPlant: 0, transfersOut: 0,
+        opening: 0, purchases: 0, newCylinders: 0, returns: 0, exchangeIn: 0, transfersIn: 0, fromPlant: 0, depositBack: 0, sales: 0, damaged: 0, refillOut: 0, toPlant: 0, transfersOut: 0, depositOut: 0,
         salesWithoutQty: 0, salesWithoutQtyAmount: 0, salesBySource: {}, salesByProduct: {},
         openingDate: op ? op.date : null, noOpening: !op || op.date > to };
       // before the setup a row keeps its old shape too, for a client that has not reloaded
@@ -374,14 +482,14 @@ function actionInventoryReport_(req, user, scOverride) {
     }
     return rows[k];
   }
-  var IN_ = { purchases: 1, returns: 1, exchangeIn: 1, transfersIn: 1, fromPlant: 1 };
+  var IN_ = { purchases: 1, returns: 1, exchangeIn: 1, transfersIn: 1, fromPlant: 1, depositBack: 1 };
   // add a quantity dated d to the period it belongs to
   function post(r, d, field, q) {
     if (r.noOpening || d < r.openingDate || d > to) return;
     if (d < from) { r.opening += IN_[field] ? q : -q; return; }
     r[field] += q;
   }
-  var MOVE_FIELD_ = { purchase: 'purchases', 'return': 'returns', damage: 'damaged', transfer_in: 'transfersIn', transfer_out: 'transfersOut', refill_out: 'toPlant', refill_in: 'fromPlant' };
+  var MOVE_FIELD_ = { purchase: 'purchases', 'return': 'returns', damage: 'damaged', transfer_in: 'transfersIn', transfer_out: 'transfersOut', refill_out: 'toPlant', refill_in: 'fromPlant', deposit_out: 'depositOut', deposit_return: 'depositBack' };
   var moves = [];
   allMoves.forEach(function (m) {
     var t = sc.moveTarget(m);
@@ -393,6 +501,8 @@ function actionInventoryReport_(req, user, scOverride) {
       moves.push(mc);
     }
     if (m.voided) return;
+    // a car's load and return stay inside the branch: its total does not move
+    if (hasOwn_(INV_CAR_, m.kind)) return;
     var r = row(m.locationId, t.item, t.state), q = Number(m.qty || 0);
     if (m.kind === 'opening') { if (!r.noOpening) r.opening += q; return; }
     post(r, m.date, MOVE_FIELD_[m.kind], q);
@@ -427,12 +537,12 @@ function actionInventoryReport_(req, user, scOverride) {
   });
   var out = order.map(function (k) {
     var r = rows[k];
-    ['opening', 'purchases', 'newCylinders', 'returns', 'exchangeIn', 'transfersIn', 'fromPlant', 'sales', 'damaged', 'refillOut', 'toPlant', 'transfersOut'].forEach(function (f) { r[f] = Math.round(r[f] * 1000) / 1000; });
+    ['opening', 'purchases', 'newCylinders', 'returns', 'exchangeIn', 'transfersIn', 'fromPlant', 'depositBack', 'sales', 'damaged', 'refillOut', 'toPlant', 'transfersOut', 'depositOut'].forEach(function (f) { r[f] = Math.round(r[f] * 1000) / 1000; });
     r.salesWithoutQtyAmount = Math.round(r.salesWithoutQtyAmount * 100) / 100;
-    r.available = Math.round((r.opening + r.purchases + r.returns + r.exchangeIn + r.transfersIn + r.fromPlant) * 1000) / 1000;
-    r.ending = Math.round((r.available - r.sales - r.damaged - r.refillOut - r.toPlant - r.transfersOut) * 1000) / 1000;
+    r.available = Math.round((r.opening + r.purchases + r.returns + r.exchangeIn + r.transfersIn + r.fromPlant + r.depositBack) * 1000) / 1000;
+    r.ending = Math.round((r.available - r.sales - r.damaged - r.refillOut - r.toPlant - r.transfersOut - r.depositOut) * 1000) / 1000;
     r.short = !r.noOpening && r.ending < 0;
-    ['opening', 'purchases', 'returns', 'exchangeIn', 'transfersIn', 'fromPlant', 'available', 'sales', 'damaged', 'refillOut', 'toPlant', 'transfersOut', 'ending'].forEach(function (f) {
+    ['opening', 'purchases', 'returns', 'exchangeIn', 'transfersIn', 'fromPlant', 'depositBack', 'available', 'sales', 'damaged', 'refillOut', 'toPlant', 'transfersOut', 'depositOut', 'ending'].forEach(function (f) {
       r[f + 'Value'] = Math.round(r[f] * r.unitCost * 100) / 100;
     });
     return r;
@@ -455,18 +565,74 @@ function actionInventoryReport_(req, user, scOverride) {
     var k = m.locationId + '|' + tg.item.id;
     if (!cyl[k]) { cyl[k] = { locationId: m.locationId, stockItemId: tg.item.id, itemName: tg.item.name || '', filled: 0, empty: 0, noOpening: true, filledValue: 0, emptyValue: 0 }; cylOrder.push(k); }
   });
+  var r3 = function (x) { return Math.round(x * 1000) / 1000; };
+  // cylinders on deposit with customers (عهدة), all time up to the end of the period
+  var held = Object.create(null), heldOrder = [];
+  sc.moves.forEach(function (m) {
+    if (m.voided || !hasOwn_(INV_DEPOSIT_, m.kind) || !inScope(m.locationId) || m.date > to) return;
+    var tg = sc.moveTarget(m); if (!tg) return;
+    var k = m.locationId + '|' + m.customerId + '|' + tg.item.id;
+    if (!held[k]) { held[k] = { locationId: m.locationId, customerId: m.customerId, stockItemId: tg.item.id, out: 0, back: 0, held: 0, last: '' }; heldOrder.push(k); }
+    var h = held[k], q = Number(m.qty || 0);
+    if (m.kind === 'deposit_out') h.out += q; else h.back += q;
+    if (m.date > h.last) h.last = m.date;
+  });
+  var customerHoldings = heldOrder.map(function (k) { var h = held[k]; h.out = r3(h.out); h.back = r3(h.back); h.held = r3(h.out - h.back); return h; }).filter(function (h) { return h.out || h.back; });
+  var withCust = Object.create(null);
+  customerHoldings.forEach(function (h) { var k = h.locationId + '|' + h.stockItemId; withCust[k] = (withCust[k] || 0) + h.held; if (!cyl[k] && sc.item(h.stockItemId) && sc.item(h.stockItemId).kind === 'cylinder') { cyl[k] = { locationId: h.locationId, stockItemId: h.stockItemId, itemName: sc.item(h.stockItemId).name || '', filled: 0, empty: 0, noOpening: true, filledValue: 0, emptyValue: 0 }; cylOrder.push(k); } });
+  // stock on each car (2026-10-06): tracked from the car's first load; loaded less
+  // returned, less what the car sold, plus the empties its exchanges took back
+  var carSince = Object.create(null);
+  sc.moves.forEach(function (m) {
+    if (m.voided || !hasOwn_(INV_CAR_, m.kind) || !m.carId || !inScope(m.locationId) || m.date > to) return;
+    if (!carSince[m.carId] || m.date < carSince[m.carId]) carSince[m.carId] = m.date;
+  });
+  var carRows = Object.create(null), carOrder = [];
+  function carRow(locId, carId, it, st) {
+    var k = carId + '|' + it.id + '|' + (st || '');
+    if (!carRows[k]) { carRows[k] = { locationId: locId, carId: carId, stockItemId: it.id, state: st || null, loaded: 0, returned: 0, sold: 0, exchangeIn: 0, onCar: 0, since: carSince[carId] }; carOrder.push(k); }
+    return carRows[k];
+  }
+  sc.moves.forEach(function (m) {
+    if (m.voided || !hasOwn_(INV_CAR_, m.kind) || !m.carId || !inScope(m.locationId) || m.date > to) return;
+    var tg = sc.moveTarget(m); if (!tg) return;
+    var cr = carRow(m.locationId, m.carId, tg.item, tg.state);
+    if (m.kind === 'car_load') cr.loaded += Number(m.qty || 0); else cr.returned += Number(m.qty || 0);
+  });
+  if (Object.keys(carSince).length) {
+    var posMap = posById_();
+    readSheet(SHEETS.ENTRIES).forEach(function (e) {
+      if (e.voided || !e.productId || !e.date || e.date > to || !Number(e.qty || 0)) return;
+      var carId = entryCarId_(e, posMap);
+      if (!carId || !carSince[carId] || e.date < carSince[carId]) return;
+      var link = sc.saleLink(e.productId); if (!link) return;
+      var q = Number(e.qty || 0);
+      var st = link.effect === 'unit' ? null : link.effect === 'sell_empty' ? 'empty' : 'full';
+      carRow(e.locationId, carId, link.item, st).sold += q;
+      if (link.effect === 'exchange') carRow(e.locationId, carId, link.back, 'empty').exchangeIn += q;
+    });
+  }
+  var cars = carOrder.map(function (k) { var c = carRows[k]; ['loaded', 'returned', 'sold', 'exchangeIn'].forEach(function (f) { c[f] = r3(c[f]); }); c.onCar = r3(c.loaded - c.returned - c.sold + c.exchangeIn); c.short = c.onCar < 0; return c; });
+  var onCars = Object.create(null);
+  cars.forEach(function (c) { var k = c.locationId + '|' + c.stockItemId + '|' + (c.state || ''); onCars[k] = (onCars[k] || 0) + c.onCar; });
   var plant = [], cylSummary = cylOrder.map(function (k) {
     var c = cyl[k], it = sc.item(c.stockItemId) || sc.items[c.stockItemId] || null, p = invPlant_(sc, c.locationId, c.stockItemId, to);
     var bodyCost = it ? Math.round(Number(invUnitValue_(it, 'empty', to, hist) || 0) * 10000) / 10000 : 0;
     c.atPlant = p.atPlant; c.plantSent = p.sent; c.plantReceived = p.received; c.plantOldest = p.oldest;
-    c.gas = c.filled; c.bodies = Math.round((c.filled + c.empty + p.atPlant) * 1000) / 1000;
+    c.withCustomers = r3(withCust[k] || 0);
+    // the branch's filled and empty include what is on its cars; the store holds the rest
+    c.onCarsFilled = r3(onCars[k + '|full'] || 0); c.onCarsEmpty = r3(onCars[k + '|empty'] || 0);
+    c.inStoreFilled = r3(c.filled - c.onCarsFilled); c.inStoreEmpty = r3(c.empty - c.onCarsEmpty);
+    c.gas = c.filled; c.bodies = r3(c.filled + c.empty + p.atPlant + c.withCustomers);
+    c.withCustomersValue = Math.round(c.withCustomers * bodyCost * 100) / 100;
     c.atPlantValue = Math.round(p.atPlant * bodyCost * 100) / 100;
     c.gasKg = it && Number(it.fillKg) > 0 ? Math.round(c.gas * Number(it.fillKg) * 1000) / 1000 : null;
     if (p.sent || p.received) plant.push({ locationId: c.locationId, stockItemId: c.stockItemId, sent: p.sent, received: p.received, atPlant: p.atPlant, oldest: p.oldest, value: c.atPlantValue });
     return c;
   });
   moves.sort(function (a, b) { return String(b.date).localeCompare(String(a.date)) || String(b.createdAt).localeCompare(String(a.createdAt)); });
-  return { ok: true, dateFrom: from, dateTo: to, rows: out, cylSummary: cylSummary, plant: plant, moves: moves.slice(0, 2000), movesTotal: moves.length, stockItemsLive: sc.live };
+  return { ok: true, dateFrom: from, dateTo: to, rows: out, cylSummary: cylSummary, plant: plant, customerHoldings: customerHoldings, cars: cars,
+    moves: moves.slice(0, 2000), movesTotal: moves.length, stockItemsLive: sc.live };
 }
 
 // ---------- The stock card (2026-10-06) ----------
@@ -501,23 +667,29 @@ function actionStockLedger_(req, user) {
   sc.moves.forEach(function (m) {
     if (m.voided || m.locationId !== locId || m.date > to) return;
     var tg = sc.moveTarget(m); if (!tg || tg.item.id !== it.id) return;
-    var q = Number(m.qty || 0), s = tg.state, d = { full: 0, empty: 0, plant: 0, unit: 0 };
+    var q = Number(m.qty || 0), s = tg.state, d = { full: 0, empty: 0, plant: 0, cust: 0, unit: 0 };
     if (m.kind === 'opening') { if (cyl) d[s] = q; else d.unit = q; }
     else if (m.kind === 'refill_out') { d.empty = -q; d.plant = q; }
     else if (m.kind === 'refill_in') { d.full = q; d.plant = -q; }
+    // a deposit leaves the branch for the customer and comes back from him
+    else if (m.kind === 'deposit_out') { if (cyl) { d[s] = -q; d.cust = q; } else d.unit = -q; }
+    else if (m.kind === 'deposit_return') { if (cyl) { d[s] = q; d.cust = -q; } else d.unit = q; }
+    // a car's load and return stay inside the branch: listed, no effect on its balance
+    else if (hasOwn_(INV_CAR_, m.kind)) { /* zero effect */ }
     else {
       var sign = ({ purchase: 1, 'return': 1, transfer_in: 1, damage: -1, transfer_out: -1 })[m.kind] || 0;
       if (cyl) d[s] += sign * q; else d.unit += sign * q;
       // a full purchase saved before the cycle existed is a one-step refill: as many empties went
       if (cyl && s === 'full' && m.kind === 'purchase' && m.newCylinders !== true) d.empty -= q;
     }
-    push({ date: m.date, at: m.createdAt || '', kind: m.kind, newCylinders: m.newCylinders === true, txNo: m.txNo || '', by: m.enteredBy, note: m.note || '', moveId: m.id, d: d, opening: m.kind === 'opening' });
+    push({ date: m.date, at: m.createdAt || '', kind: m.kind, newCylinders: m.newCylinders === true, txNo: m.txNo || '', by: m.enteredBy, note: m.note || '', moveId: m.id, d: d, opening: m.kind === 'opening',
+      customerId: m.customerId || null, carId: m.carId || null, toLocationId: m.toLocationId || null, fromLocationId: m.fromLocationId || null, qty: q });
   });
   readSheet(SHEETS.ENTRIES).forEach(function (e) {
     if (e.voided || !e.productId || e.locationId !== locId || !e.date || e.date > to) return;
     var link = sc.saleLink(e.productId); if (!link) return;
     var q = Number(e.qty || 0); if (!q) return;
-    var d = { full: 0, empty: 0, plant: 0, unit: 0 }, mine = false;
+    var d = { full: 0, empty: 0, plant: 0, cust: 0, unit: 0 }, mine = false;
     if (link.item.id === it.id) {
       mine = true;
       if (link.effect === 'unit') d.unit -= q;
@@ -531,22 +703,22 @@ function actionStockLedger_(req, user) {
   });
   // the count opens the day; within a day, in the order the rows were saved
   ev.sort(function (a, b) { return String(a.date).localeCompare(String(b.date)) || (b.opening ? 1 : 0) - (a.opening ? 1 : 0) || String(a.at).localeCompare(String(b.at)); });
-  var bal = { full: 0, empty: 0, plant: 0, unit: 0 }, lines = [], openBal = null, r3 = function (x) { return Math.round(x * 1000) / 1000; };
+  var KS = ['full', 'empty', 'plant', 'cust', 'unit'];
+  var bal = { full: 0, empty: 0, plant: 0, cust: 0, unit: 0 }, lines = [], openBal = null, r3 = function (x) { return Math.round(x * 1000) / 1000; };
+  function snap() { var b = {}; KS.forEach(function (k) { b[k] = r3(bal[k]); }); if (cyl) { b.gas = b.full; b.bodies = r3(bal.full + bal.empty + bal.plant + bal.cust); } return b; }
   ev.forEach(function (x) {
-    // before the opening count only the plant moves (empties sent before it are still out)
+    // before the opening count only what is away moves (at the plant, with customers)
     var counted = openDate && x.date >= openDate;
-    if (!counted && !(x.d.plant)) return;
-    if (!counted) x.d = { full: 0, empty: 0, plant: x.d.plant, unit: 0 };
-    if (x.date < from) { ['full', 'empty', 'plant', 'unit'].forEach(function (k) { bal[k] += x.d[k]; }); return; }
-    if (!openBal) openBal = { full: r3(bal.full), empty: r3(bal.empty), plant: r3(bal.plant), unit: r3(bal.unit) };
-    ['full', 'empty', 'plant', 'unit'].forEach(function (k) { bal[k] += x.d[k]; x.d[k] = r3(x.d[k]); });
-    x.bal = { full: r3(bal.full), empty: r3(bal.empty), plant: r3(bal.plant), unit: r3(bal.unit) };
-    if (cyl) { x.bal.gas = x.bal.full; x.bal.bodies = r3(bal.full + bal.empty + bal.plant); }
+    if (!counted && !(x.d.plant || x.d.cust)) return;
+    if (!counted) x.d = { full: 0, empty: 0, plant: x.d.plant, cust: x.d.cust, unit: 0 };
+    if (x.date < from) { KS.forEach(function (k) { bal[k] += x.d[k]; }); return; }
+    if (!openBal) openBal = snap();
+    KS.forEach(function (k) { bal[k] += x.d[k]; x.d[k] = r3(x.d[k]); });
+    x.bal = snap();
     delete x.opening;
     lines.push(x);
   });
-  if (!openBal) openBal = { full: r3(bal.full), empty: r3(bal.empty), plant: r3(bal.plant), unit: r3(bal.unit) };
-  if (cyl) { openBal.gas = openBal.full; openBal.bodies = r3(openBal.full + openBal.empty + openBal.plant); }
+  if (!openBal) openBal = snap();
   var endBal = lines.length ? lines[lines.length - 1].bal : openBal;
   return { ok: true, locationId: locId, stockItemId: it.id, itemName: it.name || '', cylinder: cyl, fillKg: Number(it.fillKg || 0) || null,
     dateFrom: from, dateTo: to, openingDate: openDate, noOpening: !openDate, opening: openBal, ending: endBal, lines: lines.slice(-3000), linesTotal: lines.length };
