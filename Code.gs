@@ -612,7 +612,11 @@ function doGet(e) {
   // deploy's own check rather than on a person's first tap.
   try { resetExecMemo_(); runOneTimeMigrations_(); }
   catch (err) { try { logAudit_('migration_failed', 'system', String(err && err.message || err)); } catch (e2) {} }
-  return json_({ ok: true, service: 'bestgas-cash-collection' });
+  // names still without their other languages, a slice per ping
+  var tr = null;
+  try { resetExecMemo_(); tr = translationsCatchUpStep_(); }
+  catch (err) { try { logAudit_('translations_catchup_failed', 'system', String(err && err.message || err)); } catch (e2) {} }
+  return json_({ ok: true, service: 'bestgas-cash-collection', translations: tr });
 }
 
 function doPost(e) {

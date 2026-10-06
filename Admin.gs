@@ -1153,26 +1153,53 @@ function allTranslatable_() {
   readSheet(SHEETS.USERS).forEach(function (u) { out = out.concat(translatableOf_({ name: u.name })); });
   return out;
 }
+// names in master data that have no translations row yet
+function translationsMissing_() {
+  var idx = translationIndex_(), seen = {};
+  return allTranslatable_().filter(function (s) {
+    s = String(s).trim();
+    if (seen[s] || hasOwn_(idx, s)) return false;
+    seen[s] = true; return true;
+  });
+}
+// A slice at a time: a request that calls Google Translate hundreds of times
+// outlives the web app's limit and holds everyone else up (live, 2026-10-06).
+var TR_SLICE_ = 25;
 function actionAdminFillTranslations_(req, user) {
   requireManager_(user);
-  var added = fillTranslations_(allTranslatable_());
+  var added = fillTranslations_(translationsMissing_(), { max: 60 });
   logAudit_('admin_fill_translations', user.id, String(added));
-  return { ok: true, added: added };
+  return { ok: true, added: added, left: translationsMissing_().length };
 }
-// Once after the deploy every name of every kind gets the other two languages,
-// so nobody has to press the button. 300 names a run; done only when nothing is
-// missing, and a run that added nothing (Translate down) waits an hour.
-function translationsCatchUpOnce_() {
+// After the deploy every name of every kind gets the other two languages, so
+// nobody has to press the button. Never inside a person's request: only the
+// warm-up GET ping runs it (doGet), one slice per ping, one ping at a time.
+// Done when nothing is missing; a slice that added nothing (Translate down)
+// waits an hour.
+function translationsCatchUpStep_(max) {
   var flag = 'TRANSLATIONS_ALL_KINDS_V2', props = scriptProps_();
-  if (props[flag]) return;
+  if (props[flag]) return { done: true };
   var tried = props[flag + '_TRIED'];
-  if (tried && Date.now() - new Date(tried).getTime() < 3600000) return;
-  var names = allTranslatable_();
-  var added = fillTranslations_(names, { max: 300 });
-  if (!added) setScriptProp_(flag + '_TRIED', new Date().toISOString());
-  var idx = translationIndex_();
-  var left = names.some(function (s) { return !hasOwn_(idx, String(s).trim()); });
-  if (!left) setScriptProp_(flag, new Date().toISOString());
+  if (tried && Date.now() - new Date(tried).getTime() < 3600000) return { waiting: true };
+  var cache = CacheService.getScriptCache();
+  if (cache.get('TR_CATCHUP_RUNNING')) return { busy: true };
+  cache.put('TR_CATCHUP_RUNNING', '1', 300);
+  try {
+    var missing = translationsMissing_();
+    // a name Translate keeps refusing is set aside for an hour, so it never holds the rest up
+    var slice = missing.filter(function (s) { return !cache.get('trf:' + s.slice(0, 200)); }).slice(0, max || TR_SLICE_);
+    var added = slice.length ? fillTranslations_(slice) : 0;
+    if (slice.length && !added) {
+      slice.forEach(function (s) {
+        if (fillTranslations_([s])) added++;
+        else cache.put('trf:' + s.slice(0, 200), '1', 3600);
+      });
+      if (!added) setScriptProp_(flag + '_TRIED', new Date().toISOString());
+    }
+    var left = missing.length ? translationsMissing_().length : 0;
+    if (!left) setScriptProp_(flag, new Date().toISOString());
+    return { added: added, left: left };
+  } finally { cache.remove('TR_CATCHUP_RUNNING'); }
 }
 // {src, ar, en, ur} or {rows:[...]}: a blank column keeps what is there
 function actionAdminSaveTranslation_(req, user) {
@@ -1534,7 +1561,7 @@ function runOneTimeMigrations_() {
   seedCustomersOnce_();
   backfillCodesOnce_();
   seedCostTypesOnce_();
-  translationsCatchUpOnce_();
+  // the translations catch-up is not here: it runs from doGet only (translationsCatchUpStep_)
   // the app became Best Gas Collections; the sender name saved at setup still
   // said the old default (a name someone chose is kept)
   runOnce_('SENDER_RENAMED', function () {

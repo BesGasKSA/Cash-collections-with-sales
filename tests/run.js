@@ -2667,11 +2667,24 @@ var cuName = 'Catchup Widget';
 ctx.writeRow(ctx.SHEETS.PRODUCTS, { name: cuName, type: 'goods', active: true });
 ctx.writeRow(ctx.SHEETS.INCOME_ITEMS, { name: 'بند دخل قديم' });
 ctx._debug.scriptProps['TRANSLATIONS_ALL_KINDS_V2'] = undefined; delete ctx._debug.scriptProps['TRANSLATIONS_ALL_KINDS_V2'];
+// a person's request never waits on Translate (live 2026-10-06: version 99 hung every request)
+var preCalls = tr.log.length;
 ctx.resetExecMemo_(); ctx.runOneTimeMigrations_(); ctx.resetExecMemo_();
-check(trOf(cuName) && trOf(cuName).ar && trOf('بند دخل قديم') && trOf('Offline Item'), 'the catch-up covers products and the other kinds');
+call({ action: 'listMeta', token: adminTok });
+check(tr.log.length === preCalls && !trOf(cuName), 'the one-time jobs and a signed-in request do not call Translate');
+// the warm-up ping goes in slices: many names take several pings, each one small
+for (var cuI = 0; cuI < 30; cuI++) ctx.writeRow(ctx.SHEETS.INCOME_ITEMS, { name: 'Catchup Bulk ' + String.fromCharCode(65 + cuI) + 'x' });
+ctx.resetExecMemo_(); var cu1 = ctx.translationsCatchUpStep_(); ctx.resetExecMemo_();
+check(cu1.added > 0 && cu1.added <= ctx.TR_SLICE_ && cu1.left > 0 && !ctx.scriptProps_()['TRANSLATIONS_ALL_KINDS_V2'], 'one ping translates one slice and leaves the rest (' + JSON.stringify(cu1) + ')');
+ctx.CacheService.getScriptCache().put('TR_CATCHUP_RUNNING', '1', 300);
+check(ctx.translationsCatchUpStep_().busy === true, 'a second ping while one runs does nothing');
+ctx.CacheService.getScriptCache().remove('TR_CATCHUP_RUNNING');
+var cuGuard = 0, cuStep;
+do { ctx.resetExecMemo_(); cuStep = ctx.doGet({}); ctx.resetExecMemo_(); cuGuard++; } while (!ctx.scriptProps_()['TRANSLATIONS_ALL_KINDS_V2'] && cuGuard < 10);
+check(trOf(cuName) && trOf(cuName).ar && trOf('بند دخل قديم') && trOf('Offline Item') && trOf('Catchup Bulk Ax'), 'the pings cover products and the other kinds');
 var cuCalls = tr.log.length;
 ctx.writeRow(ctx.SHEETS.PRODUCTS, { name: 'Added After Catchup', type: 'goods', active: true });
-ctx.resetExecMemo_(); ctx.runOneTimeMigrations_(); ctx.resetExecMemo_();
+ctx.resetExecMemo_(); ctx.doGet({}); ctx.resetExecMemo_();
 check(tr.log.length === cuCalls && !trOf('Added After Catchup'), 'the catch-up runs once');
 check(!!ctx.scriptProps_()['TRANSLATIONS_ALL_KINDS_V2'], 'and sets its flag');
 
