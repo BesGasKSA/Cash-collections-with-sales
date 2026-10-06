@@ -67,6 +67,13 @@ function actionVoidCustomerPayment_(req, user) {
 
 // ---- what a customer owes and paid, in order ----
 // The invoice an entry belongs to (the latest not credited), keyed by entry id.
+// a sale an invoice may carry: standing, and not inside an area batch still waiting for the deputy
+function invEligible_(e, batches) {
+  if (e.voided) return false;
+  if (e.batchId && e.consumedBy === e.batchId) { var b = batches[e.batchId]; if (!b || b.status !== 'deputy_approved') return false; }
+  return true;
+}
+function batchesById_() { var m = Object.create(null); readSheet(SHEETS.AREA_BULK_BATCHES).forEach(function (b) { m[b.id] = b; }); return m; }
 function invoicedEntries_() {
   var m = Object.create(null);
   readSheet(SHEETS.SALES_INVOICES).forEach(function (inv) {
@@ -163,14 +170,20 @@ function actionInvoiceCandidates_(req, user) {
   if (!custCanRead_(user)) return { ok: false, error: 'forbidden' };
   var cu = getById_(SHEETS.CUSTOMERS, req.customerId);
   if (!cu) return { ok: false, error: 'unknown_customer' };
-  var inv = invoicedEntries_();
-  var list = readSheet(SHEETS.ENTRIES).filter(function (e) { return !e.voided && e.creditCustomerId === cu.id && Number(e.creditSales || 0) > 0 && !inv[e.id]; })
+  var inv = invoicedEntries_(), bt = batchesById_();
+  var list = readSheet(SHEETS.ENTRIES).filter(function (e) { return invEligible_(e, bt) && e.creditCustomerId === cu.id && Number(e.creditSales || 0) > 0 && !inv[e.id]; })
     .sort(function (a, b) { return String(a.date).localeCompare(String(b.date)); })
     .map(function (e) { return { id: e.id, date: e.date, txNo: e.txNo || '', locationId: e.locationId, creditSales: custGross_(e, e.creditSales), creditDeliveryFee: custGross_(e, e.creditDeliveryFee), items: e.creditItems || null }; });
   return { ok: true, entries: list };
 }
 // whether a day's prices were typed with VAT: stamped on the day since 2026-10-06
-function entryInclVat_(e) { return typeof e.salesIncludeVat === 'boolean' ? e.salesIncludeVat : salesIncludeVat_(); }
+function entryInclVat_(e) {
+  if (typeof e.salesIncludeVat === 'boolean') return e.salesIncludeVat;
+  // an older day: the setting in force on its date (history kept by adminSetConfig since 2026-10-07)
+  var h = config_().salesIncludeVatHistory || [];
+  for (var i = 0; i < h.length; i++) if (String(e.date) <= String(h[i].until)) return h[i].value !== false;
+  return salesIncludeVat_();
+}
 // what a credit sale costs the customer with VAT, the figure the statement and the invoice agree on
 function custGross_(e, amount) { amount = Number(amount || 0); return r2_(entryInclVat_(e) ? amount : amount * (1 + entryVatRate_(e))); }
 function invLinesOf_(e, products) {
@@ -211,13 +224,13 @@ function actionCreateInvoice_(req, user) {
   lock.waitLock(30000);
   try {
     freshenExec_();
-    var inv = invoicedEntries_(), byId = Object.create(null), products = Object.create(null);
+    var inv = invoicedEntries_(), bt = batchesById_(), byId = Object.create(null), products = Object.create(null);
     readSheet(SHEETS.ENTRIES).forEach(function (e) { byId[e.id] = e; });
     readSheet(SHEETS.PRODUCTS).forEach(function (p) { products[p.id] = p; });
     var lines = [];
     for (var i = 0; i < ids.length; i++) {
       var e = byId[ids[i]];
-      if (!e || e.voided || e.creditCustomerId !== cu.id || !(Number(e.creditSales || 0) > 0)) return { ok: false, error: 'invalid_invoice_entry', index: i };
+      if (!e || !invEligible_(e, bt) || e.creditCustomerId !== cu.id || !(Number(e.creditSales || 0) > 0)) return { ok: false, error: 'invalid_invoice_entry', index: i };
       if (inv[e.id]) return { ok: false, error: 'already_invoiced', index: i, invoiceNo: inv[e.id].txNo };
       lines = lines.concat(invLinesOf_(e, products));
     }

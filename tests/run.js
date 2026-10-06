@@ -4878,6 +4878,24 @@ var rvPay = call({ action: 'createDailyEntry', token: jrBm.tok, date: jrToday, s
 check(rvPay.ok && !rvPay.entry.paymentCustomerId, 'a payer named on another income item is dropped, never credited to the customer');
 check(ctx.zatcaTlv_(['ش'.repeat(200), '300000000000003', '2026-10-06T10:00:00Z', '1.00', '0.13']).length > 0 && Buffer.from(ctx.zatcaTlv_(['ش'.repeat(200), 'x', 'y', 'z', 'w']), 'base64')[1] <= 255, 'a seller name too long for one QR length byte is cut to fit');
 
+console.log('--- area switching: fixes from the second review ---');
+var r2E = call({ action: 'createDailyEntry', token: asBmB.tok, date: jrToday, sourceType: 'store', sourceId: asStB.id, cashSales: 120, submissionId: 'r2-b' });
+var r2H = call({ action: 'createHandoff', token: asBmB.tok, kind: 'location_to_cluster', locationId: asLocB.id });
+check(r2E.ok && r2H.ok, 'South\'s branch manager hands his day to the area manager (' + (r2E.error || r2H.error || 'ok') + ')');
+check(asCall({ action: 'confirmHandoff', id: r2H.handoff.id }, asA.id).error === 'other_area', 'working in North, he cannot confirm a South handover');
+check(asCall({ action: 'disputeHandoff', id: r2H.handoff.id, note: 'x' }, asA.id).error === 'other_area', 'nor dispute it');
+check(asCall({ action: 'confirmHandoff', id: r2H.handoff.id }, asB.id).ok, 'switched to South, he confirms it');
+var r2V = asCall({ action: 'createDailyEntry', date: jrToday, sourceType: 'store', sourceId: asStA.id, cashSales: 9, submissionId: 'r2-v' }, asA.id);
+check(asCall({ action: 'voidEntries', ids: [r2V.entry.id], reason: 'x' }, asB.id).error === 'other_area', 'working in South, he cannot cancel a North entry');
+check(asCall({ action: 'voidEntries', ids: [r2V.entry.id], reason: 'x' }, asA.id).ok, 'in North he can');
+// an unstamped day keeps the VAT basis of its own date
+var r2Row = JSON.parse(JSON.stringify(ctx.getById_(SHEETS.ENTRIES, cuD3.entry.id))); delete r2Row.salesIncludeVat;
+var r2Cfg = ctx.config_(); var r2Was = r2Cfg.salesIncludeVatHistory;
+r2Cfg.salesIncludeVatHistory = [{ value: false, until: '2999-12-31' }]; ctx.writeRow(SHEETS.CONFIG, r2Cfg); ctx.resetExecMemo_();
+check(ctx.entryInclVat_(r2Row) === false, 'an older day reads the setting in force on its date, not today\'s');
+r2Cfg = ctx.config_(); r2Cfg.salesIncludeVatHistory = r2Was || []; ctx.writeRow(SHEETS.CONFIG, r2Cfg); ctx.resetExecMemo_();
+check(ctx.entryInclVat_(Object.assign({}, r2Row, { salesIncludeVat: true })) === true, 'a stamped day reads its own stamp');
+
 console.log('--- a test round is archived with open handovers when asked (before go-live) ---');
 var arcOpenCount = ctx.readSheet(SHEETS.HANDOFFS).filter(function (h) { return ['pending', 'pending_deputy', 'disputed'].indexOf(h.status) >= 0; }).length;
 check(arcOpenCount > 0 || true, 'open handovers on file: ' + arcOpenCount);

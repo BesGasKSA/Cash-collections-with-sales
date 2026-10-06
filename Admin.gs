@@ -1308,7 +1308,17 @@ function actionAdminSetConfig_(req, user) {
   if (d.areaManagerBulkUploadEnabled != null) cfg.areaManagerBulkUploadEnabled = !!d.areaManagerBulkUploadEnabled;
   if (d.posSalesEnabled != null) cfg.posSalesEnabled = !!d.posSalesEnabled;
   // whether the prices typed at the branches hold VAT (profit is read without it)
-  if (d.salesIncludeVat != null) cfg.salesIncludeVat = !!d.salesIncludeVat;
+  if (d.salesIncludeVat != null) {
+    // the old setting is kept with the last day it stood, so older credit sales keep their basis (2026-10-07)
+    var inclWas = cfg.salesIncludeVat !== false;
+    if (!!d.salesIncludeVat !== inclWas) {
+      var inclUntil = Utilities.formatDate(new Date(Date.now() - 86400000), 'Asia/Riyadh', 'yyyy-MM-dd');
+      var ih = Array.isArray(cfg.salesIncludeVatHistory) ? cfg.salesIncludeVatHistory.slice() : [];
+      if (!ih.length || String(ih[ih.length - 1].until) < inclUntil) ih.push({ value: inclWas, until: inclUntil });
+      cfg.salesIncludeVatHistory = ih;
+    }
+    cfg.salesIncludeVat = !!d.salesIncludeVat;
+  }
   // whether unit costs are typed with VAT (cost of goods and stock values are read without it)
   if (d.costIncludeVat != null) cfg.costIncludeVat = !!d.costIncludeVat;
   // the seller on every invoice (2026-10-06): the company's legal names, VAT and CR numbers, national address and bank

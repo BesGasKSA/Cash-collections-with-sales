@@ -547,6 +547,7 @@ function actionVoidEntries_(req, user) {
     // take it back, so nobody else can make someone's figure disappear
     if (e.enteredBy !== user.id) return { ok: false, error: 'not_your_entry' };
     if (e.consumedBy) return { ok: false, error: 'entry_locked' };
+    if (user.role === 'cluster_manager' && activeAreaOf_(user.id)) { var vl = getById_(SHEETS.LOCATIONS, e.locationId); if (!vl || vl.clusterId !== activeAreaOf_(user.id)) return { ok: false, error: 'other_area' }; }
     // a credit sale on an issued tax invoice: a credit note first (2026-10-06)
     if (e.creditCustomerId && invoicedEntries_()[e.id]) return { ok: false, error: 'entry_invoiced' };
     // Its الموازنة goes with it — unless Finance has already matched that
@@ -1432,6 +1433,7 @@ function actionBulkSubmitAreaBatch_(req, user) {
 function resubmitError_(batch, user) {
   if (!batch) return 'not_found';
   if (batch.uploadedBy !== user.id && user.role !== 'admin') return 'forbidden';
+  if (user.role === 'cluster_manager' && activeAreaOf_(user.id) && batch.clusterId !== activeAreaOf_(user.id)) return 'other_area';
   if (batch.status !== 'deputy_rejected') return 'not_rejected';
   return null;
 }
@@ -1483,6 +1485,7 @@ function actionAreaBulkBatchDetail_(req, user) {
   if (!batch) return { ok: false, error: 'not_found' };
   if (user.role === 'cluster_manager') {
     if (batch.uploadedBy !== user.id) return { ok: false, error: 'forbidden' };
+    if (activeAreaOf_(user.id) && batch.clusterId !== activeAreaOf_(user.id)) return { ok: false, error: 'other_area' };
   } else if (user.role !== 'deputy_operations_manager' && !isCompanyWide_(user.role)) {
     return { ok: false, error: 'forbidden' };
   }
@@ -1704,6 +1707,7 @@ function actionConfirmHandoff_(req, user) {
   // Only the person the cash was handed to can say it arrived — nobody, an
   // admin included, confirms a receipt on someone else's behalf.
   if (h.toUserId !== user.id) return { ok: false, error: 'receiver_only' };
+  if (!inActiveArea_(user, h)) return { ok: false, error: 'other_area' };
 
   var declared = Number(h.amount);
   var received = req.receivedAmount === undefined || req.receivedAmount === null || req.receivedAmount === ''
@@ -1863,6 +1867,7 @@ function actionDisputeHandoff_(req, user) {
   if (h.status !== 'pending') return { ok: false, error: 'not_pending' };
   if (h.fromUserId === user.id) return { ok: false, error: 'conflict_of_interest' };
   if (user.role !== 'admin' && h.toUserId !== user.id) return { ok: false, error: 'forbidden' };
+  if (!inActiveArea_(user, h)) return { ok: false, error: 'other_area' };
 
   h.status = 'disputed';
   h.disputeNote = req.note || '';
@@ -2311,7 +2316,7 @@ function actionMyPendingActions_(req, user) {
       add('deputy_batch', { count: 1, amount: net, refId: b.id, since: b.createdAt });
     }
     if (b.status === 'deputy_rejected' && b.uploadedBy === user.id) {
-      add('batch_rejected', { count: 1, amount: net, refId: b.id, since: b.deputyActedAt || b.createdAt });
+      if (user.role !== 'cluster_manager' || !activeAreaOf_(user.id) || b.clusterId === activeAreaOf_(user.id)) add('batch_rejected', { count: 1, amount: net, refId: b.id, since: b.deputyActedAt || b.createdAt });
     }
   });
 
