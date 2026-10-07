@@ -312,6 +312,11 @@ function creditOverLines_(rows) {
   });
 }
 
+// A discount on a product line (2026-10-07): the sale stays at its full price and
+// the discount comes off the cash, like credit; on a card line the card amount is
+// already the net (discountOnCard), so the cash is untouched. A reason from the list.
+var DISCOUNT_REASONS_ = ['loyal_customer', 'promotion', 'damaged_cylinder', 'price_match', 'manager_approved', 'other'];
+function discountLimit_() { var v = Number(config_().discountLimit || 0); return isFinite(v) && v > 0 ? v : 0; }
 function checkNonSalesFields_(r, siblingCash) {
   // the item the line sold, when it names one: a real, active product (security
   // review 2026-10-04: "__proto__" as an item broke the stock report for good)
@@ -321,6 +326,12 @@ function checkNonSalesFields_(r, siblingCash) {
   }
   var creditErr = settleCredit_(r) || settleChannel_(r);
   if (creditErr) return creditErr;
+  var disc = Number(r.discountAmount || 0);
+  if (!isFinite(disc) || disc < 0) return 'invalid_amount';
+  if (disc > 0) {
+    if (DISCOUNT_REASONS_.indexOf(String(r.discountReason || '')) < 0) return 'discount_reason_required';
+    if (r.discountOnCard !== true && disc > Number(r.cashSales || 0) + 0.005) return 'discount_over_sale';
+  }
   var other = Number(r.otherCash || 0);
   if (other < 0 || Number(r.expenseAmount || 0) < 0 || Number(r.directDepositAmount || 0) < 0) return 'invalid_amount';
   // a customer's transfer straight into the company account: in the sales
@@ -365,7 +376,7 @@ function checkNonSalesFields_(r, siblingCash) {
     // the same source and date: one real day gets split across several rows
     // in product mode, and the deposit rides on the first of them.
     var inHand = Number(r.cashSales || 0) - Number(r.creditSales || 0) - Number(r.creditCommission || 0) + Number(r.channelDeliveryFee || 0) - Number(r.channelCommission || 0) - transfer + Number(siblingCash || 0) + other
-      - delivery + (delivery > 0 ? (delivery / (1 + vat)) * vat : 0) - exp;
+      - delivery + (delivery > 0 ? (delivery / (1 + vat)) * vat : 0) - exp - (r.discountOnCard === true ? 0 : disc);
     if (dep > inHand + 0.005) return 'deposit_exceeds_cash';
   }
   return null;
@@ -385,7 +396,7 @@ function siblingCash_(rows, index) {
       var dl = Number(o.deliveryFeeBankAmount || 0);
       sum += Number(o.cashSales || 0) - Number(o.creditSales || 0) - Number(o.creditCommission || 0) + Number(o.channelDeliveryFee || 0) - Number(o.channelCommission || 0) - Number(o.bankTransferAmount || 0)
         + Number(o.otherCash || 0) - Number(o.expenseAmount || 0) - dl + (dl > 0 ? (dl / (1 + vat)) * vat : 0)
-        - Number(o.directDepositAmount || 0);
+        - Number(o.directDepositAmount || 0) - (o.discountOnCard === true ? 0 : Number(o.discountAmount || 0));
     }
   }
   return sum;
@@ -438,6 +449,11 @@ function actionUploadEntryPhoto_(req, user) {
 // The non-sales columns every entry row carries, whichever path created it.
 function nonSalesFields_(r) {
   return {
+    discountAmount: Number(r.discountAmount || 0) > 0 ? Math.round(Number(r.discountAmount) * 100) / 100 : 0,
+    discountReason: Number(r.discountAmount || 0) > 0 ? String(r.discountReason || '') : '',
+    discountOnCard: Number(r.discountAmount || 0) > 0 && r.discountOnCard === true,
+    // over the limit in Settings: flagged for Finance, never blocked
+    discountFlag: discountLimit_() > 0 && Number(r.discountAmount || 0) > discountLimit_(),
     otherCash: Number(r.otherCash || 0),
     otherCashItemId: Number(r.otherCash || 0) > 0 ? r.otherCashItemId : null,
     otherCashReason: Number(r.otherCash || 0) > 0 ? String(r.otherCashReason || '').trim().slice(0, 1000) : '',
@@ -859,7 +875,7 @@ function entrySalesTotal_(e) {
 function computeNet_(entries) {
   var storeCash = 0, carCash = 0, posCash = 0, deliveryFee = 0, posSales = 0, creditSales = 0;
   var otherCash = 0, expenses = 0, directDeposit = 0, bankTransfers = 0, creditDeliveryFees = 0, creditCommissions = 0;
-  var channelDeliveryFees = 0, channelCommissions = 0, creditDeliveryUnpaid = 0, vatOnDelivery = 0, vatHist = vatHistory_();
+  var channelDeliveryFees = 0, channelCommissions = 0, creditDeliveryUnpaid = 0, vatOnDelivery = 0, discounts = 0, vatHist = vatHistory_();
   entries.forEach(function (e) {
     // The credit customer's delivery fee is earned but paid later with the goods,
     // never in cash: from 2026-10-04 it is shown with the sales AND taken off
@@ -874,6 +890,8 @@ function computeNet_(entries) {
     creditDeliveryFees += Number(e.creditDeliveryFee || 0);
     creditCommissions += Number(e.creditCommission || 0);
     bankTransfers += Number(e.bankTransferAmount || 0);
+    // a discount given in cash comes off the cash (on a card line the card amount is already net)
+    if (e.discountOnCard !== true) discounts += Number(e.discountAmount || 0);
     // A sale on credit is part of the day's takings figure the branch
     // enters, but no money came in for it — so it is DEDUCTED below,
     // exactly like an expense or a موازنة. (Until 2026-09-23 it was simply
@@ -893,13 +911,13 @@ function computeNet_(entries) {
   // sale, but the money went straight to the bank: it comes off too
   var netCashOwed = storeCash + carCash + posCash + otherCash - deliveryFee + vatOnDelivery - expenses - directDeposit - creditSales - bankTransfers - creditCommissions
     // a credit customer's delivery fee: added, and on a day saved from 2026-10-04 taken off again
-    + creditDeliveryFees - creditDeliveryUnpaid + channelDeliveryFees - channelCommissions;
+    + creditDeliveryFees - creditDeliveryUnpaid + channelDeliveryFees - channelCommissions - discounts;
   return {
     storeCash: storeCash, carCash: carCash, posCash: posCash, deliveryFee: deliveryFee,
     posSales: posSales, creditSales: creditSales, vatOnDelivery: vatOnDelivery,
     otherCash: otherCash, expenses: expenses, directDeposit: directDeposit, bankTransfers: bankTransfers,
     creditDeliveryFees: creditDeliveryFees, creditDeliveryUnpaid: creditDeliveryUnpaid, creditCommissions: creditCommissions,
-    channelDeliveryFees: channelDeliveryFees, channelCommissions: channelCommissions, netCashOwed: netCashOwed
+    channelDeliveryFees: channelDeliveryFees, channelCommissions: channelCommissions, discounts: discounts, netCashOwed: netCashOwed
   };
 }
 
@@ -912,10 +930,11 @@ function computeNet_(entries) {
 function sumBreakdowns_(breakdowns) {
   var out = { storeCash: 0, carCash: 0, posCash: 0, deliveryFee: 0, posSales: 0, creditSales: 0, vatOnDelivery: 0,
     otherCash: 0, expenses: 0, directDeposit: 0, bankTransfers: 0, creditDeliveryFees: 0, creditDeliveryUnpaid: 0, creditCommissions: 0, channelDeliveryFees: 0, channelCommissions: 0,
-    shortfall: 0, netCashOwed: 0 };
+    shortfall: 0, discounts: 0, netCashOwed: 0 };
   breakdowns.forEach(function (b) {
     if (!b) return;
     out.shortfall += Number(b.shortfall || 0);
+    out.discounts += Number(b.discounts || 0);
     out.channelDeliveryFees += Number(b.channelDeliveryFees || 0);
     out.channelCommissions += Number(b.channelCommissions || 0);
     out.creditCommissions += Number(b.creditCommissions || 0);
@@ -1441,7 +1460,7 @@ function resubmitError_(batch, user) {
 var BATCH_ROW_FIELDS_ = ['date', 'sourceType', 'sourceId', 'productId', 'qty', 'unitPrice', 'cashSales', 'posSales', 'creditSales',
   'creditCustomerId', 'channelQtys', 'channelComRates', 'deliveryFeeBankAmount', 'deliveryNote', 'otherCash', 'otherCashItemId',
   'otherCashReason', 'expenseAmount', 'expenseItemId', 'expenseReason', 'directDepositAmount', 'directDepositRef', 'directDepositNote',
-  'directDepositPosId', 'paymentCustomerId', 'bankTransferAmount', 'cylindersOut', 'cylindersIn', 'note'];
+  'directDepositPosId', 'paymentCustomerId', 'discountAmount', 'discountReason', 'discountOnCard', 'bankTransferAmount', 'cylindersOut', 'cylindersIn', 'note'];
 function actionAreaBatchRows_(req, user) {
   var batch = getById_(SHEETS.AREA_BULK_BATCHES, req.id);
   var err = resubmitError_(batch, user);

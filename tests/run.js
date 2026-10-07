@@ -4950,6 +4950,35 @@ var rvRow = (rvRep.rows || []).filter(function (r) { return r.stockItemId === rv
 check(Math.abs(rvRow.unitCost - 70) < 0.001 && rvRow.ending === 10, 'the moving average follows the stock held: 10 at 70, not the 60 of all receipts (got ' + rvRow.unitCost + ')');
 call({ action: 'adminSetConfig', token: adminTok, data: { invControls: false } });
 
+console.log('--- discounts on product lines: off the cash, on the statement, with a reason (2026-10-07) ---');
+var dsMixed = [{ sourceType: 'store', cashSales: 370, discountAmount: 37, discountReason: 'loyal_customer' },
+  { sourceType: 'store', posSales: 90, discountAmount: 10, discountReason: 'promotion', discountOnCard: true },
+  { sourceType: 'store', cashSales: 100, creditSales: 50 }];
+var dsNet = ctx.computeNet_(dsMixed);
+check(dsNet.discounts === 37 && dsNet.netCashOwed === 370 - 37 + 100 - 50, 'a cash discount comes off the cash; a card one does not (the card amount is already net) (got ' + dsNet.netCashOwed + ')');
+if (clientCtx.entryAmt_) close(dsMixed.reduce(function (a, e) { return a + clientCtx.entryAmt_(e).net; }, 0), dsNet.netCashOwed, 'the screens work it out the same way');
+rowsAddUp_(dsNet, 'a day with discounts');
+check(ctx.sumBreakdowns_([dsNet, dsNet]).discounts === 74, 'a handover of handovers carries the discounts up');
+var dsLoc = jrStore.id;
+check(call({ action: 'createDailyEntry', token: jrBm.tok, date: jrToday, sourceType: 'store', sourceId: dsLoc, cashSales: 100, discountAmount: 10, submissionId: 'ds-1' }).error === 'discount_reason_required', 'a discount needs its reason');
+check(call({ action: 'createDailyEntry', token: jrBm.tok, date: jrToday, sourceType: 'store', sourceId: dsLoc, cashSales: 100, discountAmount: 150, discountReason: 'promotion', submissionId: 'ds-2' }).error === 'discount_over_sale', 'and is never more than the sale');
+check(call({ action: 'createDailyEntry', token: jrBm.tok, date: jrToday, sourceType: 'store', sourceId: dsLoc, cashSales: 100, discountAmount: -5, discountReason: 'promotion', submissionId: 'ds-3' }).error === 'invalid_amount', 'nor below zero');
+check(call({ action: 'adminSetConfig', token: adminTok, data: { discountLimit: 20 } }).ok, 'a discount limit per line');
+var dsOk = call({ action: 'createDailyEntry', token: jrBm.tok, date: jrToday, sourceType: 'store', sourceId: dsLoc, cashSales: 200, discountAmount: 25, discountReason: 'manager_approved', submissionId: 'ds-4' });
+check(dsOk.ok && dsOk.entry.discountAmount === 25 && dsOk.entry.discountReason === 'manager_approved' && dsOk.entry.discountFlag === true, 'a discount above the limit is saved, flagged for Finance');
+var dsSmall = call({ action: 'createDailyEntry', token: jrBm.tok, date: jrToday, sourceType: 'store', sourceId: dsLoc, cashSales: 200, discountAmount: 5, discountReason: 'loyal_customer', submissionId: 'ds-5' });
+check(dsSmall.ok && !dsSmall.entry.discountFlag, 'one under it is not');
+check(call({ action: 'adminSetConfig', token: adminTok, data: { discountLimit: -1 } }).error === 'invalid_setting', 'the limit is never negative');
+call({ action: 'adminSetConfig', token: adminTok, data: { discountLimit: 0 } });
+check(call({ action: 'createDailyEntry', token: jrBm.tok, date: jrToday, sourceType: 'store', sourceId: dsLoc, cashSales: 100, discountAmount: 20, discountReason: 'promotion', directDepositAmount: 95, directDepositRef: 'X1', submissionId: 'ds-6' }).error === 'deposit_exceeds_cash', 'a الموازنة cannot bank cash the discount took away (100 − 20 = 80)');
+
+console.log('--- one area manager runs four areas ---');
+var fourMgr = jrMake('cluster_manager', 'Four Area Manager', 'four.fx@bestgas.sa');
+var fourAreas = ['Area One', 'Area Two', 'Area Three', 'Area Four'].map(function (n) { return call({ action: 'adminSaveEntity', token: adminTok, kind: 'cluster', data: { name: n, clusterManagerUserId: fourMgr.u.id } }); });
+check(fourAreas.every(function (r) { return r.ok; }), 'four areas, one manager (' + fourAreas.map(function (r) { return r.error || 'ok'; }).join(',') + ')');
+var fourMeta = call({ action: 'listMeta', token: fourMgr.tok });
+check((fourMeta.myAreas || []).length === 4, 'his screens list the four for the switcher');
+
 console.log('--- a test round is archived with open handovers when asked (before go-live) ---');
 var arcOpenCount = ctx.readSheet(SHEETS.HANDOFFS).filter(function (h) { return ['pending', 'pending_deputy', 'disputed'].indexOf(h.status) >= 0; }).length;
 check(arcOpenCount > 0 || true, 'open handovers on file: ' + arcOpenCount);
