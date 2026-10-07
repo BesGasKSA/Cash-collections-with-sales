@@ -1339,6 +1339,9 @@ function actionAdminSetConfig_(req, user) {
   }
   // whether unit costs are typed with VAT (cost of goods and stock values are read without it)
   if (d.costIncludeVat != null) cfg.costIncludeVat = !!d.costIncludeVat;
+  // stock controls and valuation (2026-10-07)
+  if (d.invControls != null) cfg.invControls = !!d.invControls;
+  if (d.invValuation != null) { if (['average', 'standard'].indexOf(d.invValuation) < 0) return { ok: false, error: 'invalid_setting' }; cfg.invValuation = d.invValuation; }
   // the seller on every invoice (2026-10-06): the company's legal names, VAT and CR numbers, national address and bank
   if (d.company != null) {
     var co = companyClean_(d.company);
@@ -1832,6 +1835,6 @@ function actionMeta_(req, user) {
     clusters: clusters, zones: zones, products: products, stockItems: stockItems, users: users,
     incomeItems: incomeItems, expenseItems: expenseItems, customers: customers, cities: cities, channels: channels,
     translations: readSheet(SHEETS.TRANSLATIONS).map(function (r) { return { src: r.src, ar: r.ar || '', en: r.en || '', ur: r.ur || '', srcLang: r.srcLang || 'ar', auto: r.auto !== false }; }),
-    config: { vatRate: vatRate_(), vatHistory: vatHistory_(), staleThresholdHours: staleThresholdHours_(), heldThresholdHours: heldThresholdHours_(), secondApprovalThreshold: secondApprovalThreshold_(), areaManagerBulkUploadEnabled: areaManagerBulkUploadEnabled_(), posSalesEnabled: posSalesEnabled_(), salesIncludeVat: salesIncludeVat_(), costIncludeVat: costIncludesVat_(), company: companyProfile_(), liveLocked: config_().liveLocked === true, liveLockedAt: config_().liveLockedAt || null, stockItemsLive: stockItemsLive_() }
+    config: { vatRate: vatRate_(), vatHistory: vatHistory_(), staleThresholdHours: staleThresholdHours_(), heldThresholdHours: heldThresholdHours_(), secondApprovalThreshold: secondApprovalThreshold_(), areaManagerBulkUploadEnabled: areaManagerBulkUploadEnabled_(), posSalesEnabled: posSalesEnabled_(), salesIncludeVat: salesIncludeVat_(), costIncludeVat: costIncludesVat_(), invControls: config_().invControls !== false, invValuation: config_().invValuation || 'average', company: companyProfile_(), liveLocked: config_().liveLocked === true, liveLockedAt: config_().liveLockedAt || null, stockItemsLive: stockItemsLive_() }
   };
 }

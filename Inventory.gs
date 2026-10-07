@@ -34,7 +34,16 @@
 // branch has at the plant for that item; an extra cylinder is new cylinders or
 // a transfer. A full purchase saved before the cycle existed stays a one-step
 // refill, read as it always was.
-var INV_KINDS_ = ['opening', 'purchase', 'return', 'damage', 'transfer_in', 'transfer_out', 'refill_out', 'refill_in', 'deposit_out', 'deposit_return', 'car_load', 'car_return'];
+var INV_KINDS_ = ['opening', 'purchase', 'return', 'damage', 'transfer_in', 'transfer_out', 'refill_out', 'refill_in', 'deposit_out', 'deposit_return', 'car_load', 'car_return',
+  // 2026-10-07: gas lost (a filled cylinder that lost its gas is an empty one), and a physical count's difference
+  'waste', 'count_gain', 'count_loss'];
+// why stock was written off: a list, so the reports can group it (2026-10-07)
+var INV_REASONS_ = { damage: ['broken_body', 'expired_test', 'other'], waste: ['gas_leak', 'valve_failure', 'short_fill', 'other'] };
+var INV_COUNT_ = { count_gain: 1, count_loss: 1 };
+// purchases need their supplier and invoice, write-offs their reason (config.invControls, default on)
+function invControls_() { return config_().invControls !== false; }
+// stock is valued at the weighted average of what it cost (default), or at the standard cost
+function invAverage_() { return config_().invValuation !== 'standard'; }
 var INV_REFILL_STATE_ = { refill_out: 'empty', refill_in: 'full' };
 // Cylinders on deposit with a customer (عهدة): out leaves the branch, return comes
 // back; a customer never returns more than he holds of an item. A car's load and
@@ -204,6 +213,20 @@ function invCheckMove_(m, date, sc) {
   if (!invDateOk_(date)) return { error: 'invalid_date' };
   if (date > todayRiyadh_()) return { error: 'future_date' };
   var move = { state: st || null, kind: kind, qty: qty, newCylinders: fresh, note: String(m.note || '').slice(0, 300) };
+  // what one unit cost, as typed (with or without VAT, like every cost), for stock coming in
+  if (m.unitCost != null && m.unitCost !== '') {
+    if (['opening', 'purchase', 'refill_in'].indexOf(kind) < 0) return { error: 'invalid_cost' };
+    var uc = Number(m.unitCost); if (!isFinite(uc) || uc < 0 || uc > 1000000) return { error: 'invalid_cost' };
+    move.unitCost = Math.round(uc * 10000) / 10000;
+  }
+  if (kind === 'purchase' || kind === 'refill_in') {
+    move.supplier = String(m.supplier || '').trim().slice(0, 120); move.invoiceNo = String(m.invoiceNo || '').trim().slice(0, 60);
+  }
+  if (hasOwn_(INV_REASONS_, kind)) {
+    var rs = String(m.reason || '');
+    if (rs && INV_REASONS_[kind].indexOf(rs) < 0) return { error: 'invalid_reason' };
+    move.reason = rs || null;
+  }
   if (key.stockItemId) move.stockItemId = key.stockItemId; else move.productId = key.productId;
   // a deposit names its customer, a registered and active one
   if (hasOwn_(INV_DEPOSIT_, kind)) {
@@ -249,6 +272,11 @@ function invMoveRow_(locId, c, date, user, extra) {
     enteredBy: user.id, createdAt: new Date().toISOString(), voided: false };
   if (c.stockItemId) row.stockItemId = c.stockItemId; else row.productId = c.productId;
   if (c.customerId) row.customerId = c.customerId;
+  // what it cost, from whom, on which invoice; why it was written off (2026-10-07)
+  if (c.unitCost != null) row.unitCost = c.unitCost;
+  if (c.supplier) row.supplier = c.supplier;
+  if (c.invoiceNo) row.invoiceNo = c.invoiceNo;
+  if (c.reason) row.reason = c.reason;
   safeOwnKeys_(extra || {}).forEach(function (k) { row[k] = extra[k]; });
   return row;
 }
@@ -264,6 +292,11 @@ function actionAddInventoryMove_(req, user) {
   try {
     freshenExec_();
     if (c.move.kind === 'opening' && invOpenings_()[invOpeningKey_(lf.loc.id, c.itemId, c.move.state)]) return { ok: false, error: 'opening_exists' };
+    if (hasOwn_(INV_COUNT_, c.move.kind)) return { ok: false, error: 'use_stock_count' };
+    if (invControls_()) {
+      if (c.move.kind === 'purchase' && (!c.move.supplier || !c.move.invoiceNo)) return { ok: false, error: 'purchase_needs_reference' };
+      if (hasOwn_(INV_REASONS_, c.move.kind) && !c.move.reason) return { ok: false, error: 'reason_required' };
+    }
     // a car's load and return go through carStockMove, which names the car
     if (hasOwn_(INV_CAR_, c.move.kind)) return { ok: false, error: 'use_car_move' };
     // nobody returns more than he holds
@@ -440,10 +473,96 @@ function actionInventoryLive_(req, user) {
 // Stock is valued before VAT (2026-10-06): a cost typed with VAT has it taken out.
 function invUnitValue_(it, state, date, hist) { return costExVat_(invUnitValueAsTyped_(it, state, date, hist), date); }
 function invUnitValueAsTyped_(it, state, date, hist) {
+  if (!it.virtual && invAverage_()) { var av = invAvgTyped_(it, state, date, hist); if (av != null) return av; }
   if (it.virtual) return state === 'empty' ? it.cylinderCost : state === 'full' ? it.gasCost + it.cylinderCost : it.unitCost;
   if (it.kind !== 'cylinder') return stockItemCostOn_(it, 'unitCost', date, hist).v;
   var cyl = stockItemCostOn_(it, 'cylinderCost', date, hist).v;
   return state === 'empty' ? cyl : stockItemCostOn_(it, 'gasCost', date, hist).v + cyl;
+}
+
+// ---------- weighted average cost (2026-10-07, IAS 2) ----------
+// Company-wide, per item: every unit that came in (opening counts and purchases,
+// refills from the plant) at what it cost, as typed; a receipt with no cost of
+// its own counts at the standard cost of its day. A cylinder keeps two pools:
+// the gas (a filling) and the body. A filled cylinder is worth gas + body, an
+// empty one the body. Stock leaving (sales, damage, waste) leaves at the average.
+function invAvgPools_(hist) {
+  var ex = exec_(); if (ex.invAvg) return ex.invAvg;
+  var items = Object.create(null); readSheet(SHEETS.STOCK_ITEMS).forEach(function (s) { items[s.id] = s; });
+  var pools = Object.create(null);
+  function add(itemId, pool, date, qty, cost) { var k = itemId + '|' + pool; (pools[k] = pools[k] || []).push({ d: date, q: qty, v: qty * cost }); }
+  readSheet(SHEETS.INV_MOVES).forEach(function (m) {
+    if (m.voided || !m.stockItemId || ['opening', 'purchase', 'refill_in'].indexOf(m.kind) < 0) return;
+    var it = items[m.stockItemId]; if (!it) return;
+    var q = Number(m.qty || 0); if (!(q > 0)) return;
+    var own = m.unitCost != null && m.unitCost !== '' ? Number(m.unitCost) : null;
+    if (it.kind !== 'cylinder') { add(it.id, 'unit', m.date, q, own != null ? own : stockItemCostOn_(it, 'unitCost', m.date, hist).v); return; }
+    var gasStd = stockItemCostOn_(it, 'gasCost', m.date, hist).v, bodyStd = stockItemCostOn_(it, 'cylinderCost', m.date, hist).v;
+    if (m.state === 'empty') { add(it.id, 'body', m.date, q, own != null ? own : bodyStd); return; }
+    if (m.kind === 'opening') { add(it.id, 'gas', m.date, q, gasStd); add(it.id, 'body', m.date, q, bodyStd); return; }
+    // brand-new filled cylinders: the price paid is gas and body together
+    if (m.newCylinders === true) { var whole = own != null ? own : gasStd + bodyStd; add(it.id, 'gas', m.date, q, gasStd); add(it.id, 'body', m.date, q, Math.max(0, whole - gasStd)); return; }
+    // a filling: the price paid is the gas
+    add(it.id, 'gas', m.date, q, own != null ? own : gasStd);
+  });
+  Object.keys(pools).forEach(function (k) { pools[k].sort(function (a, b) { return String(a.d).localeCompare(String(b.d)); }); });
+  ex.invAvg = pools; return pools;
+}
+function invAvgOf_(pools, itemId, pool, date) {
+  var list = pools[itemId + '|' + pool]; if (!list) return null;
+  var q = 0, v = 0; for (var i = 0; i < list.length && String(list[i].d) <= date; i++) { q += list[i].q; v += list[i].v; }
+  return q > 0 ? v / q : null;
+}
+function invAvgTyped_(it, state, date, hist) {
+  var pools = invAvgPools_(hist);
+  if (it.kind !== 'cylinder') return invAvgOf_(pools, it.id, 'unit', date);
+  var body = invAvgOf_(pools, it.id, 'body', date); if (body == null) body = stockItemCostOn_(it, 'cylinderCost', date, hist).v;
+  if (state === 'empty') return body;
+  var gas = invAvgOf_(pools, it.id, 'gas', date); if (gas == null) gas = stockItemCostOn_(it, 'gasCost', date, hist).v;
+  return gas + body;
+}
+
+// ---------- a physical count (2026-10-07) ----------
+// The branch counts what it holds; the difference from what the app says is
+// written as a count gain or loss on the count's day, with the counted figure.
+function actionRecordStockCount_(req, user) {
+  var lf = invLocFor_(user, req.locationId);
+  if (lf.error) return { ok: false, error: lf.error };
+  var date = String(req.date || '');
+  if (!invDateOk_(date)) return { ok: false, error: 'invalid_date' };
+  if (date > todayRiyadh_()) return { ok: false, error: 'future_date' };
+  var lines = Array.isArray(req.lines) ? req.lines : [];
+  if (!lines.length || lines.length > 100) return { ok: false, error: 'invalid_input' };
+  var lock = LockService.getScriptLock(); lock.waitLock(30000);
+  try {
+    freshenExec_();
+    var sc = invStockCtx_();
+    if (!sc.live) return { ok: false, error: 'setup_required' };
+    var rep = actionInventoryReport_({ dateFrom: date, dateTo: date, locationId: lf.loc.id }, user, sc);
+    if (!rep.ok) return rep;
+    var have = Object.create(null); rep.rows.forEach(function (r) { if (!r.noOpening) have[r.stockItemId + '|' + (r.state || '')] = r.ending; });
+    var out = [], seen = Object.create(null);
+    for (var i = 0; i < lines.length; i++) {
+      var l = lines[i] || {}, it = hasOwn_(sc.items, String(l.stockItemId)) ? sc.items[l.stockItemId] : null;
+      if (!it) return { ok: false, error: 'invalid_stock_item', index: i };
+      var st = it.kind === 'cylinder' ? String(l.state || '') : '';
+      if (it.kind === 'cylinder' && INV_STATES_.indexOf(st) < 0) return { ok: false, error: 'invalid_state', index: i };
+      var key = it.id + '|' + st; if (seen[key]) return { ok: false, error: 'invalid_input', index: i }; seen[key] = true;
+      var counted = invQty_(l.counted); if (counted == null && Number(l.counted) !== 0) return { ok: false, error: 'invalid_qty', index: i };
+      counted = Number(l.counted);
+      if (!hasOwn_(have, key)) return { ok: false, error: 'opening_required', index: i, name: it.name };
+      var diff = Math.round((counted - have[key]) * 1000) / 1000;
+      out.push({ it: it, st: st, counted: counted, system: have[key], diff: diff });
+    }
+    var countId = Utilities.getUuid(), written = [];
+    out.forEach(function (o) {
+      if (!o.diff) return;
+      var c = { stockItemId: o.it.id, state: o.st || null, kind: o.diff > 0 ? 'count_gain' : 'count_loss', qty: Math.abs(o.diff), newCylinders: false, note: String(req.note || '').slice(0, 300) };
+      written.push(writeRow(SHEETS.INV_MOVES, invMoveRow_(lf.loc.id, c, date, user, { countId: countId, counted: o.counted, systemQty: o.system })));
+    });
+    logAudit_('inventory_count', user.id, lf.loc.id + ' ' + date + ' ' + out.length + ' lines, ' + written.length + ' differences');
+    return { ok: true, countId: countId, lines: out.map(function (o) { return { stockItemId: o.it.id, state: o.st || null, counted: o.counted, system: o.system, diff: o.diff }; }), moves: written };
+  } finally { try { lock.releaseLock(); } catch (e) {} }
 }
 
 function actionInventoryReport_(req, user, scOverride) {
@@ -476,6 +595,7 @@ function actionInventoryReport_(req, user, scOverride) {
       rows[k] = { locationId: locId, stockItemId: it.id, state: state || null, cylinder: it.kind === 'cylinder', itemName: it.name || '',
         unitCost: Math.round(Number(invUnitValue_(it, state, to, hist) || 0) * 10000) / 10000,
         opening: 0, purchases: 0, newCylinders: 0, returns: 0, exchangeIn: 0, transfersIn: 0, fromPlant: 0, depositBack: 0, sales: 0, damaged: 0, refillOut: 0, toPlant: 0, transfersOut: 0, depositOut: 0,
+        wasted: 0, leakedIn: 0, countGain: 0, countLoss: 0, purchasesCost: 0,
         salesWithoutQty: 0, salesWithoutQtyAmount: 0, salesBySource: {}, salesByProduct: {},
         openingDate: op ? op.date : null, noOpening: !op || op.date > to };
       // before the setup a row keeps its old shape too, for a client that has not reloaded
@@ -484,14 +604,15 @@ function actionInventoryReport_(req, user, scOverride) {
     }
     return rows[k];
   }
-  var IN_ = { purchases: 1, returns: 1, exchangeIn: 1, transfersIn: 1, fromPlant: 1, depositBack: 1 };
+  var IN_ = { purchases: 1, returns: 1, exchangeIn: 1, transfersIn: 1, fromPlant: 1, depositBack: 1, leakedIn: 1, countGain: 1 };
   // add a quantity dated d to the period it belongs to
   function post(r, d, field, q) {
     if (r.noOpening || d < r.openingDate || d > to) return;
     if (d < from) { r.opening += IN_[field] ? q : -q; return; }
     r[field] += q;
   }
-  var MOVE_FIELD_ = { purchase: 'purchases', 'return': 'returns', damage: 'damaged', transfer_in: 'transfersIn', transfer_out: 'transfersOut', refill_out: 'toPlant', refill_in: 'fromPlant', deposit_out: 'depositOut', deposit_return: 'depositBack' };
+  var MOVE_FIELD_ = { purchase: 'purchases', 'return': 'returns', damage: 'damaged', transfer_in: 'transfersIn', transfer_out: 'transfersOut', refill_out: 'toPlant', refill_in: 'fromPlant', deposit_out: 'depositOut', deposit_return: 'depositBack',
+    waste: 'wasted', count_gain: 'countGain', count_loss: 'countLoss' };
   var moves = [];
   allMoves.forEach(function (m) {
     var t = sc.moveTarget(m);
@@ -508,6 +629,10 @@ function actionInventoryReport_(req, user, scOverride) {
     var r = row(m.locationId, t.item, t.state), q = Number(m.qty || 0);
     if (m.kind === 'opening') { if (!r.noOpening) r.opening += q; return; }
     post(r, m.date, MOVE_FIELD_[m.kind], q);
+    // what the purchases in the period actually cost, before VAT (2026-10-07)
+    if ((m.kind === 'purchase' || m.kind === 'refill_in') && m.unitCost != null && !r.noOpening && m.date >= from && m.date >= r.openingDate) r.purchasesCost += q * costExVat_(Number(m.unitCost), m.date);
+    // a filled cylinder that lost its gas is an empty one: the body stays
+    if (m.kind === 'waste' && t.item.kind === 'cylinder' && t.state === 'full') post(row(m.locationId, t.item, 'empty'), m.date, 'leakedIn', q);
     // a full purchase is a refill: as many empties went out to be filled; brand-new cylinders
     // (newCylinders) sent none, and are counted on their own within the period
     if (t.item.kind === 'cylinder' && t.state === 'full' && m.kind === 'purchase') {
@@ -539,12 +664,13 @@ function actionInventoryReport_(req, user, scOverride) {
   });
   var out = order.map(function (k) {
     var r = rows[k];
-    ['opening', 'purchases', 'newCylinders', 'returns', 'exchangeIn', 'transfersIn', 'fromPlant', 'depositBack', 'sales', 'damaged', 'refillOut', 'toPlant', 'transfersOut', 'depositOut'].forEach(function (f) { r[f] = Math.round(r[f] * 1000) / 1000; });
+    ['opening', 'purchases', 'newCylinders', 'returns', 'exchangeIn', 'transfersIn', 'fromPlant', 'depositBack', 'sales', 'damaged', 'refillOut', 'toPlant', 'transfersOut', 'depositOut', 'wasted', 'leakedIn', 'countGain', 'countLoss'].forEach(function (f) { r[f] = Math.round(r[f] * 1000) / 1000; });
+    r.purchasesCost = Math.round(r.purchasesCost * 100) / 100;
     r.salesWithoutQtyAmount = Math.round(r.salesWithoutQtyAmount * 100) / 100;
-    r.available = Math.round((r.opening + r.purchases + r.returns + r.exchangeIn + r.transfersIn + r.fromPlant + r.depositBack) * 1000) / 1000;
-    r.ending = Math.round((r.available - r.sales - r.damaged - r.refillOut - r.toPlant - r.transfersOut - r.depositOut) * 1000) / 1000;
+    r.available = Math.round((r.opening + r.purchases + r.returns + r.exchangeIn + r.transfersIn + r.fromPlant + r.depositBack + r.leakedIn + r.countGain) * 1000) / 1000;
+    r.ending = Math.round((r.available - r.sales - r.damaged - r.refillOut - r.toPlant - r.transfersOut - r.depositOut - r.wasted - r.countLoss) * 1000) / 1000;
     r.short = !r.noOpening && r.ending < 0;
-    ['opening', 'purchases', 'returns', 'exchangeIn', 'transfersIn', 'fromPlant', 'depositBack', 'available', 'sales', 'damaged', 'refillOut', 'toPlant', 'transfersOut', 'depositOut', 'ending'].forEach(function (f) {
+    ['opening', 'purchases', 'returns', 'exchangeIn', 'transfersIn', 'fromPlant', 'depositBack', 'available', 'sales', 'damaged', 'refillOut', 'toPlant', 'transfersOut', 'depositOut', 'ending', 'wasted', 'leakedIn', 'countGain', 'countLoss'].forEach(function (f) {
       r[f + 'Value'] = Math.round(r[f] * r.unitCost * 100) / 100;
     });
     return r;

@@ -886,6 +886,7 @@ function route_(req) {
     uploadEntryPhoto: function () { return actionUploadEntryPhoto_(req, user); },
     listHandoffs: function () { return actionListHandoffs_(req, user); },
     addInventoryMove: function () { return actionAddInventoryMove_(req, user); },
+    recordStockCount: function () { return actionRecordStockCount_(req, user); },
     voidInventoryMove: function () { return actionVoidInventoryMove_(req, user); },
     getInventoryReport: function () { return actionInventoryReport_(req, user); },
     getInventoryLive: function () { return actionInventoryLive_(req, user); },

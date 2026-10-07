@@ -67,7 +67,7 @@ check(adminLogin.ok, 'admin login');
 var adminTok = adminLogin.token;
 // The arithmetic below was written with costs typed before VAT; the live default
 // (costs typed with VAT, 2026-10-06) has its own section near the end.
-check(call({ action: 'adminSetConfig', token: adminTok, data: { costIncludeVat: false } }).ok, 'costs read as typed before VAT for the sections that follow');
+check(call({ action: 'adminSetConfig', token: adminTok, data: { costIncludeVat: false, invControls: false } }).ok, 'costs read as typed before VAT for the sections that follow');
 
 console.log('--- create people ---');
 var sara = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Sara', email: 'sara@bestgas.sa', role: 'cluster_manager' } }).user;
@@ -4895,6 +4895,42 @@ r2Cfg.salesIncludeVatHistory = [{ value: false, until: '2999-12-31' }]; ctx.writ
 check(ctx.entryInclVat_(r2Row) === false, 'an older day reads the setting in force on its date, not today\'s');
 r2Cfg = ctx.config_(); r2Cfg.salesIncludeVatHistory = r2Was || []; ctx.writeRow(SHEETS.CONFIG, r2Cfg); ctx.resetExecMemo_();
 check(ctx.entryInclVat_(Object.assign({}, r2Row, { salesIncludeVat: true })) === true, 'a stamped day reads its own stamp');
+
+console.log('--- stock: costed purchases, waste, reasons, physical count, weighted average (2026-10-07) ---');
+check(call({ action: 'adminSetConfig', token: adminTok, data: { invControls: true } }).ok, 'stock controls on for this section');
+var ipLoc = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: 'Riyadh', name: 'Avg Branch', clusterId: cluster.entity.id, collectorUserId: musa.id } }).entity;
+var ipCyl = call({ action: 'adminSaveEntity', token: adminTok, kind: 'stock_item', data: { name: 'Avg Iron', kind: 'cylinder', boxSize: 35, gasCost: 10, cylinderCost: 100 } }).entity;
+var ipUnit = call({ action: 'adminSaveEntity', token: adminTok, kind: 'stock_item', data: { name: 'Avg Hose', kind: 'unit', unitCost: 20 } }).entity;
+function ipMv(o) { var p = { action: 'addInventoryMove', token: adminTok, locationId: ipLoc.id, stockItemId: ipCyl.id }; Object.keys(o).forEach(function (k) { p[k] = o[k]; }); return call(p); }
+check(ipMv({ state: 'full', kind: 'opening', qty: 10, date: '2026-09-01' }).ok && ipMv({ state: 'empty', kind: 'opening', qty: 5, date: '2026-09-01' }).ok, 'opening: 10 filled and 5 empty');
+check(ipMv({ stockItemId: ipUnit.id, kind: 'opening', qty: 4, date: '2026-09-01', unitCost: 20 }).ok, 'and 4 hoses at 20');
+check(ipMv({ state: 'full', kind: 'purchase', qty: 10, date: '2026-09-02', newCylinders: true, unitCost: 120 }).error === 'purchase_needs_reference', 'a purchase names its supplier and invoice');
+var ipBuy = ipMv({ state: 'full', kind: 'purchase', qty: 10, date: '2026-09-02', newCylinders: true, unitCost: 120, supplier: 'Plant Co', invoiceNo: 'PI-1001' });
+check(ipBuy.ok && ipBuy.move.unitCost === 120 && ipBuy.move.supplier === 'Plant Co' && ipBuy.move.invoiceNo === 'PI-1001', 'and keeps what it cost, from whom, on which invoice');
+check(ipMv({ state: 'empty', kind: 'damage', qty: 1, date: '2026-09-03' }).error === 'reason_required', 'damage needs its reason');
+check(ipMv({ state: 'empty', kind: 'damage', qty: 1, date: '2026-09-03', reason: 'nonsense' }).error === 'invalid_reason', 'from the list');
+check(ipMv({ state: 'empty', kind: 'damage', qty: 1, date: '2026-09-03', reason: 'broken_body' }).ok, 'one empty written off as a broken body');
+check(ipMv({ state: 'full', kind: 'waste', qty: 2, date: '2026-09-03' }).error === 'reason_required', 'waste needs its reason too');
+check(ipMv({ state: 'full', kind: 'waste', qty: 2, date: '2026-09-03', reason: 'gas_leak' }).ok, 'two filled lost their gas');
+check(ipMv({ state: 'full', kind: 'count_loss', qty: 1, date: '2026-09-03' }).error === 'use_stock_count', 'a count difference comes from a count only');
+check(ipMv({ state: 'empty', kind: 'damage', qty: 1, date: '2026-09-03', reason: 'other', unitCost: 5 }).error === 'invalid_cost', 'a cost goes on stock coming in only');
+// the count: filled 10 + 10 - 2 = 18, counted 17; empty 5 + 2 (gas lost) - 1 = 6, counted 7
+var ipCnt = call({ action: 'recordStockCount', token: adminTok, locationId: ipLoc.id, date: '2026-09-04', lines: [{ stockItemId: ipCyl.id, state: 'full', counted: 17 }, { stockItemId: ipCyl.id, state: 'empty', counted: 7 }, { stockItemId: ipUnit.id, counted: 4 }] });
+var ipL = function (st) { return (ipCnt.lines || []).filter(function (l) { return l.stockItemId === ipCyl.id && l.state === st; })[0] || {}; };
+check(ipCnt.ok && ipL('full').system === 18 && ipL('full').diff === -1 && ipL('empty').system === 6 && ipL('empty').diff === 1, 'a count records filled 18 → 17 (−1) and empty 6 → 7 (+1) (' + JSON.stringify(ipCnt.error || ipCnt.lines) + ')');
+check(ipCnt.ok && ipCnt.moves.length === 2, 'only the differences are written; the hoses matched');
+var ipRep = call({ action: 'getInventoryReport', token: adminTok, dateFrom: '2026-09-01', dateTo: '2026-09-30', locationId: ipLoc.id });
+var ipR = function (st) { return (ipRep.rows || []).filter(function (r) { return r.stockItemId === ipCyl.id && r.state === st; })[0] || {}; };
+check(ipR('full').ending === 17 && ipR('full').wasted === 2 && ipR('full').countLoss === 1, 'filled: opening 10 + 10 bought − 2 gas lost − 1 by count = 17');
+check(ipR('empty').ending === 7 && ipR('empty').leakedIn === 2 && ipR('empty').damaged === 1 && ipR('empty').countGain === 1, 'empty: 5 + 2 that lost their gas − 1 broken + 1 by count = 7');
+check(ipR('full').purchasesCost === 1200, 'what the purchase actually cost: 10 × 120 = 1,200 (got ' + ipR('full').purchasesCost + ')');
+// average: gas (10 opening at 10 + 10 new at 10) = 10; body (15 opening at 100 + 10 new at 110) = 104
+check(Math.abs(ipR('full').unitCost - 114) < 0.001 && Math.abs(ipR('empty').unitCost - 104) < 0.001, 'weighted average: a filled one 10 gas + 104 body = 114, an empty one 104 (got ' + ipR('full').unitCost + ' / ' + ipR('empty').unitCost + ')');
+check(call({ action: 'adminSetConfig', token: adminTok, data: { invValuation: 'standard' } }).ok, 'the valuation can be set back to standard cost');
+var ipStd = call({ action: 'getInventoryReport', token: adminTok, dateFrom: '2026-09-01', dateTo: '2026-09-30', locationId: ipLoc.id });
+check(((ipStd.rows || []).filter(function (r) { return r.stockItemId === ipCyl.id && r.state === 'full'; })[0] || {}).unitCost === 110, 'standard: 10 gas + 100 body = 110');
+check(call({ action: 'adminSetConfig', token: adminTok, data: { invValuation: 'fifo' } }).error === 'invalid_setting', 'only average or standard');
+call({ action: 'adminSetConfig', token: adminTok, data: { invValuation: 'average', invControls: false } });
 
 console.log('--- a test round is archived with open handovers when asked (before go-live) ---');
 var arcOpenCount = ctx.readSheet(SHEETS.HANDOFFS).filter(function (h) { return ['pending', 'pending_deputy', 'disputed'].indexOf(h.status) >= 0; }).length;
