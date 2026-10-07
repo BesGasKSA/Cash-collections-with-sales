@@ -3419,6 +3419,25 @@
     html body .xsw-head small{color:#65676B;}
     html body .xsw-x{background:#E4E6EB;color:#050505;}
   }
+  @media (max-width:700px){
+    /* depth: the bars float over the page, sections sit on it */
+    html body .tb{box-shadow:0 1px 2px rgba(0,0,0,.10),0 4px 12px rgba(0,0,0,.06);}
+    html body .bt{box-shadow:0 -1px 2px rgba(0,0,0,.08),0 -6px 16px rgba(0,0,0,.06);border-top:0;}
+    html body .card,html body .card.no-collapse{box-shadow:0 1px 2px rgba(0,0,0,.08);}
+    /* card headings: 18px bold on a header strip, a green dot with a soft halo, a hairline under it */
+    html body .card > h2{display:flex;align-items:center;gap:10px;font-size:18px;font-weight:700;line-height:1.25;color:#050505;margin:-12px -16px 12px;padding:14px 16px 12px;border-bottom:1px solid #EBEDF0;}
+    html body .card > h2::before{width:10px;height:10px;border-radius:50%;background:var(--green);box-shadow:0 0 0 4px color-mix(in srgb,var(--green) 16%,transparent);}
+    html body .card h2{font-size:18px;font-weight:700;line-height:1.25;color:#050505;gap:10px;}
+    html body .card h2::before{width:10px;height:10px;border-radius:50%;background:var(--green);box-shadow:0 0 0 4px color-mix(in srgb,var(--green) 16%,transparent);}
+    html body .card h2:has(.inv-live-dot)::before{display:none;}
+    html body .inv-live-head{padding-bottom:10px;margin-bottom:10px;border-bottom:1px solid #EBEDF0;}
+    html body .danger-card > h2::before{background:var(--danger);box-shadow:0 0 0 4px color-mix(in srgb,var(--danger) 16%,transparent);}
+    /* section titles between sections, Facebook size */
+    html body .sec-title{font-size:20px;font-weight:700;color:#050505;margin:16px 16px 8px;letter-spacing:normal;}
+    /* the welcome card: the name larger, the date chips lighter */
+    html body .hero h1,html body .hero .nm{font-size:26px;line-height:1.15;}
+    html body .hero .chip,html body .hero .pill{font-size:12px;}
+  }
   /* ===== end phone Facebook layer ===== */
 </style>
 </head>
