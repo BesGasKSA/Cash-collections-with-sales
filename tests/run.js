@@ -3719,6 +3719,14 @@ check(call({ action: 'setProductCost', token: adminTok, productId: pfChild.id, u
 var pfBeforeChild = pfNode(pfReport(), 'company').cogs;
 check(call({ action: 'createDailyEntry', token: adminTok, date: '2026-03-13', sourceType: 'store', sourceId: pfStB.id, productId: pfChild.id, qty: 10, unitPrice: 30, cashSales: 300 }).ok, 'and it is sold');
 close(pfNode(pfReport(), 'company').cogs - pfBeforeChild, 150, 'its sale then costs what its stock item costs');
+// the change log of a sales item shows its stock item's cost changes, with VAT and how (2026-10-07)
+var pfToday = ctx.todayRiyadh_();
+check(call({ action: 'setStockItemCost', token: adminTok, stockItemId: pfAnchor.id, field: 'unitCost', cost: 16, from: pfToday }).ok &&
+  call({ action: 'setStockItemCost', token: adminTok, stockItemId: pfAnchor.id, field: 'unitCost', cost: 15, from: pfToday }).ok, 'the stock item\'s cost changed today and back');
+var pfChildLog = call({ action: 'getRateHistory', token: adminTok, kind: 'product', id: pfChild.id }).changes || [];
+check(pfChildLog.some(function (r) { return r.kind === 'stock_item' && r.recordId === pfAnchor.id && r.field === 'unitCost' && r.via === 'set_cost' && Number(r.from) === 15 && Number(r.to) === 16 && typeof r.vatIncl === 'boolean' && r.vatRate != null; }),
+  'a sales item\'s change log carries its stock item\'s cost change: who, how, why, and with or before VAT');
+check(pfChildLog.some(function (r) { return r.kind === 'product' && r.field === 'unitCost'; }), 'and its own changes still');
 // odd ids never break the report
 ctx.writeRow(ctx.SHEETS.PRODUCT_COSTS, { productId: 'toString', unitCost: 5, from: '2026-01-01' });
 ctx.writeRow(ctx.SHEETS.PRODUCT_COSTS, { productId: '__proto__', unitCost: 5, from: '2026-01-01' });
@@ -4973,6 +4981,17 @@ check(call({ action: 'adminSetConfig', token: adminTok, data: { discountLimit: -
 call({ action: 'adminSetConfig', token: adminTok, data: { discountLimit: 0 } });
 check(call({ action: 'createDailyEntry', token: jrBm.tok, date: jrToday, sourceType: 'store', sourceId: dsLoc, cashSales: 0, posSales: 0, discountAmount: 30, discountReason: 'promotion', discountOnCard: true, submissionId: 'ds-7' }).error === 'discount_over_sale', 'a card discount needs a card sale to come off');
 check(call({ action: 'createDailyEntry', token: jrBm.tok, date: jrToday, sourceType: 'store', sourceId: dsLoc, cashSales: 100, discountAmount: 20, discountReason: 'promotion', directDepositAmount: 95, directDepositRef: 'X1', submissionId: 'ds-6' }).error === 'deposit_exceeds_cash', 'a الموازنة cannot bank cash the discount took away (100 − 20 = 80)');
+// the discounts section (2026-10-07): a discount on a line of its own, next to the day's sales
+var dsSec = call({ action: 'importDailyEntries', token: jrBm.tok, rows: [
+  { date: jrToday, sourceType: 'store', sourceId: dsLoc, cashSales: 300, submissionId: 'ds-7' },
+  { date: jrToday, sourceType: 'store', sourceId: dsLoc, cashSales: 0, discountAmount: 30, discountReason: 'loyal_customer', discountNote: 'Abu Fahd', submissionId: 'ds-7' }] });
+var dsSecRow = dsSec.ok && ctx.readSheet(ctx.SHEETS.ENTRIES).filter(function (e) { return e.submissionId === 'ds-7' && Number(e.discountAmount) > 0; })[0];
+check(dsSec.ok && dsSec.created === 2 && dsSecRow && dsSecRow.discountNote === 'Abu Fahd', 'a discount on its own line is saved with its reason and note (' + JSON.stringify(dsSec.results || dsSec.error) + ')');
+check(dsSecRow && ctx.computeNet_(ctx.readSheet(ctx.SHEETS.ENTRIES).filter(function (e) { return e.submissionId === 'ds-7'; })).netCashOwed === 270, 'and comes off the day\'s cash (300 − 30)');
+var dsOver = call({ action: 'importDailyEntries', token: jrBm.tok, rows: [
+  { date: jrToday, sourceType: 'store', sourceId: dsLoc, cashSales: 50, submissionId: 'ds-8' },
+  { date: jrToday, sourceType: 'store', sourceId: dsLoc, cashSales: 0, discountAmount: 80, discountReason: 'promotion', submissionId: 'ds-8' }] });
+check(!dsOver.ok || (dsOver.results || []).some(function (r) { return r.error === 'discount_over_sale'; }), 'a discount line is never more than the day\'s cash');
 
 console.log('--- one area manager runs four areas ---');
 var fourMgr = jrMake('cluster_manager', 'Four Area Manager', 'four.fx@bestgas.sa');

@@ -1072,8 +1072,11 @@ function rateChanges_(kind, before, after, userId, extra) {
   });
   var at = new Date().toISOString();
   var rows = found.map(function (c) {
+    // a cost or price says whether it was a figure with VAT or before it, and the rate (2026-10-07)
+    var isCost = ['unitCost', 'gasCost', 'cylinderCost'].indexOf(c.field) >= 0;
     return { id: Utilities.getUuid(), kind: kind, recordId: after.id, recordName: String(after.name || after.label || ''), field: c.field, productId: c.productId,
-      from: c.from, to: c.to, fromDate: extra.fromDate || todayRiyadh_(), reason: extra.reason || '', via: extra.via || 'save', by: userId || 'system', at: at };
+      from: c.from, to: c.to, fromDate: extra.fromDate || todayRiyadh_(), reason: extra.reason || '', via: extra.via || 'save', by: userId || 'system', at: at,
+      vatIncl: isCost ? config_().costIncludeVat !== false : config_().salesIncludeVat !== false, vatRate: vatRateOn_(extra.fromDate || todayRiyadh_()) };
   });
   if (extra.collect) Array.prototype.push.apply(extra.collect, rows);
   else rateChangesWrite_(rows, userId);
@@ -1092,7 +1095,17 @@ function actionGetRateHistory_(req, user) {
   if (!isCompanyWide_(user.role)) return { ok: false, error: 'forbidden' };
   if (!hasOwn_(RATE_FIELDS_, req.kind)) return { ok: false, error: 'invalid_kind' };
   var seeCost = costCanRead_(user);
-  var rows = readSheet(SHEETS.RATE_CHANGES).filter(function (r) { return r.kind === req.kind && r.recordId === req.id && (seeCost || ['unitCost', 'gasCost', 'cylinderCost'].indexOf(r.field) < 0); })
+  // a sales item's cost lives on the inventory item it moves (and the one an exchange
+  // takes back): its history shows those items' cost changes too (2026-10-07)
+  var linked = Object.create(null);
+  if (req.kind === 'product') {
+    var lp = getById_(SHEETS.PRODUCTS, req.id);
+    if (lp) [lp.stockItemId, lp.returnItemId].forEach(function (x) { if (x) linked[x] = true; });
+  }
+  var rows = readSheet(SHEETS.RATE_CHANGES).filter(function (r) {
+    var mine = (r.kind === req.kind && r.recordId === req.id) || (r.kind === 'stock_item' && hasOwn_(linked, r.recordId));
+    return mine && (seeCost || ['unitCost', 'gasCost', 'cylinderCost'].indexOf(r.field) < 0);
+  })
     .sort(function (a, b) { return String(b.at).localeCompare(String(a.at)); });
   return { ok: true, changes: rows };
 }

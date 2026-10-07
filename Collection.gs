@@ -331,7 +331,9 @@ function checkNonSalesFields_(r, siblingCash) {
   if (disc > 0) {
     if (DISCOUNT_REASONS_.indexOf(String(r.discountReason || '')) < 0) return 'discount_reason_required';
     // a card line is recorded at its full price like a cash one; its discount never touches the cash
-    if (r.discountOnCard === true ? !(Number(r.posSales || 0) > 0) || disc > Number(r.posSales || 0) + 0.005 : disc > Number(r.cashSales || 0) + 0.005) return 'discount_over_sale';
+    // a cash discount may sit on its own line of the day (the discounts section, 2026-10-07):
+    // it is never more than the cash this row and the day's other rows leave in hand
+    if (r.discountOnCard === true ? !(Number(r.posSales || 0) > 0) || disc > Number(r.posSales || 0) + 0.005 : disc > Number(r.cashSales || 0) + Math.max(0, Number(siblingCash || 0)) + 0.005) return 'discount_over_sale';
   }
   var other = Number(r.otherCash || 0);
   if (other < 0 || Number(r.expenseAmount || 0) < 0 || Number(r.directDepositAmount || 0) < 0) return 'invalid_amount';
@@ -455,6 +457,8 @@ function nonSalesFields_(r) {
     discountOnCard: Number(r.discountAmount || 0) > 0 && r.discountOnCard === true,
     // over the limit in Settings: flagged for Finance, never blocked
     discountFlag: discountLimit_() > 0 && Number(r.discountAmount || 0) > discountLimit_(),
+    // what the discount was for, in the author's words (the discounts section, 2026-10-07)
+    discountNote: Number(r.discountAmount || 0) > 0 ? String(r.discountNote || '').trim().slice(0, 1000) : '',
     otherCash: Number(r.otherCash || 0),
     otherCashItemId: Number(r.otherCash || 0) > 0 ? r.otherCashItemId : null,
     otherCashReason: Number(r.otherCash || 0) > 0 ? String(r.otherCashReason || '').trim().slice(0, 1000) : '',
@@ -1461,7 +1465,7 @@ function resubmitError_(batch, user) {
 var BATCH_ROW_FIELDS_ = ['date', 'sourceType', 'sourceId', 'productId', 'qty', 'unitPrice', 'cashSales', 'posSales', 'creditSales',
   'creditCustomerId', 'channelQtys', 'channelComRates', 'deliveryFeeBankAmount', 'deliveryNote', 'otherCash', 'otherCashItemId',
   'otherCashReason', 'expenseAmount', 'expenseItemId', 'expenseReason', 'directDepositAmount', 'directDepositRef', 'directDepositNote',
-  'directDepositPosId', 'paymentCustomerId', 'discountAmount', 'discountReason', 'discountOnCard', 'bankTransferAmount', 'cylindersOut', 'cylindersIn', 'note'];
+  'directDepositPosId', 'paymentCustomerId', 'discountAmount', 'discountReason', 'discountOnCard', 'discountNote', 'bankTransferAmount', 'cylindersOut', 'cylindersIn', 'note'];
 function actionAreaBatchRows_(req, user) {
   var batch = getById_(SHEETS.AREA_BULK_BATCHES, req.id);
   var err = resubmitError_(batch, user);
