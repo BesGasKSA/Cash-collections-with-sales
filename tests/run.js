@@ -4932,6 +4932,24 @@ check(((ipStd.rows || []).filter(function (r) { return r.stockItemId === ipCyl.i
 check(call({ action: 'adminSetConfig', token: adminTok, data: { invValuation: 'fifo' } }).error === 'invalid_setting', 'only average or standard');
 call({ action: 'adminSetConfig', token: adminTok, data: { invValuation: 'average', invControls: false } });
 
+console.log('--- stock: fixes from the review (blank counts, waste, the stock card, the moving average, the day import) ---');
+check(call({ action: 'adminSetConfig', token: adminTok, data: { invControls: true } }).ok, 'controls on');
+check(call({ action: 'recordStockCount', token: adminTok, locationId: ipLoc.id, date: '2026-09-05', lines: [{ stockItemId: ipCyl.id, state: 'full', counted: null }] }).error === 'invalid_qty', 'a blank count is refused, never read as zero');
+check(call({ action: 'recordStockCount', token: adminTok, locationId: ipLoc.id, date: '2026-09-05', lines: [{ stockItemId: ipCyl.id, state: 'full', counted: '' }] }).error === 'invalid_qty', 'and an empty box too');
+check(ipMv({ state: 'empty', kind: 'waste', qty: 1, date: '2026-09-05', reason: 'gas_leak' }).error === 'waste_full_only', 'gas is lost from a filled cylinder only');
+var rvLed = call({ action: 'getStockLedger', token: adminTok, locationId: ipLoc.id, stockItemId: ipCyl.id, dateFrom: '2026-09-01', dateTo: '2026-09-30' });
+check(rvLed.ok && rvLed.ending && rvLed.ending.full === 17 && rvLed.ending.empty === 7, 'the stock card ends where the report does: 17 filled, 7 empty (got ' + JSON.stringify(rvLed.error || rvLed.ending) + ')');
+check(call({ action: 'importInventoryDay', token: adminTok, locationId: ipLoc.id, date: '2026-09-06', ref: 'rv-day', moves: [{ stockItemId: ipCyl.id, state: 'full', kind: 'count_gain', qty: 5 }] }).error === 'use_stock_count', 'a day import cannot post a count difference');
+// moving average: 10 at 50, all written off, then 10 at 70: the stock held cost 70
+var rvUnit = call({ action: 'adminSaveEntity', token: adminTok, kind: 'stock_item', data: { name: 'Avg Valve', kind: 'unit', unitCost: 50 } }).entity;
+function rvMv(o) { var p = { action: 'addInventoryMove', token: adminTok, locationId: ipLoc.id, stockItemId: rvUnit.id }; Object.keys(o).forEach(function (k) { p[k] = o[k]; }); return call(p); }
+check(rvMv({ kind: 'opening', qty: 10, date: '2026-08-01', unitCost: 50 }).ok && rvMv({ kind: 'damage', qty: 10, date: '2026-08-02', reason: 'other' }).ok
+  && rvMv({ kind: 'purchase', qty: 10, date: '2026-08-03', unitCost: 70, supplier: 'S', invoiceNo: 'I-7' }).ok, '10 at 50 written off, then 10 bought at 70');
+var rvRep = call({ action: 'getInventoryReport', token: adminTok, dateFrom: '2026-08-01', dateTo: '2026-08-31', locationId: ipLoc.id });
+var rvRow = (rvRep.rows || []).filter(function (r) { return r.stockItemId === rvUnit.id; })[0] || {};
+check(Math.abs(rvRow.unitCost - 70) < 0.001 && rvRow.ending === 10, 'the moving average follows the stock held: 10 at 70, not the 60 of all receipts (got ' + rvRow.unitCost + ')');
+call({ action: 'adminSetConfig', token: adminTok, data: { invControls: false } });
+
 console.log('--- a test round is archived with open handovers when asked (before go-live) ---');
 var arcOpenCount = ctx.readSheet(SHEETS.HANDOFFS).filter(function (h) { return ['pending', 'pending_deputy', 'disputed'].indexOf(h.status) >= 0; }).length;
 check(arcOpenCount > 0 || true, 'open handovers on file: ' + arcOpenCount);
