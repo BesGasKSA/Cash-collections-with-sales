@@ -333,7 +333,12 @@ function checkNonSalesFields_(r, siblingCash) {
     // a card line is recorded at its full price like a cash one; its discount never touches the cash
     // a cash discount may sit on its own line of the day (the discounts section, 2026-10-07):
     // it is never more than the cash this row and the day's other rows leave in hand
-    if (r.discountOnCard === true ? !(Number(r.posSales || 0) > 0) || disc > Number(r.posSales || 0) + 0.005 : disc > Number(r.cashSales || 0) + Math.max(0, Number(siblingCash || 0)) + 0.005) return 'discount_over_sale';
+    // this row's own cash in hand counts after its own deductions (credit, transfers, expenses,
+    // delivery), like the deposit check below; review 2026-10-07: credit 300 of 300 + discount 50
+    var dvat = vatRateOn_(r.date), ddl = Number(r.deliveryFeeBankAmount || 0);
+    var rowHand = Number(r.cashSales || 0) - Number(r.creditSales || 0) - Number(r.creditCommission || 0) + Number(r.channelDeliveryFee || 0) - Number(r.channelCommission || 0)
+      - Number(r.bankTransferAmount || 0) + Number(r.otherCash || 0) - Number(r.expenseAmount || 0) - ddl + (ddl > 0 ? (ddl / (1 + dvat)) * dvat : 0);
+    if (r.discountOnCard === true ? !(Number(r.posSales || 0) > 0) || disc > Number(r.posSales || 0) + 0.005 : disc > rowHand + Math.max(0, Number(siblingCash || 0)) + 0.005) return 'discount_over_sale';
   }
   var other = Number(r.otherCash || 0);
   if (other < 0 || Number(r.expenseAmount || 0) < 0 || Number(r.directDepositAmount || 0) < 0) return 'invalid_amount';

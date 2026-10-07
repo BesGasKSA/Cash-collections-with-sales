@@ -4992,6 +4992,8 @@ var dsOver = call({ action: 'importDailyEntries', token: jrBm.tok, rows: [
   { date: jrToday, sourceType: 'store', sourceId: dsLoc, cashSales: 50, submissionId: 'ds-8' },
   { date: jrToday, sourceType: 'store', sourceId: dsLoc, cashSales: 0, discountAmount: 80, discountReason: 'promotion', submissionId: 'ds-8' }] });
 check(!dsOver.ok || (dsOver.results || []).some(function (r) { return r.error === 'discount_over_sale'; }), 'a discount line is never more than the day\'s cash');
+check(call({ action: 'createDailyEntry', token: jrBm.tok, date: jrToday, sourceType: 'store', sourceId: dsLoc, cashSales: 100, bankTransferAmount: 100, discountAmount: 10, discountReason: 'promotion', submissionId: 'ds-9' }).error === 'discount_over_sale',
+  'a discount cannot take off cash the row\'s own deductions already took (all 100 came by transfer)');
 
 console.log('--- one area manager runs four areas ---');
 var fourMgr = jrMake('cluster_manager', 'Four Area Manager', 'four.fx@bestgas.sa');
