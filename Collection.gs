@@ -1555,7 +1555,7 @@ function actionAreaBulkBatchDetail_(req, user) {
 // *data* is accurate before any cash claim exists; forcing this through that
 // machinery would permanently no-op the shortfall path for every bulk batch.
 function actionDeputyApproveBatch_(req, user) {
-  if (user.role !== 'deputy_operations_manager' && user.role !== 'admin') return { ok: false, error: 'forbidden' };
+  if (!isAreaApprover_(user.role) && user.role !== 'admin') return { ok: false, error: 'forbidden' };
   var batch = getById_(SHEETS.AREA_BULK_BATCHES, req.id);
   if (!batch) return { ok: false, error: 'not_found' };
   // 'approving' is a run that stopped half-way (a timeout on a big batch):
@@ -1653,7 +1653,7 @@ function actionDeputyApproveBatch_(req, user) {
 // old rejected rows floating in the unconsumed pool while the corrected
 // resubmit creates a brand new set of entries for the same real-world cash.
 function actionDeputyRejectBatch_(req, user) {
-  if (user.role !== 'deputy_operations_manager' && user.role !== 'admin') return { ok: false, error: 'forbidden' };
+  if (!isAreaApprover_(user.role) && user.role !== 'admin') return { ok: false, error: 'forbidden' };
   var batch = getById_(SHEETS.AREA_BULK_BATCHES, req.id);
   if (!batch) return { ok: false, error: 'not_found' };
   if (batch.status !== 'pending_deputy') return { ok: false, error: 'not_pending' };
@@ -1677,7 +1677,7 @@ function actionDeputyRejectBatch_(req, user) {
 
 function notifyDeputyPendingBatch_(batch) {
   var recipients = readSheet(SHEETS.USERS).filter(function (u) {
-    return (u.role === 'deputy_operations_manager' || u.role === 'admin' || u.role === 'finance') && u.email;
+    return (isAreaApprover_(u.role) || u.role === 'admin' || u.role === 'finance') && u.email;
   });
   recipients.forEach(function (u) {
     try {
@@ -1792,8 +1792,13 @@ function escalateLargeAmount_(handoff) {
 }
 
 // ---------- The deputy's check on the area manager -> collector handover ----------
+// Who checks an area manager's request (2026-10-07): the Deputy Operations Manager
+// or the Operations Manager, whichever acts first; an admin stands in. Never a party
+// to the handover (deputyHandoffGuard_).
+var AREA_APPROVER_ROLES_ = ['deputy_operations_manager', 'operations_manager'];
+function isAreaApprover_(role) { return AREA_APPROVER_ROLES_.indexOf(role) >= 0; }
 function requireDeputy_(user) {
-  if (user.role !== 'deputy_operations_manager' && user.role !== 'admin') throw new Error('forbidden');
+  if (!isAreaApprover_(user.role) && user.role !== 'admin') throw new Error('forbidden');
 }
 function deputyHandoffGuard_(h, user) {
   if (!h) return 'not_found';
@@ -1845,7 +1850,7 @@ function actionDeputyReturnHandoff_(req, user) {
 }
 function notifyDeputyPendingHandoff_(h) {
   var to = readSheet(SHEETS.USERS).filter(function (u) {
-    return u.active !== false && u.email && (u.role === 'deputy_operations_manager' || u.role === 'admin');
+    return u.active !== false && u.email && (isAreaApprover_(u.role) || u.role === 'admin');
   });
   var subject = 'طلب تسليم من مدير منطقة بانتظار تحققك / Area handover awaiting your validation';
   if (h.resubmitOf) subject = 'طلب تسليم مصحَّح (النسخة ' + h.revision + ') بانتظار تحققك / Corrected area handover (version ' + h.revision + ') awaiting your validation';
@@ -2265,7 +2270,7 @@ function actionDashboard_(req, user) {
   var handoffs = readSheet(SHEETS.HANDOFFS).filter(function (h) { return inActiveArea_(user, h); });
   var pendingForMe = handoffs.filter(function (h) {
     if (h.status === 'pending' && h.toUserId === user.id) return true;
-    return user.role === 'deputy_operations_manager' && h.status === 'pending_deputy';
+    return isAreaApprover_(user.role) && h.status === 'pending_deputy';
   });
   var heldByMe = handoffs.filter(function (h) { return h.status === 'confirmed' && h.toUserId === user.id && !h.consumedBy; });
   var disputedInvolvingMe = handoffs.filter(function (h) {
@@ -2305,8 +2310,8 @@ function actionMyPendingActions_(req, user) {
   var handoffs = readSheet(SHEETS.HANDOFFS).filter(function (h) { return inActiveArea_(user, h); });
   var isMoney = user.role === 'admin' || user.role === 'finance';
   var users = readSheet(SHEETS.USERS);
-  var activeDeputy = users.some(function (u) { return u.role === 'deputy_operations_manager' && u.active !== false; });
-  var isDeputy = user.role === 'deputy_operations_manager' || (user.role === 'admin' && !activeDeputy);
+  var activeDeputy = users.some(function (u) { return isAreaApprover_(u.role) && u.active !== false; });
+  var isDeputy = isAreaApprover_(user.role) || (user.role === 'admin' && !activeDeputy);
   var clusters = readSheet(SHEETS.CLUSTERS);
 
   handoffs.forEach(function (h) {

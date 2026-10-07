@@ -5367,7 +5367,8 @@ function navItemsForRole_(){
   if (isCompanyWideRole) items.push(['dashboard','nav_dashboard']);
   if (['store_manager','driver','branch_worker','cluster_manager','admin','deputy_operations_manager','finance','accountant','operations_manager'].indexOf(role)>=0) items.push(['entries','nav_entries']);
   if ((role==='cluster_manager' || role==='admin') && state.meta && state.meta.config && state.meta.config.areaManagerBulkUploadEnabled) items.push(['areaBulk','nav_areaBulk']);
-  if (role==='deputy_operations_manager' || role==='admin') items.push(['deputyReview','nav_deputyReview']);
+  // the Operations Manager checks area requests alongside the Deputy (2026-10-07)
+  if (role==='deputy_operations_manager' || role==='operations_manager' || role==='admin') items.push(['deputyReview','nav_deputyReview']);
   items.push(['handoffs','nav_handoffs']);
   if (['admin','finance','accountant','operations_manager','deputy_operations_manager','cluster_manager','store_manager'].indexOf(role)>=0) items.push(['report','nav_report']);
   if (['admin','finance','deputy_operations_manager'].indexOf(role)>=0) items.push(['reconciliation','nav_reconciliation']);
@@ -14139,7 +14140,7 @@ function handoffItem(h, showConfirm, showResolve){
   // the collector sees it: validate, or send it back with a reason
   if (h.status === 'pending_deputy'){
     var me = state.user.id, myRole = state.user.role;
-    var mayValidate = (myRole === 'deputy_operations_manager' || myRole === 'admin') && [h.fromUserId, h.toUserId, h.createdBy].indexOf(me) < 0;
+    var mayValidate = (myRole === 'deputy_operations_manager' || myRole === 'operations_manager' || myRole === 'admin') && [h.fromUserId, h.toUserId, h.createdBy].indexOf(me) < 0;
     actions.parentNode.insertBefore(el('<div class="ho-onlyrecv">'+icon_('clock')+'<span>'+esc(t('dp_waiting'))+'</span></div>'), actions);
     if (mayValidate){
       var vb = el('<button class="btn">'+icon_('check')+esc(t('dp_validate'))+'</button>');
@@ -14613,7 +14614,7 @@ function renderHandoffs(body){
     hFilter.count(visible.length, res.handoffs.length);
     var pending = visible.filter(function(h){
       if (h.status==='pending' && (h.toUserId===state.user.id || role==='admin')) return true;
-      return h.status==='pending_deputy' && (role==='deputy_operations_manager' || role==='admin');
+      return h.status==='pending_deputy' && (role==='deputy_operations_manager' || role==='operations_manager' || role==='admin');
     });
     var disputed = visible.filter(function(h){ return h.status==='disputed'; });
     // a disputed one has its own card for admin and finance: not listed twice
@@ -17997,8 +17998,8 @@ var PERM_ROWS = [
   { key:'perm_flagOnBehalf', roles:['admin'] },
   { key:'perm_deposit', roles:['collector'] },
   { key:'perm_area_bulk_upload', roles:['admin','cluster_manager'] },
-  { key:'perm_deputy_approve', roles:['admin','deputy_operations_manager'] },
-  { key:'perm_deputyValidate', roles:['admin','deputy_operations_manager'] },
+  { key:'perm_deputy_approve', roles:['admin','operations_manager','deputy_operations_manager'] },
+  { key:'perm_deputyValidate', roles:['admin','operations_manager','deputy_operations_manager'] },
   { key:'perm_handoffs_own', roles:['admin','finance','accountant','operations_manager','deputy_operations_manager','cluster_manager','store_manager','collector','driver','branch_worker'] },
   { key:'perm_handoffs_all', roles:['admin','finance','accountant','operations_manager','deputy_operations_manager'] },
   { key:'perm_report_own', roles:['cluster_manager'] },

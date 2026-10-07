@@ -4350,9 +4350,10 @@ check(paDep && paDep.amount === 1000 && paDep.locationId === paLoc.id && paDep.s
 check(!paFind(paItems(adminTok), 'deputy_validate', paSent.handoff.id), 'the admin is not asked while an active deputy exists');
 check(!paFind(paItems(paMgr.tok), 'deputy_validate'), 'the area manager does not validate his own');
 check(!paFind(paItems(paCol.tok), 'confirm_receipt', paSent.handoff.id), 'the collector cannot confirm it before the deputy');
-var paDeps = ctx.readSheet(SHEETS.USERS).filter(function (u) { return u.role === 'deputy_operations_manager'; });
+check(!!paFind(paItems(omarTok), 'deputy_validate', paSent.handoff.id), 'the Operations Manager has it to validate too (2026-10-07)');
+var paDeps = ctx.readSheet(SHEETS.USERS).filter(function (u) { return u.role === 'deputy_operations_manager' || u.role === 'operations_manager'; });
 paDeps.forEach(function (d) { ctx.writeRow(SHEETS.USERS, Object.assign({}, d, { active: false })); });
-check(!!paFind(paItems(adminTok), 'deputy_validate', paSent.handoff.id), 'with no active deputy the admin is asked instead');
+check(!!paFind(paItems(adminTok), 'deputy_validate', paSent.handoff.id), 'with no active deputy or operations manager the admin is asked instead');
 paDeps.forEach(function (d) { ctx.writeRow(SHEETS.USERS, d); });
 
 // returned: the area manager must correct it
@@ -4979,6 +4980,22 @@ var fourAreas = ['Area One', 'Area Two', 'Area Three', 'Area Four'].map(function
 check(fourAreas.every(function (r) { return r.ok; }), 'four areas, one manager (' + fourAreas.map(function (r) { return r.error || 'ok'; }).join(',') + ')');
 var fourMeta = call({ action: 'listMeta', token: fourMgr.tok });
 check((fourMeta.myAreas || []).length === 4, 'his screens list the four for the switcher');
+
+console.log('--- the Operations Manager checks area requests alongside the Deputy (2026-10-07) ---');
+var omA = jrMake('cluster_manager', 'Om Area Manager', 'omam.fx@bestgas.sa'), omC = jrMake('collector', 'Om Collector', 'omcol.fx@bestgas.sa'), omB = jrMake('store_manager', 'Om Branch Manager', 'ombm.fx@bestgas.sa');
+var omArea = call({ action: 'adminSaveEntity', token: adminTok, kind: 'cluster', data: { name: 'Om Area', clusterManagerUserId: omA.u.id } }).entity;
+var omLoc = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: 'Riyadh', name: 'Om Branch', clusterId: omArea.id, collectorUserId: omC.u.id } }).entity;
+var omSt = call({ action: 'adminSaveEntity', token: adminTok, kind: 'store', data: { locationId: omLoc.id, name: 'Om Store', storeManagerUserId: omB.u.id } }).entity;
+check(call({ action: 'createDailyEntry', token: omA.tok, date: jrToday, sourceType: 'store', sourceId: omSt.id, cashSales: 400, submissionId: 'om-1' }).ok, 'the area manager enters a day');
+var omH = call({ action: 'createHandoff', token: omA.tok, kind: 'cluster_to_collector', clusterId: omArea.id, locationId: omLoc.id });
+check(omH.ok && omH.handoff.status === 'pending_deputy', 'and sends it for checking');
+var omV = call({ action: 'deputyValidateHandoff', token: omarTok, id: omH.handoff.id });
+check(omV.ok, 'the Operations Manager validates it (' + (omV.error || 'ok') + ')');
+check(call({ action: 'deputyValidateHandoff', token: walidTok, id: omH.handoff.id }).ok === false, 'and the Deputy cannot validate it a second time');
+check(call({ action: 'deputyValidateHandoff', token: omB.tok, id: omH.handoff.id }).error === 'forbidden' || call({ action: 'deputyValidateHandoff', token: omB.tok, id: omH.handoff.id }).ok === false, 'a branch manager never validates');
+check(call({ action: 'createDailyEntry', token: omA.tok, date: jrToday, sourceType: 'store', sourceId: omSt.id, cashSales: 50, submissionId: 'om-2' }).ok, 'another day');
+var omH2 = call({ action: 'createHandoff', token: omA.tok, kind: 'cluster_to_collector', clusterId: omArea.id, locationId: omLoc.id });
+check(call({ action: 'deputyReturnHandoff', token: omarTok, id: omH2.handoff.id, reason: 'check the amount' }).ok, 'the Operations Manager can return one too');
 
 console.log('--- a test round is archived with open handovers when asked (before go-live) ---');
 var arcOpenCount = ctx.readSheet(SHEETS.HANDOFFS).filter(function (h) { return ['pending', 'pending_deputy', 'disputed'].indexOf(h.status) >= 0; }).length;
