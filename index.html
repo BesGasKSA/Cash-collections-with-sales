@@ -3360,6 +3360,28 @@
   .sic-bar{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin-bottom:12px;}.sic-bar .field{margin:0;min-width:150px;}
   .sic-grp td{background:var(--bg);padding-top:10px;}
   .sic-tot td{background:var(--cream);}
+  /* ---------- the sidebar account (2026-10-07) ---------- */
+  .sb-user.sbu2{display:flex;flex-direction:column;gap:10px;padding:12px;border-radius:16px;background:linear-gradient(180deg,rgba(242,238,228,.10),rgba(242,238,228,.05));border:1px solid rgba(242,238,228,.16);box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 8px 22px rgba(20,34,24,.28);}
+  .sbu2 .who2{display:flex;align-items:center;gap:10px;min-width:0;}
+  .sbu2 .avatar{width:40px;height:40px;flex:none;border-radius:12px;background:var(--cream);color:var(--green-dark);font-weight:800;font-size:16px;display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 3px rgba(242,238,228,.18);}
+  .sbu2 .sbu-id{flex:1;min-width:0;line-height:1.25;}
+  .sbu2 .nm{display:block;font-weight:700;font-size:14px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .sbu2 .rl{display:block;font-size:12px;color:rgba(242,238,228,.78);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .sbu2 .sbu-out{flex:none;width:38px;height:38px;padding:0;border-radius:50%;font-size:0;display:flex;align-items:center;justify-content:center;background:rgba(242,238,228,.10);border:1px solid rgba(242,238,228,.22);color:#fff;cursor:pointer;transition:background .2s ease,transform .15s ease,border-color .2s ease;}
+  .sbu2 .sbu-out svg{display:block;width:18px;height:18px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+  html[dir="rtl"] .sbu2 .sbu-out svg{transform:scaleX(-1);}
+  .sbu2 .sbu-out:hover{background:rgba(193,74,48,.85);border-color:rgba(193,74,48,.95);}
+  .sbu2 .sbu-out:active{transform:scale(.94);}
+  .sbu2 .sbu-out:focus-visible,.sbu2 .lsw-btn:focus-visible{outline:3px solid rgba(242,238,228,.7);outline-offset:2px;}
+  .sbu2 .ctl{display:block;}
+  .sbu2 .lsw-btn{width:100%;}
+  .sbu2 .build{display:block;text-align:center;font-size:10.5px;color:rgba(242,238,228,.5);letter-spacing:.02em;}
+  @media (max-width:1100px) and (min-width:701px){
+    .sb-user.sbu2{padding:8px 4px;align-items:center;background:transparent;border:0;box-shadow:none;gap:8px;}
+    .sbu2 .who2{flex-direction:column;gap:8px;}
+    .sbu2 .sbu-id,.sbu2 .build{display:none;}
+    .sbu2 .avatar{width:38px;height:38px;}
+  }
   /* ===== phone: Facebook-style type and layout (2026-10-07) ===== */
   /* The phone reads like the Facebook app: the system font at 15px body, 17px titles, 13px grey meta,
      a #F0F2F5 page with white sections running edge to edge and 8px grey gaps between them, a white
@@ -5555,14 +5577,13 @@ function renderShell(){
     '<div class="sb-brand"><span class="sb-emb"><span class="emblem"><img src="'+ICON_SRC+'" alt=""></span></span>' +
       '<div class="txt"><div class="t1">'+esc(t('appName'))+'</div><div class="t2"><bdi>Best Gas Carrier Co.</bdi></div></div></div>' +
     '<div class="sb-nav" role="navigation"></div>' +
-    '<div class="sb-user">' +
-      '<div class="build" title="build"><bdi dir="ltr">'+esc(BUILD_ID)+'</bdi></div>' +
+    // the account (2026-10-07): who is signed in with sign-out at the row's end, the language below, the build last
+    '<div class="sb-user sbu2">' +
       '<div class="who2"><span class="avatar">'+esc(initials_(state.user.name))+'</span>' +
-        '<div style="min-width:0;"><div class="nm">'+esc(state.user.name)+'</div><div class="rl">'+esc(roleLabel(state.user.role))+'</div></div></div>' +
-      '<div class="ctl">' +
-        langBtnHtml_() +
-        '<button type="button" class="out" id="logoutBtn" title="'+esc(t('logout'))+'">'+icon_('logout')+esc(t('logout'))+'</button>' +
-      '</div>' +
+        '<div class="sbu-id"><div class="nm">'+esc(state.user.name)+'</div><div class="rl">'+esc(roleLabel(state.user.role))+'</div></div>' +
+        '<button type="button" class="out sbu-out" id="logoutBtn" title="'+esc(t('logout'))+'" aria-label="'+esc(t('logout'))+'">'+icon_('logout')+'</button></div>' +
+      '<div class="ctl">' + langBtnHtml_() + '</div>' +
+      '<div class="build" title="build"><bdi dir="ltr">'+esc(BUILD_ID)+'</bdi></div>' +
     '</div>' +
     '</div>' +
   '</aside>');
