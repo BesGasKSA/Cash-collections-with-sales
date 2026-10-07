@@ -3342,6 +3342,84 @@
   .dl-seg{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:0 0 12px;}.dl-l{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:700;color:var(--muted);margin-inline-end:4px;}.dl-l .ic2{width:16px;height:16px;}
   .dl-o{border:1.5px solid var(--border);background:var(--card);border-radius:999px;padding:8px 14px;min-height:40px;font:inherit;font-size:13.5px;font-weight:700;color:var(--text);cursor:pointer;transition:all .18s;}.dl-o:hover{border-color:var(--green);}.dl-o.on{background:var(--green);border-color:var(--green);color:var(--cream);}
   .cus-mk .tiLang{flex-basis:100%;}.cus-mk .dl-seg{margin:0;}
+  /* ===== phone: Facebook-style type and layout (2026-10-07) ===== */
+  /* The phone reads like the Facebook app: the system font at 15px body, 17px titles, 13px grey meta,
+     a #F0F2F5 page with white sections running edge to edge and 8px grey gaps between them, a white
+     56px top bar with round grey buttons, a white tab bar. Only the green replaces Facebook blue. */
+  @media (max-width:700px){
+    :root{--bg:#F0F2F5;--card:#FFFFFF;--text:#050505;--ink:#050505;--muted:#65676B;--muted-2:#8A8D91;--border:#E4E6EB;--border-soft:#E4E6EB;
+      --radius:8px;--radius-sm:6px;--radius-lg:8px;--shadow-sm:none;--shadow-md:0 1px 2px rgba(0,0,0,.1);--shadow-lg:0 2px 12px rgba(0,0,0,.15);
+      --fb-font:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI","Segoe UI Historic",Roboto,"Helvetica Neue",Arial,"Noto Sans Arabic","Noto Naskh Arabic","Geeza Pro",Tahoma,sans-serif;
+      --font-en:var(--fb-font);--font-ar:var(--fb-font);}
+    html body{font-family:var(--fb-font);font-size:15px;line-height:1.3333;letter-spacing:normal;background:#F0F2F5;background-image:none;color:#050505;-webkit-text-size-adjust:100%;}
+    html body *{letter-spacing:normal;}
+    html body .bgfx,html body #app.shell::before,html body #app.shell::after{display:none;}
+    /* top bar: white, 56px, the screen name bold, round grey buttons */
+    html body .tb{background:#FFFFFF;color:#050505;box-shadow:0 1px 0 #E4E6EB;border-bottom:0;min-height:56px;padding:8px 12px;padding-top:max(8px,env(safe-area-inset-top));-webkit-backdrop-filter:none;backdrop-filter:none;gap:8px;}
+    html body .tb-title h1{font-size:24px;font-weight:700;color:#050505;line-height:1.2;}
+    html body .tb-title .sub{display:none;}
+    html body .tb-brand .emblem{--s:32px;box-shadow:none;}
+    html body .tb .icon-btn,html body .icon-btn{width:40px;height:40px;background:#E4E6EB;border:0;color:#050505;box-shadow:none;}
+    html body .tb .icon-btn svg,html body .notif-bell svg{width:20px;height:20px;stroke:#050505;}
+    html body .tb .icon-btn:active{background:#D8DADF;transform:scale(.96);}
+    html body .notif-badge{background:#E41E3F;color:#fff;border:2px solid #fff;font-size:11px;font-weight:700;}
+    html body .asw-pill{min-height:40px;padding:3px 10px 3px 3px;border:0;background:#E4E6EB;box-shadow:none;}
+    html[dir="rtl"] body .asw-pill{padding:3px 3px 3px 10px;}
+    html body .asw-pill .asw-av{width:34px;height:34px;font-size:13px;box-shadow:none;}
+    html body .asw-pill .asw-t b{font-size:15px;font-weight:600;}
+    /* the page: grey, sections edge to edge with 8px between them */
+    html body #app.shell main,html body .shell main{padding:8px 0 calc(72px + env(safe-area-inset-bottom));}
+    html body .card,html body .card.no-collapse{border-radius:0;border:0;border-block:0;box-shadow:none;margin:0 0 8px;padding:12px 16px;background:#FFFFFF;}
+    html body .card h2,html body .card > h3:first-child{font-size:17px;font-weight:600;line-height:1.3;color:#050505;letter-spacing:normal;}
+    html body .card h3{font-size:15px;font-weight:600;}
+    html body .muted,html body small,html body .sub,html body .lb,html body .hint{color:#65676B;}
+    html body .muted{font-size:13px;line-height:1.3846;}
+    html body p{font-size:15px;line-height:1.3333;}
+    /* the hero keeps the green: the one strong moment on the page */
+    html body .hero{border-radius:0;margin:0 0 8px;padding:16px;box-shadow:none;}
+    html body .hero h1,html body .hero .nm{font-size:24px;font-weight:700;letter-spacing:normal;}
+    /* figures: Facebook's grey tiles inside a white section */
+    html body .tiles{gap:8px;}
+    html body .tile{border-radius:8px;border:0;box-shadow:none;background:#F0F2F5;padding:12px;}
+    html body .tile .lb{font-size:13px;font-weight:400;color:#65676B;}
+    html body .tile .vl{font-size:20px;font-weight:700;color:#050505;letter-spacing:normal;}
+    html body .tile .ic{width:36px;height:36px;border-radius:50%;}
+    /* buttons: 36px, 6px corners, 15px semibold; secondary in Facebook grey */
+    html body .btn{min-height:36px;padding:0 12px;border-radius:6px;font-size:15px;font-weight:600;line-height:1.3333;box-shadow:none;letter-spacing:normal;}
+    html body .btn:not(.secondary):not(.danger){background:var(--green);border-color:var(--green);color:#fff;}
+    html body .btn.secondary{background:#E4E6EB;border:0;color:#050505;}
+    html body .btn.secondary:active{background:#D8DADF;}
+    html body .btn.danger{background:#FFEBE9;border:0;color:#C41E3A;}
+    html body .btn:active{transform:scale(.98);}
+    /* fields: 16px so the phone never zooms, Facebook's light border, 6px corners */
+    html body .field label{font-size:13px;font-weight:600;color:#65676B;text-transform:none;letter-spacing:normal;margin-bottom:4px;}
+    html body input:not([type=checkbox]):not([type=radio]),html body select,html body textarea,html body .dd-btn{font-size:16px;min-height:44px;border-radius:6px;border:1px solid #CCD0D5;background:#F5F6F7;color:#050505;}
+    html body input:focus,html body select:focus,html body textarea:focus{border-color:var(--green);background:#fff;box-shadow:0 0 0 2px color-mix(in srgb,var(--green) 25%,transparent);}
+    /* chips and tabs: Facebook's grey pills; the chosen one green-tinted */
+    html body .chip{background:#E4E6EB;color:#050505;border:0;font-size:13px;font-weight:600;border-radius:999px;}
+    html body .rp-tab,html body .tabs > button,html body .cus-chip,html body .dl-o,html body .rp-periods button{background:#E4E6EB;border:0;color:#050505;font-size:15px;font-weight:600;min-height:36px;border-radius:999px;}
+    html body .rp-tab.on,html body .tabs > button.active,html body .tabs > button.on,html body .cus-chip.on,html body .dl-o.on,html body .rp-periods button.on{background:color-mix(in srgb,var(--green) 14%,#fff);color:var(--green-dark);}
+    /* tables read as lists: 15px rows, grey headers */
+    html body .rp-table{font-size:15px;}
+    html body .rp-table th{font-size:13px;font-weight:600;color:#65676B;background:#F0F2F5;}
+    html body .rp-table td{border-color:#E4E6EB;}
+    /* the tab bar: white, a green bar over the active tab, 11px labels */
+    html body .bt{background:#FFFFFF;border-top:1px solid #E4E6EB;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none;}
+    html body .bt-scroll{padding:0 4px env(safe-area-inset-bottom);gap:0;}
+    html body .bt-scroll > button{position:relative;flex:1 1 0;min-height:52px;padding:6px 2px 4px;border-radius:0;background:transparent;border:0;color:#65676B;font-size:11px;font-weight:600;gap:3px;box-shadow:none;}
+    html body .bt-scroll > button svg{width:24px;height:24px;}
+    html body .bt-scroll > button.active{background:transparent;color:var(--green);}
+    html body .bt-scroll > button.active::before{content:"";position:absolute;top:0;inset-inline:18%;height:3px;border-radius:0 0 3px 3px;background:var(--green);}
+    html body .bt-ind{display:none;}
+    /* lists and folds keep Facebook's spacing */
+    html body .msg{border-radius:8px;font-size:15px;}
+    html body .e-dock{border-radius:0;box-shadow:0 -1px 0 #E4E6EB;}
+    html body .xsw-panel{border-radius:12px 12px 0 0;}
+    html body .xsw-head{background:#fff;color:#050505;border-bottom:1px solid #E4E6EB;}
+    html body .xsw-head small{color:#65676B;}
+    html body .xsw-x{background:#E4E6EB;color:#050505;}
+  }
+  /* ===== end phone Facebook layer ===== */
 </style>
 </head>
 <body>
