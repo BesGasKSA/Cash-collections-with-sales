@@ -314,7 +314,7 @@ function creditOverLines_(rows) {
 
 // A discount on a product line (2026-10-07): the sale stays at its full price and
 // the discount comes off the cash, like credit; on a card line the card amount is
-// already the net (discountOnCard), so the cash is untouched. A reason from the list.
+// paid by card (discountOnCard), so the cash is untouched. Sales are always at full price. A reason from the list.
 var DISCOUNT_REASONS_ = ['loyal_customer', 'promotion', 'damaged_cylinder', 'price_match', 'manager_approved', 'other'];
 function discountLimit_() { var v = Number(config_().discountLimit || 0); return isFinite(v) && v > 0 ? v : 0; }
 function checkNonSalesFields_(r, siblingCash) {
@@ -330,7 +330,8 @@ function checkNonSalesFields_(r, siblingCash) {
   if (!isFinite(disc) || disc < 0) return 'invalid_amount';
   if (disc > 0) {
     if (DISCOUNT_REASONS_.indexOf(String(r.discountReason || '')) < 0) return 'discount_reason_required';
-    if (r.discountOnCard !== true && disc > Number(r.cashSales || 0) + 0.005) return 'discount_over_sale';
+    // a card line is recorded at its full price like a cash one; its discount never touches the cash
+    if (r.discountOnCard === true ? !(Number(r.posSales || 0) > 0) || disc > Number(r.posSales || 0) + 0.005 : disc > Number(r.cashSales || 0) + 0.005) return 'discount_over_sale';
   }
   var other = Number(r.otherCash || 0);
   if (other < 0 || Number(r.expenseAmount || 0) < 0 || Number(r.directDepositAmount || 0) < 0) return 'invalid_amount';

@@ -6922,7 +6922,7 @@ function entriesAoa_(entries){
   function r2(v){ return Math.round(Number(v || 0) * 100) / 100; }
   var head = [t('rp_date'), t('lv_branch'), t('rp_source'), t('report_enteredBy'), t('report_product'), t('rp_qty'), t('entry_unitPrice'),
     t('eq_cashSales'), t('eq_posSales'), t('eq_dCredit'), t('rp_customer'), t('eq_dTransfer'), t('eq_dBanked'), t('eq_dExpense'), t('eq_aOther'),
-    t('entry_deliveryTitle'), t('eq_aCreditDelivery'), t('eq_dCreditDelivery'), t('eq_dCommission'), t('eq_aChannelDelivery'), t('eq_dChannelCommission'), t('eq_net'), t('rp_status'), t('entry_note')];
+    t('entry_deliveryTitle'), t('eq_aCreditDelivery'), t('eq_dCreditDelivery'), t('eq_dCommission'), t('eq_aChannelDelivery'), t('eq_dChannelCommission'), t('eq_dDiscount'), t('disc_reason'), t('eq_net'), t('rp_status'), t('entry_note')];
   var rows = [head], tot = head.map(function(){ return 0; });
   entries.forEach(function(e){
     var a = entryAmt_(e), nm = sourceName_(e), c = byId(m.customers, e.creditCustomerId);
@@ -6930,12 +6930,12 @@ function entriesAoa_(entries){
       e.productId ? productName_(e.productId) : '', Number(e.qty || 0) || '', Number(e.unitPrice || 0) || '',
       r2(e.cashSales), r2(e.posSales), r2(e.creditSales), Number(e.creditSales) > 0 ? (c ? c.name : (e.creditCustomer || '')) : '',
       r2(e.bankTransferAmount), r2(e.directDepositAmount), r2(e.expenseAmount), r2(e.otherCash), r2(e.deliveryFeeBankAmount),
-      r2(e.creditDeliveryFee), Number(e.creditFeeRule) >= 2 ? r2(e.creditDeliveryFee) : 0, r2(e.creditCommission), r2(e.channelDeliveryFee), r2(e.channelCommission), e.voided ? 0 : r2(a.net),
+      r2(e.creditDeliveryFee), Number(e.creditFeeRule) >= 2 ? r2(e.creditDeliveryFee) : 0, r2(e.creditCommission), r2(e.channelDeliveryFee), r2(e.channelCommission), r2(e.discountAmount), Number(e.discountAmount) > 0 ? t('disc_r_' + e.discountReason) + (e.discountOnCard ? ' · ' + t('entry_payment_pos') : '') + (e.discountFlag ? ' · ' + t('disc_overLimit') : '') : '', e.voided ? 0 : r2(a.net),
       e.voided ? t('el_voided') : (e.lockState ? t('el_' + e.lockState) : ''), [e.note, e.voidReason].filter(Boolean).join(' · ')];
-    [7, 8, 9, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21].forEach(function(i){ if (!e.voided) tot[i] += Number(row[i] || 0); });
+    [7, 8, 9, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 23].forEach(function(i){ if (!e.voided) tot[i] += Number(row[i] || 0); });
     rows.push(row);
   });
-  rows.push(head.map(function(h, i){ return i === 0 ? t('rp_total') : ([7, 8, 9, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21].indexOf(i) >= 0 ? r2(tot[i]) : ''); }));
+  rows.push(head.map(function(h, i){ return i === 0 ? t('rp_total') : ([7, 8, 9, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 23].indexOf(i) >= 0 ? r2(tot[i]) : ''); }));
   return rows;
 }
 function handoffsAoa_(list){
@@ -8501,6 +8501,7 @@ function salesAndCollectionStatements_(report, handoffs, open){
      .concat(opt(T.creditDeliveryUnpaid, { label: t('eq_dCreditDelivery'), amount: Number(T.creditDeliveryUnpaid||0), kind: 'deduct', color: 'var(--c-credit)' }))
      .concat(opt(T.creditCommissions, { label: t('eq_dCommission'), amount: Number(T.creditCommissions||0), kind: 'deduct', color: 'var(--c-danger)' }))
      .concat(opt(T.channelCommissions, { label: t('eq_dChannelCommission'), amount: Number(T.channelCommissions||0), kind: 'deduct', color: 'var(--c-danger)' }))
+     .concat(opt(T.discounts, { label: t('eq_dDiscount'), amount: Number(T.discounts||0), kind: 'deduct', color: 'var(--c-danger)' }))
      .concat(opt(T.bankTransfers, { label: t('entry_transferTitle'), amount: Number(T.bankTransfers||0), kind: 'deduct', color: 'var(--c-pos)' }))
      .concat(opt(T.directDeposit, { label: t('report_directDeposit'), amount: Number(T.directDeposit||0), kind: 'deduct', color: 'var(--c-deposit)', onClick: open('bankedAtSource') }))
      .concat([
@@ -11174,20 +11175,20 @@ function renderEntries(body){
     if (lineEl.classList.contains('done')) syncLineSum_(lineEl);
   }
   function recomputeTotals_(){
-    var sums = { cash: 0, pos: 0 }, discCash = 0;
+    var sums = { cash: 0, pos: 0 }, discCash = 0, discCard = 0;
     qsa('.eLine', linesBody).forEach(function(lineEl){
       var qty = numFromInput_(qs('.lnQty', lineEl));
       var price = numFromInput_(qs('.lnPrice', lineEl));
       var payment = qs('.lnPayment', lineEl).value, dsc = lineDisc_(lineEl);
-      // cash lines keep their full price and the discount comes off below; a card line is the net the bank receives
-      if (sums.hasOwnProperty(payment)) sums[payment] += qty * price - (payment === 'pos' ? dsc : 0);
-      if (payment !== 'pos') discCash += dsc;
+      // every line keeps its full price; a cash line's discount comes off the cash below, a card line's never touches it
+      if (sums.hasOwnProperty(payment)) sums[payment] += qty * price;
+      if (payment !== 'pos') discCash += dsc; else discCard += dsc;
     });
     form.dataset.discCash = String(Math.round(discCash * 100) / 100);
     var counted = qsa('.eLine', linesBody).filter(function(l){
       return numFromInput_(qs('.lnQty', l)) > 0 && numFromInput_(qs('.lnPrice', l)) > 0;
     }).length;
-    var linesTotal = sums.cash + sums.pos - discCash;
+    var linesTotal = sums.cash + sums.pos - discCash - discCard;
     var sumEl = qs('#eLinesSum', form);
     if (sumEl) sumEl.textContent = counted ? (t('entry_lineCount').replace('{n}', counted) + ' · ' + money(linesTotal)) : '';
     qs('#eCash', form).value = money(sums.cash);
@@ -11801,7 +11802,7 @@ function renderEntries(body){
         date: date, sourceType: sourceType, sourceId: sourceId, productId: productId, submissionId: submissionId, channelQtys: lineChannelQtys_(lineEl), channelComRates: lineChannelComRates_(lineEl),
         qty: qty, unitPrice: price,
         cashSales: payment==='pos' ? 0 : subtotal,
-        posSales: payment==='pos' ? subtotal - dsc : 0,
+        posSales: payment==='pos' ? subtotal : 0,
         discountAmount: dsc > 0 ? dsc : undefined, discountReason: dsc > 0 ? qs('.lnDiscR', lineEl).value : undefined, discountOnCard: dsc > 0 && payment === 'pos' ? true : undefined,
         cylindersOut: numFromInput_(qs('.lnCylOut', lineEl)),
         cylindersIn: numFromInput_(qs('.lnCylIn', lineEl)),

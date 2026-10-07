@@ -4970,6 +4970,7 @@ var dsSmall = call({ action: 'createDailyEntry', token: jrBm.tok, date: jrToday,
 check(dsSmall.ok && !dsSmall.entry.discountFlag, 'one under it is not');
 check(call({ action: 'adminSetConfig', token: adminTok, data: { discountLimit: -1 } }).error === 'invalid_setting', 'the limit is never negative');
 call({ action: 'adminSetConfig', token: adminTok, data: { discountLimit: 0 } });
+check(call({ action: 'createDailyEntry', token: jrBm.tok, date: jrToday, sourceType: 'store', sourceId: dsLoc, cashSales: 0, posSales: 0, discountAmount: 30, discountReason: 'promotion', discountOnCard: true, submissionId: 'ds-7' }).error === 'discount_over_sale', 'a card discount needs a card sale to come off');
 check(call({ action: 'createDailyEntry', token: jrBm.tok, date: jrToday, sourceType: 'store', sourceId: dsLoc, cashSales: 100, discountAmount: 20, discountReason: 'promotion', directDepositAmount: 95, directDepositRef: 'X1', submissionId: 'ds-6' }).error === 'deposit_exceeds_cash', 'a الموازنة cannot bank cash the discount took away (100 − 20 = 80)');
 
 console.log('--- one area manager runs four areas ---');

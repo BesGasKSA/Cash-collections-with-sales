@@ -766,7 +766,8 @@ function profitCompute_(from, to, basis, vatIncl) {
     var u = unit(costUnitOf_(e, maps.posById, maps.unitRow)), T = u.T, b = bIdx[byMonth ? e.date.slice(0, 7) : e.date];
     // VAT inside the prices at the rate the day was saved with
     var div = vatIncl ? 1 + entryVatRate_(e, vatHist) : 1;
-    var gross = Number(e.cashSales || 0) + Number(e.posSales || 0), net = gross / div;
+    // a discount (2026-10-07) is revenue not earned: sales are recorded at full price, the discount comes off
+    var gross = Number(e.cashSales || 0) + Number(e.posSales || 0) - Number(e.discountAmount || 0), net = gross / div;
     var deliv = (Number(e.channelDeliveryFee || 0) + Number(e.creditDeliveryFee || 0)) / div;
     var com = Number(e.channelCommission || 0) + Number(e.creditCommission || 0), exp = Number(e.expenseAmount || 0);
     var qty = Number(e.qty || 0), p = e.productId ? productsById[e.productId] : null, cogs = 0;
