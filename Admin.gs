@@ -833,6 +833,24 @@ function areaPersonBusy_(clusterId, userId) {
   });
 }
 
+// What keeps someone on an area, for the refusal to name it: open entries, handovers
+// open or held and not passed on, area uploads waiting for the deputy (2026-10-07)
+function areaHeldSummary_(clusterId, userId) {
+  var out = { entries: 0, entriesAmount: 0, handoffs: 0, handoffsAmount: 0, batches: 0 };
+  var locIds = readSheet(SHEETS.LOCATIONS).filter(function (l) { return l.clusterId === clusterId; }).map(function (l) { return l.id; });
+  readSheet(SHEETS.ENTRIES).forEach(function (e) {
+    if (e.enteredBy === userId && !e.consumedBy && !e.voided && locIds.indexOf(e.locationId) >= 0) { out.entries++; out.entriesAmount += Number(e.cashSales || 0) + Number(e.otherCash || 0); }
+  });
+  readSheet(SHEETS.HANDOFFS).forEach(function (h) {
+    if (h.clusterId !== clusterId || (h.fromUserId !== userId && h.toUserId !== userId)) return;
+    var open = h.status === 'pending' || h.status === 'pending_deputy' || h.status === 'disputed' || (h.status === 'confirmed' && h.toUserId === userId && !h.consumedBy);
+    if (open) { out.handoffs++; out.handoffsAmount += Number(h.amount || 0); }
+  });
+  out.batches = readSheet(SHEETS.AREA_BULK_BATCHES).filter(function (b) { return b.clusterId === clusterId && b.uploadedBy === userId && b.status === 'pending_deputy'; }).length;
+  out.entriesAmount = Math.round(out.entriesAmount * 100) / 100; out.handoffsAmount = Math.round(out.handoffsAmount * 100) / 100;
+  return out;
+}
+
 // A branch's handovers to its collector still open, or received and not yet banked.
 function branchCollectorBusy_(locationId, userId) {
   if (!userId) return false;
@@ -851,7 +869,7 @@ function inFlightError_(kind, before, after) {
     // second area (rows saved before one-person-one-area) may hold cash
     // there without that blocking a change here.
     var busy = kind === 'cluster' ? areaPersonBusy_(before.id, before[people[i]]) : personBusy_(before[people[i]]);
-    if (busy) return 'person_holds_cash';
+    if (busy) { exec_().holdsCash = { userId: before[people[i]], held: kind === 'cluster' ? areaHeldSummary_(before.id, before[people[i]]) : null }; return 'person_holds_cash'; }
   }
   if (kind === 'location' && changed('clusterId') && placeBusy_('location', before.id)) return 'cash_in_flight';
   // a branch's collector is not replaced while its cash is on the way to them
@@ -998,7 +1016,7 @@ function saveEntity_(req, user) {
     // an inventory item with movements or sales items keeps its kind (full and empty would lose their meaning)
     if (kind === 'stock_item' && merged.kind !== obj.kind && stockItemInUse_(obj.id)) return { ok: false, error: 'has_stock' };
     var flightErr = inFlightError_(kind, obj, merged);
-    if (flightErr) return { ok: false, error: flightErr };
+    if (flightErr) { var hc = exec_().holdsCash || {}; return { ok: false, error: flightErr, holderId: hc.userId || null, held: hc.held || null }; }
   }
 
   // a product's unit cost before this save (null for a new product), so the
