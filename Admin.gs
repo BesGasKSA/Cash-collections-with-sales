@@ -1420,7 +1420,9 @@ var TRANSACTIONAL_SHEETS_ = [
   SHEETS.BANK_LINES, SHEETS.RISK_ITEMS,
   // the stock movements balance against the sales: one without the other would
   // leave every branch's stock with purchases and no sales (2026-10-05)
-  SHEETS.INV_MOVES
+  SHEETS.INV_MOVES,
+  // a fresh round takes the archive with it: an old round's run restored into a new one would mix them
+  SHEETS.ARCHIVE_RUNS, SHEETS.ARCHIVED_ROWS
 ];
 // The audit trail is not in the list (security review 2026-10-04): a fresh round
 // must never hide who did what.
@@ -1872,16 +1874,29 @@ function actionMeta_(req, user) {
 // range that matched an archived deposit (unmatched), and a deposit kept that a
 // bank line in the range had matched (unreconciled). Their earlier state is kept
 // with the run, so a restore puts them back too.
+//
+// Review, same day (the order matters): the copies and the run are written FIRST
+// (status 'archiving'), then the edge rows are changed, then the rows are taken out,
+// and only then is the run marked 'archived'. A run cut short by a time limit or an
+// error leaves every row either still in its sheet or safely copied, and a restore
+// of an 'archiving' run puts back whatever was taken. No cell is written over the
+// sheet limit: the run is refused before anything moves.
+var ARCH_CELL_MAX_ = 48000;
 var ARCHIVE_DATED_ = [
-  { sheet: SHEETS.INV_MOVES, date: function (r) { return r.date; } },
-  { sheet: SHEETS.CUSTOMER_PAYMENTS, date: function (r) { return r.date; } },
-  { sheet: SHEETS.BANK_LINES, date: function (r) { return r.date; } },
+  { sheet: SHEETS.INV_MOVES, date: function (r) { return archDay_(r.date); } },
+  { sheet: SHEETS.CUSTOMER_PAYMENTS, date: function (r) { return archDay_(r.date); } },
+  { sheet: SHEETS.BANK_LINES, date: function (r) { return archDay_(r.date); } },
   { sheet: SHEETS.RISK_ITEMS, date: function (r) { return archDay_(r.createdAt); } }
 ];
-function archDay_(iso) {
-  if (!iso) return '';
-  if (/^\d{4}-\d{2}-\d{2}$/.test(String(iso))) return String(iso);
-  var d = new Date(iso); if (isNaN(d.getTime())) return String(iso).slice(0, 10);
+// a day as yyyy-mm-dd: ISO dates and times (Riyadh day), and dd/mm/yyyy as banks print it
+function archDay_(v) {
+  if (v == null || v === '') return '';
+  var s = String(v).trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  var m = /^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4})$/.exec(s);
+  if (m) return m[3] + '-' + ('0' + m[2]).slice(-2) + '-' + ('0' + m[1]).slice(-2);
+  var d = v instanceof Date ? v : new Date(s);
+  if (isNaN(d.getTime())) return s.slice(0, 10);
   return Utilities.formatDate(d, 'Asia/Riyadh', 'yyyy-MM-dd');
 }
 // The whole chain the range touches: entries dated in it, handovers and batches made
@@ -1899,18 +1914,17 @@ function archClosure_(from, to) {
     (h.sourceHandoffIds || []).forEach(function (id) { push(hBySrcH, id, h); });
   });
   batches.forEach(function (b) { bById[b.id] = b; (b.resultHandoffIds || []).forEach(function (id) { push(bByResult, id, b); }); });
-  var E = Object.create(null), H = Object.create(null), B = Object.create(null), queue = [];
+  var E = Object.create(null), H = Object.create(null), B = Object.create(null), queue = [], qi = 0;
   function inR(d) { return d && d >= from && d <= to; }
   function addE(x) { if (x && !E[x.id]) { E[x.id] = x; queue.push(['e', x]); } }
   function addH(x) { if (x && !H[x.id]) { H[x.id] = x; queue.push(['h', x]); } }
   function addB(x) { if (x && !B[x.id]) { B[x.id] = x; queue.push(['b', x]); } }
   function addId(id) { if (!id) return; if (hById[id]) addH(hById[id]); else if (bById[id]) addB(bById[id]); else if (eById[id]) addE(eById[id]); }
-  entries.forEach(function (e) { if (inR(e.date)) addE(e); });
+  entries.forEach(function (e) { if (inR(archDay_(e.date))) addE(e); });
   handoffs.forEach(function (h) { if (inR(archDay_(h.createdAt))) addH(h); });
   batches.forEach(function (b) { if (inR(archDay_(b.createdAt || b.uploadedAt))) addB(b); });
-  var guard = 0;
-  while (queue.length && guard++ < 500000) {
-    var it = queue.shift(), x = it[1];
+  while (qi < queue.length) {
+    var it = queue[qi++], x = it[1];
     if (it[0] === 'e') {
       addId(x.consumedBy); addId(x.batchId);
       (bySub[x.submissionId] || []).forEach(addE);           // a day goes whole
@@ -1935,16 +1949,23 @@ function archClosure_(from, to) {
 function archPlan_(from, to) {
   var cl = archClosure_(from, to), take = Object.create(null), patches = [];
   take[SHEETS.ENTRIES] = Object.keys(cl.E); take[SHEETS.HANDOFFS] = Object.keys(cl.H); take[SHEETS.AREA_BULK_BATCHES] = Object.keys(cl.B);
-  var dated = Object.create(null);
+  var stockWarn = { openings: 0, counts: 0 };
   ARCHIVE_DATED_.forEach(function (d) {
-    var rows = readSheet(d.sheet).filter(function (r) { var x = d.date(r); return x && x >= from && x <= to; });
-    // a stock transfer is one movement in two places: both sides go together
+    var all = readSheet(d.sheet), picked = Object.create(null);
+    all.forEach(function (r) { var x = d.date(r); if (x && x >= from && x <= to) picked[r.id] = r; });
     if (d.sheet === SHEETS.INV_MOVES) {
-      var links = Object.create(null); rows.forEach(function (m) { if (m.linkId) links[m.linkId] = 1; });
-      readSheet(d.sheet).forEach(function (m) { if (m.linkId && links[m.linkId] && rows.indexOf(m) < 0 && !rows.some(function (x) { return x.id === m.id; })) rows.push(m); });
+      // a stock transfer is one movement in two places: both sides go together; a
+      // customer's cylinder deposit takes its later returns with it, or what he holds
+      // would go below zero
+      var links = Object.create(null), deps = [];
+      Object.keys(picked).forEach(function (id) { var m = picked[id]; if (m.linkId) links[m.linkId] = 1; if (m.kind === 'deposit_out' && m.customerId) deps.push(m); });
+      all.forEach(function (m) {
+        if (m.linkId && links[m.linkId]) picked[m.id] = m;
+        if (m.kind === 'deposit_return' && deps.some(function (o) { return o.customerId === m.customerId && o.locationId === m.locationId && String(o.stockItemId || o.productId || '') === String(m.stockItemId || m.productId || '') && String(m.date) >= String(o.date); })) picked[m.id] = m;
+      });
+      Object.keys(picked).forEach(function (id) { var m = picked[id]; if (m.voided) return; if (m.kind === 'opening') stockWarn.openings++; if (m.kind === 'count_gain' || m.kind === 'count_loss') stockWarn.counts++; });
     }
-    take[d.sheet] = rows.map(function (r) { return r.id; });
-    dated[d.sheet] = rows;
+    take[d.sheet] = Object.keys(picked);
   });
   var gone = Object.create(null); Object.keys(take).forEach(function (s) { take[s].forEach(function (id) { gone[id] = true; }); });
   // the edge: a kept bank line on an archived deposit, a kept deposit on an archived bank line
@@ -1959,46 +1980,61 @@ function archPlan_(from, to) {
   var ents = Object.keys(cl.E).map(function (id) { return cl.E[id]; });
   var live = ents.filter(function (e) { return !e.voided; });
   var outside = Object.create(null);
-  ents.forEach(function (e) { if (!(e.date >= from && e.date <= to)) { var k = e.date + '|' + (e.locationId || ''); outside[k] = outside[k] || { date: e.date, locationId: e.locationId || null, rows: 0 }; outside[k].rows++; } });
+  ents.forEach(function (e) { var d = archDay_(e.date); if (!(d >= from && d <= to)) { var k = d + '|' + (e.locationId || ''); outside[k] = outside[k] || { date: d, locationId: e.locationId || null, rows: 0 }; outside[k].rows++; } });
   var hs = Object.keys(cl.H).map(function (id) { return cl.H[id]; });
+  var bs = Object.keys(cl.B).map(function (id) { return cl.B[id]; });
   var net = live.length ? computeNet_(live) : { netCashOwed: 0 };
-  var counts = {}; Object.keys(take).forEach(function (s) { counts[s] = take[s].length; });
+  var counts = {}, total = 0; Object.keys(take).forEach(function (s) { counts[s] = take[s].length; total += take[s].length; });
   return {
-    take: take, patches: patches, invoices: invoices, counts: counts,
+    take: take, patches: patches, invoices: invoices, counts: counts, total: total, stockWarn: stockWarn,
     money: {
       sales: Math.round(live.reduce(function (a, e) { return a + Number(e.cashSales || 0) + Number(e.posSales || 0); }, 0) * 100) / 100,
       net: Math.round(Number(net.netCashOwed || 0) * 100) / 100,
       deposited: Math.round(hs.filter(function (h) { return h.kind === 'deposit' && h.status !== 'voided'; }).reduce(function (a, h) { return a + Number(h.amount || 0); }, 0) * 100) / 100
     },
-    openHandoffs: hs.filter(function (h) { return ['pending', 'pending_deputy', 'disputed'].indexOf(h.status) >= 0; }).length,
+    // open handovers, and area batches still waiting for the deputy
+    openHandoffs: hs.filter(function (h) { return ['pending', 'pending_deputy', 'disputed'].indexOf(h.status) >= 0; }).length +
+      bs.filter(function (b) { return ['pending_deputy', 'approving'].indexOf(b.status) >= 0; }).length,
     outside: Object.keys(outside).sort().map(function (k) { return outside[k]; }),
-    days: Object.keys(live.reduce(function (a, e) { a[e.date] = 1; return a; }, {})).length
+    days: Object.keys(live.reduce(function (a, e) { a[archDay_(e.date)] = 1; return a; }, {})).length
   };
 }
-// Rows out of a sheet in one read and one write, under the caller's lock: the kept
-// rows move up and the freed rows at the end are blanked (readSheet skips a row
-// without an id). Returns the raw rows taken, exactly as stored.
-function archTakeRows_(name, ids) {
+// The raw rows of a sheet for some ids, exactly as stored, every column. No write.
+function archReadRows_(name, ids) {
   var want = Object.create(null); ids.forEach(function (id) { want[id] = true; });
   var sh = sheet_(name), last = sh.getLastRow();
   if (last < 2 || !ids.length) return [];
-  var rng = sh.getRange(2, 1, last - 1, 3), vals = rng.getValues(), keep = [], taken = [];
-  vals.forEach(function (v) { if (v[0] && want[v[0]]) taken.push(v); else if (v[0]) keep.push(v); });
-  if (!taken.length) return [];
-  var out = keep.slice(); while (out.length < vals.length) out.push(['', '', '']);
+  var w = Math.max(3, sh.getLastColumn ? sh.getLastColumn() : 3);
+  return sh.getRange(2, 1, last - 1, w).getValues().filter(function (v) { return v[0] && want[v[0]]; });
+}
+// Rows out of a sheet in one read and one write, under the caller's lock: the kept
+// rows move up, every column with them, and the freed rows at the end are blanked
+// (readSheet skips a row without an id). A row with no id but something in it stays.
+function archTakeRows_(name, ids) {
+  var want = Object.create(null); ids.forEach(function (id) { want[id] = true; });
+  var sh = sheet_(name), last = sh.getLastRow();
+  if (last < 2 || !ids.length) return 0;
+  var w = Math.max(3, sh.getLastColumn ? sh.getLastColumn() : 3);
+  var rng = sh.getRange(2, 1, last - 1, w), vals = rng.getValues(), keep = [], n = 0;
+  vals.forEach(function (v) { if (v[0] && want[v[0]]) n++; else if (v.some(function (c) { return c !== '' && c != null; })) keep.push(v); });
+  if (!n) return 0;
+  var blank = []; for (var i = 0; i < w; i++) blank.push('');
+  var out = keep.slice(); while (out.length < vals.length) out.push(blank.slice());
   rng.setValues(out);
   bumpVersion_(name);
-  return taken;
+  return n;
 }
 // Raw rows back at the end of a sheet, exactly as they were stored.
 function archPutRows_(name, vals) {
   if (!vals.length) return;
-  var sh = sheet_(name), ids = Object.create(null), last = sh.getLastRow();
+  var sh = sheet_(name), last = sh.getLastRow(), w = 3;
+  vals.forEach(function (v) { w = Math.max(w, v.length); });
+  vals = vals.map(function (v) { var r = v.slice(); while (r.length < w) r.push(''); return r; });
   // the first free row: the blanks a take left at the end are reused
   var first = 2;
-  if (last >= 2) { var col = sh.getRange(2, 1, last - 1, 1).getValues(); for (var i = col.length - 1; i >= 0; i--) { if (col[i][0]) { first = i + 3; break; } } }
+  if (last >= 2) { var col = sh.getRange(2, 1, last - 1, w).getValues(); for (var i = col.length - 1; i >= 0; i--) { if (col[i].some(function (c) { return c !== '' && c != null; })) { first = i + 3; break; } } }
   if (sh.getMaxRows && first + vals.length - 1 > sh.getMaxRows()) sh.insertRowsAfter(sh.getMaxRows(), first + vals.length - 1 - sh.getMaxRows());
-  sh.getRange(first, 1, vals.length, 3).setValues(vals);
+  sh.getRange(first, 1, vals.length, w).setValues(vals);
   bumpVersion_(name);
 }
 function archRangeOk_(from, to) {
@@ -2006,13 +2042,14 @@ function archRangeOk_(from, to) {
   if (from > to) return 'invalid_period';
   return null;
 }
+function archCell_(v) { return v instanceof Date ? v.toISOString() : v; }
 function actionArchiveRange_(req, user, previewOnly) {
   if (user.role !== 'admin') return { ok: false, error: 'forbidden' };
   var from = String(req.dateFrom || ''), to = String(req.dateTo || '');
   var bad = archRangeOk_(from, to); if (bad) return { ok: false, error: bad };
   if (previewOnly) {
     var pv = archPlan_(from, to);
-    return { ok: true, preview: { counts: pv.counts, money: pv.money, openHandoffs: pv.openHandoffs, outside: pv.outside, days: pv.days, invoices: pv.invoices, patches: pv.patches.length } };
+    return { ok: true, preview: { counts: pv.counts, total: pv.total, money: pv.money, openHandoffs: pv.openHandoffs, outside: pv.outside, days: pv.days, invoices: pv.invoices, patches: pv.patches.length, stockWarn: pv.stockWarn } };
   }
   // a word the caller types, and why
   if (String(req.confirm || '') !== 'ARCHIVE') return { ok: false, error: 'confirm_required' };
@@ -2026,27 +2063,40 @@ function actionArchiveRange_(req, user, previewOnly) {
     if (plan.invoices.length) return { ok: false, error: 'archive_has_invoices', invoices: plan.invoices };
     // the days outside the range move only when the person saw them and said so
     if (plan.outside.length && req.acceptOutside !== true) return { ok: false, error: 'archive_outside_days', outside: plan.outside };
-    var total = Object.keys(plan.take).reduce(function (a, s) { return a + plan.take[s].length; }, 0);
-    if (!total) return { ok: false, error: 'archive_nothing' };
+    if (!plan.total) return { ok: false, error: 'archive_nothing' };
+    // what the person saw in the preview must still be what moves
+    if (req.expectTotal != null && Number(req.expectTotal) !== plan.total) return { ok: false, error: 'archive_changed', total: plan.total };
     var runId = Utilities.getUuid(), at = new Date().toISOString(), rows = [];
-    // the edge rows' state before the change, then the change itself
-    var patched = plan.patches.map(function (p) {
-      var before = JSON.parse(JSON.stringify(p.row)), r = p.row;
+    Object.keys(plan.take).forEach(function (s) {
+      archReadRows_(s, plan.take[s]).forEach(function (v) {
+        rows.push({ id: Utilities.getUuid(), runId: runId, kind: 'row', sheet: s, rowId: v[0], data: String(v[1]), rowAt: archCell_(v[2]), extra: v.length > 3 ? v.slice(3).map(archCell_) : null });
+      });
+    });
+    // the edge rows' state before the change, kept as copies like the rows
+    plan.patches.forEach(function (p) { rows.push({ id: Utilities.getUuid(), runId: runId, kind: 'patch', sheet: p.sheet, rowId: p.row.id, data: JSON.stringify(p.row), rowAt: p.row.updatedAt || '' }); });
+    // nothing is written when any copy would pass the sheet's cell limit
+    var big = rows.filter(function (r) { return JSON.stringify(r).length > ARCH_CELL_MAX_; });
+    if (big.length) return { ok: false, error: 'archive_row_too_large', rows: big.slice(0, 20).map(function (r) { return { sheet: r.sheet, id: r.rowId }; }) };
+    var counts = {}; Object.keys(plan.take).forEach(function (s) { counts[s] = plan.take[s].length; });
+    var run = { id: runId, dateFrom: from, dateTo: to, reason: reason, by: user.id, at: at, status: 'archiving', counts: counts,
+      rows: rows.filter(function (r) { return r.kind === 'row'; }).length, money: plan.money, outside: plan.outside.slice(0, 200), outsideTotal: plan.outside.length,
+      patches: plan.patches.map(function (p) { return { sheet: p.sheet, id: p.row.id, afterAt: null }; }) };
+    // 1. the copies and the run, before anything moves
+    costAppendMany_(SHEETS.ARCHIVED_ROWS, rows);
+    writeRow(SHEETS.ARCHIVE_RUNS, run);
+    // 2. the edge rows
+    plan.patches.forEach(function (p, i) {
+      var r = p.row;
       if (p.sheet === SHEETS.BANK_LINES) { r.status = 'unmatched'; r.matchedHandoffId = null; r.matchedAt = null; r.matchedBy = null; }
       else { r.reconciled = false; r.reconciledAt = null; r.reconciledLineId = null; }
       r.archiveRunId = runId;
-      var after = writeRow(p.sheet, r);
-      return { sheet: p.sheet, id: r.id, before: before, afterAt: after.updatedAt };
+      run.patches[i].afterAt = writeRow(p.sheet, r).updatedAt;
     });
-    var counts = {};
-    Object.keys(plan.take).forEach(function (s) {
-      var taken = archTakeRows_(s, plan.take[s]);
-      counts[s] = taken.length;
-      taken.forEach(function (v) { rows.push({ id: Utilities.getUuid(), runId: runId, sheet: s, rowId: v[0], data: String(v[1]), rowAt: v[2] instanceof Date ? v[2].toISOString() : v[2] }); });
-    });
-    costAppendMany_(SHEETS.ARCHIVED_ROWS, rows);
-    var run = writeRow(SHEETS.ARCHIVE_RUNS, { id: runId, dateFrom: from, dateTo: to, reason: reason, by: user.id, at: at, status: 'archived',
-      counts: counts, rows: rows.length, money: plan.money, outside: plan.outside, patches: patched });
+    // 3. the rows themselves
+    Object.keys(plan.take).forEach(function (s) { archTakeRows_(s, plan.take[s]); });
+    // 4. done
+    run.status = 'archived';
+    run = writeRow(SHEETS.ARCHIVE_RUNS, run);
     logAudit_('archive_range', user.id, runId + ' ' + from + '..' + to + ' ' + Object.keys(counts).map(function (s) { return s + ':' + counts[s]; }).join(', ') + ' (' + reason + ')');
     return { ok: true, run: archRunView_(run) };
   } finally { try { lock.releaseLock(); } catch (e) {} }
@@ -2060,8 +2110,8 @@ function actionListArchiveRuns_(req, user) {
   return { ok: true, runs: readSheet(SHEETS.ARCHIVE_RUNS).sort(function (a, b) { return String(b.at).localeCompare(String(a.at)); }).map(archRunView_) };
 }
 // A run back as it was: its rows return to their sheets, and the edge rows get their
-// earlier state back when nobody has changed them since. Refused when a day the run
-// holds has been entered again meanwhile: restoring would count that day twice.
+// earlier state back when nobody has changed them since. A day, bank line, payment or
+// stock opening entered again meanwhile is listed first: restoring would count it twice.
 function actionArchiveRestore_(req, user) {
   if (user.role !== 'admin') return { ok: false, error: 'forbidden' };
   if (String(req.confirm || '') !== 'RESTORE') return { ok: false, error: 'confirm_required' };
@@ -2071,37 +2121,71 @@ function actionArchiveRestore_(req, user) {
     freshenExec_();
     var run = getById_(SHEETS.ARCHIVE_RUNS, req.id);
     if (!run) return { ok: false, error: 'not_found' };
-    if (run.status !== 'archived') return { ok: false, error: 'already_restored' };
-    var rows = readSheet(SHEETS.ARCHIVED_ROWS).filter(function (r) { return r.runId === run.id; });
+    // a run cut short ('archiving') is restored too: whatever it took comes back
+    if (run.status !== 'archived' && run.status !== 'archiving') return { ok: false, error: 'already_restored' };
+    var copies = readSheet(SHEETS.ARCHIVED_ROWS).filter(function (r) { return r.runId === run.id; });
+    var rows = copies.filter(function (r) { return r.kind !== 'patch'; }), patchCopy = Object.create(null);
+    copies.forEach(function (r) { if (r.kind === 'patch') patchCopy[r.sheet + '|' + r.rowId] = r; });
     var bySheet = Object.create(null);
     rows.forEach(function (r) { (bySheet[r.sheet] = bySheet[r.sheet] || []).push(r); });
-    // the same branch day entered again since: refuse, and say which
-    var days = Object.create(null);
-    (bySheet[SHEETS.ENTRIES] || []).forEach(function (r) { try { var e = JSON.parse(r.data); if (!e.voided) days[e.sourceType + '|' + e.sourceId + '|' + e.date] = { date: e.date, locationId: e.locationId || null }; } catch (x) {} });
+    function parsed(list) { return (list || []).map(function (r) { try { return JSON.parse(r.data); } catch (x) { return null; } }).filter(Boolean); }
+    // what was entered again since: the same branch day, bank line, customer payment, stock opening or imported sheet day
     var clash = Object.create(null);
-    readSheet(SHEETS.ENTRIES).forEach(function (e) { var k = e.sourceType + '|' + e.sourceId + '|' + e.date; if (!e.voided && days[k]) clash[k] = days[k]; });
+    function keysOf(sheet, o) {
+      if (o.voided) return [];
+      if (sheet === SHEETS.ENTRIES) return [o.sourceType + '|' + o.sourceId + '|' + archDay_(o.date)];
+      if (sheet === SHEETS.BANK_LINES) return ['b|' + archDay_(o.date) + '|' + Number(o.amount || 0) + '|' + String(o.reference || '')];
+      if (sheet === SHEETS.CUSTOMER_PAYMENTS) return ['p|' + o.customerId + '|' + archDay_(o.date) + '|' + Number(o.amount || 0) + '|' + String(o.ref || '')];
+      if (sheet === SHEETS.INV_MOVES) { var k = []; if (o.kind === 'opening') k.push('o|' + o.locationId + '|' + (o.stockItemId || o.productId || '') + '|' + (o.state || '')); if (o.importRef) k.push('i|' + o.locationId + '|' + o.importRef); return k; }
+      return [];
+    }
+    [SHEETS.ENTRIES, SHEETS.BANK_LINES, SHEETS.CUSTOMER_PAYMENTS, SHEETS.INV_MOVES].forEach(function (s) {
+      var mine = Object.create(null);
+      parsed(bySheet[s]).forEach(function (o) { keysOf(s, o).forEach(function (k) { mine[k] = { date: archDay_(o.date), locationId: o.locationId || null }; }); });
+      if (!Object.keys(mine).length) return;
+      var archivedIds = Object.create(null); (bySheet[s] || []).forEach(function (r) { archivedIds[r.rowId] = true; });
+      readSheet(s).forEach(function (o) { if (archivedIds[o.id]) return; keysOf(s, o).forEach(function (k) { if (mine[k]) clash[s + '#' + k] = mine[k]; }); });
+    });
     // a day can hold several entries, so this cannot tell a re-entry from a second
-    // entry: the days are listed, and the restore goes ahead only when the admin says so
+    // entry: the clashes are listed, and the restore goes ahead only when the admin says so
     if (Object.keys(clash).length && req.acceptConflicts !== true) return { ok: false, error: 'restore_conflict', days: Object.keys(clash).map(function (k) { return clash[k]; }) };
-    // a row already back (or never gone) is not written twice
+    // a row already back (or never taken, in a run cut short) is not written twice
     var restored = {};
     Object.keys(bySheet).forEach(function (s) {
       var have = Object.create(null); readSheet(s).forEach(function (x) { have[x.id] = true; });
-      var vals = bySheet[s].filter(function (r) { return !have[r.rowId]; }).map(function (r) { return [r.rowId, r.data, r.rowAt || new Date().toISOString()]; });
+      var vals = bySheet[s].filter(function (r) { return !have[r.rowId]; }).map(function (r) { return [r.rowId, r.data, r.rowAt || new Date().toISOString()].concat(r.extra || []); });
       archPutRows_(s, vals);
       restored[s] = vals.length;
     });
     var skipped = [];
     (run.patches || []).forEach(function (p) {
-      var cur = getById_(p.sheet, p.id);
-      if (!cur || String(cur.updatedAt) !== String(p.afterAt)) { skipped.push({ sheet: p.sheet, id: p.id }); return; }
-      var back = p.before; back.id = p.id; writeRow(p.sheet, back);
+      if (!p.afterAt) return;                         // never applied (a run cut short)
+      var cur = getById_(p.sheet, p.id), copy = patchCopy[p.sheet + '|' + p.id];
+      if (!cur || !copy || String(cur.updatedAt) !== String(p.afterAt)) { skipped.push({ sheet: p.sheet, id: p.id }); return; }
+      var back; try { back = JSON.parse(copy.data); } catch (x) { skipped.push({ sheet: p.sheet, id: p.id }); return; }
+      back.id = p.id; delete back.archiveRunId; writeRow(p.sheet, back);
     });
-    run.status = 'restored'; run.restoredBy = user.id; run.restoredAt = new Date().toISOString(); run.restoredCounts = restored; run.restoreSkipped = skipped;
+    // a bank line and its deposit always point at each other, or neither does: a side
+    // whose partner is gone or matched elsewhere since is cleared, and listed
+    var lines = readSheet(SHEETS.BANK_LINES), hs = readSheet(SHEETS.HANDOFFS);
+    var lineById = Object.create(null), hById = Object.create(null);
+    lines.forEach(function (l) { lineById[l.id] = l; }); hs.forEach(function (h) { hById[h.id] = h; });
+    var back = Object.create(null); (bySheet[SHEETS.HANDOFFS] || []).concat(bySheet[SHEETS.BANK_LINES] || []).forEach(function (r) { back[r.rowId] = true; });
+    hs.forEach(function (h) {
+      if (!back[h.id] || !h.reconciledLineId) return;
+      var l = lineById[h.reconciledLineId];
+      if (!l || l.matchedHandoffId !== h.id) { h.reconciled = false; h.reconciledAt = null; h.reconciledLineId = null; writeRow(SHEETS.HANDOFFS, h); skipped.push({ sheet: SHEETS.HANDOFFS, id: h.id, unmatched: true }); }
+    });
+    lines.forEach(function (l) {
+      if (!back[l.id] || !l.matchedHandoffId) return;
+      var h = hById[l.matchedHandoffId];
+      if (!h || h.reconciledLineId !== l.id) { l.status = 'unmatched'; l.matchedHandoffId = null; l.matchedAt = null; l.matchedBy = null; writeRow(SHEETS.BANK_LINES, l); skipped.push({ sheet: SHEETS.BANK_LINES, id: l.id, unmatched: true }); }
+    });
+    run.status = 'restored'; run.restoredBy = user.id; run.restoredAt = new Date().toISOString(); run.restoredCounts = restored; run.restoreSkipped = skipped.slice(0, 200);
     run = writeRow(SHEETS.ARCHIVE_RUNS, run);
     // the archived copies of a restored run are not needed twice
-    archTakeRows_(SHEETS.ARCHIVED_ROWS, rows.map(function (r) { return r.id; }));
-    logAudit_('archive_restore', user.id, run.id + ' ' + Object.keys(restored).map(function (s) { return s + ':' + restored[s]; }).join(', ') + (skipped.length ? ' (edge rows changed since, left: ' + skipped.length + ')' : ''));
+    archTakeRows_(SHEETS.ARCHIVED_ROWS, copies.map(function (r) { return r.id; }));
+    logAudit_('archive_restore', user.id, run.id + ' ' + Object.keys(restored).map(function (s) { return s + ':' + restored[s]; }).join(', ') + (skipped.length ? ' (edge rows left as they are: ' + skipped.length + ')' : ''));
     return { ok: true, run: archRunView_(run), restored: restored, skipped: skipped };
   } finally { try { lock.releaseLock(); } catch (e) {} }
 }

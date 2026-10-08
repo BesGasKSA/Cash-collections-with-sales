@@ -288,6 +288,9 @@ function writeRow(name, obj) {
     if (rowIndex > 0) {
       sh.getRange(rowIndex, 1, 1, 3).setValues([[obj.id, json, now]]);
     } else {
+      // a numbered record that is no longer in its sheet was archived (2026-10-08): a
+      // copy read before the archive must not bring it back half-linked
+      if (!isNew && toStore.txNo && isTxSheet_(name)) throw new Error('record_archived');
       // a row new to the sheet (its id may have been made by the caller) gets its number
       if (!toStore.txNo) { txStamp_(name, toStore); if (toStore.txNo) { obj.txNo = toStore.txNo; if (toStore.txLine) obj.txLine = toStore.txLine; json = JSON.stringify(toStore); } }
       sh.appendRow([obj.id, json, now]);

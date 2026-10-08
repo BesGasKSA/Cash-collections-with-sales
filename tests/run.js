@@ -5037,8 +5037,14 @@ check(arPv.ok && arPv.preview.outside.some(function (o) { return o.date === '202
 check(ctx.readSheet(SHEETS.ENTRIES).some(function (e) { return e.id === arA.entry.id; }), 'a preview moves nothing');
 check(call({ action: 'archiveRange', token: adminTok, dateFrom: '2026-09-01', dateTo: '2026-09-01', confirm: 'ARCHIVE' }).error === 'reason_required', 'a run says why');
 check(call({ action: 'archiveRange', token: adminTok, dateFrom: '2026-09-01', dateTo: '2026-09-01', confirm: 'ARCHIVE', reason: 'test days' }).error === 'archive_outside_days', 'and moves days outside the range only when told to');
-var arRun = call({ action: 'archiveRange', token: adminTok, dateFrom: '2026-09-01', dateTo: '2026-09-01', confirm: 'ARCHIVE', reason: 'test days', acceptOutside: true });
+check(call({ action: 'archiveRange', token: adminTok, dateFrom: '2026-09-01', dateTo: '2026-09-01', confirm: 'ARCHIVE', reason: 'test days', acceptOutside: true, expectTotal: arPv.preview.total + 1 }).error === 'archive_changed', 'a run whose records changed since the preview is refused');
+var arRun = call({ action: 'archiveRange', token: adminTok, dateFrom: '2026-09-01', dateTo: '2026-09-01', confirm: 'ARCHIVE', reason: 'test days', acceptOutside: true, expectTotal: arPv.preview.total });
 check(arRun.ok && arRun.run.status === 'archived', 'the range is archived (' + (arRun.error || 'ok') + ')');
+// a copy read before the archive cannot bring its record back half-linked
+var arStale = JSON.parse(JSON.stringify(arH.handoff)); arStale.status = 'confirmed';
+var arStaleErr = null; try { ctx.writeRow(SHEETS.HANDOFFS, arStale); } catch (e) { arStaleErr = String(e.message || e); }
+check(arStaleErr === 'record_archived', 'a stale save of an archived request is refused (' + arStaleErr + ')');
+check(!ctx.readSheet(SHEETS.HANDOFFS).some(function (h) { return h.id === arH.handoff.id; }), 'and it stays archived');
 var arIds = ctx.readSheet(SHEETS.ENTRIES).map(function (e) { return e.id; });
 check(arIds.indexOf(arA.entry.id) < 0 && arIds.indexOf(arB.entry.id) < 0 && arIds.indexOf(arC.entry.id) >= 0, 'its days are gone from the entries, the day not in its chain stays');
 check(!ctx.readSheet(SHEETS.HANDOFFS).some(function (h) { return h.id === arH.handoff.id; }), 'its request is gone too');
