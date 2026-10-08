@@ -5018,6 +5018,54 @@ check(call({ action: 'createDailyEntry', token: omA.tok, date: jrToday, sourceTy
 var omH2 = call({ action: 'createHandoff', token: omA.tok, kind: 'cluster_to_collector', clusterId: omArea.id, locationId: omLoc.id });
 check(call({ action: 'deputyReturnHandoff', token: omarTok, id: omH2.handoff.id, reason: 'check the amount' }).ok, 'the Operations Manager can return one too');
 
+console.log('--- archiving a date range: the whole chain, every impact, and restoring it (2026-10-08) ---');
+var arA = call({ action: 'createDailyEntry', token: omA.tok, date: '2026-09-01', sourceType: 'store', sourceId: omSt.id, cashSales: 300, submissionId: 'ar-a' });
+var arB = call({ action: 'createDailyEntry', token: omA.tok, date: '2026-09-20', sourceType: 'store', sourceId: omSt.id, cashSales: 200, submissionId: 'ar-b' });
+check(arA.ok && arB.ok, 'two days on file (' + [arA.error, arB.error].join(',') + ')');
+var arH = call({ action: 'createHandoff', token: omA.tok, kind: 'cluster_to_collector', clusterId: omArea.id, locationId: omLoc.id });
+// a day entered after the request is not in its chain
+var arC = call({ action: 'createDailyEntry', token: omA.tok, date: '2026-09-25', sourceType: 'store', sourceId: omSt.id, cashSales: 70, submissionId: 'ar-c' });
+check(arC.ok, 'a third day, after the request');
+check(arH.ok && (arH.handoff.sourceEntryIds || []).indexOf(arA.entry.id) >= 0 && (arH.handoff.sourceEntryIds || []).indexOf(arB.entry.id) >= 0, 'one request carries the 1st and the 20th');
+function arSales() { var r = call({ action: 'getSalesReport', token: adminTok, locationId: omLoc.id }); return (r.entries || []).filter(function (e) { return !e.voided; }).length; }
+var arBefore = arSales();
+check(call({ action: 'archiveRangePreview', token: omA.tok, dateFrom: '2026-09-01', dateTo: '2026-09-01' }).error === 'forbidden', 'only an admin archives');
+check(call({ action: 'archiveRangePreview', token: adminTok, dateFrom: '2026-09-05', dateTo: '2026-09-01' }).error === 'invalid_period', 'a range runs forwards');
+var arPv = call({ action: 'archiveRangePreview', token: adminTok, dateFrom: '2026-09-01', dateTo: '2026-09-01' });
+check(arPv.ok && arPv.preview.counts.daily_entries >= 2 && arPv.preview.counts.handoffs >= 1, 'the preview takes the 1st and, through its request, the 20th (' + JSON.stringify(arPv.preview && arPv.preview.counts) + ')');
+check(arPv.ok && arPv.preview.outside.some(function (o) { return o.date === '2026-09-20'; }), 'and names the day outside the range it would take');
+check(ctx.readSheet(SHEETS.ENTRIES).some(function (e) { return e.id === arA.entry.id; }), 'a preview moves nothing');
+check(call({ action: 'archiveRange', token: adminTok, dateFrom: '2026-09-01', dateTo: '2026-09-01', confirm: 'ARCHIVE' }).error === 'reason_required', 'a run says why');
+check(call({ action: 'archiveRange', token: adminTok, dateFrom: '2026-09-01', dateTo: '2026-09-01', confirm: 'ARCHIVE', reason: 'test days' }).error === 'archive_outside_days', 'and moves days outside the range only when told to');
+var arRun = call({ action: 'archiveRange', token: adminTok, dateFrom: '2026-09-01', dateTo: '2026-09-01', confirm: 'ARCHIVE', reason: 'test days', acceptOutside: true });
+check(arRun.ok && arRun.run.status === 'archived', 'the range is archived (' + (arRun.error || 'ok') + ')');
+var arIds = ctx.readSheet(SHEETS.ENTRIES).map(function (e) { return e.id; });
+check(arIds.indexOf(arA.entry.id) < 0 && arIds.indexOf(arB.entry.id) < 0 && arIds.indexOf(arC.entry.id) >= 0, 'its days are gone from the entries, the day not in its chain stays');
+check(!ctx.readSheet(SHEETS.HANDOFFS).some(function (h) { return h.id === arH.handoff.id; }), 'its request is gone too');
+var arRep = (call({ action: 'getSalesReport', token: adminTok, locationId: omLoc.id }).entries || []).map(function (e) { return e.id; });
+check(arSales() <= arBefore - 2 && arRep.indexOf(arA.entry.id) < 0 && arRep.indexOf(arB.entry.id) < 0, 'and the sales report no longer counts them');
+check(call({ action: 'createDailyEntry', token: omA.tok, date: '2026-09-01', sourceType: 'store', sourceId: omSt.id, cashSales: 10, submissionId: 'ar-d' }).ok, 'the archived day is open to a new entry');
+var arRuns = call({ action: 'listArchiveRuns', token: adminTok });
+check(arRuns.ok && arRuns.runs[0].id === arRun.run.id && arRuns.runs[0].rows >= 3, 'the run is listed with its rows');
+check(ctx.readSheet(SHEETS.AUDIT).some(function (a) { return a.action === 'archive_range' && String(a.detail).indexOf(arRun.run.id) === 0; }), 'and written to the audit trail');
+check(call({ action: 'archiveRestore', token: adminTok, id: arRun.run.id }).error === 'confirm_required', 'a restore is typed');
+var arClash = call({ action: 'archiveRestore', token: adminTok, id: arRun.run.id, confirm: 'RESTORE' });
+check(arClash.error === 'restore_conflict' && arClash.days.some(function (d) { return d.date === '2026-09-01'; }), 'a restore is refused while the same day was entered again');
+var arD = ctx.readSheet(SHEETS.ENTRIES).filter(function (e) { return e.submissionId === 'ar-d'; })[0];
+check(call({ action: 'voidEntries', token: omA.tok, ids: [arD.id], reason: 'make way for the restore' }).ok, 'the new day is cancelled');
+var arBack = call({ action: 'archiveRestore', token: adminTok, id: arRun.run.id, confirm: 'RESTORE', acceptConflicts: true });
+check(arBack.ok && arBack.run.status === 'restored', 'then the run comes back (' + (arBack.error || 'ok') + ')');
+var arAfter = ctx.readSheet(SHEETS.ENTRIES);
+check(arAfter.some(function (e) { return e.id === arA.entry.id; }) && arAfter.some(function (e) { return e.id === arB.entry.id; }) && ctx.readSheet(SHEETS.HANDOFFS).some(function (h) { return h.id === arH.handoff.id && (h.sourceEntryIds || []).indexOf(arA.entry.id) >= 0; }), 'with its days and its request as they were');
+check(arAfter.filter(function (e) { return e.id === arA.entry.id; }).length === 1 && arAfter.filter(function (e) { return e.id === arA.entry.id; })[0].txNo === arA.entry.txNo, 'once each, with their own numbers');
+check(call({ action: 'archiveRestore', token: adminTok, id: arRun.run.id, confirm: 'RESTORE' }).error === 'already_restored', 'and a run comes back only once');
+if (ctx.readSheet(SHEETS.SALES_INVOICES).length) {
+  var arInv = call({ action: 'archiveRange', token: adminTok, dateFrom: '2020-01-01', dateTo: '2030-12-31', confirm: 'ARCHIVE', reason: 'all', acceptOutside: true });
+  check(arInv.error === 'archive_has_invoices' && arInv.invoices.length > 0, 'a range holding an issued tax invoice is refused (' + (arInv.error || 'ok') + ')');
+}
+ctx.resetExecMemo_();
+check(ctx.readSheet(SHEETS.ENTRIES).every(function (e) { return !!e.id; }), 'no blank rows read back as records');
+
 console.log('--- a test round is archived with open handovers when asked (before go-live) ---');
 var arcOpenCount = ctx.readSheet(SHEETS.HANDOFFS).filter(function (h) { return ['pending', 'pending_deputy', 'disputed'].indexOf(h.status) >= 0; }).length;
 check(arcOpenCount > 0 || true, 'open handovers on file: ' + arcOpenCount);

@@ -52,6 +52,10 @@ var SHEETS = {
   // Area-manager bulk uploads awaiting Deputy Operations Manager approval —
   // an explicit, toggleable exception to the normal chain. See CLAUDE.md.
   AREA_BULK_BATCHES: 'area_bulk_batches',
+  // a date range of transactions taken out of every screen and report, and the
+  // rows themselves, so a run can be put back as it was (2026-10-08, Admin.gs)
+  ARCHIVE_RUNS: 'archive_runs',
+  ARCHIVED_ROWS: 'archived_rows',
   // Master data for the two kinds of money that move at a source without
   // being a sale: cash collected for something else (an old credit sale
   // being paid off, a cylinder deposit, scrap) and cash paid out of the
@@ -979,7 +983,12 @@ function route_(req) {
     adminFillTranslations: function () { return withMeta_(actionAdminFillTranslations_(req, user), req, user); },
     // starts a fresh round of testing by archiving the movement tabs —
     // renames, never deletes (see Admin.gs)
-    adminArchiveTransactions: function () { return actionAdminArchiveTransactions_(req, user); }
+    adminArchiveTransactions: function () { return actionAdminArchiveTransactions_(req, user); },
+    // a date range, with its whole chain; previewed first, and reversible (2026-10-08)
+    archiveRangePreview: function () { return actionArchiveRange_(req, user, true); },
+    archiveRange: function () { return actionArchiveRange_(req, user, false); },
+    archiveRestore: function () { return actionArchiveRestore_(req, user); },
+    listArchiveRuns: function () { return actionListArchiveRuns_(req, user); }
   };
 
   if (!hasOwn_(handlers, action)) throw new Error('unknown_action');

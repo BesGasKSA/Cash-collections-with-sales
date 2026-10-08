@@ -1853,3 +1853,255 @@ function actionMeta_(req, user) {
     config: { vatRate: vatRate_(), vatHistory: vatHistory_(), staleThresholdHours: staleThresholdHours_(), heldThresholdHours: heldThresholdHours_(), secondApprovalThreshold: secondApprovalThreshold_(), areaManagerBulkUploadEnabled: areaManagerBulkUploadEnabled_(), posSalesEnabled: posSalesEnabled_(), salesIncludeVat: salesIncludeVat_(), costIncludeVat: costIncludesVat_(), invControls: config_().invControls !== false, discountLimit: Number(config_().discountLimit || 0), invValuation: config_().invValuation || 'average', company: companyProfile_(), liveLocked: config_().liveLocked === true, liveLockedAt: config_().liveLockedAt || null, stockItemsLive: stockItemsLive_() }
   };
 }
+
+// ---------- Archiving a date range of transactions (2026-10-08) ----------
+// The user: archive any date range of transactions, all of them, and remove every
+// impact they have. Asked and answered the same day:
+// - everything in the range: day entries and the handovers, deposits and area batches
+//   that carry them, stock movements, customer payments, bank-statement lines and
+//   risk items. The audit trail stays, and records what was done.
+// - a handover that also carries days outside the range takes those days with it
+//   (the whole chain moves, never half a handover); the preview lists them first.
+// - reversible: every row goes to `archived_rows` under its run, and a restore puts
+//   the run back as it was.
+// - a customer tax invoice on an archived day stops the run: an issued invoice does
+//   not vanish from the books.
+// Removing the rows is what removes their impact: every report, balance, stock
+// figure and statement is worked out from these sheets. The only rows changed in
+// place are the ones that point across the edge: a bank line kept outside the
+// range that matched an archived deposit (unmatched), and a deposit kept that a
+// bank line in the range had matched (unreconciled). Their earlier state is kept
+// with the run, so a restore puts them back too.
+var ARCHIVE_DATED_ = [
+  { sheet: SHEETS.INV_MOVES, date: function (r) { return r.date; } },
+  { sheet: SHEETS.CUSTOMER_PAYMENTS, date: function (r) { return r.date; } },
+  { sheet: SHEETS.BANK_LINES, date: function (r) { return r.date; } },
+  { sheet: SHEETS.RISK_ITEMS, date: function (r) { return archDay_(r.createdAt); } }
+];
+function archDay_(iso) {
+  if (!iso) return '';
+  if (/^\d{4}-\d{2}-\d{2}$/.test(String(iso))) return String(iso);
+  var d = new Date(iso); if (isNaN(d.getTime())) return String(iso).slice(0, 10);
+  return Utilities.formatDate(d, 'Asia/Riyadh', 'yyyy-MM-dd');
+}
+// The whole chain the range touches: entries dated in it, handovers and batches made
+// in it, and everything linked to those, up and down, until nothing new turns up.
+function archClosure_(from, to) {
+  var entries = readSheet(SHEETS.ENTRIES), handoffs = readSheet(SHEETS.HANDOFFS), batches = readSheet(SHEETS.AREA_BULK_BATCHES);
+  var eById = Object.create(null), hById = Object.create(null), bById = Object.create(null);
+  var bySub = Object.create(null), eByConsumer = Object.create(null), eByBatch = Object.create(null);
+  var hBySrcEntry = Object.create(null), hBySrcH = Object.create(null), hByConsumer = Object.create(null), bByResult = Object.create(null);
+  function push(map, k, v) { if (k) (map[k] = map[k] || []).push(v); }
+  entries.forEach(function (e) { eById[e.id] = e; push(bySub, e.submissionId, e); push(eByConsumer, e.consumedBy, e); push(eByBatch, e.batchId, e); });
+  handoffs.forEach(function (h) {
+    hById[h.id] = h; push(hByConsumer, h.consumedBy, h);
+    (h.sourceEntryIds || []).forEach(function (id) { push(hBySrcEntry, id, h); });
+    (h.sourceHandoffIds || []).forEach(function (id) { push(hBySrcH, id, h); });
+  });
+  batches.forEach(function (b) { bById[b.id] = b; (b.resultHandoffIds || []).forEach(function (id) { push(bByResult, id, b); }); });
+  var E = Object.create(null), H = Object.create(null), B = Object.create(null), queue = [];
+  function inR(d) { return d && d >= from && d <= to; }
+  function addE(x) { if (x && !E[x.id]) { E[x.id] = x; queue.push(['e', x]); } }
+  function addH(x) { if (x && !H[x.id]) { H[x.id] = x; queue.push(['h', x]); } }
+  function addB(x) { if (x && !B[x.id]) { B[x.id] = x; queue.push(['b', x]); } }
+  function addId(id) { if (!id) return; if (hById[id]) addH(hById[id]); else if (bById[id]) addB(bById[id]); else if (eById[id]) addE(eById[id]); }
+  entries.forEach(function (e) { if (inR(e.date)) addE(e); });
+  handoffs.forEach(function (h) { if (inR(archDay_(h.createdAt))) addH(h); });
+  batches.forEach(function (b) { if (inR(archDay_(b.createdAt || b.uploadedAt))) addB(b); });
+  var guard = 0;
+  while (queue.length && guard++ < 500000) {
+    var it = queue.shift(), x = it[1];
+    if (it[0] === 'e') {
+      addId(x.consumedBy); addId(x.batchId);
+      (bySub[x.submissionId] || []).forEach(addE);           // a day goes whole
+      (hBySrcEntry[x.id] || []).forEach(addH);               // its handover or direct deposit
+    } else if (it[0] === 'h') {
+      (x.sourceEntryIds || []).forEach(function (id) { addE(eById[id]); });
+      (x.sourceHandoffIds || []).forEach(function (id) { addH(hById[id]); });
+      addId(x.consumedBy); addId(x.resubmitOf); addId(x.resubmittedAs); addId(x.supersededBy);
+      (hBySrcH[x.id] || []).forEach(addH); (hByConsumer[x.id] || []).forEach(addH);
+      (eByConsumer[x.id] || []).forEach(addE); (bByResult[x.id] || []).forEach(addB);
+    } else {
+      (x.entryIds || []).forEach(function (id) { addE(eById[id]); });
+      (x.history || []).forEach(function (v) { (v && v.entryIds || []).forEach(function (id) { addE(eById[id]); }); });
+      (x.resultHandoffIds || []).forEach(function (id) { addH(hById[id]); });
+      addId(x.resubmitOf); addId(x.resubmittedAs);
+      (eByBatch[x.id] || []).forEach(addE); (eByConsumer[x.id] || []).forEach(addE);
+    }
+  }
+  return { E: E, H: H, B: B };
+}
+// Everything one run would take, and what it would change in place. No write.
+function archPlan_(from, to) {
+  var cl = archClosure_(from, to), take = Object.create(null), patches = [];
+  take[SHEETS.ENTRIES] = Object.keys(cl.E); take[SHEETS.HANDOFFS] = Object.keys(cl.H); take[SHEETS.AREA_BULK_BATCHES] = Object.keys(cl.B);
+  var dated = Object.create(null);
+  ARCHIVE_DATED_.forEach(function (d) {
+    var rows = readSheet(d.sheet).filter(function (r) { var x = d.date(r); return x && x >= from && x <= to; });
+    // a stock transfer is one movement in two places: both sides go together
+    if (d.sheet === SHEETS.INV_MOVES) {
+      var links = Object.create(null); rows.forEach(function (m) { if (m.linkId) links[m.linkId] = 1; });
+      readSheet(d.sheet).forEach(function (m) { if (m.linkId && links[m.linkId] && rows.indexOf(m) < 0 && !rows.some(function (x) { return x.id === m.id; })) rows.push(m); });
+    }
+    take[d.sheet] = rows.map(function (r) { return r.id; });
+    dated[d.sheet] = rows;
+  });
+  var gone = Object.create(null); Object.keys(take).forEach(function (s) { take[s].forEach(function (id) { gone[id] = true; }); });
+  // the edge: a kept bank line on an archived deposit, a kept deposit on an archived bank line
+  readSheet(SHEETS.BANK_LINES).forEach(function (l) { if (!gone[l.id] && l.matchedHandoffId && gone[l.matchedHandoffId]) patches.push({ sheet: SHEETS.BANK_LINES, row: l }); });
+  readSheet(SHEETS.HANDOFFS).forEach(function (h) { if (!gone[h.id] && h.reconciledLineId && gone[h.reconciledLineId]) patches.push({ sheet: SHEETS.HANDOFFS, row: h }); });
+  // a tax invoice on an archived day, or issued in the range, stops the run
+  var invoices = readSheet(SHEETS.SALES_INVOICES).filter(function (v) {
+    var d = archDay_(v.issueDate || v.createdAt);
+    return (v.sourceEntryIds || []).some(function (id) { return gone[id]; }) || (d >= from && d <= to);
+  }).map(function (v) { return { id: v.id, no: v.txNo || '', date: v.issueDate || '', customerId: v.customerId || null, kind: v.kind || 'invoice' }; });
+  // what the preview shows: counts, money, open handovers and the days outside the range
+  var ents = Object.keys(cl.E).map(function (id) { return cl.E[id]; });
+  var live = ents.filter(function (e) { return !e.voided; });
+  var outside = Object.create(null);
+  ents.forEach(function (e) { if (!(e.date >= from && e.date <= to)) { var k = e.date + '|' + (e.locationId || ''); outside[k] = outside[k] || { date: e.date, locationId: e.locationId || null, rows: 0 }; outside[k].rows++; } });
+  var hs = Object.keys(cl.H).map(function (id) { return cl.H[id]; });
+  var net = live.length ? computeNet_(live) : { netCashOwed: 0 };
+  var counts = {}; Object.keys(take).forEach(function (s) { counts[s] = take[s].length; });
+  return {
+    take: take, patches: patches, invoices: invoices, counts: counts,
+    money: {
+      sales: Math.round(live.reduce(function (a, e) { return a + Number(e.cashSales || 0) + Number(e.posSales || 0); }, 0) * 100) / 100,
+      net: Math.round(Number(net.netCashOwed || 0) * 100) / 100,
+      deposited: Math.round(hs.filter(function (h) { return h.kind === 'deposit' && h.status !== 'voided'; }).reduce(function (a, h) { return a + Number(h.amount || 0); }, 0) * 100) / 100
+    },
+    openHandoffs: hs.filter(function (h) { return ['pending', 'pending_deputy', 'disputed'].indexOf(h.status) >= 0; }).length,
+    outside: Object.keys(outside).sort().map(function (k) { return outside[k]; }),
+    days: Object.keys(live.reduce(function (a, e) { a[e.date] = 1; return a; }, {})).length
+  };
+}
+// Rows out of a sheet in one read and one write, under the caller's lock: the kept
+// rows move up and the freed rows at the end are blanked (readSheet skips a row
+// without an id). Returns the raw rows taken, exactly as stored.
+function archTakeRows_(name, ids) {
+  var want = Object.create(null); ids.forEach(function (id) { want[id] = true; });
+  var sh = sheet_(name), last = sh.getLastRow();
+  if (last < 2 || !ids.length) return [];
+  var rng = sh.getRange(2, 1, last - 1, 3), vals = rng.getValues(), keep = [], taken = [];
+  vals.forEach(function (v) { if (v[0] && want[v[0]]) taken.push(v); else if (v[0]) keep.push(v); });
+  if (!taken.length) return [];
+  var out = keep.slice(); while (out.length < vals.length) out.push(['', '', '']);
+  rng.setValues(out);
+  bumpVersion_(name);
+  return taken;
+}
+// Raw rows back at the end of a sheet, exactly as they were stored.
+function archPutRows_(name, vals) {
+  if (!vals.length) return;
+  var sh = sheet_(name), ids = Object.create(null), last = sh.getLastRow();
+  // the first free row: the blanks a take left at the end are reused
+  var first = 2;
+  if (last >= 2) { var col = sh.getRange(2, 1, last - 1, 1).getValues(); for (var i = col.length - 1; i >= 0; i--) { if (col[i][0]) { first = i + 3; break; } } }
+  if (sh.getMaxRows && first + vals.length - 1 > sh.getMaxRows()) sh.insertRowsAfter(sh.getMaxRows(), first + vals.length - 1 - sh.getMaxRows());
+  sh.getRange(first, 1, vals.length, 3).setValues(vals);
+  bumpVersion_(name);
+}
+function archRangeOk_(from, to) {
+  if (!invDateOk_(from) || !invDateOk_(to)) return 'invalid_date';
+  if (from > to) return 'invalid_period';
+  return null;
+}
+function actionArchiveRange_(req, user, previewOnly) {
+  if (user.role !== 'admin') return { ok: false, error: 'forbidden' };
+  var from = String(req.dateFrom || ''), to = String(req.dateTo || '');
+  var bad = archRangeOk_(from, to); if (bad) return { ok: false, error: bad };
+  if (previewOnly) {
+    var pv = archPlan_(from, to);
+    return { ok: true, preview: { counts: pv.counts, money: pv.money, openHandoffs: pv.openHandoffs, outside: pv.outside, days: pv.days, invoices: pv.invoices, patches: pv.patches.length } };
+  }
+  // a word the caller types, and why
+  if (String(req.confirm || '') !== 'ARCHIVE') return { ok: false, error: 'confirm_required' };
+  var reason = String(req.reason || '').trim().slice(0, 500);
+  if (!reason) return { ok: false, error: 'reason_required' };
+  var lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  try {
+    freshenExec_();
+    var plan = archPlan_(from, to);
+    if (plan.invoices.length) return { ok: false, error: 'archive_has_invoices', invoices: plan.invoices };
+    // the days outside the range move only when the person saw them and said so
+    if (plan.outside.length && req.acceptOutside !== true) return { ok: false, error: 'archive_outside_days', outside: plan.outside };
+    var total = Object.keys(plan.take).reduce(function (a, s) { return a + plan.take[s].length; }, 0);
+    if (!total) return { ok: false, error: 'archive_nothing' };
+    var runId = Utilities.getUuid(), at = new Date().toISOString(), rows = [];
+    // the edge rows' state before the change, then the change itself
+    var patched = plan.patches.map(function (p) {
+      var before = JSON.parse(JSON.stringify(p.row)), r = p.row;
+      if (p.sheet === SHEETS.BANK_LINES) { r.status = 'unmatched'; r.matchedHandoffId = null; r.matchedAt = null; r.matchedBy = null; }
+      else { r.reconciled = false; r.reconciledAt = null; r.reconciledLineId = null; }
+      r.archiveRunId = runId;
+      var after = writeRow(p.sheet, r);
+      return { sheet: p.sheet, id: r.id, before: before, afterAt: after.updatedAt };
+    });
+    var counts = {};
+    Object.keys(plan.take).forEach(function (s) {
+      var taken = archTakeRows_(s, plan.take[s]);
+      counts[s] = taken.length;
+      taken.forEach(function (v) { rows.push({ id: Utilities.getUuid(), runId: runId, sheet: s, rowId: v[0], data: String(v[1]), rowAt: v[2] instanceof Date ? v[2].toISOString() : v[2] }); });
+    });
+    costAppendMany_(SHEETS.ARCHIVED_ROWS, rows);
+    var run = writeRow(SHEETS.ARCHIVE_RUNS, { id: runId, dateFrom: from, dateTo: to, reason: reason, by: user.id, at: at, status: 'archived',
+      counts: counts, rows: rows.length, money: plan.money, outside: plan.outside, patches: patched });
+    logAudit_('archive_range', user.id, runId + ' ' + from + '..' + to + ' ' + Object.keys(counts).map(function (s) { return s + ':' + counts[s]; }).join(', ') + ' (' + reason + ')');
+    return { ok: true, run: archRunView_(run) };
+  } finally { try { lock.releaseLock(); } catch (e) {} }
+}
+function archRunView_(r) {
+  return { id: r.id, dateFrom: r.dateFrom, dateTo: r.dateTo, reason: r.reason, by: r.by, at: r.at, status: r.status, counts: r.counts, rows: r.rows,
+    money: r.money, outside: r.outside || [], restoredBy: r.restoredBy || null, restoredAt: r.restoredAt || null, patches: (r.patches || []).length };
+}
+function actionListArchiveRuns_(req, user) {
+  if (user.role !== 'admin') return { ok: false, error: 'forbidden' };
+  return { ok: true, runs: readSheet(SHEETS.ARCHIVE_RUNS).sort(function (a, b) { return String(b.at).localeCompare(String(a.at)); }).map(archRunView_) };
+}
+// A run back as it was: its rows return to their sheets, and the edge rows get their
+// earlier state back when nobody has changed them since. Refused when a day the run
+// holds has been entered again meanwhile: restoring would count that day twice.
+function actionArchiveRestore_(req, user) {
+  if (user.role !== 'admin') return { ok: false, error: 'forbidden' };
+  if (String(req.confirm || '') !== 'RESTORE') return { ok: false, error: 'confirm_required' };
+  var lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  try {
+    freshenExec_();
+    var run = getById_(SHEETS.ARCHIVE_RUNS, req.id);
+    if (!run) return { ok: false, error: 'not_found' };
+    if (run.status !== 'archived') return { ok: false, error: 'already_restored' };
+    var rows = readSheet(SHEETS.ARCHIVED_ROWS).filter(function (r) { return r.runId === run.id; });
+    var bySheet = Object.create(null);
+    rows.forEach(function (r) { (bySheet[r.sheet] = bySheet[r.sheet] || []).push(r); });
+    // the same branch day entered again since: refuse, and say which
+    var days = Object.create(null);
+    (bySheet[SHEETS.ENTRIES] || []).forEach(function (r) { try { var e = JSON.parse(r.data); if (!e.voided) days[e.sourceType + '|' + e.sourceId + '|' + e.date] = { date: e.date, locationId: e.locationId || null }; } catch (x) {} });
+    var clash = Object.create(null);
+    readSheet(SHEETS.ENTRIES).forEach(function (e) { var k = e.sourceType + '|' + e.sourceId + '|' + e.date; if (!e.voided && days[k]) clash[k] = days[k]; });
+    // a day can hold several entries, so this cannot tell a re-entry from a second
+    // entry: the days are listed, and the restore goes ahead only when the admin says so
+    if (Object.keys(clash).length && req.acceptConflicts !== true) return { ok: false, error: 'restore_conflict', days: Object.keys(clash).map(function (k) { return clash[k]; }) };
+    // a row already back (or never gone) is not written twice
+    var restored = {};
+    Object.keys(bySheet).forEach(function (s) {
+      var have = Object.create(null); readSheet(s).forEach(function (x) { have[x.id] = true; });
+      var vals = bySheet[s].filter(function (r) { return !have[r.rowId]; }).map(function (r) { return [r.rowId, r.data, r.rowAt || new Date().toISOString()]; });
+      archPutRows_(s, vals);
+      restored[s] = vals.length;
+    });
+    var skipped = [];
+    (run.patches || []).forEach(function (p) {
+      var cur = getById_(p.sheet, p.id);
+      if (!cur || String(cur.updatedAt) !== String(p.afterAt)) { skipped.push({ sheet: p.sheet, id: p.id }); return; }
+      var back = p.before; back.id = p.id; writeRow(p.sheet, back);
+    });
+    run.status = 'restored'; run.restoredBy = user.id; run.restoredAt = new Date().toISOString(); run.restoredCounts = restored; run.restoreSkipped = skipped;
+    run = writeRow(SHEETS.ARCHIVE_RUNS, run);
+    // the archived copies of a restored run are not needed twice
+    archTakeRows_(SHEETS.ARCHIVED_ROWS, rows.map(function (r) { return r.id; }));
+    logAudit_('archive_restore', user.id, run.id + ' ' + Object.keys(restored).map(function (s) { return s + ':' + restored[s]; }).join(', ') + (skipped.length ? ' (edge rows changed since, left: ' + skipped.length + ')' : ''));
+    return { ok: true, run: archRunView_(run), restored: restored, skipped: skipped };
+  } finally { try { lock.releaseLock(); } catch (e) {} }
+}
