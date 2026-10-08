@@ -964,6 +964,33 @@
   #loadOverlay .pct{position:absolute;top:100%;left:50%;transform:translate(-50%,6px);font-size:12px;font-weight:800;color:var(--green-dark);background:var(--card);border-radius:999px;padding:2px 9px;box-shadow:var(--shadow-sm);white-space:nowrap;}
   @keyframes bgcHeartbeat{0%{transform:scale(1);}14%{transform:scale(1.13);}28%{transform:scale(1);}42%{transform:scale(1.08);}70%{transform:scale(1);}}
   @keyframes bgcRipple{0%{transform:scale(.8);opacity:.55;}100%{transform:scale(1.45);opacity:0;}}
+  /* ---------- stale screen copy, headline icons (2026-10-08) ---------- */
+  .scr-stale .card, .scr-stale .tile, .scr-stale .panel{transition:opacity .2s ease;opacity:.62;}
+  .tb-title h1{display:flex;align-items:center;gap:10px;}
+  .tb-ic{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;flex:none;border-radius:10px;background:var(--green-pale);}
+  .tb-ic svg{width:18px;height:18px;stroke:var(--green);fill:none;stroke-width:2;}
+  .tb-ic svg .d{fill:var(--green);fill-opacity:.18;stroke:none;}
+  h2.hd-ic, h3.hd-ic{display:flex;align-items:center;gap:9px;}
+  .hd-i{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;flex:none;border-radius:8px;background:var(--green-pale);}
+  h3.hd-ic .hd-i{width:22px;height:22px;border-radius:7px;}
+  .hd-i svg{width:15px;height:15px;stroke:var(--green);fill:none;stroke-width:2;}
+  h3.hd-ic .hd-i svg{width:13px;height:13px;}
+  .hd-i svg .d{fill:var(--green);fill-opacity:.18;stroke:none;}
+  @media print{ .hd-i, .tb-ic{display:none;} }
+  /* ---------- the city's landmark watermark (2026-10-08) ---------- */
+  .city-wm{position:fixed;inset-inline-end:2vw;bottom:0;width:min(620px,52vw);z-index:-1;pointer-events:none;color:var(--green);opacity:.085;}
+  .city-wm svg{display:block;width:100%;height:auto;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;}
+  .city-wm .cw-ground{stroke-width:1;opacity:.6;}
+  .city-wm .cw-name{position:absolute;inset-inline-end:8px;bottom:12px;font-weight:800;font-size:clamp(22px,3vw,40px);letter-spacing:-.01em;opacity:0;}
+  .city-wm.cw-reveal{animation:cwFade 2.6s ease forwards;}
+  .city-wm.cw-reveal path{stroke-dasharray:900;stroke-dashoffset:900;animation:cwDraw 1.8s ease forwards;}
+  .city-wm.cw-reveal .cw-name{animation:cwName 2.6s ease forwards;}
+  @keyframes cwDraw{to{stroke-dashoffset:0;}}
+  @keyframes cwFade{0%{opacity:.32;}70%{opacity:.32;}100%{opacity:.085;}}
+  @keyframes cwName{0%{opacity:0;transform:translateY(6px);}20%{opacity:1;transform:none;}75%{opacity:1;}100%{opacity:.6;}}
+  @media (prefers-reduced-motion: reduce){ .city-wm.cw-reveal, .city-wm.cw-reveal path, .city-wm.cw-reveal .cw-name{animation:none;stroke-dashoffset:0;} }
+  @media (max-width:700px){ .city-wm{width:92vw;inset-inline-end:4vw;bottom:64px;opacity:.06;} }
+  @media print{ .city-wm{display:none;} }
   #topProgress{position:fixed;top:0;inset-inline:0;height:3px;z-index:9998;pointer-events:none;opacity:0;transition:opacity .25s ease;overflow:hidden;}
   #topProgress.active{opacity:1;}
   #topProgress::before{content:'';position:absolute;top:0;bottom:0;width:40%;background:linear-gradient(90deg,transparent,var(--c-credit),var(--green),transparent);animation:bgcSlide 1.1s ease-in-out infinite;}
@@ -4521,6 +4548,9 @@ function silentProgress_(delta){
   if (!bar) { bar = document.createElement('div'); bar.id = 'topProgress'; document.body.appendChild(bar); }
   bar.classList.toggle('active', silentCount > 0);
 }
+// a stale copy on screen keeps the thin top bar running until its fresh copy lands
+var STALE_ON_ = 0;
+function silentStale_(on){ if (on && !STALE_ON_) { STALE_ON_ = 1; silentProgress_(1); } else if (!on && STALE_ON_) { STALE_ON_ = 0; silentProgress_(-1); } }
 function setLoadProgress(p){
   loadProgress = p;
   var els = loadOverlayEls();
@@ -4574,7 +4604,10 @@ function api(action, payload, opts){
   }).then(function(r){ return r.json(); }).then(function(res){
     if (!opts.silent) stopLoading(); else silentProgress_(-1);
     if (res.token) { state.token = res.token; localStorage.setItem('bgc_token', res.token); }
-    if (res.ok && !READ_ACTIONS[action]) { clearScreenCache_(); DRILL.entries = null; DRILL.handoffs = null; DRILL.eById = null; DRILL.hById = null; }
+    // a save no longer wipes the screens' last copies (2026-10-08: every screen after a save
+    // then waited the whole round trip behind the loading circle); they are marked stale,
+    // still drawn at once but dimmed under an "updating" bar until the fresh copy lands
+    if (res.ok && !READ_ACTIONS[action]) { markScreenCacheStale_(); state.pendDirty = true; DRILL.entries = null; DRILL.handoffs = null; DRILL.eById = null; DRILL.hById = null; }
     // a session ended elsewhere (a changed sign-in, a reset): sign out cleanly;
     // a temporary sign-in: its page, before anything else (2026-10-04)
     if (res && res.error === 'auth_required' && state.user && action !== 'login') setTimeout(function(){ logout(); }, 0);
@@ -4586,6 +4619,52 @@ function api(action, payload, opts){
   });
 }
 
+// ---------- an icon on every section headline (2026-10-08) ----------
+// A card's h2/h3 without an icon gets one: its text is matched to the string key it was
+// drawn from (current language), and the key to an icon by what it is about. Added by one
+// watcher, like the sortable tables, so no screen has to remember it.
+var HD_RULES_ = [
+  [/eq|netCash|net_|cashCalc|remaining|held|cash/i, 'cash'], [/trend|byDay|daily|perDay|sales_by_day|bh_|heat/i, 'trend'],
+  [/week|7|compare|comparison|vs/i, 'clock'], [/age|stale|sat|long|oldest/i, 'hourglass'],
+  [/status|step|stage|chain/i, 'layers'], [/branch|location|city|area|cluster|zone|level/i, 'pin'],
+  [/product|item|cyl|gas|stock|inv|refill|transfer|car/i, 'inventory'], [/source|channel|pay|money|came/i, 'wallet'],
+  [/handoff|handover|sender|collect/i, 'handoffs'], [/deputy|batch|bulk|upload|request/i, 'areaBulk'],
+  [/bank|recon|deposit|unmatched/i, 'bank'], [/risk|complaint|register/i, 'risk'], [/user|people|entrant|shortfall/i, 'user'],
+  [/profit|margin|ratio|indicator|ranked|kpi/i, 'percent'], [/pivot|tree/i, 'layers'], [/report/i, 'report'],
+  [/entr|day|saved|recent|my/i, 'entries'], [/customer|credit/i, 'customers'], [/setup|record|new|add/i, 'plus'], [/missing|gap/i, 'alert']
+];
+var HD_IDX_ = { lang: null, map: null };
+function hdKeyOf_(text){
+  if (HD_IDX_.lang !== state.lang) {
+    var m = Object.create(null), dict = (typeof L !== 'undefined' && L[state.lang]) || {};
+    Object.keys(dict).forEach(function(k){ var v = dict[k]; if (typeof v === 'string' && v.length < 90) { var n = v.replace(/\{[^}]+\}/g, '').trim().toLowerCase(); if (n && !(n in m)) m[n] = k; } });
+    HD_IDX_ = { lang: state.lang, map: m };
+  }
+  return HD_IDX_.map[String(text || '').trim().toLowerCase()] || '';
+}
+function hdIconFor_(text){
+  var key = hdKeyOf_(text), probe = key || text;
+  for (var i = 0; i < HD_RULES_.length; i++) if (HD_RULES_[i][0].test(probe)) return HD_RULES_[i][1];
+  return 'doc';
+}
+function hdEnhance_(root){
+  qsa('.card h2, .card > h3, .panel h2, .panel > h3, #screenBody h2', root || document).forEach(function(h){
+    if (h._hd || h.querySelector('svg') || h.closest('[data-noicon]')) return;
+    h._hd = true;
+    // the heading's own words, without a trailing count or badge
+    var txt = ''; for (var n = h.firstChild; n; n = n.nextSibling) { if (n.nodeType === 3) txt += n.nodeValue; else if (n.nodeType === 1 && !/num|badge|chip|sum|count/i.test(n.className || '')) txt += n.textContent; }
+    txt = txt.replace(/\s+\d[\d,.\s]*$/, '').trim();
+    if (!txt) return;
+    h.classList.add('hd-ic');
+    h.insertBefore(el('<span class="hd-i" aria-hidden="true">'+icon_(hdIconFor_(txt))+'</span>'), h.firstChild);
+  });
+}
+(function(){
+  if (!window.MutationObserver) return;
+  var t0 = null;
+  new MutationObserver(function(){ if (t0) return; t0 = setTimeout(function(){ t0 = null; hdEnhance_(document.getElementById('app') || document); }, 60); })
+    .observe(document.documentElement, { childList: true, subtree: true });
+})();
 // ---------------- instant screens (show last copy, refresh quietly) ----------------
 // Every Apps Script round trip costs a second or more no matter how fast
 // the server code is, so screens no longer wait on it: the last response
@@ -4597,6 +4676,9 @@ var CACHE_PREFIX = 'bgc_c_';
 function screenCacheKey_(action, payload){
   return CACHE_PREFIX + (state.user ? state.user.id : 'anon') + '_' + (activeArea_() || '') + '_' + action + '_' + JSON.stringify(payload || {});
 }
+// When the last save happened: a copy kept before it is stale (drawn dimmed until refreshed).
+function markScreenCacheStale_(){ try { localStorage.setItem('bgc_cStale', String(Date.now())); } catch (e) {} }
+function screenCacheStaleAt_(){ try { return Number(localStorage.getItem('bgc_cStale') || 0); } catch (e) { return 0; } }
 function clearScreenCache_(){
   try {
     Object.keys(localStorage).forEach(function(k){ if (k.indexOf(CACHE_PREFIX) === 0) localStorage.removeItem(k); });
@@ -4652,24 +4734,30 @@ function apiCached(action, payload, body, cb){
   var key = screenCacheKey_(action, payload);
   var cachedStr = null;
   try { cachedStr = localStorage.getItem(key); } catch (e) {}
-  var cached = null, freshDrawn = false;
-  if (cachedStr) { try { cached = JSON.parse(cachedStr); } catch (e) { cached = null; } }
-  if (cached) cb(cached, true);
+  var cached = null, freshDrawn = false, cachedAt = 0;
+  // a kept copy is {_at, d}; an older plain copy counts as kept before any save
+  function unwrap(str){ var o = JSON.parse(str); if (o && o._at && o.d) { cachedAt = o._at; return o.d; } cachedAt = 0; return o; }
+  function staleMark(on){ if (body) body.classList.toggle('scr-stale', !!on); silentStale_(on); }
+  if (cachedStr) { try { cached = unwrap(cachedStr); cachedStr = JSON.stringify(cached); } catch (e) { cached = null; } }
+  if (cached) { cb(cached, true); if (cachedAt < screenCacheStaleAt_()) staleMark(true); }
   else idbGet_(key, function(str){
     // the network may already have answered; never draw an older copy over it
     if (!str || freshDrawn || cached || (body && !body.isConnected)) return;
-    try { cached = JSON.parse(str); cachedStr = str; } catch (e) { return; }
+    try { cached = unwrap(str); cachedStr = JSON.stringify(cached); } catch (e) { return; }
     cb(cached, true);
+    if (cachedAt < screenCacheStaleAt_()) staleMark(true);
   });
   api(action, JSON.parse(JSON.stringify(payload || {})), { silent: !!cached }).then(function(res){
+    staleMark(false);
     if (body && !body.isConnected) return;
     if (!res.ok) { if (!cached) cb(res, false); return; }
     var fresh = stripToken_(res);
     var freshStr = JSON.stringify(fresh);
     freshDrawn = true;
-    if (freshStr === cachedStr) return;
-    try { localStorage.setItem(key, freshStr); }
-    catch (e) { try { localStorage.removeItem(key); } catch (e2) {} idbSet_(key, freshStr); }
+    var keep = JSON.stringify({ _at: Date.now(), d: fresh });
+    if (freshStr === cachedStr) { try { localStorage.setItem(key, keep); } catch (e) { idbSet_(key, keep); } return; }
+    try { localStorage.setItem(key, keep); }
+    catch (e) { try { localStorage.removeItem(key); } catch (e2) {} idbSet_(key, keep); }
     if (cached && body && body.dataset.dirty === '1') return;
     cb(fresh, false);
   });
@@ -5619,6 +5707,48 @@ function goScreen_(screen, keepOpen){
   window.scrollTo(0, 0);
 }
 
+// ---------- the city's landmark behind the screens (2026-10-08) ----------
+// The area being worked in, or the person's own branch, names a city; its best-known
+// landmark is drawn as fine line art in the brand green, very faint, in the page's
+// corner. Switching to an area in another city draws the new one stroke by stroke with
+// the city's name, once. Unknown cities get a desert water tower and palms.
+var CITY_ART_ = {"riyadh":["M196 196 L206 62 Q214 18 222 12 Q230 18 238 62 L248 196","M210 52 Q222 22 234 52","M211 44 L233 44","M300 196 L322 64 L344 196","M322 64 L322 28","M315 92 a7 7 0 1 0 14 0 a7 7 0 1 0 -14 0","M40 196 V150 H70 V196","M78 196 V128 H104 V196","M112 196 V160 H150 V196","M158 196 V138 H186 V196","M262 196 V146 H290 V196","M356 196 V122 H380 V196","M388 196 V156 H430 V196","M86 140 H96 M86 152 H96 M86 164 H96"],"jeddah":["M332 196 C332 120 334 52 338 22","M338 22 C352 26 362 56 368 96","M338 22 C326 30 318 58 314 92","M368 96 l3 8 M314 92 l-3 8 M372 112 l2 6","M260 196 q12 -6 24 0 t24 0 t24 0 t24 0 t24 0 t24 0 t24 0 t24 0","M40 196 V112 H96 V196","M104 196 V96 H156 V196","M164 196 V124 H214 V196","M52 124 h14 v26 h-14 z M74 124 h14 v26 h-14 z","M116 110 h28 v34 h-28 z M116 122 h28 M130 110 v34","M176 136 h26 v22 h-26 z","M40 112 l6 -8 h44 l6 8 M104 96 l6 -8 h40 l6 8"],"qassim":["M240 196 V96","M248 196 V96","M212 96 h64 l-10 -18 h-44 z","M224 78 l8 -14 h24 l8 14","M244 64 V46","M90 196 q6 -50 0 -96","M90 100 q-30 -6 -44 14 M90 100 q-24 -22 -46 -12 M90 100 q4 -28 -14 -42 M90 100 q22 -26 46 -16 M90 100 q30 -2 42 18","M380 196 q-4 -40 2 -78","M382 118 q-24 -4 -34 12 M382 118 q-18 -18 -36 -8 M382 118 q16 -22 36 -12 M382 118 q24 0 32 16","M140 196 v-16 h28 v16 M172 196 v-12 h24 v12"],"hail":["M10 196 L70 110 L104 140 L150 76 L196 136 L226 112 L262 196","M280 196 Q330 150 400 156 Q440 160 470 196","M318 152 V112 H388 V156","M306 154 V100 h20 v52 M380 156 V96 h20 v62","M318 112 h6 v-6 h6 v6 h6 v-6 h6 v6 h6 v-6 h6 v6 h6 v-6 h6 v6 h6 v-6 h6 v6 h6","M346 156 v-22 q6 -8 12 0 v22"],"east":["M300 196 V96","M310 196 V96","M280 96 h50","M286 96 a19 19 0 0 1 38 0","M305 77 L305 30 M296 52 h18","M20 196 q14 -7 28 0 t28 0 t28 0 t28 0 t28 0 t28 0 t28 0","M370 196 V140 H404 V196 M412 196 V120 H444 V196","M220 196 V150 H256 V196"],"makkah":["M206 196 V120 H274 V196","M218 120 V66 H262 V120","M240 92 m-14 0 a14 14 0 1 0 28 0 a14 14 0 1 0 -28 0","M240 92 v-8 M240 92 h6","M226 66 L234 40 H246 L254 66","M240 40 V12","M236 14 q4 -6 8 0","M120 196 V140 H180 V196","M300 196 V140 H360 V196","M60 196 V160 H110 V196","M370 196 V158 H420 V196"],"generic":["M250 196 V104 M262 196 V104 M232 104 h48 l-6 -22 h-36 z M256 82 V60","M10 196 q60 -40 130 -10 q50 22 90 -4","M290 196 q60 -36 120 -12 q30 12 60 4","M120 196 q4 -44 -2 -82","M118 114 q-24 -4 -34 12 M118 114 q-18 -18 -36 -8 M118 114 q16 -22 36 -12 M118 114 q24 0 32 16","M410 196 q-3 -34 2 -64","M412 132 q-20 -3 -28 10 M412 132 q14 -18 30 -10 M412 132 q20 0 26 14"]};
+var CITY_ALIAS_ = {"riyadh":["الرياض","riyadh","الخرج","الدرعية"],"jeddah":["جدة","جده","jeddah","jiddah","رابغ"],"qassim":["القصيم","بريدة","بريده","عنيزة","عنيزه","الرس","qassim","buraidah","unaizah"],"hail":["حائل","hail","haail"],"east":["الدمام","الخبر","الظهران","الشرقية","الشرقيه","القطيف","الجبيل","الاحساء","الأحساء","dammam","khobar","dhahran","jubail","ahsa"],"makkah":["مكة","مكه","مكة المكرمة","makkah","mecca"]};
+var CITY_WM_LAST_ = null;
+function cityArtKey_(city){
+  var n = normName_(city || '');
+  if (!n) return null;
+  for (var k in CITY_ALIAS_) if (CITY_ALIAS_[k].some(function(a){ var x = normName_(a); return n === x || n.indexOf(x) >= 0; })) return k;
+  return 'generic';
+}
+// the city of the area in use; else the one most of the person's own branches sit in
+function cityOfWork_(){
+  var meta = state.meta || {}, locs = meta.locations || [], u = state.user || {}, ids = [];
+  var area = typeof activeArea_ === 'function' ? activeArea_() : null;
+  if (area) ids = locs.filter(function(l){ return l.clusterId === area; });
+  if (!ids.length && u.id) {
+    var mine = Object.create(null);
+    (meta.stores || []).forEach(function(x){ if (x.storeManagerUserId === u.id) mine[x.locationId] = 1; });
+    (meta.cars || []).forEach(function(x){ if (x.driverUserId === u.id) mine[x.locationId] = 1; });
+    (meta.clusters || []).forEach(function(c){ if (c.clusterManagerUserId === u.id) locs.forEach(function(l){ if (l.clusterId === c.id) mine[l.id] = 1; }); });
+    locs.forEach(function(l){ if (branchCollectorOf_(l) === u.id) mine[l.id] = 1; });
+    ids = locs.filter(function(l){ return mine[l.id]; });
+  }
+  var count = Object.create(null), best = null;
+  ids.forEach(function(l){ var c = String(l.city || '').trim(); if (!c) return; count[c] = (count[c] || 0) + 1; if (!best || count[c] > count[best]) best = c; });
+  return best;
+}
+function cityWatermark_(){
+  var city = cityOfWork_(), key = cityArtKey_(city);
+  if (!key) return null;
+  var paths = CITY_ART_[key].map(function(d){ return '<path d="'+d+'"/>'; }).join('');
+  var wm = el('<div class="city-wm" aria-hidden="true"><svg viewBox="0 0 480 200" preserveAspectRatio="xMidYMax meet"><path class="cw-ground" d="M0 197 H480"/>'+paths+'</svg><span class="cw-name">'+esc(trText_ ? trText_(city) : city)+'</span></div>');
+  // a new city since the last screen: draw it in once, with its name
+  var changed = CITY_WM_LAST_ !== null && CITY_WM_LAST_ !== city;
+  CITY_WM_LAST_ = city;
+  if (changed) wm.classList.add('cw-reveal');
+  return wm;
+}
 function renderShell(){
   // an area manager on several areas: the screens draw only once the meta is the area he is in
   if (!areaEnsure_()) return;
@@ -5636,6 +5766,8 @@ function renderShell(){
   bgfx.style.setProperty('--sb-t', '-' + (performance.now() / 1000).toFixed(2) + 's');
   root.appendChild(bgfx);
   bgGlow_(bgfx);
+  // the city's landmark, faint, behind the work (2026-10-08)
+  var cityWm = cityWatermark_(); if (cityWm) root.appendChild(cityWm);
 
   // ---- sidebar (desktop / tablet) ----
   var sb = el('<aside class="sb" aria-label="'+esc(t('appName'))+'">' +
@@ -5680,7 +5812,7 @@ function renderShell(){
   var tb = el('<div class="tb">' +
     '<div class="tb-left" style="display:flex;align-items:center;gap:12px;min-width:0;">' +
       '<span class="tb-brand"><span class="emblem"><img src="'+ICON_SRC+'" alt=""></span></span>' +
-      '<div class="tb-title"><h1>'+esc(t(current[1]))+'</h1><div class="sub">'+esc(dates.gregorian||'')+'</div></div>' +
+      '<div class="tb-title"><h1><span class="tb-ic" aria-hidden="true">'+icon_(current[0])+'</span>'+esc(t(current[1]))+'</h1><div class="sub">'+esc(dates.gregorian||'')+'</div></div>' +
     '</div>' +
     '<div class="tb-actions">' + areaPillHtml_() +
       '<button type="button" class="icon-btn notif-bell" id="notifBell" title="'+esc(t('nav_notifications'))+'">'+icon_('bell') +
@@ -6208,6 +6340,10 @@ function refreshPending_(opts){
   var uid = state.user.id;
   // one request at a time; a popup asked for meanwhile is kept for the answer
   if (state.pendBusy) { if (opts && opts.popup) state.pendWant = true; return; }
+  // every screen change used to ask the server again (2026-10-08): once a minute is enough,
+  // sooner after a save, the sign-in popup or a direct ask
+  if (!(opts && (opts.popup || opts.force)) && !state.pendDirty && state.pendAt && Date.now() - state.pendAt < 60000) return;
+  state.pendDirty = false; state.pendAt = Date.now();
   state.pendBusy = true;
   if (opts && opts.popup) state.pendWant = true;
   api('myPendingActions', {}, { silent: true }).then(function(res){
