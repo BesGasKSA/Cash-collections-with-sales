@@ -1837,8 +1837,31 @@ function actionMeta_(req, user) {
       var locs = locations.filter(function (l) { return l.clusterId === c.id; });
       var cols = Object.create(null), cities = Object.create(null);
       locs.forEach(function (l) { if (l.collectorUserId) cols[l.collectorUserId] = 1; if (l.city) cities[l.city] = 1; });
-      return { id: c.id, code: c.code || '', name: c.name || '', branches: locs.length, collectors: Object.keys(cols).length, cities: Object.keys(cities) };
+      return { id: c.id, code: c.code || '', name: c.name || '', branches: locs.length, collectors: Object.keys(cols).length, cities: Object.keys(cities), locIds: locs.map(function (l) { return l.id; }) };
     });
+    // the switcher's picture of each area (2026-10-09): sales of the last 7 days,
+    // days not handed over yet, and requests waiting or returned. Only for a manager
+    // with two areas or more, so nobody else pays for the read.
+    if (myAreas.length > 1) {
+      var today = todayRiyadh_(), days = [];
+      for (var di = 6; di >= 0; di--) days.push(Utilities.formatDate(new Date(new Date(today + 'T12:00:00Z').getTime() - di * 86400000), 'Asia/Riyadh', 'yyyy-MM-dd'));
+      var areaOfLoc = Object.create(null), st = Object.create(null);
+      myAreas.forEach(function (a) { a.locIds.forEach(function (id) { areaOfLoc[id] = a.id; }); st[a.id] = { last7: [0, 0, 0, 0, 0, 0, 0], open: 0, waiting: 0, returned: 0 }; });
+      var openSubs = Object.create(null);
+      readSheet(SHEETS.ENTRIES).forEach(function (e) {
+        var aid = areaOfLoc[e.locationId]; if (!aid || e.voided) return;
+        var di2 = days.indexOf(e.date); if (di2 >= 0) st[aid].last7[di2] += Number(e.cashSales || 0) + Number(e.posSales || 0);
+        if (!e.consumedBy) { var k = aid + '|' + (e.submissionId || e.id); if (!openSubs[k]) { openSubs[k] = 1; st[aid].open++; } }
+      });
+      readSheet(SHEETS.HANDOFFS).forEach(function (h) {
+        var aid = h.locationId ? areaOfLoc[h.locationId] : (h.clusterId && st[h.clusterId] ? h.clusterId : null); if (!aid) return;
+        if (h.kind !== 'cluster_to_collector') return;
+        if (h.status === 'pending_deputy' || h.status === 'pending') st[aid].waiting++;
+        else if (h.status === 'returned' && !h.resubmittedAs && !h.supersededBy) st[aid].returned++;
+      });
+      myAreas.forEach(function (a) { var s = st[a.id]; s.last7 = s.last7.map(function (v) { return Math.round(v * 100) / 100; }); s.today = s.last7[6]; s.days = days; a.stats = s; });
+    }
+    myAreas.forEach(function (a) { delete a.locIds; });
     if (activeAreaId) clusters = clusters.map(function (c) {
       if (c.clusterManagerUserId !== user.id || c.id === activeAreaId) return c;
       var o = {}; safeOwnKeys_(c).forEach(function (k) { if (k !== 'clusterManagerUserId') o[k] = c[k]; }); o.otherArea = true; return o;

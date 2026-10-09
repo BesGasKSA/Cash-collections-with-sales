@@ -5001,6 +5001,7 @@ var fourAreas = ['Area One', 'Area Two', 'Area Three', 'Area Four'].map(function
 check(fourAreas.every(function (r) { return r.ok; }), 'four areas, one manager (' + fourAreas.map(function (r) { return r.error || 'ok'; }).join(',') + ')');
 var fourMeta = call({ action: 'listMeta', token: fourMgr.tok });
 check((fourMeta.myAreas || []).length === 4, 'his screens list the four for the switcher');
+check(fourMeta.myAreas.every(function (a) { return a.stats && a.stats.last7.length === 7 && typeof a.stats.today === 'number' && typeof a.stats.open === 'number' && typeof a.stats.waiting === 'number' && !a.locIds; }), 'each area carries its week of sales and what waits in it, for the switcher (2026-10-09)');
 
 console.log('--- the Operations Manager checks area requests alongside the Deputy (2026-10-07) ---');
 var omA = jrMake('cluster_manager', 'Om Area Manager', 'omam.fx@bestgas.sa'), omC = jrMake('collector', 'Om Collector', 'omcol.fx@bestgas.sa'), omB = jrMake('store_manager', 'Om Branch Manager', 'ombm.fx@bestgas.sa');
