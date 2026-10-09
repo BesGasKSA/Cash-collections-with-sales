@@ -8448,6 +8448,26 @@ function entryRowData_(e, amount){
     status: entryStatus_(e)
   };
 }
+// Rows saved under one number become one item: summed, every product named, opening the whole transaction (2026-10-09)
+function txMergeItems_(items){
+  var out = [], at = {};
+  (items || []).forEach(function(it){
+    var e = it && it.kind === 'entry' ? it.ref : null, k = e ? (e.txNo || e.submissionId || '') : '';
+    if (!k) { out.push(it); return; }
+    var m = at[k];
+    if (!m) { m = {}; Object.keys(it).forEach(function(x){ m[x] = it[x]; }); m.amount = 0; m._rows = []; at[k] = m; out.push(m); }
+    m._rows.push(e); m.amount += Number(it.amount || 0);
+  });
+  out.forEach(function(m){
+    if (!m._rows) return;
+    var rows = m._rows, e0 = rows.filter(function(e){ return !e.voided; })[0] || rows[0], prods = [];
+    rows.forEach(function(e){ var p = productName_(e.productId); if (p && prods.indexOf(p) < 0) prods.push(p); });
+    m.ref = e0; m.status = entryStatus_(e0); m.amount = Math.round(m.amount * 100) / 100;
+    m.sub = [e0.txNo || '', e0.date, t('entry_source_' + e0.sourceType), prods.join('، '), userName(e0.enteredBy)].filter(Boolean).join(' · ');
+    delete m._rows;
+  });
+  return out;
+}
 function handoffRowData_(h, amount){
   return {
     kind: 'handoff', ref: h, amount: amount == null ? Number(h.amount||0) : amount,
@@ -8463,7 +8483,7 @@ function txListView_(o){
   return {
     title: o.title, sub: o.sub, crumb: o.title,
     render: function(body, foot){
-      var items = o.items || [];
+      var items = txMergeItems_(o.items || []);
       var search = el('<div class="dr-search">'+icon_('search')+'<input type="search" placeholder="'+esc(t('ui_search'))+'" aria-label="'+esc(t('ui_search'))+'"></div>');
       var count = el('<div class="dr-count"></div>');
       var listWrap = el('<div></div>');
@@ -8523,6 +8543,8 @@ function kv_(pairs){
   }).join('') + '</dl>';
 }
 function entryDocView_(e){
+  // a row that belongs to a numbered transaction opens the whole transaction (2026-10-09)
+  if (e && (e.txNo || e.submissionId)) return txDocView_(e);
   return {
     title: t('doc_entry'), sub: e.date + ' · ' + locationName(e.locationId), crumb: t('doc_entry'),
     render: function(body){
@@ -8665,7 +8687,7 @@ function txDocView_(e){
         var sold = live.filter(function(x){ return x.productId && Number(x.qty) > 0; });
         var lineRows = sold.map(function(x){
           var ch = x.channelQtys ? Object.keys(x.channelQtys).filter(function(k){ return Number(x.channelQtys[k]) > 0; }).map(function(k){ var c = byId(meta.channels, k); return (c ? c.name : k) + ' ' + x.channelQtys[k]; }).join('، ') : '';
-          return '<tr><td>'+txBadge_(x)+'</td><td>'+esc(productName_(x.productId))+(ch ? '<small class="muted"> · '+esc(ch)+'</small>' : '')+'</td><td class="n num">'+esc(String(x.qty))+'</td><td class="n num">'+money(x.unitPrice)+'</td><td>'+esc(Number(x.posSales) > 0 ? t('entry_pos') : t('entry_cash'))+'</td><td class="n num"><b>'+money(Number(x.cashSales||0) + Number(x.posSales||0))+'</b></td></tr>';
+          return '<tr><td>'+esc(productName_(x.productId))+(ch ? '<small class="muted"> · '+esc(ch)+'</small>' : '')+'</td><td class="n num">'+esc(String(x.qty))+'</td><td class="n num">'+money(x.unitPrice)+'</td><td>'+esc(Number(x.posSales) > 0 ? t('entry_pos') : t('entry_cash'))+'</td><td class="n num"><b>'+money(Number(x.cashSales||0) + Number(x.posSales||0))+'</b></td></tr>';
         }).join('');
         var other = [];
         live.forEach(function(x){
@@ -8678,9 +8700,15 @@ function txDocView_(e){
           if (Number(x.directDepositAmount) > 0) other.push([t('entry_depositTitle'), x.directDepositRef || '', x.directDepositNote || '', x.directDepositAmount]);
         });
         body.appendChild(el('<div class="doc-sec"><h3>'+icon_('box')+esc(t('txd_lines'))+'</h3>' +
-          (lineRows ? '<div class="tbl-scroll"><table class="rp-table" data-nosort><thead><tr><th>'+esc(t('sc_no'))+'</th><th>'+esc(t('doc_product'))+'</th><th class="n">'+esc(t('pg_qty'))+'</th><th class="n">'+esc(t('pg_price'))+'</th><th>'+esc(t('pg_pay'))+'</th><th class="n">'+esc(t('pg_amount'))+'</th></tr></thead><tbody>'+lineRows+'</tbody></table></div>' : '<div class="muted pf-none">'+esc(t('tx_noLines'))+'</div>') +
+          (lineRows ? '<div class="tbl-scroll"><table class="rp-table" data-nosort><thead><tr><th>'+esc(t('doc_product'))+'</th><th class="n">'+esc(t('pg_qty'))+'</th><th class="n">'+esc(t('pg_price'))+'</th><th>'+esc(t('pg_pay'))+'</th><th class="n">'+esc(t('pg_amount'))+'</th></tr></thead><tbody>'+lineRows+'</tbody></table></div>' : '<div class="muted pf-none">'+esc(t('tx_noLines'))+'</div>') +
           (other.length ? '<div class="tbl-scroll"><table class="rp-table tx-other" data-nosort><tbody>' + other.map(function(o){ return '<tr><td><b>'+esc(o[0])+'</b></td><td>'+esc(o[1])+'</td><td class="muted">'+esc(o[2])+'</td><td class="n num">'+money(o[3])+'</td></tr>'; }).join('') + '</tbody></table></div>' : '') +
           '</div>'));
+        // tx-one-calc: everything entered, worked through to the net cash, as one transaction (2026-10-09)
+        var amt = el('<div class="doc-sec" style="padding:8px 6px;"><h3 style="padding:6px 10px 0;">'+icon_('cash')+esc(t('doc_amounts'))+'</h3></div>');
+        var cr = cashCalcRows_({ cash: S.cash, other: S.other, delivery: S.delivery, vat: S.vat, credit: S.credit, creditFee: S.creditFee, creditFeeOff: S.creditFeeOff, commission: S.commission, chFee: S.chFee, chCom: S.chCom, transfer: S.transfer, expense: S.expense, discount: S.discount, banked: S.banked, net: S.net });
+        if (S.pos) cr.push({ label: t('report_pos'), amount: S.pos, color: 'var(--c-pos)', hint: t('handoff_posNote') });
+        amt.appendChild(qs('.st-rows', statement_({ title: '', value: 0, rows: cr })));
+        body.appendChild(amt);
         // every level underneath: each row as saved, credit customers' items, sales
         // channels, and each handover's own figures (2026-10-09)
         var credLines = [];
@@ -8706,22 +8734,6 @@ function txDocView_(e){
             var bank = h.kind === 'deposit' ? (h.bankReference ? ' · ' + h.bankReference : '') + (h.reconciled ? ' · ' + t('tx_st_bank') + ' ' + fmtDateTime_(h.reconciledAt) : '') : '';
             return '<tr><td>'+txBadge_(h)+'</td><td>'+esc(t('kind_' + h.kind))+'</td><td>'+esc(userName(h.fromUserId))+'</td><td>'+esc(h.toUserId ? userName(h.toUserId) : t('entity_bank'))+'</td><td class="n num">'+money(declared)+'</td><td class="n num"><b>'+money(h.amount)+'</b>'+(short ? '<small class="'+(short > 0 ? 'sc-short' : '')+'"> ('+(short > 0 ? '−' : '+')+money(Math.abs(short))+')</small>' : '')+'</td><td>'+esc(checked)+'</td><td>'+handoffStatusChip_(h)+'<small class="muted">'+esc(bank)+'</small></td></tr>';
           }).join('') + '</tbody></table></div></div>'));
-        // every row exactly as it was saved, each with its own statement
-        var rowsSec = el('<div class="doc-sec"><h3>'+icon_('layers')+esc(t('txd_rows').replace('{n}', rows.length))+'</h3><div class="txd-rows"></div></div>'), rbox = qs('.txd-rows', rowsSec);
-        rows.forEach(function(x){
-          var a = entryAmt_(x), d = el('<details class="txd-row'+(x.voided ? ' off' : '')+'"><summary>'+txBadge_(x)+'<span>'+esc(x.productId ? productName_(x.productId) + (x.qty ? ' × ' + x.qty : '') : t('txd_moneyRow'))+'</span><b class="num">'+money(a.net)+'</b></summary></details>');
-          var rr = cashCalcRows_({ cash: a.cash, other: a.other, delivery: a.delivery, vat: a.vat, credit: a.credit, creditFee: a.creditFee, creditFeeOff: a.creditFeeOff, commission: a.commission, chFee: a.chFee, chCom: a.chCom, transfer: a.transfer, expense: a.expense, discount: a.discount, banked: a.banked, net: a.net });
-          d.appendChild(qs('.st-rows', statement_({ title: '', value: 0, rows: rr })));
-          d.appendChild(el('<div class="txd-meta">' + kv_([[t('doc_createdAt'), fmtDateTime_(x.createdAt || x.updatedAt)], [t('doc_enteredBy'), userName(x.enteredBy)], [t('doc_status'), x.voided ? t('el_voided') : x.consumedBy ? t('st_inHandoff') : t('st_notHandedOff')], [t('el_voidReason'), x.voidReason || ''], [t('doc_note'), x.note || '']]) + '</div>'));
-          rbox.appendChild(d);
-        });
-        body.appendChild(rowsSec);
-        // the cash statement, all rows together
-        var amt = el('<div class="doc-sec" style="padding:8px 6px;"><h3 style="padding:6px 10px 0;">'+icon_('cash')+esc(t('doc_amounts'))+'</h3></div>');
-        var cr = cashCalcRows_({ cash: S.cash, other: S.other, delivery: S.delivery, vat: S.vat, credit: S.credit, creditFee: S.creditFee, creditFeeOff: S.creditFeeOff, commission: S.commission, chFee: S.chFee, chCom: S.chCom, transfer: S.transfer, expense: S.expense, discount: S.discount, banked: S.banked, net: S.net });
-        if (S.pos) cr.push({ label: t('report_pos'), amount: S.pos, color: 'var(--c-pos)', hint: t('handoff_posNote') });
-        amt.appendChild(qs('.st-rows', statement_({ title: '', value: 0, rows: cr })));
-        body.appendChild(amt);
         // the money it made: sales before VAT, cost of goods at today's unit cost, margin
         if (pmCanSee_()) {
           var cfg = meta.config || {}, v = vatRateFor_(e), incl = cfg.salesIncludeVat !== false, pm = pmRows_();
@@ -8932,6 +8944,7 @@ function handoffDocView_(h){
         // included transactions
         var inc = [];
         (h.sourceEntryIds || []).forEach(function(id){ var e = drillEntry_(id); if (e) inc.push(entryRowData_(e, entryAmt_(e).net)); });
+        inc = txMergeItems_(inc);
         if (inc.length) {
           var incSec = el('<div class="doc-sec"><h3>'+icon_('layers')+esc(t('doc_included'))+' ('+inc.length+')</h3></div>');
           var list = el('<div class="tx-list"></div>');
@@ -8975,8 +8988,9 @@ function batchDocView_(batchId){
           var entries = (DRILL.entries || []).filter(function(e){ return e.batchId === batchId; });
           if (!entries.length) return;
           var list = el('<div class="tx-list"></div>');
-          entries.forEach(function(e){
-            var it = entryRowData_(e, entryAmt_(e).gross);
+          entries = txMergeItems_(entries.map(function(e){ return entryRowData_(e, entryAmt_(e).gross); }));
+          entries.forEach(function(it){
+            var e = it.ref;
             var row = el('<div class="tx" role="button" tabindex="0" style="--c:'+it.color+'"><span class="mk">'+icon_(it.icon)+'</span>' +
               '<div style="min-width:0;"><div class="t">'+esc(it.title)+'</div><div class="s">'+esc(it.sub)+'</div></div>' +
               '<div class="r"><div class="a num">'+esc(money(it.amount))+'</div></div></div>');
@@ -14545,7 +14559,8 @@ function hoGrouped_(host, list, makeItem){
   })(host, list, 0);
 }
 // a transaction's number (2026-10-06): PREFIX-YEAR-NNNNNN, a day's line after a slash
-function txNoText_(x){ return x && x.txNo ? x.txNo + (Number(x.txLine) > 1 ? '/' + x.txLine : '') : ''; }
+// one number per transaction (2026-10-09): the user reads a day as one transaction, never its lines
+function txNoText_(x){ return x && x.txNo ? x.txNo : ''; }
 function txBadge_(x, whole){ var s = whole && x ? (x.txNo || '') : txNoText_(x); return s ? '<span class="tx-no" dir="ltr">'+esc(s)+'</span>' : ''; }
 function hoSumLine_(h){
   var arrow = document.documentElement.dir === 'rtl' ? ' ← ' : ' → ';
