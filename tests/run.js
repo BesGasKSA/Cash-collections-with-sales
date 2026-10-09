@@ -579,8 +579,11 @@ check(bigConfirm.ok && bigConfirm.handoff.status === 'confirmed', 'confirmation 
 check(bigConfirm.handoff.requiresSecondApproval === true, 'a 6,000 handoff against a 5,000 threshold is flagged for a second sign-off');
 var largeAmountMail = ctx._debug.mailLog.slice(mailBefore3);
 check(largeAmountMail.length > 0, 'admin/finance got emailed about the large amount');
-check(largeAmountMail.some(function (m) { return m.to === sara.email; }) && largeAmountMail.some(function (m) { return m.to === musa.email; }),
-  'the cluster\'s own manager and collector are also notified, same recipient set as the shortfall/stale escalations — not just admin/finance');
+check(largeAmountMail.some(function (m) { return m.to === musa.email; }),
+  'the branch\'s collector is also notified, same recipient set as the shortfall/stale escalations — not just admin/finance');
+// the area manager confirmed it herself: no alert about her own action (2026-10-09)
+check(!largeAmountMail.some(function (m) { return m.to === sara.email; }), 'the receiver who just confirmed is not alerted about her own confirmation');
+check(largeAmountMail.filter(function (m) { return m.to === musa.email; }).every(function (m) { return m.html.indexOf('second_approval') < 0; }), 'someone who cannot give the second sign-off is told, not asked to give it');
 
 var smallLocation = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: 'Riyadh', name: 'Small Amount Test', clusterId: cluster.entity.id } }).entity;
 var mgr6 = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Small Store Manager', email: 'mgr6.fx@bestgas.sa', role: 'store_manager' } }).user;
@@ -635,7 +638,7 @@ var listByStoreManager = call({ action: 'listRiskItems', token: aliTok });
 check(!listByStoreManager.ok && listByStoreManager.error === 'forbidden', 'a store manager can report but not browse the register (company-wide roles only)');
 var listByAdmin = call({ action: 'listRiskItems', token: adminTok });
 check(listByAdmin.ok && listByAdmin.items.some(function (i) { return i.id === riskItem.item.id; }), 'admin sees the full register, including the store manager\'s report');
-check(ctx._debug.mailLog.some(function (m) { return m.subject.indexOf('High-severity risk') >= 0; }), 'the high-severity risk triggered an immediate email; the low-severity complaint did not need to');
+check(ctx._debug.mailLog.some(function (m) { return m.subject.indexOf('High-severity report') >= 0; }), 'the high-severity risk triggered an immediate email; the low-severity complaint did not need to');
 
 var resolveByStoreManager = call({ action: 'updateRiskItemStatus', token: aliTok, id: riskItem.item.id, status: 'resolved' });
 check(!resolveByStoreManager.ok && resolveByStoreManager.error === 'forbidden', 'only admin/finance can change a risk item\'s status');
@@ -5079,6 +5082,51 @@ check(arcOpenCount > 0 || true, 'open handovers on file: ' + arcOpenCount);
 var arcRes = call({ action: 'adminArchiveTransactions', token: adminTok, confirm: 'ARCHIVE', includeOpen: true });
 check(arcRes.ok || arcRes.error === 'live_locked', 'with includeOpen the round is archived even with handovers open (' + (arcRes.error || 'ok') + ')');
 if (arcRes.ok) { ctx.resetExecMemo_(); check(ctx.readSheet(SHEETS.HANDOFFS).length === 0 && ctx.readSheet(SHEETS.SALES_INVOICES).length === 0, 'handovers and invoices start empty after it'); }
+
+console.log('--- notification emails: designed, in the reader\'s language, with a link to the request ---');
+(function () {
+  var log = ctx._debug.mailLog;
+  var ask = log.filter(function (m) { return /Confirm receipt|أكّد الاستلام|وصولی کی تصدیق/.test(m.subject); });
+  check(ask.length > 0, 'a receiver is asked to confirm by email (' + ask.length + ')');
+  check(ask.every(function (m) { return m.html && m.html.indexOf('assets/mail-logo.png') > 0 && m.html.indexOf('?open=confirm_receipt%3A') > 0; }), 'every confirm-receipt email carries the logo and a link that opens that request');
+  check(ask.every(function (m) { return m.body.indexOf('?open=confirm_receipt%3A') > 0; }), 'the plain-text copy carries the same link');
+  check(log.some(function (m) { return /^Received (in full|short|over)|^تم الاستلام|^استُلم|^مکمل وصول|^کم وصول/.test(m.subject); }), 'the person who handed cash over hears when it was received');
+  var withCalc = log.filter(function (m) { return m.html && m.html.indexOf('Net cash') > 0; });
+  check(withCalc.length > 0, 'the amount is worked through to the net cash inside the email');
+  check(log.every(function (m) { return !m.html || (m.html.indexOf('undefined') < 0 && m.html.indexOf('NaN') < 0 && m.html.indexOf('{amount}') < 0 && m.html.indexOf('{from}') < 0); }), 'no email shows undefined, NaN or an unfilled placeholder');
+  // review fixes (2026-10-09): every statement adds up, more cash is not "missing", a broken record never breaks the action
+  var cEn = ctx.NM_.en, bad = 0;
+  ctx.readSheet(SHEETS.HANDOFFS).forEach(function (x) {
+    var k = ctx.nmCalc_(x.breakdown, cEn); if (!k) return;
+    if (Math.abs(k.totalIn - k.totalOut - k.net) > 0.01) bad++;
+  });
+  check(bad === 0, 'every handover\'s email statement adds up to its net (' + bad + ' do not)');
+  var hx = ctx.readSheet(SHEETS.HANDOFFS)[0];
+  if (hx) {
+    var over = JSON.parse(JSON.stringify(hx)); over.originalAmount = Number(hx.amount) - 50; over.shortfall = -50;
+    var b4 = log.length;
+    var adminU = ctx.readSheet(SHEETS.USERS).filter(function (u) { return u.role === 'admin' && u.email; })[0];
+    ctx.escalateShortfall_(over);
+    var sent = log.slice(b4);
+    check(sent.length > 0 && sent.every(function (m) { return !/missing|ينقص|کم/.test(m.subject); }), 'a handover received over is never emailed as cash missing');
+    var broken = JSON.parse(JSON.stringify(hx)); broken.sourceEntryIds = 'not-a-list'; broken.breakdown = 'x';
+    var threw = false;
+    try { ctx.nmHandoffMail_(adminU, 'confirm_receipt', broken, {}); } catch (e) { threw = true; }
+    check(!threw, 'a malformed record never makes the mail throw into the action that sends it');
+    var inject = JSON.parse(JSON.stringify(hx)); inject.disputeNote = '<img src=x onerror=alert(1)>'; inject.disputedBy = adminU.id;
+    var b5 = log.length;
+    ctx.nmHandoffMail_(adminU, 'disputed', inject, {});
+    check(log[b5] && log[b5].html.indexOf('<img src=x') < 0 && log[b5].html.indexOf('&lt;img') > 0, 'text people typed is escaped in the email');
+  }
+  // the same layout in each language, right to left where it should be
+  var h = ctx.readSheet(SHEETS.HANDOFFS).filter(function (x) { return x.breakdown; })[0];
+  if (h) ['en', 'ar', 'ur'].forEach(function (lang) {
+    var before = log.length;
+    ctx.nmHandoffMail_({ id: 'u-x', name: 'Test Person', email: 'x@example.com', language: lang, languageChosen: true }, 'confirm_receipt', h, { open: 'confirm_receipt' });
+    var m = log[before];
+    check(m && m.html.indexOf(' dir="' + (lang === 'en' ? 'ltr' : 'rtl') + '"') > 0, lang + ': the email reads ' + (lang === 'en' ? 'left to right' : 'right to left'));
+  });
+})();
 
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);

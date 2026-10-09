@@ -68,11 +68,5 @@ function actionUpdateRiskItemStatus_(req, user) {
 // whoever reviews it next, no need to interrupt anyone.
 function notifyRiskItem_(item, reporter) {
   if (item.severity !== 'high') return;
-  var recipients = readSheet(SHEETS.USERS).filter(function (u) { return (u.role === 'admin' || u.role === 'finance') && u.email; });
-  var subject = (item.type === 'risk' ? 'خطر تشغيلي عالي الخطورة / High-severity risk reported' : 'شكوى عالية الأهمية / High-severity complaint reported');
-  var body = 'العنوان: ' + item.title + '\nالوصف: ' + item.description + '\nمُبلَّغ من: ' + (reporter.name || reporter.id) + '\n\n' +
-    'Title: ' + item.title + '\nDescription: ' + item.description + '\nReported by: ' + (reporter.name || reporter.id);
-  recipients.forEach(function (u) {
-    try { sendMail_(u.email, subject, body); } catch (e) { /* best-effort */ }
-  });
+  readSheet(SHEETS.USERS).filter(function (u) { return (u.role === 'admin' || u.role === 'finance') && u.active !== false && u.email; }).forEach(function (u) { nmRiskMail_(u, item, reporter); });
 }
