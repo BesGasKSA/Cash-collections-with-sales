@@ -114,10 +114,24 @@ collectors.
   whose day nets to nothing (banked directly) gets none: its entries stay
   consumed by the batch, and `listEntries` reads `deputy_approved` as
   `approved`, so they don't look stuck waiting.
-- **In flight.** A branch's collector can't be replaced while its cash is on
-  the way to them (`branchCollectorBusy_` → `person_holds_cash`). Handoffs
-  made before the change have no `locationId`, so this guard can't see them;
-  their `toUserId` is fixed and still receives them.
+- **Changing a branch's collector (2026-10-11, user's request).** Allowed at any
+  time; the old guard (`branchCollectorBusy_` → `person_holds_cash`) is gone
+  from `inFlightError_`. What the old collector received stays his until he
+  hands it to another collector or banks it. A request already through the
+  deputy (`pending`) stays addressed to him; `moveWaitingRequests_` moves the
+  ones still `pending_deputy` to the new collector (audited
+  `handoff_collector_changed`, `collectorChangedFrom` on the row). The branch
+  form's picker only notes who still holds the branch's cash (`bc2_keeps`). A
+  collector holding cash still can't be deactivated or change role (`personBusy_`).
+- **Collector → collector** (`kind: 'collector_to_collector'`, number `HCC`):
+  `createCollectorHandoff_` sends everything the sender holds
+  (`collectorHeld_`: confirmed, unconsumed `cluster_to_collector` and
+  `collector_to_collector` rows to him) to another active collector; the sources
+  are consumed by it and released on a rejected dispute. `perCluster` carries the
+  areas (`collectorPerCluster_`; a short receipt is spread over them in
+  proportion). `recordDeposit` banks both kinds. Client: a card under the bank
+  deposit on Handovers; the collect pivot follows a request through these
+  handovers to whoever holds it now.
 - **Alerts.** The four `escalate*_` functions add `collectorForHandoff_(h)`
   (the addressee of a `cluster_to_collector`, else the branch's collector)
   instead of the area's collector.
