@@ -13,7 +13,7 @@ var NM_ = {
   en: {
     dir: 'ltr', org: 'Best Gas Carrier Co.', app: 'Cash Collection',
     tag: { action: 'Action needed', bad: 'Needs attention', good: 'Completed', info: 'Status update', warn: 'Alert' },
-    kind: { car_to_location: 'Car to branch handover', location_to_cluster: 'Branch to area handover', cluster_to_collector: 'Area to collector handover', deposit: 'Bank deposit', batch: 'Area upload' },
+    kind: { car_to_location: 'Car to branch handover', location_to_cluster: 'Branch to area handover', cluster_to_collector: 'Area to collector handover', collector_to_collector: 'Collector to collector handover', deposit: 'Bank deposit', batch: 'Area upload' },
     st: { pending: 'Waiting for receipt', pending_deputy: 'Waiting for the operations check', confirmed: 'Received', disputed: 'Disputed', returned: 'Returned for correction', rejected: 'Rejected', completed: 'Deposited', deputy_approved: 'Approved', approving: 'Being approved', voided: 'Cancelled' },
     ev: {
       confirm_receipt: { s: 'Confirm receipt: {amount} SAR from {from}', h: 'Cash is on its way to you', l: '{from} has handed you {amount} SAR. Count it, then confirm the amount you actually received.', b: 'Confirm receipt', t: 'action' },
@@ -51,7 +51,7 @@ var NM_ = {
   ar: {
     dir: 'rtl', org: 'شركة الناقل الأفضل للغاز', app: 'تحصيل النقدية',
     tag: { action: 'مطلوب إجراء منك', bad: 'يحتاج انتباهك', good: 'تم بنجاح', info: 'تحديث الحالة', warn: 'تنبيه' },
-    kind: { car_to_location: 'تسليم من السيارة إلى الفرع', location_to_cluster: 'تسليم من الفرع إلى المنطقة', cluster_to_collector: 'تسليم من المنطقة إلى المحصّل', deposit: 'إيداع بنكي', batch: 'رفع بيانات المنطقة' },
+    kind: { car_to_location: 'تسليم من السيارة إلى الفرع', location_to_cluster: 'تسليم من الفرع إلى المنطقة', cluster_to_collector: 'تسليم من المنطقة إلى المحصّل', collector_to_collector: 'تسليم من محصّل إلى محصّل', deposit: 'إيداع بنكي', batch: 'رفع بيانات المنطقة' },
     st: { pending: 'بانتظار الاستلام', pending_deputy: 'بانتظار تحقق العمليات', confirmed: 'تم الاستلام', disputed: 'معترض عليه', returned: 'أُعيد للتصحيح', rejected: 'مرفوض', completed: 'تم الإيداع', deputy_approved: 'معتمد', approving: 'قيد الاعتماد', voided: 'ملغى' },
     ev: {
       confirm_receipt: { s: 'أكّد الاستلام: {amount} ريال من {from}', h: 'نقدية في طريقها إليك', l: 'سلّمك {from} مبلغ {amount} ريال. عُدّ المبلغ ثم أكّد ما استلمته فعلاً.', b: 'تأكيد الاستلام', t: 'action' },
@@ -89,7 +89,7 @@ var NM_ = {
   ur: {
     dir: 'rtl', org: 'بیسٹ گیس کیریئر کمپنی', app: 'کیش کلیکشن',
     tag: { action: 'آپ کی کارروائی درکار ہے', bad: 'توجہ درکار ہے', good: 'مکمل ہو گیا', info: 'حالت کی تازہ کاری', warn: 'انتباہ' },
-    kind: { car_to_location: 'گاڑی سے برانچ کو حوالگی', location_to_cluster: 'برانچ سے علاقے کو حوالگی', cluster_to_collector: 'علاقے سے کلکٹر کو حوالگی', deposit: 'بینک ڈپازٹ', batch: 'علاقے کا اپ لوڈ' },
+    kind: { car_to_location: 'گاڑی سے برانچ کو حوالگی', location_to_cluster: 'برانچ سے علاقے کو حوالگی', cluster_to_collector: 'علاقے سے کلکٹر کو حوالگی', collector_to_collector: 'کلکٹر سے کلکٹر کو حوالگی', deposit: 'بینک ڈپازٹ', batch: 'علاقے کا اپ لوڈ' },
     st: { pending: 'وصولی کا انتظار', pending_deputy: 'آپریشنز کی جانچ کا انتظار', confirmed: 'وصول ہو گیا', disputed: 'اعتراض شدہ', returned: 'درستی کے لیے واپس', rejected: 'مسترد', completed: 'جمع ہو گیا', deputy_approved: 'منظور', approving: 'منظوری جاری', voided: 'منسوخ' },
     ev: {
       confirm_receipt: { s: 'وصولی کی تصدیق کریں: {from} سے {amount} ریال', h: 'نقدی آپ کی طرف آ رہی ہے', l: '{from} نے آپ کو {amount} ریال حوالے کیے ہیں۔ گن کر جو رقم واقعی ملی اس کی تصدیق کریں۔', b: 'وصولی کی تصدیق کریں', t: 'action' },
@@ -180,7 +180,7 @@ function nmCalc_(b, c) {
 
 // Which step of the chain a handover stands at: [index, done]
 function nmStage_(h) {
-  var at = { car_to_location: 1, location_to_cluster: 2, cluster_to_collector: h.status === 'pending_deputy' || h.status === 'returned' ? 3 : 4, deposit: 5, batch: 3 }[h.kind] || 1;
+  var at = { car_to_location: 1, location_to_cluster: 2, cluster_to_collector: h.status === 'pending_deputy' || h.status === 'returned' ? 3 : 4, collector_to_collector: 4, deposit: 5, batch: 3 }[h.kind] || 1;
   var done = h.status === 'confirmed' || h.status === 'completed' || h.status === 'deputy_approved';
   if (h.kind === 'deposit') done = !!h.reconciled;
   return { at: at, done: done, bad: h.status === 'returned' || h.status === 'disputed' || h.status === 'rejected' };

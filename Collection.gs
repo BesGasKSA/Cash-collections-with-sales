@@ -26,7 +26,7 @@ function storeOfLocation_(locationId) {
 // The collector a handover concerns, for alerts: the one it is addressed to,
 // or the collector of the branch it came from.
 function collectorForHandoff_(handoff) {
-  if (handoff.kind === 'cluster_to_collector') return handoff.toUserId;
+  if (handoff.kind === 'cluster_to_collector' || handoff.kind === 'collector_to_collector') return handoff.toUserId;
   if (handoff.locationId) return branchCollector_(handoff.locationId);
   if (handoff.kind === 'deposit' && userHasRole_(handoff.fromUserId, 'collector')) return handoff.fromUserId;
   var c = handoff.clusterId ? getById_(SHEETS.CLUSTERS, handoff.clusterId) : null;
@@ -983,7 +983,62 @@ function actionCreateHandoff_(req, user) {
   if (req.kind === 'car_to_location') return createCarHandoff_(req, user);
   if (req.kind === 'location_to_cluster') return createLocationHandoff_(req, user);
   if (req.kind === 'cluster_to_collector') return createClusterHandoff_(req, user);
+  if (req.kind === 'collector_to_collector') return withCashLock_(function () { return createCollectorHandoff_(req, user); });
   return { ok: false, error: 'invalid_kind' };
+}
+
+// What a person holds as a collector: received from an area manager or from
+// another collector, confirmed, not passed on or banked.
+function collectorHeld_(userId) {
+  return readSheet(SHEETS.HANDOFFS).filter(function (h) {
+    return (h.kind === 'cluster_to_collector' || h.kind === 'collector_to_collector') && h.toUserId === userId && h.status === 'confirmed' && !h.consumedBy;
+  });
+}
+// The areas a held sum came from, flattened: a collector handover carries the
+// areas of what it passed on, so a deposit still names the area for every riyal.
+function collectorPerCluster_(held) {
+  var out = [];
+  held.forEach(function (h) {
+    if (h.kind === 'collector_to_collector' && Array.isArray(h.perCluster) && h.perCluster.length) {
+      // a short or over receipt is spread over the areas in proportion, so the parts
+      // add up to what was received and no area goes below zero
+      var parts = h.perCluster.map(function (p) { return { clusterId: p.clusterId, amount: Number(p.amount || 0), breakdown: p.breakdown, perLocation: p.perLocation || [] }; });
+      var was = parts.reduce(function (s, p) { return s + p.amount; }, 0), now = Number(h.amount || 0);
+      if (was > 0 && Math.abs(now - was) > 0.005) {
+        var left = Math.round(now * 100) / 100;
+        parts.forEach(function (p, i) {
+          var v = i === parts.length - 1 ? left : Math.round(p.amount * now / was * 100) / 100;
+          p.amount = Math.max(0, v); left = Math.round((left - p.amount) * 100) / 100;
+        });
+      }
+      out = out.concat(parts);
+    } else out.push({ clusterId: h.clusterId, amount: h.amount, breakdown: h.breakdown, perLocation: h.perLocation || [] });
+  });
+  return out;
+}
+// A collector hands everything he holds to another collector (2026-10-11): when
+// his branch was given a new collector, or he is leaving. The receiver confirms
+// it like any handover (shortfall, dispute, second approval all apply).
+function createCollectorHandoff_(req, user) {
+  var to = getById_(SHEETS.USERS, String(req.toUserId || ''));
+  if (!to) return { ok: false, error: 'not_found' };
+  if (to.id === user.id) return { ok: false, error: 'conflict_of_interest' };
+  if (to.role !== 'collector') return { ok: false, error: 'wrong_role' };
+  if (to.active === false) return { ok: false, error: 'inactive_user' };
+  var held = collectorHeld_(user.id);
+  if (!held.length) return { ok: false, error: 'no_held_cash' };
+  var amount = Math.round(held.reduce(function (s, h) { return s + Number(h.amount || 0); }, 0) * 100) / 100;
+  var h = {
+    id: Utilities.getUuid(), kind: 'collector_to_collector', fromUserId: user.id, toUserId: to.id, amount: amount,
+    breakdown: sumBreakdowns_(held.map(function (x) { return x.breakdown; })), perCluster: collectorPerCluster_(held),
+    note: String(req.note || '').trim().slice(0, 1000), sourceEntryIds: [], sourceHandoffIds: held.map(function (x) { return x.id; }),
+    consumedBy: null, status: 'pending', createdAt: new Date().toISOString()
+  };
+  writeRow(SHEETS.HANDOFFS, h);
+  held.forEach(function (x) { x.consumedBy = h.id; writeRow(SHEETS.HANDOFFS, x); });
+  logAudit_('create_handoff', user.id, h.id);
+  notifyPending_(h);
+  return { ok: true, handoff: h };
 }
 
 // The cycle the xlsx "Cycle" sheet actually describes starts one hop earlier
@@ -1959,15 +2014,12 @@ function actionRecordDeposit_(req, user) {
   // collector moved off their area since, who would otherwise be left holding
   // cash nobody can move.
 
-  var held = readSheet(SHEETS.HANDOFFS).filter(function (h) {
-    return h.kind === 'cluster_to_collector' && h.toUserId === user.id && h.status === 'confirmed' && !h.consumedBy;
-  });
+  // what the collector received from area managers, and from other collectors (2026-10-11)
+  var held = collectorHeld_(user.id);
   if (!held.length) return { ok: false, error: 'no_held_cash' };
   var amount = held.reduce(function (s, h) { return s + Number(h.amount || 0); }, 0);
   var breakdown = sumBreakdowns_(held.map(function (h) { return h.breakdown; }));
-  var perCluster = held.map(function (h) {
-    return { clusterId: h.clusterId, amount: h.amount, breakdown: h.breakdown, perLocation: h.perLocation || [] };
-  });
+  var perCluster = collectorPerCluster_(held);
 
   var attachmentId = null;
   if (req.fileBase64) {
@@ -2453,7 +2505,7 @@ function jrHandoffSteps_(c, h, o) {
       amount: vis ? h.amount : null, ref: vis ? h.bankReference : null, loc: h.locationId }));
     return steps.concat(jrMatchSteps_(c, h));
   }
-  var sentKey = { car_to_location: 'car_sent', location_to_cluster: 'branch_sent' }[h.kind] || 'area_sent';
+  var sentKey = { car_to_location: 'car_sent', location_to_cluster: 'branch_sent', collector_to_collector: 'collector_sent' }[h.kind] || 'area_sent';
   if (!h.viaBulkBatch) {
     if (o.resent) steps.push(jrStep_(c, 'area_resent', 'done', { at: h.createdAt, by: h.fromUserId, rev: h.revision, note: h.correctionNote, amount: vis ? declared : null, loc: h.locationId }));
     else steps.push(jrStep_(c, sentKey, 'done', { at: h.createdAt, by: h.fromUserId, to: h.toUserId, amount: vis ? declared : null, loc: h.locationId }));

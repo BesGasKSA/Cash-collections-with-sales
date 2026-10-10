@@ -315,7 +315,7 @@ var TX_PREFIX_ = {
   risk_items: 'RSK', cost_lines: 'CSL', product_costs: 'PCH', rate_changes: 'RCH', entry_photos: 'PHO',
   customer_payments: 'CPY', sales_invoices: 'INV'
 };
-var TX_HANDOFF_PREFIX_ = { car_to_location: 'HCB', location_to_cluster: 'HBA', cluster_to_collector: 'HAC', deposit: 'DEP' };
+var TX_HANDOFF_PREFIX_ = { car_to_location: 'HCB', location_to_cluster: 'HBA', cluster_to_collector: 'HAC', collector_to_collector: 'HCC', deposit: 'DEP' };
 var TX_FLAG_ = 'TX_NUMBERED_V1';
 function txPrefixOf_(name, obj) {
   if (name === SHEETS.HANDOFFS) return TX_HANDOFF_PREFIX_[obj.kind] || 'HND';

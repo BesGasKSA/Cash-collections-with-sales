@@ -1962,7 +1962,9 @@ var rB = bcReqRest.handoff;
 check(call({ action: 'createHandoff', token: bcMgrTok, kind: 'cluster_to_collector', clusterId: bcArea.id }).error === 'no_held_cash', 'nothing is left to send');
 check(call({ action: 'deputyValidateHandoff', token: walidTok, id: rA.id }).ok && call({ action: 'deputyValidateHandoff', token: walidTok, id: rB.id }).ok, 'the deputy validates each branch\'s request');
 var bcSwap = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', id: bcLocA.id, data: Object.assign({}, bcLocA, { collectorUserId: bcColB.id }) });
-check(!bcSwap.ok && bcSwap.error === 'person_holds_cash', 'branch A\'s collector cannot be swapped while its request is on the way to them');
+check(bcSwap.ok, 'branch A\'s collector can be changed while its request is on the way (2026-10-11) (' + (bcSwap.error || '') + ')');
+check(ctx.getById_(SHEETS.HANDOFFS, rA.id).toUserId === bcColA.id, 'a request the deputy already let through stays with collector A, who receives it');
+check(call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', id: bcLocA.id, data: Object.assign({}, bcLocA, { collectorUserId: bcColA.id }) }).ok, 'and the branch goes back to A for the tests below');
 check(call({ action: 'createHandoff', token: bcMgrTok, kind: 'cluster_to_collector', clusterId: bcArea.id, locationId: location2.entity ? location2.entity.id : location2.id }).error === 'not_found', 'a branch of another area cannot be sent from this one');
 check(call({ action: 'confirmHandoff', token: bcColBTok, id: rA.id }).error === 'receiver_only', 'collector B cannot confirm branch A\'s cash');
 check(call({ action: 'confirmHandoff', token: bcColATok, id: rA.id }).ok && call({ action: 'confirmHandoff', token: bcColBTok, id: rB.id }).ok, 'each collector confirms their own branch');
@@ -5075,6 +5077,68 @@ if (ctx.readSheet(SHEETS.SALES_INVOICES).length) {
 }
 ctx.resetExecMemo_();
 check(ctx.readSheet(SHEETS.ENTRIES).every(function (e) { return !!e.id; }), 'no blank rows read back as records');
+
+console.log('--- a branch changes collector; the old one keeps what he holds until he hands it on or banks it (2026-10-11) ---');
+(function () {
+  function mk(name, email, role) { return call({ action: 'adminCreateUser', token: adminTok, data: { name: name, email: email, role: role } }).user; }
+  var mgr = mk('Cc Area Manager', 'ccmgr.fx@bestgas.sa', 'cluster_manager'), colX = mk('Cc Collector X', 'cccolx.fx@bestgas.sa', 'collector'), colY = mk('Cc Collector Y', 'cccoly.fx@bestgas.sa', 'collector');
+  var bm = mk('Cc Branch Manager', 'ccbm.fx@bestgas.sa', 'store_manager');
+  var mgrTok = acceptInvite('ccmgr.fx@bestgas.sa'), xTok = acceptInvite('cccolx.fx@bestgas.sa'), yTok = acceptInvite('cccoly.fx@bestgas.sa'), bmTok = acceptInvite('ccbm.fx@bestgas.sa');
+  var area = call({ action: 'adminSaveEntity', token: adminTok, kind: 'cluster', data: { name: 'Cc Area', clusterManagerUserId: mgr.id } }).entity;
+  var loc = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: 'Riyadh', name: 'Cc Branch', clusterId: area.id, collectorUserId: colX.id } }).entity;
+  var store = call({ action: 'adminSaveEntity', token: adminTok, kind: 'store', data: { locationId: loc.id, name: 'Cc Store', storeManagerUserId: bm.id } }).entity;
+  check(area && loc && store, 'a branch whose cash goes to collector X');
+  var day = ctx.todayRiyadh_();
+  function toArea(amount) {
+    call({ action: 'createDailyEntry', token: bmTok, date: day, sourceType: 'store', sourceId: store.id, cashSales: amount });
+    var h = call({ action: 'createHandoff', token: bmTok, kind: 'location_to_cluster', locationId: loc.id });
+    call({ action: 'confirmHandoff', token: mgrTok, id: h.handoff.id });
+    return call({ action: 'createHandoff', token: mgrTok, kind: 'cluster_to_collector', clusterId: area.id, locationId: loc.id });
+  }
+  var r1 = toArea(1000);
+  check(r1.ok && r1.handoff.toUserId === colX.id, 'the area manager\'s request goes to collector X');
+  call({ action: 'deputyValidateHandoff', token: walidTok, id: r1.handoff.id });
+  check(call({ action: 'confirmHandoff', token: xTok, id: r1.handoff.id }).ok, 'X receives 1,000');
+  var r2 = toArea(500);
+  check(r2.ok && r2.handoff.status === 'pending_deputy' && r2.handoff.toUserId === colX.id, 'a second request waits for the deputy, addressed to X');
+
+  // the change
+  var sw = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', id: loc.id, data: Object.assign({}, loc, { collectorUserId: colY.id }) });
+  check(sw.ok, 'the branch\'s collector is changed to Y while X still holds its cash (' + (sw.error || '') + ')');
+  check(ctx.branchCollector_(loc.id) === colY.id, 'the branch now sends to Y');
+  var r2now = ctx.getById_(SHEETS.HANDOFFS, r2.handoff.id);
+  check(r2now.toUserId === colY.id && r2now.status === 'pending_deputy', 'the request no cash has moved on yet follows the branch to Y');
+  var xHeld = call({ action: 'myPendingActions', token: xTok });
+  check(xHeld.ok && (xHeld.items || []).some(function (i) { return i.kind === 'deposit_due' && Math.abs(i.amount - 1000) < 0.005; }), 'X still holds his 1,000 and is reminded to pass it on (' + JSON.stringify((xHeld.items || []).map(function (i) { return i.kind + ':' + i.amount; })) + ')');
+
+  // handing it to another collector
+  check(call({ action: 'createHandoff', token: xTok, kind: 'collector_to_collector', toUserId: bm.id }).error === 'wrong_role', 'collector cash goes only to a collector');
+  check(call({ action: 'createHandoff', token: xTok, kind: 'collector_to_collector', toUserId: colX.id }).error === 'conflict_of_interest', 'not to himself');
+  check(call({ action: 'createHandoff', token: yTok, kind: 'collector_to_collector', toUserId: colX.id }).error === 'no_held_cash', 'nobody hands over cash he does not hold');
+  var c2c = call({ action: 'createHandoff', token: xTok, kind: 'collector_to_collector', toUserId: colY.id, note: 'leaving the branch' });
+  check(c2c.ok && c2c.handoff.kind === 'collector_to_collector' && c2c.handoff.status === 'pending' && Math.abs(c2c.handoff.amount - 1000) < 0.005 && c2c.handoff.toUserId === colY.id,
+    'X hands his 1,000 to Y, waiting for Y to confirm (' + (c2c.error || '') + ')');
+  check(c2c.ok && c2c.handoff.breakdown && Math.abs(c2c.handoff.breakdown.netCashOwed - 1000) < 0.005 && (c2c.handoff.perCluster || []).some(function (p) { return p.clusterId === area.id; }), 'with the breakdown and the area it came from');
+  check(call({ action: 'recordDeposit', token: xTok, bankReference: 'CC-X' }).error === 'no_held_cash', 'X can no longer bank what he handed on');
+  check(call({ action: 'createHandoff', token: xTok, kind: 'collector_to_collector', toUserId: colY.id }).error === 'no_held_cash', 'nor hand it over twice');
+  // a dispute settled as rejected gives it back to X
+  check(call({ action: 'disputeHandoff', token: yTok, id: c2c.handoff.id, note: 'not received yet' }).ok, 'Y disputes it');
+  check(call({ action: 'resolveDispute', token: financeTok, id: c2c.handoff.id, resolution: 'reject', note: 'send again' }).ok, 'finance rejects it');
+  var again = call({ action: 'createHandoff', token: xTok, kind: 'collector_to_collector', toUserId: colY.id });
+  check(again.ok && Math.abs(again.handoff.amount - 1000) < 0.005, 'the cash is back with X, who sends it again');
+  check(call({ action: 'confirmHandoff', token: mgrTok, id: again.handoff.id }).error === 'receiver_only', 'only Y confirms it');
+  check(call({ action: 'confirmHandoff', token: yTok, id: again.handoff.id }).ok, 'Y confirms receipt');
+  // X is free now; the new request reaches Y
+  check(call({ action: 'adminUpdateUser', token: adminTok, id: colX.id, data: { active: false } }).ok, 'X holds nothing and can be deactivated');
+  call({ action: 'deputyValidateHandoff', token: walidTok, id: r2.handoff.id });
+  check(call({ action: 'confirmHandoff', token: yTok, id: r2.handoff.id }).ok, 'Y receives the branch\'s next request');
+  var dep = call({ action: 'recordDeposit', token: yTok, bankReference: 'CC-Y-1' });
+  check(dep.ok && Math.abs(dep.handoff.amount - 1500) < 0.005, 'Y banks both: what X handed over and what the branch sent (got ' + (dep.handoff && dep.handoff.amount) + ')');
+  check(dep.ok && (dep.handoff.perCluster || []).filter(function (p) { return p.clusterId === area.id; }).reduce(function (s, p) { return s + Number(p.amount || 0); }, 0) === 1500, 'the deposit still names the area for every riyal');
+  // still blocked: a collector holding cash cannot be deactivated
+  var r3 = toArea(200); call({ action: 'deputyValidateHandoff', token: walidTok, id: r3.handoff.id }); call({ action: 'confirmHandoff', token: yTok, id: r3.handoff.id });
+  check(call({ action: 'adminUpdateUser', token: adminTok, id: colY.id, data: { active: false } }).error === 'person_holds_cash', 'a collector holding cash still cannot be deactivated');
+})();
 
 console.log('--- a test round is archived with open handovers when asked (before go-live) ---');
 var arcOpenCount = ctx.readSheet(SHEETS.HANDOFFS).filter(function (h) { return ['pending', 'pending_deputy', 'disputed'].indexOf(h.status) >= 0; }).length;

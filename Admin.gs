@@ -851,6 +851,18 @@ function areaHeldSummary_(clusterId, userId) {
   return out;
 }
 
+// A branch's new collector takes the area manager's requests the deputy has not
+// let through yet: no cash has moved on them. A request already pending is the
+// old collector's to receive (2026-10-11).
+function moveWaitingRequests_(locationId, fromUserId, toUserId, byUserId) {
+  readSheet(SHEETS.HANDOFFS).forEach(function (h) {
+    if (h.kind !== 'cluster_to_collector' || h.locationId !== locationId || h.toUserId !== fromUserId || h.status !== 'pending_deputy') return;
+    h.toUserId = toUserId; h.collectorChangedFrom = fromUserId; h.collectorChangedAt = new Date().toISOString();
+    writeRow(SHEETS.HANDOFFS, h);
+    logAudit_('handoff_collector_changed', byUserId, h.id + ' ' + fromUserId + ' > ' + toUserId);
+  });
+}
+
 // A branch's handovers to its collector still open, or received and not yet banked.
 function branchCollectorBusy_(locationId, userId) {
   if (!userId) return false;
@@ -872,8 +884,10 @@ function inFlightError_(kind, before, after) {
     if (busy) { exec_().holdsCash = { userId: before[people[i]], held: kind === 'cluster' ? areaHeldSummary_(before.id, before[people[i]]) : null }; return 'person_holds_cash'; }
   }
   if (kind === 'location' && changed('clusterId') && placeBusy_('location', before.id)) return 'cash_in_flight';
-  // a branch's collector is not replaced while its cash is on the way to them
-  if (kind === 'location' && changed('collectorUserId') && branchCollectorBusy_(before.id, before.collectorUserId || branchCollector_(before.id))) return 'person_holds_cash';
+  // A branch's collector may be changed at any time (2026-10-11): what the old
+  // one received stays his until he hands it to another collector or banks it,
+  // and a request already through the deputy stays addressed to him (saveEntity_
+  // moves only the requests still waiting for the deputy to the new one).
   if ((kind === 'store' || kind === 'car') && changed('locationId') && placeBusy_(kind, before.id)) return 'cash_in_flight';
   if (kind === 'pos' && (changed('ownerId') || changed('ownerType')) && placeBusy_('pos', before.id)) return 'cash_in_flight';
   return null;
@@ -1024,6 +1038,8 @@ function saveEntity_(req, user) {
   var costBefore = kind === 'product' && req.id ? Number(obj.unitCost || 0) : null;
   // prices, fees and commissions before the save, for their history
   var rateBefore = hasOwn_(RATE_FIELDS_, kind) ? (req.id ? JSON.parse(JSON.stringify(obj)) : {}) : null;
+  // the branch's collector before the save, to move its waiting requests
+  var colBefore = kind === 'location' && req.id ? (obj.collectorUserId || branchCollector_(obj.id) || null) : null;
   safeOwnKeys_(d).forEach(function (k) { obj[k] = d[k]; });
   if (obj.active === undefined) obj.active = true;
   if ((kind === 'customer' || kind === 'city') && obj.name) obj.name = String(obj.name).replace(/\s+/g, ' ').trim();
@@ -1034,6 +1050,7 @@ function saveEntity_(req, user) {
   if (kind === 'product') noteProductCost_(saved, costBefore, user.id);
   if (kind === 'stock_item') noteStockItemCost_(saved, stockBefore, user.id);
   if (rateBefore) rateChanges_(kind, rateBefore, saved, user.id, { via: req.importing ? 'import' : 'save' });
+  if (colBefore && saved.collectorUserId && saved.collectorUserId !== colBefore) moveWaitingRequests_(saved.id, colBefore, saved.collectorUserId, user.id);
   logAudit_('admin_save_' + kind, user.id, saved.id);
   if (!req.noTranslate) fillTranslations_(translatableOf_(saved));
   return { ok: true, entity: saved };
@@ -1823,7 +1840,7 @@ function actionMeta_(req, user) {
     // non-admins get every row (ids needed for pickers/labels) but only the
     // safe columns per the reference app's rule: restrict fields, not rows.
     users = users.map(function (u) {
-      return { id: u.id, code: u.code || null, name: u.name, role: u.role, locationId: u.locationId, clusterId: u.clusterId };
+      return { id: u.id, code: u.code || null, name: u.name, role: u.role, locationId: u.locationId, clusterId: u.clusterId, active: u.active !== false };
     });
   }
 
