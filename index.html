@@ -414,6 +414,30 @@
   .inv-tag{font-style:normal;font-size:10.5px;font-weight:700;border-radius:5px;padding:0 6px;margin-inline-start:4px;}
   .inv-tag-add{background:var(--green-pale);color:var(--green-dark);}
   .inv-tag-ded{background:var(--warn-bg);color:var(--warn);}
+  .inv-live{position:relative;--ivl-f:#2E7D4F;--ivl-e:#B8862E;}
+  .ivl-legend{display:flex;gap:14px;font-size:12px;color:var(--muted);margin:2px 0 10px;}
+  .ivl-legend span,.ivl-nums span{display:inline-flex;align-items:center;gap:6px;}
+  .ivl-legend .sw,.ivl-nums .sw{width:10px;height:10px;border-radius:3px;display:inline-block;}
+  .sw.f{background:var(--ivl-f);} .sw.e{background:var(--ivl-e);}
+  .ivl-rows{display:flex;flex-direction:column;gap:14px;margin-bottom:12px;}
+  .ivl-h{display:flex;justify-content:space-between;align-items:baseline;gap:10px;font-size:13.5px;margin-bottom:6px;}
+  .ivl-h .num{font-size:12px;color:var(--muted);}
+  .ivl-bar{display:flex;gap:2px;height:12px;background:var(--bg-soft,#f2f1ec);border-radius:4px;overflow:hidden;}
+  .ivl-bar i{display:block;min-width:3px;}
+  .ivl-row{--i:0;}
+  .ivl-bar i.f{background:var(--ivl-f);} .ivl-bar i.e{background:var(--ivl-e);}
+  .ivl-bar i:first-child{border-start-start-radius:4px;border-end-start-radius:4px;}
+  .ivl-bar i:last-child{border-start-end-radius:4px;border-end-end-radius:4px;}
+  .ivl-nums{display:flex;gap:16px;font-size:12.5px;color:var(--muted);margin-top:6px;}
+  .ivl-nums b{color:var(--ink,#1f2a22);font-size:14px;}
+  .ivl-row.short .ivl-h b{color:var(--c-danger);}
+  @keyframes ivlGrow{from{transform:scaleX(0);}to{transform:scaleX(1);}}
+  .ivl-enter .ivl-bar i{transform-origin:left;animation:ivlGrow .4s cubic-bezier(0,0,.2,1) both;animation-delay:calc(var(--i,0) * 40ms);}
+  html[dir="rtl"] .ivl-enter .ivl-bar i{transform-origin:right;}
+  .ivl-enter .ivl-row:nth-child(n+3) .ivl-bar i{animation-delay:80ms;}
+  @keyframes tcGrow{from{transform:scaleY(0);}to{transform:scaleY(1);}}
+  .tc-enter .tc-bar:not(.zero){transform-box:fill-box;transform-origin:bottom;animation:tcGrow .4s cubic-bezier(0,0,.2,1) both;}
+  @media (prefers-reduced-motion:reduce){.ivl-enter .ivl-bar i,.tc-enter .tc-bar{animation:none;}}
   .inv-live{position:relative;}
   .inv-live-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:10px;}
   .inv-live-head h2{margin:0;display:flex;align-items:center;gap:8px;}
@@ -3712,7 +3736,7 @@ var ICON_B64 = 'iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAYAAAA9zQYyAAAcG0lEQVR42u2dd1cU
 // Stamped by tools/stamp-build.js at publish time so the running app can
 // say which build it is — a cached page is the usual reason a shipped change
 // seems missing.
-var BUILD_ID = '2026-10-11 09:38 · 0162f19';
+var BUILD_ID = '2026-10-11 17:38 · e0ec42b';
 var LOGO_SRC = 'data:image/png;base64,' + LOGO_B64;
 var ICON_SRC = LOGO_SRC; // same asset — see the comment above LOGO_B64
 // The sign-in mark (2026-09-30): the logo's round emblem as a coin with a
@@ -15686,9 +15710,9 @@ function trendChart(rows, opts){
     for (var si = 0; si < steps.length; si++) if (m <= steps[si]) return steps[si] * p; return 10 * p; }
   function compact(v){ return v >= 1e6 ? (Math.round(v / 1e5) / 10) + 'M' : v >= 1e3 ? (Math.round(v / 100) / 10) + 'K' : String(Math.round(v)); }
   function dm(iso){ var p = iso.split('-'); return Number(p[2]) + '/' + Number(p[1]); }
-  var lastW = 0;
+  var lastW = 0, lastW0 = 0;
   function draw(W){
-    W = Math.max(260, Math.round(W)); lastW = W;
+    W = Math.max(260, Math.round(W)); lastW0 = lastW; lastW = W;
     var H = W < 480 ? 196 : 236, padL = 44, padR = 14, padT = 26, padB = 28;
     var n = all.length, max = nice(Math.max.apply(null, all.map(function(r){ return r.total; })) || 1);
     var pw = W - padL - padR, ph = H - padT - padB;
@@ -15715,8 +15739,8 @@ function trendChart(rows, opts){
     var cols = bars ? all.map(function(r, i){
       var xx = x(i) - bw / 2;
       if (!(r.total > 0)) return '<rect x="'+xx.toFixed(1)+'" y="'+(y(0) - 2)+'" width="'+bw.toFixed(1)+'" height="2" rx="1" class="tc-bar zero"/>';
-      var top = y(r.total), hh = Math.max(3, y(0) - top);
-      return '<rect x="'+xx.toFixed(1)+'" y="'+(y(0) - hh).toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+hh.toFixed(1)+'" rx="'+Math.min(4, bw / 2).toFixed(1)+'" class="tc-bar'+(i === n - 1 ? ' last' : '')+'"/>';
+      var top = y(r.total), hh = Math.max(3, y(0) - top), rr = Math.min(4, bw / 2, hh), x0 = xx, x1 = xx + bw, yb = y(0), yt = yb - hh;
+      return '<path d="M'+x0.toFixed(1)+' '+yb.toFixed(1)+' V'+(yt + rr).toFixed(1)+' Q'+x0.toFixed(1)+' '+yt.toFixed(1)+' '+(x0 + rr).toFixed(1)+' '+yt.toFixed(1)+' H'+(x1 - rr).toFixed(1)+' Q'+x1.toFixed(1)+' '+yt.toFixed(1)+' '+x1.toFixed(1)+' '+(yt + rr).toFixed(1)+' V'+yb.toFixed(1)+' Z" class="tc-bar'+(i === n - 1 ? ' last' : '')+'"/>';
     }).join('') : '';
     // x labels: first, last, and evenly between as room allows
     var room = Math.max(2, Math.floor(pw / 64)), every = Math.max(1, Math.ceil((n - 1) / (room - 1)));
@@ -15733,7 +15757,7 @@ function trendChart(rows, opts){
     var labs = label(peakI, true) + (n - 1 !== peakI && Math.abs(x(n - 1) - x(peakI)) > 70 ? label(n - 1, false) : '');
     var dots = bars ? '' : (n <= 31 ? all.map(function(r, i){ return '<circle cx="'+x(i)+'" cy="'+y(r.total)+'" r="3.5" class="tc-dot'+(r.row ? '' : ' zero')+'"/>'; }).join('') : '') +
       '<circle cx="'+x(n - 1)+'" cy="'+y(all[n - 1].total)+'" r="4.5" class="tc-end"/>';
-    var svg = '<svg class="tc-svg" width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="'+esc(t('report_trend'))+'">' + g +
+    var svg = '<svg class="tc-svg'+(bars && !lastW0 ? ' tc-enter' : '')+'" width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="'+esc(t('report_trend'))+'">' + g +
       (bars ? cols : '<path d="'+area+'" class="tc-area"/><path d="'+line+'" class="tc-line"/>') + dots + labs + xl +
       '<line class="tc-cross" x1="0" y1="'+padT+'" x2="0" y2="'+(padT + ph)+'"/><circle class="tc-hov" r="5" cx="-20" cy="-20"/>' +
       '<rect class="tc-hit" x="'+(rtl ? padR : padL)+'" y="0" width="'+pw+'" height="'+H+'"/></svg>';
@@ -16476,13 +16500,29 @@ function invLiveCard_(opts){
     var total = order.reduce(function(a, k){ return a + Math.max(0, by[k].value); }, 0);
     var nUn = Object.keys(uncounted).filter(function(k){ return !by[k]; }).length;
     var at = ''; try { at = new Date(res.asOf).toLocaleTimeString(state.lang === 'en' ? 'en-GB' : 'ar-SA-u-nu-latn', { hour: '2-digit', minute: '2-digit', second: '2-digit' }); } catch (e) {}
-    box.innerHTML = (order.length ? '<div class="inv-live-grid">' + order.map(function(k){
-        var x = by[k], name = invRowName_(x.stockItemId, '');
-        return '<div class="inv-live-t'+(x.qty < -0.0005 ? ' short' : '')+'"><div class="n">'+esc(name)+'</div>' +
-          (x.state ? '<span class="st'+(x.state === 'empty' ? ' empty' : '')+'">'+esc(t('inv_st_' + x.state))+'</span>' : '') +
-          '<div class="q num">'+invFig_(x.qty)+'</div>' +
-          (x.value ? '<div class="v">'+money(Math.abs(x.value))+' '+esc(t('ui_sar'))+'</div>' : '') + '</div>';
-      }).join('') + '</div>' : '<div class="muted">'+esc(t('inv_liveEmpty'))+'</div>') +
+    // A cylinder type is one row: filled and empty as parts of one stacked bar
+    // (2026-10-11, dataviz: part-to-whole; colours validated for colour blindness).
+    // Unit items stay small tiles. Bars grow in on the first paint only, never
+    // on the minute's refresh.
+    var cyl = {}, cylOrder = [], units = [];
+    order.forEach(function(k){ var x = by[k]; if (x.state) { if (!cyl[x.stockItemId]) { cyl[x.stockItemId] = { id: x.stockItemId, full: null, empty: null, value: 0 }; cylOrder.push(x.stockItemId); } cyl[x.stockItemId][x.state] = x; cyl[x.stockItemId].value += Math.max(0, x.value); } else units.push(x); });
+    var enter = !card._drawn; card._drawn = true;
+    function seg(x, cls){ var q = x ? Math.max(0, x.qty) : 0; return q > 0 ? '<i class="'+cls+'" style="flex-grow:'+q+'" title="'+esc(t('inv_st_' + (cls === 'f' ? 'full' : 'empty')) + ': ' + invQty_(q))+'"></i>' : ''; }
+    function num(x, cls){ return '<span><i class="sw '+cls+'" aria-hidden="true"></i>'+esc(t('inv_st_' + (cls === 'f' ? 'full' : 'empty')))+' <b class="num">'+(x ? invFig_(x.qty) : '0')+'</b></span>'; }
+    var cylHtml = cylOrder.map(function(id, i){
+      var c = cyl[id], f = c.full ? c.full.qty : 0, e = c.empty ? c.empty.qty : 0, short = f < -0.0005 || e < -0.0005;
+      return '<div class="ivl-row'+(short ? ' short' : '')+'" style="--i:'+Math.min(i, 10)+'">' +
+        '<div class="ivl-h"><b>'+esc(invRowName_(id, ''))+'</b>'+(c.value ? '<span class="num">'+money(c.value)+' '+esc(t('ui_sar'))+'</span>' : '')+'</div>' +
+        '<div class="ivl-bar" role="img" aria-label="'+esc(invRowName_(id, '') + ': ' + t('inv_st_full') + ' ' + invQty_(f) + '، ' + t('inv_st_empty') + ' ' + invQty_(e))+'">'+seg(c.full, 'f')+seg(c.empty, 'e')+'</div>' +
+        '<div class="ivl-nums">'+num(c.full, 'f')+num(c.empty, 'e')+'</div></div>';
+    }).join('');
+    var unitHtml = units.map(function(x){
+      return '<div class="inv-live-t'+(x.qty < -0.0005 ? ' short' : '')+'"><div class="n">'+esc(invRowName_(x.stockItemId, ''))+'</div><div class="q num">'+invFig_(x.qty)+'</div>' +
+        (x.value ? '<div class="v">'+money(Math.abs(x.value))+' '+esc(t('ui_sar'))+'</div>' : '') + '</div>';
+    }).join('');
+    box.classList.toggle('ivl-enter', enter);
+    box.innerHTML = (order.length ? (cylHtml ? '<div class="ivl-legend"><span><i class="sw f"></i>'+esc(t('inv_st_full'))+'</span><span><i class="sw e"></i>'+esc(t('inv_st_empty'))+'</span></div><div class="ivl-rows">'+cylHtml+'</div>' : '') +
+        (unitHtml ? '<div class="inv-live-grid">'+unitHtml+'</div>' : '') : '<div class="muted">'+esc(t('inv_liveEmpty'))+'</div>') +
       '<div class="inv-live-foot"><span class="muted">'+esc(t('inv_liveAsOf').replace('{t}', at))+(Object.keys(branches).length > 1 ? ' · '+esc(t('inv_liveBranches').replace('{n}', Object.keys(branches).length)) : '')+(nUn ? ' · '+esc(t('inv_liveUncounted').replace('{n}', nUn)) : '')+'</span>' +
       (total ? '<span>'+esc(t('inv_liveTotal'))+' <b>'+money(Math.abs(total))+' '+esc(t('ui_sar'))+'</b></span>' : '')+'</div>';
   }
