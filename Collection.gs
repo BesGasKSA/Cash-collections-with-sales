@@ -2061,6 +2061,78 @@ function actionListHandoffs_(req, user) {
   return { ok: true, handoffs: rows };
 }
 
+// ---------- The Collections screen: every area request followed to the bank (2026-10-11) ----------
+// Read-only. One row per area-manager → collector request the viewer may
+// follow, each with where its cash stands now: waiting for the deputy, on its
+// way to a collector, held by one, or banked. The deposit itself is never
+// sent (it may carry other areas' cash), only its date, number and whether the
+// bank statement matched it. Scope: company-wide roles see all; an area manager
+// his areas; a collector every request that reached him; a branch manager,
+// driver or branch worker their own branch's requests.
+function collectionsScope_(user) {
+  if (isCompanyWide_(user.role)) return function () { return true; };
+  var role = user.role, me = user.id;
+  if (role === 'cluster_manager') {
+    var areas = {}; managedAreas_(me).forEach(function (c) { areas[c.id] = 1; });
+    return function (h) { return (h.fromUserId === me || areas[clusterIdForHandoff_(h)]) && inActiveArea_(user, h); };
+  }
+  if (role === 'collector') return function (h, hops) { return h.toUserId === me || hops.some(function (x) { return x.fromUserId === me || x.toUserId === me; }); };
+  var locs = {};
+  readSheet(SHEETS.STORES).forEach(function (s) { if (s.storeManagerUserId === me) locs[s.locationId] = 1; });
+  var cars = readSheet(SHEETS.CARS), stores = readSheet(SHEETS.STORES);
+  cars.forEach(function (c) { if (c.driverUserId === me && c.locationId) locs[c.locationId] = 1; });
+  readSheet(SHEETS.POS).forEach(function (p) {
+    if (p.assignedUserId !== me) return;
+    var own = p.ownerType === 'car' ? cars : stores, o = null;
+    for (var i = 0; i < own.length; i++) if (own[i].id === p.ownerId) { o = own[i]; break; }
+    if (o && o.locationId) locs[o.locationId] = 1;
+  });
+  return function (h) { return !!(h.locationId && locs[h.locationId]); };
+}
+function actionCollectionsData_(req, user) {
+  var rows = readSheet(SHEETS.HANDOFFS), byId = Object.create(null);
+  rows.forEach(function (h) { byId[h.id] = h; });
+  var wide = isCompanyWide_(user.role), see = collectionsScope_(user), out = [];
+  rows.forEach(function (h) {
+    if (h.kind !== 'cluster_to_collector') return;
+    // follow the cash through collector → collector hand-ons to where it is now
+    var hops = [], cur = h, holder = h.toUserId, stage, stageAt = h.createdAt, dep = null, n = 0;
+    // a hop received short carries its share of the gap: the request's cash shrinks in proportion
+    var now = Number(h.amount || 0), hopShort = 0;
+    if (h.status === 'pending_deputy') stage = 'deputy';
+    else if (h.status === 'pending') { stage = 'pending'; stageAt = h.deputyValidatedAt || h.createdAt; }
+    else if (h.status === 'returned' || h.status === 'disputed' || h.status === 'rejected') stage = h.status;
+    else if (h.status === 'confirmed') {
+      stage = 'held'; stageAt = h.resolvedAt || h.confirmedAt || h.createdAt;
+      while (cur.consumedBy && byId[cur.consumedBy] && n++ < 20) {
+        var nx = byId[cur.consumedBy];
+        if (nx.kind === 'collector_to_collector') {
+          hops.push({ id: nx.id, txNo: nx.txNo || '', fromUserId: nx.fromUserId, toUserId: nx.toUserId, status: nx.status, at: nx.createdAt, confirmedAt: nx.confirmedAt || null, amount: Number(nx.amount || 0), shortfall: Number(nx.shortfall || 0) });
+          holder = nx.toUserId;
+          if (nx.status !== 'confirmed') { stage = nx.status === 'disputed' ? 'disputed' : 'moving'; stageAt = nx.createdAt; break; }
+          var decl = nx.originalAmount != null ? Number(nx.originalAmount) : Number(nx.amount || 0);
+          if (decl > 0 && Math.abs(decl - Number(nx.amount || 0)) > 0.004) { var after = Math.round(now * Number(nx.amount || 0) / decl * 100) / 100; hopShort += now - after; now = after; }
+          stageAt = nx.confirmedAt || nx.createdAt; cur = nx; continue;
+        }
+        if (nx.kind === 'deposit' && nx.status !== 'voided') { dep = nx; stage = 'deposited'; stageAt = nx.createdAt; holder = nx.fromUserId; }
+        break;
+      }
+    } else return;
+    if (!see(h, hops)) return;
+    var depSeen = dep && (wide || dep.fromUserId === user.id);
+    out.push({
+      id: h.id, txNo: h.txNo || '', amount: now, sentAmount: Number(h.amount || 0), originalAmount: h.originalAmount != null ? Number(h.originalAmount) : null,
+      shortfall: Math.round((Number(h.shortfall || 0) + hopShort) * 100) / 100, clusterId: clusterIdForHandoff_(h), locationId: h.locationId || null,
+      fromUserId: h.fromUserId, toUserId: h.toUserId, status: h.status, createdAt: h.createdAt,
+      confirmedAt: h.confirmedAt || null, holder: holder, stage: stage, stageAt: stageAt, hops: hops,
+      depositId: dep ? dep.id : null, depositNo: dep ? (dep.txNo || '') : '', depositedAt: dep ? dep.createdAt : null,
+      depositRef: depSeen ? (dep.bankReference || '') : '', reconciled: !!(dep && dep.reconciled)
+    });
+  });
+  out.sort(function (a, b) { var x = String(a.createdAt), y = String(b.createdAt); return x === y ? 0 : (y < x ? -1 : 1); });
+  return { ok: true, requests: out };
+}
+
 // ---------- Attachments (deposit slips) — private Drive, never public ----------
 
 function depositsFolder_() {

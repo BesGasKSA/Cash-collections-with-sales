@@ -5138,6 +5138,38 @@ console.log('--- a branch changes collector; the old one keeps what he holds unt
   // still blocked: a collector holding cash cannot be deactivated
   var r3 = toArea(200); call({ action: 'deputyValidateHandoff', token: walidTok, id: r3.handoff.id }); call({ action: 'confirmHandoff', token: yTok, id: r3.handoff.id });
   check(call({ action: 'adminUpdateUser', token: adminTok, id: colY.id, data: { active: false } }).error === 'person_holds_cash', 'a collector holding cash still cannot be deactivated');
+
+  // the Collections screen follows each request to where its cash is now
+  var cdA = call({ action: 'collectionsData', token: adminTok });
+  function cdRow(res, id) { return (res.requests || []).filter(function (r) { return r.id === id; })[0]; }
+  var a1 = cdRow(cdA, r1.handoff.id), a2 = cdRow(cdA, r2.handoff.id), a3 = cdRow(cdA, r3.handoff.id);
+  check(cdA.ok && a1 && a1.stage === 'deposited' && a1.holder === colY.id && a1.hops.length === 1 && a1.hops[0].toUserId === colY.id && a1.depositId === dep.handoff.id && a1.depositRef === 'CC-Y-1',
+    'collections: X\'s request is followed through the hand-on to Y\'s deposit (' + JSON.stringify(a1 && { s: a1.stage, h: a1.hops.length }) + ')');
+  check(a2 && a2.stage === 'deposited' && a3 && a3.stage === 'held' && a3.holder === colY.id && Math.abs(a3.amount - 200) < 0.005, 'collections: the next request is banked, the last one is held by Y');
+  var cdM = call({ action: 'collectionsData', token: mgrTok });
+  check(cdM.ok && cdM.requests.length === 3 && cdM.requests.every(function (r) { return r.clusterId === area.id; }) && cdRow(cdM, r1.handoff.id).depositRef === '',
+    'collections: the area manager sees his area\'s requests to the bank, without the deposit\'s bank reference');
+  var cdB = call({ action: 'collectionsData', token: bmTok });
+  check(cdB.ok && cdB.requests.length === 3 && cdB.requests.every(function (r) { return r.locationId === loc.id; }), 'collections: the branch manager follows his own branch\'s cash');
+  var cdY = call({ action: 'collectionsData', token: yTok });
+  check(cdY.ok && cdY.requests.length === 3 && cdRow(cdY, r1.handoff.id).depositRef === 'CC-Y-1', 'collections: Y sees what reached him, X\'s request included, and his own bank reference');
+  check(!call({ action: 'collectionsData' }).ok, 'collections: needs a sign-in');
+  // nobody outside the chain sees it
+  var outCol = mk('Cc Outsider Collector', 'ccout.fx@bestgas.sa', 'collector'), outBm = mk('Cc Other Branch Manager', 'ccobm.fx@bestgas.sa', 'store_manager');
+  var outColTok = acceptInvite('ccout.fx@bestgas.sa'), outBmTok = acceptInvite('ccobm.fx@bestgas.sa');
+  var oLoc = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: 'Riyadh', name: 'Cc Other Branch', clusterId: area.id, collectorUserId: colY.id } }).entity;
+  call({ action: 'adminSaveEntity', token: adminTok, kind: 'store', data: { locationId: oLoc.id, name: 'Cc Other Store', storeManagerUserId: outBm.id } });
+  var cdO = call({ action: 'collectionsData', token: outColTok }), cdOB = call({ action: 'collectionsData', token: outBmTok });
+  check(cdO.ok && !cdO.requests.some(function (r) { return r.locationId === loc.id; }), 'collections: a collector outside the chain sees none of it');
+  check(cdOB.ok && !cdOB.requests.some(function (r) { return r.locationId === loc.id; }), 'collections: another branch\'s manager sees none of it');
+  var ccSrc = clientFn_('colDay_') + clientFn_('colCompute_');
+  check(!!ccSrc, 'collections: the screen code can be loaded');
+  if (ccSrc) {
+    var cc = new Function('localToday_', ccSrc + ' return colCompute_;')(function () { return day; });
+    var D = cc(cdA.requests.filter(function (r) { return r.clusterId === area.id; }), { today: day });
+    check(Math.abs(D.T.deposited - 1500) < 0.005 && Math.abs(D.T.held - 200) < 0.005 && Math.abs(D.T.total - 1700) < 0.005 && D.collectors.length === 1 && D.collectors[0].key === colY.id,
+      'collections: the screen\'s figures add up (banked 1,500, held 200, all by Y)');
+  }
 })();
 
 console.log('--- a test round is archived with open handovers when asked (before go-live) ---');

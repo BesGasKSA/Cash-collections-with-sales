@@ -1584,6 +1584,27 @@ should have history for the numbers changes in all areas; it's very sensitive".
   deputy, accountant and operations roles, and on Home for collectors (opens on his
   branches). Tapping a request opens its own handover row (`cpOpenRequest_`). Read-only:
   no new server action, scoping is `listHandoffs`'s own.
+## The Collections screen (التحصيل), every role (2026-10-11)
+
+- **Server** `collectionsData` (`actionCollectionsData_`, read-only, in the client's `READ_ACTIONS`):
+  one row per `cluster_to_collector` request, followed through `collector_to_collector`
+  hops (`hops`) to its deposit. `stage`: deputy / pending / moving / held / deposited /
+  returned / disputed / rejected; `holder` is who has the cash now. The deposit row itself
+  is never sent (it carries other areas' cash): only its id, number, date, `reconciled`,
+  and its bank reference for company-wide roles or the depositor. Scope
+  (`collectionsScope_`): company-wide all; area manager his areas (active area); collector
+  every request that reached him; branch manager, driver, branch worker their branch.
+- **Client** `renderCollections` (state `COL_`, sessionStorage `bgc_col`): period presets
+  or dates (a request counts by the day it was made, followed to today), city › area ›
+  branch › collector filters, hero (cash still out, banked %, one stacked bar of the four
+  stages), tiles, per-collector league (tap filters), day by day (sent / banked, two charts,
+  never a dual axis), open cash by age, per area and branch, every request (opens its
+  handover row only for a party or company-wide viewer). `colCompute_` is pure and tested
+  in `tests/run.js`; `colSheets_` is the Excel/PDF workbook (summary, collectors, areas,
+  branches, days, aging, requests).
+- Stage colours `COL_C_` were checked with the dataviz validator (CVD band: always labelled).
+  Bars grow once on the screen's first paint (`COL_DRAWN_`), none under reduced motion.
+
 ## What is waiting on a person: welcome popup, bell, home hero (2026-10-05)
 
 - **One list, three views.** `myPendingActions` (Collection.gs `actionMyPendingActions_`, never in the response cache, writes nothing) returns `{items,total}` for the signed-in user; `PENDING_KINDS_` is the order. Kinds: confirm_receipt, deputy_validate, deputy_batch, returned_fix, batch_rejected, send_ready, car_handover, dispute_open, second_approval, deposit_due, risk_high. Each is scoped like the screen it points to (the deputy item goes to an admin only while no active deputy exists; disputes and second approvals never to a party; a returned request only while `resendError_` allows the resend). `total` is the number of rows, and the bell shows that.

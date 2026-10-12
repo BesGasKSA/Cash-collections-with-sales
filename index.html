@@ -414,6 +414,70 @@
   .inv-tag{font-style:normal;font-size:10.5px;font-weight:700;border-radius:5px;padding:0 6px;margin-inline-start:4px;}
   .inv-tag-add{background:var(--green-pale);color:var(--green-dark);}
   .inv-tag-ded{background:var(--warn-bg);color:var(--warn);}
+  /* Collections screen (2026-10-11) */
+  .col-head .col-h1{display:flex;gap:12px;align-items:center;margin-bottom:10px;}
+  .col-head h2{margin:0;}
+  .col-head p{margin:2px 0 0;font-size:12.5px;}
+  .col-ic{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;background:color-mix(in srgb,var(--green) 12%,#fff);color:var(--green);flex:none;}
+  .col-ic .ic2{width:24px;height:24px;}
+  .col-chips{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding:2px 0 4px;margin:0 0 10px;}
+  .col-chips::-webkit-scrollbar{display:none;}
+  .col-chip{flex:none;border:1px solid var(--border);background:#fff;color:var(--ink,#1f2a22);border-radius:999px;padding:7px 14px;font:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:background-color .2s cubic-bezier(.2,0,0,1),color .2s cubic-bezier(.2,0,0,1),transform .1s cubic-bezier(.2,0,0,1);}
+  .col-chip:active,.col-row:active,.col-req:active{transform:scale(.97);}
+  .col-chip.on{background:var(--green);border-color:var(--green);color:#fff;}
+  .col-dates,.col-levels{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px 12px;align-items:end;}
+  .col-dates{margin-bottom:8px;}
+  .col-levels .field,.col-dates .field{margin:0;}
+  .col-hero-top{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px;}
+  .col-k{font-size:13px;color:var(--muted);font-weight:600;}
+  .col-big{font-size:30px;font-weight:800;line-height:1.15;letter-spacing:-.01em;}
+  .col-big small{font-size:13px;font-weight:600;color:var(--muted);margin-inline-start:6px;}
+  .col-cap{font-size:12.5px;color:var(--muted);margin-top:2px;}
+  .col-ring{--p:0;flex:none;width:78px;height:78px;border-radius:50%;display:grid;place-content:center;text-align:center;background:radial-gradient(closest-side,#fff 78%,transparent 79%),conic-gradient(#2E7D4F calc(var(--p)*1%),#E4E8E2 0);}
+  .col-ring b{font-size:17px;line-height:1;}
+  .col-ring span{font-size:10px;color:var(--muted);max-width:56px;line-height:1.2;margin-top:2px;}
+  .col-bar{display:flex;gap:2px;height:12px;border-radius:4px;overflow:hidden;background:#EEF0EC;}
+  .col-bar.empty{opacity:.6;}
+  .col-bar i{display:block;min-width:3px;}
+  .col-hero .col-bar{height:16px;}
+  .col-legend{display:grid;grid-template-columns:1fr 1fr;gap:10px 14px;margin-top:12px;}
+  .col-lg{display:grid;grid-template-columns:10px 1fr;column-gap:7px;align-items:center;font-size:12.5px;}
+  .col-lg i{width:10px;height:10px;border-radius:3px;}
+  .col-lg span{color:var(--muted);}
+  .col-lg b{grid-column:2;font-size:15px;}
+  .col-lg em{grid-column:2;font-style:normal;font-size:11.5px;color:var(--muted);}
+  .col-note,.col-hint{font-size:12px;margin:10px 0 0;}
+  .col-hint{margin:-4px 0 10px;}
+  .col-rows{display:flex;flex-direction:column;gap:4px;}
+  .col-row,.col-req{display:flex;gap:12px;align-items:flex-start;width:100%;text-align:start;background:none;border:0;border-radius:10px;padding:10px 6px;font:inherit;color:inherit;cursor:pointer;transition:background-color .2s cubic-bezier(.2,0,0,1),transform .1s cubic-bezier(.2,0,0,1);}
+  .col-row:hover,.col-req:hover{background:#F4F5F2;}
+  .col-row.on{background:color-mix(in srgb,var(--green) 9%,#fff);}
+  .col-req.ro{cursor:default;}
+  .col-av{flex:none;width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:#E7ECE5;color:var(--green);font-weight:700;font-size:13px;}
+  .col-rb,.col-qb{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px;}
+  .col-rt{display:flex;justify-content:space-between;gap:10px;align-items:baseline;font-size:14px;}
+  .col-rt b{min-width:0;overflow-wrap:anywhere;}
+  .col-rt .num{font-weight:700;white-space:nowrap;}
+  .col-rs,.col-st{font-size:12px;color:var(--muted);line-height:1.45;}
+  .col-rs em,.col-st em{font-style:normal;}
+  em.late{color:var(--c-danger);font-weight:600;}
+  .col-dot{flex:none;width:10px;height:10px;border-radius:50%;background:var(--c);margin-top:6px;}
+  .col-pill{display:inline-block;background:color-mix(in srgb,var(--c) 14%,#fff);color:var(--c);border-radius:6px;padding:1px 7px;font-weight:700;margin-inline-end:6px;}
+  .col-rh{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:6px;}
+  .col-rh h2{margin:0;}
+  .card .col-rh select{width:auto;max-width:150px;flex:none;}
+  .col-sh{font-size:13px;color:var(--muted);font-weight:600;margin:10px 0 4px;}
+  .col-more{width:100%;margin-top:8px;}
+  .col-req + .col-req{border-top:1px solid #EEF0EC;border-radius:0;}
+  @keyframes colGrow{from{transform:scaleX(0);}to{transform:scaleX(1);}}
+  .col-bar.col-enter{transform-origin:left;animation:colGrow .4s cubic-bezier(0,0,.2,1) both;animation-delay:calc(min(var(--i,0),2) * 40ms);}
+  html[dir="rtl"] .col-bar.col-enter{transform-origin:right;}
+  @keyframes colRise{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+  .col-rise .col-row{animation:colRise .3s cubic-bezier(0,0,.2,1) both;animation-delay:calc(var(--i,0) * 40ms);}
+  @media (prefers-reduced-motion:reduce){.col-bar.col-enter,.col-rise .col-row{animation:none;}.col-chip,.col-row,.col-req{transition:none;}}
+  @media (max-width:700px){
+    html body .col-big{font-size:26px;}
+  }
   .inv-live{position:relative;--ivl-f:#2E7D4F;--ivl-e:#B8862E;}
   .ivl-legend{display:flex;gap:14px;font-size:12px;color:var(--muted);margin:2px 0 10px;}
   .ivl-legend span,.ivl-nums span{display:inline-flex;align-items:center;gap:6px;}
@@ -3254,6 +3318,24 @@
   .pa-bell{flex:none;width:46px;height:46px;border-radius:50%;background:rgba(255,255,255,.16);display:flex;align-items:center;justify-content:center;}
   .pa-bell .ic2{width:24px;height:24px;stroke:#fff;fill:none;}
   .pa-hi{font-size:13px;font-weight:700;opacity:.82;}
+  .pa-energy{display:flex;gap:8px;align-items:flex-start;margin:10px 0 0;font-size:13.5px;line-height:1.5;font-weight:600;color:var(--green);background:color-mix(in srgb,var(--green) 8%,#fff);border-radius:12px;padding:10px 12px;}
+  .pa-energy .sp{flex:none;font-size:16px;line-height:1.3;}
+  .mm-nav{display:grid;grid-template-columns:1fr;gap:2px;background:#fff;border-radius:14px;padding:6px;}
+  .mm-it{display:flex;align-items:center;gap:12px;width:100%;border:0;background:none;border-radius:10px;padding:9px 8px;font:inherit;font-size:15px;font-weight:600;color:var(--ink,#1f2a22);text-align:start;cursor:pointer;transition:background-color .2s cubic-bezier(.2,0,0,1),transform .1s cubic-bezier(.2,0,0,1);}
+  .mm-it:active{transform:scale(.98);}
+  .mm-it:hover{background:#F4F5F2;}
+  .mm-it.on{background:color-mix(in srgb,var(--green) 10%,#fff);color:var(--green);}
+  .mm-ic{flex:none;width:36px;height:36px;border-radius:10px;display:grid;place-items:center;background:#EEF1EC;color:var(--green);}
+  .mm-it.on .mm-ic{background:var(--green);color:#fff;}
+  .mm-ic .ic2{width:20px;height:20px;}
+  .mm-l{flex:1;min-width:0;}
+  .mm-ch{flex:none;opacity:.35;transform:scaleX(var(--fx,1));}
+  .mm-ch .ic2{width:16px;height:16px;}
+  @keyframes mmIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+  .mm-it{animation:mmIn .3s cubic-bezier(0,0,.2,1) both;animation-delay:calc(var(--i,0) * 30ms);}
+  @media (prefers-reduced-motion:reduce){.mm-it{animation:none;transition:none;}}
+  @media (max-width:700px){html body .sec-title{flex-wrap:wrap;row-gap:6px;}html body .sec-title .note{margin-inline-start:0;}}
+
   .pa-top h2{margin:2px 0 0;font-size:19px;line-height:1.35;color:#fff;border:0;padding:0;}
   .pa-list{overflow:auto;padding:8px 14px;display:flex;flex-direction:column;gap:2px;}
   .pa-row{display:flex;align-items:center;gap:12px;padding:11px 8px;border-bottom:1px solid var(--border-soft);}
@@ -3736,7 +3818,7 @@ var ICON_B64 = 'iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAYAAAA9zQYyAAAcG0lEQVR42u2dd1cU
 // Stamped by tools/stamp-build.js at publish time so the running app can
 // say which build it is — a cached page is the usual reason a shipped change
 // seems missing.
-var BUILD_ID = '2026-10-11 17:38 · e0ec42b';
+var BUILD_ID = '2026-10-12 09:32 · 426b9f8';
 var LOGO_SRC = 'data:image/png;base64,' + LOGO_B64;
 var ICON_SRC = LOGO_SRC; // same asset — see the comment above LOGO_B64
 // The sign-in mark (2026-09-30): the logo's round emblem as a coin with a
@@ -4391,6 +4473,74 @@ var L = {
     jr_ref:'بینک حوالہ'
   }
 };
+// Collections screen strings (2026-10-11)
+(function(){
+  var X = {
+    en: { mm_screens:'Screens', navs_deputyReview:'Approvals', navs_users:'Users', navs_areaBulk:'Area upload', navs_reconciliation:'Bank', navs_customers:'Customers',
+      en_line0:'Every riyal you hand over on time keeps Best Gas strong. Thank you for today.', en_line1:'A clear day starts with one small step. You have got this.',
+      en_line2:'Your care with the numbers is what customers never see, and always feel.', en_line3:'Good work is quiet. Today it adds up to something big.',
+      en_line4:'Every cylinder that reaches a home carries your effort with it.', en_line5:'Steady hands, accurate figures, a proud team. Have a great shift.',
+      en_line6:'Small wins every day become the year we are proud of.', en_line7:'Thank you for keeping the chain clean and the cash safe.', nav_collections:'Collections', col_sub:'Every area request followed to the bank, per collector',
+      col_period:'Period', col_p_today:'Today', col_p_7d:'7 days', col_p_month:'This month', col_p_lastMonth:'Last month', col_p_30d:'30 days', col_p_all:'All time', col_p_custom:'Dates',
+      col_f_city:'City', col_f_area:'Area', col_f_branch:'Branch', col_f_collector:'Collector', col_allCities:'All cities', col_allAreas:'All areas', col_allBranches:'All branches', col_allCollectors:'All collectors', col_clear:'Clear filters',
+      col_st_deputy:'With the deputy', col_st_onway:'On the way to a collector', col_st_held:'Held by collectors', col_st_deposited:'Banked',
+      col_outNow:'Cash still out', col_ofTotal:'of {total} SAR requested in {n} requests', col_bankedPct:'banked', col_cohort:'requests made in the period, followed to today',
+      col_k_total:'Requested', col_reqN:'{n} requests', col_k_short:'Short at receipt', col_shortW:'received less than sent', col_overW:'received more than sent',
+      col_k_days:'Days to the bank', col_daysW:'average, banked requests', col_k_oldest:'Oldest open (days)', col_since:'since {d}', col_nothingOpen:'nothing open',
+      col_byCollector:'Per collector', col_byCollectorHint:'Who holds the cash now. Tap one to filter the screen.', col_rowSub:'Banked {bank} ({p}%) · {n} requests', col_oldestD:'{n} days open',
+      col_daily:'Day by day', col_dailyReq:'Sent to collectors', col_dailyBank:'Banked', col_noBank:'Nothing banked in this period yet',
+      col_aging:'Open cash by age', col_agingHint:'Cash not yet banked, by days since the request', col_age_0:'Up to 1 day', col_age_1:'2 to 3 days', col_age_2:'4 to 7 days', col_age_3:'Over 7 days',
+      col_byArea:'Per area', col_byBranch:'Per branch', col_rowSub2:'Banked {bank} ({p}%) · open {open}',
+      col_requests:'Requests', col_sort_new:'Newest', col_sort_old:'Oldest', col_sort_high:'Highest', col_sort_late:'Longest open', col_more:'Show more ({n} left)',
+      col_where_bank:'banked {d}', col_where_held:'held by {who}', col_where_onway:'on the way to {who}', col_where_deputy:'waiting for the deputy', col_matched:'matched to the bank statement',
+      col_shortX:'short {x}', col_overX:'over {x}', col_none:'No collection requests yet', col_noneHere:'No requests match these filters', col_yes:'Yes',
+      col_x_name:'Name', col_x_bankPct:'Banked %', col_x_reqs:'Requests', col_x_oldest:'Oldest open', col_x_item:'Item', col_x_amount:'Amount (SAR)', col_x_returned:'Returned requests', col_x_disputed:'Disputed requests', col_x_rejected:'Rejected requests',
+      col_x_day:'Day', col_x_no:'Number', col_x_from:'Area manager', col_x_to:'Collector', col_x_holder:'Holder now', col_x_stage:'Stage', col_x_age:'Days open', col_x_bankDay:'Banked on', col_x_depNo:'Deposit number', col_x_ref:'Bank reference', col_x_summary:'Summary' },
+    ar: { mm_screens:'الشاشات', navs_deputyReview:'الاعتمادات', navs_users:'المستخدمون', navs_areaBulk:'رفع المنطقة', navs_reconciliation:'البنك', navs_customers:'العملاء',
+      en_line0:'كل ريال تسلّمه في وقته يقوّي شركتنا. شكرًا لك على اليوم.', en_line1:'اليوم الواضح يبدأ بخطوة صغيرة. أنت قدّها.',
+      en_line2:'دقتك في الأرقام لا يراها العميل، لكنه يشعر بها دائمًا.', en_line3:'العمل الجيد هادئ، واليوم يصنع فرقًا كبيرًا.',
+      en_line4:'كل أسطوانة تصل إلى بيت تحمل معها جهدك.', en_line5:'أيدٍ ثابتة، أرقام دقيقة، وفريق نفخر به. يومك سعيد.',
+      en_line6:'الإنجازات الصغيرة كل يوم تصنع سنة نفخر بها.', en_line7:'شكرًا لأنك تحافظ على سلامة السلسلة وأمان النقدية.',
+      nav_collections:'التحصيل', col_sub:'كل طلب منطقة متابَع حتى البنك، لكل محصل',
+      col_period:'الفترة', col_p_today:'اليوم', col_p_7d:'7 أيام', col_p_month:'هذا الشهر', col_p_lastMonth:'الشهر الماضي', col_p_30d:'30 يوما', col_p_all:'كل الفترات', col_p_custom:'تواريخ',
+      col_f_city:'المدينة', col_f_area:'المنطقة', col_f_branch:'الفرع', col_f_collector:'المحصل', col_allCities:'كل المدن', col_allAreas:'كل المناطق', col_allBranches:'كل الفروع', col_allCollectors:'كل المحصلين', col_clear:'مسح التصفية',
+      col_st_deputy:'لدى نائب مدير العمليات', col_st_onway:'في الطريق إلى المحصل', col_st_held:'لدى المحصلين', col_st_deposited:'أودع في البنك',
+      col_outNow:'نقدية لم تودع بعد', col_ofTotal:'من {total} ر.س مطلوبة في {n} طلب', col_bankedPct:'أودع', col_cohort:'الطلبات المرسلة في الفترة متابَعة حتى اليوم',
+      col_k_total:'المطلوب', col_reqN:'{n} طلب', col_k_short:'عجز عند الاستلام', col_shortW:'استلم أقل من المرسل', col_overW:'استلم أكثر من المرسل',
+      col_k_days:'أيام حتى الإيداع', col_daysW:'المتوسط للطلبات المودعة', col_k_oldest:'أقدم مفتوح (أيام)', col_since:'منذ {d}', col_nothingOpen:'لا شيء مفتوح',
+      col_byCollector:'لكل محصل', col_byCollectorHint:'من يحمل النقدية الآن. اضغط على محصل لتصفية الشاشة.', col_rowSub:'أودع {bank} ({p}%) · {n} طلب', col_oldestD:'مفتوح {n} يوم',
+      col_daily:'يوما بيوم', col_dailyReq:'أرسل إلى المحصلين', col_dailyBank:'أودع في البنك', col_noBank:'لم يودع شيء في هذه الفترة بعد',
+      col_aging:'النقدية المفتوحة حسب العمر', col_agingHint:'ما لم يودع بعد، حسب الأيام منذ الطلب', col_age_0:'حتى يوم', col_age_1:'من 2 إلى 3 أيام', col_age_2:'من 4 إلى 7 أيام', col_age_3:'أكثر من 7 أيام',
+      col_byArea:'لكل منطقة', col_byBranch:'لكل فرع', col_rowSub2:'أودع {bank} ({p}%) · مفتوح {open}',
+      col_requests:'الطلبات', col_sort_new:'الأحدث', col_sort_old:'الأقدم', col_sort_high:'الأعلى', col_sort_late:'الأطول انتظارا', col_more:'عرض المزيد (باقي {n})',
+      col_where_bank:'أودع {d}', col_where_held:'لدى {who}', col_where_onway:'في الطريق إلى {who}', col_where_deputy:'بانتظار نائب مدير العمليات', col_matched:'مطابق لكشف البنك',
+      col_shortX:'عجز {x}', col_overX:'زيادة {x}', col_none:'لا توجد طلبات تحصيل بعد', col_noneHere:'لا توجد طلبات بهذه التصفية', col_yes:'نعم',
+      col_x_name:'الاسم', col_x_bankPct:'نسبة الإيداع', col_x_reqs:'الطلبات', col_x_oldest:'أقدم مفتوح', col_x_item:'البند', col_x_amount:'المبلغ (ر.س)', col_x_returned:'طلبات معادة', col_x_disputed:'طلبات عليها اعتراض', col_x_rejected:'طلبات مرفوضة',
+      col_x_day:'اليوم', col_x_no:'الرقم', col_x_from:'مدير المنطقة', col_x_to:'المحصل', col_x_holder:'لدى من الآن', col_x_stage:'المرحلة', col_x_age:'أيام مفتوح', col_x_bankDay:'تاريخ الإيداع', col_x_depNo:'رقم الإيداع', col_x_ref:'مرجع البنك', col_x_summary:'الملخص' },
+    ur: { mm_screens:'اسکرینیں', navs_deputyReview:'منظوریاں', navs_users:'صارفین', navs_areaBulk:'ایریا اپ لوڈ', navs_reconciliation:'بینک', navs_customers:'گاہک',
+      en_line0:'وقت پر دیا گیا ہر ریال کمپنی کو مضبوط رکھتا ہے۔ آج کے لیے شکریہ۔', en_line1:'اچھا دن ایک چھوٹے قدم سے شروع ہوتا ہے۔ آپ کر سکتے ہیں۔',
+      en_line2:'اعداد میں آپ کی احتیاط گاہک نہیں دیکھتا، مگر ہمیشہ محسوس کرتا ہے۔', en_line3:'اچھا کام خاموش ہوتا ہے، آج یہ بڑا فرق بنائے گا۔',
+      en_line4:'گھر پہنچنے والا ہر سلنڈر آپ کی محنت ساتھ لے جاتا ہے۔', en_line5:'مضبوط ہاتھ، درست اعداد، قابل فخر ٹیم۔ آپ کا دن اچھا گزرے۔',
+      en_line6:'روز کی چھوٹی کامیابیاں فخر والا سال بناتی ہیں۔', en_line7:'زنجیر صاف اور نقدی محفوظ رکھنے کا شکریہ۔',
+      nav_collections:'وصولی', col_sub:'ہر ایریا درخواست بینک تک، ہر کلکٹر کے لیے',
+      col_period:'مدت', col_p_today:'آج', col_p_7d:'7 دن', col_p_month:'یہ مہینہ', col_p_lastMonth:'پچھلا مہینہ', col_p_30d:'30 دن', col_p_all:'تمام مدت', col_p_custom:'تاریخیں',
+      col_f_city:'شہر', col_f_area:'علاقہ', col_f_branch:'برانچ', col_f_collector:'کلکٹر', col_allCities:'تمام شہر', col_allAreas:'تمام علاقے', col_allBranches:'تمام برانچیں', col_allCollectors:'تمام کلکٹر', col_clear:'فلٹر صاف کریں',
+      col_st_deputy:'ڈپٹی کے پاس', col_st_onway:'کلکٹر کی طرف راستے میں', col_st_held:'کلکٹرز کے پاس', col_st_deposited:'بینک میں جمع',
+      col_outNow:'ابھی باہر نقدی', col_ofTotal:'{n} درخواستوں میں مانگے گئے {total} ریال میں سے', col_bankedPct:'جمع', col_cohort:'مدت میں بھیجی گئی درخواستیں، آج تک',
+      col_k_total:'مانگی گئی رقم', col_reqN:'{n} درخواستیں', col_k_short:'وصولی پر کمی', col_shortW:'بھیجی گئی سے کم وصول ہوا', col_overW:'بھیجی گئی سے زیادہ وصول ہوا',
+      col_k_days:'بینک تک دن', col_daysW:'اوسط، جمع شدہ درخواستیں', col_k_oldest:'سب سے پرانی کھلی (دن)', col_since:'{d} سے', col_nothingOpen:'کچھ کھلا نہیں',
+      col_byCollector:'ہر کلکٹر', col_byCollectorHint:'نقدی ابھی کس کے پاس ہے۔ فلٹر کرنے کے لیے دبائیں۔', col_rowSub:'جمع {bank} ({p}%) · {n} درخواستیں', col_oldestD:'{n} دن سے کھلی',
+      col_daily:'دن بہ دن', col_dailyReq:'کلکٹرز کو بھیجا گیا', col_dailyBank:'بینک میں جمع', col_noBank:'اس مدت میں ابھی کچھ جمع نہیں ہوا',
+      col_aging:'کھلی نقدی عمر کے لحاظ سے', col_agingHint:'جو ابھی جمع نہیں ہوا، درخواست کے بعد کے دن', col_age_0:'1 دن تک', col_age_1:'2 سے 3 دن', col_age_2:'4 سے 7 دن', col_age_3:'7 دن سے زیادہ',
+      col_byArea:'ہر علاقہ', col_byBranch:'ہر برانچ', col_rowSub2:'جمع {bank} ({p}%) · کھلی {open}',
+      col_requests:'درخواستیں', col_sort_new:'نئی', col_sort_old:'پرانی', col_sort_high:'سب سے زیادہ', col_sort_late:'سب سے دیر سے کھلی', col_more:'مزید دکھائیں ({n} باقی)',
+      col_where_bank:'{d} کو جمع', col_where_held:'{who} کے پاس', col_where_onway:'{who} کی طرف راستے میں', col_where_deputy:'ڈپٹی کا انتظار', col_matched:'بینک اسٹیٹمنٹ سے ملایا گیا',
+      col_shortX:'کمی {x}', col_overX:'زیادہ {x}', col_none:'ابھی وصولی کی کوئی درخواست نہیں', col_noneHere:'ان فلٹرز سے کوئی درخواست نہیں', col_yes:'ہاں',
+      col_x_name:'نام', col_x_bankPct:'جمع %', col_x_reqs:'درخواستیں', col_x_oldest:'سب سے پرانی کھلی', col_x_item:'مد', col_x_amount:'رقم (ریال)', col_x_returned:'واپس کی گئی درخواستیں', col_x_disputed:'اعتراض والی درخواستیں', col_x_rejected:'مسترد درخواستیں',
+      col_x_day:'دن', col_x_no:'نمبر', col_x_from:'ایریا منیجر', col_x_to:'کلکٹر', col_x_holder:'ابھی کس کے پاس', col_x_stage:'مرحلہ', col_x_age:'کھلے دن', col_x_bankDay:'جمع کی تاریخ', col_x_depNo:'جمع نمبر', col_x_ref:'بینک حوالہ', col_x_summary:'خلاصہ' }
+  };
+  ['ar', 'en', 'ur'].forEach(function(lg){ Object.keys(X[lg]).forEach(function(k){ L[lg][k] = X[lg][k]; }); });
+})();
 function t(k){ var l=L[state.lang]||L.ar; return l[k]!==undefined ? l[k] : (L.en[k]!==undefined?L.en[k]:k); }
 function dirFor(lang){ return lang==='en' ? 'ltr' : 'rtl'; }
 // ---- labels for the v2 design (shell, statements, drill-down, documents) ----
@@ -4720,7 +4870,7 @@ function stopLoading(){
 // Read-only actions. Anything NOT listed here changes data, so a successful
 // call to it wipes the screen cache below -- otherwise a screen re-rendered
 // right after "confirm" could briefly show the pre-confirm copy.
-var READ_ACTIONS = { getRateHistory:1, whoami:1, bootstrap:1, listMeta:1, listDashboard:1, getDashboardAll:1, listEntries:1, listHandoffs:1,
+var READ_ACTIONS = { collectionsData:1, getRateHistory:1, whoami:1, bootstrap:1, listMeta:1, listDashboard:1, getDashboardAll:1, listEntries:1, listHandoffs:1,
   getSalesReport:1, getShortfallByEntrant:1, getDashboardComparison:1, getHeldCashTrend:1, listAudit:1, getFile:1,
   getReconciliation:1, listRiskItems:1, listAreaBulkBatches:1, areaBulkBatchDetail:1, login:1, forgotPassword:1, setLanguage:1,
   listCosts:1, getCostReport:1, getProfitReport:1, getInventoryLive:1, getInventoryReport:1, areaBatchRows:1, myPendingActions:1, getJourney:1 };
@@ -5673,6 +5823,7 @@ var ICONS = {
   power: '<path d="M12 3v9"/><path d="M6.4 6.4a8 8 0 1 0 11.2 0"/>',
   eyeOff: '<path d="M10.6 5.1A10.7 10.7 0 0 1 12 5c6.4 0 10 7 10 7a17.6 17.6 0 0 1-3.3 4.2"/><path d="M6.6 6.6C3.8 8.4 2 12 2 12s3.6 7 10 7a9.7 9.7 0 0 0 5.4-1.6"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/><path d="M2 2l20 20"/>'
 };
+ICONS.collections = ICONS.wallet;
 function icon_(name){ return '<svg class="ic2" viewBox="0 0 24 24" aria-hidden="true">'+(ICONS[name]||'')+'</svg>'; }
 
 function navItemsForRole_(){
@@ -5685,6 +5836,8 @@ function navItemsForRole_(){
   // the Operations Manager checks area requests alongside the Deputy (2026-10-07)
   if (role==='deputy_operations_manager' || role==='operations_manager' || role==='admin') items.push(['deputyReview','nav_deputyReview']);
   items.push(['handoffs','nav_handoffs']);
+  // every role follows the cash to the bank, each within its own reach (2026-10-11)
+  items.push(['collections','nav_collections']);
   if (['admin','finance','accountant','operations_manager','deputy_operations_manager','cluster_manager','store_manager'].indexOf(role)>=0) items.push(['report','nav_report']);
   if (['admin','finance','deputy_operations_manager'].indexOf(role)>=0) items.push(['reconciliation','nav_reconciliation']);
   if (['admin','finance','accountant','operations_manager','deputy_operations_manager','cluster_manager','store_manager'].indexOf(role)>=0) items.push(['inventory','nav_inventory']);
@@ -5979,7 +6132,7 @@ function renderShell(){
 
   watchCollapsibles_(body);
   if (state.lastAnimatedScreen !== state.screen) { state.lastAnimatedScreen = state.screen; watchEntrance_(body); }
-  var renderers = { home: renderHome, dashboard: renderDashboard, entries: renderEntries, areaBulk: renderAreaBulk, deputyReview: renderDeputyReview, handoffs: renderHandoffs, report: renderReport, reconciliation: renderReconciliation, inventory: renderInventory, profit: renderProfit, customers: renderCustomers, risk: renderRisk, admin: renderAdmin, users: renderAdmin };
+  var renderers = { home: renderHome, dashboard: renderDashboard, entries: renderEntries, areaBulk: renderAreaBulk, deputyReview: renderDeputyReview, handoffs: renderHandoffs, collections: renderCollections, report: renderReport, reconciliation: renderReconciliation, inventory: renderInventory, profit: renderProfit, customers: renderCustomers, risk: renderRisk, admin: renderAdmin, users: renderAdmin };
   (renderers[state.screen] || renderHome)(body);
   // the bell, the hero and (once per sign-in) the welcome popup read one list
   refreshPending_(state.pendKicked ? null : { popup: true });
@@ -6230,7 +6383,7 @@ function buildBottomSwitcher_(navItems, badge, justNavigated){
   }
   tabs.forEach(function(it){
     var b = el('<button type="button"'+(state.screen===it[0]?' class="active" aria-current="page"':'')+'>' +
-      icon_(it[0]) + '<span>'+esc(t(it[1]))+'</span>' + (it[0]==='handoffs' ? badge : '') + '</button>');
+      icon_(it[0]) + '<span>'+esc(t(L.en['navs_' + it[0]] ? 'navs_' + it[0] : it[1]))+'</span>' + (it[0]==='handoffs' ? badge : '') + '</button>');
     b.addEventListener('click', function(){ goScreen_(it[0]); });
     scroller.appendChild(b);
   });
@@ -6308,6 +6461,13 @@ function openMobileMenu_(){
     sub: roleLabel(state.user.role),
     render: function(b){
       var wrap = el('<div class="stack"></div>');
+      var nav = el('<div class="mm-nav" role="navigation" aria-label="'+esc(t('mm_screens'))+'"></div>');
+      navItemsForRole_().forEach(function(it, i){
+        var b = el('<button type="button" class="mm-it'+(state.screen === it[0] ? ' on' : '')+'" style="--i:'+Math.min(i, 8)+'"'+(state.screen === it[0] ? ' aria-current="page"' : '')+'><span class="mm-ic">'+icon_(it[0])+'</span><span class="mm-l">'+esc(t(it[1]))+'</span><span class="mm-ch">'+icon_('chevron')+'</span></button>');
+        b.addEventListener('click', function(){ drawerClose_(); goScreen_(it[0]); });
+        nav.appendChild(b);
+      });
+      wrap.appendChild(nav);
       var langCard = el('<div class="doc-sec"><h3>'+icon_('layers')+esc(t('ui_language'))+'</h3>' +
         '<div class="tabs">' + ['ar','en','ur'].map(function(l){
           return '<button type="button" data-l="'+l+'" class="'+(state.lang===l?'active':'')+'">'+(l==='ar'?'العربية':l==='en'?'English':'اردو')+'</button>';
@@ -6483,6 +6643,12 @@ function pendClose_(){
 }
 
 // The welcome popup: centred on a desktop, a bottom sheet on a phone.
+// A positive line for the welcome (2026-10-12, the user's ask): one of eight,
+// turning with every sign-in, in the screen's language.
+function energyLine_(){
+  var n = 0; try { n = Number(localStorage.getItem('bgc_loginN_' + state.user.id) || 0); } catch (e) {}
+  return t('en_line' + (n % 8));
+}
 function pendOpen_(){
   if (!state.user || qs('.pa-ov')) return;
   var p = state.pend, items = (p && p.items) || [];
@@ -6494,6 +6660,7 @@ function pendOpen_(){
         '<div class="pa-hi">' + esc(timeGreeting() + '، ' + state.user.name) + '</div>' +
         '<h2 id="paTitle">' + esc(n ? (n === 1 ? t('pa_one') : pendFill_(t('pa_many'), { n: n })) : t('pa_none')) + '</h2>' +
       '</div></div>' +
+      '<p class="pa-energy"><span class="sp" aria-hidden="true">✦</span><span>' + esc(energyLine_()) + '</span></p>' +
       '<div class="pa-list"></div>' +
       '<div class="pa-foot"><button type="button" class="btn secondary pa-later">' + esc(t(n ? 'pa_later' : 'pa_close')) + '</button></div>' +
     '</div></div>');
@@ -9166,7 +9333,7 @@ function watchEntrance_(body){
   mo.observe(body, { childList: true, subtree: true });
 }
 function countUp_(root){
-  qsa('.tile .vl, .st-head .v, .hero .cta .big, .eqx-big .n', root).forEach(function(node){
+  qsa('.tile .vl, .st-head .v, .hero .cta .big, .eqx-big .n, .col-big', root).forEach(function(node){
     var tn = null;
     for (var i = 0; i < node.childNodes.length; i++) { if (node.childNodes[i].nodeType === 3 && /\d/.test(node.childNodes[i].nodeValue)) { tn = node.childNodes[i]; break; } }
     if (!tn) return;
@@ -15098,6 +15265,245 @@ function handoffItem(h, showConfirm, showResolve){
   return div;
 }
 
+// ---------- Collections (2026-10-11): the cash of every area request, per collector, to the bank ----------
+// One screen for every role, scoped by the server (collectionsData). A request
+// made in the chosen period is followed to where its cash stands today: with the
+// deputy, on its way to a collector, held by one, or banked. Filters: period
+// presets or dates, city, area, branch, collector (the one holding it now).
+// dataviz: the four stages are one validated palette (CVD-checked, labelled
+// everywhere, never colour alone). motion: bars grow once on the first paint
+// (400 ms decelerate, 40 ms stagger, 500 ms in all), nothing under reduced motion.
+var COL_ST_ = ['deputy', 'onway', 'held', 'deposited'];
+var COL_C_ = { deputy: '#7A5BB0', onway: '#C27C1E', held: '#2E6FA8', deposited: '#2E7D4F' };
+var COL_ = null, COL_DRAWN_ = false;
+function colState_(){
+  if (COL_) return COL_;
+  COL_ = { preset: 'month', from: '', to: '', city: '', area: '', branch: '', collector: '', sort: 'new', more: 0 };
+  try { var s = JSON.parse(sessionStorage.getItem('bgc_col') || 'null'); if (s) Object.keys(s).forEach(function(k){ COL_[k] = s[k]; }); } catch (e) {}
+  return COL_;
+}
+function colSave_(){ try { sessionStorage.setItem('bgc_col', JSON.stringify(COL_)); } catch (e) {} }
+function colDay_(iso){ var d = new Date(iso); if (isNaN(d)) return String(iso || '').slice(0, 10); function p(n){ return (n < 10 ? '0' : '') + n; } return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()); }
+function colAddDays_(day, n){ var d = new Date(day + 'T00:00:00'); d.setDate(d.getDate() + n); return colDay_(d.toISOString ? d : d); }
+function colRange_(S){
+  var today = localToday_(), f = S.from, to = S.to;
+  if (S.preset === 'today') { f = today; to = today; }
+  else if (S.preset === '7d') { f = colAddDays_(today, -6); to = today; }
+  else if (S.preset === '30d') { f = colAddDays_(today, -29); to = today; }
+  else if (S.preset === 'month') { f = today.slice(0, 8) + '01'; to = today; }
+  else if (S.preset === 'lastMonth') { var d = new Date(today.slice(0, 8) + '01T00:00:00'); d.setDate(0); to = colDay_(d); f = to.slice(0, 8) + '01'; }
+  else if (S.preset === 'all') { f = ''; to = ''; }
+  return { from: f || '', to: to || '' };
+}
+// pure: requests (collectionsData rows) → every figure the screen draws
+function colCompute_(reqs, o){
+  o = o || {};
+  var today = o.today || localToday_(), locOf = o.locOf || function(){ return {}; };
+  function stOf(r){ return r.stage === 'deputy' ? 'deputy' : (r.stage === 'pending' || r.stage === 'moving') ? 'onway' : r.stage === 'held' ? 'held' : r.stage === 'deposited' ? 'deposited' : null; }
+  function zero(){ return { deputy: 0, onway: 0, held: 0, deposited: 0, total: 0, n: 0, short: 0, returned: 0, disputed: 0, rejected: 0, daysSum: 0, daysN: 0, oldest: null }; }
+  var T = zero(), byCol = {}, byArea = {}, byBranch = {}, byCity = {}, days = {}, banked = {}, aging = [0, 0, 0, 0], agingN = [0, 0, 0, 0], rows = [];
+  function grp(map, key){ if (!map[key]) map[key] = zero(); return map[key]; }
+  reqs.forEach(function(r){
+    var loc = locOf(r.locationId) || {}, area = r.clusterId || loc.clusterId || '_', city = loc.city || '_';
+    var day = colDay_(r.createdAt);
+    if (o.from && day < o.from) return; if (o.to && day > o.to) return;
+    if (o.city && city !== o.city) return; if (o.area && area !== o.area) return;
+    if (o.branch && r.locationId !== o.branch) return; if (o.collector && r.holder !== o.collector) return;
+    var st = stOf(r), amt = Number(r.amount || 0);
+    // returned, disputed and rejected requests are counted, never drawn as an empty group
+    if (!st) { T[r.stage === 'disputed' ? 'disputed' : r.stage === 'rejected' ? 'rejected' : 'returned']++; return; }
+    var gs = [T, grp(byCol, r.holder || '_'), grp(byArea, area), grp(byBranch, r.locationId || '_'), grp(byCity, city)];
+    var age = st === 'deposited' ? null : Math.max(0, Math.round((new Date(today + 'T00:00:00') - new Date(day + 'T00:00:00')) / 86400000));
+    var toBank = st === 'deposited' ? Math.max(0, Math.round((new Date(colDay_(r.depositedAt) + 'T00:00:00') - new Date(day + 'T00:00:00')) / 86400000)) : null;
+    gs.forEach(function(g){
+      g[st] += amt; g.total += amt; g.n++; g.short += Number(r.shortfall || 0);
+      if (toBank != null) { g.daysSum += toBank; g.daysN++; }
+      if (age != null && (!g.oldest || day < g.oldest)) g.oldest = day;
+    });
+    if (!days[day]) days[day] = { date: day, total: 0 }; days[day].total += amt;
+    if (st === 'deposited') { var bd = colDay_(r.depositedAt); if (!banked[bd]) banked[bd] = { date: bd, total: 0 }; banked[bd].total += amt; }
+    if (age != null) { var b = age <= 1 ? 0 : age <= 3 ? 1 : age <= 7 ? 2 : 3; aging[b] += amt; agingN[b]++; }
+    rows.push({ r: r, st: st, day: day, area: area, city: city, age: age, toBank: toBank });
+  });
+  function list(map){ return Object.keys(map).map(function(k){ var g = map[k]; g.key = k; return g; }).sort(function(a, b){ return b.total - a.total; }); }
+  return { T: T, collectors: list(byCol), areas: list(byArea), branches: list(byBranch), cities: list(byCity),
+    days: Object.keys(days).sort().map(function(k){ return days[k]; }), banked: Object.keys(banked).sort().map(function(k){ return banked[k]; }),
+    aging: aging, agingN: agingN, rows: rows };
+}
+function colPct_(a, b){ return b > 0 ? Math.round(a / b * 100) : 0; }
+function colStack_(g, enter, i){
+  var tot = COL_ST_.reduce(function(s, k){ return s + Math.max(0, g[k]); }, 0);
+  if (!(tot > 0)) return '<div class="col-bar empty"></div>';
+  return '<div class="col-bar'+(enter ? ' col-enter' : '')+'" style="--i:'+Math.min(i || 0, 10)+'" role="img" aria-label="'+esc(COL_ST_.filter(function(k){ return g[k] > 0; }).map(function(k){ return t('col_st_' + k) + ' ' + money(g[k]); }).join('، '))+'">' +
+    COL_ST_.map(function(k){ return g[k] > 0 ? '<i style="flex-grow:'+g[k]+';background:'+COL_C_[k]+'" title="'+esc(t('col_st_' + k) + ': ' + money(g[k]))+'"></i>' : ''; }).join('') + '</div>';
+}
+function renderCollections(body){
+  var S = colState_(), meta = state.meta || {};
+  body.innerHTML = skeleton_();
+  apiCached('collectionsData', {}, body, function(res){
+    if (!res.ok) { body.innerHTML = '<div class="msg err">'+esc(errMsg_(res))+'</div>'; return; }
+    var reqs = res.requests || [];
+    body.innerHTML = '';
+    var enter = !COL_DRAWN_ && !(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches); COL_DRAWN_ = true;
+    var locOf = function(id){ return byId(meta.locations, id) || {}; };
+    // ---- head: title, what it counts, exports ----
+    var head = el('<div class="card col-head no-collapse"><div class="col-h1"><div><h2>'+esc(t('nav_collections'))+'</h2><p class="muted">'+esc(t('col_sub'))+'</p></div></div></div>');
+    body.appendChild(head);
+    // ---- filters: presets, dates, levels ----
+    var fc = el('<div class="card col-filters no-collapse"></div>');
+    var PRE = ['today', '7d', 'month', 'lastMonth', '30d', 'all', 'custom'];
+    fc.innerHTML = '<div class="col-chips" role="group" aria-label="'+esc(t('col_period'))+'">' + PRE.map(function(p){ return '<button type="button" class="col-chip'+(S.preset === p ? ' on' : '')+'" data-p="'+p+'">'+esc(t('col_p_' + p))+'</button>'; }).join('') + '</div>' +
+      '<div class="col-dates"'+(S.preset === 'custom' ? '' : ' hidden')+'><div class="field"><label>'+esc(t('inv_from'))+'</label><input type="date" class="cFrom" value="'+esc(S.from)+'"></div><div class="field"><label>'+esc(t('inv_to'))+'</label><input type="date" class="cTo" value="'+esc(S.to)+'"></div></div>' +
+      '<div class="col-levels"></div>';
+    body.appendChild(fc);
+    var lv = qs('.col-levels', fc);
+    function opts(list, sel, all){ return '<option value="">'+esc(all)+'</option>' + list.map(function(x){ return '<option value="'+esc(x[0])+'"'+(x[0] === sel ? ' selected' : '')+'>'+esc(x[1])+'</option>'; }).join(''); }
+    function uniq(fn){ var seen = {}, out = []; reqs.forEach(function(r){ var x = fn(r); if (x && x[0] && !seen[x[0]]) { seen[x[0]] = 1; out.push(x); } }); return out.sort(function(a, b){ return String(a[1]).localeCompare(String(b[1]), 'ar'); }); }
+    var cities = uniq(function(r){ var c = locOf(r.locationId).city; return c ? [c, c] : null; });
+    var areas = uniq(function(r){ var a = r.clusterId || locOf(r.locationId).clusterId; return a && (!S.city || locOf(r.locationId).city === S.city) ? [a, clusterName(a)] : null; });
+    var branches = uniq(function(r){ var l = locOf(r.locationId); return r.locationId && (!S.city || l.city === S.city) && (!S.area || (r.clusterId || l.clusterId) === S.area) ? [r.locationId, l.name || locationName(r.locationId)] : null; });
+    var cols = uniq(function(r){ return r.holder ? [r.holder, userName(r.holder)] : null; });
+    lv.innerHTML = [['city', cities, 'col_allCities'], ['area', areas, 'col_allAreas'], ['branch', branches, 'col_allBranches'], ['collector', cols, 'col_allCollectors']].map(function(x){
+      return '<div class="field"><label>'+esc(t('col_f_' + x[0]))+'</label><select data-k="'+x[0]+'">'+opts(x[1], S[x[0]], t(x[2]))+'</select></div>'; }).join('') +
+      (S.city || S.area || S.branch || S.collector ? '<button type="button" class="btn ghost col-clear">'+esc(t('col_clear'))+'</button>' : '');
+    function redraw(){ colSave_(); renderCollections(body); }
+    qs('.col-chips', fc).addEventListener('click', function(ev){ var b = ev.target.closest('.col-chip'); if (!b) return; S.preset = b.dataset.p; if (S.preset === 'custom' && !S.from) { var r0 = colRange_({ preset: 'month' }); S.from = r0.from; S.to = r0.to; } S.more = 0; redraw(); });
+    ['.cFrom', '.cTo'].forEach(function(s){ qs(s, fc).addEventListener('change', function(){ S.from = qs('.cFrom', fc).value; S.to = qs('.cTo', fc).value; redraw(); }); });
+    qsa('select[data-k]', lv).forEach(function(s){ s.addEventListener('change', function(){
+      var k = s.dataset.k; S[k] = s.value;
+      if (k === 'city') { S.area = ''; S.branch = ''; } if (k === 'area') S.branch = '';
+      S.more = 0; redraw(); }); });
+    var clr = qs('.col-clear', lv); if (clr) clr.addEventListener('click', function(){ S.city = S.area = S.branch = S.collector = ''; redraw(); });
+
+    var R = colRange_(S);
+    var D = colCompute_(reqs, { from: R.from, to: R.to, city: S.city, area: S.area, branch: S.branch, collector: S.collector, locOf: locOf });
+    var T = D.T;
+    var periodTxt = R.from ? t('inv_period').replace('{from}', R.from).replace('{to}', R.to) : t('col_p_all');
+    head.appendChild(exButtons_(function(){ return colSheets_(D, periodTxt); }, function(){ return t('nav_collections'); }, function(){ return { note: periodTxt }; }));
+
+    if (!T.n && !T.returned && !T.disputed) {
+      body.appendChild(el('<div class="card no-collapse"><div class="muted rp-empty">'+esc(t(reqs.length ? 'col_noneHere' : 'col_none'))+'</div></div>'));
+      return;
+    }
+    // ---- hero: cash still out, and the four stages as one bar ----
+    var out = T.deputy + T.onway + T.held;
+    var hero = el('<div class="card col-hero no-collapse">' +
+      '<div class="col-hero-top"><div><div class="col-k">'+esc(t('col_outNow'))+'</div><div class="col-big num">'+money(out)+'<small>'+esc(t('ui_sar'))+'</small></div>' +
+      '<div class="col-cap">'+esc(t('col_ofTotal').replace('{total}', money(T.total)).replace('{n}', T.n))+'</div></div>' +
+      '<div class="col-ring" style="--p:'+colPct_(T.deposited, T.total)+'"><b class="num">'+colPct_(T.deposited, T.total)+'%</b><span>'+esc(t('col_bankedPct'))+'</span></div></div>' +
+      colStack_(T, enter, 0) +
+      '<div class="col-legend">' + COL_ST_.map(function(k){ return '<div class="col-lg"><i style="background:'+COL_C_[k]+'"></i><span>'+esc(t('col_st_' + k))+'</span><b class="num">'+money(T[k])+'</b><em>'+colPct_(T[k], T.total)+'%</em></div>'; }).join('') + '</div>' +
+      '<p class="muted col-note">'+esc(periodTxt + ' · ' + t('col_cohort'))+'</p></div>');
+    body.appendChild(hero);
+    if (enter) countUp_(hero);
+    // ---- KPI tiles ----
+    var avg = T.daysN ? (T.daysSum / T.daysN) : 0, oldD = T.oldest ? cpDays_(T.oldest, localToday_()) : 0;
+    body.appendChild(tiles_([
+      { label: t('col_k_total'), value: money(T.total), icon: 'handoffs', foot: esc(t('col_reqN').replace('{n}', T.n)) },
+      { label: t('col_st_deposited'), value: money(T.deposited), icon: 'bank', color: COL_C_.deposited, foot: esc(colPct_(T.deposited, T.total) + '%') },
+      { label: t('col_st_held'), value: money(T.held), icon: 'wallet', color: COL_C_.held },
+      { label: t('col_k_short'), value: money(Math.abs(T.short)), icon: 'alert', color: T.short > 0.004 ? 'var(--c-danger)' : 'var(--green)', foot: esc(T.short > 0.004 ? t('col_shortW') : T.short < -0.004 ? t('col_overW') : '') },
+      { label: t('col_k_days'), value: avg ? (Math.round(avg * 10) / 10).toLocaleString('en-US') : '0', icon: 'clock', foot: esc(t('col_daysW')) },
+      { label: t('col_k_oldest'), value: String(oldD), icon: 'hourglass', color: oldD > 3 ? 'var(--c-danger)' : 'var(--green)', foot: esc(T.oldest ? t('col_since').replace('{d}', T.oldest) : t('col_nothingOpen')) }
+    ]));
+    // ---- the collectors, ranked by what they still hold ----
+    var cc = el('<div class="card col-league no-collapse"><h2>'+esc(t('col_byCollector'))+'</h2><p class="muted col-hint">'+esc(t('col_byCollectorHint'))+'</p><div class="col-rows"></div></div>');
+    var cr = qs('.col-rows', cc); if (enter) cr.classList.add('col-rise');
+    D.collectors.slice().sort(function(a, b){ return (b.held + b.onway + b.deputy) - (a.held + a.onway + a.deputy) || b.total - a.total; }).forEach(function(g, i){
+      var name = g.key === '_' ? t('report_unspecified') : userName(g.key), open = g.held + g.onway + g.deputy;
+      var row = el('<button type="button" class="col-row'+(S.collector === g.key ? ' on' : '')+'" style="--i:'+Math.min(i, 6)+'">' +
+        '<span class="col-av" aria-hidden="true">'+esc(initials_(name))+'</span>' +
+        '<span class="col-rb"><span class="col-rt"><b>'+esc(name)+'</b><span class="num">'+money(open)+'</span></span>' +
+        colStack_(g, enter, i + 1) +
+        '<span class="col-rs">'+esc(t('col_rowSub').replace('{bank}', money(g.deposited)).replace('{p}', colPct_(g.deposited, g.total)).replace('{n}', g.n))+
+        (g.oldest ? ' · <em class="'+(cpDays_(g.oldest, localToday_()) > 3 ? 'late' : '')+'">'+esc(t('col_oldestD').replace('{n}', cpDays_(g.oldest, localToday_())))+'</em>' : '')+'</span></span></button>');
+      row.addEventListener('click', function(){ S.collector = S.collector === g.key ? '' : g.key; S.more = 0; redraw(); });
+      cr.appendChild(row);
+    });
+    body.appendChild(cc);
+    // ---- daily: requested, and banked (two charts, one scale each) ----
+    if (D.days.length) {
+      var dc = el('<div class="card col-daily no-collapse"><h2>'+esc(t('col_daily'))+'</h2><h3 class="col-sh">'+esc(t('col_dailyReq'))+'</h3><div class="col-c1"></div><h3 class="col-sh">'+esc(t('col_dailyBank'))+'</h3><div class="col-c2"></div></div>');
+      qs('.col-c1', dc).appendChild(trendChart(D.days, {}));
+      qs('.col-c2', dc).appendChild(D.banked.length ? trendChart(D.banked, {}) : el('<div class="muted">'+esc(t('col_noBank'))+'</div>'));
+      body.appendChild(dc);
+    }
+    // ---- aging of what is still out ----
+    var AG = ['0-1', '2-3', '4-7', '8+'];
+    var ac = el('<div class="card no-collapse"><h2>'+esc(t('col_aging'))+'</h2><p class="muted col-hint">'+esc(t('col_agingHint'))+'</p></div>');
+    ac.appendChild(barRows_(AG.map(function(a, i){ return { label: t('col_age_' + i), sub: t('col_reqN').replace('{n}', D.agingN[i]), amount: D.aging[i], color: ['#2E7D4F', '#C27C1E', '#B5642A', 'var(--c-danger)'][i], icon: 'clock' }; }), { status: true }));
+    body.appendChild(ac);
+    // ---- by area and by branch ----
+    function lvlCard(title, list, nameOf, key){
+      var c = el('<div class="card"><h2>'+esc(title)+'</h2></div>');
+      c.appendChild(barRows_(list.map(function(g){ return { label: nameOf(g.key), sub: t('col_rowSub2').replace('{bank}', money(g.deposited)).replace('{open}', money(g.held + g.onway + g.deputy)).replace('{p}', colPct_(g.deposited, g.total)), amount: g.total,
+        onClick: key ? function(){ S[key] = g.key; if (key === 'area') S.branch = ''; S.more = 0; redraw(); } : null }; })));
+      return c;
+    }
+    if (!S.area && D.areas.length > 1) body.appendChild(lvlCard(t('col_byArea'), D.areas, function(k){ return k === '_' ? t('report_unspecified') : clusterName(k); }, 'area'));
+    if (!S.branch) body.appendChild(lvlCard(t('col_byBranch'), D.branches, function(k){ return k === '_' ? t('cpv_wholeArea') : locationName(k); }, 'branch'));
+    // ---- every request ----
+    var rc = el('<div class="card col-reqs no-collapse"><div class="col-rh"><h2>'+esc(t('col_requests'))+'</h2><select class="col-sort">' +
+      ['new', 'old', 'high', 'late'].map(function(s){ return '<option value="'+s+'"'+(S.sort === s ? ' selected' : '')+'>'+esc(t('col_sort_' + s))+'</option>'; }).join('') + '</select></div><div class="col-list"></div></div>');
+    var rows = D.rows.slice();
+    rows.sort(function(a, b){
+      if (S.sort === 'old') return a.r.createdAt < b.r.createdAt ? -1 : 1;
+      if (S.sort === 'high') return b.r.amount - a.r.amount;
+      if (S.sort === 'late') return (b.age == null ? -1 : b.age) - (a.age == null ? -1 : a.age);
+      return a.r.createdAt < b.r.createdAt ? 1 : -1;
+    });
+    var shown = 30 + (S.more || 0) * 30, lst = qs('.col-list', rc);
+    rows.slice(0, shown).forEach(function(x){
+      var r = x.r;
+      var where = x.st === 'deposited' ? t('col_where_bank').replace('{d}', colDay_(r.depositedAt)) + (r.depositNo ? ' · ' + r.depositNo : '') + (r.reconciled ? ' · ' + t('col_matched') : '')
+        : x.st === 'held' ? t('col_where_held').replace('{who}', userName(r.holder))
+        : x.st === 'onway' ? t('col_where_onway').replace('{who}', userName(r.holder)) : t('col_where_deputy');
+      var it = el('<button type="button" class="col-req" style="--c:'+COL_C_[x.st]+'"><span class="col-dot" aria-hidden="true"></span><span class="col-qb">' +
+        '<span class="col-rt"><b>'+esc(locationName(r.locationId))+'</b><span class="num">'+money(r.amount)+'</span></span>' +
+        '<span class="col-rs">'+esc([r.txNo, x.day, userName(r.fromUserId) + ' › ' + userName(r.toUserId)].filter(Boolean).join(' · '))+'</span>' +
+        '<span class="col-st"><span class="col-pill">'+esc(t('col_st_' + x.st))+'</span>'+esc(where)+(x.age != null && x.age > 0 ? ' · <em class="'+(x.age > 3 ? 'late' : '')+'">'+esc(t('col_oldestD').replace('{n}', x.age))+'</em>' : '')+
+        (Math.abs(r.shortfall) > 0.004 ? ' · <em class="late">'+esc(t(r.shortfall > 0 ? 'col_shortX' : 'col_overX').replace('{x}', money(Math.abs(r.shortfall))))+'</em>' : '')+'</span></span></button>');
+      var mine = ['admin','finance','accountant','operations_manager','deputy_operations_manager'].indexOf(state.user.role) >= 0 || [r.fromUserId, r.toUserId].indexOf(state.user.id) >= 0;
+      if (mine) it.addEventListener('click', function(){ cpOpenRequest_({ id: r.id }); }); else it.classList.add('ro');
+      lst.appendChild(it);
+    });
+    if (rows.length > shown) {
+      var more = el('<button type="button" class="btn ghost col-more">'+esc(t('col_more').replace('{n}', rows.length - shown))+'</button>');
+      more.addEventListener('click', function(){ S.more = (S.more || 0) + 1; redraw(); });
+      rc.appendChild(more);
+    }
+    qs('.col-sort', rc).addEventListener('change', function(ev){ S.sort = ev.target.value; redraw(); });
+    body.appendChild(rc);
+  });
+}
+// the whole report as a workbook: summary, collectors, areas, branches, days, aging, requests
+function colSheets_(D, periodTxt){
+  var T = D.T, money2 = function(v){ return Math.round(v * 100) / 100; };
+  var stH = COL_ST_.map(function(k){ return t('col_st_' + k); });
+  function grpRows(list, nameOf){
+    var rows = [[t('col_x_name')].concat(stH, [t('col_k_total'), t('col_x_bankPct'), t('col_x_reqs'), t('col_k_short'), t('col_k_days'), t('col_x_oldest')])];
+    list.forEach(function(g){ rows.push([nameOf(g.key)].concat(COL_ST_.map(function(k){ return money2(g[k]); }), [money2(g.total), colPct_(g.deposited, g.total) + '%', g.n, money2(g.short), g.daysN ? Math.round(g.daysSum / g.daysN * 10) / 10 : '', g.oldest || ''])); });
+    rows.push([t('rp_total')].concat(COL_ST_.map(function(k){ return money2(T[k]); }), [money2(T.total), colPct_(T.deposited, T.total) + '%', T.n, money2(T.short), T.daysN ? Math.round(T.daysSum / T.daysN * 10) / 10 : '', T.oldest || '']));
+    return rows;
+  }
+  var sum = [[t('col_x_item'), t('col_x_amount')], [t('col_k_total'), money2(T.total)]].concat(COL_ST_.map(function(k){ return [t('col_st_' + k), money2(T[k])]; }),
+    [[t('col_outNow'), money2(T.deputy + T.onway + T.held)], [t('col_bankedPct'), colPct_(T.deposited, T.total) + '%'], [t('col_x_reqs'), T.n], [t('col_k_short'), money2(T.short)], [t('col_x_returned'), T.returned], [t('col_x_disputed'), T.disputed], [t('col_x_rejected'), T.rejected]]);
+  var daysRows = [[t('col_x_day'), t('col_dailyReq'), t('col_dailyBank')]], dm = {};
+  D.days.forEach(function(d){ dm[d.date] = [d.total, 0]; }); D.banked.forEach(function(d){ (dm[d.date] = dm[d.date] || [0, 0])[1] = d.total; });
+  Object.keys(dm).sort().forEach(function(k){ daysRows.push([k, money2(dm[k][0]), money2(dm[k][1])]); });
+  var ag = [[t('col_aging'), t('col_x_amount'), t('col_x_reqs')]].concat([0, 1, 2, 3].map(function(i){ return [t('col_age_' + i), money2(D.aging[i]), D.agingN[i]]; }));
+  var req = [[t('col_x_no'), t('col_x_day'), t('col_f_city'), t('col_f_area'), t('col_f_branch'), t('col_x_from'), t('col_x_to'), t('col_x_holder'), t('col_x_stage'), t('col_x_amount'), t('col_k_short'), t('col_x_age'), t('col_x_bankDay'), t('col_x_depNo'), t('col_x_ref'), t('col_matched')]];
+  D.rows.forEach(function(x){ var r = x.r; req.push([r.txNo || '', x.day, x.city === '_' ? '' : x.city, x.area === '_' ? '' : clusterName(x.area), locationName(r.locationId), userName(r.fromUserId), userName(r.toUserId), userName(r.holder), t('col_st_' + x.st), money2(r.amount), money2(r.shortfall || 0), x.age == null ? '' : x.age, r.depositedAt ? colDay_(r.depositedAt) : '', r.depositNo || '', r.depositRef || '', r.reconciled ? t('col_yes') : '']); });
+  return [
+    { name: t('col_x_summary'), rows: sum, note: periodTxt, noBars: true },
+    { name: t('col_byCollector'), rows: grpRows(D.collectors, function(k){ return k === '_' ? t('report_unspecified') : userName(k); }) },
+    { name: t('col_byArea'), rows: grpRows(D.areas, function(k){ return k === '_' ? t('report_unspecified') : clusterName(k); }) },
+    { name: t('col_byBranch'), rows: grpRows(D.branches, function(k){ return k === '_' ? t('cpv_wholeArea') : locationName(k); }) },
+    { name: t('col_daily'), rows: daysRows },
+    { name: t('col_aging'), rows: ag, noBars: true },
+    { name: t('col_requests'), rows: req }
+  ];
+}
 function renderHandoffs(body){
   body.innerHTML = '<div class="card">'+esc(t('loading'))+'</div>';
   var role = state.user.role;

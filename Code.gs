@@ -892,6 +892,7 @@ function route_(req) {
     recordDeposit: function () { return withCashLock_(function () { return actionRecordDeposit_(req, user); }); },
     uploadEntryPhoto: function () { return actionUploadEntryPhoto_(req, user); },
     listHandoffs: function () { return actionListHandoffs_(req, user); },
+    collectionsData: function () { return actionCollectionsData_(req, user); },
     addInventoryMove: function () { return actionAddInventoryMove_(req, user); },
     recordStockCount: function () { return actionRecordStockCount_(req, user); },
     voidInventoryMove: function () { return actionVoidInventoryMove_(req, user); },
