@@ -878,10 +878,11 @@ function route_(req) {
 
     // entries
     voidEntries: function () { return actionVoidEntries_(req, user); },
+    adminVoidTransaction: function () { return withCashLock_(function () { return actionAdminVoidTransaction_(req, user); }); },
     deputyValidateHandoff: function () { return actionDeputyValidateHandoff_(req, user); },
     deputyReturnHandoff: function () { return actionDeputyReturnHandoff_(req, user); },
-    createDailyEntry: function () { return actionCreateEntry_(req, user); },
-    importDailyEntries: function () { return actionImportEntries_(req, user); },
+    createDailyEntry: function () { return withCashLock_(function () { return actionCreateEntry_(req, user); }); },
+    importDailyEntries: function () { return withCashLock_(function () { return actionImportEntries_(req, user); }); },
     listEntries: function () { return actionListEntries_(req, user); },
 
     // handoffs
@@ -957,7 +958,7 @@ function route_(req) {
     // area-manager bulk upload -> Deputy Operations Manager approval — a
     // toggleable exception to the normal driver/store-manager chain, see
     // CLAUDE.md and checkClusterBulkEntryScope_ (Collection.gs).
-    bulkSubmitAreaBatch: function () { return actionBulkSubmitAreaBatch_(req, user); },
+    bulkSubmitAreaBatch: function () { return withCashLock_(function () { return actionBulkSubmitAreaBatch_(req, user); }); },
     listAreaBulkBatches: function () { return actionListAreaBulkBatches_(req, user); },
     areaBulkBatchDetail: function () { return actionAreaBulkBatchDetail_(req, user); },
     areaBatchRows: function () { return actionAreaBatchRows_(req, user); },

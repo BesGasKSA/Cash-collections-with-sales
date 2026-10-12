@@ -3332,6 +3332,71 @@
     .pl-dc-g span{display:flex;flex-direction:column;align-items:flex-start;font-weight:700;}
     .pl-dc-g i{font-style:normal;font-size:11px;color:var(--muted);}
   }
+  .sc-foot{display:flex;gap:10px;justify-content:flex-end;}
+  .sc-diff{background:color-mix(in srgb,#C27C1E 12%,#fff);}
+  .sc-lines{margin-top:12px;max-height:40vh;overflow:auto;}
+  /* the collector's home (2026-10-12): big figures, big buttons, one job per card */
+  .ch-wrap{display:flex;flex-direction:column;gap:12px;max-width:640px;margin:0 auto;}
+  .ch-sk{height:140px;border-radius:18px;background:linear-gradient(90deg,#ECEFEA,#F5F6F3,#ECEFEA);background-size:200% 100%;animation:chSk 1.2s linear infinite;}
+  @keyframes chSk{to{background-position:-200% 0;}}
+  .ch-hello{font-size:14px;font-weight:700;color:var(--muted);padding:2px 4px;}
+  .ch-hero{background:linear-gradient(160deg,#4D6D51,#35503A);color:#fff;border-radius:20px;padding:20px 18px;box-shadow:0 10px 24px rgba(53,80,58,.22);}
+  .ch-k{font-size:13px;font-weight:700;opacity:.85;}
+  .ch-big{font-size:38px;font-weight:800;line-height:1.15;margin-top:4px;letter-spacing:-.01em;}
+  .ch-big small{font-size:14px;font-weight:600;opacity:.8;margin-inline-start:6px;}
+  .ch-steps{list-style:none;display:flex;gap:6px;margin:16px 0 0;padding:0;}
+  .ch-steps li{flex:1;display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.12);border-radius:12px;padding:8px;font-size:12px;font-weight:600;opacity:.7;}
+  .ch-steps li.on{opacity:1;background:rgba(255,255,255,.22);}
+  .ch-steps b{flex:none;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;background:#fff;color:#35503A;font-size:12px;}
+  .ch-steps em{font-style:normal;background:#F2EEE4;color:#35503A;border-radius:999px;padding:0 6px;margin-inline-start:2px;}
+  .ch-cta{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:54px;margin-top:16px;border:0;border-radius:14px;background:#F2EEE4;color:#2B4230;font:inherit;font-size:16px;font-weight:800;cursor:pointer;transition:transform .1s cubic-bezier(.2,0,0,1);}
+  .ch-cta .ic2{width:22px;height:22px;}
+  .ch-cta:active,.ch-ok:active,.ch-other:active,.ch-link:active,.ch-photo:active{transform:scale(.97);}
+  .ch-none{margin:14px 0 0;font-size:13.5px;opacity:.9;}
+  .ch-sec{background:#fff;border-radius:18px;padding:16px;}
+  .ch-h{display:flex;align-items:center;gap:8px;font-size:16px;margin:0 0 12px;}
+  .ch-n{background:#C27C1E;color:#fff;border-radius:999px;font-size:12px;padding:1px 8px;}
+  .ch-empty{margin:0;color:var(--muted);font-size:13.5px;}
+  .ch-card{border:1px solid #E4E8E2;border-radius:16px;padding:14px;margin-bottom:10px;transition:opacity .26s cubic-bezier(.3,0,1,.3),transform .26s cubic-bezier(.3,0,1,.3);}
+  .ch-card.ch-out{opacity:0;transform:translateX(calc(var(--fx,1) * 24px));}
+  .ch-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;}
+  .ch-top b{display:block;font-size:15px;}
+  .ch-top span{display:block;font-size:12.5px;color:var(--muted);margin-top:2px;}
+  .ch-amt{font-size:22px;font-weight:800;white-space:nowrap;}
+  .ch-acts{display:flex;gap:8px;margin-top:12px;}
+  .ch-ok{flex:2;display:flex;align-items:center;justify-content:center;gap:8px;min-height:50px;border:0;border-radius:12px;background:#2E7D4F;color:#fff;font:inherit;font-size:15px;font-weight:800;cursor:pointer;transition:transform .1s cubic-bezier(.2,0,0,1);}
+  .ch-ok .ic2{width:20px;height:20px;}
+  .ch-other{flex:1;min-height:50px;border:1px solid #D9DED6;border-radius:12px;background:#fff;color:var(--ink,#1f2a22);font:inherit;font-size:13.5px;font-weight:700;cursor:pointer;transition:transform .1s cubic-bezier(.2,0,0,1);}
+  .ch-diff{margin-top:12px;}
+  .ch-diff label{display:block;font-size:12.5px;font-weight:700;color:var(--muted);margin-bottom:6px;}
+  .ch-diff input,.ch-dep input{width:100%;min-height:50px;font-size:20px;font-weight:700;border-radius:12px;}
+  .ch-total{margin:4px 0 0;font-size:13px;font-weight:700;color:var(--muted);text-align:end;}
+  .ch-line{display:flex;align-items:center;gap:10px;padding:10px 0;font-size:13.5px;}
+  .ch-line + .ch-line{border-top:1px solid #EEF0EC;}
+  .ch-line .ic2{flex:none;width:20px;height:20px;color:var(--green);}
+  .ch-line.bad .ic2{color:var(--c-danger);}
+  .ch-line span{flex:1;min-width:0;}
+  .ch-line em{display:block;font-style:normal;font-size:11.5px;color:#C27C1E;}
+  .ch-line em.ok{color:#2E7D4F;}
+  .ch-line b{white-space:nowrap;}
+  .ch-more{display:flex;gap:8px;}
+  .ch-link{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;min-height:46px;border:0;border-radius:12px;background:#fff;color:var(--green);font:inherit;font-size:13px;font-weight:700;cursor:pointer;transition:transform .1s cubic-bezier(.2,0,0,1);}
+  .ch-link .ic2{width:18px;height:18px;}
+  .ch-dep .field{margin-bottom:12px;}
+  .ch-hint{font-size:12px;margin-top:4px;}
+  .ch-photo{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:50px;border:1.5px dashed #C9D2C6;border-radius:12px;background:#F7F8F5;color:var(--green);font:inherit;font-weight:700;cursor:pointer;}
+  .chdPrev{display:block;max-width:140px;max-height:140px;border-radius:10px;margin-top:8px;}
+  .ch-dep .ch-cta{background:#2E7D4F;color:#fff;}
+  @keyframes chRise{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+  .ch-rise{animation:chRise .3s cubic-bezier(0,0,.2,1) both;animation-delay:calc(var(--i,0) * 40ms);}
+  @media (prefers-reduced-motion:reduce){.ch-rise,.ch-sk{animation:none;}.ch-card,.ch-cta,.ch-ok,.ch-other,.ch-link{transition:none;}}
+  html body #screenBody > .ch-wrap{padding:0 12px;}
+  .hp-body{padding:14px 18px 4px;}
+  .hp-k{font-size:12.5px;font-weight:700;color:var(--muted);}
+  .hp-big{font-size:30px;font-weight:800;line-height:1.2;margin-top:2px;}
+  .hp-big small{font-size:13px;color:var(--muted);margin-inline-start:6px;font-weight:600;}
+  .hp-s{font-size:12.5px;color:var(--muted);margin-top:2px;}
+  .hp-row{display:flex;justify-content:space-between;gap:12px;margin-top:12px;padding:10px 12px;border-radius:10px;background:#F4F5F2;font-size:13.5px;}
   .pa-energy{display:flex;gap:8px;align-items:flex-start;margin:10px 0 0;font-size:13.5px;line-height:1.5;font-weight:600;color:var(--green);background:color-mix(in srgb,var(--green) 8%,#fff);border-radius:12px;padding:10px 12px;}
   .pa-energy .sp{flex:none;font-size:16px;line-height:1.3;}
   .mm-nav{display:grid;grid-template-columns:1fr;gap:2px;background:#fff;border-radius:14px;padding:6px;}
@@ -3832,7 +3897,7 @@ var ICON_B64 = 'iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAYAAAA9zQYyAAAcG0lEQVR42u2dd1cU
 // Stamped by tools/stamp-build.js at publish time so the running app can
 // say which build it is — a cached page is the usual reason a shipped change
 // seems missing.
-var BUILD_ID = '2026-10-12 15:18 · 52c31dd';
+var BUILD_ID = '2026-10-12 16:24 · fe884b2';
 var LOGO_SRC = 'data:image/png;base64,' + LOGO_B64;
 var ICON_SRC = LOGO_SRC; // same asset — see the comment above LOGO_B64
 // The sign-in mark (2026-09-30): the logo's round emblem as a coin with a
@@ -4490,7 +4555,12 @@ var L = {
 // Collections screen strings (2026-10-11)
 (function(){
   var X = {
-    en: { mm_screens:'Screens', navs_deputyReview:'Approvals', navs_users:'Users', navs_areaBulk:'Area upload', navs_reconciliation:'Bank', navs_customers:'Customers',
+    en: { ch_withMe:'Cash with me now', ch_s1:'Receive', ch_s2:'Hold', ch_s3:'Bank', ch_bankIt:'Deposit to the bank', ch_bankSub:'Count the cash, then fill these three things', ch_receiveFirst:'Nothing with you yet. Receive the cash below first.', ch_allClear:'All clear. Nothing to receive or deposit.', ch_toReceive:'Cash to receive', ch_noneToReceive:'Nothing waiting for you.', ch_from:'From {who}', ch_gotIt:'I received it', ch_different:'Different amount', ch_countedAmt:'The amount you counted', ch_saveCounted:'Save this amount', ch_problem:'Report a problem', ch_confirmDiff:'You received {a}, not {b}. The difference will be recorded and reported. Continue?', ch_reported:'Reported', ch_totalToReceive:'Total to receive: {a}', ch_atDeputy:'{n} on the way, waiting for the deputy', ch_disputed:'{n} with a reported problem', ch_lastDeposits:'My last deposits', ch_noDeposits:'No deposits yet.', ch_matched:'matched with the bank', ch_notMatched:'waiting for the bank statement', ch_handOther:'Hand to another collector', ch_seeAll:'All my collections', ch_confirmDeposit:'Confirm deposit',
+      sc_hi:'Before saving', sc_title:'The system will record this day as', sc_diff:'The screen showed {p}. This is the exact figure that will be saved.', sc_back:'Back to the form', sc_save:'Save the day',
+      av_hint:'Admin: cancel this whole transaction, every line, whoever entered it. If it is in a handover nobody has received yet, that handover is cancelled too and its other days go back to be sent again. Nothing is deleted: it stays in the audit trail.', av_btn:'Cancel the whole transaction', av_confirm:'Cancel every line of this transaction, with its bank deposit and any handover not yet received?', av_done:'Cancelled: {n} lines, {h} handovers', err_entryHandedOn:'This day is in a handover already received or passed on ({no}). Settle it through that handover instead.',
+      hp_title:'Here is what you hold now', hp_held:'Cash with you now', hp_heldN:'from {n} received handovers not yet passed on', hp_nothing:'Nothing left with you. All handed on.', hp_coming:'Still on its way to you ({n})', hp_received:'Received {amount} SAR', hp_banked:'Deposited {amount} SAR',
+      err_dayAlreadyEntered:'This day is already entered for this source ({no}, by {who}). Only {who} or the admin can cancel it; then the day can be entered again.', dep_amount:'Amount you are depositing', dep_amountHint:'Count the cash and type the total. It must match the cash you hold.', err_depAmountRequired:'Type the amount you are depositing', err_depAmountMismatch:'The amount does not match the cash you hold. Count again before depositing.',
+      mm_screens:'Screens', navs_deputyReview:'Approvals', navs_users:'Users', navs_areaBulk:'Area upload', navs_reconciliation:'Bank', navs_customers:'Customers',
       en_line0:'Every riyal you hand over on time keeps Best Gas strong. Thank you for today.', en_line1:'A clear day starts with one small step. You have got this.',
       en_line2:'Your care with the numbers is what customers never see, and always feel.', en_line3:'Good work is quiet. Today it adds up to something big.',
       en_line4:'Every cylinder that reaches a home carries your effort with it.', en_line5:'Steady hands, accurate figures, a proud team. Have a great shift.',
@@ -4510,7 +4580,12 @@ var L = {
       col_shortX:'short {x}', col_overX:'over {x}', col_none:'No collection requests yet', col_noneHere:'No requests match these filters', col_yes:'Yes',
       col_x_name:'Name', col_x_bankPct:'Banked %', col_x_reqs:'Requests', col_x_oldest:'Oldest open', col_x_item:'Item', col_x_amount:'Amount (SAR)', col_x_returned:'Returned requests', col_x_disputed:'Disputed requests', col_x_rejected:'Rejected requests',
       col_x_day:'Day', col_x_no:'Number', col_x_from:'Area manager', col_x_to:'Collector', col_x_holder:'Holder now', col_x_stage:'Stage', col_x_age:'Days open', col_x_bankDay:'Banked on', col_x_depNo:'Deposit number', col_x_ref:'Bank reference', col_x_summary:'Summary' },
-    ar: { mm_screens:'الشاشات', navs_deputyReview:'الاعتمادات', navs_users:'المستخدمون', navs_areaBulk:'رفع المنطقة', navs_reconciliation:'البنك', navs_customers:'العملاء',
+    ar: { ch_withMe:'النقدية التي معي الآن', ch_s1:'استلم', ch_s2:'احتفظ', ch_s3:'أودع', ch_bankIt:'إيداع في البنك', ch_bankSub:'عُدّ النقدية ثم املأ هذه الثلاثة', ch_receiveFirst:'لا شيء معك بعد. استلم النقدية بالأسفل أولًا.', ch_allClear:'كل شيء تمام. لا يوجد ما تستلمه أو تودعه.', ch_toReceive:'نقدية للاستلام', ch_noneToReceive:'لا يوجد شيء بانتظارك.', ch_from:'من {who}', ch_gotIt:'استلمتها', ch_different:'مبلغ مختلف', ch_countedAmt:'المبلغ الذي عددته', ch_saveCounted:'احفظ هذا المبلغ', ch_problem:'الإبلاغ عن مشكلة', ch_confirmDiff:'استلمت {a} وليس {b}. سيُسجل الفرق ويُبلغ عنه. متابعة؟', ch_reported:'تم الإبلاغ', ch_totalToReceive:'إجمالي المطلوب استلامه: {a}', ch_atDeputy:'{n} في الطريق، بانتظار نائب مدير العمليات', ch_disputed:'{n} عليها مشكلة مبلغ عنها', ch_lastDeposits:'آخر إيداعاتي', ch_noDeposits:'لا توجد إيداعات بعد.', ch_matched:'مطابق مع البنك', ch_notMatched:'بانتظار كشف البنك', ch_handOther:'تسليم لمحصل آخر', ch_seeAll:'كل تحصيلاتي', ch_confirmDeposit:'تأكيد الإيداع',
+      sc_hi:'قبل الحفظ', sc_title:'سيُسجّل النظام هذا اليوم هكذا', sc_diff:'الشاشة عرضت {p}. هذا هو الرقم الدقيق الذي سيُحفظ.', sc_back:'العودة إلى النموذج', sc_save:'حفظ اليوم',
+      av_hint:'للمسؤول: إلغاء هذه المعاملة كاملة بكل أسطرها أيًّا كان مُدخِلها. إن كانت في تسليم لم يُستلم بعد، يُلغى التسليم أيضًا وتعود أيامه الأخرى لتُرسل من جديد. لا يُحذف شيء: يبقى في سجل التدقيق.', av_btn:'إلغاء المعاملة كاملة', av_confirm:'إلغاء كل أسطر هذه المعاملة مع إيداعها البنكي وأي تسليم لم يُستلم بعد؟', av_done:'أُلغي: {n} سطر، {h} تسليم', err_entryHandedOn:'هذا اليوم في تسليم تم استلامه أو تمريره ({no}). عالجه من خلال ذلك التسليم.',
+      hp_title:'هذا ما لديك الآن', hp_held:'النقدية التي معك الآن', hp_heldN:'من {n} تسليمات استلمتها ولم تُسلَّم بعد', hp_nothing:'لا يوجد لديك شيء. سُلّم كل شيء.', hp_coming:'ما زال في الطريق إليك ({n})', hp_received:'استلمت {amount} ر.س', hp_banked:'أودعت {amount} ر.س',
+      err_dayAlreadyEntered:'هذا اليوم مُدخل مسبقًا لهذا المصدر ({no}، أدخله {who}). لا يلغيه إلا {who} أو مسؤول النظام، ثم يمكن إدخال اليوم من جديد.', dep_amount:'المبلغ الذي تودعه', dep_amountHint:'عُدّ النقدية واكتب الإجمالي. يجب أن يطابق النقدية التي لديك.', err_depAmountRequired:'اكتب المبلغ الذي تودعه', err_depAmountMismatch:'المبلغ لا يطابق النقدية التي لديك. أعد العدّ قبل الإيداع.',
+      mm_screens:'الشاشات', navs_deputyReview:'الاعتمادات', navs_users:'المستخدمون', navs_areaBulk:'رفع المنطقة', navs_reconciliation:'البنك', navs_customers:'العملاء',
       en_line0:'كل ريال تسلّمه في وقته يقوّي شركتنا. شكرًا لك على اليوم.', en_line1:'اليوم الواضح يبدأ بخطوة صغيرة. أنت قدّها.',
       en_line2:'دقتك في الأرقام لا يراها العميل، لكنه يشعر بها دائمًا.', en_line3:'العمل الجيد هادئ، واليوم يصنع فرقًا كبيرًا.',
       en_line4:'كل أسطوانة تصل إلى بيت تحمل معها جهدك.', en_line5:'أيدٍ ثابتة، أرقام دقيقة، وفريق نفخر به. يومك سعيد.',
@@ -4531,7 +4606,12 @@ var L = {
       col_shortX:'عجز {x}', col_overX:'زيادة {x}', col_none:'لا توجد طلبات تحصيل بعد', col_noneHere:'لا توجد طلبات بهذه التصفية', col_yes:'نعم',
       col_x_name:'الاسم', col_x_bankPct:'نسبة الإيداع', col_x_reqs:'الطلبات', col_x_oldest:'أقدم مفتوح', col_x_item:'البند', col_x_amount:'المبلغ (ر.س)', col_x_returned:'طلبات معادة', col_x_disputed:'طلبات عليها اعتراض', col_x_rejected:'طلبات مرفوضة',
       col_x_day:'اليوم', col_x_no:'الرقم', col_x_from:'مدير المنطقة', col_x_to:'المحصل', col_x_holder:'لدى من الآن', col_x_stage:'المرحلة', col_x_age:'أيام مفتوح', col_x_bankDay:'تاريخ الإيداع', col_x_depNo:'رقم الإيداع', col_x_ref:'مرجع البنك', col_x_summary:'الملخص' },
-    ur: { mm_screens:'اسکرینیں', navs_deputyReview:'منظوریاں', navs_users:'صارفین', navs_areaBulk:'ایریا اپ لوڈ', navs_reconciliation:'بینک', navs_customers:'گاہک',
+    ur: { ch_withMe:'ابھی میرے پاس نقدی', ch_s1:'وصول', ch_s2:'رکھیں', ch_s3:'جمع', ch_bankIt:'بینک میں جمع کریں', ch_bankSub:'نقدی گنیں، پھر یہ تین چیزیں بھریں', ch_receiveFirst:'ابھی آپ کے پاس کچھ نہیں۔ پہلے نیچے نقدی وصول کریں۔', ch_allClear:'سب ٹھیک ہے۔ وصول یا جمع کرنے کو کچھ نہیں۔', ch_toReceive:'وصول کرنے کی نقدی', ch_noneToReceive:'آپ کا کچھ انتظار میں نہیں۔', ch_from:'{who} سے', ch_gotIt:'میں نے وصول کر لیا', ch_different:'مختلف رقم', ch_countedAmt:'آپ کی گنی ہوئی رقم', ch_saveCounted:'یہ رقم محفوظ کریں', ch_problem:'مسئلہ بتائیں', ch_confirmDiff:'آپ نے {b} نہیں بلکہ {a} وصول کیے۔ فرق درج اور رپورٹ ہو گا۔ جاری رکھیں؟', ch_reported:'رپورٹ ہو گیا', ch_totalToReceive:'کل وصولی: {a}', ch_atDeputy:'{n} راستے میں، ڈپٹی کے انتظار میں', ch_disputed:'{n} پر مسئلہ رپورٹ ہوا', ch_lastDeposits:'میری آخری جمع', ch_noDeposits:'ابھی کوئی جمع نہیں۔', ch_matched:'بینک سے ملایا گیا', ch_notMatched:'بینک اسٹیٹمنٹ کا انتظار', ch_handOther:'دوسرے کلکٹر کو دیں', ch_seeAll:'میری تمام وصولیاں', ch_confirmDeposit:'جمع کی تصدیق',
+      sc_hi:'محفوظ کرنے سے پہلے', sc_title:'سسٹم یہ دن اس طرح درج کرے گا', sc_diff:'اسکرین نے {p} دکھایا۔ یہی درست رقم محفوظ ہو گی۔', sc_back:'فارم پر واپس', sc_save:'دن محفوظ کریں',
+      av_hint:'ایڈمن: یہ پورا لین دین منسوخ کریں، ہر سطر، جس نے بھی درج کیا ہو۔ اگر یہ کسی ایسی ترسیل میں ہے جو ابھی وصول نہیں ہوئی تو وہ ترسیل بھی منسوخ ہو گی اور اس کے دوسرے دن دوبارہ بھیجنے کے لیے واپس جائیں گے۔ کچھ حذف نہیں ہوتا: یہ آڈٹ ریکارڈ میں رہتا ہے۔', av_btn:'پورا لین دین منسوخ کریں', av_confirm:'اس لین دین کی ہر سطر، اس کی بینک جمع اور ابھی وصول نہ ہونے والی ترسیل منسوخ کریں؟', av_done:'منسوخ: {n} سطریں، {h} ترسیل', err_entryHandedOn:'یہ دن ایسی ترسیل میں ہے جو وصول یا آگے جا چکی ({no})۔ اسے اسی ترسیل کے ذریعے نمٹائیں۔',
+      hp_title:'اب آپ کے پاس یہ ہے', hp_held:'ابھی آپ کے پاس نقدی', hp_heldN:'{n} وصول شدہ ترسیل سے، جو ابھی آگے نہیں گئیں', hp_nothing:'آپ کے پاس کچھ باقی نہیں۔ سب آگے دے دیا گیا۔', hp_coming:'ابھی آپ کی طرف راستے میں ({n})', hp_received:'{amount} ریال وصول ہوئے', hp_banked:'{amount} ریال جمع ہوئے',
+      err_dayAlreadyEntered:'یہ دن اس ذریعے کے لیے پہلے سے درج ہے ({no}، {who} نے درج کیا)۔ صرف {who} یا ایڈمن اسے منسوخ کر سکتے ہیں، پھر دن دوبارہ درج ہو سکتا ہے۔', dep_amount:'جمع کی جانے والی رقم', dep_amountHint:'نقدی گنیں اور کل رقم لکھیں۔ یہ آپ کے پاس موجود نقدی کے برابر ہونی چاہیے۔', err_depAmountRequired:'جمع کی جانے والی رقم لکھیں', err_depAmountMismatch:'رقم آپ کے پاس موجود نقدی سے مطابقت نہیں رکھتی۔ جمع کرنے سے پہلے دوبارہ گنیں۔',
+      mm_screens:'اسکرینیں', navs_deputyReview:'منظوریاں', navs_users:'صارفین', navs_areaBulk:'ایریا اپ لوڈ', navs_reconciliation:'بینک', navs_customers:'گاہک',
       en_line0:'وقت پر دیا گیا ہر ریال کمپنی کو مضبوط رکھتا ہے۔ آج کے لیے شکریہ۔', en_line1:'اچھا دن ایک چھوٹے قدم سے شروع ہوتا ہے۔ آپ کر سکتے ہیں۔',
       en_line2:'اعداد میں آپ کی احتیاط گاہک نہیں دیکھتا، مگر ہمیشہ محسوس کرتا ہے۔', en_line3:'اچھا کام خاموش ہوتا ہے، آج یہ بڑا فرق بنائے گا۔',
       en_line4:'گھر پہنچنے والا ہر سلنڈر آپ کی محنت ساتھ لے جاتا ہے۔', en_line5:'مضبوط ہاتھ، درست اعداد، قابل فخر ٹیم۔ آپ کا دن اچھا گزرے۔',
@@ -5107,7 +5187,7 @@ var ERROR_KEYS_ = { archive_changed:'ar_changed', archive_row_too_large:'ar_tooL
   invalid_centre:'err_invalidCentre', invalid_month:'err_invalidMonth', duplicate_line:'err_duplicateLine', overlap_line:'err_overlapLine',
   invalid_income_item:'err_invalidIncomeItem', invalid_expense_item:'err_invalidExpenseItem', reason_required:'err_reasonRequired',
   customer_required:'err_customerRequired', user_in_other_area:'err_userInOtherArea',
-  future_date:'err_futureDate', day_closed:'err_dayClosed', invalid_date:'err_invalidDate', not_your_entry:'err_notYourEntry',
+  future_date:'err_futureDate', day_closed:'err_dayClosed', day_already_entered:'err_dayAlreadyEntered', entry_handed_on:'err_entryHandedOn', deposit_amount_mismatch:'err_depAmountMismatch', deposit_amount_required:'err_depAmountRequired', invalid_date:'err_invalidDate', not_your_entry:'err_notYourEntry',
   entry_locked:'err_entryLocked', deposit_reconciled:'err_depositReconciled', has_direct_deposit:'err_hasDirectDeposit', already_voided:'err_alreadyVoided', receiver_only:'err_receiverOnly',
   person_holds_cash:'err_personHoldsCash', cash_in_flight:'err_cashInFlight', user_has_assignments:'err_userHasAssignments',
   cannot_change_self:'err_cannotChangeSelf', last_admin:'err_lastAdmin', live_locked:'err_liveLocked',
@@ -5124,6 +5204,8 @@ var ERROR_KEYS_ = { archive_changed:'ar_changed', archive_row_too_large:'ar_tooL
 function errMsg_(res){
   var code = res && res.error;
   if (!code) return t('err_generic');
+  if (code === 'day_already_entered') return t('err_dayAlreadyEntered').replace('{no}', res.existingTxNo || '').split('{who}').join(res.enteredBy ? userName(res.enteredBy) : '—');
+  if (code === 'entry_handed_on') return t('err_entryHandedOn').replace('{no}', res.existingTxNo || '');
   if (code === 'person_holds_cash' && res.holderId) {
     var hd = res.held || {}, bits = [];
     if (hd.entries) bits.push(t('hc_entries').replace('{n}', hd.entries).replace('{a}', money(hd.entriesAmount)));
@@ -6657,6 +6739,61 @@ function pendClose_(){
 }
 
 // The welcome popup: centred on a desktop, a bottom sheet on a phone.
+// Before a day is saved (2026-10-12): the server works out the rows exactly as the
+// save will (dry run, nothing written) and the person confirms that figure. What
+// is confirmed is what is saved, whatever the screen's own preview says.
+function entryServerCheck_(rows, previewNet, go, stop){
+  api('importDailyEntries', { rows: rows, dryRun: true }).then(function(res){
+    if (!res || !res.ok) { stop(res || { ok: false, error: 'network' }); return; }
+    var bad = (res.results || []).filter(function(r){ return !r.ok; });
+    if (bad.length) { stop({ ok: false, error: bad[0].error, existingTxNo: bad[0].existingTxNo, enteredBy: bad[0].enteredBy }); return; }
+    var b = res.breakdown || {}, net = Math.round(Number(b.netCashOwed || 0) * 100) / 100;
+    var differs = previewNet != null && Math.abs(net - previewNet) > 0.009;
+    var ov = el('<div class="pa-ov sc-ov" role="dialog" aria-modal="true" aria-labelledby="scTitle"><div class="pa-bg"></div><div class="pa-card">' +
+      '<div class="pa-top"><span class="pa-bell">'+icon_('check')+'</span><div><div class="pa-hi">'+esc(t('sc_hi'))+'</div><h2 id="scTitle">'+esc(t('sc_title'))+'</h2></div></div>' +
+      '<div class="hp-body"><div class="hp-k">'+esc(t('entry_netOwed'))+'</div><div class="hp-big num">'+money(net)+'<small>'+esc(t('ui_sar'))+'</small></div>' +
+        (differs ? '<div class="hp-row sc-diff"><span>'+esc(t('sc_diff').replace('{p}', money(previewNet)))+'</span></div>' : '') +
+        '<div class="sc-lines"></div></div>' +
+      '<div class="pa-foot sc-foot"><button type="button" class="btn secondary sc-back">'+esc(t('sc_back'))+'</button><button type="button" class="btn sc-go">'+esc(t('sc_save'))+'</button></div></div></div>');
+    try { qs('.sc-lines', ov).innerHTML = breakdownGrid(b); } catch (e) {}
+    function close(){ document.removeEventListener('keydown', onKey); ov.remove(); }
+    function onKey(e){ if (e.key === 'Escape') { close(); stop(null); } }
+    document.addEventListener('keydown', onKey);
+    qs('.pa-bg', ov).addEventListener('click', function(){ close(); stop(null); });
+    qs('.sc-back', ov).addEventListener('click', function(){ close(); stop(null); });
+    qs('.sc-go', ov).addEventListener('click', function(){ close(); go(); });
+    document.body.appendChild(ov);
+    setTimeout(function(){ try { qs('.sc-go', ov).focus({ preventScroll: true }); } catch (e) {} }, 60);
+  });
+}
+// After a confirm (cash received, or banked): what the person still holds now and
+// what is still on its way to them (2026-10-12, the user's ask). Reads the fresh
+// list, so the figure is the server's, never a sum kept on the screen.
+function heldPopup_(doneText){
+  api('listHandoffs', {}).then(function(res){
+    if (!res || !res.ok || !state.user) return;
+    var me = state.user.id, held = 0, heldN = 0, coming = 0, comingN = 0;
+    (res.handoffs || []).forEach(function(h){
+      if (h.kind === 'deposit' || h.toUserId !== me) return;
+      if (h.status === 'confirmed' && !h.consumedBy) { held += Number(h.amount || 0); heldN++; }
+      else if (h.status === 'pending' || h.status === 'pending_deputy') { coming += Number(h.amount || 0); comingN++; }
+    });
+    if (qs('.pa-ov')) return;
+    var ov = el('<div class="pa-ov hp-ov" role="dialog" aria-modal="true" aria-labelledby="hpTitle"><div class="pa-bg"></div><div class="pa-card">' +
+      '<div class="pa-top"><span class="pa-bell">'+icon_('check')+'</span><div><div class="pa-hi">'+esc(doneText)+'</div><h2 id="hpTitle">'+esc(t('hp_title'))+'</h2></div></div>' +
+      '<div class="hp-body"><div class="hp-k">'+esc(t('hp_held'))+'</div><div class="hp-big num">'+money(held)+'<small>'+esc(t('ui_sar'))+'</small></div>' +
+        '<div class="hp-s">'+esc(held > 0 ? t('hp_heldN').replace('{n}', heldN) : t('hp_nothing'))+'</div>' +
+        (comingN ? '<div class="hp-row"><span>'+esc(t('hp_coming').replace('{n}', comingN))+'</span><b class="num">'+money(coming)+'</b></div>' : '') +
+      '</div><div class="pa-foot"><button type="button" class="btn pa-later">'+esc(t('pa_close'))+'</button></div></div></div>');
+    function close(){ document.removeEventListener('keydown', onKey); ov.remove(); }
+    function onKey(e){ if (e.key === 'Escape') close(); }
+    document.addEventListener('keydown', onKey);
+    qs('.pa-bg', ov).addEventListener('click', close);
+    qs('.pa-later', ov).addEventListener('click', close);
+    document.body.appendChild(ov);
+    setTimeout(function(){ try { qs('.pa-later', ov).focus({ preventScroll: true }); } catch (e) {} }, 60);
+  });
+}
 // A positive line for the welcome (2026-10-12, the user's ask): one of eight,
 // turning with every sign-in, in the screen's language.
 function energyLine_(){
@@ -10063,7 +10200,169 @@ function myOrgPanel_(all){
   return node;
 }
 
+// ---------- The collector's home, rebuilt simple (2026-10-12, the user: "they found it complicated") ----------
+// One screen, three steps in the order the work happens: receive the cash the
+// area managers send, see what you hold, bank it. Big figures, big buttons, one
+// action per card; everything else (history, hand to another collector) sits
+// below, quiet. Motion: cards rise in once on the first paint (300 ms, 40 ms
+// apart, decelerate); a received card slides out; nothing under reduced motion.
+var CH_DRAWN_ = false;
+function renderCollectorHome_(body){
+  body.innerHTML = '<div class="ch-wrap"><div class="ch-sk"></div><div class="ch-sk"></div></div>';
+  api('listHandoffs', {}).then(function(res){
+    if (!res || !res.ok) { body.innerHTML = '<div class="msg err">'+esc(errMsg_(res || {}))+'</div>'; return; }
+    var me = state.user.id, all = res.handoffs || [];
+    var mine = function(h){ return (h.kind === 'cluster_to_collector' || h.kind === 'collector_to_collector') && h.toUserId === me; };
+    var toReceive = all.filter(function(h){ return mine(h) && h.status === 'pending'; });
+    var atDeputy = all.filter(function(h){ return mine(h) && h.status === 'pending_deputy'; });
+    var held = all.filter(function(h){ return mine(h) && h.status === 'confirmed' && !h.consumedBy; });
+    var disputed = all.filter(function(h){ return (h.toUserId === me || h.fromUserId === me) && h.status === 'disputed'; });
+    var deposits = all.filter(function(h){ return h.kind === 'deposit' && h.fromUserId === me && h.status !== 'voided'; }).slice(0, 5);
+    function sum(l){ return l.reduce(function(s, h){ return s + Number(h.amount || 0); }, 0); }
+    var heldAmt = sum(held), recvAmt = sum(toReceive);
+    var enter = !CH_DRAWN_ && !(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches); CH_DRAWN_ = true;
+    var i = 0; function rise(){ return enter ? ' ch-rise" style="--i:'+Math.min(i++, 6) : ''; }
+    function place(h){ return h.locationId ? locationName(h.locationId) : (h.clusterId ? clusterName(h.clusterId) : t('kind_' + h.kind)); }
+    function when(h){ return fmtStamp_(h.createdAt); }
+
+    var w = el('<div class="ch-wrap"></div>');
+    // 1. hello, and the one figure that matters
+    w.appendChild(el('<div class="ch-hello'+rise()+'"><span>'+esc(timeGreeting() + '، ' + state.user.name)+'</span></div>'));
+    var steps = [['ch_s1', toReceive.length], ['ch_s2', held.length], ['ch_s3', null]];
+    var hero = el('<section class="ch-hero'+rise()+'">' +
+      '<div class="ch-k">'+esc(t('ch_withMe'))+'</div>' +
+      '<div class="ch-big num">'+money(heldAmt)+'<small>'+esc(t('ui_sar'))+'</small></div>' +
+      '<ol class="ch-steps">' + steps.map(function(s, k){
+        var on = k === 0 ? toReceive.length > 0 : k === 1 ? heldAmt > 0 : false;
+        return '<li class="'+(on ? 'on' : '')+'"><b>'+(k + 1)+'</b><span>'+esc(t(s[0]))+(s[1] ? ' <em>'+s[1]+'</em>' : '')+'</span></li>';
+      }).join('') + '</ol>' +
+      (heldAmt > 0 ? '<button type="button" class="ch-cta">'+icon_('bank')+'<span>'+esc(t('ch_bankIt'))+'</span></button>'
+        : '<p class="ch-none">'+esc(t(toReceive.length ? 'ch_receiveFirst' : 'ch_allClear'))+'</p>') +
+    '</section>');
+    w.appendChild(hero);
+    var cta = qs('.ch-cta', hero);
+    if (cta) cta.addEventListener('click', function(){ chDepositSheet_(heldAmt); });
+
+    // 2. cash to receive: one big card each
+    var rc = el('<section class="ch-sec'+rise()+'"><h2 class="ch-h">'+esc(t('ch_toReceive'))+(toReceive.length ? '<span class="ch-n">'+toReceive.length+'</span>' : '')+'</h2></section>');
+    if (!toReceive.length) rc.appendChild(el('<p class="ch-empty">'+esc(t('ch_noneToReceive'))+'</p>'));
+    toReceive.forEach(function(h){
+      var c = el('<article class="ch-card">' +
+        '<div class="ch-top"><div><b>'+esc(place(h))+'</b><span>'+esc(t('ch_from').replace('{who}', userName(h.fromUserId)))+' · '+esc(when(h))+'</span></div>' +
+        '<div class="ch-amt num">'+money(h.amount)+'</div></div>' +
+        '<div class="ch-acts"><button type="button" class="ch-ok">'+icon_('check')+'<span>'+esc(t('ch_gotIt'))+'</span></button>' +
+        '<button type="button" class="ch-other">'+esc(t('ch_different'))+'</button></div>' +
+        '<div class="ch-diff" hidden><label>'+esc(t('ch_countedAmt'))+'</label><input type="text" inputmode="decimal" placeholder="0.00">' +
+          '<div class="ch-acts"><button type="button" class="ch-ok ch-diffok">'+esc(t('ch_saveCounted'))+'</button><button type="button" class="ch-other ch-prob">'+esc(t('ch_problem'))+'</button></div></div>' +
+        '<div class="ch-msg"></div></article>');
+      function done(amount){
+        c.classList.add('ch-out');
+        setTimeout(function(){ renderCollectorHome_(body); heldPopup_(t('hp_received').replace('{amount}', money(amount))); }, enter ? 260 : 0);
+      }
+      function receive(amount, btn){
+        btn.disabled = true;
+        api('confirmHandoff', { id: h.id, receivedAmount: amount }).then(function(r){
+          btn.disabled = false;
+          if (!r.ok) { qs('.ch-msg', c).innerHTML = '<div class="msg err">'+esc(errMsg_(r))+'</div>'; return; }
+          done(r.handoff ? r.handoff.amount : amount);
+        });
+      }
+      qs('.ch-ok', c).addEventListener('click', function(ev){ receive(Number(h.amount), ev.currentTarget); });
+      qs('.ch-other', c).addEventListener('click', function(){ var d = qs('.ch-diff', c); d.hidden = !d.hidden; if (!d.hidden) qs('input', d).focus(); });
+      qs('.ch-diffok', c).addEventListener('click', function(ev){
+        var v = numFromInput_(qs('.ch-diff input', c));
+        if (!(v >= 0) || qs('.ch-diff input', c).value.trim() === '') { qs('.ch-msg', c).innerHTML = '<div class="msg err">'+esc(t('err_depAmountRequired'))+'</div>'; return; }
+        if (!confirm(t('ch_confirmDiff').replace('{a}', money(v)).replace('{b}', money(h.amount)))) return;
+        receive(v, ev.currentTarget);
+      });
+      qs('.ch-prob', c).addEventListener('click', function(ev){
+        var pb = ev.currentTarget;
+        var note = prompt(t('handoff_disputeNote'));
+        if (!note || !note.trim()) return;
+        pb.disabled = true;
+        api('disputeHandoff', { id: h.id, note: note.trim() }).then(function(r){
+          if (!r.ok) { pb.disabled = false; qs('.ch-msg', c).innerHTML = '<div class="msg err">'+esc(errMsg_(r))+'</div>'; return; }
+          toast('ch_reported', 'ok'); renderCollectorHome_(body);
+        });
+      });
+      rc.appendChild(c);
+    });
+    if (toReceive.length > 1) rc.appendChild(el('<p class="ch-total">'+esc(t('ch_totalToReceive').replace('{a}', money(recvAmt)))+'</p>'));
+    w.appendChild(rc);
+
+    // 3. what the deputy still checks, disputes: one quiet line each
+    if (atDeputy.length || disputed.length) {
+      var info = el('<section class="ch-sec ch-info'+rise()+'"></section>');
+      if (atDeputy.length) info.appendChild(el('<div class="ch-line">'+icon_('hourglass')+'<span>'+esc(t('ch_atDeputy').replace('{n}', atDeputy.length))+'</span><b class="num">'+money(sum(atDeputy))+'</b></div>'));
+      if (disputed.length) info.appendChild(el('<div class="ch-line bad">'+icon_('alert')+'<span>'+esc(t('ch_disputed').replace('{n}', disputed.length))+'</span><b class="num">'+money(sum(disputed))+'</b></div>'));
+      w.appendChild(info);
+    }
+
+    // 4. my last deposits
+    var dc = el('<section class="ch-sec'+rise()+'"><h2 class="ch-h">'+esc(t('ch_lastDeposits'))+'</h2></section>');
+    if (!deposits.length) dc.appendChild(el('<p class="ch-empty">'+esc(t('ch_noDeposits'))+'</p>'));
+    deposits.forEach(function(d){
+      dc.appendChild(el('<div class="ch-line">'+icon_('bank')+'<span>'+esc(fmtStamp_(d.createdAt))+(d.bankReference ? ' · ' + esc(d.bankReference) : '')+'<em class="'+(d.reconciled ? 'ok' : '')+'">'+esc(t(d.reconciled ? 'ch_matched' : 'ch_notMatched'))+'</em></span><b class="num">'+money(d.amount)+'</b></div>'));
+    });
+    w.appendChild(dc);
+
+    // 5. rarely used, kept out of the way
+    var more = el('<section class="ch-more'+rise()+'"><button type="button" class="ch-link ch-hand">'+icon_('handoffs')+'<span>'+esc(t('ch_handOther'))+'</span></button>' +
+      '<button type="button" class="ch-link ch-all">'+icon_('report')+'<span>'+esc(t('ch_seeAll'))+'</span></button></section>');
+    qs('.ch-hand', more).addEventListener('click', function(){ goScreen_('handoffs'); });
+    qs('.ch-all', more).addEventListener('click', function(){ goScreen_('collections'); });
+    w.appendChild(more);
+
+    body.innerHTML = '';
+    body.appendChild(w);
+    if (enter) countUp_(hero);
+  });
+}
+// the deposit as one simple sheet: count, type, reference, photo, done
+function chDepositSheet_(heldAmt){
+  drawerOpen_({
+    title: t('ch_bankIt'),
+    sub: t('ch_bankSub'),
+    render: function(b){
+      var f = el('<div class="ch-dep">' +
+        '<div class="field"><label>'+esc(t('dep_amount'))+'</label><input class="chdAmt" type="text" inputmode="decimal" placeholder="0.00" autocomplete="off"><div class="muted ch-hint">'+esc(t('dep_amountHint'))+'</div></div>' +
+        '<div class="field"><label>'+esc(t('handoff_bankRef'))+'</label><input class="chdRef" autocomplete="off"></div>' +
+        '<div class="field"><label>'+esc(t('handoff_slip'))+'</label><button type="button" class="ch-photo">'+icon_('doc')+'<span>'+esc(t('handoff_takePhoto'))+'</span></button>' +
+          '<input class="chdFile" type="file" accept="image/*" capture="environment" hidden><img class="chdPrev" hidden alt=""></div>' +
+        '<button type="button" class="ch-cta chdGo">'+icon_('check')+'<span>'+esc(t('ch_confirmDeposit'))+'</span></button><div class="chdMsg"></div></div>');
+      var file = null;
+      qs('.ch-photo', f).addEventListener('click', function(){ qs('.chdFile', f).click(); });
+      qs('.chdFile', f).addEventListener('change', function(){
+        file = this.files && this.files[0]; if (!file) return;
+        var rd = new FileReader(); rd.onload = function(){ var im = qs('.chdPrev', f); im.src = rd.result; im.hidden = false; }; rd.readAsDataURL(file);
+      });
+      qs('.chdGo', f).addEventListener('click', function(ev){
+        var amt = numFromInput_(qs('.chdAmt', f)), ref = qs('.chdRef', f).value.trim(), msg = qs('.chdMsg', f), btn = ev.currentTarget;
+        if (!(amt > 0)) { msg.innerHTML = '<div class="msg err">'+esc(t('err_depAmountRequired'))+'</div>'; return; }
+        if (!ref) { msg.innerHTML = '<div class="msg err">'+esc(t('err_depositNeedsReference'))+'</div>'; return; }
+        btn.disabled = true;
+        function send(fd){
+          var p = { bankReference: ref, depositAmount: amt };
+          if (fd) { p.fileBase64 = fd.base64; p.fileName = fd.name; p.fileMime = fd.mime; }
+          api('recordDeposit', p).then(function(r){
+            btn.disabled = false;
+            if (!r.ok) { msg.innerHTML = '<div class="msg err">'+esc(errMsg_(r))+'</div>'; return; }
+            drawerClose_();
+            render();
+            heldPopup_(t('hp_banked').replace('{amount}', money(r.handoff ? r.handoff.amount : amt)));
+          });
+        }
+        if (file) { var rd = new FileReader(); rd.onload = function(){ send({ base64: String(rd.result).split(',')[1], name: file.name, mime: file.type }); }; rd.readAsDataURL(file); }
+        else send(null);
+      });
+      b.appendChild(f);
+      setTimeout(function(){ try { qs('.chdAmt', f).focus(); } catch (e) {} }, 120);
+    }
+  });
+}
 function renderHome(body){
+  // a collector gets one simple screen: receive, hold, bank (2026-10-12)
+  if (state.user && state.user.role === 'collector') { renderCollectorHome_(body); return; }
   body.innerHTML = skeleton_();
   var isCompanyWide = ['admin','finance','accountant','operations_manager','deputy_operations_manager'].indexOf(state.user.role) >= 0;
   if (isCompanyWide) {
@@ -11945,7 +12244,10 @@ function renderEntries(body){
       });
     });
     // the credit customers' fee is shown and taken off again (2026-10-04): paid later, not in cash
-    var discount = numFromInput_(qs('#eDiscount', form));
+    // the discounts section, plus every cash product line's own discount: the save sends
+    // them on the lines and the server takes them off the cash (the preview did not:
+    // area managers saw one net before saving and another after, 2026-10-12)
+    var discount = numFromInput_(qs('#eDiscount', form)) + (((qs('#eMode', form) || {}).value || 'product') === 'product' ? Number(form.dataset.discCash || 0) : 0);
     var net = cash + other + creditFee - creditFee + chFee - delivery + vatBack - expense - deposited - credit - transfer - commission - chCom - discount;
     var box = qs('#eNetPreview', form), dock = qs('#eDockNet', form);
     box.innerHTML = '';
@@ -12731,7 +13033,7 @@ function renderEntries(body){
         if(!res.ok){ msgBox.innerHTML='<div class="msg err">'+esc(errMsg_(res))+'</div>'; msgBox.scrollIntoView({ block: 'center', behavior: 'smooth' }); return; }
         var failed = (res.results||[]).filter(function(r){ return !r.ok; });
         if (failed.length) {
-          msgBox.innerHTML='<div class="msg err">'+esc(errMsg_({ error: failed[0].error }))+'</div>';
+          msgBox.innerHTML='<div class="msg err">'+esc(errMsg_(failed[0]))+'</div>';
           msgBox.scrollIntoView({ block: 'center', behavior: 'smooth' });
           if (res.created > 0) { clearForm_(); loadEntryList(); }
           return;
@@ -12745,8 +13047,11 @@ function renderEntries(body){
       }
       // One line each is one request, exactly as before; extra lines go as
       // their own rows in a single bulk call rather than several requests.
-      if (extraRows.length) api('importDailyEntries', { rows: [payload].concat(extraRows) }).then(afterSave);
-      else api('createDailyEntry', payload).then(afterSave);
+      var previewNet = numFromInput_(qs('#eDockNet', form));
+      entryServerCheck_([payload].concat(extraRows), previewNet, function(){
+        if (extraRows.length) api('importDailyEntries', { rows: [payload].concat(extraRows) }).then(afterSave);
+        else api('createDailyEntry', payload).then(afterSave);
+      }, function(err){ done_(); if (err) { var mb = qs('#entryMsg', form); mb.innerHTML = '<div class="msg err">'+esc(errMsg_(err))+'</div>'; mb.scrollIntoView({ block: 'center', behavior: 'smooth' }); } });
       return;
     }
 
@@ -12816,9 +13121,18 @@ function renderEntries(body){
     // to one product line, so they ride on the first row of the batch.
     if (rows.length) {
       var firstMoney2 = firstMoneyFields_();
+      // the discounts section's first line goes on a row of its own: on rows[0] it
+      // overwrote that product line's own discount (2026-10-12, review)
+      var secDisc = { discountAmount: firstMoney2.discountAmount, discountReason: firstMoney2.discountReason, discountNote: firstMoney2.discountNote };
+      delete firstMoney2.discountAmount; delete firstMoney2.discountReason; delete firstMoney2.discountNote;
       Object.keys(firstMoney2).forEach(function(k){ rows[0][k] = firstMoney2[k]; });
       rows = rows.concat(extraMoneyRows_(rows[0]));
+      if (Number(secDisc.discountAmount || 0) > 0) rows.push({ date: rows[0].date, sourceType: rows[0].sourceType, sourceId: rows[0].sourceId, cashSales: 0, posSales: 0, creditSales: 0, deliveryFeeBankAmount: 0,
+        discountAmount: secDisc.discountAmount, discountReason: secDisc.discountReason, discountNote: secDisc.discountNote, note: rows[0].note || '', submissionId: rows[0].submissionId });
     }
+    var linesPreviewNet = numFromInput_(qs('#eDockNet', form));
+    entryServerCheck_(rows, linesPreviewNet, function(){ saveLines_(); }, function(err){ done_(); if (err) { qs('#entryMsg',form).innerHTML='<div class="msg err">'+esc(errMsg_(err))+'</div>'; qs('#entryMsg',form).scrollIntoView({ block: 'center', behavior: 'smooth' }); } });
+    function saveLines_(){
     api('importDailyEntries', { rows: rows }).then(function(res){
       done_();
       if(!res.ok){ qs('#entryMsg',form).innerHTML='<div class="msg err">'+esc(errMsg_(res))+'</div>'; return; }
@@ -12828,6 +13142,7 @@ function renderEntries(body){
         : '<div class="msg ok">'+esc(t('ok_saved'))+'</div>';
       if (res.created > 0){ resetLines_(); clearForm_(); if (!failed.length) { toast('ok_saved', 'ok'); setView_('list'); } loadEntryList(); }
     });
+    }
   });
 
   if (role === 'admin') {
@@ -12912,6 +13227,10 @@ function renderEntries(body){
       qs('#impSubmit', wrap).addEventListener('click', function(){
         var validRows = pendingImportRows.filter(function(r){ return r.status==='ok'; });
         if (!validRows.length) return;
+        // one form number per source and day of the file, kept on the rows, so the
+        // same file sent twice is saved once (2026-10-12)
+        var impIds = pendingImportRows._ids || (pendingImportRows._ids = {});
+        validRows.forEach(function(r){ var k = r.sourceType + '|' + r.sourceId + '|' + r.date; if (!impIds[k]) impIds[k] = newSubmissionId_(); if (!r.submissionId) r.submissionId = impIds[k]; });
         api('importDailyEntries', { rows: validRows }).then(function(res){
           if (!res.ok){ qs('#impMsg',importCard).innerHTML='<div class="msg err">'+esc(errMsg_(res))+'</div>'; return; }
           qs('#impMsg',importCard).innerHTML='<div class="msg ok">'+esc(t('entry_importResult').replace('{created}',res.created).replace('{total}',res.total))+'</div>';
@@ -13277,6 +13596,9 @@ function renderEntries(body){
         '<details class="jr-fold"><summary>'+icon_('clock')+'<span>'+esc(t('jr_title'))+'</span></summary><div class="jr-host"></div></details>' +
         (canVoid ? '<div class="el-cancel"><div class="field"><label>'+esc(t('el_cancelReason'))+'</label><input class="elReason" placeholder="'+esc(t('el_cancelPh'))+'"></div>' +
           '<button type="button" class="btn danger elVoid">'+esc(t('el_cancel'))+'</button><div class="elMsg"></div></div>' : '') +
+        // the admin cancels the whole transaction, whoever entered it (2026-10-12)
+        (!canVoid && state.user.role === 'admin' && live.length ? '<div class="el-cancel el-admin"><p class="muted" style="font-size:12.5px;margin:0 0 8px;">'+esc(t('av_hint'))+'</p><div class="field"><label>'+esc(t('el_cancelReason'))+'</label><input class="elAReason" placeholder="'+esc(t('el_cancelPh'))+'"></div>' +
+          '<button type="button" class="btn danger elAVoid">'+esc(t('av_btn'))+'</button><div class="elAMsg"></div></div>' : '') +
       '</div>' +
     '</article>');
     var more = qs('.el-more', node), det = qs('.el-detail', node);
@@ -13288,6 +13610,19 @@ function renderEntries(body){
     // the journey is asked for each time the fold opens
     var jrFold = qs('.jr-fold', node);
     jrFold.addEventListener('toggle', function(){ if (jrFold.open) jrLoad_(qs('.jr-host', node), { entryId: (live[0] || e0).id }); });
+    var avb = qs('.elAVoid', node);
+    if (avb) avb.addEventListener('click', function(){
+      var reason = qs('.elAReason', node).value.trim();
+      if (!reason){ qs('.elAMsg', node).innerHTML = '<div class="msg err">'+esc(t('err_reasonRequired'))+'</div>'; return; }
+      if (!confirm(t('av_confirm'))) return;
+      avb.disabled = true;
+      api('adminVoidTransaction', { ids: voidIds, reason: reason }).then(function(res){
+        avb.disabled = false;
+        if (!res.ok){ qs('.elAMsg', node).innerHTML = '<div class="msg err">'+esc(errMsg_(res))+'</div>'; return; }
+        toastRaw_(t('av_done').replace('{n}', res.voided).replace('{h}', res.handoffsVoided), 'ok');
+        loadEntryList();
+      });
+    });
     var vb = qs('.elVoid', node);
     if (vb) vb.addEventListener('click', function(){
       var reason = qs('.elReason', node).value.trim();
@@ -14743,7 +15078,7 @@ function draftFromEntries_(rows){
     if (Number(e.expenseAmount || 0) > 0) d.expense.push({ a: s(e.expenseAmount), i: e.expenseItemId || '', r: e.expenseReason || '' });
     if (Number(e.deliveryFeeBankAmount || 0) > 0) d.delivery.push({ a: s(e.deliveryFeeBankAmount), r: e.deliveryNote || '' });
     if (Number(e.bankTransferAmount || 0) > 0) d.transfer.push({ a: s(e.bankTransferAmount) });
-    if (Number(e.discountAmount || 0) > 0 && e.discountOnCard !== true) d.discount.push({ a: s(e.discountAmount), k: e.discountReason || '', r: e.discountNote || '' });
+    if (Number(e.discountAmount || 0) > 0 && e.discountOnCard !== true && !(byProduct && e.productId && Number(e.qty || 0) > 0)) d.discount.push({ a: s(e.discountAmount), k: e.discountReason || '', r: e.discountNote || '' });
     if (Number(e.creditSales || 0) > 0) d.credit.push({ c: e.creditCustomerId || '', items: (e.creditItems || []).map(function(it){ return { p: it.productId, q: s(it.qty), pr: s(it.unitPrice) }; }) });
     if (Number(e.directDepositAmount || 0) > 0) d.deposit.push({ d: e.directDepositPosId || '', a: s(e.directDepositAmount), ref: e.directDepositRef || '', n: e.directDepositNote || '', ph: e.directDepositPhotoId || '' });
   });
@@ -15239,9 +15574,10 @@ function handoffItem(h, showConfirm, showResolve){
         if (!res.ok) { toastRaw_(errMsg_(res), 'err'); return; }
         // received: the row folds and moves down into the history
         HO_OPEN_ = null;
-        if (res.handoff && res.handoff.shortfall != null) { toast('handoff_shortfallAccepted', 'ok'); render(); return; }
+        if (res.handoff && res.handoff.shortfall != null) { toast('handoff_shortfallAccepted', 'ok'); render(); heldPopup_(t('hp_received').replace('{amount}', money(res.handoff.amount))); return; }
         toastRaw_(t('ho_receivedOk').replace('{amount}', money(res.handoff ? res.handoff.amount : receivedAmount)), 'ok');
         render();
+        heldPopup_(t('hp_received').replace('{amount}', money(res.handoff ? res.handoff.amount : receivedAmount)));
       });
     });
     var db = el('<button class="btn danger">'+esc(t('handoff_dispute'))+'</button>');
@@ -15786,6 +16122,7 @@ function renderHandoffs(body){
 
     if (role==='collector' || role==='admin'){
       var dc = el('<div class="card"><h2>'+esc(t('handoff_deposit'))+'</h2>' +
+        '<div class="field"><label>'+esc(t('dep_amount'))+'</label><input id="hDepAmt" type="text" inputmode="decimal" autocomplete="off" placeholder="0.00"><div class="muted" style="font-size:12px;margin-top:4px;">'+esc(t('dep_amountHint'))+'</div></div>' +
         '<div class="field"><label>'+esc(t('handoff_bankRef'))+'</label><input id="hBankRef"></div>' +
         '<div class="field"><label>'+esc(t('handoff_slip'))+'</label>' +
           '<div class="row">' +
@@ -15841,12 +16178,17 @@ function renderHandoffs(body){
 
       qs('#hDeposit', dc).addEventListener('click', function(){
         var bankRef = qs('#hBankRef', dc).value;
+        // the amount banked is typed first and checked against the cash held (2026-10-12)
+        var depAmt = numFromInput_(qs('#hDepAmt', dc));
+        if (!(depAmt > 0)) { qs('#hDepMsg',dc).innerHTML = '<div class="msg err">'+esc(t('err_depAmountRequired'))+'</div>'; qs('#hDepAmt', dc).classList.add('f-bad'); qs('#hDepAmt', dc).focus(); return; }
+        if (!String(bankRef || '').trim()) { qs('#hDepMsg',dc).innerHTML = '<div class="msg err">'+esc(t('err_depositNeedsReference'))+'</div>'; qs('#hBankRef', dc).classList.add('f-bad'); qs('#hBankRef', dc).focus(); return; }
+        qs('#hDepAmt', dc).classList.remove('f-bad'); qs('#hBankRef', dc).classList.remove('f-bad');
         function submit(fileData){
-          var payload = { bankReference: bankRef };
+          var payload = { bankReference: bankRef, depositAmount: depAmt };
           if (fileData) { payload.fileBase64 = fileData.base64; payload.fileName = fileData.name; payload.fileMime = fileData.mime; }
           api('recordDeposit', payload).then(function(res2){
             qs('#hDepMsg',dc).innerHTML = res2.ok ? '<div class="msg ok">'+esc(t('ok_saved'))+'</div>' : '<div class="msg err">'+esc(errMsg_(res2))+'</div>';
-            if(res2.ok) render();
+            if(res2.ok) { render(); heldPopup_(t('hp_banked').replace('{amount}', money(res2.handoff ? res2.handoff.amount : depAmt))); }
           });
         }
         if (pickedFile){

@@ -603,6 +603,66 @@ function actionVoidEntries_(req, user) {
   return { ok: true, voided: rows.length, depositsVoided: deposits.length };
 }
 
+// ---------- The admin cancels a whole transaction (2026-10-12, duplicates found) ----------
+// Every line saved under the same number, whoever entered it, with its own bank
+// deposit (الموازنة). Nothing is deleted: rows are marked cancelled with the
+// reason, drop out of every total and stay in the audit trail. A day already in a
+// handover that nobody has received yet (pending, with the deputy, or disputed)
+// takes that handover back with it: the handover is cancelled and its other days
+// return to their sender to be sent again. A handover already received, a sale on
+// a tax invoice, or a deposit matched to the bank statement stop it.
+function actionAdminVoidTransaction_(req, user) {
+  if (user.role !== 'admin') return { ok: false, error: 'forbidden' };
+  var ids = Array.isArray(req.ids) ? req.ids : (req.id ? [req.id] : []);
+  var reason = String(req.reason || '').trim().slice(0, 1000);
+  if (!ids.length) return { ok: false, error: 'invalid_input' };
+  if (!reason) return { ok: false, error: 'reason_required' };
+  var all = readSheet(SHEETS.ENTRIES), pick = {};
+  ids.forEach(function (id) {
+    var e = all.filter(function (x) { return x.id === id; })[0];
+    if (!e) return;
+    all.forEach(function (x) { if (x.id === e.id || (e.txNo && x.txNo === e.txNo) || (e.submissionId && x.submissionId === e.submissionId)) pick[x.id] = x; });
+  });
+  var rows = Object.keys(pick).map(function (k) { return pick[k]; }).filter(function (e) { return !e.voided; });
+  if (!rows.length) return { ok: false, error: 'not_found' };
+  var inv = invoicedEntries_(), handoffs = {}, deposits = [];
+  for (var i = 0; i < rows.length; i++) {
+    var e = rows[i];
+    if (e.creditCustomerId && inv[e.id]) return { ok: false, error: 'entry_invoiced' };
+    var dep = directDepositOf_(e.id);
+    if (dep && dep.reconciled) return { ok: false, error: 'deposit_reconciled' };
+    if (dep) deposits.push(dep);
+    if (e.consumedBy) {
+      var h = getById_(SHEETS.HANDOFFS, e.consumedBy);
+      // inside an area batch, or a handover already received or passed on: not here
+      if (!h || h.consumedBy || ['pending', 'pending_deputy', 'disputed'].indexOf(h.status) < 0) return { ok: false, error: 'entry_handed_on', existingTxNo: h ? (h.txNo || '') : '' };
+      // an admin who is a party to it, or who raised its dispute, does not cancel it
+      if (h.fromUserId === user.id || h.toUserId === user.id || h.createdBy === user.id || h.disputedBy === user.id) return { ok: false, error: 'conflict_of_interest' };
+      handoffs[h.id] = h;
+    }
+  }
+  var at = new Date().toISOString(), hList = Object.keys(handoffs).map(function (k) { return handoffs[k]; });
+  hList.forEach(function (h) {
+    releaseConsumed_(h);
+    h.status = 'voided'; h.voidedAt = at; h.voidedBy = user.id; h.voidReason = reason;
+    writeRow(SHEETS.HANDOFFS, h);
+    logAudit_('admin_void_handoff', user.id, h.id);
+  });
+  rows.forEach(function (e) {
+    var fresh = getById_(SHEETS.ENTRIES, e.id) || e;
+    fresh.voided = true; fresh.voidedAt = at; fresh.voidedBy = user.id; fresh.voidReason = reason; fresh.consumedBy = null;
+    writeRow(SHEETS.ENTRIES, fresh);
+    logAudit_('admin_void_entry', user.id, fresh.id);
+    if (fresh.directDepositPhotoId) { var ph = getById_(SHEETS.ENTRY_PHOTOS, fresh.directDepositPhotoId); if (ph && ph.usedBy === fresh.id) { ph.usedBy = null; writeRow(SHEETS.ENTRY_PHOTOS, ph); } }
+  });
+  deposits.forEach(function (d) {
+    d.status = 'voided'; d.voidedAt = at; d.voidedBy = user.id; d.voidReason = reason;
+    writeRow(SHEETS.HANDOFFS, d);
+    logAudit_('void_direct_deposit', user.id, d.id);
+  });
+  return { ok: true, voided: rows.length, handoffsVoided: hList.length, depositsVoided: deposits.length };
+}
+
 // The bank deposit a day's الموازنة wrote, if it is still standing.
 function directDepositOf_(entryId) {
   return readSheet(SHEETS.HANDOFFS).filter(function (h) {
@@ -610,10 +670,40 @@ function directDepositOf_(entryId) {
   })[0] || null;
 }
 
+// ---------- No day entered twice (2026-10-12, the user found a branch's day saved twice by one person) ----------
+// A form sent again (a second tap, a retry after a lost answer) carries the same
+// submissionId: it is saved once and the repeat answers 'already saved'. A new form
+// for a source and date that still has an open entry (not handed over yet) is
+// refused with that entry's number: correct or cancel the open one instead. Once
+// the day is handed over, a later entry the same day is a new handover and goes
+// through. Both actions run under the script lock, so two taps cannot both pass.
+function savedSubmission_(submissionId) {
+  if (!submissionId) return [];
+  var id = String(submissionId).slice(0, 64);
+  return readSheet(SHEETS.ENTRIES).filter(function (e) { return e.submissionId === id && !e.voided; });
+}
+// a day's sales: what makes a second entry of the same day a duplicate. A later
+// line without sales (a customer's payment, a collection) is not one.
+function entryHasSales_(e) {
+  return Number(e.cashSales || 0) > 0 || Number(e.posSales || 0) > 0 || Number(e.creditSales || 0) > 0 || Number(e.qty || 0) > 0;
+}
+function openDayEntry_(sourceType, sourceId, date, submissionId) {
+  var sid = submissionId ? String(submissionId).slice(0, 64) : null, rows = readSheet(SHEETS.ENTRIES);
+  for (var i = 0; i < rows.length; i++) {
+    var e = rows[i];
+    // open, or uploaded by the area manager (a batch entry is consumed by its batch)
+    if (e.voided || (e.consumedBy && !e.batchId) || e.sourceType !== sourceType || e.sourceId !== sourceId || e.date !== date || !entryHasSales_(e)) continue;
+    if (sid && e.submissionId === sid) continue;
+    return e;
+  }
+  return null;
+}
 function actionCreateEntry_(req, user) {
   if (!req.date || !req.sourceType || !req.sourceId) return { ok: false, error: 'source_required' };
   var scope = checkEntryScope_(user, req.sourceType, req.sourceId);
   if (!scope.ok) return { ok: false, error: scope.error };
+  var again = savedSubmission_(req.submissionId).filter(function (e) { return e.enteredBy === user.id; });
+  if (again.length) return { ok: true, already: true, entry: again[0] };
   var dateErr = entryDateError_(req.sourceType, req.sourceId, req.date);
   if (dateErr) return { ok: false, error: dateErr };
 
@@ -624,6 +714,9 @@ function actionCreateEntry_(req, user) {
   if (creditOverLines_([req])) return { ok: false, error: 'credit_over_lines' };
   var nonSalesErr = checkNonSalesFields_(req) || checkDepositSlip_(req, user, scope.locationId);
   if (nonSalesErr) return { ok: false, error: nonSalesErr };
+  // every screen sends a form number; a bare API call (the test harness) keeps the old behaviour
+  var dup = req.submissionId && entryHasSales_(req) ? openDayEntry_(req.sourceType, req.sourceId, req.date, req.submissionId) : null;
+  if (dup) return { ok: false, error: 'day_already_entered', existingTxNo: dup.txNo || '', existingId: dup.id, enteredBy: dup.enteredBy };
 
   var entry = {
     id: Utilities.getUuid(),
@@ -679,6 +772,19 @@ function actionImportEntries_(req, user) {
   if (!rows.length) return { ok: false, error: 'invalid_input' };
   if (rows.length > 500) return { ok: false, error: 'too_many_rows' };
   if (creditOverLines_(rows)) return { ok: false, error: 'credit_over_lines' };
+  // the same form sent twice is saved once
+  var sids = {}; rows.forEach(function (r) { if (r && r.submissionId) sids[String(r.submissionId).slice(0, 64)] = 1; });
+  var sidList = Object.keys(sids);
+  // a dry run (2026-10-12) checks and works out the day exactly as a save would, and writes nothing
+  var dry = req.dryRun === true, built = [];
+  if (!dry && sidList.length === 1 && rows.every(function (r) { return r && r.submissionId; }) && savedSubmission_(sidList[0]).filter(function (e) { return e.enteredBy === user.id; }).length) {
+    return { ok: true, already: true, created: 0, total: rows.length, results: [] };
+  }
+  // open days on file, read before this batch writes: lines of this same batch
+  // for one source and day belong together
+  var dayTaken = {};
+  // form numbers already saved before this batch: such a row was sent before
+  var sidBefore = {}; readSheet(SHEETS.ENTRIES).forEach(function (e) { if (e.submissionId && !e.voided) sidBefore[e.submissionId + '|' + e.sourceType + '|' + e.sourceId + '|' + e.date] = 1; });
 
   // "Product mode" on the client splits one real-world sale into several
   // rows in the same submission (e.g. a cash-tagged goods line plus a
@@ -719,6 +825,13 @@ function actionImportEntries_(req, user) {
       results.push({ row: i, ok: false, error: rowErr });
       continue;
     }
+    var dk = r.sourceType + '|' + r.sourceId + '|' + r.date;
+    if (r.submissionId && sidBefore[String(r.submissionId).slice(0, 64) + '|' + dk]) { results.push({ row: i, ok: true, already: true }); continue; }
+    if (!(dk in dayTaken)) dayTaken[dk] = r.submissionId && rows.some(function (x) { return x && x.sourceType === r.sourceType && x.sourceId === r.sourceId && x.date === r.date && entryHasSales_(x); }) ? openDayEntry_(r.sourceType, r.sourceId, r.date, r.submissionId) : null;
+    if (dayTaken[dk]) {
+      results.push({ row: i, ok: false, error: 'day_already_entered', existingTxNo: dayTaken[dk].txNo || '', enteredBy: dayTaken[dk].enteredBy });
+      continue;
+    }
     var entry = {
       id: Utilities.getUuid(),
       date: r.date,
@@ -742,12 +855,14 @@ function actionImportEntries_(req, user) {
     };
     var rowExtra = nonSalesFields_(r);
     safeOwnKeys_(rowExtra).forEach(function (k) { entry[k] = rowExtra[k]; });
+    if (dry) { built.push(entry); results.push({ row: i, ok: true }); continue; }
     writeRow(SHEETS.ENTRIES, entry);
     claimPhoto_(entry.directDepositPhotoId, entry.id);
     if (entry.directDepositAmount > 0) recordDirectDeposit_(entry, user);
     created++;
     results.push({ row: i, ok: true, id: entry.id });
   }
+  if (dry) return { ok: true, dryRun: true, total: rows.length, results: results, breakdown: computeNet_(built) };
   logAudit_('import_entries', user.id, created + '/' + rows.length);
   return { ok: true, created: created, total: rows.length, results: results };
 }
@@ -1403,6 +1518,12 @@ function actionBulkSubmitAreaBatch_(req, user) {
       errors.push({ row: i, error: bulkDateErr });
       continue;
     }
+    // a branch day already on file (entered at the branch, or in another area upload) is not entered again
+    var areaDup = readSheet(SHEETS.ENTRIES).filter(function (e) { return !e.voided && e.sourceType === r.sourceType && e.sourceId === r.sourceId && e.date === r.date && entryHasSales_(e) && (!req.resubmitOf || e.batchId !== req.resubmitOf); })[0];
+    if (areaDup) {
+      errors.push({ row: i, error: 'day_already_entered', existingTxNo: areaDup.txNo || '', enteredBy: areaDup.enteredBy });
+      continue;
+    }
     if (Number(r.deliveryFeeBankAmount || 0) > 0 &&
       !deliveryNeedsSale_(r.sourceType, r.sourceId, r.date, r.cashSales, r.posSales, batchHasSale(r.sourceType, r.sourceId, r.date), r.creditSales)) {
       errors.push({ row: i, error: 'delivery_without_sale' });
@@ -1492,15 +1613,15 @@ function actionBulkSubmitAreaBatch_(req, user) {
 
   if (prior) {
     // two taps on "send again" must not both go through
-    var lock = LockService.getScriptLock();
-    lock.waitLock(30000);
+    var lock = LockService.getScriptLock(), heldAlready = lock.hasLock ? lock.hasLock() : false;
+    if (!heldAlready) lock.waitLock(30000);
     try {
       var fresh = getById_(SHEETS.AREA_BULK_BATCHES, prior.id);
       var freshErr = resubmitError_(fresh, user);
       if (freshErr) return { ok: false, error: freshErr };
       entries.forEach(function (e) { writeRow(SHEETS.ENTRIES, e); });
       writeRow(SHEETS.AREA_BULK_BATCHES, batch);
-    } finally { try { lock.releaseLock(); } catch (e) {} }
+    } finally { if (!heldAlready) { try { lock.releaseLock(); } catch (e) {} } }
     logAudit_('resubmit_area_batch', user.id, batch.id + ' v' + batch.revision);
     notifyDeputyPendingBatch_(batch);
     return { ok: true, batch: batch };
@@ -2018,6 +2139,13 @@ function actionRecordDeposit_(req, user) {
   var held = collectorHeld_(user.id);
   if (!held.length) return { ok: false, error: 'no_held_cash' };
   var amount = held.reduce(function (s, h) { return s + Number(h.amount || 0); }, 0);
+  // the collector types the amount he is banking (2026-10-12): it must be exactly
+  // the cash he holds, or nothing is recorded and he recounts
+  if (req.depositAmount != null && req.depositAmount !== '') {
+    var typed = Number(req.depositAmount);
+    if (!(typed > 0)) return { ok: false, error: 'deposit_amount_required' };
+    if (Math.abs(typed - amount) > 0.005) return { ok: false, error: 'deposit_amount_mismatch' };
+  }
   var breakdown = sumBreakdowns_(held.map(function (h) { return h.breakdown; }));
   var perCluster = collectorPerCluster_(held);
 
@@ -2073,10 +2201,13 @@ function collectionsScope_(user) {
   if (isCompanyWide_(user.role)) return function () { return true; };
   var role = user.role, me = user.id;
   if (role === 'cluster_manager') {
+    // his branches only (2026-10-12): the branches of the areas he manages
     var areas = {}; managedAreas_(me).forEach(function (c) { areas[c.id] = 1; });
-    return function (h) { return (h.fromUserId === me || areas[clusterIdForHandoff_(h)]) && inActiveArea_(user, h); };
+    var myLocs = {}; readSheet(SHEETS.LOCATIONS).forEach(function (l) { if (areas[l.clusterId]) myLocs[l.id] = 1; });
+    return function (h) { return ((h.locationId && myLocs[h.locationId]) || (!h.locationId && h.fromUserId === me)) && inActiveArea_(user, h); };
   }
-  if (role === 'collector') return function (h, hops) { return h.toUserId === me || hops.some(function (x) { return x.fromUserId === me || x.toUserId === me; }); };
+  // a collector: his own only (2026-10-12) — sent to him, or holding it now
+  if (role === 'collector') return function (h, hops, holder) { return h.toUserId === me || holder === me; };
   var locs = {};
   readSheet(SHEETS.STORES).forEach(function (s) { if (s.storeManagerUserId === me) locs[s.locationId] = 1; });
   var cars = readSheet(SHEETS.CARS), stores = readSheet(SHEETS.STORES);
@@ -2118,7 +2249,7 @@ function actionCollectionsData_(req, user) {
         break;
       }
     } else return;
-    if (!see(h, hops)) return;
+    if (!see(h, hops, holder)) return;
     var depSeen = dep && (wide || dep.fromUserId === user.id);
     out.push({
       id: h.id, txNo: h.txNo || '', amount: now, sentAmount: Number(h.amount || 0), originalAmount: h.originalAmount != null ? Number(h.originalAmount) : null,
@@ -2594,6 +2725,7 @@ function jrHandoffSteps_(c, h, o) {
   }
   var received = h.receivedAmount != null ? h.receivedAmount : h.amount;
   var short = Number(h.shortfall || 0) ? h.shortfall : null;
+  if (h.status === 'voided') { steps.push(jrStep_(c, 'voided', 'bad', { at: h.voidedAt, by: h.voidedBy, reason: h.voidReason })); return steps; }
   if (h.status === 'pending') { steps.push(jrStep_(c, 'recv_wait', 'wait', { to: h.toUserId })); return steps; }
   if (h.status === 'disputed') {
     steps.push(jrStep_(c, 'disputed', 'bad', { at: h.disputedAt, by: h.disputedBy || h.toUserId, reason: h.disputeNote }));

@@ -1584,6 +1584,46 @@ should have history for the numbers changes in all areas; it's very sensitive".
   deputy, accountant and operations roles, and on Home for collectors (opens on his
   branches). Tapping a request opens its own handover row (`cpOpenRequest_`). Read-only:
   no new server action, scoping is `listHandoffs`'s own.
+## No day twice, the admin's cancel, the figure confirmed before saving, the collector's home (2026-10-12)
+
+- **A branch day is entered once.** `openDayEntry_` refuses a second set of *sales*
+  (`entryHasSales_`) for a source and date while one is open or sits in an area batch
+  (`day_already_entered`, with `existingTxNo` and `enteredBy`); a later line without sales
+  (a customer payment, a collection) still goes in, and once the day is handed over a new
+  entry is a new handover. The same `submissionId` sent again (a second tap, a retry)
+  answers `already` and writes nothing (`savedSubmission_`, only the sender's own rows).
+  Checks run after the scope check and after field validation, so a refused field keeps
+  its own message. The rule applies to requests carrying a `submissionId` (every screen
+  sends one; the file import makes one per source and day); bare API calls in
+  `tests/run.js` keep the old behaviour. createDailyEntry, importDailyEntries and
+  bulkSubmitAreaBatch run under `withCashLock_`. The area upload refuses a source and day
+  that already has sales on file.
+- **The admin cancels a whole transaction** (`adminVoidTransaction`, admin only, reason
+  required): every line under the same txNo/submissionId, whoever entered it, with its
+  الموازنة. A handover holding it that nobody received yet (pending, pending_deputy,
+  disputed) is voided too (`status:'voided'`) and its other sources go back to their sender
+  (`releaseConsumed_`). Received or passed-on handovers, invoiced credit and reconciled
+  deposits refuse (`entry_handed_on`, `entry_invoiced`, `deposit_reconciled`). Nothing is
+  deleted. Delete was asked for; cancel was chosen because every report, the chain and the
+  audit already treat a cancelled row as gone, and a deletion would break the trail.
+- **The figure confirmed is the figure saved.** `importDailyEntries {dryRun:true}` runs every
+  check and builds the rows as a save would, writes nothing, and returns
+  `computeNet_(rows)`. The entry form calls it on Save (`entryServerCheck_`) and the person
+  confirms the server's figure; if the screen's preview differed, both are shown. Area
+  managers reported "right on screen, other numbers once saved" (cause not reproduced:
+  duplicate days were found at the same time).
+- **Deposits**: the collector types the amount he banks (`depositAmount`), which must equal
+  what he holds (`deposit_amount_mismatch`, `deposit_amount_required`); the screen requires
+  it and the bank reference. After a receipt or a deposit `heldPopup_` shows what he holds
+  now and what is still on its way to him.
+- **Collector home** (`renderCollectorHome_`, replaces Home for the collector role): cash
+  with me, three steps (receive, hold, bank), one big card per request to receive (I
+  received it / different amount / report a problem), a deposit sheet
+  (`chDepositSheet_`), last deposits, then links to hand to another collector and to the
+  Collections screen.
+- **Collections scope**: a collector sees requests sent to him or held by him; an area
+  manager his branches (and his own older multi-branch requests).
+
 ## The Collections screen (التحصيل), every role (2026-10-11)
 
 - **Server** `collectionsData` (`actionCollectionsData_`, read-only, in the client's `READ_ACTIONS`):

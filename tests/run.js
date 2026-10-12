@@ -4584,7 +4584,9 @@ var jrDd = jrJ(jrBm.tok, { entryId: jrE5.entry.id });
 check(jrKeys(jrDd).join() === 'entered,direct_deposit,match_wait' && jrStep(jrDd, 'direct_deposit').ref === 'DD-JR-1', 'entered, banked with its reference, waiting for the statement; nothing left to hand over (' + jrKeys(jrDd) + ')');
 
 // an area-manager batch: uploaded, rejected, corrected, approved, received
-var jrBRows = [{ date: jrToday, sourceType: 'store', sourceId: jrStore.id, cashSales: 650 }];
+// its own day: the branch already entered today, and a day is never entered twice (2026-10-12)
+var jrBDay = (function () { var d = new Date(jrToday + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() - 2); return d.toISOString().slice(0, 10); })();
+var jrBRows = [{ date: jrBDay, sourceType: 'store', sourceId: jrStore.id, cashSales: 650 }];
 var jrB = call({ action: 'bulkSubmitAreaBatch', token: jrMgr.tok, clusterId: jrArea.id, rows: jrBRows });
 check(jrB.ok, 'the area manager uploads a day');
 var jrBEntry = call({ action: 'listEntries', token: jrMgr.tok }).entries.filter(function (e) { return e.batchId === jrB.batch.id; })[0];
@@ -4747,10 +4749,13 @@ txE.forEach(function (e) { if (!e.submissionId) { if (txNos[e.txNo]) txDup = tru
 txH.forEach(function (h) { if (txNos[h.txNo]) txDup = true; txNos[h.txNo] = 1; });
 check(!txDup, 'no number is given twice');
 check(ctx.txNumbersBackfill_() === 0, 'the pass runs once');
-var txNew = call({ action: 'createDailyEntry', token: jrBm.tok, date: jrToday, sourceType: 'store', sourceId: jrStore.id, cashSales: 15, submissionId: 'sub-tx-new' });
+// a day of its own: today already has an open entry, and a day is never entered twice
+var txDay = (function () { var d = new Date(jrToday + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() - 3); return d.toISOString().slice(0, 10); })();
+var txImp = call({ action: 'importDailyEntries', token: jrBm.tok, rows: [{ date: txDay, sourceType: 'store', sourceId: jrStore.id, cashSales: 15, submissionId: 'sub-tx-new' }, { date: txDay, sourceType: 'store', sourceId: jrStore.id, cashSales: 5, submissionId: 'sub-tx-new' }] });
+var txNew = { ok: txImp.ok && txImp.created === 2, entry: ctx.getById_(SHEETS.ENTRIES, txImp.results[0].id) };
 var txMax = txE.filter(function (e) { return e.txNo.slice(0, 9) === txNew.entry.txNo.slice(0, 9); }).reduce(function (a, e) { return Math.max(a, Number(e.txNo.slice(-6))); }, 0);
 check(txNew.ok && /^DAY-\d{4}-\d{6}$/.test(txNew.entry.txNo) && Number(txNew.entry.txNo.slice(-6)) === txMax + 1 && txNew.entry.txLine === 1, 'a new day gets the next number, line 1 (' + txNew.entry.txNo + ')');
-var txSame = call({ action: 'createDailyEntry', token: jrBm.tok, date: jrToday, sourceType: 'store', sourceId: jrStore.id, cashSales: 5, submissionId: 'sub-tx-new' });
+var txSame = { entry: ctx.getById_(SHEETS.ENTRIES, txImp.results[1].id) };
 check(txSame.entry.txNo === txNew.entry.txNo && txSame.entry.txLine === 2, 'a second row of the same day keeps the number, line 2');
 var txRow = ctx.getById_(SHEETS.ENTRIES, txNew.entry.id), txCopy = JSON.parse(JSON.stringify(txRow)); delete txCopy.txNo; delete txCopy.txLine;
 ctx.writeRow(SHEETS.ENTRIES, txCopy); ctx.resetExecMemo_();
@@ -4765,8 +4770,11 @@ check(call({ action: 'adminSaveEntity', token: adminTok, kind: 'customer', id: c
 var cuSaved = call({ action: 'adminSaveEntity', token: adminTok, kind: 'customer', id: cuA.id, data: { vatNumber: '300000000000003', crNumber: '1010000000', street: 'King Fahd', district: 'Olaya', postalCode: '12211', buildingNo: '1234' } });
 check(cuSaved.ok && cuSaved.entity.vatNumber === '300000000000003', 'the buyer VAT number, CR and national address are kept on the customer');
 // two credit days and one branch cash payment
-var cuD1 = call({ action: 'createDailyEntry', token: jrBm.tok, date: jrToday, sourceType: 'store', sourceId: jrStore.id, cashSales: 1150, creditSales: 1150, creditCustomerId: cuA.id, submissionId: 'cu-d1' });
-var cuD2 = call({ action: 'createDailyEntry', token: jrBm.tok, date: jrToday, sourceType: 'store', sourceId: jrStore.id, cashSales: 230, creditSales: 230, creditCustomerId: cuA.id, submissionId: 'cu-d2' });
+var cuDay1 = (function () { var d = new Date(jrToday + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() - 5); return d.toISOString().slice(0, 10); })();
+var cuD1 = call({ action: 'createDailyEntry', token: jrBm.tok, date: cuDay1, sourceType: 'store', sourceId: jrStore.id, cashSales: 1150, creditSales: 1150, creditCustomerId: cuA.id, submissionId: 'cu-d1' });
+// another day: a second set of sales the same day while the first is open is refused (2026-10-12)
+var cuDay2 = (function () { var d = new Date(jrToday + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() - 4); return d.toISOString().slice(0, 10); })();
+var cuD2 = call({ action: 'createDailyEntry', token: jrBm.tok, date: cuDay2, sourceType: 'store', sourceId: jrStore.id, cashSales: 230, creditSales: 230, creditCustomerId: cuA.id, submissionId: 'cu-d2' });
 check(cuD1.ok && cuD2.ok, 'two credit sales to the customer (' + (cuD1.error || cuD2.error || 'ok') + ')');
 var cuMeta = call({ action: 'listMeta', token: adminTok });
 var cuPayItem = (cuMeta.incomeItems || []).filter(function (i) { return i.system === 'customer_payment'; })[0];
@@ -4826,7 +4834,8 @@ check(cuCn.ok && /^CRN-\d{4}-\d{6}$/.test(cuCn.creditNote.txNo) && cuCn.creditNo
 check(call({ action: 'creditInvoice', token: financeTok, id: cuInv.invoice.id, reason: 'again' }).error === 'already_credited', 'an invoice is credited once');
 check(call({ action: 'getInvoiceCandidates', token: adminTok, customerId: cuA.id }).entries.length === 2, 'its sales can be invoiced again');
 var cuSimple = call({ action: 'adminSaveEntity', token: adminTok, kind: 'customer', data: { name: 'Walk In Customer', city: 'Riyadh' } }).entity;
-var cuD3 = call({ action: 'createDailyEntry', token: jrBm.tok, date: jrToday, sourceType: 'store', sourceId: jrStore.id, cashSales: 115, creditSales: 115, creditCustomerId: cuSimple.id, submissionId: 'cu-d3' });
+var cuDay3 = (function () { var d = new Date(jrToday + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() - 6); return d.toISOString().slice(0, 10); })();
+var cuD3 = call({ action: 'createDailyEntry', token: jrBm.tok, date: cuDay3, sourceType: 'store', sourceId: jrStore.id, cashSales: 115, creditSales: 115, creditCustomerId: cuSimple.id, submissionId: 'cu-d3' });
 var cuInv2 = call({ action: 'createInvoice', token: adminTok, customerId: cuSimple.id, entryIds: [cuD3.entry.id] });
 check(cuInv2.ok && cuInv2.invoice.type === 'simplified', 'a buyer without a VAT number gets a simplified tax invoice');
 check(call({ action: 'createInvoice', token: adminTok, customerId: cuSimple.id, entryIds: [cuD1.entry.id] }).error === 'invalid_invoice_entry', 'a sale of another customer cannot be put on his invoice');
@@ -4899,7 +4908,8 @@ check(r2E.ok && r2H.ok, 'South\'s branch manager hands his day to the area manag
 check(asCall({ action: 'confirmHandoff', id: r2H.handoff.id }, asA.id).error === 'other_area', 'working in North, he cannot confirm a South handover');
 check(asCall({ action: 'disputeHandoff', id: r2H.handoff.id, note: 'x' }, asA.id).error === 'other_area', 'nor dispute it');
 check(asCall({ action: 'confirmHandoff', id: r2H.handoff.id }, asB.id).ok, 'switched to South, he confirms it');
-var r2V = asCall({ action: 'createDailyEntry', date: jrToday, sourceType: 'store', sourceId: asStA.id, cashSales: 9, submissionId: 'r2-v' }, asA.id);
+var r2Day = (function () { var d = new Date(jrToday + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() - 7); return d.toISOString().slice(0, 10); })();
+var r2V = asCall({ action: 'createDailyEntry', date: r2Day, sourceType: 'store', sourceId: asStA.id, cashSales: 9, submissionId: 'r2-v' }, asA.id);
 check(asCall({ action: 'voidEntries', ids: [r2V.entry.id], reason: 'x' }, asB.id).error === 'other_area', 'working in South, he cannot cancel a North entry');
 check(asCall({ action: 'voidEntries', ids: [r2V.entry.id], reason: 'x' }, asA.id).ok, 'in North he can');
 // an unstamped day keeps the VAT basis of its own date
@@ -4974,13 +4984,15 @@ if (clientCtx.entryAmt_) close(dsMixed.reduce(function (a, e) { return a + clien
 rowsAddUp_(dsNet, 'a day with discounts');
 check(ctx.sumBreakdowns_([dsNet, dsNet]).discounts === 74, 'a handover of handovers carries the discounts up');
 var dsLoc = jrStore.id;
+// each saved day on a date of its own: a day's sales are never entered twice (2026-10-12)
+function dsDay(n) { var d = new Date(jrToday + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() - n); return d.toISOString().slice(0, 10); }
 check(call({ action: 'createDailyEntry', token: jrBm.tok, date: jrToday, sourceType: 'store', sourceId: dsLoc, cashSales: 100, discountAmount: 10, submissionId: 'ds-1' }).error === 'discount_reason_required', 'a discount needs its reason');
 check(call({ action: 'createDailyEntry', token: jrBm.tok, date: jrToday, sourceType: 'store', sourceId: dsLoc, cashSales: 100, discountAmount: 150, discountReason: 'promotion', submissionId: 'ds-2' }).error === 'discount_over_sale', 'and is never more than the sale');
 check(call({ action: 'createDailyEntry', token: jrBm.tok, date: jrToday, sourceType: 'store', sourceId: dsLoc, cashSales: 100, discountAmount: -5, discountReason: 'promotion', submissionId: 'ds-3' }).error === 'invalid_amount', 'nor below zero');
 check(call({ action: 'adminSetConfig', token: adminTok, data: { discountLimit: 20 } }).ok, 'a discount limit per line');
-var dsOk = call({ action: 'createDailyEntry', token: jrBm.tok, date: jrToday, sourceType: 'store', sourceId: dsLoc, cashSales: 200, discountAmount: 25, discountReason: 'manager_approved', submissionId: 'ds-4' });
+var dsOk = call({ action: 'createDailyEntry', token: jrBm.tok, date: dsDay(8), sourceType: 'store', sourceId: dsLoc, cashSales: 200, discountAmount: 25, discountReason: 'manager_approved', submissionId: 'ds-4' });
 check(dsOk.ok && dsOk.entry.discountAmount === 25 && dsOk.entry.discountReason === 'manager_approved' && dsOk.entry.discountFlag === true, 'a discount above the limit is saved, flagged for Finance');
-var dsSmall = call({ action: 'createDailyEntry', token: jrBm.tok, date: jrToday, sourceType: 'store', sourceId: dsLoc, cashSales: 200, discountAmount: 5, discountReason: 'loyal_customer', submissionId: 'ds-5' });
+var dsSmall = call({ action: 'createDailyEntry', token: jrBm.tok, date: dsDay(9), sourceType: 'store', sourceId: dsLoc, cashSales: 200, discountAmount: 5, discountReason: 'loyal_customer', submissionId: 'ds-5' });
 check(dsSmall.ok && !dsSmall.entry.discountFlag, 'one under it is not');
 check(call({ action: 'adminSetConfig', token: adminTok, data: { discountLimit: -1 } }).error === 'invalid_setting', 'the limit is never negative');
 call({ action: 'adminSetConfig', token: adminTok, data: { discountLimit: 0 } });
@@ -4988,8 +5000,8 @@ check(call({ action: 'createDailyEntry', token: jrBm.tok, date: jrToday, sourceT
 check(call({ action: 'createDailyEntry', token: jrBm.tok, date: jrToday, sourceType: 'store', sourceId: dsLoc, cashSales: 100, discountAmount: 20, discountReason: 'promotion', directDepositAmount: 95, directDepositRef: 'X1', submissionId: 'ds-6' }).error === 'deposit_exceeds_cash', 'a الموازنة cannot bank cash the discount took away (100 − 20 = 80)');
 // the discounts section (2026-10-07): a discount on a line of its own, next to the day's sales
 var dsSec = call({ action: 'importDailyEntries', token: jrBm.tok, rows: [
-  { date: jrToday, sourceType: 'store', sourceId: dsLoc, cashSales: 300, submissionId: 'ds-7' },
-  { date: jrToday, sourceType: 'store', sourceId: dsLoc, cashSales: 0, discountAmount: 30, discountReason: 'loyal_customer', discountNote: 'Abu Fahd', submissionId: 'ds-7' }] });
+  { date: dsDay(10), sourceType: 'store', sourceId: dsLoc, cashSales: 300, submissionId: 'ds-7' },
+  { date: dsDay(10), sourceType: 'store', sourceId: dsLoc, cashSales: 0, discountAmount: 30, discountReason: 'loyal_customer', discountNote: 'Abu Fahd', submissionId: 'ds-7' }] });
 var dsSecRow = dsSec.ok && ctx.readSheet(ctx.SHEETS.ENTRIES).filter(function (e) { return e.submissionId === 'ds-7' && Number(e.discountAmount) > 0; })[0];
 check(dsSec.ok && dsSec.created === 2 && dsSecRow && dsSecRow.discountNote === 'Abu Fahd', 'a discount on its own line is saved with its reason and note (' + JSON.stringify(dsSec.results || dsSec.error) + ')');
 check(dsSecRow && ctx.computeNet_(ctx.readSheet(ctx.SHEETS.ENTRIES).filter(function (e) { return e.submissionId === 'ds-7'; })).netCashOwed === 270, 'and comes off the day\'s cash (300 − 30)');
@@ -5132,7 +5144,9 @@ console.log('--- a branch changes collector; the old one keeps what he holds unt
   check(call({ action: 'adminUpdateUser', token: adminTok, id: colX.id, data: { active: false } }).ok, 'X holds nothing and can be deactivated');
   call({ action: 'deputyValidateHandoff', token: walidTok, id: r2.handoff.id });
   check(call({ action: 'confirmHandoff', token: yTok, id: r2.handoff.id }).ok, 'Y receives the branch\'s next request');
-  var dep = call({ action: 'recordDeposit', token: yTok, bankReference: 'CC-Y-1' });
+  check(call({ action: 'recordDeposit', token: yTok, bankReference: 'CC-Y-1', depositAmount: 1499 }).error === 'deposit_amount_mismatch', 'a deposit whose typed amount is not the cash held is refused; he recounts');
+  check(call({ action: 'recordDeposit', token: yTok, bankReference: 'CC-Y-1', depositAmount: 0 }).error === 'deposit_amount_required', 'a zero amount is refused');
+  var dep = call({ action: 'recordDeposit', token: yTok, bankReference: 'CC-Y-1', depositAmount: 1500 });
   check(dep.ok && Math.abs(dep.handoff.amount - 1500) < 0.005, 'Y banks both: what X handed over and what the branch sent (got ' + (dep.handoff && dep.handoff.amount) + ')');
   check(dep.ok && (dep.handoff.perCluster || []).filter(function (p) { return p.clusterId === area.id; }).reduce(function (s, p) { return s + Number(p.amount || 0); }, 0) === 1500, 'the deposit still names the area for every riyal');
   // still blocked: a collector holding cash cannot be deactivated
@@ -5222,6 +5236,56 @@ console.log('--- notification emails: designed, in the reader\'s language, with 
     var m = log[before];
     check(m && m.html.indexOf(' dir="' + (lang === 'en' ? 'ltr' : 'rtl') + '"') > 0, lang + ': the email reads ' + (lang === 'en' ? 'left to right' : 'right to left'));
   });
+})();
+
+console.log('--- a day is never entered twice (2026-10-12) ---');
+(function () {
+  var D1 = dsDay(20), D2 = dsDay(21);
+  function n() { return ctx.readSheet(SHEETS.ENTRIES).filter(function (e) { return e.sourceId === jrStore.id && (e.date === D1 || e.date === D2) && !e.voided; }).length; }
+  var a = call({ action: 'createDailyEntry', token: jrBm.tok, date: D1, sourceType: 'store', sourceId: jrStore.id, cashSales: 100, submissionId: 'dup-a' });
+  check(a.ok && n() === 1, 'the day is saved');
+  var a2 = call({ action: 'createDailyEntry', token: jrBm.tok, date: D1, sourceType: 'store', sourceId: jrStore.id, cashSales: 100, submissionId: 'dup-a' });
+  check(a2.ok && a2.already && n() === 1, 'the same form sent again (a second tap) is saved once');
+  var b = call({ action: 'createDailyEntry', token: jrBm.tok, date: D1, sourceType: 'store', sourceId: jrStore.id, cashSales: 100, submissionId: 'dup-b' });
+  check(b.error === 'day_already_entered' && b.existingTxNo === a.entry.txNo && n() === 1, 'the same branch day entered again is refused, naming the entry on file (' + (b.error || 'saved') + ')');
+  var c = call({ action: 'importDailyEntries', token: jrBm.tok, rows: [{ date: D1, sourceType: 'store', sourceId: jrStore.id, cashSales: 40, submissionId: 'dup-c' }] });
+  check(c.created === 0 && c.results[0].error === 'day_already_entered' && n() === 1, 'by file or by product lines too');
+  var mgrDup = call({ action: 'createDailyEntry', token: adminTok, date: D1, sourceType: 'store', sourceId: jrStore.id, cashSales: 100, submissionId: 'dup-d' });
+  check(mgrDup.error === 'day_already_entered', 'and by anyone else, not only the person who entered it');
+  var rows = [{ date: D2, sourceType: 'store', sourceId: jrStore.id, cashSales: 70, submissionId: 'dup-e' }, { date: D2, sourceType: 'store', sourceId: jrStore.id, cashSales: 30, submissionId: 'dup-e' }];
+  var e1 = call({ action: 'importDailyEntries', token: jrBm.tok, rows: rows }), e2 = call({ action: 'importDailyEntries', token: jrBm.tok, rows: rows });
+  check(e1.created === 2 && e2.ok && e2.already && n() === 3, 'one form of two lines is saved once even when sent twice');
+  check(call({ action: 'voidEntries', token: jrBm.tok, ids: [a.entry.id], reason: 'retype' }).ok, 'cancelling the open day');
+  var f = call({ action: 'createDailyEntry', token: jrBm.tok, date: D1, sourceType: 'store', sourceId: jrStore.id, cashSales: 110, submissionId: 'dup-f' });
+  check(f.ok, 'lets it be entered again, corrected');
+
+  // the admin cancels a whole transaction, whoever entered it (2026-10-12)
+  var D3 = dsDay(22);
+  var g = call({ action: 'importDailyEntries', token: jrBm.tok, rows: [{ date: D3, sourceType: 'store', sourceId: jrStore.id, cashSales: 60, submissionId: 'av-g' }, { date: D3, sourceType: 'store', sourceId: jrStore.id, cashSales: 40, submissionId: 'av-g' }] });
+  var gIds = g.results.map(function (r) { return r.id; });
+  check(call({ action: 'adminVoidTransaction', token: jrBm.tok, ids: [gIds[0]], reason: 'dup' }).error === 'forbidden', 'only the admin cancels someone\'s transaction');
+  check(call({ action: 'adminVoidTransaction', token: adminTok, ids: [gIds[0]] }).error === 'reason_required', 'with a reason');
+  var gv = call({ action: 'adminVoidTransaction', token: adminTok, ids: [gIds[0]], reason: 'entered twice' });
+  check(gv.ok && gv.voided === 2 && gIds.every(function (id) { var e = ctx.getById_(SHEETS.ENTRIES, id); return e.voided && e.voidReason === 'entered twice'; }), 'one line picked cancels every line of the transaction, kept with its reason');
+  // a day in a handover nobody has received yet takes the handover back with it
+  var D4 = dsDay(23);
+  var h1 = call({ action: 'createDailyEntry', token: jrBm.tok, date: D4, sourceType: 'store', sourceId: jrStore.id, cashSales: 70, submissionId: 'av-h1' });
+  var hh = call({ action: 'createHandoff', token: jrBm.tok, kind: 'location_to_cluster', locationId: jrStore.locationId });
+  var others = hh.ok ? (hh.handoff.sourceEntryIds || []).filter(function (id) { return id !== h1.entry.id; }) : [];
+  var hv = call({ action: 'adminVoidTransaction', token: adminTok, ids: [h1.entry.id], reason: 'duplicate day' });
+  check(hh.ok && hv.ok && hv.handoffsVoided === 1 && ctx.getById_(SHEETS.HANDOFFS, hh.handoff.id).status === 'voided', 'its handover not yet received is cancelled too (' + (hh.error || hv.error || 'ok') + ')');
+  check(others.every(function (id) { var e = ctx.getById_(SHEETS.ENTRIES, id); return e.voided || !e.consumedBy; }), 'and the handover\'s other days go back to be sent again');
+
+  // the figure confirmed before saving is the one saved (2026-10-12)
+  var D5 = dsDay(24), before = ctx.readSheet(SHEETS.ENTRIES).length;
+  var dRows = [{ date: D5, sourceType: 'store', sourceId: jrStore.id, cashSales: 500, discountAmount: 20, discountReason: 'loyal_customer', submissionId: 'dry-1' },
+    { date: D5, sourceType: 'store', sourceId: jrStore.id, cashSales: 0, expenseAmount: 30, expenseItemId: ctx.readSheet(SHEETS.EXPENSE_ITEMS)[0].id, expenseReason: 'fuel', submissionId: 'dry-1' }];
+  var dr = call({ action: 'importDailyEntries', token: jrBm.tok, rows: dRows, dryRun: true });
+  check(dr.ok && dr.dryRun && ctx.readSheet(SHEETS.ENTRIES).length === before, 'a dry run writes nothing (' + (dr.error || JSON.stringify(dr.results)) + ')');
+  var ds = call({ action: 'importDailyEntries', token: jrBm.tok, rows: dRows });
+  var saved = ctx.computeNet_(ctx.readSheet(SHEETS.ENTRIES).filter(function (e) { return e.submissionId === 'dry-1'; }));
+  check(ds.created === 2 && Math.abs(dr.breakdown.netCashOwed - saved.netCashOwed) < 0.005 && Math.abs(saved.netCashOwed - 450) < 0.005,
+    'and its figure is exactly what is saved (500 − 20 − 30 = 450; got ' + (dr.breakdown && dr.breakdown.netCashOwed) + ' / ' + saved.netCashOwed + ')');
 })();
 
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
