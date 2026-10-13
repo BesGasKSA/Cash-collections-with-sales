@@ -1981,6 +1981,85 @@ function deputyHandoffGuard_(h, user) {
   if (h.fromUserId === user.id || h.toUserId === user.id || h.createdBy === user.id) return 'conflict_of_interest';
   return null;
 }
+// The WhatsApp message to the collector once his request is approved. With the
+// company's WhatsApp Business account set (Settings: WA_TOKEN, WA_PHONE_ID,
+// WA_TEMPLATE in script properties) the server sends it itself, as the approved
+// template {{1}} name, {{2}} number, {{3}} amount, {{4}} branch, {{5}} link.
+// Without it, the deputy's screen offers it as one tap (wa.me) with the same text.
+// Sending never fails the approval.
+function waConfig_() {
+  var p = scriptProps_();
+  return { token: p.WA_TOKEN || '', phoneId: p.WA_PHONE_ID || '', template: p.WA_TEMPLATE || '', lang: p.WA_LANG || 'ar' };
+}
+function actionAdminSetWhatsApp_(req, user) {
+  if (user.role !== 'admin') return { ok: false, error: 'forbidden' };
+  var d = req.data || {};
+  [['token', 'WA_TOKEN'], ['phoneId', 'WA_PHONE_ID'], ['template', 'WA_TEMPLATE'], ['lang', 'WA_LANG']].forEach(function (k) {
+    if (d[k[0]] != null && String(d[k[0]]).trim() !== '') setScriptProp_(k[1], String(d[k[0]]).trim().slice(0, 1000));
+  });
+  if (d.clear === true) ['WA_TOKEN', 'WA_PHONE_ID', 'WA_TEMPLATE'].forEach(function (k) { setScriptProp_(k, ''); });
+  var changed = d.clear === true || ['token', 'phoneId', 'template', 'lang'].some(function (k) { return d[k] != null && String(d[k]).trim() !== ''; });
+  if (changed) logAudit_('admin_set_whatsapp', user.id, d.clear === true ? 'cleared' : 'set');
+  var c = waConfig_();
+  return { ok: true, configured: !!(c.token && c.phoneId && c.template), phoneId: c.phoneId, template: c.template, lang: c.lang };
+}
+function waNotifyCollector_(h) {
+  try {
+    var col = getById_(SHEETS.USERS, h.toUserId);
+    if (!col) return null;
+    var loc = h.locationId ? getById_(SHEETS.LOCATIONS, h.locationId) : null;
+    var branch = loc ? (loc.city ? loc.city + ' - ' : '') + loc.name : '';
+    var amount = nmMoney_(h.amount), link = nmLink_('confirm_receipt', h.id), no = h.txNo || '';
+    // Arabic right to left: every line starts with a right-to-left mark and every
+    // Latin value (number, amount, link) is isolated, so WhatsApp never flips the line
+    var R = '\u200F', L = function (v) { return '\u2066' + v + '\u2069'; };
+    var sender = getById_(SHEETS.USERS, h.fromUserId), area = h.clusterId ? getById_(SHEETS.CLUSTERS, h.clusterId) : (loc && loc.clusterId ? getById_(SHEETS.CLUSTERS, loc.clusterId) : null);
+    var store = loc ? storeOfLocation_(loc.id) : null, bm = store && store.storeManagerUserId ? getById_(SHEETS.USERS, store.storeManagerUserId) : null;
+    var dep = h.deputyValidatedBy ? getById_(SHEETS.USERS, h.deputyValidatedBy) : null;
+    var day = ''; try { day = Utilities.formatDate(new Date(h.createdAt), 'Asia/Riyadh', 'dd/MM/yyyy'); } catch (de) {}
+    function chat(u) { return u && u.phone ? L('wa.me/' + u.phone) : null; }
+    var text = [
+      R + '*شركة الناقل الأفضل للغاز*',
+      R + '*طلب تحصيل بانتظار استلامك*',
+      '',
+      R + 'السلام عليكم ورحمة الله، ' + col.name,
+      R + 'اعتمد نائب مدير العمليات طلب التحصيل التالي، ونرجو منك استلامه:',
+      '',
+      R + '🔢 رقم المعاملة: ' + L(no || '-'),
+      day ? R + '📅 التاريخ: ' + L(day) : null,
+      R + '🏪 الفرع: ' + (branch || '-'),
+      area ? R + '📍 المنطقة: ' + area.name : null,
+      bm ? R + '👤 مدير الفرع: ' + bm.name : null,
+      chat(bm) ? R + '📞 واتساب مدير الفرع: ' + chat(bm) : null,
+      sender ? R + '👤 المرسل (مدير المنطقة): ' + sender.name : null,
+      chat(sender) ? R + '📞 واتساب مدير المنطقة: ' + chat(sender) : null,
+      dep ? R + '✅ اعتمده: ' + dep.name : null,
+      '',
+      R + '💰 *المبلغ المطلوب استلامه: ' + L(amount) + ' ريال*',
+      '',
+      R + 'عُدّ المبلغ عند الاستلام، ثم أكّده من الرابط:',
+      link,
+      '',
+      R + 'مع التحية،',
+      R + 'إدارة تحصيل النقدية'
+    ].filter(function (x) { return x !== null; }).join('\n');
+    var out = { phone: col.phone || null, name: col.name, text: text, sent: false };
+    var cfg = waConfig_();
+    if (col.phone && cfg.token && cfg.phoneId && cfg.template) {
+      var res;
+      try { res = UrlFetchApp.fetch('https://graph.facebook.com/v21.0/' + encodeURIComponent(cfg.phoneId) + '/messages', {
+        method: 'post', contentType: 'application/json', muteHttpExceptions: true,
+        headers: { Authorization: 'Bearer ' + cfg.token },
+        payload: JSON.stringify({ messaging_product: 'whatsapp', to: col.phone, type: 'template',
+          template: { name: cfg.template, language: { code: cfg.lang },
+            components: [{ type: 'body', parameters: [col.name, no, amount, branch || '-', link].map(function (v) { return { type: 'text', text: String(v) }; }) }] } })
+      }); } catch (fe) { logAudit_('whatsapp_failed', 'system', h.id + ' fetch'); return out; }
+      out.sent = res.getResponseCode() >= 200 && res.getResponseCode() < 300;
+      logAudit_(out.sent ? 'whatsapp_sent' : 'whatsapp_failed', 'system', h.id + (out.sent ? '' : ' ' + res.getResponseCode()));
+    }
+    return out;
+  } catch (e) { return null; }
+}
 function actionDeputyValidateHandoff_(req, user) {
   requireDeputy_(user);
   var h = getById_(SHEETS.HANDOFFS, req.id);
@@ -1994,7 +2073,7 @@ function actionDeputyValidateHandoff_(req, user) {
   logAudit_('deputy_validate_handoff', user.id, h.id);
   notifyPending_(h);
   nmHandoffMail_(getById_(SHEETS.USERS, h.fromUserId), 'validated', h, { by: user.id });
-  return { ok: true, handoff: h };
+  return { ok: true, handoff: h, wa: waNotifyCollector_(h) };
 }
 function actionDeputyReturnHandoff_(req, user) {
   requireDeputy_(user);
@@ -2309,7 +2388,14 @@ function actionGetFile_(req, user) {
 // ---------- Notifications ----------
 
 function notifyPending_(handoff) {
-  nmHandoffMail_(getById_(SHEETS.USERS, handoff.toUserId), 'confirm_receipt', handoff, { open: 'confirm_receipt' });
+  var to = getById_(SHEETS.USERS, handoff.toUserId);
+  if (handoff.kind === 'cluster_to_collector' && to) {
+    // in Arabic whatever the account's language (the user's ask, 2026-10-12)
+    var ar = {}; safeOwnKeys_(to).forEach(function (k) { ar[k] = to[k]; }); ar.language = 'ar'; ar.languageChosen = true;
+    nmHandoffMail_(ar, 'collector_receive', handoff, { open: 'confirm_receipt', by: handoff.deputyValidatedBy || handoff.createdBy });
+    return;
+  }
+  nmHandoffMail_(to, 'confirm_receipt', handoff, { open: 'confirm_receipt' });
 }
 
 function notifyDispute_(handoff) {

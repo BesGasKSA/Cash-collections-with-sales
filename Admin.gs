@@ -93,6 +93,19 @@ function validRole_(r) {
 // a single-use link, the person picks their own password on the accept page,
 // and their status moves invited -> accepted (link used) -> active (first
 // real sign-in). See userStatus_ in Code.gs for how the admin list reads it.
+// ---------- WhatsApp to the collector (2026-10-12) ----------
+// A Saudi mobile in the international form WhatsApp wants: 9665XXXXXXXX.
+// Accepts 05.., 5.., +966.., 00966.., with Arabic digits, spaces and dashes.
+function waNumber_(raw) {
+  var s = String(raw == null ? '' : raw).replace(/[\u0660-\u0669]/g, function (c) { return String(c.charCodeAt(0) - 0x0660); })
+    .replace(/[\u06F0-\u06F9]/g, function (c) { return String(c.charCodeAt(0) - 0x06F0); }).replace(/[^\d+]/g, '');
+  if (!s) return null;
+  s = s.replace(/^\+/, '').replace(/^00/, '');
+  if (/^05\d{8}$/.test(s)) s = '966' + s.slice(1);
+  else if (/^5\d{8}$/.test(s)) s = '966' + s;
+  return /^9665\d{8}$/.test(s) ? s : (/^\d{10,15}$/.test(s) && !/^0/.test(s) ? s : null);
+}
+function phoneError_(d) { return d && d.phone != null && String(d.phone).trim() !== '' && !waNumber_(d.phone) ? 'invalid_phone' : null; }
 function actionAdminCreateUser_(req, user) {
   requireAdmin_(user);
   var d = req.data || {};
@@ -100,6 +113,8 @@ function actionAdminCreateUser_(req, user) {
   if (!String(d.name || '').trim()) return { ok: false, error: 'name_required' };
   // an email sends an invitation; an iqama number gives a temporary password
   if (!email && !iq) return { ok: false, error: 'login_required' };
+  if (phoneError_(d)) return { ok: false, error: 'invalid_phone' };
+  if (d.role === 'collector' && !waNumber_(d.phone)) return { ok: false, error: 'phone_required' };
   if (!validRole_(d.role)) return { ok: false, error: 'role_required' };
   if (email && userByEmail_(email)) return { ok: false, error: 'email_exists' };
   if (iq && userByIqama_(iq)) return { ok: false, error: 'iqama_exists' };
@@ -115,6 +130,7 @@ function actionAdminCreateUser_(req, user) {
     locationId: d.locationId || null,
     clusterId: d.clusterId || null,
     iqamaId: d.iqamaId || null,
+    phone: waNumber_(d.phone) || null,
     salt: null,
     pass: null,
     mustChangePw: false,
@@ -480,7 +496,11 @@ function actionAdminUpdateUser_(req, user) {
   if (d.active != null) target.active = !!d.active;
   if (d.locationId !== undefined) target.locationId = d.locationId;
   if (d.clusterId !== undefined) target.clusterId = d.clusterId;
+  if (phoneError_(d)) return { ok: false, error: 'invalid_phone' };
+  var nextRole = d.role || target.role, nextPhone = d.phone !== undefined ? waNumber_(d.phone) : target.phone;
+  if (nextRole === 'collector' && (d.phone !== undefined || d.role === 'collector') && !nextPhone) return { ok: false, error: 'phone_required' };
   if (d.iqamaId !== undefined) target.iqamaId = d.iqamaId;
+  if (d.phone !== undefined) target.phone = waNumber_(d.phone) || null;
   writeRow(SHEETS.USERS, target);
   logAudit_('admin_update_user', user.id, target.id);
   fillTranslations_(translatableOf_({ name: target.name }));
@@ -502,7 +522,7 @@ function createIqamaUser_(d, iq, user) {
   var newUser = {
     id: Utilities.getUuid(), name: String(d.name).trim(), email: '', role: d.role, active: true,
     language: d.language || 'en', languageChosen: !!d.language, locationId: d.locationId || null, clusterId: d.clusterId || null,
-    iqamaId: iq, salt: salt, pass: hashPw_(temp, salt), mustChangePw: true,
+    iqamaId: iq, phone: waNumber_(d.phone) || null, salt: salt, pass: hashPw_(temp, salt), mustChangePw: true,
     inviteStatus: 'accepted', createdAt: new Date().toISOString()
   };
   var lock = LockService.getScriptLock();
@@ -1831,7 +1851,7 @@ function actionMeta_(req, user) {
     // the deputy, the accountant and operations see people, not their sign-in
     // names or iqama numbers (security review 2026-10-04)
     pos = pos.map(function (p) { var o = {}; safeOwnKeys_(p).forEach(function (k) { if (k !== 'holderIqama') o[k] = p[k]; }); return o; });
-    users = users.map(function (u) { var o = {}; safeOwnKeys_(u).forEach(function (k) { if (k !== 'email' && k !== 'iqamaId') o[k] = u[k]; }); return o; });
+    users = users.map(function (u) { var o = {}; safeOwnKeys_(u).forEach(function (k) { if (k !== 'email' && k !== 'iqamaId' && k !== 'phone') o[k] = u[k]; }); return o; });
   }
   if (!isCompanyWide_(user.role)) {
     // holders' iqama numbers are private, and they are sign-in names

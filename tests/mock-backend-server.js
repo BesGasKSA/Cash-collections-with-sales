@@ -53,7 +53,7 @@ var adminLogin = call({ action: 'login', email: 'admin@bestgas.sa', password: 'B
 var adminTok = adminLogin.token;
 
 var sara = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Sara (Cluster Manager)', email: 'sara@bestgas.sa', role: 'cluster_manager' } }).user;
-var musa = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Musa (Collector)', email: 'musa@bestgas.sa', role: 'collector' } }).user;
+var musa = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Musa (Collector)', email: 'musa@bestgas.sa', role: 'collector', phone: '0550000000' } }).user;
 var ali = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Ali (Store Manager)', email: 'ali@bestgas.sa', role: 'store_manager' } }).user;
 var hassan = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Hassan (Driver)', email: 'hassan@bestgas.sa', role: 'driver' } }).user;
 var nasser = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Nasser (Deputy)', email: 'deputy@bestgas.sa', role: 'deputy_operations_manager' } }).user;
@@ -71,13 +71,13 @@ call({ action: 'adminSaveEntity', token: adminTok, kind: 'pos', data: { ownerTyp
 var muzafer = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Muzafer (Area Manager)', email: 'muzafer@bestgas.sa', role: 'cluster_manager' } }).user;
 var muntasir = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Muntasir (Area Manager)', email: 'muntasir@bestgas.sa', role: 'cluster_manager' } }).user;
 var ahmed = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Ahmed (Deputy)', email: 'ahmed@bestgas.sa', role: 'deputy_operations_manager' } }).user;
-var mazen = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Mazen (Collector)', email: 'mazen@bestgas.sa', role: 'collector' } }).user;
+var mazen = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Mazen (Collector)', email: 'mazen@bestgas.sa', role: 'collector', phone: '0550000000' } }).user;
 
 var northArea = call({ action: 'adminSaveEntity', token: adminTok, kind: 'cluster', data: { name: 'North Area', clusterManagerUserId: muzafer.id } }).entity;
 // the North is served by two collectors, branch by branch
-var khalid = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Khalid (Collector)', email: 'khalid@bestgas.sa', role: 'collector' } }).user;
+var khalid = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Khalid (Collector)', email: 'khalid@bestgas.sa', role: 'collector', phone: '0550000000' } }).user;
 // one person, one area: the South gets its own collector
-var rami = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Rami (Collector)', email: 'rami@bestgas.sa', role: 'collector' } }).user;
+var rami = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Rami (Collector)', email: 'rami@bestgas.sa', role: 'collector', phone: '0550000000' } }).user;
 var southArea = call({ action: 'adminSaveEntity', token: adminTok, kind: 'cluster', data: { name: 'South Area', clusterManagerUserId: muntasir.id } }).entity;
 
 // city, location name, clusterId, collector — one store + one car + one pos per location

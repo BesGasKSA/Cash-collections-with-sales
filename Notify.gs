@@ -16,6 +16,7 @@ var NM_ = {
     kind: { car_to_location: 'Car to branch handover', location_to_cluster: 'Branch to area handover', cluster_to_collector: 'Area to collector handover', collector_to_collector: 'Collector to collector handover', deposit: 'Bank deposit', batch: 'Area upload' },
     st: { pending: 'Waiting for receipt', pending_deputy: 'Waiting for the operations check', confirmed: 'Received', disputed: 'Disputed', returned: 'Returned for correction', rejected: 'Rejected', completed: 'Deposited', deputy_approved: 'Approved', approving: 'Being approved', voided: 'Cancelled' },
     ev: {
+      collector_receive: { s: 'Collection request for you: {amount} SAR from {branch}', h: 'Please collect {amount} SAR', l: '{by} approved collection request {no} sent by area manager {from} for {branch}. Collect the cash from the branch, count it, then confirm what you actually received with the button below.', b: 'Receive the request now', t: 'action' },
       confirm_receipt: { s: 'Confirm receipt: {amount} SAR from {from}', h: 'Cash is on its way to you', l: '{from} has handed you {amount} SAR. Count it, then confirm the amount you actually received.', b: 'Confirm receipt', t: 'action' },
       deputy_validate: { s: 'Check needed: {from}\'s handover of {amount} SAR', h: 'A handover is waiting for your check', l: '{from} is sending {amount} SAR to {to}. It reaches the collector only after you check it.', b: 'Review the request', t: 'action' },
       deputy_validate_rev: { s: 'Corrected handover (version {rev}) waiting for your check', h: 'A corrected handover is back for your check', l: '{from} corrected the handover you returned and sent it again: {amount} SAR to {to}.', b: 'Review the request', t: 'action' },
@@ -54,6 +55,7 @@ var NM_ = {
     kind: { car_to_location: 'تسليم من السيارة إلى الفرع', location_to_cluster: 'تسليم من الفرع إلى المنطقة', cluster_to_collector: 'تسليم من المنطقة إلى المحصّل', collector_to_collector: 'تسليم من محصّل إلى محصّل', deposit: 'إيداع بنكي', batch: 'رفع بيانات المنطقة' },
     st: { pending: 'بانتظار الاستلام', pending_deputy: 'بانتظار تحقق العمليات', confirmed: 'تم الاستلام', disputed: 'معترض عليه', returned: 'أُعيد للتصحيح', rejected: 'مرفوض', completed: 'تم الإيداع', deputy_approved: 'معتمد', approving: 'قيد الاعتماد', voided: 'ملغى' },
     ev: {
+      collector_receive: { s: 'طلب تحصيل بانتظار استلامك: {amount} ريال من فرع {branch}', h: 'مطلوب منك استلام {amount} ريال', l: 'اعتمد {by} طلب التحصيل رقم {no} المرسل من مدير المنطقة {from} عن فرع {branch}. نرجو منك استلام المبلغ من الفرع وعدّه، ثم تأكيد ما استلمته فعلاً من الزر أدناه. إن اختلف المبلغ فاكتب ما عددته، ويُسجَّل الفرق ويُبلَّغ عنه.', b: 'استلام الطلب الآن', t: 'action' },
       confirm_receipt: { s: 'أكّد الاستلام: {amount} ريال من {from}', h: 'نقدية في طريقها إليك', l: 'سلّمك {from} مبلغ {amount} ريال. عُدّ المبلغ ثم أكّد ما استلمته فعلاً.', b: 'تأكيد الاستلام', t: 'action' },
       deputy_validate: { s: 'مطلوب تحققك: تسليم {from} بمبلغ {amount} ريال', h: 'طلب تسليم بانتظار تحققك', l: 'يرسل {from} مبلغ {amount} ريال إلى {to}، ولا يصل إلى المحصّل إلا بعد تحققك.', b: 'مراجعة الطلب', t: 'action' },
       deputy_validate_rev: { s: 'طلب مصحَّح (النسخة {rev}) بانتظار تحققك', h: 'عاد إليك طلب مصحَّح للتحقق', l: 'صحّح {from} الطلب الذي أعدته وأرسله من جديد: {amount} ريال إلى {to}.', b: 'مراجعة الطلب', t: 'action' },
@@ -92,6 +94,7 @@ var NM_ = {
     kind: { car_to_location: 'گاڑی سے برانچ کو حوالگی', location_to_cluster: 'برانچ سے علاقے کو حوالگی', cluster_to_collector: 'علاقے سے کلکٹر کو حوالگی', collector_to_collector: 'کلکٹر سے کلکٹر کو حوالگی', deposit: 'بینک ڈپازٹ', batch: 'علاقے کا اپ لوڈ' },
     st: { pending: 'وصولی کا انتظار', pending_deputy: 'آپریشنز کی جانچ کا انتظار', confirmed: 'وصول ہو گیا', disputed: 'اعتراض شدہ', returned: 'درستی کے لیے واپس', rejected: 'مسترد', completed: 'جمع ہو گیا', deputy_approved: 'منظور', approving: 'منظوری جاری', voided: 'منسوخ' },
     ev: {
+      collector_receive: { s: 'آپ کے لیے وصولی کی درخواست: {branch} سے {amount} ریال', h: 'براہ کرم {amount} ریال وصول کریں', l: '{by} نے ایریا منیجر {from} کی {branch} کے لیے وصولی کی درخواست {no} منظور کی۔ برانچ سے نقدی وصول کریں، گنیں، پھر نیچے کے بٹن سے اصل وصول شدہ رقم کی تصدیق کریں۔', b: 'ابھی درخواست وصول کریں', t: 'action' },
       confirm_receipt: { s: 'وصولی کی تصدیق کریں: {from} سے {amount} ریال', h: 'نقدی آپ کی طرف آ رہی ہے', l: '{from} نے آپ کو {amount} ریال حوالے کیے ہیں۔ گن کر جو رقم واقعی ملی اس کی تصدیق کریں۔', b: 'وصولی کی تصدیق کریں', t: 'action' },
       deputy_validate: { s: 'جانچ درکار: {from} کی {amount} ریال کی حوالگی', h: 'ایک حوالگی آپ کی جانچ کی منتظر ہے', l: '{from} {amount} ریال {to} کو بھیج رہے ہیں۔ یہ آپ کی جانچ کے بعد ہی کلکٹر تک پہنچے گی۔', b: 'درخواست دیکھیں', t: 'action' },
       deputy_validate_rev: { s: 'درست شدہ حوالگی (ورژن {rev}) آپ کی جانچ کی منتظر', h: 'درست شدہ حوالگی دوبارہ جانچ کے لیے آئی ہے', l: '{from} نے واپس کی گئی حوالگی درست کر کے دوبارہ بھیجی: {amount} ریال {to} کو۔', b: 'درخواست دیکھیں', t: 'action' },
@@ -225,7 +228,7 @@ function nmHandoffMailIn_(u, ev, h, x) {
   var p = nmPlace_(h), declared = h.originalAmount != null ? Number(h.originalAmount) : Number(h.amount);
   var toName = h.toUserId ? nmName_(h.toUserId) : (lang === 'en' ? 'the bank' : lang === 'ur' ? 'بینک' : 'البنك');
   var vars = { amount: nmMoney_(h.amount), declared: nmMoney_(declared), short: nmMoney_(h.shortfall), from: nmName_(h.fromUserId), to: toName,
-    by: x.by ? nmName_(x.by) : '', no: h.txNo || '', rev: h.revision || '', hours: x.hours != null ? Math.round(x.hours) : '', limit: x.limit != null ? nmMoney_(x.limit) : '' };
+    by: x.by ? nmName_(x.by) : '', no: h.txNo || '', rev: h.revision || '', branch: p.branch || p.area || '', hours: x.hours != null ? Math.round(x.hours) : '', limit: x.limit != null ? nmMoney_(x.limit) : '' };
   var facts = [[c.f.no, h.txNo || String(h.id).slice(0, 8), true], [c.f.kind, c.kind[h.kind] || h.kind],
     [c.f.place, p.branch], [c.f.area, p.area], [c.f.city, p.city], [c.f.created, nmWhen_(h.createdAt), true], [c.f.status, c.st[h.status] || h.status]];
   if (h.revision > 1) facts.push([c.f.rev, String(h.revision), true]);
@@ -253,7 +256,7 @@ function nmHandoffMailIn_(u, ev, h, x) {
   var got = h.status === 'confirmed' || h.status === 'completed';
   var link = nmLink_(x.open || 'view', h.id);
   nmSend_(u, c, lang, {
-    subject: fill_(E.s, vars), tone: E.t, head: E.h, lead: fill_(E.l, vars), name: firstName_(u.name),
+    subject: fill_(E.s, vars), tone: E.t, head: fill_(E.h, vars), lead: fill_(E.l, vars), name: firstName_(u.name),
     amount: Number(h.amount), amountNote: got ? c.amountGot : c.amountTo, chips: chips,
     route: { from: nmName_(h.fromUserId), fromRole: nmRole_(h.fromUserId, lang), to: toName, toRole: h.toUserId ? nmRole_(h.toUserId, lang) : '' },
     facts: facts, notes: notes, calc: full ? nmCalc_(h.breakdown, c) : null, carries: carries, stages: st, button: E.b, link: link

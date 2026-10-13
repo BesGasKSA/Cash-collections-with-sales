@@ -71,7 +71,7 @@ check(call({ action: 'adminSetConfig', token: adminTok, data: { costIncludeVat: 
 
 console.log('--- create people ---');
 var sara = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Sara', email: 'sara@bestgas.sa', role: 'cluster_manager' } }).user;
-var musa = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Musa', email: 'musa@bestgas.sa', role: 'collector' } }).user;
+var musa = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Musa', email: 'musa@bestgas.sa', role: 'collector', phone: '0550000000' } }).user;
 var ali = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Ali', email: 'ali@bestgas.sa', role: 'store_manager' } }).user;
 var hassan = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Hassan', email: 'hassan@bestgas.sa', role: 'driver' } }).user;
 check(sara && musa && ali && hassan, 'four users created');
@@ -266,7 +266,7 @@ var nonAdminEntity = call({ action: 'adminSaveEntity', token: aliTok, kind: 'loc
 check(!nonAdminEntity.ok && nonAdminEntity.error === 'forbidden', 'a store manager cannot use admin entity management');
 
 // a branch hands its cash to its own collector
-var loc2Collector = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Other Branch Collector', email: 'loc2col.fx@bestgas.sa', role: 'collector' } }).user;
+var loc2Collector = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Other Branch Collector', email: 'loc2col.fx@bestgas.sa', role: 'collector', phone: '0550000000' } }).user;
 var location2 = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: 'Jeddah', name: 'Other', collectorUserId: loc2Collector.id } }).entity;
 var wrongLocationHandoff = call({ action: 'createHandoff', token: aliTok, kind: 'location_to_cluster', locationId: location2.id });
 check(!wrongLocationHandoff.ok && wrongLocationHandoff.error === 'forbidden', 'a store manager cannot submit a handoff for a location they do not manage');
@@ -274,7 +274,7 @@ check(!wrongLocationHandoff.ok && wrongLocationHandoff.error === 'forbidden', 'a
 console.log('--- cluster manager report scoping ---');
 // an area is created with both ends of its hop assigned
 var otherManager = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Nora', email: 'nora@bestgas.sa', role: 'cluster_manager' } }).user;
-var otherCollector = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Rakan', email: 'rakan@bestgas.sa', role: 'collector' } }).user;
+var otherCollector = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Rakan', email: 'rakan@bestgas.sa', role: 'collector', phone: '0550000000' } }).user;
 var cluster2 = call({ action: 'adminSaveEntity', token: adminTok, kind: 'cluster', data: { name: 'Other Cluster', clusterManagerUserId: otherManager.id, collectorUserId: otherCollector.id } }).entity;
 call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { id: location2.id, clusterId: cluster2.id } });
 var noraTok = acceptInvite('nora@bestgas.sa');
@@ -441,7 +441,7 @@ var financeTok = acceptInvite('fatima@bestgas.sa');
 // holding by this point in the file.
 // its own people too: nobody may serve two areas
 var reconMgr = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Recon Area Manager', email: 'reconmgr.fx@bestgas.sa', role: 'cluster_manager' } }).user;
-var reconCol = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Recon Collector', email: 'reconcol.fx@bestgas.sa', role: 'collector' } }).user;
+var reconCol = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Recon Collector', email: 'reconcol.fx@bestgas.sa', role: 'collector', phone: '0550000000' } }).user;
 var reconMgrTok = acceptInvite('reconmgr.fx@bestgas.sa');
 var reconColTok = acceptInvite('reconcol.fx@bestgas.sa');
 var reconCluster = call({ action: 'adminSaveEntity', token: adminTok, kind: 'cluster', data: { name: 'ReconCluster', clusterManagerUserId: reconMgr.id, collectorUserId: reconCol.id } }).entity;
@@ -610,7 +610,7 @@ console.log('--- second approval: four eyes means two different people, even whe
 // declaring and approving their own submission) must still not be able to
 // also acknowledge their own second-approval sign-off; that has to be a
 // different person, exactly like resolving a dispute you're a party to.
-var selfAckCollector = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Self-Ack Collector', email: 'selfackcol.fx@bestgas.sa', role: 'collector' } }).user;
+var selfAckCollector = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Self-Ack Collector', email: 'selfackcol.fx@bestgas.sa', role: 'collector', phone: '0550000000' } }).user;
 var selfAckCluster = call({ action: 'adminSaveEntity', token: adminTok, kind: 'cluster', data: { name: 'Self-Ack Cluster', clusterManagerUserId: admin.id, collectorUserId: selfAckCollector.id } }).entity;
 var selfAckManager = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Self-Ack Store Manager', email: 'selfack@bestgas.sa', role: 'store_manager' } }).user;
 var selfAckManagerTok = acceptInvite('selfack@bestgas.sa');
@@ -843,9 +843,11 @@ call({ action: 'createHandoff', token: laylaTok, kind: 'location_to_cluster', lo
 
 console.log('--- admin can edit a user\'s full profile, not just toggle active/inactive ---');
 var editTarget = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Edit Target', email: 'edittarget@bestgas.sa', role: 'driver' } }).user;
+check(call({ action: 'adminUpdateUser', token: adminTok, id: editTarget.id, data: { role: 'collector' } }).error === 'phone_required', 'a collector cannot be made without a WhatsApp number (2026-10-12)');
+check(call({ action: 'adminCreateUser', token: adminTok, data: { name: 'No Phone Collector', email: 'nophone.fx@bestgas.sa', role: 'collector' } }).error === 'phone_required', 'nor created without one');
 var profileEdit = call({
   action: 'adminUpdateUser', token: adminTok, id: editTarget.id,
-  data: { name: 'Edit Target Renamed', email: 'edittarget-new@bestgas.sa', role: 'collector', language: 'en', active: true }
+  data: { name: 'Edit Target Renamed', email: 'edittarget-new@bestgas.sa', role: 'collector', phone: '0550000000', language: 'en', active: true }
 });
 check(profileEdit.ok, 'admin edits name, email, role, and language together');
 check(profileEdit.user.name === 'Edit Target Renamed', 'name updated');
@@ -1285,7 +1287,7 @@ check(invMail.html.indexOf('أهلاً Invitee') >= 0 && invMail.html.indexOf('�
 check(invMail.html.indexOf('width="600"') < 0 && invMail.html.indexOf('max-width:560px') >= 0, 'the email is fluid: nothing is cut off on a phone');
 check(!/letter-spacing:\s*[1-9]/.test(invMail.html), 'no letter-spacing that would break the Arabic letters apart');
 check(invMail.html.indexOf('\u2014') < 0, 'and no em dashes in the copy');
-var invEn = call({ action: 'adminCreateUser', token: adminTok, appUrl: 'https://besgasksa.github.io/Cash-collections-with-sales/', data: { name: 'Nadia Karim', email: 'invitee.en@bestgas.sa', role: 'collector', language: 'en' } });
+var invEn = call({ action: 'adminCreateUser', token: adminTok, appUrl: 'https://besgasksa.github.io/Cash-collections-with-sales/', data: { name: 'Nadia Karim', email: 'invitee.en@bestgas.sa', role: 'collector', phone: '0550000000', language: 'en' } });
 var invEnMail = ctx._debug.mailLog.filter(function (m) { return m.to === 'invitee.en@bestgas.sa'; }).pop();
 check(invEn.ok && invEnMail && invEnMail.html.indexOf('Accept invitation') >= 0 && invEnMail.html.indexOf('dir="ltr"') >= 0 && /invited/i.test(invEnMail.subject) && invEnMail.html.indexOf('Hello Nadia') >= 0,
   'an English user gets it in English');
@@ -1422,7 +1424,7 @@ check(amCar.ok, 'and a car in that branch');
 var amPos = call({ action: 'createDailyEntry', token: saraTok, date: '2026-07-10', sourceType: 'pos', sourceId: pos.entity.id, cashSales: 100, deliveryFeeBankAmount: 23 });
 check(amPos.ok, 'and a POS machine in that branch');
 var farMgr = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Far Area Manager', email: 'farmgr.fx@bestgas.sa', role: 'cluster_manager' } }).user;
-var farCollector = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Far Collector', email: 'farcol.fx@bestgas.sa', role: 'collector' } }).user;
+var farCollector = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Far Collector', email: 'farcol.fx@bestgas.sa', role: 'collector', phone: '0550000000' } }).user;
 var outsideStore = call({ action: 'adminSaveEntity', token: adminTok, kind: 'cluster', data: { name: 'Far Area', clusterManagerUserId: farMgr.id, collectorUserId: farCollector.id } });
 var outsideLoc = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: 'Jeddah', name: 'Far Branch', clusterId: outsideStore.entity.id } });
 var mgr9 = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Far Store Manager', email: 'mgr9.fx@bestgas.sa', role: 'store_manager' } }).user;
@@ -1512,7 +1514,7 @@ check(call({ action: 'createDailyEntry', token: aliTok, date: '2026-08-26', sour
 console.log('--- an admin write answers with the fresh reference data, saving a round trip ---');
 var beforeClusters = call({ action: 'listMeta', token: adminTok }).clusters.length;
 var eastMgr = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Eastern Area Manager', email: 'eastmgr.fx@bestgas.sa', role: 'cluster_manager' } }).user;
-var eastCollector = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Eastern Collector', email: 'eastcol.fx@bestgas.sa', role: 'collector' } }).user;
+var eastCollector = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Eastern Collector', email: 'eastcol.fx@bestgas.sa', role: 'collector', phone: '0550000000' } }).user;
 var newArea = call({ action: 'adminSaveEntity', token: adminTok, kind: 'cluster', data: { name: 'Eastern Area', clusterManagerUserId: eastMgr.id, collectorUserId: eastCollector.id } });
 check(newArea.ok && newArea.meta && newArea.meta.ok, 'saving an area returns the reference data with it');
 check(newArea.meta.clusters.length === beforeClusters + 1, 'and that data already contains the area just created — no second call needed');
@@ -1530,7 +1532,7 @@ check(call({ action: 'adminSaveEntity', token: adminTok, kind: 'cluster', data: 
 console.log('--- controls: what can change, by whom, and when it locks ---');
 // A branch of its own, so nothing earlier in the file is in flight here.
 var ctlMgr = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Ctl Area Manager', email: 'ctlmgr.fx@bestgas.sa', role: 'cluster_manager' } }).user;
-var ctlCol = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Ctl Collector', email: 'ctlcol.fx@bestgas.sa', role: 'collector' } }).user;
+var ctlCol = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Ctl Collector', email: 'ctlcol.fx@bestgas.sa', role: 'collector', phone: '0550000000' } }).user;
 var ctlBm = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Ctl Branch Manager', email: 'ctlbm.fx@bestgas.sa', role: 'store_manager' } }).user;
 var ctlDrv = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Ctl Driver', email: 'ctldrv.fx@bestgas.sa', role: 'driver' } }).user;
 var ctlMgrTok = acceptInvite('ctlmgr.fx@bestgas.sa'), ctlColTok = acceptInvite('ctlcol.fx@bestgas.sa');
@@ -1620,7 +1622,7 @@ var disableHolder = call({ action: 'adminUpdateUser', token: adminTok, id: ctlDr
 check(!disableHolder.ok && disableHolder.error === 'person_holds_cash', 'a person holding cash cannot be disabled');
 var roleAssigned = call({ action: 'adminUpdateUser', token: adminTok, id: otherBm.id, data: { role: 'driver' } });
 check(roleAssigned.ok, 'an unassigned person with nothing in flight can change role');
-var roleOfAssigned = call({ action: 'adminUpdateUser', token: adminTok, id: ctlMgr.id, data: { role: 'collector' } });
+var roleOfAssigned = call({ action: 'adminUpdateUser', token: adminTok, id: ctlMgr.id, data: { role: 'collector', phone: '0550000000' } });
 check(!roleOfAssigned.ok && (roleOfAssigned.error === 'user_has_assignments' || roleOfAssigned.error === 'person_holds_cash'),
   'someone named on a link cannot be given another role until the link is reassigned');
 
@@ -1638,7 +1640,7 @@ check(ctx.readSheet(SHEETS.AUDIT).some(function (a) { return a.action === 'admin
 console.log('--- the deputy checks the area manager -> collector handover ---');
 // a fresh area so the amounts are known
 var dpMgr = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Dp Area Manager', email: 'dpmgr.fx@bestgas.sa', role: 'cluster_manager' } }).user;
-var dpCol = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Dp Collector', email: 'dpcol.fx@bestgas.sa', role: 'collector' } }).user;
+var dpCol = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Dp Collector', email: 'dpcol.fx@bestgas.sa', role: 'collector', phone: '0550000000' } }).user;
 var dpBm = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Dp Branch Manager', email: 'dpbm.fx@bestgas.sa', role: 'store_manager' } }).user;
 var dpMgrTok = acceptInvite('dpmgr.fx@bestgas.sa'), dpColTok = acceptInvite('dpcol.fx@bestgas.sa'), dpBmTok = acceptInvite('dpbm.fx@bestgas.sa');
 var dpArea = call({ action: 'adminSaveEntity', token: adminTok, kind: 'cluster', data: { name: 'Dp Area', clusterManagerUserId: dpMgr.id, collectorUserId: dpCol.id } }).entity;
@@ -1671,8 +1673,8 @@ check(ctx.readSheet(SHEETS.AUDIT).some(function (a) { return a.action === 'deput
 console.log('--- a returned area request is corrected and sent again ---');
 var rsMgr = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Rs Area Manager', email: 'rsmgr.fx@bestgas.sa', role: 'cluster_manager' } }).user;
 var rsMgr2 = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Rs Other Area Manager', email: 'rsmgr2.fx@bestgas.sa', role: 'cluster_manager' } }).user;
-var rsCol = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Rs Collector', email: 'rscol.fx@bestgas.sa', role: 'collector' } }).user;
-var rsCol2 = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Rs Second Collector', email: 'rscol2.fx@bestgas.sa', role: 'collector' } }).user;
+var rsCol = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Rs Collector', email: 'rscol.fx@bestgas.sa', role: 'collector', phone: '0550000000' } }).user;
+var rsCol2 = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Rs Second Collector', email: 'rscol2.fx@bestgas.sa', role: 'collector', phone: '0550000000' } }).user;
 var rsMgrTok = acceptInvite('rsmgr.fx@bestgas.sa'), rsMgr2Tok = acceptInvite('rsmgr2.fx@bestgas.sa'), rsCol2Tok = acceptInvite('rscol2.fx@bestgas.sa');
 var rsArea = call({ action: 'adminSaveEntity', token: adminTok, kind: 'cluster', data: { name: 'Rs Area', clusterManagerUserId: rsMgr.id } }).entity;
 var rsArea2 = call({ action: 'adminSaveEntity', token: adminTok, kind: 'cluster', data: { name: 'Rs Other Area', clusterManagerUserId: rsMgr2.id } }).entity;
@@ -1825,7 +1827,7 @@ check(call({ action: 'createDailyEntry', token: walidTok, date: ctx.todayRiyadh_
 
 console.log('--- a day the area manager enters himself travels in his own request ---');
 var amMgr = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Am Area Manager', email: 'ammgr.fx@bestgas.sa', role: 'cluster_manager' } }).user;
-var amCol = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Am Collector', email: 'amcol.fx@bestgas.sa', role: 'collector' } }).user;
+var amCol = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Am Collector', email: 'amcol.fx@bestgas.sa', role: 'collector', phone: '0550000000' } }).user;
 var amBm = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Am Branch Manager', email: 'ambm.fx@bestgas.sa', role: 'store_manager' } }).user;
 var amMgrTok = acceptInvite('ammgr.fx@bestgas.sa'), amColTok = acceptInvite('amcol.fx@bestgas.sa'), amBmTok = acceptInvite('ambm.fx@bestgas.sa');
 var amArea = call({ action: 'adminSaveEntity', token: adminTok, kind: 'cluster', data: { name: 'Am Area', clusterManagerUserId: amMgr.id, collectorUserId: amCol.id } }).entity;
@@ -1881,8 +1883,8 @@ check(!mVoid.ok && mVoid.error === 'deposit_reconciled', 'the bank has confirmed
 console.log('--- taking a legacy two-area manager off the area that has nothing in flight ---');
 // Rows saved before the one-person-one-area rule: one manager on two areas.
 var twMgr = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Tw Two-Area Manager', email: 'twmgr.fx@bestgas.sa', role: 'cluster_manager' } }).user;
-var twColN = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Tw North Collector', email: 'twcoln.fx@bestgas.sa', role: 'collector' } }).user;
-var twColS = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Tw South Collector', email: 'twcols.fx@bestgas.sa', role: 'collector' } }).user;
+var twColN = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Tw North Collector', email: 'twcoln.fx@bestgas.sa', role: 'collector', phone: '0550000000' } }).user;
+var twColS = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Tw South Collector', email: 'twcols.fx@bestgas.sa', role: 'collector', phone: '0550000000' } }).user;
 var twNew = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Tw New South Manager', email: 'twnew.fx@bestgas.sa', role: 'cluster_manager' } }).user;
 var twMgrTok = acceptInvite('twmgr.fx@bestgas.sa');
 var twNorth = call({ action: 'adminSaveEntity', token: adminTok, kind: 'cluster', data: { name: 'Tw North', clusterManagerUserId: twMgr.id, collectorUserId: twColN.id } }).entity;
@@ -1910,7 +1912,7 @@ call({ action: 'adminSetConfig', token: adminTok, data: { posSalesEnabled: false
 check(call({ action: 'listMeta', token: aliTok }).config.posSalesEnabled === false, 'and off again');
 
 console.log('--- collectors belong to branches: one area, two collectors ---');
-function mk(name, email, role) { return call({ action: 'adminCreateUser', token: adminTok, data: { name: name, email: email, role: role } }).user; }
+function mk(name, email, role) { return call({ action: 'adminCreateUser', token: adminTok, data: { name: name, email: email, role: role, phone: role === 'collector' ? '0550000000' : undefined } }).user; }
 var bcMgr = mk('Bc Area Manager', 'bcmgr.fx@bestgas.sa', 'cluster_manager');
 var bcColA = mk('Bc Collector A', 'bccola.fx@bestgas.sa', 'collector');
 var bcColB = mk('Bc Collector B', 'bccolb.fx@bestgas.sa', 'collector');
@@ -2111,7 +2113,7 @@ var soloMgr = call({ action: 'adminCreateUser', token: adminTok, data: { name: '
 var dupCol = call({ action: 'adminSaveEntity', token: adminTok, kind: 'cluster', data: { name: 'Twin Area', clusterManagerUserId: soloMgr.id, collectorUserId: musa.id } });
 check(dupCol.ok, 'a collector who already collects for another area can collect for this one too');
 if (dupCol.ok) call({ action: 'adminDeleteEntity', token: adminTok, kind: 'cluster', id: dupCol.entity.id });
-var soloCol = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Solo Collector', email: 'solocol.fx@bestgas.sa', role: 'collector' } }).user;
+var soloCol = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Solo Collector', email: 'solocol.fx@bestgas.sa', role: 'collector', phone: '0550000000' } }).user;
 var twin = call({ action: 'adminSaveEntity', token: adminTok, kind: 'cluster', data: { name: 'Twin Area', clusterManagerUserId: soloMgr.id, collectorUserId: soloCol.id } });
 check(twin.ok, 'two people nobody else uses make a valid area');
 check(call({ action: 'adminSaveEntity', token: adminTok, kind: 'cluster', id: twin.entity.id, data: { name: 'Twin Area (renamed)' } }).ok,
@@ -2961,7 +2963,7 @@ check(call({ action: 'adminSaveEntity', token: adminTok, kind: 'product', id: cy
 
 console.log('--- every way a sale is entered reaches the stock, once (2026-10-05) ---');
 var scLoc = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: 'Riyadh', name: 'Scenario Branch', clusterId: cluster.entity.id, collectorUserId: musa.id } }).entity;
-function scUser(n, role) { return call({ action: 'adminCreateUser', token: adminTok, data: { name: n, email: n.toLowerCase().replace(/\W+/g, '.') + '@bestgas.sa', role: role } }).user; }
+function scUser(n, role) { return call({ action: 'adminCreateUser', token: adminTok, data: { name: n, email: n.toLowerCase().replace(/\W+/g, '.') + '@bestgas.sa', role: role, phone: role === 'collector' ? '0550000000' : undefined } }).user; }
 var scMgr = scUser('Sc Manager', 'store_manager'), scMgr2 = scUser('Sc Manager Two', 'store_manager'), scDrv = scUser('Sc Driver', 'driver');
 var scStore = call({ action: 'adminSaveEntity', token: adminTok, kind: 'store', data: { locationId: scLoc.id, name: 'Scenario Store', storeManagerUserId: scMgr.id } }).entity;
 var scCar = call({ action: 'adminSaveEntity', token: adminTok, kind: 'car', data: { locationId: scLoc.id, label: 'Scenario Car', driverUserId: scDrv.id } }).entity;
@@ -3184,7 +3186,7 @@ function lvCall(payload) { try { return lv.route_(payload); } catch (e) { return
 (function () { var salt = lv.randomSalt_(); lv.writeRow(lv.SHEETS.USERS, { id: lv.Utilities.getUuid(), name: 'Lv Admin', email: 'lv.admin@bestgas.sa', role: 'admin', active: true, language: 'en', salt: salt, pass: lv.hashPw_('Bootstrap#1', salt), mustChangePw: false }); })();
 var lvTok = lvCall({ action: 'login', email: 'lv.admin@bestgas.sa', password: 'Bootstrap#1' }).token;
 function lvEnt(kind, d) { var r = lvCall({ action: 'adminSaveEntity', token: lvTok, kind: kind, data: d }); check(r.ok, 'live shape: ' + kind + ' ' + (d.name || d.label || '') + (r.ok ? '' : ': ' + r.error)); return r.entity || {}; }
-function lvUser(n, role) { return lvCall({ action: 'adminCreateUser', token: lvTok, data: { name: n, email: n.toLowerCase().replace(/\W+/g, '.') + '@bestgas.sa', role: role } }).user || {}; }
+function lvUser(n, role) { return lvCall({ action: 'adminCreateUser', token: lvTok, data: { name: n, email: n.toLowerCase().replace(/\W+/g, '.') + '@bestgas.sa', role: role, phone: role === 'collector' ? '0550000000' : undefined } }).user || {}; }
 var lvAm = lvUser('Lv Area Manager', 'cluster_manager'), lvCol = lvUser('Lv Collector', 'collector'), lvBm = lvUser('Lv Branch Manager', 'store_manager');
 var lvArea = lvEnt('cluster', { name: 'Lv Area', clusterManagerUserId: lvAm.id });
 var lvLoc = lvEnt('location', { city: 'Riyadh', name: 'Lv Branch', clusterId: lvArea.id, collectorUserId: lvCol.id });
@@ -3278,7 +3280,7 @@ function l2Call(payload) { try { return l2.route_(payload); } catch (e) { return
 (function () { var salt = l2.randomSalt_(); l2.writeRow(l2.SHEETS.USERS, { id: l2.Utilities.getUuid(), name: 'L2 Admin', email: 'l2.admin@bestgas.sa', role: 'admin', active: true, language: 'en', salt: salt, pass: l2.hashPw_('Bootstrap#1', salt), mustChangePw: false }); })();
 var l2Tok = l2Call({ action: 'login', email: 'l2.admin@bestgas.sa', password: 'Bootstrap#1' }).token;
 function l2Ent(kind, d) { var r = l2Call({ action: 'adminSaveEntity', token: l2Tok, kind: kind, data: d }); check(r.ok, 'resume shape: ' + kind + ' ' + (d.name || d.label || '') + (r.ok ? '' : ': ' + r.error)); return r.entity || {}; }
-function l2User(n, role) { return l2Call({ action: 'adminCreateUser', token: l2Tok, data: { name: n, email: n.toLowerCase().replace(/\W+/g, '.') + '@bestgas.sa', role: role } }).user || {}; }
+function l2User(n, role) { return l2Call({ action: 'adminCreateUser', token: l2Tok, data: { name: n, email: n.toLowerCase().replace(/\W+/g, '.') + '@bestgas.sa', role: role, phone: role === 'collector' ? '0550000000' : undefined } }).user || {}; }
 var l2Area = l2Ent('cluster', { name: 'L2 Area', clusterManagerUserId: l2User('L2 Area Manager', 'cluster_manager').id });
 var l2Loc = l2Ent('location', { city: 'Riyadh', name: 'L2 Branch', clusterId: l2Area.id, collectorUserId: l2User('L2 Collector', 'collector').id });
 var l2Exch = l2Ent('product', { name: 'استبدال غاز', type: 'goods', unitPrice: 37 });
@@ -3500,7 +3502,7 @@ var pfOwn = call({ action: 'adminSaveEntity', token: adminTok, kind: 'cost_type'
 check(pfOwn.ok && /^CST-/.test(pfOwn.entity.code), 'finance adds a cost type of its own');
 
 console.log('--- costing: a small company to cost ---');
-function pfUser(name, role) { return call({ action: 'adminCreateUser', token: adminTok, data: { name: name, email: name.toLowerCase().replace(/\W+/g, '.') + '@bestgas.sa', role: role } }).user; }
+function pfUser(name, role) { return call({ action: 'adminCreateUser', token: adminTok, data: { name: name, email: name.toLowerCase().replace(/\W+/g, '.') + '@bestgas.sa', role: role, phone: role === 'collector' ? '0550000000' : undefined } }).user; }
 var pfMgr = pfUser('PF Area Manager', 'cluster_manager'), pfCol = pfUser('PF Collector', 'collector');
 var pfSm1 = pfUser('PF Manager A', 'store_manager'), pfSm2 = pfUser('PF Manager B', 'store_manager');
 var pfDr1 = pfUser('PF Driver A', 'driver'), pfDr2 = pfUser('PF Driver B', 'driver');
@@ -3761,7 +3763,7 @@ Object.keys(ctx._debug.sheets).forEach(function (n) {
 check(txBad.length === 0, 'after the whole run, every row of every sheet is [text id, JSON, ISO text] (' + txBad.slice(0, 3).join(' | ') + ')');
 
 console.log('--- English is the default language; a chosen one stays ---');
-var lgNew = call({ action: 'adminCreateUser', token: adminTok, appUrl: 'https://x.test/', data: { name: 'Lang Default', email: 'lang.default@bestgas.sa', role: 'collector' } });
+var lgNew = call({ action: 'adminCreateUser', token: adminTok, appUrl: 'https://x.test/', data: { name: 'Lang Default', email: 'lang.default@bestgas.sa', role: 'collector', phone: '0550000000' } });
 check(lgNew.ok && lgNew.user.language === 'en', 'a new account without a language is English (got ' + (lgNew.user && lgNew.user.language) + ')');
 var lgMail = ctx._debug.mailLog.filter(function (m) { return m.to === 'lang.default@bestgas.sa'; }).pop();
 check(lgMail && lgMail.html.indexOf('Accept invitation') >= 0 && lgMail.html.indexOf('قبول الدعوة') < 0, 'and its invitation is in English');
@@ -3769,7 +3771,7 @@ var lgOld = ctx.getById_(ctx.SHEETS.USERS, lgNew.user.id); lgOld.language = 'ar'
 check(ctx.publicUser_(ctx.getById_(ctx.SHEETS.USERS, lgNew.user.id)).language === 'en', 'an account that only carries the old Arabic default opens in English');
 ctx.actionSetLanguage_({ language: 'ar' }, ctx.getById_(ctx.SHEETS.USERS, lgNew.user.id));
 check(ctx.publicUser_(ctx.getById_(ctx.SHEETS.USERS, lgNew.user.id)).language === 'ar', 'once someone picks Arabic, Arabic stays');
-check(call({ action: 'adminCreateUser', token: adminTok, appUrl: 'https://x.test/', data: { name: 'Lang Urdu', email: 'lang.ur@bestgas.sa', role: 'collector', language: 'ur' } }).user.language === 'ur', 'Urdu set by the admin stays Urdu');
+check(call({ action: 'adminCreateUser', token: adminTok, appUrl: 'https://x.test/', data: { name: 'Lang Urdu', email: 'lang.ur@bestgas.sa', role: 'collector', phone: '0550000000', language: 'ur' } }).user.language === 'ur', 'Urdu set by the admin stays Urdu');
 
 console.log('--- a handover amount is the same at every stage, and its parts always add up to it ---');
 // what a receiver's statement adds up: what came in, less what came off,
@@ -4320,7 +4322,7 @@ check(cpOk, 'every level adds up to its children, returned counts roll up, and e
 console.log('--- every action waiting on a person is listed for them ---');
 var paSnap = function () { var o = {}; Object.keys(SHEETS).forEach(function (k) { o[k] = JSON.stringify(ctx.readSheet(SHEETS[k])); }); return JSON.stringify(o); };
 function paMake(role, name, mail) {
-  var u = call({ action: 'adminCreateUser', token: adminTok, data: { name: name, email: mail, role: role } }).user;
+  var u = call({ action: 'adminCreateUser', token: adminTok, data: { name: name, email: mail, role: role, phone: role === 'collector' ? '0550000000' : undefined } }).user;
   return { u: u, tok: acceptInvite(mail) };
 }
 function paItems(tok) { var r = call({ action: 'myPendingActions', token: tok }); check(r.ok, 'myPendingActions answers'); return r.items || []; }
@@ -4438,7 +4440,7 @@ check(paTot.total === paTot.items.length, 'the total is the number of rows liste
 console.log('--- every entry\'s journey: getJourney from entries, handovers and area batches ---');
 call({ action: 'adminSetConfig', token: adminTok, data: { areaManagerBulkUploadEnabled: true } });
 function jrMake(role, name, mail) {
-  var u = call({ action: 'adminCreateUser', token: adminTok, data: { name: name, email: mail, role: role } }).user;
+  var u = call({ action: 'adminCreateUser', token: adminTok, data: { name: name, email: mail, role: role, phone: role === 'collector' ? '0550000000' : undefined } }).user;
   return { u: u, tok: acceptInvite(mail) };
 }
 var jrMgr = jrMake('cluster_manager', 'Jr Area Manager', 'jrmgr.fx@bestgas.sa');
@@ -5092,7 +5094,7 @@ check(ctx.readSheet(SHEETS.ENTRIES).every(function (e) { return !!e.id; }), 'no 
 
 console.log('--- a branch changes collector; the old one keeps what he holds until he hands it on or banks it (2026-10-11) ---');
 (function () {
-  function mk(name, email, role) { return call({ action: 'adminCreateUser', token: adminTok, data: { name: name, email: email, role: role } }).user; }
+  function mk(name, email, role) { return call({ action: 'adminCreateUser', token: adminTok, data: { name: name, email: email, role: role, phone: role === 'collector' ? '0550000000' : undefined } }).user; }
   var mgr = mk('Cc Area Manager', 'ccmgr.fx@bestgas.sa', 'cluster_manager'), colX = mk('Cc Collector X', 'cccolx.fx@bestgas.sa', 'collector'), colY = mk('Cc Collector Y', 'cccoly.fx@bestgas.sa', 'collector');
   var bm = mk('Cc Branch Manager', 'ccbm.fx@bestgas.sa', 'store_manager');
   var mgrTok = acceptInvite('ccmgr.fx@bestgas.sa'), xTok = acceptInvite('cccolx.fx@bestgas.sa'), yTok = acceptInvite('cccoly.fx@bestgas.sa'), bmTok = acceptInvite('ccbm.fx@bestgas.sa');
@@ -5184,6 +5186,28 @@ console.log('--- a branch changes collector; the old one keeps what he holds unt
     check(Math.abs(D.T.deposited - 1500) < 0.005 && Math.abs(D.T.held - 200) < 0.005 && Math.abs(D.T.total - 1700) < 0.005 && D.collectors.length === 1 && D.collectors[0].key === colY.id,
       'collections: the screen\'s figures add up (banked 1,500, held 200, all by Y)');
   }
+  // WhatsApp to the collector once the deputy approves (2026-10-12)
+  check(ctx.waNumber_('0551234567') === '966551234567' && ctx.waNumber_('+966 55 123 4567') === '966551234567' && ctx.waNumber_('٠٥٥١٢٣٤٥٦٧') === '966551234567' && ctx.waNumber_('12') === null, 'a Saudi mobile is read in any common form');
+  check(call({ action: 'adminUpdateUser', token: adminTok, id: colY.id, data: { phone: 'abc' } }).error === 'invalid_phone', 'a phone that is not a number is refused');
+  check(call({ action: 'adminUpdateUser', token: adminTok, id: colY.id, data: { phone: '0551234567' } }).ok && ctx.getById_(SHEETS.USERS, colY.id).phone === '966551234567', 'the collector\'s phone is kept in the international form');
+  var waMeta = call({ action: 'listMeta', token: walidTok });
+  check(!(waMeta.users || []).some(function (u) { return u.phone; }), 'phone numbers are not sent to everyone in the user list');
+  var r4 = toArea(300);
+  var v4 = call({ action: 'deputyValidateHandoff', token: walidTok, id: r4.handoff.id });
+  check(v4.ok && v4.wa && v4.wa.phone === '966551234567' && v4.wa.sent === false && v4.wa.text.indexOf('open=') > 0 && v4.wa.text.indexOf('300.00') > 0, 'without the WhatsApp account the deputy gets the message ready to send in one tap');
+  check(call({ action: 'adminSetWhatsApp', token: walidTok, data: { token: 'x' } }).error === 'forbidden', 'only the admin sets the WhatsApp account');
+  var waSet = call({ action: 'adminSetWhatsApp', token: adminTok, data: { token: 'TEST-TOKEN', phoneId: '1234', template: 'collection_ready' } });
+  check(waSet.ok && waSet.configured && JSON.stringify(waSet).indexOf('TEST-TOKEN') < 0, 'the admin sets it; the WhatsApp token never comes back');
+  var uf = ctx._debug.urlFetch, ufBefore = uf.log.length, oldResp = uf.responder;
+  uf.responder = function (url) { return url.indexOf('graph.facebook.com') >= 0 ? { code: 200, body: '{}' } : oldResp.apply(null, arguments); };
+  var r5 = toArea(150);
+  var v5 = call({ action: 'deputyValidateHandoff', token: walidTok, id: r5.handoff.id });
+  var waCall = uf.log.slice(ufBefore).filter(function (x) { return x.url.indexOf('graph.facebook.com/v21.0/1234/messages') >= 0; })[0];
+  var waBody = waCall ? JSON.parse(waCall.options.payload) : null;
+  check(v5.ok && v5.wa && v5.wa.sent === true && waBody && waBody.to === '966551234567' && waBody.template.name === 'collection_ready' && waBody.template.components[0].parameters.length === 5, 'with it, the server sends the approved template to the collector itself');
+  uf.responder = oldResp;
+  call({ action: 'adminSetWhatsApp', token: adminTok, data: { clear: true } });
+
 })();
 
 console.log('--- a test round is archived with open handovers when asked (before go-live) ---');
@@ -5203,7 +5227,8 @@ console.log('--- notification emails: designed, in the reader\'s language, with 
   check(log.some(function (m) { return /^Received (in full|short|over)|^تم الاستلام|^استُلم|^مکمل وصول|^کم وصول/.test(m.subject); }), 'the person who handed cash over hears when it was received');
   var withCalc = log.filter(function (m) { return m.html && m.html.indexOf('Net cash') > 0; });
   check(withCalc.length > 0, 'the amount is worked through to the net cash inside the email');
-  check(log.every(function (m) { return !m.html || (m.html.indexOf('undefined') < 0 && m.html.indexOf('NaN') < 0 && m.html.indexOf('{amount}') < 0 && m.html.indexOf('{from}') < 0); }), 'no email shows undefined, NaN or an unfilled placeholder');
+  var badMail = log.filter(function (m) { return m.html && (m.html.indexOf('undefined') >= 0 || m.html.indexOf('NaN') >= 0 || m.html.indexOf('{amount}') >= 0 || m.html.indexOf('{from}') >= 0); });
+  check(!badMail.length, 'no email shows undefined, NaN or an unfilled placeholder' + (badMail.length ? ' (' + badMail[0].subject + ' :: ' + (badMail[0].html.match(/.{60}(undefined|NaN|{amount}|{from}).{30}/) || [''])[0] + ')' : ''));
   // review fixes (2026-10-09): every statement adds up, more cash is not "missing", a broken record never breaks the action
   var cEn = ctx.NM_.en, bad = 0;
   ctx.readSheet(SHEETS.HANDOFFS).forEach(function (x) {

@@ -720,7 +720,7 @@ function publicUser_(u) {
     id: u.id, code: u.code || null, name: u.name, email: u.email, role: u.role,
     active: u.active !== false, language: userLang_(u),
     locationId: u.locationId || null, clusterId: u.clusterId || null,
-    mustChangePw: !!u.mustChangePw, iqamaId: u.iqamaId || null,
+    mustChangePw: !!u.mustChangePw, iqamaId: u.iqamaId || null, phone: u.phone || null,
     status: userStatus_(u), lastLoginAt: u.lastLoginAt || null,
     invitedAt: u.invitedAt || null, acceptedAt: u.acceptedAt || null,
     activatedAt: u.activatedAt || null, inviteExpiresAt: u.inviteExpiresAt || null
@@ -894,6 +894,7 @@ function route_(req) {
     uploadEntryPhoto: function () { return actionUploadEntryPhoto_(req, user); },
     listHandoffs: function () { return actionListHandoffs_(req, user); },
     collectionsData: function () { return actionCollectionsData_(req, user); },
+    adminSetWhatsApp: function () { return actionAdminSetWhatsApp_(req, user); },
     addInventoryMove: function () { return actionAddInventoryMove_(req, user); },
     recordStockCount: function () { return actionRecordStockCount_(req, user); },
     voidInventoryMove: function () { return actionVoidInventoryMove_(req, user); },
@@ -962,7 +963,7 @@ function route_(req) {
     listAreaBulkBatches: function () { return actionListAreaBulkBatches_(req, user); },
     areaBulkBatchDetail: function () { return actionAreaBulkBatchDetail_(req, user); },
     areaBatchRows: function () { return actionAreaBatchRows_(req, user); },
-    deputyApproveBatch: function () { return withCashLock_(function () { return actionDeputyApproveBatch_(req, user); }); },
+    deputyApproveBatch: function () { var r = withCashLock_(function () { return actionDeputyApproveBatch_(req, user); }); if (r && r.ok && r.handoffs) r.wa = r.handoffs.map(waNotifyCollector_).filter(Boolean); return r; },
     deputyRejectBatch: function () { return withCashLock_(function () { return actionDeputyRejectBatch_(req, user); }); },
 
     // admin — users (special: password/invite logic)
