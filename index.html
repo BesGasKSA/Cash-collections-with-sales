@@ -453,6 +453,9 @@
   .col-row:hover,.col-req:hover{background:#F4F5F2;}
   .col-row.on{background:color-mix(in srgb,var(--green) 9%,#fff);}
   .col-req.ro{cursor:default;}
+  .col-slip{align-self:flex-start;display:inline-flex;align-items:center;gap:6px;margin-top:4px;padding:5px 10px;border-radius:999px;background:color-mix(in srgb,#2E7D4F 12%,#fff);color:#2E7D4F;font-size:12px;font-weight:700;cursor:pointer;}
+  .col-slip .ic2{width:15px;height:15px;}
+  .col-slip:active{transform:scale(.97);}
   .col-av{flex:none;width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:#E7ECE5;color:var(--green);font-weight:700;font-size:13px;}
   .col-rb,.col-qb{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px;}
   .col-rt{display:flex;justify-content:space-between;gap:10px;align-items:baseline;font-size:14px;}
@@ -3920,7 +3923,7 @@ var ICON_B64 = 'iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAYAAAA9zQYyAAAcG0lEQVR42u2dd1cU
 // Stamped by tools/stamp-build.js at publish time so the running app can
 // say which build it is — a cached page is the usual reason a shipped change
 // seems missing.
-var BUILD_ID = '2026-10-13 13:59 · ee6cc58';
+var BUILD_ID = '2026-10-13 15:18 · d799a43';
 var LOGO_SRC = 'data:image/png;base64,' + LOGO_B64;
 var ICON_SRC = LOGO_SRC; // same asset — see the comment above LOGO_B64
 // The sign-in mark (2026-09-30): the logo's round emblem as a coin with a
@@ -4602,7 +4605,7 @@ var L = {
       col_byArea:'Per area', col_byBranch:'Per branch', col_rowSub2:'Banked {bank} ({p}%) · open {open}',
       col_requests:'Requests', col_sort_new:'Newest', col_sort_old:'Oldest', col_sort_high:'Highest', col_sort_late:'Longest open', col_more:'Show more ({n} left)',
       col_where_bank:'banked {d}', col_where_held:'held by {who}', col_where_onway:'on the way to {who}', col_where_deputy:'waiting for the deputy', col_matched:'matched to the bank statement',
-      col_shortX:'short {x}', col_overX:'over {x}', col_none:'No collection requests yet', col_noneHere:'No requests match these filters', col_yes:'Yes',
+      col_shortX:'short {x}', col_overX:'over {x}', col_none:'No collection requests yet', col_noneHere:'No requests match these filters', col_yes:'Yes', col_depositDoc:'Deposit and its slip', col_docNotYours:'This document is not in your reach',
       col_x_name:'Name', col_x_bankPct:'Banked %', col_x_reqs:'Requests', col_x_oldest:'Oldest open', col_x_item:'Item', col_x_amount:'Amount (SAR)', col_x_returned:'Returned requests', col_x_disputed:'Disputed requests', col_x_rejected:'Rejected requests',
       col_x_day:'Day', col_x_no:'Number', col_x_from:'Area manager', col_x_to:'Collector', col_x_holder:'Holder now', col_x_stage:'Stage', col_x_age:'Days open', col_x_bankDay:'Banked on', col_x_depNo:'Deposit number', col_x_ref:'Bank reference', col_x_summary:'Summary' },
     ar: { rpc_title:'قنوات البيع', rpc_hint:'المبيعات عبر سوق غاز وقنوات البيع الأخرى في هذه الفترة', rpc_qty:'الكمية', rpc_sales:'المبيعات', rpc_fee:'رسوم التوصيل المضافة', rpc_com:'عمولة السائق', rpc_days:'الأيام', rpc_share:'{p}% من المبيعات', rpc_channel:'القناة', rpc_shareCol:'النسبة من المبيعات',
@@ -4630,7 +4633,7 @@ var L = {
       col_byArea:'لكل منطقة', col_byBranch:'لكل فرع', col_rowSub2:'أودع {bank} ({p}%) · مفتوح {open}',
       col_requests:'الطلبات', col_sort_new:'الأحدث', col_sort_old:'الأقدم', col_sort_high:'الأعلى', col_sort_late:'الأطول انتظارا', col_more:'عرض المزيد (باقي {n})',
       col_where_bank:'أودع {d}', col_where_held:'لدى {who}', col_where_onway:'في الطريق إلى {who}', col_where_deputy:'بانتظار نائب مدير العمليات', col_matched:'مطابق لكشف البنك',
-      col_shortX:'عجز {x}', col_overX:'زيادة {x}', col_none:'لا توجد طلبات تحصيل بعد', col_noneHere:'لا توجد طلبات بهذه التصفية', col_yes:'نعم',
+      col_shortX:'عجز {x}', col_overX:'زيادة {x}', col_none:'لا توجد طلبات تحصيل بعد', col_noneHere:'لا توجد طلبات بهذه التصفية', col_yes:'نعم', col_depositDoc:'الإيداع وإيصاله', col_docNotYours:'هذا المستند ليس ضمن صلاحيتك',
       col_x_name:'الاسم', col_x_bankPct:'نسبة الإيداع', col_x_reqs:'الطلبات', col_x_oldest:'أقدم مفتوح', col_x_item:'البند', col_x_amount:'المبلغ (ر.س)', col_x_returned:'طلبات معادة', col_x_disputed:'طلبات عليها اعتراض', col_x_rejected:'طلبات مرفوضة',
       col_x_day:'اليوم', col_x_no:'الرقم', col_x_from:'مدير المنطقة', col_x_to:'المحصل', col_x_holder:'لدى من الآن', col_x_stage:'المرحلة', col_x_age:'أيام مفتوح', col_x_bankDay:'تاريخ الإيداع', col_x_depNo:'رقم الإيداع', col_x_ref:'مرجع البنك', col_x_summary:'الملخص' },
     ur: { rpc_title:'فروخت کے چینل', rpc_hint:'اس مدت میں سوق گیس اور دوسرے چینلز سے فروخت', rpc_qty:'مقدار', rpc_sales:'فروخت', rpc_fee:'شامل ڈلیوری فیس', rpc_com:'ڈرائیور کمیشن', rpc_days:'دن', rpc_share:'فروخت کا {p}%', rpc_channel:'چینل', rpc_shareCol:'فروخت میں حصہ',
@@ -4658,7 +4661,7 @@ var L = {
       col_byArea:'ہر علاقہ', col_byBranch:'ہر برانچ', col_rowSub2:'جمع {bank} ({p}%) · کھلی {open}',
       col_requests:'درخواستیں', col_sort_new:'نئی', col_sort_old:'پرانی', col_sort_high:'سب سے زیادہ', col_sort_late:'سب سے دیر سے کھلی', col_more:'مزید دکھائیں ({n} باقی)',
       col_where_bank:'{d} کو جمع', col_where_held:'{who} کے پاس', col_where_onway:'{who} کی طرف راستے میں', col_where_deputy:'ڈپٹی کا انتظار', col_matched:'بینک اسٹیٹمنٹ سے ملایا گیا',
-      col_shortX:'کمی {x}', col_overX:'زیادہ {x}', col_none:'ابھی وصولی کی کوئی درخواست نہیں', col_noneHere:'ان فلٹرز سے کوئی درخواست نہیں', col_yes:'ہاں',
+      col_shortX:'کمی {x}', col_overX:'زیادہ {x}', col_none:'ابھی وصولی کی کوئی درخواست نہیں', col_noneHere:'ان فلٹرز سے کوئی درخواست نہیں', col_yes:'ہاں', col_depositDoc:'جمع اور اس کی رسید', col_docNotYours:'یہ دستاویز آپ کی رسائی میں نہیں',
       col_x_name:'نام', col_x_bankPct:'جمع %', col_x_reqs:'درخواستیں', col_x_oldest:'سب سے پرانی کھلی', col_x_item:'مد', col_x_amount:'رقم (ریال)', col_x_returned:'واپس کی گئی درخواستیں', col_x_disputed:'اعتراض والی درخواستیں', col_x_rejected:'مسترد درخواستیں',
       col_x_day:'دن', col_x_no:'نمبر', col_x_from:'ایریا منیجر', col_x_to:'کلکٹر', col_x_holder:'ابھی کس کے پاس', col_x_stage:'مرحلہ', col_x_age:'کھلے دن', col_x_bankDay:'جمع کی تاریخ', col_x_depNo:'جمع نمبر', col_x_ref:'بینک حوالہ', col_x_summary:'خلاصہ' }
   };
@@ -15950,8 +15953,14 @@ function renderCollections(body){
         '<span class="col-rs">'+esc([r.txNo, x.day, userName(r.fromUserId) + ' › ' + userName(r.toUserId)].filter(Boolean).join(' · '))+'</span>' +
         '<span class="col-st"><span class="col-pill">'+esc(t('col_st_' + x.st))+'</span>'+esc(where)+(x.age != null && x.age > 0 ? ' · <em class="'+(x.age > 3 ? 'late' : '')+'">'+esc(t('col_oldestD').replace('{n}', x.age))+'</em>' : '')+
         (Math.abs(r.shortfall) > 0.004 ? ' · <em class="late">'+esc(t(r.shortfall > 0 ? 'col_shortX' : 'col_overX').replace('{x}', money(Math.abs(r.shortfall))))+'</em>' : '')+'</span></span></button>');
-      var mine = ['admin','finance','accountant','operations_manager','deputy_operations_manager'].indexOf(state.user.role) >= 0 || [r.fromUserId, r.toUserId].indexOf(state.user.id) >= 0;
-      if (mine) it.addEventListener('click', function(){ cpOpenRequest_({ id: r.id }); }); else it.classList.add('ro');
+      // every card opens the request's own document: the breakdown, the branch days and
+      // transactions inside it level by level, and the attached slips (2026-10-13)
+      it.addEventListener('click', function(){ colOpenDoc_(r.id); });
+      if (r.depositId) {
+        var slipBtn = el('<span class="col-slip" role="button" tabindex="0">'+icon_('bank')+'<span>'+esc(t('col_depositDoc'))+'</span></span>');
+        slipBtn.addEventListener('click', function(ev){ ev.stopPropagation(); colOpenDoc_(r.depositId); });
+        qs('.col-qb', it).appendChild(slipBtn);
+      }
       lst.appendChild(it);
     });
     if (rows.length > shown) {
@@ -15961,6 +15970,14 @@ function renderCollections(body){
     }
     qs('.col-sort', rc).addEventListener('change', function(ev){ S.sort = ev.target.value; redraw(); });
     body.appendChild(rc);
+  });
+}
+// a request or its deposit as its full document (breakdown, sources, attachments)
+function colOpenDoc_(id){
+  drillEnsure_(true, true, function(){
+    var h = (DRILL.handoffs || []).filter(function(x){ return x.id === id; })[0];
+    if (h) { drawerOpen_(handoffDocView_(h)); return; }
+    toastRaw_(t('col_docNotYours'), 'err');
   });
 }
 // the whole report as a workbook: summary, collectors, areas, branches, days, aging, requests
