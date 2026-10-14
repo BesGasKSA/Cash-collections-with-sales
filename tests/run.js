@@ -5185,6 +5185,48 @@ console.log('--- a branch changes collector; the old one keeps what he holds unt
     var D = cc(cdA.requests.filter(function (r) { return r.clusterId === area.id; }), { today: day });
     check(Math.abs(D.T.deposited - 1500) < 0.005 && Math.abs(D.T.held - 200) < 0.005 && Math.abs(D.T.total - 1700) < 0.005 && D.collectors.length === 1 && D.collectors[0].key === colY.id,
       'collections: the screen\'s figures add up (banked 1,500, held 200, all by Y)');
+    // v2 (2026-10-14): every filter moves every figure, and the three totals always add up
+    var fxLoc = { b1: { city: 'Riyadh', clusterId: 'a1' }, b2: { city: 'Riyadh', clusterId: 'a1' }, b3: { city: 'Jeddah', clusterId: 'a2' } };
+    var fxLocOf = function (id) { return fxLoc[id] || {}; };
+    function fxReq(id, holder, loc, created, amount, stage, depAt, depId) {
+      return { id: id, holder: holder, locationId: loc, clusterId: fxLoc[loc].clusterId, createdAt: created + 'T09:00:00.000Z', amount: amount, stage: stage, shortfall: 0, depositedAt: depAt ? depAt + 'T10:00:00.000Z' : null, depositId: depId || null };
+    }
+    var fx = [
+      fxReq('c1', 'k1', 'b1', '2026-10-10', 100, 'deposited', '2026-10-12', 'dep1'),
+      fxReq('c2', 'k1', 'b2', '2026-10-11', 200, 'held'),
+      fxReq('c3', 'k1', 'b1', '2026-10-12', 50, 'pending'),
+      fxReq('c4', 'k2', 'b3', '2026-10-05', 400, 'deposited', '2026-10-12', 'dep1'),
+      fxReq('c5', 'k2', 'b3', '2026-10-13', 300, 'deputy'),
+      fxReq('c6', 'k2', 'b3', '2026-09-20', 999, 'held')
+    ];
+    var fxBase = { today: '2026-10-14', from: '2026-10-01', to: '2026-10-14', locOf: fxLocOf };
+    function fxRun(extra) { var o = {}; Object.keys(fxBase).forEach(function (k) { o[k] = fxBase[k]; }); Object.keys(extra || {}).forEach(function (k) { o[k] = extra[k]; }); return cc(fx, o); }
+    var fa = fxRun();
+    check(fa.T.total === 1050 && fa.T.deposited === 500 && fa.T.remaining === 550 && fa.T.deputy + fa.T.onway + fa.T.held === fa.T.remaining, 'collections v2: total 1,050 = banked 500 + remaining 550 (a request outside the period is not counted)');
+    var fk1 = fa.collectors.filter(function (g) { return g.key === 'k1'; })[0], fk2 = fa.collectors.filter(function (g) { return g.key === 'k2'; })[0];
+    check(fk1 && fk1.remaining === 250 && fk1.total === 350 && fk1.branchesN === 2 && fk1.lastDeposit === '2026-10-12' && fk2.branchesN === 1 && fk2.remaining === 300 && fk2.lastDeposit === '2026-10-12', 'collections v2: a collector carries remaining, branches served and last deposit');
+    check(Math.abs(fk1.share + fk2.share - 100) < 0.001 && Math.abs(fk1.share - 250 / 550 * 100) < 0.001, 'collections v2: shares of the remaining add up to 100%');
+    check(fa.collectors.every(function (g) { return Math.abs(g.remaining - (g.total - g.deposited)) < 0.005; }) && fa.areas.every(function (g) { return Math.abs(g.remaining - (g.total - g.deposited)) < 0.005; }) && fa.branches.every(function (g) { return Math.abs(g.remaining - (g.total - g.deposited)) < 0.005; }), 'collections v2: remaining = total - banked for every collector, area and branch');
+    check(fa.collectors.reduce(function (s, g) { return s + g.total; }, 0) === fa.T.total && fa.collectors.reduce(function (s, g) { return s + g.remaining; }, 0) === fa.T.remaining, 'collections v2: the collectors add up to the totals');
+    check(fk1.days.length === 3 && fk1.days.every(function (d) { return d.n === 1; }) && fk1.days[0].date < fk1.days[2].date, 'collections v2: a collector carries requests per day for a sparkline');
+    check(fa.T.lastDeposit === '2026-10-12' && fa.T.branchesN === 3, 'collections v2: the total carries the last deposit and the branches count');
+    check(Math.abs(fa.aging.reduce(function (s, v) { return s + v; }, 0) - fa.T.remaining) < 0.005, 'collections v2: the open-cash ages add up to the remaining');
+    var fc1 = fxRun({ collector: 'k1' });
+    check(fc1.T.total === 350 && fc1.T.remaining === 250 && fc1.T.deposited === 100 && fc1.collectors.length === 1 && fc1.areas.length === 1 && fc1.branches.length === 2 && fc1.collectors[0].share === 100, 'collections v2: a collector filter moves every figure and group');
+    check(fc1.days.length === 3 && fc1.banked.length === 1 && fc1.banked[0].total === 100 && fc1.rows.length === 3, 'collections v2: the days, the banked days and the list follow the collector filter');
+    check(fc1.deposits.length === 1 && fc1.deposits[0].amount === 100 && fc1.deposits[0].full === 500 && fc1.deposits[0].partial === true, 'collections v2: a deposit shows only the filtered requests\' share, with the full deposit beside it');
+    var fa2 = fxRun({ area: 'a2' });
+    check(fa2.T.total === 700 && fa2.T.deposited === 400 && fa2.T.remaining === 300 && fa2.branches.length === 1 && fa2.collectors.length === 1 && fa2.deposits[0].amount === 400, 'collections v2: an area filter moves every figure');
+    var fcity = fxRun({ city: 'Riyadh' });
+    check(fcity.T.total === 350 && fcity.areas.length === 1 && fcity.cities.length === 1, 'collections v2: a city filter moves every figure');
+    var fb2 = fxRun({ branch: 'b2' });
+    check(fb2.T.total === 200 && fb2.T.deposited === 0 && fb2.T.remaining === 200 && fb2.deposits.length === 0 && fb2.banked.length === 0 && fb2.T.lastDeposit === null, 'collections v2: a branch with nothing banked has no deposits and no last deposit');
+    var fp = fxRun({ from: '2026-10-11' });
+    check(fp.T.total === 550 && fp.T.deposited === 0 && fp.deposits.length === 0 && fp.rows.length === 3, 'collections v2: a narrower period leaves out earlier requests and their deposits');
+    var fall = fxRun({ from: '', to: '' });
+    check(fall.T.total === 2049 && fall.T.remaining === 1549, 'collections v2: all time counts the old request too');
+    var fnone = fxRun({ collector: 'nobody' });
+    check(fnone.T.total === 0 && fnone.T.remaining === 0 && fnone.collectors.length === 0 && fnone.deposits.length === 0, 'collections v2: a filter that matches nothing is all zero');
   }
   // WhatsApp to the collector once the deputy approves (2026-10-12)
   check(ctx.waNumber_('0551234567') === '966551234567' && ctx.waNumber_('+966 55 123 4567') === '966551234567' && ctx.waNumber_('٠٥٥١٢٣٤٥٦٧') === '966551234567' && ctx.waNumber_('12') === null, 'a Saudi mobile is read in any common form');

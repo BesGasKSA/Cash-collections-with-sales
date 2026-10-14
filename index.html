@@ -453,6 +453,16 @@
   .col-row:hover,.col-req:hover{background:#F4F5F2;}
   .col-row.on{background:color-mix(in srgb,var(--green) 9%,#fff);}
   .col-req.ro{cursor:default;}
+  .col-dep{border:1px solid #E4E8E2;border-radius:14px;margin-bottom:8px;overflow:hidden;background:#fff;}
+  .col-dep-main{display:flex;gap:12px;align-items:flex-start;width:100%;text-align:start;background:none;border:0;padding:12px;font:inherit;color:inherit;cursor:pointer;}
+  .col-dep-main:active,.col-dep-reqs:active{transform:scale(.98);}
+  .col-dep-ic{flex:none;width:38px;height:38px;border-radius:10px;display:grid;place-items:center;background:color-mix(in srgb,#2E7D4F 12%,#fff);color:#2E7D4F;}
+  .col-dep-ic .ic2{width:20px;height:20px;}
+  .col-dep-reqs{display:block;width:100%;border:0;border-top:1px solid #EEF0EC;background:#F7F8F5;padding:10px;font:inherit;font-size:13px;font-weight:700;color:var(--green);cursor:pointer;}
+  .col-tag{display:inline-block;border-radius:6px;padding:1px 7px;margin-inline-end:6px;margin-top:4px;font-size:11.5px;font-weight:700;background:#EEF0EC;color:#4A564D;}
+  .col-tag.ok{background:color-mix(in srgb,#2E7D4F 14%,#fff);color:#2E7D4F;}
+  .col-tag.bad{background:color-mix(in srgb,#C14A30 12%,#fff);color:#C14A30;}
+  .col-tag.wait{background:color-mix(in srgb,#C27C1E 14%,#fff);color:#9A5F12;}
   .col-lv-total{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;margin-bottom:10px;border-radius:12px;background:color-mix(in srgb,var(--green) 9%,#fff);font-weight:700;}
   .col-lv-total b{font-size:18px;}
   .col-slip{align-self:flex-start;display:inline-flex;align-items:center;gap:6px;margin-top:4px;padding:5px 10px;border-radius:999px;background:color-mix(in srgb,#2E7D4F 12%,#fff);color:#2E7D4F;font-size:12px;font-weight:700;cursor:pointer;}
@@ -480,6 +490,92 @@
   @keyframes colRise{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
   .col-rise .col-row{animation:colRise .3s cubic-bezier(0,0,.2,1) both;animation-delay:calc(var(--i,0) * 40ms);}
   @media (prefers-reduced-motion:reduce){.col-bar.col-enter,.col-rise .col-row{animation:none;}.col-chip,.col-row,.col-req{transition:none;}}
+  /* collections v2 (2026-10-14): what is counted, three totals, by collector */
+  .col-stick{position:sticky;z-index:14;margin:0 0 14px;padding:9px 14px;border:1px solid var(--border);border-radius:12px;background:rgba(255,255,255,.94);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;}
+  .col-sent{font-size:13px;line-height:1.5;min-width:0;overflow-wrap:anywhere;}
+  .col-fchips{display:flex;flex-wrap:wrap;gap:6px;}
+  .col-fchip{display:inline-flex;align-items:center;gap:8px;border:1px solid color-mix(in srgb,var(--green) 40%,#fff);background:color-mix(in srgb,var(--green) 9%,#fff);color:var(--green);border-radius:999px;padding:4px 10px;font:inherit;font-size:12.5px;font-weight:700;cursor:pointer;transition:background-color .2s cubic-bezier(.2,0,0,1),transform .1s cubic-bezier(.2,0,0,1);}
+  .col-fchip i{font-style:normal;font-size:11px;opacity:.8;}
+  .col-fchip:hover{background:color-mix(in srgb,var(--green) 16%,#fff);}
+  .col-fchip:active{transform:scale(.96);}
+  .col-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-bottom:8px;}
+  .col-card{display:flex;flex-direction:column;gap:8px;text-align:start;background:#fff;border:1px solid var(--border);border-top:4px solid var(--c);border-radius:16px;padding:16px;font:inherit;color:inherit;cursor:pointer;min-width:0;transition:box-shadow .2s cubic-bezier(.2,0,0,1),transform .1s cubic-bezier(.2,0,0,1);}
+  .col-card:hover{box-shadow:0 6px 18px rgba(31,42,34,.10);}
+  .col-card:active{transform:scale(.985);}
+  .col-card .col-k{font-size:13px;font-weight:700;color:var(--muted);}
+  .col-card .col-big{font-size:36px;color:var(--c);}
+  .col-card .col-cap{font-size:13.5px;color:var(--ink,#1f2a22);opacity:.78;}
+  .col-card .col-cap{margin:0;}
+  .col-spark{display:block;width:100%;height:30px;}
+  html[dir="rtl"] .col-spark{transform:scaleX(-1);}
+  .col-pbar{display:block;height:14px;border-radius:6px;background:#E4E8E2;overflow:hidden;}
+  .col-pbar i,.col-ht i,.col-pb i{display:block;height:100%;width:100%;background:var(--c,#2E7D4F);border-radius:inherit;transform:scaleX(var(--p,0));transform-origin:left;}
+  html[dir="rtl"] .col-pbar i,html[dir="rtl"] .col-ht i,html[dir="rtl"] .col-pb i{transform-origin:right;}
+  .col-legend3{display:flex;flex-direction:column;gap:4px;font-size:12.5px;}
+  .col-lg3{display:grid;grid-template-columns:10px 1fr auto;gap:7px;align-items:center;color:var(--muted);}
+  .col-lg3 i{width:10px;height:10px;border-radius:3px;}
+  .col-lg3 b{color:var(--ink,#1f2a22);}
+  .col-formula{font-size:14px;font-weight:700;margin:0 0 16px;line-height:1.5;padding:10px 14px;border-radius:12px;background:color-mix(in srgb,var(--green) 7%,#fff);border:1px solid color-mix(in srgb,var(--green) 18%,#fff);overflow-wrap:anywhere;}
+  .col-showing{margin:0 0 8px;font-size:12.5px;font-weight:700;color:var(--green);}
+  .col-card:focus-visible,.col-hb:focus-visible,.col-tr:focus-visible,.col-fchip:focus-visible,.col-sortb:focus-visible,.col-detbtn:focus-visible,.col-dep-main:focus-visible,.col-dep-reqs:focus-visible{outline:3px solid #1F5E8C;outline-offset:2px;}
+  .col-hbs{display:flex;flex-direction:column;gap:2px;margin-bottom:14px;}
+  .col-hb{display:grid;grid-template-columns:minmax(80px,150px) 1fr auto;gap:10px;align-items:center;width:100%;text-align:start;background:none;border:0;border-radius:8px;padding:6px;font:inherit;font-size:13px;color:inherit;cursor:pointer;transition:opacity .25s cubic-bezier(.2,0,0,1),background-color .2s cubic-bezier(.2,0,0,1);}
+  .col-hb:hover{background:#F4F5F2;}
+  .col-hb.on{background:color-mix(in srgb,var(--green) 9%,#fff);}
+  .col-hb.dim,.col-tr.dim{opacity:.45;}
+  .col-hb.dim{animation:none;}
+  .col-hn{overflow-wrap:anywhere;font-weight:600;}
+  .col-ht{display:block;height:14px;border-radius:5px;background:#EEF0EC;overflow:hidden;--c:#C27C1E;}
+  .col-hv{font-weight:700;white-space:nowrap;}
+  .col-tw{overflow-x:auto;}
+  .col-tbl{width:100%;border-collapse:collapse;font-size:12.5px;}
+  .col-tbl td.num,.col-tbl th{overflow-wrap:anywhere;}
+  .col-tbl th{padding:0;text-align:start;vertical-align:bottom;border-bottom:2px solid var(--border);}
+  .col-sortb{white-space:normal;display:flex;align-items:center;gap:4px;width:100%;background:none;border:0;padding:8px 6px;font:inherit;font-size:12px;font-weight:700;color:var(--muted);cursor:pointer;text-align:start;}
+  .col-sortb.on{color:var(--green);}
+  .col-sortb i{font-style:normal;font-size:9px;}
+  .col-tbl td{padding:9px 4px;border-bottom:1px solid #EEF0EC;vertical-align:middle;}
+  .col-tr{cursor:pointer;transition:background-color .2s cubic-bezier(.2,0,0,1),opacity .25s cubic-bezier(.2,0,0,1);}
+  .col-tr:hover{background:#F4F5F2;}
+  .col-tr.on{background:color-mix(in srgb,var(--green) 9%,#fff);}
+  .col-tbl .c-name{display:flex;align-items:center;gap:8px;min-width:120px;}
+  .col-tbl .c-name .col-av{width:30px;height:30px;font-size:11px;}
+  .col-tbl .col-spark{width:46px;height:14px;display:inline-block;margin-inline-start:6px;vertical-align:middle;}
+  .col-pb{display:inline-block;width:34px;height:8px;border-radius:4px;background:#E4E8E2;overflow:hidden;vertical-align:middle;margin-inline-end:6px;--c:#2E7D4F;}
+  .col-tbl em{font-style:normal;}
+  .col-tbl em.amber{color:#9A5F12;font-weight:700;}
+  .col-tbl em.late{color:var(--c-danger);font-weight:700;}
+  .col-detbtn{align-self:flex-start;background:none;border:0;padding:6px 0;font:inherit;font-size:12px;font-weight:700;color:var(--green);cursor:pointer;text-decoration:underline;min-height:32px;}
+  .col-tbl .c-nm{display:flex;flex-direction:column;align-items:flex-start;min-width:0;}
+  .col-sortsel{display:none;}
+  .col-grp{display:flex;justify-content:space-between;gap:10px;padding:10px 4px 4px;margin-top:8px;border-bottom:2px solid var(--border);font-size:14px;}
+  .col-grp2{padding:8px 4px 2px;font-size:12px;font-weight:700;color:var(--muted);}
+  @keyframes colGrowP{from{transform:scaleX(0);}to{transform:scaleX(var(--p,0));}}
+  .col-pbar.col-enter i,.col-ht i.col-enter,.col-pb i.col-enter{animation:colGrowP .4s cubic-bezier(0,0,.2,1) both;}
+  .col-card.col-in,.col-dep.col-in{animation:colRise .3s cubic-bezier(0,0,.2,1) both;}
+  .col-card.col-in:nth-child(2){animation-delay:40ms;}
+  .col-card.col-in:nth-child(3){animation-delay:80ms;}
+  .col-dep.col-in{animation-delay:calc(var(--i,0) * 40ms);}
+  .col-hb{animation:colRise .3s cubic-bezier(0,0,.2,1) both;animation-delay:calc(var(--i,0) * 40ms);}
+  @media (prefers-reduced-motion:reduce){.col-pbar.col-enter i,.col-ht i.col-enter,.col-pb i.col-enter,.col-card.col-in,.col-dep.col-in,.col-hb{animation:none;}.col-card,.col-fchip,.col-tr,.col-hb{transition:none;}}
+  @media (max-width:900px){.col-cards{grid-template-columns:1fr;gap:10px;}}
+  @media (max-width:700px){html body .col-card .col-big{font-size:28px;}}
+  @media (max-width:800px){
+    .col-sortsel{display:block;margin:0 0 10px;}
+    .col-tbl thead{display:none;}
+    .col-tw{overflow:visible;}
+    .col-tbl,.col-tbl tbody{display:block;}
+    .col-tbl tr{display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;padding:12px;margin-bottom:10px;border:1px solid var(--border);border-radius:14px;background:#fff;}
+    .col-tbl td{display:flex;flex-direction:column;align-items:flex-start;gap:1px;padding:0;border:0;min-width:0;}
+    .col-tbl td::before{content:attr(data-l);font-size:11px;color:var(--muted);font-weight:600;}
+    .col-tbl td.c-name{grid-column:1 / -1;flex-direction:row;align-items:center;min-width:0;}
+    .col-tbl td.c-name::before{content:none;}
+    .col-detbtn{min-height:44px;padding:10px 0;}
+    .col-fchip{min-height:44px;}
+    .col-sortsel{min-height:44px;}
+    .col-hb{min-height:44px;}
+    .col-hb{grid-template-columns:90px 1fr auto;}
+  }
   @media (max-width:700px){
     html body .col-big{font-size:26px;}
   }
@@ -3419,6 +3515,8 @@
   .ch2-figs span{display:flex;flex-direction:column;align-items:flex-start;}
   .ch2-figs i{font-style:normal;font-size:11.5px;color:var(--muted);}
   .ch2-figs b{font-size:15px;}
+  .co-table{width:100%;}
+  .co-close{margin-top:14px;padding-top:12px;border-top:1px solid var(--border);}
   .hp-body{padding:14px 18px 4px;}
   .hp-k{font-size:12.5px;font-weight:700;color:var(--muted);}
   .hp-big{font-size:30px;font-weight:800;line-height:1.2;margin-top:2px;}
@@ -4583,7 +4681,8 @@ var L = {
 // Collections screen strings (2026-10-11)
 (function(){
   var X = {
-    en: { rpc_title:'Sales channels', rpc_hint:'Sales through Souq Gas and the other channels in this period', rpc_qty:'Units', rpc_sales:'Sales', rpc_fee:'Delivery fees added', rpc_com:'Driver commission', rpc_days:'Days', rpc_share:'{p}% of sales', rpc_channel:'Channel', rpc_shareCol:'Share of sales',
+    en: { co_title:'Close everything before the system started', co_hint:'Shows what each collector still has up to the date: cash held, requests not received yet, and disputes. After checking it with finance, the admin closes it: held cash is recorded as deposited before the system started (reference CUTOVER-date), requests not received are closed. Nothing is deleted; disputes stay open for a decision. From the next day collectors start clean.', co_date:'Up to and including', co_show:'Show what is open', co_collector:'Collector', co_held:'Cash held', co_open:'Not received yet', co_disputed:'Disputed', co_total:'To close', co_upTo:'Up to {d}', co_disputedNote:'{n} disputed requests stay open: settle them from Handovers.', co_nothing:'Nothing is open up to this date.', co_reason:'Reason (kept in the audit trail)', co_reasonDefault:'Deposited before the system started', co_typeClose:'Type CLOSE to confirm', co_go:'Close {a} up to {d}', co_sure:'Close everything collectors had up to {d}? This cannot be undone from the app.', co_closed:'Closed: {n} requests and {d} collectors\' cash', co_done:'Closed on {d}', err_confirmRequiredClose:'Type CLOSE to confirm',
+      rpc_title:'Sales channels', rpc_hint:'Sales through Souq Gas and the other channels in this period', rpc_qty:'Units', rpc_sales:'Sales', rpc_fee:'Delivery fees added', rpc_com:'Driver commission', rpc_days:'Days', rpc_share:'{p}% of sales', rpc_channel:'Channel', rpc_shareCol:'Share of sales',
       err_phoneRequired:'A collector needs a WhatsApp mobile number', wa_phoneId:'WhatsApp phone number ID (from Meta)', wa_token:'Access token (from Meta)', wa_sent:'WhatsApp sent to {n} collector(s)', wa_hi:'Approved', wa_title:'Tell the collector on WhatsApp', wa_send:'Send on WhatsApp', wa_noPhone:'No phone number on this collector. Add it in Users and permissions.', us_phone:'Mobile (WhatsApp), required for collectors', err_invalidPhone:'Type a valid mobile number, e.g. 05XXXXXXXX', wa_settings:'WhatsApp messages to collectors', wa_settingsHint:'With the company\'s WhatsApp Business account (Meta Cloud API) the system sends the collector a message by itself when the deputy approves. Without it, the deputy gets the message ready to send in one tap. The template needs five fields: name, number, amount, branch, link.', wa_template:'Approved template name', wa_lang:'Template language code', wa_tokenPh:'Type it only to change it', wa_save:'Save', wa_clear:'Turn off', wa_clearConfirm:'Turn off sending by the system?', wa_on:'On: the system sends the messages', wa_off:'Off: the deputy sends them in one tap',
       ch_withMe:'Cash with me now', ch_s1:'Receive', ch_s2:'Hold', ch_s3:'Bank', ch_bankIt:'Deposit to the bank', ch_bankSub:'Count the cash, then fill these three things', ch_receiveFirst:'Nothing with you yet. Receive the cash below first.', ch_allClear:'All clear. Nothing to receive or deposit.', ch_toReceive:'Cash to receive', ch_noneToReceive:'Nothing waiting for you.', ch_from:'From {who}', ch_gotIt:'I received it', ch_different:'Different amount', ch_countedAmt:'The amount you counted', ch_saveCounted:'Save this amount', ch_problem:'Report a problem', ch_confirmDiff:'You received {a}, not {b}. The difference will be recorded and reported. Continue?', ch_reported:'Reported', ch_totalToReceive:'Total to receive: {a}', ch_atDeputy:'{n} on the way, waiting for the deputy', ch_disputed:'{n} with a reported problem', ch_lastDeposits:'My last deposits', ch_noDeposits:'No deposits yet.', ch_matched:'matched with the bank', ch_notMatched:'waiting for the bank statement', ch_handOther:'Hand to another collector', ch_seeAll:'All my collections', ch_confirmDeposit:'Confirm deposit',
       sc_hi:'Before saving', sc_title:'The system will record this day as', sc_diff:'The screen showed {p}. This is the exact figure that will be saved.', sc_back:'Back to the form', sc_save:'Save the day',
@@ -4607,10 +4706,12 @@ var L = {
       col_byArea:'Per area', col_byBranch:'Per branch', col_rowSub2:'Banked {bank} ({p}%) · open {open}',
       col_requests:'Requests', col_sort_new:'Newest', col_sort_old:'Oldest', col_sort_high:'Highest', col_sort_late:'Longest open', col_more:'Show more ({n} left)',
       col_where_bank:'banked {d}', col_where_held:'held by {who}', col_where_onway:'on the way to {who}', col_where_deputy:'waiting for the deputy', col_matched:'matched to the bank statement',
-      col_shortX:'short {x}', col_overX:'over {x}', col_none:'No collection requests yet', col_noneHere:'No requests match these filters', col_yes:'Yes', col_daysToBank:'{n} days to the bank', col_depositDoc:'Deposit and its slip', col_docNotYours:'This document is not in your reach',
+      col_shortX:'short {x}', col_overX:'over {x}', col_none:'No collection requests yet', col_noneHere:'No requests match these filters', col_yes:'Yes', col_deposits:'Bank deposits', col_depositsHint:'Each deposit with its slip and the requests it banked. Tap a deposit for its document and slip.', col_noDeposits:'No deposits in this period yet', col_ref:'ref {r}', col_slipYes:'Slip attached', col_slipNo:'No slip', col_depReqs:'Requests in this deposit', col_notMatched:'Not matched with the bank yet', col_daysToBank:'{n} days to the bank', col_depositDoc:'Deposit and its slip', col_docNotYours:'This document is not in your reach',
       col_x_name:'Name', col_x_bankPct:'Banked %', col_x_reqs:'Requests', col_x_oldest:'Oldest open', col_x_item:'Item', col_x_amount:'Amount (SAR)', col_x_returned:'Returned requests', col_x_disputed:'Disputed requests', col_x_rejected:'Rejected requests',
-      col_x_day:'Day', col_x_no:'Number', col_x_from:'Area manager', col_x_to:'Collector', col_x_holder:'Holder now', col_x_stage:'Stage', col_x_age:'Days open', col_x_bankDay:'Banked on', col_x_depNo:'Deposit number', col_x_ref:'Bank reference', col_x_summary:'Summary' },
-    ar: { rpc_title:'قنوات البيع', rpc_hint:'المبيعات عبر سوق غاز وقنوات البيع الأخرى في هذه الفترة', rpc_qty:'الكمية', rpc_sales:'المبيعات', rpc_fee:'رسوم التوصيل المضافة', rpc_com:'عمولة السائق', rpc_days:'الأيام', rpc_share:'{p}% من المبيعات', rpc_channel:'القناة', rpc_shareCol:'النسبة من المبيعات',
+      col_x_day:'Day', col_x_no:'Number', col_x_from:'Area manager', col_x_to:'Collector', col_x_holder:'Holder now', col_x_stage:'Stage', col_x_age:'Days open', col_x_bankDay:'Banked on', col_x_depNo:'Deposit number', col_x_ref:'Bank reference', col_x_summary:'Summary',
+      col_card_total:'Total collections', col_depLine:'{p}% of collections \u00B7 last deposit {d}', col_depLineNone:'{p}% of collections \u00B7 nothing banked yet', col_remLine:'deputy {a} \u00B7 on the way {b} \u00B7 held {c}', col_card_dep:'Total deposits', col_card_rem:'Total remaining', col_cardTotalSub:'{n} requests in the filter', col_lastDep:'last deposit {d}', col_noDep:'nothing banked yet', col_ofCollection:'{p}% of the total collection', col_oldestOpen:'oldest open {n} days', col_nothingRem:'nothing left to bank', col_formula:'{tc} {total} \u2212 {td} {dep} = {tr} {rem}', col_counted:'Counted', col_countedAll:'all cities, areas and collectors', col_removeF:'Remove filter: {x}', col_cRemChart:'Remaining by collector', col_th_collector:'Collector', col_th_branches:'Branches', col_th_reqs:'Requests', col_th_total:'Total', col_th_dep:'Deposited', col_th_rem:'Remaining', col_th_pct:'% banked', col_th_days:'Days to bank', col_th_oldest:'Oldest open', col_th_short:'Short / over', col_th_last:'Last deposit', col_th_share:'Share of remaining', col_details:'Details', col_showing:'Showing {k} of {n} collectors', col_cTableHint:'Tap a row to filter the whole screen to that collector. Tap again to clear.', col_dayN:'{n} d', col_depHint2:'Only deposits carrying a request inside this filter, showing that share of each. Tap one for its requests; the document button opens the deposit and its slip.', col_depOfTotal:'of {x} total deposit', col_depN:'{n} requests', col_x_branches:'Branches', col_x_remaining:'Remaining', col_x_lastDep:'Last deposit', col_x_share:'Share of remaining (%)', col_x_depFull:'Whole deposit', col_x_filters:'Filters', col_cDrawerSub:'{n} requests, by branch then day', col_noOpen:'none' },
+    ar: { co_title:'إغلاق ما قبل بدء النظام', co_hint:'يعرض ما لدى كل محصل حتى التاريخ: النقدية التي معه، والطلبات التي لم يستلمها بعد، والاعتراضات. بعد مراجعته مع المالية يغلقه مسؤول النظام: تُسجَّل النقدية التي معه كمودعة قبل بدء النظام (مرجع CUTOVER-التاريخ)، وتُغلق الطلبات غير المستلمة. لا يُحذف شيء، وتبقى الاعتراضات مفتوحة لاتخاذ قرار. ومن اليوم التالي يبدأ المحصلون من الصفر.', co_date:'حتى تاريخ (شامل)', co_show:'عرض المفتوح', co_collector:'المحصل', co_held:'نقدية معه', co_open:'لم تُستلم بعد', co_disputed:'عليها اعتراض', co_total:'المطلوب إغلاقه', co_upTo:'حتى {d}', co_disputedNote:'{n} طلبات عليها اعتراض تبقى مفتوحة: تُحسم من شاشة التسليمات.', co_nothing:'لا يوجد شيء مفتوح حتى هذا التاريخ.', co_reason:'السبب (يُحفظ في سجل التدقيق)', co_reasonDefault:'أودعت قبل بدء العمل بالنظام', co_typeClose:'اكتب CLOSE للتأكيد', co_go:'إغلاق {a} حتى {d}', co_sure:'إغلاق كل ما لدى المحصلين حتى {d}؟ لا يمكن التراجع عنه من النظام.', co_closed:'تم الإغلاق: {n} طلب ونقدية {d} محصل', co_done:'تم الإغلاق في {d}', err_confirmRequiredClose:'اكتب CLOSE للتأكيد',
+      rpc_title:'قنوات البيع', rpc_hint:'المبيعات عبر سوق غاز وقنوات البيع الأخرى في هذه الفترة', rpc_qty:'الكمية', rpc_sales:'المبيعات', rpc_fee:'رسوم التوصيل المضافة', rpc_com:'عمولة السائق', rpc_days:'الأيام', rpc_share:'{p}% من المبيعات', rpc_channel:'القناة', rpc_shareCol:'النسبة من المبيعات',
       err_phoneRequired:'رقم جوال واتساب مطلوب للمحصل', wa_phoneId:'معرّف رقم واتساب (من Meta)', wa_token:'رمز الوصول (من Meta)', wa_sent:'أُرسلت رسالة واتساب إلى {n} محصل', wa_hi:'تم الاعتماد', wa_title:'أبلغ المحصل على واتساب', wa_send:'إرسال على واتساب', wa_noPhone:'لا يوجد رقم جوال لهذا المحصل. أضفه من المستخدمين والصلاحيات.', us_phone:'الجوال (واتساب)، إلزامي للمحصل', err_invalidPhone:'اكتب رقم جوال صحيح، مثل 05XXXXXXXX', wa_settings:'رسائل واتساب للمحصلين', wa_settingsHint:'مع حساب واتساب للأعمال الخاص بالشركة (Meta Cloud API) يرسل النظام للمحصل رسالة تلقائيًا عند اعتماد نائب مدير العمليات. وبدونه تظهر الرسالة لنائب مدير العمليات جاهزة للإرسال بضغطة واحدة. يحتاج القالب خمسة حقول: الاسم، الرقم، المبلغ، الفرع، الرابط.', wa_template:'اسم القالب المعتمد', wa_lang:'رمز لغة القالب', wa_tokenPh:'اكتبه فقط عند تغييره', wa_save:'حفظ', wa_clear:'إيقاف', wa_clearConfirm:'إيقاف الإرسال التلقائي من النظام؟', wa_on:'مفعّل: النظام يرسل الرسائل', wa_off:'غير مفعّل: نائب مدير العمليات يرسلها بضغطة',
       ch_withMe:'النقدية التي معي الآن', ch_s1:'استلم', ch_s2:'احتفظ', ch_s3:'أودع', ch_bankIt:'إيداع في البنك', ch_bankSub:'عُدّ النقدية ثم املأ هذه الثلاثة', ch_receiveFirst:'لا شيء معك بعد. استلم النقدية بالأسفل أولًا.', ch_allClear:'كل شيء تمام. لا يوجد ما تستلمه أو تودعه.', ch_toReceive:'نقدية للاستلام', ch_noneToReceive:'لا يوجد شيء بانتظارك.', ch_from:'من {who}', ch_gotIt:'استلمتها', ch_different:'مبلغ مختلف', ch_countedAmt:'المبلغ الذي عددته', ch_saveCounted:'احفظ هذا المبلغ', ch_problem:'الإبلاغ عن مشكلة', ch_confirmDiff:'استلمت {a} وليس {b}. سيُسجل الفرق ويُبلغ عنه. متابعة؟', ch_reported:'تم الإبلاغ', ch_totalToReceive:'إجمالي المطلوب استلامه: {a}', ch_atDeputy:'{n} في الطريق، بانتظار نائب مدير العمليات', ch_disputed:'{n} عليها مشكلة مبلغ عنها', ch_lastDeposits:'آخر إيداعاتي', ch_noDeposits:'لا توجد إيداعات بعد.', ch_matched:'مطابق مع البنك', ch_notMatched:'بانتظار كشف البنك', ch_handOther:'تسليم لمحصل آخر', ch_seeAll:'كل تحصيلاتي', ch_confirmDeposit:'تأكيد الإيداع',
       sc_hi:'قبل الحفظ', sc_title:'سيُسجّل النظام هذا اليوم هكذا', sc_diff:'الشاشة عرضت {p}. هذا هو الرقم الدقيق الذي سيُحفظ.', sc_back:'العودة إلى النموذج', sc_save:'حفظ اليوم',
@@ -4635,10 +4736,12 @@ var L = {
       col_byArea:'لكل منطقة', col_byBranch:'لكل فرع', col_rowSub2:'أودع {bank} ({p}%) · مفتوح {open}',
       col_requests:'الطلبات', col_sort_new:'الأحدث', col_sort_old:'الأقدم', col_sort_high:'الأعلى', col_sort_late:'الأطول انتظارا', col_more:'عرض المزيد (باقي {n})',
       col_where_bank:'أودع {d}', col_where_held:'لدى {who}', col_where_onway:'في الطريق إلى {who}', col_where_deputy:'بانتظار نائب مدير العمليات', col_matched:'مطابق لكشف البنك',
-      col_shortX:'عجز {x}', col_overX:'زيادة {x}', col_none:'لا توجد طلبات تحصيل بعد', col_noneHere:'لا توجد طلبات بهذه التصفية', col_yes:'نعم', col_daysToBank:'{n} يوم حتى الإيداع', col_depositDoc:'الإيداع وإيصاله', col_docNotYours:'هذا المستند ليس ضمن صلاحيتك',
+      col_shortX:'عجز {x}', col_overX:'زيادة {x}', col_none:'لا توجد طلبات تحصيل بعد', col_noneHere:'لا توجد طلبات بهذه التصفية', col_yes:'نعم', col_deposits:'الإيداعات البنكية', col_depositsHint:'كل إيداع مع إيصاله والطلبات التي أودعها. اضغط الإيداع لفتح مستنده وإيصاله.', col_noDeposits:'لا توجد إيداعات في هذه الفترة بعد', col_ref:'مرجع {r}', col_slipYes:'الإيصال مرفق', col_slipNo:'بدون إيصال', col_depReqs:'الطلبات في هذا الإيداع', col_notMatched:'لم يطابق مع البنك بعد', col_daysToBank:'{n} يوم حتى الإيداع', col_depositDoc:'الإيداع وإيصاله', col_docNotYours:'هذا المستند ليس ضمن صلاحيتك',
       col_x_name:'الاسم', col_x_bankPct:'نسبة الإيداع', col_x_reqs:'الطلبات', col_x_oldest:'أقدم مفتوح', col_x_item:'البند', col_x_amount:'المبلغ (ر.س)', col_x_returned:'طلبات معادة', col_x_disputed:'طلبات عليها اعتراض', col_x_rejected:'طلبات مرفوضة',
-      col_x_day:'اليوم', col_x_no:'الرقم', col_x_from:'مدير المنطقة', col_x_to:'المحصل', col_x_holder:'لدى من الآن', col_x_stage:'المرحلة', col_x_age:'أيام مفتوح', col_x_bankDay:'تاريخ الإيداع', col_x_depNo:'رقم الإيداع', col_x_ref:'مرجع البنك', col_x_summary:'الملخص' },
-    ur: { rpc_title:'فروخت کے چینل', rpc_hint:'اس مدت میں سوق گیس اور دوسرے چینلز سے فروخت', rpc_qty:'مقدار', rpc_sales:'فروخت', rpc_fee:'شامل ڈلیوری فیس', rpc_com:'ڈرائیور کمیشن', rpc_days:'دن', rpc_share:'فروخت کا {p}%', rpc_channel:'چینل', rpc_shareCol:'فروخت میں حصہ',
+      col_x_day:'اليوم', col_x_no:'الرقم', col_x_from:'مدير المنطقة', col_x_to:'المحصل', col_x_holder:'لدى من الآن', col_x_stage:'المرحلة', col_x_age:'أيام مفتوح', col_x_bankDay:'تاريخ الإيداع', col_x_depNo:'رقم الإيداع', col_x_ref:'مرجع البنك', col_x_summary:'الملخص',
+      col_card_total:'إجمالي التحصيل', col_depLine:'{p}% من التحصيل \u00B7 آخر إيداع {d}', col_depLineNone:'{p}% من التحصيل \u00B7 لا إيداع بعد', col_remLine:'عند النائب {a} \u00B7 في الطريق {b} \u00B7 لدى المحصلين {c}', col_card_dep:'إجمالي الإيداعات', col_card_rem:'إجمالي المتبقي', col_cardTotalSub:'{n} طلب ضمن التصفية', col_lastDep:'آخر إيداع {d}', col_noDep:'لا إيداع بعد', col_ofCollection:'{p}% من إجمالي التحصيل', col_oldestOpen:'أقدم مفتوح {n} يوم', col_nothingRem:'لا شيء متبقٍ للإيداع', col_formula:'{tc} {total} \u2212 {td} {dep} = {tr} {rem}', col_counted:'المحسوب', col_countedAll:'كل المدن والمناطق والمحصلين', col_removeF:'إزالة التصفية: {x}', col_cRemChart:'المتبقي لكل محصل', col_th_collector:'المحصل', col_th_branches:'الفروع', col_th_reqs:'الطلبات', col_th_total:'الإجمالي', col_th_dep:'المودَع', col_th_rem:'المتبقي', col_th_pct:'نسبة الإيداع', col_th_days:'أيام للإيداع', col_th_oldest:'أقدم مفتوح', col_th_short:'عجز / زيادة', col_th_last:'آخر إيداع', col_th_share:'حصته من المتبقي', col_details:'التفاصيل', col_showing:'عرض {k} من {n} محصل', col_cTableHint:'اضغط على صف لتصفية الشاشة كلها على هذا المحصل. اضغط مرة أخرى للإلغاء.', col_dayN:'{n} ي', col_depHint2:'الإيداعات التي تحمل طلبًا ضمن هذه التصفية فقط، مع حصة هذه التصفية من كل إيداع. اضغط إيداعًا لطلباته؛ وزر المستند يفتح الإيداع وإيصاله.', col_depOfTotal:'من إيداع إجماليه {x}', col_depN:'{n} طلب', col_x_branches:'الفروع', col_x_remaining:'المتبقي', col_x_lastDep:'آخر إيداع', col_x_share:'الحصة من المتبقي (%)', col_x_depFull:'الإيداع كاملًا', col_x_filters:'التصفية', col_cDrawerSub:'{n} طلب، حسب الفرع ثم اليوم', col_noOpen:'لا شيء' },
+    ur: { co_title:'سسٹم شروع ہونے سے پہلے کا سب بند کریں', co_hint:'تاریخ تک ہر کلکٹر کے پاس جو باقی ہے دکھاتا ہے: پاس رکھی نقدی، ابھی وصول نہ ہونے والی درخواستیں، اور اعتراضات۔ فنانس سے جانچ کے بعد ایڈمن اسے بند کرتا ہے: پاس رکھی نقدی سسٹم سے پہلے جمع شدہ درج ہوتی ہے (حوالہ CUTOVER-تاریخ)، غیر وصول شدہ درخواستیں بند ہوتی ہیں۔ کچھ حذف نہیں ہوتا؛ اعتراضات فیصلے کے لیے کھلے رہتے ہیں۔', co_date:'تاریخ تک (شامل)', co_show:'کھلا دکھائیں', co_collector:'کلکٹر', co_held:'پاس نقدی', co_open:'ابھی وصول نہیں', co_disputed:'اعتراض', co_total:'بند کرنا ہے', co_upTo:'{d} تک', co_disputedNote:'{n} اعتراض والی درخواستیں کھلی رہیں گی۔', co_nothing:'اس تاریخ تک کچھ کھلا نہیں۔', co_reason:'وجہ (آڈٹ میں محفوظ)', co_reasonDefault:'سسٹم شروع ہونے سے پہلے جمع ہو چکا', co_typeClose:'تصدیق کے لیے CLOSE لکھیں', co_go:'{d} تک {a} بند کریں', co_sure:'{d} تک کلکٹرز کا سب بند کریں؟ ایپ سے واپس نہیں ہو سکتا۔', co_closed:'بند: {n} درخواستیں اور {d} کلکٹرز کی نقدی', co_done:'{d} کو بند ہوا', err_confirmRequiredClose:'تصدیق کے لیے CLOSE لکھیں',
+      rpc_title:'فروخت کے چینل', rpc_hint:'اس مدت میں سوق گیس اور دوسرے چینلز سے فروخت', rpc_qty:'مقدار', rpc_sales:'فروخت', rpc_fee:'شامل ڈلیوری فیس', rpc_com:'ڈرائیور کمیشن', rpc_days:'دن', rpc_share:'فروخت کا {p}%', rpc_channel:'چینل', rpc_shareCol:'فروخت میں حصہ',
       err_phoneRequired:'کلکٹر کے لیے واٹس ایپ موبائل نمبر ضروری ہے', wa_phoneId:'واٹس ایپ نمبر ID (Meta سے)', wa_token:'رسائی ٹوکن (Meta سے)', wa_sent:'{n} کلکٹر کو واٹس ایپ بھیجا گیا', wa_hi:'منظور ہو گیا', wa_title:'کلکٹر کو واٹس ایپ پر بتائیں', wa_send:'واٹس ایپ پر بھیجیں', wa_noPhone:'اس کلکٹر کا موبائل نمبر نہیں۔ صارفین میں شامل کریں۔', us_phone:'موبائل (واٹس ایپ)، کلکٹر کے لیے ضروری', err_invalidPhone:'درست موبائل نمبر لکھیں، مثلاً 05XXXXXXXX', wa_settings:'کلکٹرز کو واٹس ایپ پیغامات', wa_settingsHint:'کمپنی کے واٹس ایپ بزنس اکاؤنٹ (Meta Cloud API) سے سسٹم ڈپٹی کی منظوری پر کلکٹر کو خود پیغام بھیجتا ہے۔ اس کے بغیر ڈپٹی کو پیغام ایک ٹیپ میں بھیجنے کے لیے تیار ملتا ہے۔ ٹیمپلیٹ میں پانچ خانے: نام، نمبر، رقم، برانچ، لنک۔', wa_template:'منظور شدہ ٹیمپلیٹ کا نام', wa_lang:'ٹیمپلیٹ کی زبان کا کوڈ', wa_tokenPh:'صرف تبدیل کرنے کے لیے لکھیں', wa_save:'محفوظ کریں', wa_clear:'بند کریں', wa_clearConfirm:'سسٹم سے خودکار بھیجنا بند کریں؟', wa_on:'فعال: سسٹم پیغام بھیجتا ہے', wa_off:'غیر فعال: ڈپٹی ایک ٹیپ میں بھیجتا ہے',
       ch_withMe:'ابھی میرے پاس نقدی', ch_s1:'وصول', ch_s2:'رکھیں', ch_s3:'جمع', ch_bankIt:'بینک میں جمع کریں', ch_bankSub:'نقدی گنیں، پھر یہ تین چیزیں بھریں', ch_receiveFirst:'ابھی آپ کے پاس کچھ نہیں۔ پہلے نیچے نقدی وصول کریں۔', ch_allClear:'سب ٹھیک ہے۔ وصول یا جمع کرنے کو کچھ نہیں۔', ch_toReceive:'وصول کرنے کی نقدی', ch_noneToReceive:'آپ کا کچھ انتظار میں نہیں۔', ch_from:'{who} سے', ch_gotIt:'میں نے وصول کر لیا', ch_different:'مختلف رقم', ch_countedAmt:'آپ کی گنی ہوئی رقم', ch_saveCounted:'یہ رقم محفوظ کریں', ch_problem:'مسئلہ بتائیں', ch_confirmDiff:'آپ نے {b} نہیں بلکہ {a} وصول کیے۔ فرق درج اور رپورٹ ہو گا۔ جاری رکھیں؟', ch_reported:'رپورٹ ہو گیا', ch_totalToReceive:'کل وصولی: {a}', ch_atDeputy:'{n} راستے میں، ڈپٹی کے انتظار میں', ch_disputed:'{n} پر مسئلہ رپورٹ ہوا', ch_lastDeposits:'میری آخری جمع', ch_noDeposits:'ابھی کوئی جمع نہیں۔', ch_matched:'بینک سے ملایا گیا', ch_notMatched:'بینک اسٹیٹمنٹ کا انتظار', ch_handOther:'دوسرے کلکٹر کو دیں', ch_seeAll:'میری تمام وصولیاں', ch_confirmDeposit:'جمع کی تصدیق',
       sc_hi:'محفوظ کرنے سے پہلے', sc_title:'سسٹم یہ دن اس طرح درج کرے گا', sc_diff:'اسکرین نے {p} دکھایا۔ یہی درست رقم محفوظ ہو گی۔', sc_back:'فارم پر واپس', sc_save:'دن محفوظ کریں',
@@ -4663,9 +4766,10 @@ var L = {
       col_byArea:'ہر علاقہ', col_byBranch:'ہر برانچ', col_rowSub2:'جمع {bank} ({p}%) · کھلی {open}',
       col_requests:'درخواستیں', col_sort_new:'نئی', col_sort_old:'پرانی', col_sort_high:'سب سے زیادہ', col_sort_late:'سب سے دیر سے کھلی', col_more:'مزید دکھائیں ({n} باقی)',
       col_where_bank:'{d} کو جمع', col_where_held:'{who} کے پاس', col_where_onway:'{who} کی طرف راستے میں', col_where_deputy:'ڈپٹی کا انتظار', col_matched:'بینک اسٹیٹمنٹ سے ملایا گیا',
-      col_shortX:'کمی {x}', col_overX:'زیادہ {x}', col_none:'ابھی وصولی کی کوئی درخواست نہیں', col_noneHere:'ان فلٹرز سے کوئی درخواست نہیں', col_yes:'ہاں', col_daysToBank:'بینک تک {n} دن', col_depositDoc:'جمع اور اس کی رسید', col_docNotYours:'یہ دستاویز آپ کی رسائی میں نہیں',
+      col_shortX:'کمی {x}', col_overX:'زیادہ {x}', col_none:'ابھی وصولی کی کوئی درخواست نہیں', col_noneHere:'ان فلٹرز سے کوئی درخواست نہیں', col_yes:'ہاں', col_deposits:'بینک جمع', col_depositsHint:'ہر جمع اس کی رسید اور اس میں شامل درخواستوں کے ساتھ۔ دستاویز اور رسید کے لیے جمع پر ٹیپ کریں۔', col_noDeposits:'اس مدت میں ابھی کوئی جمع نہیں', col_ref:'حوالہ {r}', col_slipYes:'رسید منسلک', col_slipNo:'رسید نہیں', col_depReqs:'اس جمع کی درخواستیں', col_notMatched:'ابھی بینک سے نہیں ملایا گیا', col_daysToBank:'بینک تک {n} دن', col_depositDoc:'جمع اور اس کی رسید', col_docNotYours:'یہ دستاویز آپ کی رسائی میں نہیں',
       col_x_name:'نام', col_x_bankPct:'جمع %', col_x_reqs:'درخواستیں', col_x_oldest:'سب سے پرانی کھلی', col_x_item:'مد', col_x_amount:'رقم (ریال)', col_x_returned:'واپس کی گئی درخواستیں', col_x_disputed:'اعتراض والی درخواستیں', col_x_rejected:'مسترد درخواستیں',
-      col_x_day:'دن', col_x_no:'نمبر', col_x_from:'ایریا منیجر', col_x_to:'کلکٹر', col_x_holder:'ابھی کس کے پاس', col_x_stage:'مرحلہ', col_x_age:'کھلے دن', col_x_bankDay:'جمع کی تاریخ', col_x_depNo:'جمع نمبر', col_x_ref:'بینک حوالہ', col_x_summary:'خلاصہ' }
+      col_x_day:'دن', col_x_no:'نمبر', col_x_from:'ایریا منیجر', col_x_to:'کلکٹر', col_x_holder:'ابھی کس کے پاس', col_x_stage:'مرحلہ', col_x_age:'کھلے دن', col_x_bankDay:'جمع کی تاریخ', col_x_depNo:'جمع نمبر', col_x_ref:'بینک حوالہ', col_x_summary:'خلاصہ',
+      col_card_total:'کل وصولی', col_depLine:'وصولی کا {p}% \u00B7 آخری جمع {d}', col_depLineNone:'وصولی کا {p}% \u00B7 ابھی کچھ جمع نہیں', col_remLine:'ڈپٹی کے پاس {a} \u00B7 راستے میں {b} \u00B7 کلکٹرز کے پاس {c}', col_card_dep:'کل جمع شدہ', col_card_rem:'کل باقی', col_cardTotalSub:'فلٹر میں {n} درخواستیں', col_lastDep:'آخری جمع {d}', col_noDep:'ابھی کچھ جمع نہیں', col_ofCollection:'کل وصولی کا {p}%', col_oldestOpen:'سب سے پرانی کھلی {n} دن', col_nothingRem:'جمع کرانے کو کچھ باقی نہیں', col_formula:'{tc} {total} \u2212 {td} {dep} = {tr} {rem}', col_counted:'شمار', col_countedAll:'تمام شہر، علاقے اور کلکٹرز', col_removeF:'فلٹر ہٹائیں: {x}', col_cRemChart:'ہر کلکٹر کا باقی', col_th_collector:'کلکٹر', col_th_branches:'برانچیں', col_th_reqs:'درخواستیں', col_th_total:'کل', col_th_dep:'جمع شدہ', col_th_rem:'باقی', col_th_pct:'جمع %', col_th_days:'جمع میں دن', col_th_oldest:'سب سے پرانی کھلی', col_th_short:'کمی / زیادہ', col_th_last:'آخری جمع', col_th_share:'باقی میں حصہ', col_details:'تفصیل', col_showing:'{n} میں سے {k} کلکٹر', col_cTableHint:'پوری اسکرین کو اس کلکٹر تک محدود کرنے کے لیے صف دبائیں۔ دوبارہ دبائیں تو ہٹ جائے گا۔', col_dayN:'{n} د', col_depHint2:'صرف وہ جمع جن میں اس فلٹر کی کوئی درخواست ہے، ہر ایک میں اسی فلٹر کا حصہ۔ درخواستوں کے لیے جمع دبائیں؛ دستاویز کا بٹن جمع اور رسید کھولتا ہے۔', col_depOfTotal:'{x} کی کل جمع میں سے', col_depN:'{n} درخواستیں', col_x_branches:'برانچیں', col_x_remaining:'باقی', col_x_lastDep:'آخری جمع', col_x_share:'باقی میں حصہ (%)', col_x_depFull:'پوری جمع', col_x_filters:'فلٹر', col_cDrawerSub:'{n} درخواستیں، برانچ پھر دن کے لحاظ سے', col_noOpen:'کوئی نہیں' }
   };
   ['ar', 'en', 'ur'].forEach(function(lg){ Object.keys(X[lg]).forEach(function(k){ L[lg][k] = X[lg][k]; }); });
 })();
@@ -5221,7 +5325,7 @@ var ERROR_KEYS_ = { archive_changed:'ar_changed', archive_row_too_large:'ar_tooL
   invalid_centre:'err_invalidCentre', invalid_month:'err_invalidMonth', duplicate_line:'err_duplicateLine', overlap_line:'err_overlapLine',
   invalid_income_item:'err_invalidIncomeItem', invalid_expense_item:'err_invalidExpenseItem', reason_required:'err_reasonRequired',
   customer_required:'err_customerRequired', user_in_other_area:'err_userInOtherArea',
-  future_date:'err_futureDate', day_closed:'err_dayClosed', day_already_entered:'err_dayAlreadyEntered', invalid_phone:'err_invalidPhone', phone_required:'err_phoneRequired', entry_handed_on:'err_entryHandedOn', deposit_amount_mismatch:'err_depAmountMismatch', deposit_amount_required:'err_depAmountRequired', invalid_date:'err_invalidDate', not_your_entry:'err_notYourEntry',
+  future_date:'err_futureDate', day_closed:'err_dayClosed', day_already_entered:'err_dayAlreadyEntered', close_confirm_required:'err_confirmRequiredClose', invalid_phone:'err_invalidPhone', phone_required:'err_phoneRequired', entry_handed_on:'err_entryHandedOn', deposit_amount_mismatch:'err_depAmountMismatch', deposit_amount_required:'err_depAmountRequired', invalid_date:'err_invalidDate', not_your_entry:'err_notYourEntry',
   entry_locked:'err_entryLocked', deposit_reconciled:'err_depositReconciled', has_direct_deposit:'err_hasDirectDeposit', already_voided:'err_alreadyVoided', receiver_only:'err_receiverOnly',
   person_holds_cash:'err_personHoldsCash', cash_in_flight:'err_cashInFlight', user_has_assignments:'err_userHasAssignments',
   cannot_change_self:'err_cannotChangeSelf', last_admin:'err_lastAdmin', live_locked:'err_liveLocked',
@@ -15767,6 +15871,7 @@ function handoffItem(h, showConfirm, showResolve){
 var COL_ST_ = ['deputy', 'onway', 'held', 'deposited'];
 var COL_C_ = { deputy: '#7A5BB0', onway: '#C27C1E', held: '#2E6FA8', deposited: '#2E7D4F' };
 var COL_ = null, COL_DRAWN_ = false;
+window.COL_ST_ALL_ = COL_ST_;
 function colState_(){
   if (COL_) return COL_;
   COL_ = { preset: 'month', from: '', to: '', city: '', area: '', branch: '', collector: '', sort: 'new', more: 0 };
@@ -15792,8 +15897,10 @@ function colCompute_(reqs, o){
   o = o || {};
   var today = o.today || localToday_(), locOf = o.locOf || function(){ return {}; };
   function stOf(r){ return r.stage === 'deputy' ? 'deputy' : (r.stage === 'pending' || r.stage === 'moving') ? 'onway' : r.stage === 'held' ? 'held' : r.stage === 'deposited' ? 'deposited' : null; }
-  function zero(){ return { deputy: 0, onway: 0, held: 0, deposited: 0, total: 0, n: 0, short: 0, returned: 0, disputed: 0, rejected: 0, daysSum: 0, daysN: 0, oldest: null }; }
-  var T = zero(), byCol = {}, byArea = {}, byBranch = {}, byCity = {}, days = {}, banked = {}, aging = [0, 0, 0, 0], agingN = [0, 0, 0, 0], rows = [];
+  function zero(){ return { deputy: 0, onway: 0, held: 0, deposited: 0, total: 0, n: 0, short: 0, returned: 0, disputed: 0, rejected: 0, daysSum: 0, daysN: 0, oldest: null, remaining: 0, lastDeposit: null, branchesN: 0, share: 0, days: [], _br: {}, _dm: {} }; }
+  var T = zero(), byCol = {}, byArea = {}, byBranch = {}, byCity = {}, days = {}, banked = {}, aging = [0, 0, 0, 0], agingN = [0, 0, 0, 0], rows = [], deps = {}, depFull = {};
+  // a deposit's whole amount, over every request given (the filter below narrows what is counted, not what the bank received)
+  reqs.forEach(function(r){ if (r.stage === 'deposited' && r.depositId) depFull[r.depositId] = (depFull[r.depositId] || 0) + Number(r.amount || 0); });
   function grp(map, key){ if (!map[key]) map[key] = zero(); return map[key]; }
   reqs.forEach(function(r){
     var loc = locOf(r.locationId) || {}, area = r.clusterId || loc.clusterId || '_', city = loc.city || '_';
@@ -15811,19 +15918,37 @@ function colCompute_(reqs, o){
       g[st] += amt; g.total += amt; g.n++; g.short += Number(r.shortfall || 0);
       if (toBank != null) { g.daysSum += toBank; g.daysN++; }
       if (age != null && (!g.oldest || day < g.oldest)) g.oldest = day;
+      g._br[r.locationId || '_'] = 1; g._dm[day] = (g._dm[day] || 0) + 1;
+      if (st === 'deposited' && r.depositedAt) { var dd = colDay_(r.depositedAt); if (!g.lastDeposit || dd > g.lastDeposit) g.lastDeposit = dd; }
     });
+    if (st === 'deposited' && r.depositId) {
+      var dp = deps[r.depositId] || (deps[r.depositId] = { id: r.depositId, no: r.depositNo || '', date: colDay_(r.depositedAt), amount: 0, n: 0, full: depFull[r.depositId] || 0, partial: false, reconciled: !!r.reconciled, ref: r.depositRef || '', by: r.depositBy || r.holder || '', slip: r.depositHasSlip });
+      dp.amount += amt; dp.n++; dp.partial = dp.full - dp.amount > 0.004;
+    }
     if (!days[day]) days[day] = { date: day, total: 0 }; days[day].total += amt;
     if (st === 'deposited') { var bd = colDay_(r.depositedAt); if (!banked[bd]) banked[bd] = { date: bd, total: 0 }; banked[bd].total += amt; }
     if (age != null) { var b = age <= 1 ? 0 : age <= 3 ? 1 : age <= 7 ? 2 : 3; aging[b] += amt; agingN[b]++; }
     rows.push({ r: r, st: st, day: day, area: area, city: city, age: age, toBank: toBank });
   });
-  function list(map){ return Object.keys(map).map(function(k){ var g = map[k]; g.key = k; return g; }).sort(function(a, b){ return b.total - a.total; }); }
-  return { T: T, collectors: list(byCol), areas: list(byArea), branches: list(byBranch), cities: list(byCity),
+  function fin(g){
+    g.remaining = g.deputy + g.onway + g.held; g.branchesN = Object.keys(g._br).length;
+    g.days = Object.keys(g._dm).sort().map(function(k){ return { date: k, n: g._dm[k] }; });
+    g.share = T.remaining > 0 ? g.remaining / T.remaining * 100 : 0; delete g._br; delete g._dm; return g;
+  }
+  T.remaining = T.deputy + T.onway + T.held;
+  function list(map){ return Object.keys(map).map(function(k){ var g = map[k]; g.key = k; return fin(g); }).sort(function(a, b){ return b.total - a.total; }); }
+  var Dout = { collectors: list(byCol), areas: list(byArea), branches: list(byBranch), cities: list(byCity) };
+  fin(T);
+  return { T: T, collectors: Dout.collectors, areas: Dout.areas, branches: Dout.branches, cities: Dout.cities,
+    deposits: Object.keys(deps).map(function(k){ return deps[k]; }).sort(function(a, b){ return a.date < b.date ? 1 : a.date > b.date ? -1 : 0; }),
     days: Object.keys(days).sort().map(function(k){ return days[k]; }), banked: Object.keys(banked).sort().map(function(k){ return banked[k]; }),
     aging: aging, agingN: agingN, rows: rows };
 }
+// every occurrence of each {placeholder} (a chained replace fills only the first)
+function colFill_(str, vars){ Object.keys(vars).forEach(function(k){ str = str.split('{' + k + '}').join(vars[k]); }); return str; }
 function colPct_(a, b){ return b > 0 ? Math.round(a / b * 100) : 0; }
-function colStack_(g, enter, i){
+function colStack_(g, enter, i, stages){
+  var COL_ST_ = stages || window.COL_ST_ALL_;
   var tot = COL_ST_.reduce(function(s, k){ return s + Math.max(0, g[k]); }, 0);
   if (!(tot > 0)) return '<div class="col-bar empty"></div>';
   return '<div class="col-bar'+(enter ? ' col-enter' : '')+'" style="--i:'+Math.min(i || 0, 10)+'" role="img" aria-label="'+esc(COL_ST_.filter(function(k){ return g[k] > 0; }).map(function(k){ return t('col_st_' + k) + ' ' + money(g[k]); }).join(state.lang === 'en' ? ', ' : '، '))+'">' +
@@ -15836,7 +15961,8 @@ function renderCollections(body){
     if (!res.ok) { body.innerHTML = '<div class="msg err">'+esc(errMsg_(res))+'</div>'; return; }
     var reqs = res.requests || [];
     body.innerHTML = '';
-    var enter = !COL_DRAWN_ && !(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches); COL_DRAWN_ = true;
+    // bars and figures move on the first paint and on every filter change (nothing under reduced motion)
+    var enter = !(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches); COL_DRAWN_ = true;
     var locOf = function(id){ return byId(meta.locations, id) || {}; };
     // ---- head: title, what it counts, exports ----
     var head = el('<div class="card col-head no-collapse"><div class="col-h1"><div><h2>'+esc(t('nav_collections'))+'</h2><p class="muted">'+esc(t('col_sub'))+'</p></div></div></div>');
@@ -15848,6 +15974,9 @@ function renderCollections(body){
       '<div class="col-dates"'+(S.preset === 'custom' ? '' : ' hidden')+'><div class="field"><label>'+esc(t('inv_from'))+'</label><input type="date" class="cFrom" value="'+esc(S.from)+'"></div><div class="field"><label>'+esc(t('inv_to'))+'</label><input type="date" class="cTo" value="'+esc(S.to)+'"></div></div>' +
       '<div class="col-levels"></div>';
     body.appendChild(fc);
+    var stick = el('<div class="col-stick no-collapse" role="status" aria-live="polite"></div>');
+    body.appendChild(stick);
+    var tbEl = document.querySelector('.tb'); stick.style.top = (tbEl ? tbEl.offsetHeight : 0) + 'px';
     var lv = qs('.col-levels', fc);
     function opts(list, sel, all){ return '<option value="">'+esc(all)+'</option>' + list.map(function(x){ return '<option value="'+esc(x[0])+'"'+(x[0] === sel ? ' selected' : '')+'>'+esc(x[1])+'</option>'; }).join(''); }
     function uniq(fn){ var seen = {}, out = []; reqs.forEach(function(r){ var x = fn(r); if (x && x[0] && !seen[x[0]]) { seen[x[0]] = 1; out.push(x); } }); return out.sort(function(a, b){ return String(a[1]).localeCompare(String(b[1]), state.lang || 'ar'); }); }
@@ -15870,52 +15999,59 @@ function renderCollections(body){
     var R = colRange_(S);
     var D = colCompute_(reqs, { from: R.from, to: R.to, city: S.city, area: S.area, branch: S.branch, collector: S.collector, locOf: locOf });
     var T = D.T;
+    // the collectors table lists every collector of the other filters, so a collector filter can dim the rest
+    var D0 = S.collector ? colCompute_(reqs, { from: R.from, to: R.to, city: S.city, area: S.area, branch: S.branch, locOf: locOf }) : D;
     var periodTxt = R.from ? t('inv_period').replace('{from}', R.from).replace('{to}', R.to) : t('col_p_all');
-    head.appendChild(exButtons_(function(){ return colSheets_(D, periodTxt); }, function(){ return t('nav_collections'); }, function(){ return { note: periodTxt }; }));
-
-    if (!T.n && !T.returned && !T.disputed) {
-      body.appendChild(el('<div class="card no-collapse"><div class="muted rp-empty">'+esc(t(reqs.length ? 'col_noneHere' : 'col_none'))+'</div></div>'));
-      return;
-    }
-    // ---- hero: cash still out, and the four stages as one bar ----
-    var out = T.deputy + T.onway + T.held;
-    var hero = el('<div class="card col-hero no-collapse">' +
-      '<div class="col-hero-top"><div><div class="col-k">'+esc(t('col_outNow'))+'</div><div class="col-big num">'+money(out)+'<small>'+esc(t('ui_sar'))+'</small></div>' +
-      '<div class="col-cap">'+esc(t('col_ofTotal').replace('{total}', money(T.total)).replace('{n}', T.n))+'</div></div>' +
-      '<div class="col-ring" style="--p:'+colPct_(T.deposited, T.total)+'"><b class="num">'+colPct_(T.deposited, T.total)+'%</b><span>'+esc(t('col_bankedPct'))+'</span></div></div>' +
-      colStack_(T, enter, 0) +
-      '<div class="col-legend">' + COL_ST_.map(function(k){ return '<div class="col-lg"><i style="background:'+COL_C_[k]+'"></i><span>'+esc(t('col_st_' + k))+'</span><b class="num">'+money(T[k])+'</b><em>'+colPct_(T[k], T.total)+'%</em></div>'; }).join('') + '</div>' +
-      '<p class="muted col-note">'+esc(periodTxt + ' · ' + t('col_cohort'))+'</p></div>');
-    body.appendChild(hero);
-    if (enter) countUp_(hero);
-    // ---- KPI tiles ----
-    var avg = T.daysN ? (T.daysSum / T.daysN) : 0, oldD = T.oldest ? cpDays_(T.oldest, localToday_()) : 0;
-    // every figure opens the requests behind it, and each request its document (2026-10-13)
+    // ---- what is counted: removable chips and one sentence, sticky ----
+    var fchips = [['city', S.city, S.city], ['area', S.area, S.area && clusterName(S.area)], ['branch', S.branch, S.branch && locationName(S.branch)], ['collector', S.collector, S.collector && userName(S.collector)]].filter(function(x){ return x[1]; });
+    var sentence = [periodTxt].concat(fchips.map(function(x){ return x[2]; })).join(' \u00B7 ');
+    stick.innerHTML = '<div class="col-sent"><b>'+esc(t('col_counted'))+':</b> '+esc(fchips.length ? sentence : periodTxt + ' \u00B7 ' + t('col_countedAll'))+'</div>' +
+      (fchips.length ? '<div class="col-fchips">' + fchips.map(function(x){ return '<button type="button" class="col-fchip" data-k="'+x[0]+'" aria-label="'+esc(t('col_removeF').replace('{x}', x[2]))+'"><span>'+esc(t('col_f_' + x[0]) + ': ' + x[2])+'</span><i aria-hidden="true">\u2715</i></button>'; }).join('') + '</div>' : '');
+    qsa('.col-fchip', stick).forEach(function(b){ b.addEventListener('click', function(){ var k = b.dataset.k; S[k] = ''; if (k === 'city') { S.area = ''; S.branch = ''; } if (k === 'area') S.branch = ''; S.more = 0; redraw(); }); });
+    head.appendChild(exButtons_(function(){ return colSheets_(D, sentence); }, function(){ return t('nav_collections'); }, function(){ return { note: sentence }; }));
     function tileList(title, rows, sortFn){ return function(){ drawerOpen_(colListView_(title, sortFn ? rows.slice().sort(sortFn) : rows)); }; }
     var depRows = D.rows.filter(function(x){ return x.st === 'deposited'; }), openRows = D.rows.filter(function(x){ return x.st !== 'deposited'; });
+    // ---- the three totals: collection = deposits + remaining ----
+    var pDep = colPct_(T.deposited, T.total), oldD = T.oldest ? cpDays_(T.oldest, localToday_()) : 0;
+    var cards = el('<div class="col-cards no-collapse"></div>');
+    function cardNode(cls, color, label, big, sub, extra, onClick){
+      var b = el('<button type="button" class="col-card '+cls+(enter ? ' col-in' : '')+'" style="--c:'+color+'"><span class="col-k">'+esc(label)+'</span>' +
+        '<span class="col-big num">'+big+'<small>'+esc(t('ui_sar'))+'</small></span><span class="col-cap">'+sub+'</span>'+extra+'</button>');
+      b.addEventListener('click', onClick); return b;
+    }
+    var r2 = function(v){ return Math.round(v * 100) / 100; };
+    // the three always add up: remaining is collections minus deposits, from the same rounded figures
+    var vTot = r2(T.total), vDep = r2(T.deposited), vRem = r2(vTot - vDep);
+    var shortDate = function(iso){ try { return new Date(iso + 'T00:00:00').toLocaleDateString(state.lang === 'ar' ? 'ar-SA-u-ca-gregory-nu-latn' : state.lang === 'ur' ? 'ur-PK-u-nu-latn' : 'en-GB', { day: 'numeric', month: 'short' }); } catch (e) { return iso; } };
+    var spark = D.days.length > 1 ? colSpark_(D.days.map(function(d){ return d.total; }), '#4D6D51') : '';
+    cards.appendChild(cardNode('c-total', '#4D6D51', t('col_card_total'), money(vTot), esc(t('col_reqN').replace('{n}', T.n)), spark, tileList(t('col_card_total'), D.rows)));
+    cards.appendChild(cardNode('c-dep', COL_C_.deposited, t('col_card_dep'), money(vDep),
+      esc(T.lastDeposit ? t('col_depLine').replace('{p}', pDep).replace('{d}', shortDate(T.lastDeposit)) : t('col_depLineNone').replace('{p}', pDep)),
+      '<span class="col-pbar'+(enter ? ' col-enter' : '')+'" aria-hidden="true"><i style="--p:'+(T.total > 0 ? T.deposited / T.total : 0)+'"></i></span>', tileList(t('col_card_dep'), depRows)));
+    var remStages = ['deputy', 'onway', 'held'];
+    cards.appendChild(cardNode('c-rem', vRem > 0.004 ? '#C27C1E' : COL_C_.deposited, t('col_card_rem'), money(vRem),
+      esc(colFill_(t('col_remLine'), { a: money(T.deputy), b: money(T.onway), c: money(T.held) })),
+      colStack_(T, enter, 1, remStages), tileList(t('col_card_rem'), openRows, function(a, b){ return (b.age || 0) - (a.age || 0); })));
+    body.appendChild(cards);
+    body.appendChild(el('<p class="col-formula num" role="status">'+esc(colFill_(t('col_formula'), { tc: t('col_card_total'), td: t('col_card_dep'), tr: t('col_card_rem'), total: money(vTot), dep: money(vDep), rem: money(vRem) }))+'</p>'));
+    if (enter) countUp_(cards);
+    if (!T.n && !T.returned && !T.disputed) {
+      body.appendChild(el('<div class="card no-collapse"><div class="muted rp-empty">'+esc(t(reqs.length ? 'col_noneHere' : 'col_none'))+'</div></div>'));
+      // a collector chosen together with another filter can leave nothing: the table still shows who is dimmed
+      if (D0.collectors.length) body.appendChild(colCollectors_(D, D0, S, enter, redraw));
+      return;
+    }
+    // ---- smaller figures: shortfall, days to the bank, oldest open ----
+    var avg = T.daysN ? (T.daysSum / T.daysN) : 0;
     body.appendChild(tiles_([
-      { label: t('col_k_total'), value: money(T.total), icon: 'handoffs', foot: esc(t('col_reqN').replace('{n}', T.n)), onClick: tileList(t('col_k_total'), D.rows) },
-      { label: t('col_st_deposited'), value: money(T.deposited), icon: 'bank', color: COL_C_.deposited, foot: esc(colPct_(T.deposited, T.total) + '%'), onClick: tileList(t('col_st_deposited'), depRows) },
-      { label: t('col_st_held'), value: money(T.held), icon: 'wallet', color: COL_C_.held, onClick: tileList(t('col_st_held'), D.rows.filter(function(x){ return x.st === 'held'; })) },
       { label: t('col_k_short'), value: money(Math.abs(T.short)), icon: 'alert', color: T.short > 0.004 ? 'var(--c-danger)' : 'var(--green)', foot: esc(T.short > 0.004 ? t('col_shortW') : T.short < -0.004 ? t('col_overW') : ''), onClick: tileList(t('col_k_short'), D.rows.filter(function(x){ return Math.abs(Number(x.r.shortfall || 0)) > 0.004; }), function(a, b){ return Math.abs(b.r.shortfall) - Math.abs(a.r.shortfall); }) },
       { label: t('col_k_days'), value: avg ? (Math.round(avg * 10) / 10).toLocaleString('en-US') : '0', icon: 'clock', foot: esc(t('col_daysW')), onClick: tileList(t('col_k_days'), depRows, function(a, b){ return (b.toBank || 0) - (a.toBank || 0); }) },
       { label: t('col_k_oldest'), value: String(oldD), icon: 'hourglass', color: oldD > 3 ? 'var(--c-danger)' : 'var(--green)', foot: esc(T.oldest ? t('col_since').replace('{d}', T.oldest) : t('col_nothingOpen')), onClick: tileList(t('col_k_oldest'), openRows, function(a, b){ return (b.age || 0) - (a.age || 0); }) }
     ]));
-    // ---- the collectors, ranked by what they still hold ----
-    var cc = el('<div class="card col-league no-collapse"><h2>'+esc(t('col_byCollector'))+'</h2><p class="muted col-hint">'+esc(t('col_byCollectorHint'))+'</p><div class="col-rows"></div></div>');
-    var cr = qs('.col-rows', cc); if (enter) cr.classList.add('col-rise');
-    D.collectors.slice().sort(function(a, b){ return (b.held + b.onway + b.deputy) - (a.held + a.onway + a.deputy) || b.total - a.total; }).forEach(function(g, i){
-      var name = g.key === '_' ? t('report_unspecified') : userName(g.key), open = g.held + g.onway + g.deputy;
-      var row = el('<button type="button" class="col-row'+(S.collector === g.key ? ' on' : '')+'" style="--i:'+Math.min(i, 6)+'">' +
-        '<span class="col-av" aria-hidden="true">'+esc(initials_(name))+'</span>' +
-        '<span class="col-rb"><span class="col-rt"><b>'+esc(name)+'</b><span class="num">'+money(open)+'</span></span>' +
-        colStack_(g, enter, i + 1) +
-        '<span class="col-rs">'+esc(t('col_rowSub').replace('{bank}', money(g.deposited)).replace('{p}', colPct_(g.deposited, g.total)).replace('{n}', g.n))+
-        (g.oldest ? ' · <em class="'+(cpDays_(g.oldest, localToday_()) > 3 ? 'late' : '')+'">'+esc(t('col_oldestD').replace('{n}', cpDays_(g.oldest, localToday_())))+'</em>' : '')+'</span></span></button>');
-      row.addEventListener('click', function(){ S.collector = S.collector === g.key ? '' : g.key; S.more = 0; redraw(); });
-      cr.appendChild(row);
-    });
-    body.appendChild(cc);
+    // ---- by collector: always shown. A chart of what each still holds, then the full table ----
+    body.appendChild(colCollectors_(D, D0, S, enter, redraw));
+    // ---- deposits that carry a request of this filter ----
+    body.appendChild(colDeposits_(D, S, enter, redraw));
     // ---- daily: requested, and banked (two charts, one scale each) ----
     if (D.days.length) {
       var dc = el('<div class="card col-daily no-collapse"><h2>'+esc(t('col_daily'))+'</h2><h3 class="col-sh">'+esc(t('col_dailyReq'))+'</h3><div class="col-c1"></div><h3 class="col-sh">'+esc(t('col_dailyBank'))+'</h3><div class="col-c2"></div></div>');
@@ -15977,6 +16113,147 @@ function renderCollections(body){
     body.appendChild(rc);
   });
 }
+// one request as a row: where it stands, its age, its short or over, and its document
+function colItem_(x){
+  var r = x.r;
+  var it = el('<button type="button" class="col-req" style="--c:'+COL_C_[x.st]+'"><span class="col-dot" aria-hidden="true"></span><span class="col-qb">' +
+    '<span class="col-rt"><b>'+esc(locationName(r.locationId))+'</b><span class="num">'+money(r.amount)+'</span></span>' +
+    '<span class="col-rs">'+esc([r.txNo, x.day, userName(r.fromUserId) + ' \u203A ' + userName(r.holder || r.toUserId)].filter(Boolean).join(' \u00B7 '))+'</span>' +
+    '<span class="col-st"><span class="col-pill">'+esc(t('col_st_' + x.st))+'</span>' +
+      (x.toBank != null ? esc(t('col_where_bank').replace('{d}', colDay_(r.depositedAt))) + ' \u00B7 ' + esc(t('col_daysToBank').replace('{n}', x.toBank)) : (x.age != null ? esc(t('col_oldestD').replace('{n}', x.age)) : '')) +
+      (Math.abs(Number(r.shortfall || 0)) > 0.004 ? ' \u00B7 <em class="late">'+esc(t(r.shortfall > 0 ? 'col_shortX' : 'col_overX').replace('{x}', money(Math.abs(r.shortfall))))+'</em>' : '') + '</span></span></button>');
+  it.addEventListener('click', function(){ colOpenDoc_(r.id); });
+  if (r.depositId) {
+    var sb = el('<span class="col-slip" role="button" tabindex="0">'+icon_('bank')+'<span>'+esc(t('col_depositDoc'))+'</span></span>');
+    sb.addEventListener('click', function(ev){ ev.stopPropagation(); colOpenDoc_(r.depositId); });
+    qs('.col-qb', it).appendChild(sb);
+  }
+  return it;
+}
+// a tiny line of requests per day (time runs right to left in ar/ur: the style flips it)
+function colSpark_(vals, color){
+  if (vals.length < 2) return '';
+  var mx = Math.max.apply(null, vals) || 1;
+  var pts = vals.map(function(v, i){ return (i / (vals.length - 1) * 100).toFixed(1) + ',' + (26 - v / mx * 22).toFixed(1); }).join(' ');
+  return '<svg class="col-spark" viewBox="0 0 100 28" preserveAspectRatio="none" aria-hidden="true"><polyline points="'+pts+'" fill="none" stroke="'+color+'" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linejoin="round" stroke-linecap="round"/></svg>';
+}
+// the sort keys of the collectors table: one value per column
+var COL_SORTS_ = {
+  name: function(g){ return g.key === '_' ? '' : userName(g.key); },
+  branches: function(g){ return g.branchesN; }, reqs: function(g){ return g.n; }, total: function(g){ return g.total; },
+  dep: function(g){ return g.deposited; }, rem: function(g){ return g.remaining; }, pct: function(g){ return g.total > 0 ? g.deposited / g.total : 0; },
+  days: function(g){ return g.daysN ? g.daysSum / g.daysN : -1; }, oldest: function(g){ return g.oldest ? cpDays_(g.oldest, localToday_()) : -1; },
+  short: function(g){ return Math.abs(g.short); }, last: function(g){ return g.lastDeposit || ''; }, share: function(g){ return g.share; }
+};
+// By collector (always shown): remaining as a bar chart, then the analytical table.
+// D0 holds every collector of the other filters; with a collector chosen the rest are dimmed.
+function colCollectors_(D, D0, S, enter, redraw){
+  var list = D0.collectors.slice();
+  var sk = COL_SORTS_[S.csort] ? S.csort : 'rem', dir = S.cdir === 'asc' ? 1 : -1;
+  var fn = COL_SORTS_[sk];
+  list.sort(function(a, b){ var x = fn(a), y = fn(b); var r = typeof x === 'string' ? String(x).localeCompare(String(y), state.lang || 'ar') : x - y; return (r || (b.total - a.total)) * (r ? dir : 1); });
+  var nameOf = function(g){ return g.key === '_' ? t('report_unspecified') : userName(g.key); };
+  var card = el('<div class="card col-league no-collapse" data-noexport><h2>'+esc(t('col_byCollector'))+'</h2><p class="muted col-hint">'+esc(t('col_cTableHint'))+'</p>' +
+    (S.collector ? '<p class="col-showing">'+esc(t('col_showing').replace('{k}', '1').replace('{n}', D0.collectors.length))+'</p>' : '') +
+    '<h3 class="col-sh">'+esc(t('col_cRemChart'))+'</h3><div class="col-hbs"></div>' +
+    '<select class="col-sortsel" aria-label="'+esc(t('col_byCollector'))+'">'+[['name', 'col_th_collector'], ['branches', 'col_th_branches'], ['reqs', 'col_th_reqs'], ['total', 'col_th_total'], ['dep', 'col_th_dep'], ['rem', 'col_th_rem'], ['pct', 'col_th_pct'], ['days', 'col_th_days'], ['oldest', 'col_th_oldest'], ['short', 'col_th_short'], ['last', 'col_th_last'], ['share', 'col_th_share']].map(function(h){ return '<option value="'+h[0]+'"'+(h[0] === sk ? ' selected' : '')+'>'+esc(t(h[1]))+'</option>'; }).join('')+'</select><div class="col-tw"></div></div>');
+  qs('.col-sortsel', card).addEventListener('change', function(ev){ S.csort = ev.target.value; S.cdir = S.csort === 'name' ? 'asc' : 'desc'; redraw(); });
+  // chart: what each still holds, on one scale
+  var mx = D0.collectors.reduce(function(m, g){ return Math.max(m, g.remaining); }, 0) || 1;
+  var hb = qs('.col-hbs', card);
+  D0.collectors.slice().sort(function(a, b){ return b.remaining - a.remaining; }).forEach(function(g, i){
+    var row = el('<button type="button" class="col-hb'+(S.collector && S.collector !== g.key ? ' dim' : '')+(S.collector === g.key ? ' on' : '')+'" style="--i:'+Math.min(i, 8)+'">' +
+      '<span class="col-hn">'+esc(nameOf(g))+'</span><span class="col-ht"><i class="'+(enter ? 'col-enter' : '')+'" style="--p:'+(g.remaining / mx)+'"></i></span><span class="col-hv num">'+money(g.remaining)+'</span></button>');
+    row.addEventListener('click', function(){ S.collector = S.collector === g.key ? '' : g.key; S.more = 0; redraw(); });
+    hb.appendChild(row);
+  });
+  // table, built as one string (a bare <tr> through el() is lost)
+  var TH = [['name', 'col_th_collector'], ['branches', 'col_th_branches'], ['reqs', 'col_th_reqs'], ['total', 'col_th_total'], ['dep', 'col_th_dep'], ['rem', 'col_th_rem'], ['pct', 'col_th_pct'], ['days', 'col_th_days'], ['oldest', 'col_th_oldest'], ['short', 'col_th_short'], ['last', 'col_th_last'], ['share', 'col_th_share']];
+  var today = localToday_();
+  function tr(g, i){
+    var name = nameOf(g), p = g.total > 0 ? g.deposited / g.total : 0, od = g.oldest ? cpDays_(g.oldest, today) : 0, thr = 3;
+    var cls = 'col-tr' + (S.collector === g.key ? ' on' : '') + (S.collector && S.collector !== g.key ? ' dim' : '');
+    var shortTxt = Math.abs(g.short) > 0.004 ? t(g.short > 0 ? 'col_shortX' : 'col_overX').replace('{x}', money(Math.abs(g.short))) : '\u2014';
+    var sp = g.days.length > 1 ? colSpark_(g.days.map(function(d){ return d.n; }), '#4D6D51') : '';
+    return '<tr class="'+cls+'" data-key="'+esc(g.key)+'" style="--i:'+Math.min(i, 8)+'" tabindex="0">' +
+      '<td class="c-name" data-l="'+esc(t('col_th_collector'))+'"><span class="col-av" aria-hidden="true">'+esc(initials_(name))+'</span><span class="c-nm"><b>'+esc(name)+'</b><button type="button" class="col-detbtn" data-key="'+esc(g.key)+'">'+esc(t('col_details'))+'</button></span></td>' +
+      '<td data-l="'+esc(t('col_th_branches'))+'" class="num">'+g.branchesN+'</td>' +
+      '<td data-l="'+esc(t('col_th_reqs'))+'" class="num">'+g.n+sp+'</td>' +
+      '<td data-l="'+esc(t('col_th_total'))+'" class="num">'+money(g.total)+'</td>' +
+      '<td data-l="'+esc(t('col_th_dep'))+'" class="num">'+money(g.deposited)+'</td>' +
+      '<td data-l="'+esc(t('col_th_rem'))+'" class="num"><b>'+money(g.remaining)+'</b></td>' +
+      '<td data-l="'+esc(t('col_th_pct'))+'"><span class="col-pb"><i class="'+(enter ? 'col-enter' : '')+'" style="--p:'+p+'"></i></span><span class="num">'+Math.round(p * 100)+'%</span></td>' +
+      '<td data-l="'+esc(t('col_th_days'))+'" class="num">'+(g.daysN ? (Math.round(g.daysSum / g.daysN * 10) / 10).toLocaleString('en-US') : '\u2014')+'</td>' +
+      '<td data-l="'+esc(t('col_th_oldest'))+'" class="num">'+(g.oldest ? '<em class="'+(od > 2 * thr ? 'late' : od > thr ? 'amber' : '')+'">'+esc(t('col_dayN').replace('{n}', od))+'</em>' : '\u2014')+'</td>' +
+      '<td data-l="'+esc(t('col_th_short'))+'" class="num">'+(Math.abs(g.short) > 0.004 ? '<em class="'+(g.short > 0 ? 'late' : '')+'">'+esc(shortTxt)+'</em>' : shortTxt)+'</td>' +
+      '<td data-l="'+esc(t('col_th_last'))+'" class="num">'+esc(g.lastDeposit || '\u2014')+'</td>' +
+      '<td data-l="'+esc(t('col_th_share'))+'" class="num">'+Math.round(g.share * 10) / 10+'%</td>' +
+      '</tr>';
+  }
+  var T0 = D0.T;
+  qs('.col-tw', card).innerHTML = '<table class="col-tbl" data-nosort><thead><tr>' + TH.map(function(h){
+      return '<th scope="col" aria-sort="'+(h[0] === sk ? (dir > 0 ? 'ascending' : 'descending') : 'none')+'"><button type="button" class="col-sortb'+(h[0] === sk ? ' on' : '')+'" data-sk="'+h[0]+'">'+esc(t(h[1]))+'<i aria-hidden="true">'+(h[0] === sk ? (dir > 0 ? '\u25B2' : '\u25BC') : '')+'</i></button></th>'; }).join('') + '</tr></thead><tbody>' +
+    list.map(tr).join('') + '</tbody></table>';
+  qsa('.col-sortb', card).forEach(function(b){ b.addEventListener('click', function(){ var k = b.dataset.sk; if (S.csort === k) S.cdir = S.cdir === 'asc' ? 'desc' : 'asc'; else { S.csort = k; S.cdir = k === 'name' ? 'asc' : 'desc'; } redraw(); }); });
+  qsa('.col-tr', card).forEach(function(r){
+    function pick(){ var k = r.dataset.key; S.collector = S.collector === k ? '' : k; S.more = 0; redraw(); }
+    r.addEventListener('click', function(ev){ if (ev.target.closest('.col-detbtn')) return; pick(); });
+    r.addEventListener('keydown', function(ev){ if ((ev.key === 'Enter' || ev.key === ' ') && !ev.target.closest('.col-detbtn')) { ev.preventDefault(); pick(); } });
+  });
+  qsa('.col-detbtn', card).forEach(function(b){ b.addEventListener('click', function(ev){
+    ev.stopPropagation(); var k = b.dataset.key;
+    drawerOpen_(colCollectorView_(k === '_' ? t('report_unspecified') : userName(k), D0.rows.filter(function(x){ return (x.r.holder || '_') === k; })));
+  }); });
+  return card;
+}
+// a collector's requests, grouped branch then day
+function colCollectorView_(name, rows){
+  return {
+    title: name, sub: t('col_cDrawerSub').replace('{n}', rows.length), crumb: name,
+    render: function(b){
+      var tot = rows.reduce(function(s2, x){ return s2 + Number(x.r.amount || 0); }, 0);
+      b.appendChild(el('<div class="col-lv-total"><span>'+esc(t('rp_total'))+'</span><b class="num">'+money(tot)+'</b></div>'));
+      if (!rows.length) { b.appendChild(el('<div class="muted" style="padding:12px 4px;">'+esc(t('col_noneHere'))+'</div>')); return; }
+      var byB = {}, order = [];
+      rows.forEach(function(x){ var k = x.r.locationId || '_'; if (!byB[k]) { byB[k] = []; order.push(k); } byB[k].push(x); });
+      order.forEach(function(k){
+        var list = byB[k], sum = list.reduce(function(s2, x){ return s2 + Number(x.r.amount || 0); }, 0);
+        b.appendChild(el('<div class="col-grp"><b>'+esc(k === '_' ? t('cpv_wholeArea') : locationName(k))+'</b><span class="num">'+money(sum)+'</span></div>'));
+        var byD = {}, days = [];
+        list.forEach(function(x){ if (!byD[x.day]) { byD[x.day] = []; days.push(x.day); } byD[x.day].push(x); });
+        days.sort().reverse().forEach(function(d){
+          b.appendChild(el('<div class="col-grp2">'+esc(d)+'</div>'));
+          byD[d].forEach(function(x){ b.appendChild(colItem_(x)); });
+        });
+      });
+    }
+  };
+}
+// Deposits that carry a request of this filter: the filtered share of each, with the whole deposit beside it
+function colDeposits_(D, S, enter, redraw){
+  var card = el('<div class="card col-deps no-collapse"><h2>'+esc(t('col_deposits'))+(D.deposits.length ? ' <span class="rp-n">'+D.deposits.length+'</span>' : '')+'</h2><p class="muted col-hint">'+esc(t('col_depHint2'))+'</p><div class="col-dl"></div></div>');
+  var lst = qs('.col-dl', card), shown = 10 + (S.dmore || 0) * 10;
+  if (!D.deposits.length) lst.appendChild(el('<div class="muted rp-empty">'+esc(t('col_noDeposits'))+'</div>'));
+  D.deposits.slice(0, shown).forEach(function(d, i){
+    var inDep = D.rows.filter(function(x){ return x.r.depositId === d.id; });
+    var it = el('<div class="col-dep'+(enter ? ' col-in' : '')+'" style="--i:'+Math.min(i, 8)+'"><button type="button" class="col-dep-main"><span class="col-dep-ic">'+icon_('bank')+'</span><span class="col-qb">' +
+      '<span class="col-rt"><b>'+esc(d.no || t('kind_deposit'))+'</b><span class="num">'+money(d.amount)+'</span></span>' +
+      '<span class="col-rs">'+esc([d.date, d.by ? userName(d.by) : '', d.ref ? t('col_ref').replace('{r}', d.ref) : '', t('col_depN').replace('{n}', d.n)].filter(Boolean).join(' \u00B7 '))+'</span>' +
+      '<span class="col-st">'+(d.partial ? '<span class="col-tag wait">'+esc(t('col_depOfTotal').replace('{x}', money(d.full)))+'</span>' : '') +
+        (d.slip != null ? '<span class="col-tag '+(d.slip ? 'ok' : 'bad')+'">'+esc(t(d.slip ? 'col_slipYes' : 'col_slipNo'))+'</span>' : '') +
+        '<span class="col-tag '+(d.reconciled ? 'ok' : 'wait')+'">'+esc(t(d.reconciled ? 'col_matched' : 'col_notMatched'))+'</span></span></span></button>' +
+      '<button type="button" class="col-dep-reqs">'+esc(t('col_depReqs'))+'</button></div>');
+    qs('.col-dep-main', it).addEventListener('click', function(){ colOpenDoc_(d.id); });
+    qs('.col-dep-reqs', it).addEventListener('click', function(){ drawerOpen_(colListView_((d.no || t('kind_deposit')) + ' \u00B7 ' + t('col_depReqs'), inDep)); });
+    lst.appendChild(it);
+  });
+  if (D.deposits.length > shown) {
+    var more = el('<button type="button" class="btn ghost col-more">'+esc(t('col_more').replace('{n}', D.deposits.length - shown))+'</button>');
+    more.addEventListener('click', function(){ S.dmore = (S.dmore || 0) + 1; redraw(); });
+    card.appendChild(more);
+  }
+  return card;
+}
 // the requests behind a figure, as a list in the side panel; each opens its document
 function colListView_(title, rows){
   return {
@@ -15985,22 +16262,7 @@ function colListView_(title, rows){
       var tot = rows.reduce(function(s2, x){ return s2 + Number(x.r.amount || 0); }, 0);
       b.appendChild(el('<div class="col-lv-total"><span>'+esc(t('rp_total'))+'</span><b class="num">'+money(tot)+'</b></div>'));
       if (!rows.length) { b.appendChild(el('<div class="muted" style="padding:12px 4px;">'+esc(t('col_noneHere'))+'</div>')); return; }
-      rows.forEach(function(x){
-        var r = x.r;
-        var it = el('<button type="button" class="col-req" style="--c:'+COL_C_[x.st]+'"><span class="col-dot" aria-hidden="true"></span><span class="col-qb">' +
-          '<span class="col-rt"><b>'+esc(locationName(r.locationId))+'</b><span class="num">'+money(r.amount)+'</span></span>' +
-          '<span class="col-rs">'+esc([r.txNo, x.day, userName(r.fromUserId) + ' › ' + userName(r.holder || r.toUserId)].filter(Boolean).join(' · '))+'</span>' +
-          '<span class="col-st"><span class="col-pill">'+esc(t('col_st_' + x.st))+'</span>' +
-            (x.toBank != null ? esc(t('col_where_bank').replace('{d}', colDay_(r.depositedAt))) + ' · ' + esc(t('col_daysToBank').replace('{n}', x.toBank)) : (x.age != null ? esc(t('col_oldestD').replace('{n}', x.age)) : '')) +
-            (Math.abs(Number(r.shortfall || 0)) > 0.004 ? ' · <em class="late">'+esc(t(r.shortfall > 0 ? 'col_shortX' : 'col_overX').replace('{x}', money(Math.abs(r.shortfall))))+'</em>' : '') + '</span></span></button>');
-        it.addEventListener('click', function(){ colOpenDoc_(r.id); });
-        if (r.depositId) {
-          var sb = el('<span class="col-slip" role="button" tabindex="0">'+icon_('bank')+'<span>'+esc(t('col_depositDoc'))+'</span></span>');
-          sb.addEventListener('click', function(ev){ ev.stopPropagation(); colOpenDoc_(r.depositId); });
-          qs('.col-qb', it).appendChild(sb);
-        }
-        b.appendChild(it);
-      });
+      rows.forEach(function(x){ b.appendChild(colItem_(x)); });
     }
   };
 }
@@ -16013,6 +16275,17 @@ function colOpenDoc_(id){
   });
 }
 // the whole report as a workbook: summary, collectors, areas, branches, days, aging, requests
+// the collectors sheet: every figure of the table, for the filtered set
+function colCollectorRows_(D){
+  var T = D.T, m2 = function(v){ return Math.round(v * 100) / 100; };
+  function line(name, g){
+    return [name, g.branchesN, g.n, m2(g.total), m2(g.deposited), m2(g.remaining), colPct_(g.deposited, g.total) + '%', g.daysN ? Math.round(g.daysSum / g.daysN * 10) / 10 : '', g.oldest || '', m2(g.short), g.lastDeposit || '', Math.round(g.share * 10) / 10];
+  }
+  var rows = [[t('col_th_collector'), t('col_x_branches'), t('col_x_reqs'), t('col_k_total'), t('col_st_deposited'), t('col_x_remaining'), t('col_x_bankPct'), t('col_k_days'), t('col_x_oldest'), t('col_k_short'), t('col_x_lastDep'), t('col_x_share')]];
+  D.collectors.forEach(function(g){ rows.push(line(g.key === '_' ? t('report_unspecified') : userName(g.key), g)); });
+  rows.push(line(t('rp_total'), T));
+  return rows;
+}
 function colSheets_(D, periodTxt){
   var T = D.T, money2 = function(v){ return Math.round(v * 100) / 100; };
   var stH = COL_ST_.map(function(k){ return t('col_st_' + k); });
@@ -16022,19 +16295,22 @@ function colSheets_(D, periodTxt){
     rows.push([t('rp_total')].concat(COL_ST_.map(function(k){ return money2(T[k]); }), [money2(T.total), colPct_(T.deposited, T.total) + '%', T.n, money2(T.short), T.daysN ? Math.round(T.daysSum / T.daysN * 10) / 10 : '', T.oldest || '']));
     return rows;
   }
-  var sum = [[t('col_x_item'), t('col_x_amount')], [t('col_k_total'), money2(T.total)]].concat(COL_ST_.map(function(k){ return [t('col_st_' + k), money2(T[k])]; }),
+  var sum = [[t('col_x_item'), t('col_x_amount')], [t('col_x_filters'), periodTxt], [t('col_card_total'), money2(T.total)], [t('col_card_dep'), money2(T.deposited)], [t('col_card_rem'), money2(T.remaining)]].concat(COL_ST_.map(function(k){ return [t('col_st_' + k), money2(T[k])]; }),
     [[t('col_outNow'), money2(T.deputy + T.onway + T.held)], [t('col_bankedPct'), colPct_(T.deposited, T.total) + '%'], [t('col_x_reqs'), T.n], [t('col_k_short'), money2(T.short)], [t('col_x_returned'), T.returned], [t('col_x_disputed'), T.disputed], [t('col_x_rejected'), T.rejected]]);
   var daysRows = [[t('col_x_day'), t('col_dailyReq'), t('col_dailyBank')]], dm = {};
   D.days.forEach(function(d){ dm[d.date] = [d.total, 0]; }); D.banked.forEach(function(d){ (dm[d.date] = dm[d.date] || [0, 0])[1] = d.total; });
   Object.keys(dm).sort().forEach(function(k){ daysRows.push([k, money2(dm[k][0]), money2(dm[k][1])]); });
+  var depRows = [[t('col_x_depNo'), t('col_x_day'), t('col_x_amount'), t('col_x_depFull'), t('col_x_reqs'), t('col_x_ref'), t('col_matched')]];
+  D.deposits.forEach(function(d){ depRows.push([d.no, d.date, money2(d.amount), money2(d.full), d.n, d.ref, d.reconciled ? t('col_yes') : '']); });
   var ag = [[t('col_aging'), t('col_x_amount'), t('col_x_reqs')]].concat([0, 1, 2, 3].map(function(i){ return [t('col_age_' + i), money2(D.aging[i]), D.agingN[i]]; }));
   var req = [[t('col_x_no'), t('col_x_day'), t('col_f_city'), t('col_f_area'), t('col_f_branch'), t('col_x_from'), t('col_x_to'), t('col_x_holder'), t('col_x_stage'), t('col_x_amount'), t('col_k_short'), t('col_x_age'), t('col_x_bankDay'), t('col_x_depNo'), t('col_x_ref'), t('col_matched')]];
   D.rows.forEach(function(x){ var r = x.r; req.push([r.txNo || '', x.day, x.city === '_' ? '' : x.city, x.area === '_' ? '' : clusterName(x.area), locationName(r.locationId), userName(r.fromUserId), userName(r.toUserId), userName(r.holder), t('col_st_' + x.st), money2(r.amount), money2(r.shortfall || 0), x.age == null ? '' : x.age, r.depositedAt ? colDay_(r.depositedAt) : '', r.depositNo || '', r.depositRef || '', r.reconciled ? t('col_yes') : '']); });
   return [
     { name: t('col_x_summary'), rows: sum, note: periodTxt, noBars: true },
-    { name: t('col_byCollector'), rows: grpRows(D.collectors, function(k){ return k === '_' ? t('report_unspecified') : userName(k); }) },
+    { name: t('col_byCollector'), rows: colCollectorRows_(D) },
     { name: t('col_byArea'), rows: grpRows(D.areas, function(k){ return k === '_' ? t('report_unspecified') : clusterName(k); }) },
     { name: t('col_byBranch'), rows: grpRows(D.branches, function(k){ return k === '_' ? t('cpv_wholeArea') : locationName(k); }) },
+    { name: t('col_deposits'), rows: depRows },
     { name: t('col_daily'), rows: daysRows },
     { name: t('col_aging'), rows: ag, noBars: true },
     { name: t('col_requests'), rows: req }
@@ -22181,6 +22457,55 @@ function renderAdminTranslations(content){
   });
 }
 
+// Cut-over (2026-10-13): what collectors still have up to a date, then the admin closes it
+function cutoverCard_(){
+  var isAdmin = state.user.role === 'admin';
+  var c = el('<div class="card co-card"><h2>'+esc(t('co_title'))+'</h2><p class="muted" style="font-size:12.5px;line-height:1.8;">'+esc(t('co_hint'))+'</p>' +
+    '<div class="row" style="align-items:flex-end;gap:10px;flex-wrap:wrap;"><div class="field" style="margin:0;"><label>'+esc(t('co_date'))+'</label><input type="date" class="coDate" value="2026-10-12"></div>' +
+    '<button type="button" class="btn coShow">'+esc(t('co_show'))+'</button></div><div class="coOut"></div></div>');
+  var out = qs('.coOut', c);
+  function show(){
+    var date = qs('.coDate', c).value;
+    out.innerHTML = '<div class="muted" style="padding:10px 0;">'+esc(t('loading'))+'</div>';
+    api('cutoverPreview', { date: date }).then(function(r){
+      if (!r.ok) { out.innerHTML = '<div class="msg err">'+esc(errMsg_(r))+'</div>'; return; }
+      var T = { held: 0, open: 0, disputed: 0, heldN: 0, openN: 0, disputedN: 0 };
+      r.collectors.forEach(function(x){ ['held', 'open', 'disputed', 'heldN', 'openN', 'disputedN'].forEach(function(k){ T[k] += Number(x[k] || 0); }); });
+      var nothing = !(T.held > 0.004 || T.open > 0.004);
+      out.innerHTML = (r.done ? '<div class="msg ok" style="margin-top:10px;">'+esc(t('co_done').replace('{d}', r.done.slice(0, 16).replace('T', ' ')))+'</div>' : '') +
+        '<div class="tbl-scroll" style="margin-top:10px;"><table class="co-table" data-noexport="1"><thead><tr><th>'+esc(t('co_collector'))+'</th><th class="n">'+esc(t('co_held'))+'</th><th class="n">'+esc(t('co_open'))+'</th><th class="n">'+esc(t('co_disputed'))+'</th><th class="n">'+esc(t('co_total'))+'</th></tr></thead><tbody>' +
+        r.collectors.map(function(x){ return '<tr><td>'+esc(x.name || userName(x.collectorId))+'</td><td class="n num">'+money(x.held)+' <small>('+x.heldN+')</small></td><td class="n num">'+money(x.open)+' <small>('+x.openN+')</small></td><td class="n num">'+money(x.disputed)+' <small>('+x.disputedN+')</small></td><td class="n num"><b>'+money(x.held + x.open)+'</b></td></tr>'; }).join('') +
+        '</tbody><tfoot><tr><td>'+esc(t('rp_total'))+'</td><td class="n num">'+money(T.held)+'</td><td class="n num">'+money(T.open)+'</td><td class="n num">'+money(T.disputed)+'</td><td class="n num"><b>'+money(T.held + T.open)+'</b></td></tr></tfoot></table></div>' +
+        (T.disputedN ? '<p class="muted" style="font-size:12.5px;">'+esc(t('co_disputedNote').replace('{n}', T.disputedN))+'</p>' : '');
+      out.appendChild(exButtons_(function(){
+        var rows = [[t('co_collector'), t('co_held'), t('co_open'), t('co_disputed'), t('co_total')]].concat(r.collectors.map(function(x){ return [x.name || userName(x.collectorId), x.held, x.open, x.disputed, Math.round((x.held + x.open) * 100) / 100]; }));
+        rows.push([t('rp_total'), T.held, T.open, T.disputed, Math.round((T.held + T.open) * 100) / 100]);
+        var det = [[t('col_x_no'), t('col_x_day'), t('co_collector'), t('col_f_branch'), t('col_x_stage'), t('col_x_amount')]].concat(r.requests.map(function(q){ return [q.txNo, q.day, userName(q.collectorId), q.locationId ? locationName(q.locationId) : '', t('handoff_' + q.status), q.amount]; }));
+        return [{ name: t('co_title'), rows: rows, note: t('co_upTo').replace('{d}', date) }, { name: t('col_requests'), rows: det }];
+      }, function(){ return t('co_title') + ' ' + date; }));
+      if (!isAdmin) return;
+      if (nothing) { out.appendChild(el('<div class="msg ok" style="margin-top:10px;">'+esc(t('co_nothing'))+'</div>')); return; }
+      var form = el('<div class="co-close"><div class="field"><label>'+esc(t('co_reason'))+'</label><input class="coReason" value="'+esc(t('co_reasonDefault'))+'"></div>' +
+        '<div class="field"><label>'+esc(t('co_typeClose'))+'</label><input class="coConfirm" dir="ltr" autocomplete="off" placeholder="CLOSE"></div>' +
+        '<button type="button" class="btn danger coGo">'+esc(t('co_go').replace('{a}', money(T.held + T.open)).replace('{d}', date))+'</button><div class="coMsg"></div></div>');
+      qs('.coGo', form).addEventListener('click', function(ev){
+        var b = ev.currentTarget;
+        if (qs('.coConfirm', form).value.trim() !== 'CLOSE') { qs('.coMsg', form).innerHTML = '<div class="msg err">'+esc(t('co_typeClose'))+'</div>'; return; }
+        if (!confirm(t('co_sure').replace('{d}', date))) return;
+        b.disabled = true;
+        api('cutoverClose', { date: date, reason: qs('.coReason', form).value.trim(), confirm: 'CLOSE' }).then(function(x){
+          b.disabled = false;
+          if (!x.ok) { qs('.coMsg', form).innerHTML = '<div class="msg err">'+esc(errMsg_(x))+'</div>'; return; }
+          toastRaw_(t('co_closed').replace('{n}', x.requestsClosed).replace('{d}', x.deposits.length), 'ok');
+          show();
+        });
+      });
+      out.appendChild(form);
+    });
+  }
+  qs('.coShow', c).addEventListener('click', show);
+  return c;
+}
 function waSettingsCard_(){
   var c = el('<div class="card"><h2>'+esc(t('wa_settings'))+'</h2><p class="muted" style="font-size:12.5px;line-height:1.8;">'+esc(t('wa_settingsHint'))+'</p>' +
     '<div class="wa-status muted">…</div>' +
@@ -22231,6 +22556,7 @@ function renderAdminConfig(content){
     '<button class="btn" id="cSave">'+esc(t('save'))+'</button><div id="cMsg"></div></div>');
   content.appendChild(form);
   if (state.user && state.user.role === 'admin') content.appendChild(waSettingsCard_());
+  if (state.user && (state.user.role === 'admin' || state.user.role === 'finance')) content.appendChild(cutoverCard_());
 
   // Starting a fresh round of testing: the movement tabs are renamed with a
   // date and the app makes empty ones. Nothing is deleted, the org stays as

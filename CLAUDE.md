@@ -1644,6 +1644,19 @@ should have history for the numbers changes in all areas; it's very sensitive".
   branches, days, aging, requests).
 - Stage colours `COL_C_` were checked with the dataviz validator (CVD band: always labelled).
   Bars grow once on the screen's first paint (`COL_DRAWN_`), none under reduced motion.
+- **v2 (2026-10-14): every figure follows the filter.** `colCompute_` returns `T`, `collectors`,
+  `areas`, `branches`, `cities`, `deposits`, `days`, `banked`, `aging`, `rows`, all from the one filtered
+  set; each group also carries `remaining` (= total - banked), `branchesN`, `lastDeposit`, `share` of
+  the filtered remaining and `days` (requests per day). `deposits` holds only deposits that carry a
+  filtered request, with the filtered share (`amount`) and the whole deposit (`full`, `partial`).
+  Screen order: filters, sticky "Counted: ..." sentence with removable chips (`.col-stick`), three
+  cards (Total collections / Total deposits / Total remaining, each opens its requests), the
+  equation line (rounded once: remaining = collections - deposits), small tiles, By collector (always
+  shown: remaining chart + sortable table, phone = cards; with a collector chosen the rest are dimmed
+  from `D0`, the same filters minus the collector), Bank deposits, then the charts. Bars and figures
+  animate on every redraw (not only the first), none under reduced motion. `colFill_` fills repeated
+  placeholders (`fillTemplate_` is local to another function). Known gap: the server sends no
+  `depositHasSlip`/`depositBy`, so the slip tag is hidden and the depositor falls back to the holder.
 
 ## What is waiting on a person: welcome popup, bell, home hero (2026-10-05)
 
