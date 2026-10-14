@@ -521,6 +521,8 @@ function recordDirectDeposit_(entry, user) {
     posId: entry.directDepositPosId || null,
     sourceEntryIds: [entry.id],
     sourceHandoffIds: [],
+    handoffDate: String(entry.date || '').slice(0, 10) || undefined,
+    entryDate: String(entry.date || '').slice(0, 10) || undefined,
     consumedBy: null,
     status: 'completed',
     createdAt: new Date().toISOString(),
@@ -1149,9 +1151,14 @@ function createCollectorHandoff_(req, user) {
     note: String(req.note || '').trim().slice(0, 1000), sourceEntryIds: [], sourceHandoffIds: held.map(function (x) { return x.id; }),
     consumedBy: null, status: 'pending', createdAt: new Date().toISOString()
   };
+  var dctx = hoDateCtx_();
+  if (req.dryRun) return hoDryRun_(dctx, h);
+  var derr = hoStampDate_(dctx, h, req.handoffDate, req.dateChangeReason, user);
+  if (derr) return { ok: false, error: derr };
   writeRow(SHEETS.HANDOFFS, h);
   held.forEach(function (x) { x.consumedBy = h.id; writeRow(SHEETS.HANDOFFS, x); });
   logAudit_('create_handoff', user.id, h.id);
+  hoAuditDate_(h, user);
   notifyPending_(h);
   return { ok: true, handoff: h };
 }
@@ -1219,9 +1226,14 @@ function createCarHandoff_(req, user) {
     status: 'pending',
     createdAt: new Date().toISOString()
   };
+  var dctx = hoDateCtx_();
+  if (req.dryRun) return hoDryRun_(dctx, handoff);
+  var derr = hoStampDate_(dctx, handoff, req.handoffDate, req.dateChangeReason, user);
+  if (derr) return { ok: false, error: derr };
   writeRow(SHEETS.HANDOFFS, handoff);
   entries.forEach(function (e) { e.consumedBy = handoff.id; writeRow(SHEETS.ENTRIES, e); });
   logAudit_('create_handoff_car', user.id, handoff.id);
+  hoAuditDate_(handoff, user);
   notifyPending_(handoff);
   return { ok: true, handoff: handoff };
 }
@@ -1281,10 +1293,15 @@ function createLocationHandoff_(req, user) {
     status: 'pending',
     createdAt: new Date().toISOString()
   };
+  var dctx = hoDateCtx_();
+  if (req.dryRun) return hoDryRun_(dctx, handoff);
+  var derr = hoStampDate_(dctx, handoff, req.handoffDate, req.dateChangeReason, user);
+  if (derr) return { ok: false, error: derr };
   writeRow(SHEETS.HANDOFFS, handoff);
   directEntries.forEach(function (e) { e.consumedBy = handoff.id; writeRow(SHEETS.ENTRIES, e); });
   heldCarHandoffs.forEach(function (h) { h.consumedBy = handoff.id; writeRow(SHEETS.HANDOFFS, h); });
   logAudit_('create_handoff_location', user.id, handoff.id);
+  hoAuditDate_(handoff, user);
   notifyPending_(handoff);
   return { ok: true, handoff: handoff };
 }
@@ -1359,6 +1376,20 @@ function createClusterHandoff_(req, user) {
   }
   if (!plans.length) return { ok: false, error: 'nothing_owed' };
 
+  var pctx = hoDateCtx_(), nowIso = new Date().toISOString();
+  var dmap = (req.handoffDates && typeof req.handoffDates === 'object') ? req.handoffDates : {};
+  for (var pi = 0; pi < plans.length; pi++) {
+    var pp = plans[pi];
+    var cand = { createdAt: nowIso, sourceEntryIds: pp.g.own.map(function (e) { return e.id; }), sourceHandoffIds: pp.g.held.map(function (h) { return h.id; }) };
+    if (req.dryRun) { pp.dates = hoDateInfo_(pctx, cand); continue; }
+    var dgiven = Object.prototype.hasOwnProperty.call(dmap, pp.g.locationId) ? dmap[pp.g.locationId] : req.handoffDate;
+    var rmap = (req.dateChangeReasons && typeof req.dateChangeReasons === 'object') ? req.dateChangeReasons : {};
+    var dreason = Object.prototype.hasOwnProperty.call(rmap, pp.g.locationId) ? rmap[pp.g.locationId] : req.dateChangeReason;
+    var derr = hoStampDate_(pctx, cand, dgiven, dreason, user);
+    if (derr) return { ok: false, error: derr, locationId: pp.g.locationId };
+    pp.stamp = cand;
+  }
+  if (req.dryRun) return { ok: true, dryRun: true, previews: plans.map(function (p) { return { locationId: p.g.locationId, dates: p.dates }; }) };
   var handoffs = plans.map(function (p) {
     var handoff = {
       id: Utilities.getUuid(),
@@ -1388,6 +1419,7 @@ function createClusterHandoff_(req, user) {
         returnedAt: prior.deputyReturnedAt || null, correctionNote: prior.correctionNote || ''
       }]);
     }
+    HO_DATE_FIELDS_.forEach(function (k) { if (p.stamp[k] !== undefined) handoff[k] = p.stamp[k]; });
     writeRow(SHEETS.HANDOFFS, handoff);
     p.g.held.forEach(function (h) { h.consumedBy = handoff.id; writeRow(SHEETS.HANDOFFS, h); });
     p.g.own.forEach(function (e) { e.consumedBy = handoff.id; writeRow(SHEETS.ENTRIES, e); });
@@ -1402,6 +1434,7 @@ function createClusterHandoff_(req, user) {
     });
     if (prior && !prior.resubmittedAs) { prior.resubmittedAs = handoff.id; writeRow(SHEETS.HANDOFFS, prior); }
     logAudit_(prior ? 'area_handoff_resubmit' : 'create_handoff_cluster', user.id, handoff.id);
+    hoAuditDate_(handoff, user);
     notifyDeputyPendingHandoff_(handoff);
     return handoff;
   });
@@ -2228,6 +2261,11 @@ function actionRecordDeposit_(req, user) {
   var breakdown = sumBreakdowns_(held.map(function (h) { return h.breakdown; }));
   var perCluster = collectorPerCluster_(held);
 
+  var dctx = hoDateCtx_(), dcand = { createdAt: new Date().toISOString(), sourceEntryIds: [], sourceHandoffIds: held.map(function (h) { return h.id; }) };
+  if (req.dryRun) return hoDryRun_(dctx, dcand);
+  var derr = hoStampDate_(dctx, dcand, req.handoffDate, req.dateChangeReason, user);
+  if (derr) return { ok: false, error: derr };
+
   var attachmentId = null;
   if (req.fileBase64) {
     attachmentId = saveDepositSlip_(req.fileBase64, req.fileName, req.fileMime);
@@ -2251,9 +2289,11 @@ function actionRecordDeposit_(req, user) {
     confirmedAt: new Date().toISOString(),
     confirmedBy: user.id
   };
+  HO_DATE_FIELDS_.forEach(function (k) { if (dcand[k] !== undefined) deposit[k] = dcand[k]; });
   writeRow(SHEETS.HANDOFFS, deposit);
   held.forEach(function (h) { h.consumedBy = deposit.id; writeRow(SHEETS.HANDOFFS, h); });
   logAudit_('record_deposit', user.id, deposit.id);
+  hoAuditDate_(deposit, user);
   return { ok: true, handoff: deposit };
 }
 
@@ -2307,6 +2347,74 @@ function filterHandoffs_(rows, req, allRows, placeOnly) {
   });
   return out;
 }
+// ---------- A handover's own date, and the entries' dates under it (2026-10-14) ----------
+// Every handover carries handoffDate. Its default is the entries' own date as typed
+// on the Entries screen: the one date they share, or the latest of several (then
+// dateMismatch warns and lists every date). The sender may change it, but only with
+// a reason, never into the future (Riyadh) and never before the oldest entry; the
+// change is flagged (dateChanged), stored with who and why, and audited. The default
+// is always worked out here: entryDate is never taken from the client.
+// Above the first hop the entries are found by walking sourceHandoffIds down.
+var HO_DATE_DEPTH_ = 12;
+var HO_DATE_FIELDS_ = ['handoffDate', 'entryDate', 'entryDates', 'dateChanged', 'dateChangeReason', 'dateChangedBy', 'dateChangedAt'];
+function hoDateCtx_() {
+  var c = { hById: Object.create(null), eById: Object.create(null), memo: Object.create(null) };
+  readSheet(SHEETS.HANDOFFS).forEach(function (h) { c.hById[h.id] = h; });
+  readSheet(SHEETS.ENTRIES).forEach(function (e) { c.eById[e.id] = e; });
+  return c;
+}
+function hoSrcDates_(c, h, depth) {
+  var set = {};
+  if (depth > HO_DATE_DEPTH_) return set;
+  (h.sourceEntryIds || []).forEach(function (id) {
+    var e = c.eById[id];
+    if (e && !e.voided && e.date) set[String(e.date).slice(0, 10)] = 1;
+  });
+  (h.sourceHandoffIds || []).forEach(function (id) {
+    var sh = c.hById[id];
+    if (!sh) return;
+    var sub = c.memo[sh.id] || (c.memo[sh.id] = hoSrcDates_(c, sh, depth + 1));
+    Object.keys(sub).forEach(function (d) { set[d] = 1; });
+  });
+  return set;
+}
+// { entryDates (sorted, distinct), defaultDate, dateMismatch (more than one date) }
+function hoDateInfo_(c, h) {
+  var dates = Object.keys(hoSrcDates_(c, h, 0)).sort();
+  var def = dates.length ? dates[dates.length - 1] : Utilities.formatDate(new Date(h.createdAt || new Date().toISOString()), 'Asia/Riyadh', 'yyyy-MM-dd');
+  return { entryDates: dates, defaultDate: def, dateMismatch: dates.length > 1 };
+}
+function hoDayValid_(d) {
+  if (!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(d)) return false;
+  var t = new Date(Date.UTC(Number(d.slice(0, 4)), Number(d.slice(5, 7)) - 1, Number(d.slice(8, 10))));
+  return t.toISOString().slice(0, 10) === d;
+}
+// Sets handoffDate and friends on a handover about to be written; returns an error code or null.
+function hoStampDate_(c, h, given, reason, user) {
+  var info = hoDateInfo_(c, h);
+  h.entryDate = info.defaultDate; h.entryDates = info.entryDates; h.handoffDate = info.defaultDate;
+  given = given == null ? '' : String(given).trim();
+  if (!given || given === info.defaultDate) return null;
+  if (!hoDayValid_(given)) return 'invalid_handoff_date';
+  if (given > todayRiyadh_()) return 'handoff_date_future';
+  if (info.entryDates.length && given < info.entryDates[0]) return 'handoff_date_before_entries';
+  reason = String(reason == null ? '' : reason).trim();
+  if (!reason || reason.length > 300) return 'date_reason_required';
+  h.handoffDate = given; h.dateChanged = true; h.dateChangeReason = reason;
+  h.dateChangedBy = user.id; h.dateChangedAt = new Date().toISOString();
+  return null;
+}
+function hoAuditDate_(h, user) { if (h.dateChanged) logAudit_('handoff_date_changed', user.id, h.id); }
+// what a read returns: the live entry dates, the stored (or default) handoffDate, the flag and its reason
+function hoDecorate_(c, h, row) {
+  var info = hoDateInfo_(c, h);
+  row.entryDates = info.entryDates; row.dateMismatch = info.dateMismatch;
+  row.handoffDate = h.handoffDate || info.defaultDate; row.entryDate = h.entryDate || info.defaultDate;
+  if (h.dateChanged) { row.dateChanged = true; row.dateChangeReason = h.dateChangeReason || ''; row.dateChangedBy = h.dateChangedBy || null; }
+  return row;
+}
+// the send forms' preview: the same walk over what the send would carry, nothing written
+function hoDryRun_(c, candidate) { return { ok: true, dryRun: true, dates: hoDateInfo_(c, candidate) }; }
 
 function actionListHandoffs_(req, user) {
   var all = readSheet(SHEETS.HANDOFFS), rows = all;
@@ -2317,6 +2425,8 @@ function actionListHandoffs_(req, user) {
   if (req.status) rows = rows.filter(function (h) { return h.status === req.status; });
   if (req.kind) rows = rows.filter(function (h) { return h.kind === req.kind; });
   rows.sort(function (a, b) { return new Date(b.createdAt) - new Date(a.createdAt); });
+  var dctx = hoDateCtx_();
+  rows.forEach(function (h) { hoDecorate_(dctx, h, h); });
   return { ok: true, handoffs: rows };
 }
 
@@ -2383,7 +2493,7 @@ function followRequest_(h, byId) {
 function actionCollectionsData_(req, user) {
   var rows = readSheet(SHEETS.HANDOFFS), byId = Object.create(null);
   rows.forEach(function (h) { byId[h.id] = h; });
-  var wide = isCompanyWide_(user.role), see = collectionsScope_(user), out = [];
+  var wide = isCompanyWide_(user.role), see = collectionsScope_(user), out = [], dctx = hoDateCtx_();
   rows.forEach(function (h) {
     if (h.kind !== 'cluster_to_collector') return;
     var f = followRequest_(h, byId);
@@ -2391,7 +2501,7 @@ function actionCollectionsData_(req, user) {
     var hops = f.hops, holder = f.holder, stage = f.stage, stageAt = f.stageAt, dep = f.dep, now = f.now, hopShort = f.hopShort;
     if (!see(h, hops, holder)) return;
     var depSeen = dep && (wide || dep.fromUserId === user.id);
-    out.push({
+    out.push(hoDecorate_(dctx, h, {
       id: h.id, txNo: h.txNo || '', amount: now, sentAmount: Number(h.amount || 0), originalAmount: h.originalAmount != null ? Number(h.originalAmount) : null,
       shortfall: Math.round((Number(h.shortfall || 0) + hopShort) * 100) / 100, clusterId: clusterIdForHandoff_(h), locationId: h.locationId || null,
       fromUserId: h.fromUserId, toUserId: h.toUserId, status: h.status, createdAt: h.createdAt,
@@ -2399,7 +2509,7 @@ function actionCollectionsData_(req, user) {
       depositId: dep ? dep.id : null, depositNo: dep ? (dep.txNo || '') : '', depositedAt: dep ? dep.createdAt : null,
       depositRef: depSeen ? (dep.bankReference || '') : '', reconciled: !!(dep && dep.reconciled),
       depositHasSlip: depSeen ? !!dep.attachmentId : null, depositBy: dep ? dep.fromUserId : null
-    });
+    }));
   });
   out.sort(function (a, b) { var x = String(a.createdAt), y = String(b.createdAt); return x === y ? 0 : (y < x ? -1 : 1); });
   return { ok: true, requests: out };
@@ -3459,10 +3569,41 @@ function actionHeldCashTrend_(req, user) {
   return { ok: true, dates: dates, holderIds: Object.keys(holderIds), series: series, weekly: weekly };
 }
 
+// The audit log, filtered BEFORE the limit (2026-10-14): a date range or a word
+// older than the latest rows is found, not silently missed. Filters: dateFrom /
+// dateTo (UTC day of the row, YYYY-MM-DD), text (action, person's name, detail,
+// time; case-blind), userId, auditAction (the route key "action" is taken).
+// order 'old' lists the oldest first. Returns audit (at most limit rows),
+// matched (rows passing the filters) and total (the whole log).
 function actionListAudit_(req, user) {
   requireCompanyWide_(user);
+  var dayRe = /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/;
+  var from = req.dateFrom ? String(req.dateFrom) : '', to = req.dateTo ? String(req.dateTo) : '';
+  if ((from && !dayRe.test(from)) || (to && !dayRe.test(to))) return { ok: false, error: 'invalid_date' };
+  if (from && to && from > to) return { ok: false, error: 'invalid_range' };
+  var text = String(req.text || '').trim().toLowerCase();
+  var userId = req.userId ? String(req.userId) : '';
+  var act = req.auditAction ? String(req.auditAction) : '';
+  var names = {};
+  if (text) readSheet(SHEETS.USERS).forEach(function (u) { names[u.id] = String(u.name || ''); });
   var rows = readSheet(SHEETS.AUDIT);
-  rows.sort(function (a, b) { return new Date(b.at) - new Date(a.at); });
-  if (req.limit) rows = rows.slice(0, Number(req.limit));
-  return { ok: true, audit: rows };
+  var total = rows.length;
+  rows = rows.filter(function (a) {
+    var day = String(a.at || '').slice(0, 10);
+    if (from && (!day || day < from)) return false;
+    if (to && (!day || day > to)) return false;
+    if (userId && a.userId !== userId) return false;
+    if (act && a.action !== act) return false;
+    if (text) {
+      var hay = [a.action, names[a.userId] || '', a.detail, String(a.at || '').slice(0, 19)].join(' ').toLowerCase();
+      if (hay.indexOf(text) < 0) return false;
+    }
+    return true;
+  });
+  var matched = rows.length;
+  var oldFirst = req.order === 'old';
+  rows.sort(function (a, b) { return oldFirst ? new Date(a.at) - new Date(b.at) : new Date(b.at) - new Date(a.at); });
+  var limit = Number(req.limit);
+  if (limit > 0) rows = rows.slice(0, Math.min(Math.floor(limit), 2000));
+  return { ok: true, audit: rows, matched: matched, total: total };
 }
