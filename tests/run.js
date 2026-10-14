@@ -5419,6 +5419,13 @@ console.log('--- dashboard filters: handovers, held cash, comparison, trend, sho
     close(tot, res.dashboard.companyOutstanding, 'filter #' + i + ': the holders add up to the outstanding figure');
     rows.forEach(function (h) { if (h.kind === 'deposit' && h.fullAmount != null) check(h.amount <= h.fullAmount + 0.005 && h.amount > 0, 'filter #' + i + ': a deposit never counts more than it banked'); });
   });
+  // a hand-on received short: its filtered share is the received amount, as unfiltered
+  var C2 = H({ kind: "collector_to_collector", fromUserId: cX.id, toUserId: cY.id, amount: 450, originalAmount: 500, shortfall: 50, day: 4 });
+  var R8 = H({ kind: "cluster_to_collector", locationId: A2.id, clusterId: areaA.id, amount: 500, day: 4, consumedBy: C2.id });
+  C2.sourceHandoffIds = [R8.id]; ctx.writeRow(SHEETS.HANDOFFS, C2);
+  var U4 = dash({}), F4 = dash({ dateFrom: dayN(4), dateTo: dayN(4) });
+  close(F4.dashboard.companyHeldByHolder[cY.id] || 0, 450, "a hand-on received short counts what was received (450), not the declared 500");
+  close(F4.dashboard.companyHeldByHolder[cY.id] || 0, U4.dashboard.companyHeldByHolder[cY.id] || 0, "filtered held = unfiltered held for that holder");
   // the report side follows the same filter
   close(AB.report.totals.netCashOwed, 700, 'area B: sales net follows the filter (300 + 400)');
   close(T0.report.totals.netCashOwed, 1000, 'today: sales net 1,000');

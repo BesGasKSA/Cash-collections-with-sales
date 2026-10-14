@@ -2267,7 +2267,7 @@ function actionRecordDeposit_(req, user) {
 var DASH_FILTER_KEYS_ = ['dateFrom', 'dateTo', 'city', 'clusterId', 'locationId'];
 function dashFilterOn_(f) { return DASH_FILTER_KEYS_.some(function (k) { return !!(f && f[k]); }); }
 function riyadhDay_(iso) {
-  try { return Utilities.formatDate(new Date(iso), 'Asia/Riyadh', 'yyyy-MM-dd'); } catch (e) { return String(iso || '').slice(0, 10); }
+  var t = Date.parse(iso); if (isNaN(t)) return String(iso || '').slice(0, 10); return new Date(t + 3 * 3600000).toISOString().slice(0, 10); // Riyadh is UTC+3 all year
 }
 // rows: what the viewer's role already sees; allRows: the whole sheet (to follow chains)
 function filterHandoffs_(rows, req, allRows, placeOnly) {
@@ -2282,7 +2282,7 @@ function filterHandoffs_(rows, req, allRows, placeOnly) {
     if (f.dateFrom && day < f.dateFrom) return false;
     if (f.dateTo && day > f.dateTo) return false;
     if (f.locationId && h.locationId !== f.locationId) return false;
-    if (f.clusterId && clusterIdForHandoff_(h) !== f.clusterId) return false;
+    if (f.clusterId) { var lc = h.locationId ? locById[h.locationId] : null; if ((h.clusterId || (lc && lc.clusterId) || null) !== f.clusterId) return false; }
     if (f.city) { var l = h.locationId ? locById[h.locationId] : null; if (!l || l.city !== f.city) return false; }
     return true;
   }
@@ -2371,7 +2371,7 @@ function followRequest_(h, byId) {
         holder = nx.toUserId;
         if (nx.status !== 'confirmed') { stage = nx.status === 'disputed' ? 'disputed' : 'moving'; stageAt = nx.createdAt; break; }
         var decl = nx.originalAmount != null ? Number(nx.originalAmount) : Number(nx.amount || 0);
-        if (decl > 0 && Math.abs(decl - Number(nx.amount || 0)) > 0.004) { var after = Math.round(now * Number(nx.amount || 0) / decl * 100) / 100; hopShort += now - after; now = after; }
+        if (decl > 0 && Math.abs(decl - Number(nx.amount || 0)) > 0.004) { var after = Math.round(now * Number(nx.amount || 0) / decl * 100) / 100; hopShort += now - after; now = after; hops[hops.length - 1].carried = now; }
         stageAt = nx.confirmedAt || nx.createdAt; cur = nx; continue;
       }
       if (nx.kind === 'deposit' && nx.status !== 'voided') { dep = nx; stage = 'deposited'; stageAt = nx.createdAt; holder = nx.fromUserId; }
