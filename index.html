@@ -535,6 +535,9 @@
   .col-sortb.on{color:var(--green);}
   .col-sortb i{font-style:normal;font-size:9px;}
   .col-tbl td{padding:9px 4px;border-bottom:1px solid #EEF0EC;vertical-align:middle;}
+  .col-tbl tfoot .col-tot th,.col-tbl tfoot .col-tot td{padding:12px 4px;font-weight:800;background:#F2EEE4;border-top:2px solid #4D6D51;border-bottom:none;vertical-align:middle;}
+  .col-tbl tfoot .col-tot th{text-align:start;padding-inline-start:12px;color:#4D6D51;font-size:13px;}
+  .col-tbl tfoot .col-tot th small{font-weight:600;color:var(--muted);}
   .col-tr{cursor:pointer;transition:background-color .2s cubic-bezier(.2,0,0,1),opacity .25s cubic-bezier(.2,0,0,1);}
   .col-tr:hover{background:#F4F5F2;}
   .col-tr.on{background:color-mix(in srgb,var(--green) 9%,#fff);}
@@ -16218,7 +16221,7 @@ function colCollectors_(D, D0, S, enter, redraw){
   var T0 = D0.T;
   qs('.col-tw', card).innerHTML = '<table class="col-tbl" data-nosort><thead><tr>' + TH.map(function(h){
       return '<th scope="col" aria-sort="'+(h[0] === sk ? (dir > 0 ? 'ascending' : 'descending') : 'none')+'"><button type="button" class="col-sortb'+(h[0] === sk ? ' on' : '')+'" data-sk="'+h[0]+'">'+esc(t(h[1]))+'<i aria-hidden="true">'+(h[0] === sk ? (dir > 0 ? '\u25B2' : '\u25BC') : '')+'</i></button></th>'; }).join('') + '</tr></thead><tbody>' +
-    list.map(tr).join('') + '</tbody></table>';
+    list.map(tr).join('') + '</tbody>' + colTotalRow_(D0, list) + '</table>';
   qsa('.col-sortb', card).forEach(function(b){ b.addEventListener('click', function(){ var k = b.dataset.sk; if (S.csort === k) S.cdir = S.cdir === 'asc' ? 'desc' : 'asc'; else { S.csort = k; S.cdir = k === 'name' ? 'asc' : 'desc'; } redraw(); }); });
   qsa('.col-tr', card).forEach(function(r){
     function pick(){ var k = r.dataset.key; S.collector = S.collector === k ? '' : k; S.more = 0; S.dmore = 0; redraw(); }
@@ -16230,6 +16233,27 @@ function colCollectors_(D, D0, S, enter, redraw){
     drawerOpen_(colCollectorView_(k === '_' ? t('report_unspecified') : userName(k), D0.rows.filter(function(x){ return (x.r.holder || '_') === k; })));
   }); });
   return card;
+}
+// the total line under the collector table: every column summed (or worked out) over the rows shown
+function colTotalRow_(D0, list){
+  if (!list || list.length < 2) return '';
+  function sum(k){ return Math.round(list.reduce(function(a, g){ return a + Number(g[k] || 0); }, 0) * 100) / 100; }
+  var tot = sum('total'), dep = sum('deposited'), rem = Math.round((tot - dep) * 100) / 100, sh = sum('short');
+  var p = tot > 0 ? dep / tot : 0, dS = sum('daysSum'), dN = sum('daysN');
+  var last = list.reduce(function(m, g){ return g.lastDeposit && (!m || g.lastDeposit > m) ? g.lastDeposit : m; }, null);
+  var br = (D0.branches || []).length || sum('branchesN');
+  var shortTxt = Math.abs(sh) > 0.004 ? t(sh > 0 ? 'col_shortX' : 'col_overX').replace('{x}', money(Math.abs(sh))) : '\u2014';
+  function td(k, v){ return '<td data-l="'+esc(t(k))+'" class="num">'+v+'</td>'; }
+  return '<tfoot><tr class="col-tot">' +
+    '<th scope="row">'+esc(t('rp_total'))+' <small>('+list.length+')</small></th>' +
+    td('col_th_branches', br) + td('col_th_reqs', sum('n')) + td('col_th_total', money(tot)) + td('col_th_dep', money(dep)) +
+    td('col_th_rem', '<b>'+money(rem)+'</b>') +
+    '<td data-l="'+esc(t('col_th_pct'))+'"><span class="col-pb"><i style="--p:'+p+'"></i></span><span class="num">'+Math.round(p * 100)+'%</span></td>' +
+    td('col_th_days', dN ? (Math.round(dS / dN * 10) / 10).toLocaleString('en-US') : '\u2014') +
+    td('col_th_oldest', '\u2014') +
+    td('col_th_short', Math.abs(sh) > 0.004 ? '<em class="'+(sh > 0 ? 'late' : '')+'">'+esc(shortTxt)+'</em>' : shortTxt) +
+    td('col_th_last', esc(last || '\u2014')) + td('col_th_share', '100%') +
+    '</tr></tfoot>';
 }
 // a collector's requests, grouped branch then day
 function colCollectorView_(name, rows){
