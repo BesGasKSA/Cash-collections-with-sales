@@ -535,6 +535,7 @@
   .col-sortb.on{color:var(--green);}
   .col-sortb i{font-style:normal;font-size:9px;}
   .col-tbl td{padding:9px 4px;border-bottom:1px solid #EEF0EC;vertical-align:middle;}
+  .kf-eq{margin:10px 2px 0;padding:10px 14px;border-radius:12px;background:#F2EEE4;color:#4D6D51;font-weight:700;font-size:13px;line-height:1.6;}
   .col-tbl tfoot .col-tot th,.col-tbl tfoot .col-tot td{padding:12px 4px;font-weight:800;background:#F2EEE4;border-top:2px solid #4D6D51;border-bottom:none;vertical-align:middle;}
   .col-tbl tfoot .col-tot th{text-align:start;padding-inline-start:12px;color:#4D6D51;font-size:13px;}
   .col-tbl tfoot .col-tot th small{font-weight:600;color:var(--muted);}
@@ -3135,6 +3136,16 @@
   .idle-msg{display:flex;align-items:flex-start;gap:8px;text-align:start;line-height:1.6;}
   .idle-msg svg.ic2{width:16px;height:16px;flex:none;margin-top:3px;}
   /* the welcome line under the greeting (2026-10-03) */
+  .hero:has(.hero-span){grid-template-columns:minmax(0,1fr) auto auto;}
+  .hero-span{position:relative;z-index:1;align-self:center;min-width:230px;padding:14px 16px;border-radius:14px;background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.18);backdrop-filter:blur(6px);display:flex;flex-direction:column;gap:6px;animation:hsIn .45s cubic-bezier(.2,.8,.2,1) both;}
+  .hero-span .hs-t{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;opacity:.85;}
+  .hero-span .hs-t svg{width:15px;height:15px;}
+  .hero-span .hs-row{display:flex;justify-content:space-between;gap:16px;font-size:13px;}
+  .hero-span .hs-row b{font-size:15px;font-weight:800;}
+  .hero-span .hs-sub{font-size:11.5px;opacity:.8;}
+  @keyframes hsIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+  @media (prefers-reduced-motion: reduce){ .hero-span{animation:none;} }
+  @media (max-width:700px){ .hero:has(.hero-span){grid-template-columns:minmax(0,1fr);} .hero-span{min-width:0;} }
   .hero-wis{position:relative;margin:14px 0 0;padding:12px 14px 12px;max-width:560px;border-radius:14px;background:rgba(255,255,255,.10);
     border:1px solid rgba(255,255,255,.16);box-shadow:inset 0 1px 0 rgba(255,255,255,.12);animation:wisIn .55s cubic-bezier(.2,.8,.2,1) both;}
   .hero-wis[hidden]{display:none;}
@@ -4801,7 +4812,7 @@ function dirFor(lang){ return lang==='en' ? 'ltr' : 'rtl'; }
       doc_cylOut:'أسطوانات خارجة', doc_cylIn:'أسطوانات راجعة', doc_enteredBy:'أدخلها', doc_createdAt:'وقت الإدخال', doc_note:'ملاحظة',
       doc_from:'من', doc_to:'إلى', doc_status:'الحالة', doc_confirmedAt:'وقت التأكيد', doc_bankRef:'المرجع البنكي', doc_resolutionNote:'ملاحظة الحل',
       journey_entered:'أُدخلت بواسطة',
-      dash_overview:'الملخص المالي', dash_keyFigures:'مؤشرات رئيسية', dash_salesAnalysis:'تحليل المبيعات', dash_collectionsAnalysis:'تحليل التحصيل',
+      dash_overview:'الملخص المالي', dash_keyFigures:'مؤشرات رئيسية', hs_title:'فترة المعاملات', hs_first:'أول معاملة', hs_last:'آخر معاملة', hs_sub:'{d} يوم · {n} معاملة', kf_sales:'إجمالي المبيعات', kf_salesFoot:'نقدي وشبكة، الآجل ضمنها', kf_pos:'مبيعات الشبكة (POS)', kf_posFoot:'تُسدَّد إلى البنك مباشرة', kf_direct:'الموازنات المودعة في البنك', kf_directFoot:'أودعت من الفروع مباشرة', kf_other:'إجمالي الخصومات الأخرى', kf_otherFoot:'توصيل، مصروفات، آجل، تحويلات، عمولات', kf_otherAdd:'بعد إضافة {x} تحصيلات أخرى', kf_net:'إجمالي النقد المطلوب تحصيله', kf_netFoot:'الصافي بعد كل الخصومات', kf_dep:'إجمالي النقد المودع', kf_depFoot:'ما أودعه المحصّلون في البنك', kf_rem:'إجمالي النقد المتبقي', kf_remFoot:'لم يُودع بعد', kf_eq:'المبيعات {s} − الشبكة {p} − الموازنات {d} − خصومات أخرى {o}{a} = النقد المطلوب {n} · المودع {dep} · المتبقي {r}', kf_eqAdd:' + تحصيلات أخرى {x}', kf_status:'حالة التسليمات', dash_salesAnalysis:'تحليل المبيعات', dash_collectionsAnalysis:'تحليل التحصيل',
       dash_statementSales:'ملخص المبيعات', dash_statementCollect:'ملخص التحصيل والإيداع',
       dash_posHint:'تُسوّى مباشرة في البنك — ليست نقدية للتحصيل', dash_creditHint:'مطالبات على العملاء — تُخصم لأنها ضمن المبيعات ولم تُحصَّل نقداً',
       dash_deliveryDeductHint:'تُدفع مباشرة للبنك — لا تستلمها يد السائق', dash_vatOnDeliveryFoot:'على رسوم التوصيل فقط',
@@ -4823,7 +4834,7 @@ function dirFor(lang){ return lang==='en' ? 'ltr' : 'rtl'; }
       doc_cylOut:'Cylinders out', doc_cylIn:'Cylinders in', doc_enteredBy:'Entered by', doc_createdAt:'Entered at', doc_note:'Note',
       doc_from:'From', doc_to:'To', doc_status:'Status', doc_confirmedAt:'Confirmed at', doc_bankRef:'Bank reference', doc_resolutionNote:'Resolution note',
       journey_entered:'Entered by',
-      dash_overview:'Financial summary', dash_keyFigures:'Key figures', dash_salesAnalysis:'Sales analysis', dash_collectionsAnalysis:'Collections analysis',
+      dash_overview:'Financial summary', dash_keyFigures:'Key figures', hs_title:'Transactions on file', hs_first:'First transaction', hs_last:'Last transaction', hs_sub:'{d} days · {n} transactions', kf_sales:'Total sales', kf_salesFoot:'cash and card, credit inside', kf_pos:'Card (POS) sales', kf_posFoot:'settled to the bank directly', kf_direct:'Direct deposits in the bank', kf_directFoot:'banked by the branches themselves', kf_other:'Total other deductions', kf_otherFoot:'delivery, expenses, credit, transfers, commissions', kf_otherAdd:'after adding {x} other collections', kf_net:'Total cash to collect', kf_netFoot:'net after every deduction', kf_dep:'Total cash deposited', kf_depFoot:'banked by the collectors', kf_rem:'Total cash remaining', kf_remFoot:'not banked yet', kf_eq:'Sales {s} − card {p} − direct deposits {d} − other deductions {o}{a} = cash to collect {n} · deposited {dep} · remaining {r}', kf_eqAdd:' + other collections {x}', kf_status:'Handover status', dash_salesAnalysis:'Sales analysis', dash_collectionsAnalysis:'Collections analysis',
       dash_statementSales:'Sales summary', dash_statementCollect:'Collection & deposit summary',
       dash_posHint:'Settles straight to the bank — not cash to collect', dash_creditHint:'Owed by customers — deducted: part of sales, but no cash came in',
       dash_deliveryDeductHint:'Paid straight to the bank — never in the driver\'s hand', dash_vatOnDeliveryFoot:'On delivery fees only',
@@ -4845,7 +4856,7 @@ function dirFor(lang){ return lang==='en' ? 'ltr' : 'rtl'; }
       doc_cylOut:'باہر جانے والے سلنڈر', doc_cylIn:'واپس آنے والے سلنڈر', doc_enteredBy:'درج کرنے والا', doc_createdAt:'اندراج کا وقت', doc_note:'نوٹ',
       doc_from:'از', doc_to:'بنام', doc_status:'حیثیت', doc_confirmedAt:'تصدیق کا وقت', doc_bankRef:'بینک حوالہ', doc_resolutionNote:'حل کا نوٹ',
       journey_entered:'درج کیا',
-      dash_overview:'مالی خلاصہ', dash_keyFigures:'اہم اعداد', dash_salesAnalysis:'سیلز تجزیہ', dash_collectionsAnalysis:'وصولی تجزیہ',
+      dash_overview:'مالی خلاصہ', dash_keyFigures:'اہم اعداد', hs_title:'لین دین کی مدت', hs_first:'پہلا لین دین', hs_last:'آخری لین دین', hs_sub:'{d} دن · {n} لین دین', kf_sales:'کل فروخت', kf_salesFoot:'نقد اور کارڈ، ادھار شامل', kf_pos:'کارڈ (POS) فروخت', kf_posFoot:'براہ راست بینک میں', kf_direct:'بینک میں براہ راست جمع', kf_directFoot:'برانچوں نے خود جمع کیا', kf_other:'دیگر کٹوتیوں کا کل', kf_otherFoot:'ڈیلیوری، اخراجات، ادھار، ٹرانسفر، کمیشن', kf_otherAdd:'{x} دیگر وصولیاں شامل کرنے کے بعد', kf_net:'وصول کرنے کے لیے کل نقد', kf_netFoot:'تمام کٹوتیوں کے بعد خالص', kf_dep:'کل جمع شدہ نقد', kf_depFoot:'وصول کنندگان نے بینک میں جمع کیا', kf_rem:'کل باقی نقد', kf_remFoot:'ابھی جمع نہیں ہوا', kf_eq:'فروخت {s} − کارڈ {p} − براہ راست جمع {d} − دیگر کٹوتیاں {o}{a} = وصولی کے لیے نقد {n} · جمع {dep} · باقی {r}', kf_eqAdd:' + دیگر وصولیاں {x}', kf_status:'حوالگی کی صورتحال', dash_salesAnalysis:'سیلز تجزیہ', dash_collectionsAnalysis:'وصولی تجزیہ',
       dash_statementSales:'سیلز خلاصہ', dash_statementCollect:'وصولی اور ڈپازٹ خلاصہ',
       dash_posHint:'براہ راست بینک میں — وصولی کی نقدی نہیں', dash_creditHint:'گاہکوں پر واجب — منہا، کیونکہ فروخت میں شامل مگر نقدی نہیں آئی',
       dash_deliveryDeductHint:'براہ راست بینک کو ادا — ڈرائیور کے ہاتھ میں نہیں', dash_vatOnDeliveryFoot:'صرف ترسیل چارجز پر',
@@ -9738,6 +9749,32 @@ function sumDeposits_(handoffs){
   return (handoffs||[]).filter(function(h){ return h.kind === 'deposit' && h.status !== 'voided'; }).reduce(function(s,h){ return s + Number(h.amount||0); }, 0);
 }
 // The two headline statements shared by Home (company-wide) and Dashboard.
+// The filter's money in seven figures (2026-10-15, the user's ask): sales, card, direct deposits,
+// other deductions, cash to collect, deposited, remaining. Every one comes from the same filtered
+// report and handovers as the equation, and the line under them shows they add up.
+function keyMoneyTiles_(report, handoffs, st, open, forF){
+  var T = report.totals || {};
+  function n(v){ return Number(v || 0); }
+  var cashSales = n(T.storeCash) + n(T.carCash) + n(T.posCash), pos = n(T.posSales), sales = cashSales + pos;
+  var direct = n(T.directDeposit), net = n(st.totalToCollect), deposited = net - n(st.remaining), rem = n(st.remaining);
+  // what came off the cash between the sales and the net, besides the direct deposits (additions shown apart)
+  var additions = n(T.otherCash) + n(T.creditDeliveryFees) + n(T.channelDeliveryFees);
+  var other = Math.round((cashSales + additions - direct - net) * 100) / 100;
+  var w = el('<div class="kf-wrap"></div>');
+  w.appendChild(tiles_([
+    { label: t('kf_sales'), value: money(sales), icon: 'trend', color: 'var(--c-cash)', foot: esc(t('kf_salesFoot') + forF), onClick: open('gross') },
+    { label: t('kf_pos'), value: money(pos), icon: 'card', color: 'var(--c-pos)', foot: esc(t('kf_posFoot')), onClick: open('pos') },
+    { label: t('kf_direct'), value: money(direct), icon: 'bank', color: 'var(--c-deposit)', foot: esc(t('kf_directFoot')), onClick: open('bankedAtSource') },
+    { label: t('kf_other'), value: money(other), icon: 'alert', color: 'var(--c-danger)', foot: esc(additions > 0.004 ? t('kf_otherAdd').replace('{x}', money(additions)) : t('kf_otherFoot')), onClick: open('net') },
+    { label: t('kf_net'), value: money(net), icon: 'wallet', color: 'var(--green)', foot: esc(t('kf_netFoot')), onClick: open('net') },
+    { label: t('kf_dep'), value: money(deposited), icon: 'bank', color: 'var(--c-deposit)', foot: esc(t('kf_depFoot')), onClick: open('deposited') },
+    { label: t('kf_rem'), value: money(rem), icon: 'clock', color: rem > 0.004 ? 'var(--c-hold)' : 'var(--green)', foot: esc(t('kf_remFoot')), onClick: open('remaining') }
+  ]));
+  var eq = colFill_(t('kf_eq'), { s: money(sales), p: money(pos), d: money(direct), o: money(other),
+    a: additions > 0.004 ? t('kf_eqAdd').replace('{x}', money(additions)) : '', n: money(net), dep: money(deposited), r: money(rem) });
+  w.appendChild(el('<p class="kf-eq num">'+esc(eq)+'</p>'));
+  return w;
+}
 function salesAndCollectionStatements_(report, handoffs, open){
   var T = report.totals;
   var cashSales = T.storeCash + T.carCash + T.posCash;
@@ -9993,6 +10030,8 @@ function renderDashboard(body, animate){
     entries.forEach(function(e){ if (e.locationId) locsReporting[e.locationId] = 1; });
     var locCount = Object.keys(locsReporting).length;
     body.appendChild(secTitle_(t('dash_keyFigures')));
+    body.appendChild(keyMoneyTiles_(report, handoffs, st, open, forF));
+    body.appendChild(secTitle_(t('kf_status')));
     body.appendChild(tiles_([
       { label: t('report_outstanding'), value: money(report.outstanding.netCashOwed), icon: 'clock', color: 'var(--c-hold)', foot: esc(t('dash_notYetHandedOff')), onClick: open('outstanding') },
       { label: t('home_companyOutstanding'), value: dash.companyOutstanding != null ? money(dash.companyOutstanding) : '—', icon: 'wallet', color: 'var(--green)', foot: esc(t('dash_heldConfirmedNotDeposited') + forF), onClick: open('held') },
@@ -10630,6 +10669,26 @@ function chDepositSheet_(heldAmt){
     }
   });
 }
+// The first and the last day with a transaction the viewer can see, and how many (2026-10-15).
+function heroSpan_(entries){
+  if (!entries || !entries.length) return '';
+  var first = null, last = null, tx = {};
+  entries.forEach(function(e){
+    if (e.voided || !e.date) return;
+    var d = String(e.date).slice(0, 10);
+    if (!first || d < first) first = d;
+    if (!last || d > last) last = d;
+    tx[e.txNo || e.submissionId || e.id] = 1;
+  });
+  if (!first) return '';
+  var days = Math.round((Date.parse(last + 'T00:00:00Z') - Date.parse(first + 'T00:00:00Z')) / 86400000) + 1;
+  return '<div class="hero-span" role="group" aria-label="'+esc(t('hs_title'))+'">' +
+    '<div class="hs-t">'+icon_('clock')+'<span>'+esc(t('hs_title'))+'</span></div>' +
+    '<div class="hs-row"><span>'+esc(t('hs_first'))+'</span><b class="num">'+esc(first)+'</b></div>' +
+    '<div class="hs-row"><span>'+esc(t('hs_last'))+'</span><b class="num">'+esc(last)+'</b></div>' +
+    '<div class="hs-sub num">'+esc(colFill_(t('hs_sub'), { d: days.toLocaleString('en-US'), n: Object.keys(tx).length.toLocaleString('en-US') }))+'</div>' +
+  '</div>';
+}
 function renderHome(body){
   // a collector gets one simple screen: receive, hold, bank (2026-10-12)
   if (state.user && state.user.role === 'collector') { renderCollectorHome_(body); return; }
@@ -10677,6 +10736,7 @@ function renderHome(body){
         '<div class="meta">'+chips.map(function(c){ return '<span>'+esc(c)+'</span>'; }).join('')+'</div>' +
         '<figure class="hero-wis" hidden></figure>' +
       '</div>' +
+      heroSpan_(entries) +
       '<div class="cta"></div>' +
       '<div class="hero-pend" hidden></div>' +
     '</div>');
