@@ -1266,6 +1266,28 @@
   .lf-clear{all:unset;box-sizing:border-box;cursor:pointer;font-size:12px;font-weight:700;color:var(--muted);
     padding:7px 11px;border-radius:9px;}
   .lf-clear:hover{background:var(--bg);color:var(--danger);}
+  .lf-toggle:focus-visible,.lf-clear:focus-visible,.lf-chip:focus-visible{outline:2px solid var(--green);outline-offset:2px;}
+  .lf-chips{display:flex;flex-wrap:wrap;gap:6px;padding:0 14px 10px;}
+  .lf-chips[hidden]{display:none;}
+  .lf-chip{all:unset;box-sizing:border-box;cursor:pointer;display:inline-flex;align-items:center;gap:6px;min-height:32px;max-width:100%;padding:4px 10px;border-radius:999px;background:var(--green-pale);color:var(--green-dark);font-size:12px;font-weight:700;}
+  .lf-chip span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .lf-chip b{font-size:15px;line-height:1;}
+  .lf-chip:hover{background:var(--bg);color:var(--danger);}
+  @media (max-width:600px){ .lf-toggle,.lf-clear,.lf-chip{min-height:44px;} .lf-chip{padding:4px 14px;} }
+  /* a handover's own date and the warning when it differs from its entries (2026-10-14) */
+  .hfd-warn,.hfd-several{display:flex;gap:8px;align-items:flex-start;background:var(--warn-bg);border:1px solid var(--warn);color:var(--warn);border-radius:10px;padding:9px 12px;font-size:12.5px;line-height:1.7;margin:8px 0;font-weight:600;}
+  .hfd-warn[hidden],.hfd-several[hidden],.hfd-f[hidden],.hfd-confirm[hidden],.hfd-reason[hidden]{display:none;}
+  .hfd-warn svg,.hfd-several svg,.hfd-cf b svg{width:16px;height:16px;flex:none;stroke:currentColor;fill:none;stroke-width:2;margin-top:3px;}
+  .hfd-warn p,.hfd-several p{margin:0;}
+  .hfd-chip{display:inline-flex;align-items:center;gap:4px;font-style:normal;font-size:11.5px;font-weight:700;background:var(--warn-bg);color:var(--warn);border:1px solid var(--warn);border-radius:999px;padding:2px 8px;}
+  .hfd-chip svg{width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2.2;}
+  .hfd-cf{background:var(--warn-bg);border:1px solid var(--warn);border-radius:10px;padding:10px 12px;margin:8px 0;color:var(--text);}
+  .hfd-cf b{display:flex;align-items:center;gap:6px;color:var(--warn);}
+  .hfd-cf p{margin:6px 0;font-size:13px;line-height:1.7;}
+  .hfd-cfa{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;}
+  .hfd-cfa .btn{min-height:44px;}
+  .ho-hdate{display:block;font-size:10.5px;color:var(--muted-2);white-space:nowrap;text-align:end;}
+  .ho-body .hfd-warn{margin:0 0 10px;}
   .lf-body{padding:2px 14px 14px;border-top:1px solid var(--border-soft);}
   .lf-body .grid{gap:10px;}
   .lf .field label{font-size:11px;}
@@ -1520,6 +1542,8 @@
   .ac-br .ac-bsend svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2.2;}
   .ac-br:not(.ready) .ac-bsend{display:none;}
   .ac-bst{grid-column:1/-1;}
+  .ac-bdate{grid-column:1/-1;}
+  .ac-bdate .hfd-f .field{margin:0;}
   .ac-bst:empty{display:none;}
   .ho-place{display:flex;align-items:center;gap:5px;margin-top:2px;}
   .ho-route{display:flex;flex-wrap:wrap;align-items:stretch;gap:6px;margin:8px 0 2px;padding:6px;border-radius:12px;
@@ -4747,6 +4771,14 @@ function dirFor(lang){ return lang==='en' ? 'ltr' : 'rtl'; }
 })();
 
 
+// ---- filters that stay, handover dates, cost months (2026-10-14) ----
+(function(){
+  var add = { ar: {"lf_remove":"إزالة الفلتر","lf_active":"الفلاتر المفعّلة","hp_period":"الفترة: من {from} إلى {to}","hp_periodHint":"تتبع الفترة تاريخ الفلتر أعلاه؛ وبدون تواريخ تكون من بداية الشهر حتى اليوم.","au_capped":"يظهر أحدث {n} من {m} نتيجة. ضيّق التواريخ أو البحث لرؤية الباقي.","au_logTotal":"السجل كله: {t} سطراً","err_invalidRange":"تاريخ البداية بعد تاريخ النهاية.","pl_costsTrend6":"آخر 6 أشهر","pl_costsRange":"{n} أشهر في النطاق المختار (شهور كاملة)","pl_costsCapped":"النطاق {asked} شهراً؛ تُعرض آخر 12 فقط","hd_date":"تاريخ التسليم","hd_dateHint":"الافتراضي هو تاريخ القيود كما أُدخلت. تغييره يحتاج سبباً.","hd_several":"قيود هذا التسليم بتواريخ {dates}؛ وتاريخ التسليم {date}","hd_changed":"غُيّر تاريخ التسليم من {from} (تاريخ القيود) إلى {to}.","hd_reasonIs":"السبب: {r}","hd_youChanged":"غيّرت تاريخ التسليم من {from}، تاريخ القيود، إلى {to}.","hd_reason":"سبب تغيير التاريخ (مطلوب)","hd_reasonPh":"مثال: أُرسل بعد الجرد","hd_confirmTitle":"تأكيد تغيير تاريخ التسليم","hd_confirmText":"سيُرسل التسليم بتاريخ {to} بدل {from} (تاريخ القيود). السبب: {r}","hd_confirmSend":"تأكيد الإرسال","hd_back":"رجوع","hd_chipChanged":"تاريخ مُعدَّل","hd_chipSeveral":"قيود بتواريخ مختلفة","err_handoffDateFuture":"تاريخ التسليم لا يكون في المستقبل.","err_handoffDateBefore":"تاريخ التسليم لا يسبق تاريخ أقدم قيد فيه.","err_dateReasonRequired":"اكتب سبب تغيير تاريخ التسليم.","err_handoffDateInvalid":"تاريخ التسليم غير صحيح."}, en: {"lf_remove":"Remove filter","lf_active":"Active filters","hp_period":"Period: {from} to {to}","hp_periodHint":"The period follows the date filter above; with no dates it is the month so far.","au_capped":"Showing the latest {n} of {m} matches. Narrow the dates or the search to see the rest.","au_logTotal":"Whole log: {t} rows","err_invalidRange":"The start date is after the end date.","pl_costsTrend6":"Last 6 months","pl_costsRange":"{n} months in the chosen range (whole months)","pl_costsCapped":"The range is {asked} months; only the last 12 are shown","hd_date":"Handover date","hd_dateHint":"By default the date of the entries as typed. Changing it needs a reason.","hd_several":"Entries in this handover are dated {dates}; the handover is dated {date}","hd_changed":"The handover date was changed from {from}, the date of its entries, to {to}.","hd_reasonIs":"Reason: {r}","hd_youChanged":"You changed the handover date from {from}, the date of its entries, to {to}.","hd_reason":"Reason for the new date (required)","hd_reasonPh":"e.g. sent after the count","hd_confirmTitle":"Confirm the changed handover date","hd_confirmText":"This will be sent dated {to} instead of {from}, the date of its entries. Reason: {r}","hd_confirmSend":"Confirm and send","hd_back":"Back","hd_chipChanged":"Date changed","hd_chipSeveral":"Mixed entry dates","err_handoffDateFuture":"The handover date cannot be in the future.","err_handoffDateBefore":"The handover date cannot be before its oldest entry.","err_dateReasonRequired":"Write the reason for changing the handover date.","err_handoffDateInvalid":"The handover date is not a valid date."}, ur: {"lf_remove":"فلٹر ہٹائیں","lf_active":"فعال فلٹر","hp_period":"مدت: {from} سے {to} تک","hp_periodHint":"مدت اوپر کے تاریخ فلٹر کے مطابق ہے؛ تاریخیں نہ ہوں تو مہینے کی ابتدا سے آج تک۔","au_capped":"تازہ ترین {n} از {m} نتائج دکھائے گئے ہیں۔ باقی دیکھنے کے لیے تاریخیں یا تلاش محدود کریں۔","au_logTotal":"پورا لاگ: {t} اندراجات","err_invalidRange":"ابتدائی تاریخ آخری تاریخ کے بعد ہے۔","pl_costsTrend6":"آخری 6 مہینے","pl_costsRange":"منتخب مدت کے {n} مہینے (پورے مہینے)","pl_costsCapped":"مدت {asked} مہینے ہے؛ صرف آخری 12 دکھائے گئے","hd_date":"حوالگی کی تاریخ","hd_dateHint":"طے شدہ تاریخ اندراجات کی ہے۔ بدلنے کے لیے وجہ لکھنا ہوگی۔","hd_several":"اس حوالگی کے اندراجات کی تاریخیں {dates} ہیں؛ حوالگی کی تاریخ {date} ہے","hd_changed":"حوالگی کی تاریخ {from} (اندراجات کی تاریخ) سے بدل کر {to} کر دی گئی۔","hd_reasonIs":"وجہ: {r}","hd_youChanged":"آپ نے حوالگی کی تاریخ {from} (اندراجات کی تاریخ) سے بدل کر {to} کر دی۔","hd_reason":"نئی تاریخ کی وجہ (ضروری)","hd_reasonPh":"مثلاً: گنتی کے بعد بھیجا","hd_confirmTitle":"بدلی ہوئی تاریخ کی تصدیق","hd_confirmText":"یہ {from} (اندراجات کی تاریخ) کی بجائے {to} کی تاریخ سے بھیجا جائے گا۔ وجہ: {r}","hd_confirmSend":"تصدیق کر کے بھیجیں","hd_back":"واپس","hd_chipChanged":"تاریخ بدلی گئی","hd_chipSeveral":"مختلف تاریخوں کے اندراجات","err_handoffDateFuture":"حوالگی کی تاریخ مستقبل کی نہیں ہو سکتی۔","err_handoffDateBefore":"حوالگی کی تاریخ سب سے پرانے اندراج سے پہلے کی نہیں ہو سکتی۔","err_dateReasonRequired":"حوالگی کی تاریخ بدلنے کی وجہ لکھیں۔","err_handoffDateInvalid":"حوالگی کی تاریخ درست نہیں۔"} };
+  Object.keys(add).forEach(function(lang){
+    Object.keys(add[lang]).forEach(function(k){ L[lang][k] = add[lang][k]; });
+  });
+})();
+
 // ---------------- state ----------------
 // Baked-in default so this file works out of the box wherever it's opened —
 // no per-browser/per-profile localStorage setup step. localStorage can still
@@ -5021,7 +5053,7 @@ function api(action, payload, opts){
     // a save no longer wipes the screens' last copies (2026-10-08: every screen after a save
     // then waited the whole round trip behind the loading circle); they are marked stale,
     // still drawn at once but dimmed under an "updating" bar until the fresh copy lands
-    if (res.ok && !READ_ACTIONS[action]) { markScreenCacheStale_(); state.pendDirty = true; DRILL.entries = null; DRILL.handoffs = null; DRILL.eById = null; DRILL.hById = null; }
+    if (res.ok && !READ_ACTIONS[action] && !payload.dryRun) { markScreenCacheStale_(); state.pendDirty = true; DRILL.entries = null; DRILL.handoffs = null; DRILL.eById = null; DRILL.hById = null; }
     // a session ended elsewhere (a changed sign-in, a reset): sign out cleanly;
     // a temporary sign-in: its page, before anything else (2026-10-04)
     if (res && res.error === 'auth_required' && state.user && action !== 'login') setTimeout(function(){ logout(); }, 0);
@@ -5221,7 +5253,7 @@ var ERROR_KEYS_ = { archive_changed:'ar_changed', archive_row_too_large:'ar_tooL
   invalid_centre:'err_invalidCentre', invalid_month:'err_invalidMonth', duplicate_line:'err_duplicateLine', overlap_line:'err_overlapLine',
   invalid_income_item:'err_invalidIncomeItem', invalid_expense_item:'err_invalidExpenseItem', reason_required:'err_reasonRequired',
   customer_required:'err_customerRequired', user_in_other_area:'err_userInOtherArea',
-  future_date:'err_futureDate', day_closed:'err_dayClosed', day_already_entered:'err_dayAlreadyEntered', invalid_phone:'err_invalidPhone', phone_required:'err_phoneRequired', entry_handed_on:'err_entryHandedOn', deposit_amount_mismatch:'err_depAmountMismatch', deposit_amount_required:'err_depAmountRequired', invalid_date:'err_invalidDate', not_your_entry:'err_notYourEntry',
+  future_date:'err_futureDate', day_closed:'err_dayClosed', day_already_entered:'err_dayAlreadyEntered', invalid_phone:'err_invalidPhone', phone_required:'err_phoneRequired', entry_handed_on:'err_entryHandedOn', deposit_amount_mismatch:'err_depAmountMismatch', deposit_amount_required:'err_depAmountRequired', invalid_date:'err_invalidDate', invalid_range:'err_invalidRange', handoff_date_future:'err_handoffDateFuture', handoff_date_before_entries:'err_handoffDateBefore', date_reason_required:'err_dateReasonRequired', invalid_handoff_date:'err_handoffDateInvalid', not_your_entry:'err_notYourEntry',
   entry_locked:'err_entryLocked', deposit_reconciled:'err_depositReconciled', has_direct_deposit:'err_hasDirectDeposit', already_voided:'err_alreadyVoided', receiver_only:'err_receiverOnly',
   person_holds_cash:'err_personHoldsCash', cash_in_flight:'err_cashInFlight', user_has_assignments:'err_userHasAssignments',
   cannot_change_self:'err_cannotChangeSelf', last_admin:'err_lastAdmin', live_locked:'err_liveLocked',
@@ -5261,7 +5293,7 @@ var ERR_FIELD_ = { invalid_phone:['#uPhone','phone'], phone_required:['#uPhone',
   invalid_cost:['unitCost','gasCost','cylinderCost'], group_required:['group'], invalid_type:['type'], invalid_stock_link:['stockItemId','stockEffect'], invalid_return_link:['returnItemId'], invalid_box_size:['boxSize'], invalid_stock_kind:['kind'], stock_link_locked:['stockItemId','stockEffect','returnItemId'],
   manager_required:['storeManagerUserId','clusterManagerUserId'], collector_required:['collectorUserId'], driver_required:['driverUserId'],
   holder_required:['assignedUserId','holderName'], invalid_coordinates:['lat','lng'], duplicate_customer:['name'], duplicate_city:['name'],
-  note_required:['#hoFixNote'], invalid_cluster:['clusterId'], invalid_location:['locationId'], invalid_owner:['ownerId'], invalid_owner_type:['ownerType'], wrong_role:[] };
+  note_required:['#hoFixNote'], handoff_date_future:['handoffDate'], handoff_date_before_entries:['handoffDate'], invalid_handoff_date:['handoffDate'], date_reason_required:['dateChangeReason'], invalid_cluster:['clusterId'], invalid_location:['locationId'], invalid_owner:['ownerId'], invalid_owner_type:['ownerType'], wrong_role:[] };
 function markErrField_(scope, res){
   if (!scope) return;
   qsa('.f-bad', scope).forEach(function(f){ f.classList.remove('f-bad'); });
@@ -9334,12 +9366,14 @@ function handoffDocView_(h){
           [t('doc_to'), h.toUserId ? userName(h.toUserId) : t('entity_bank')],
           [t('doc_status'), handoffStatusChip_(h), true],
           [t('doc_createdAt'), fmtDateTime_(h.createdAt)],
+          [t('hd_date'), h.handoffDate || ''],
           [t('doc_confirmedAt'), fmtDateTime_(h.confirmedAt)],
           [t('doc_bankRef'), h.bankReference || ''],
           [t('handoff_disputeNote'), h.disputeNote || ''],
           [t('doc_resolutionNote'), h.resolutionNote || '']
         ]) + '</div>'));
 
+        if (hfdWarn_(h)) body.appendChild(el(hfdWarn_(h)));
         if (h.originalAmount != null) {
           var sf = el('<div class="doc-sec" style="padding:8px 6px;"><h3 style="padding:6px 10px 0;color:var(--c-danger);">'+icon_('alert')+esc(t('handoff_shortfall'))+'</h3></div>');
           sf.appendChild(qs('.st-rows', statement_({ title:'', value:0, rows: [
@@ -10388,8 +10422,8 @@ function renderCollectorHome_(body){
     if (!toReceive.length) rc.appendChild(el('<p class="ch-empty">'+esc(t('ch_noneToReceive'))+'</p>'));
     toReceive.forEach(function(h){
       var c = el('<article class="ch-card">' +
-        '<div class="ch-top"><div><b>'+esc(place(h))+'</b><span>'+esc(t('ch_from').replace('{who}', userName(h.fromUserId)))+' · '+esc(when(h))+'</span></div>' +
-        '<div class="ch-amt num">'+money(h.amount)+'</div></div>' +
+        '<div class="ch-top"><div><b>'+esc(place(h))+'</b><span>'+esc(t('ch_from').replace('{who}', userName(h.fromUserId)))+' · '+esc(when(h))+(h.handoffDate ? ' · '+esc(t('hd_date'))+' '+esc(h.handoffDate) : '')+'</span></div>' +
+        '<div class="ch-amt num">'+money(h.amount)+'</div></div>' + hfdWarn_(h) +
         '<div class="ch-acts"><button type="button" class="ch-ok">'+icon_('check')+'<span>'+esc(t('ch_gotIt'))+'</span></button>' +
         '<button type="button" class="ch-other">'+esc(t('ch_different'))+'</button></div>' +
         '<div class="ch-diff" hidden><label>'+esc(t('ch_countedAmt'))+'</label><input type="text" inputmode="decimal" placeholder="0.00">' +
@@ -10469,8 +10503,11 @@ function chDepositSheet_(heldAmt){
         '<div class="field"><label>'+esc(t('handoff_bankRef'))+'</label><input class="chdRef" autocomplete="off"></div>' +
         '<div class="field"><label>'+esc(t('handoff_slip'))+'</label><button type="button" class="ch-photo">'+icon_('doc')+'<span>'+esc(t('handoff_takePhoto'))+'</span></button>' +
           '<input class="chdFile" type="file" accept="image/*" capture="environment" hidden><img class="chdPrev" hidden alt=""></div>' +
+        '<div class="chdDate"></div>' +
         '<button type="button" class="ch-cta chdGo">'+icon_('check')+'<span>'+esc(t('ch_confirmDeposit'))+'</span></button><div class="chdMsg"></div></div>');
       var file = null;
+      var hfdSh = hfdField_(); qs('.chdDate', f).appendChild(hfdSh.node);
+      api('recordDeposit', { dryRun: true }, { silent: true }).then(function(dr){ hfdSh.set(dr.ok && dr.dates ? dr.dates : null); });
       qs('.ch-photo', f).addEventListener('click', function(){ qs('.chdFile', f).click(); });
       qs('.chdFile', f).addEventListener('change', function(){
         file = this.files && this.files[0]; if (!file) return;
@@ -10480,13 +10517,15 @@ function chDepositSheet_(heldAmt){
         var amt = numFromInput_(qs('.chdAmt', f)), ref = qs('.chdRef', f).value.trim(), msg = qs('.chdMsg', f), btn = ev.currentTarget;
         if (!(amt > 0)) { msg.innerHTML = '<div class="msg err">'+esc(t('err_depAmountRequired'))+'</div>'; return; }
         if (!ref) { msg.innerHTML = '<div class="msg err">'+esc(t('err_depositNeedsReference'))+'</div>'; return; }
+        function run_(){
         btn.disabled = true;
         function send(fd){
           var p = { bankReference: ref, depositAmount: amt };
+          Object.assign(p, hfdSh.payload());
           if (fd) { p.fileBase64 = fd.base64; p.fileName = fd.name; p.fileMime = fd.mime; }
           api('recordDeposit', p).then(function(r){
             btn.disabled = false;
-            if (!r.ok) { msg.innerHTML = '<div class="msg err">'+esc(errMsg_(r))+'</div>'; return; }
+            if (!r.ok) { msg.innerHTML = '<div class="msg err">'+esc(errMsg_(r))+'</div>'; markErrField_(f, r); return; }
             drawerClose_();
             render();
             heldPopup_(t('hp_banked').replace('{amount}', money(r.handoff ? r.handoff.amount : amt)));
@@ -10494,6 +10533,8 @@ function chDepositSheet_(heldAmt){
         }
         if (file) { var rd = new FileReader(); rd.onload = function(){ send({ base64: String(rd.result).split(',')[1], name: file.name, mime: file.type }); }; rd.readAsDataURL(file); }
         else send(null);
+        }
+        hfdGate_(hfdSh.host, [{ f: hfdSh }], run_);
       });
       b.appendChild(f);
       setTimeout(function(){ try { qs('.chdAmt', f).focus(); } catch (e) {} }, 120);
@@ -10899,6 +10940,7 @@ function ddEnhance_(sel){
   if (sel.style.display === 'none') btn.style.display = 'none';
   var lbl = sel.closest('.field') && sel.closest('.field').querySelector('label');
   if (lbl && lbl.textContent) btn.setAttribute('aria-label', lbl.textContent.replace('*', '').trim());
+  else if (sel.getAttribute('aria-label')) btn.setAttribute('aria-label', sel.getAttribute('aria-label'));
   sel._dd = btn; btn._sel = sel;
   sel.classList.add('dd-native');
   sel.tabIndex = -1;
@@ -11591,12 +11633,15 @@ function listFilters_(opts){
   var node = el('<section class="card lf'+(opts.open ? ' open' : '')+'">' +
     '<div class="lf-head"><button type="button" class="lf-toggle">'+icon_('search')+'<span>'+esc(t('lf_title'))+'</span><span class="lf-count"></span>'+icon_('chevron')+'</button>' +
       '<span class="lf-results" aria-live="polite"></span>' +
-      '<label class="lf-sort"><span>'+esc(t('sort_by'))+'</span><select class="lfSort">' + sorts.map(function(o){ return '<option value="'+o[0]+'">'+esc(t(o[1]))+'</option>'; }).join('') + '</select></label>' +
+      '<label class="lf-sort"><span>'+esc(t('sort_by'))+'</span><select class="lfSort" aria-label="'+esc(t('sort_by'))+'">' + sorts.map(function(o){ return '<option value="'+o[0]+'">'+esc(t(o[1]))+'</option>'; }).join('') + '</select></label>' +
       '<button type="button" class="lf-clear" hidden>'+esc(t('lf_clear'))+'</button></div>' +
+    '<div class="lf-chips" role="group" aria-label="'+esc(t('lf_active'))+'" hidden></div>' +
     '<div class="lf-body"'+(opts.open ? '' : ' hidden')+'><div class="grid">'+parts.join('')+'</div></div>' +
   '</section>');
 
   var body = qs('.lf-body', node), toggle = qs('.lf-toggle', node), clear = qs('.lf-clear', node);
+  // every field named for a screen reader by its visible label (2026-10-14)
+  qsa('.lf-body .field', node).forEach(function(box){ var lb = qs('label', box), fi = qs('input, select', box); if (lb && fi && !fi.getAttribute('aria-label')) fi.setAttribute('aria-label', lb.textContent.trim()); });
   function val(sel){ var e = qs(sel, node); return e ? String(e.value || '').trim() : ''; }
   function values(){
     return { text: val('.lfText').toLowerCase(), from: val('.lfFrom'), to: val('.lfTo'), area: val('.lfArea'),
@@ -11613,8 +11658,34 @@ function listFilters_(opts){
     var n = activeCount();
     qs('.lf-count', node).textContent = n ? t('report_activeFilters').replace(/^/, n + ' ') : '';
     clear.hidden = !n;
+    // what is in use, each as a chip that takes itself off (2026-10-14)
+    var chipBox = qs('.lf-chips', node), ps = pairs();
+    chipBox.innerHTML = ps.map(function(p){
+      return '<button type="button" class="lf-chip" data-k="'+esc(p.k)+'" aria-label="'+esc(t('lf_remove')+': '+(p.label ? p.label+' ' : '')+p.value)+'"><span>'+esc((p.label ? p.label+': ' : '')+p.value)+'</span><b aria-hidden="true">&times;</b></button>';
+    }).join('');
+    chipBox.hidden = !ps.length;
   }
-  function changed(){ refreshHead(); if (opts.onChange) opts.onChange(); }
+  // opts.state: a plain object the caller keeps; the values (and whether the bar is open)
+  // are written to it on every change and read back when the bar is built again, so a
+  // redraw of the screen never empties what was chosen (2026-10-14)
+  var keep = opts.state || null;
+  function keyOf(inp){ return String(inp.className || '').split(' ')[0]; }
+  function save_(){
+    if (!keep) return;
+    keep.v = {};
+    qsa('input, select', node).forEach(function(inp){ keep.v[keyOf(inp)] = inp.value; });
+    keep.open = !body.hidden;
+  }
+  if (keep && keep.v) {
+    qsa('input, select', node).forEach(function(inp){ var k = keyOf(inp); if (keep.v[k] != null) inp.value = keep.v[k]; });
+    if (keep.open) { body.hidden = false; node.classList.add('open'); }
+  }
+  qs('.lf-chips', node).addEventListener('click', function(ev){
+    var b = ev.target.closest('.lf-chip'); if (!b) return;
+    var inp = qs('.'+b.getAttribute('data-k'), node);
+    if (inp) { inp.value = ''; changed(); try { toggle.focus(); } catch (e) {} }
+  });
+  function changed(){ save_(); refreshHead(); if (opts.onChange) opts.onChange(); }
   // the list's own order wins over a header sort remembered from before
   qs('.lfSort', node).addEventListener('change', function(){ TSORT_ = {}; });
   qsa('input, select', node).forEach(function(inp){
@@ -11640,6 +11711,7 @@ function listFilters_(opts){
   toggle.addEventListener('click', function(){
     body.hidden = !body.hidden;
     node.classList.toggle('open', !body.hidden);
+    save_();
   });
   clear.addEventListener('click', function(){
     qsa('input, select', node).forEach(function(inp){ if (!inp.classList.contains('lfSort')) inp.value = ''; });
@@ -11654,10 +11726,15 @@ function listFilters_(opts){
     }
     if (v.from && (!row.date || row.date < v.from)) return false;
     if (v.to && (!row.date || row.date > v.to)) return false;
-    if (v.branch && row.locationId !== v.branch) return false;
+    // a row may name several branches (an area batch) and may carry its area itself
+    var rowLocs = row.locationIds || (row.locationId ? [row.locationId] : []);
+    if (v.branch && rowLocs.indexOf(v.branch) < 0) return false;
     if (v.area) {
-      var loc = byId((state.meta||{}).locations, row.locationId);
-      if (!loc || loc.clusterId !== v.area) return false;
+      if (row.clusterId) { if (row.clusterId !== v.area) return false; }
+      else {
+        var loc = byId((state.meta||{}).locations, row.locationId);
+        if (!loc || loc.clusterId !== v.area) return false;
+      }
     }
     if (v.type && row.sourceType !== v.type) return false;
     if (v.status && String(row.status) !== v.status) return false;
@@ -11675,11 +11752,11 @@ function listFilters_(opts){
     qsa('.lf-body input, .lf-body select', node).forEach(function(inp){
       var v = String(inp.value || '').trim(); if (!v) return;
       var box = inp.closest('.field'), l = box && qs('label', box);
-      out.push({ label: l ? l.textContent.trim() : '', value: inp.tagName === 'SELECT' && inp.selectedIndex >= 0 ? inp.options[inp.selectedIndex].text : v });
+      out.push({ k: keyOf(inp), label: l ? l.textContent.trim() : '', value: inp.tagName === 'SELECT' && inp.selectedIndex >= 0 ? inp.options[inp.selectedIndex].text : v });
     });
     return out;
   }
-  return { node: node, match: match, values: values, active: activeCount, sort: sort, count: count, pairs: pairs };
+  return { node: node, match: match, values: values, active: activeCount, sort: sort, count: count, pairs: pairs, sortMode: function(){ return val('.lfSort') || 'new'; } };
 }
 
 // Today's date on this device, for the date pickers (the server checks the
@@ -14864,11 +14941,20 @@ function wireProductDetailToggle_(container, batchId){
 // entirely around the latter shape. breakdownGrid/handoffDetailRows are
 // reused as-is below since they only need a plain breakdown/perLocation
 // object, with no handoff-specific assumptions. See CLAUDE.md.
+// what is chosen in the Deputy screen's bar, kept across redraws (2026-10-14)
+var DP_STATE_ = {};
 function renderDeputyReview(body){
   body.innerHTML = '<div class="card">'+esc(t('loading'))+'</div>';
   api('listAreaBulkBatches', { status: 'pending_deputy' }).then(function(res){
     body.innerHTML = '';
     if (!res.ok){ body.innerHTML = '<div class="msg err">'+esc(errMsg_(res))+'</div>'; return; }
+
+    // One bar over the area managers' requests and the area batches, always built (2026-10-14),
+    // also when nothing waits; both lists follow it and one count says how many of how many.
+    var cnt = { r: [0, 0], b: [0, 0] }, drawReq_ = function(){}, drawBat_ = function(){};
+    var dpF = listFilters_({ fields: ['text', 'date', 'area', 'branch', 'amount'], state: DP_STATE_, onChange: function(){ drawReq_(); drawBat_(); } });
+    function recount_(){ dpF.count(cnt.r[0] + cnt.b[0], cnt.r[1] + cnt.b[1]); }
+    body.appendChild(dpF.node);
 
     // the area managers' requests to hand cash to their collector
     var reqCard = el('<div class="card no-collapse"><h2>'+esc(t('dp_requests'))+'</h2><div class="muted" style="font-size:12.5px;margin-bottom:8px;">'+esc(t('dp_requestsHint'))+'</div><div class="dpList">'+esc(t('loading'))+'</div></div>');
@@ -14877,22 +14963,21 @@ function renderDeputyReview(body){
       var list = qs('.dpList', reqCard);
       if (!hr.ok){ list.innerHTML = '<div class="msg err">'+esc(errMsg_(hr))+'</div>'; return; }
       var waiting = (hr.handoffs||[]).filter(function(h){ return h.status === 'pending_deputy'; });
+      cnt.r = [waiting.length, waiting.length]; recount_();
       if (!waiting.length) { list.innerHTML = emptyOk_(t('dp_none')); return; }
-      var dpF = listFilters_({ fields: ['text', 'date', 'area', 'branch', 'amount'], onChange: draw });
-      reqCard.insertBefore(dpF.node, list);
       var exBox = el('<div class="tbl-tools"></div>'); reqCard.insertBefore(exBox, list);
       function norm(h){ return { date: String(h.createdAt || '').slice(0, 10), locationId: h.locationId, amount: h.amount,
         text: [userName(h.fromUserId), userName(h.toUserId), locationName(h.locationId), clusterName(h.clusterId), money(h.amount)].join(' ') }; }
       var shownDp = waiting;
       exBox.appendChild(exButtons_(function(){ return [{ name: t('dp_requests'), rows: handoffsAoa_(shownDp) }]; }, function(){ return t('dp_requests'); }, function(){ return { filters: dpF.pairs() }; }));
-      function draw(){
+      drawReq_ = function(){
         shownDp = dpF.sort(waiting.filter(function(h){ return dpF.match(norm(h)); }), norm);
-        dpF.count(shownDp.length, waiting.length);
+        cnt.r = [shownDp.length, waiting.length]; recount_();
         list.innerHTML = shownDp.length ? '' : '<div class="lf-empty">'+esc(t('lf_noMatch'))+'</div>';
         shownDp.forEach(function(h){ list.appendChild(handoffItem(h, true)); });
         if (!qs('.ho-all', exBox)) exBox.appendChild(hoAllToggle_(list));
-      }
-      draw();
+      };
+      drawReq_();
     });
 
     var header = el('<div class="card no-collapse"><h2>'+esc(t('deputy_title'))+'</h2><div class="muted" style="font-size:12.5px;">'+esc(t('deputy_hint'))+'</div></div>');
@@ -14900,6 +14985,7 @@ function renderDeputyReview(body){
 
     if (!res.batches.length){
       header.appendChild(el(emptyOk_(t('deputy_noPending'))));
+      recount_();
       return;
     }
 
@@ -14910,6 +14996,21 @@ function renderDeputyReview(body){
     header.appendChild(batchList);
     var bTools = el('<div class="ho-listbar"></div>'); bTools.appendChild(hoAllToggle_(batchList));
     header.insertBefore(bTools, batchList);
+    // the batches follow the bar by their area, their branches, their date and amount
+    var batEntries = [], bNone = el('<div class="lf-empty" hidden>'+esc(t('lf_noMatch'))+'</div>');
+    header.appendChild(bNone);
+    function bNorm(b){
+      var ids = (b.perLocation || []).map(function(x){ return x.locationId; }).filter(Boolean);
+      return { date: String(b.createdAt || '').slice(0, 10), locationIds: ids, clusterId: b.clusterId, amount: Number((b.breakdown || {}).netCashOwed || 0),
+        text: [clusterName(b.clusterId), userName(b.uploadedBy)].concat(ids.map(locationName)).concat([money((b.breakdown || {}).netCashOwed)]).join(' ') };
+    }
+    drawBat_ = function(){
+      var shownB = dpF.sort(batEntries.filter(function(x){ return dpF.match(bNorm(x.b)); }), function(x){ var n = bNorm(x.b); return { date: n.date, amount: n.amount }; });
+      batEntries.forEach(function(x){ x.card.style.display = 'none'; });
+      shownB.forEach(function(x){ x.card.style.display = ''; batchList.appendChild(x.card); });
+      bNone.hidden = shownB.length > 0;
+      cnt.b = [shownB.length, batEntries.length]; recount_();
+    };
     res.batches.forEach(function(b){
       var nBr = (b.perLocation || []).length;
       var card = el('<div class="list-item ho-item">' +
@@ -14939,6 +15040,7 @@ function renderDeputyReview(body){
         '</div>' +
       '</div>');
       batchList.appendChild(card);
+      batEntries.push({ b: b, card: card });
       var bSum = qs('.ho-sum', card), bBody = qs('.ho-body', card);
       card._hoSet = function(open){ hoFold_(card, bSum, bBody, open); };
       bSum.addEventListener('click', function(){
@@ -14966,6 +15068,7 @@ function renderDeputyReview(body){
         });
       });
     });
+    drawBat_();
   });
 }
 
@@ -15366,6 +15469,8 @@ function collectPivotTree_(handoffs, meta){
   all.forEach(function(h){ if (h.kind === 'deposit' && h.status !== 'voided') deps[h.id] = h; });
   function inPeriod(day){ return (!meta.from || day >= meta.from) && (!meta.to || day <= meta.to); }
   var root = { kids: [], map: {} };
+  // meta.include(h): the requests the screen's filters let through; the chain lookups above still see every handover
+  var include = meta.include || null;
   var total = zero(); total.returned = 0; total.disputed = 0; total.n = 0;
   function child(parent, i, key, h){
     if (!parent.map[key]) {
@@ -15387,6 +15492,7 @@ function collectPivotTree_(handoffs, meta){
   var hById = {}; all.forEach(function(x){ hById[x.id] = x; });
   all.forEach(function(h){
     if (h.kind !== 'cluster_to_collector') return;
+    if (include && !include(h)) return;
     var st = h.status, amt = Number(h.amount || 0), day = dayOf(h.createdAt), holder = h.toUserId;
     var col = st === 'pending_deputy' ? 'deputy' : st === 'pending' ? 'pending' : null;
     if (st === 'confirmed') {
@@ -15444,9 +15550,11 @@ function collectPivotCard_(handoffs, opts){
   function colLabel(c){ return t(c === 'pending' && opts.mine ? 'cpv_pendingMe' : 'cpv_' + c); }
   var card = el('<div class="card rp-card pv-card cpv-card no-collapse" data-noexport="1">' +
     '<div class="rp-head pv-head"><div><h2>'+esc(t(opts.mine ? 'cpv_titleMine' : 'cpv_title'))+'</h2><p class="pv-sub">'+LEVELS.map(function(l){ return '<span>'+esc(t('cpv_lv_' + l))+'</span>'; }).join('<i aria-hidden="true">›</i>')+'</p></div></div>' +
-    '<div class="cpv-period"><div class="field"><label>'+esc(t('inv_from'))+'</label><input type="date" class="cpFrom" value="'+esc(CPV_.from)+'" max="'+today+'"></div>' +
-      '<div class="field"><label>'+esc(t('inv_to'))+'</label><input type="date" class="cpTo" value="'+esc(CPV_.to)+'" max="'+today+'"></div>' +
-      '<p class="muted cpv-hint">'+esc(t('cpv_hint'))+'</p></div>' +
+    (opts.period
+      ? '<div class="cpv-period"><p class="cpv-barnote" role="status"></p><p class="muted cpv-hint">'+esc(t('hp_periodHint'))+'</p></div>'
+      : '<div class="cpv-period"><div class="field"><label>'+esc(t('inv_from'))+'</label><input type="date" class="cpFrom" value="'+esc(CPV_.from)+'" max="'+today+'"></div>' +
+        '<div class="field"><label>'+esc(t('inv_to'))+'</label><input type="date" class="cpTo" value="'+esc(CPV_.to)+'" max="'+today+'"></div>' +
+        '<p class="muted cpv-hint">'+esc(t('cpv_hint'))+'</p></div>') +
     '<div class="pv-tools"><div class="pv-depth" role="group"><span class="pv-depth-l">'+esc(t('pv_openTo'))+'</span>' +
       LEVELS.map(function(l, i){ return '<button type="button" data-depth="'+(i + 1)+'"><b>'+(i + 1)+'</b><span>'+esc(t('cpv_lv_' + l))+'</span></button>'; }).join('') + '</div>' +
       '<label class="pv-q"><span class="sr-only">'+esc(t('pv_search'))+'</span>'+icon_('search')+'<input type="search" placeholder="'+esc(t('cpv_search'))+'"></label></div>' +
@@ -15462,9 +15570,18 @@ function collectPivotCard_(handoffs, opts){
     return userName(h.fromUserId);
   }
   function openTo(){ (function walk(nodes){ nodes.forEach(function(n){ n.open = n.depth < upto - 1 && n.lvl !== 'request'; walk(n.kids); }); })(roots); }
+  // the period it covers: its own pickers, or the screen's date filter when it is given one (2026-10-14)
+  var span = { from: '', to: '' };
   function build(){
-    CPV_.from = qs('.cpFrom', card).value || CPV_.from; CPV_.to = qs('.cpTo', card).value || CPV_.to;
-    tree = collectPivotTree_(handoffs, { from: CPV_.from, to: CPV_.to, name: nameOf, locOf: function(id){ return byId(meta.locations, id) || {}; } });
+    if (opts.period) {
+      var pp = opts.period() || {};
+      span.from = pp.from || invMonthStart_(today); span.to = pp.to || today;
+      qs('.cpv-barnote', card).textContent = t('hp_period').replace('{from}', span.from).replace('{to}', span.to);
+    } else {
+      CPV_.from = qs('.cpFrom', card).value || CPV_.from; CPV_.to = qs('.cpTo', card).value || CPV_.to;
+      span.from = CPV_.from; span.to = CPV_.to;
+    }
+    tree = collectPivotTree_(handoffs, { from: span.from, to: span.to, include: opts.include, name: nameOf, locOf: function(id){ return byId(meta.locations, id) || {}; } });
     roots = tree.roots;
     openTo();
   }
@@ -15528,7 +15645,7 @@ function collectPivotCard_(handoffs, opts){
   });
   var qIn = qs('.pv-q input', card), qT = null;
   qIn.addEventListener('input', function(){ clearTimeout(qT); qT = setTimeout(function(){ q = normName_(qIn.value || ''); draw(); }, 160); });
-  ['.cpFrom', '.cpTo'].forEach(function(s){ qs(s, card).addEventListener('change', function(){ build(); draw(); }); });
+  if (!opts.period) ['.cpFrom', '.cpTo'].forEach(function(s){ qs(s, card).addEventListener('change', function(){ build(); draw(); }); });
   // Excel: every level with its own totals and folding; PDF: what is open
   function levelRows(allOpen){
     var head = [t('pv_level'), t('pv_levelType')].concat(COLS.map(colLabel), [t('cpv_returnedCol')]);
@@ -15545,11 +15662,11 @@ function collectPivotCard_(handoffs, opts){
     outline.push(null);
     return { rows: rowsX, outline: outline };
   }
-  function note(){ return { note: t('inv_period').replace('{from}', CPV_.from).replace('{to}', CPV_.to) }; }
+  function note(){ return { note: t('inv_period').replace('{from}', span.from).replace('{to}', span.to) }; }
   var exBar = el('<div class="ex-bar"><button type="button" class="ex-btn">'+icon_('doc')+'<span>'+esc(t('ex_button'))+'</span></button><button type="button" class="ex-btn">'+icon_('printer')+'<span>'+esc(t('ex_pdf'))+'</span></button></div>');
   qs('.pv-head', card).appendChild(exBar);
   var eb = qsa('button', exBar);
-  eb[0].addEventListener('click', function(){ var a = levelRows(true); exportXlsx_(t('cpv_title') + ' ' + CPV_.to, [{ name: t('cpv_title'), rows: a.rows, outline: a.outline, note: note().note }], note()); });
+  eb[0].addEventListener('click', function(){ var a = levelRows(true); exportXlsx_(t('cpv_title') + ' ' + span.to, [{ name: t('cpv_title'), rows: a.rows, outline: a.outline, note: note().note }], note()); });
   eb[1].addEventListener('click', function(){ var a = levelRows(false); exportPdf_(t('cpv_title'), [{ name: t('cpv_title'), rows: a.rows, outline: a.outline }], note()); });
   build(); draw();
   qsa('.pv-depth button', card)[upto - 1].classList.add('on');
@@ -15575,6 +15692,89 @@ function cpOpenRequest_(h){
   if (node && node._hoSet) { node._hoSet(true); node.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
 }
 
+// ---- a handover's own date, and the warning when it differs from its entries (2026-10-14) ----
+// handoffDate defaults to the entries' own date (the latest of several); the sender may change it
+// with a reason. Everyone who sees the handover sees both dates before acting on it.
+function hfdDay_(d){
+  if (!d) return '';
+  try {
+    var dt = new Date(String(d).slice(0, 10) + 'T12:00:00'), o = { day: 'numeric', month: 'short' };
+    if (dt.getFullYear() !== new Date().getFullYear()) o.year = 'numeric';
+    return new Intl.DateTimeFormat(dpLocale_(), o).format(dt);
+  } catch (e) { return String(d); }
+}
+function hfdLines_(h){
+  var out = [];
+  if (h.dateChanged) out.push(jrFill_(t('hd_changed'), { from: hfdDay_(h.entryDate), to: hfdDay_(h.handoffDate) }) + (h.dateChangeReason ? ' ' + jrFill_(t('hd_reasonIs'), { r: h.dateChangeReason }) : ''));
+  if (h.dateMismatch && (h.entryDates || []).length > 1) out.push(jrFill_(t('hd_several'), { dates: h.entryDates.map(hfdDay_).join(' / '), date: hfdDay_(h.handoffDate) }));
+  return out;
+}
+function hfdWarn_(h){
+  var ls = hfdLines_(h); if (!ls.length) return '';
+  return '<div class="hfd-warn" role="note">' + icon_('alert') + '<div>' + ls.map(function(x){ return '<p>' + esc(x) + '</p>'; }).join('') + '</div></div>';
+}
+function hfdChip_(h){
+  if (!h.dateChanged && !h.dateMismatch) return '';
+  return '<em class="hfd-chip">' + icon_('alert') + esc(t(h.dateChanged ? 'hd_chipChanged' : 'hd_chipSeveral')) + '</em>';
+}
+// The date field of a send form. set({entryDates, defaultDate, dateMismatch}) fills it from the
+// server's own preview; payload() carries a date only when the person changed it, so the server
+// stays the one that works out the default.
+function hfdField_(){
+  var today = localToday_();
+  var node = el('<div class="hfd-f" hidden>' +
+    '<div class="field"><label>'+esc(t('hd_date'))+'</label><input type="date" class="hfdDate" data-k="handoffDate" aria-label="'+esc(t('hd_date'))+'" max="'+today+'"><small class="hint">'+esc(t('hd_dateHint'))+'</small></div>' +
+    '<div class="hfd-several" role="status" hidden></div>' +
+    '<div class="hfd-warn hfd-changed" role="alert" hidden></div>' +
+    '<div class="field hfd-reason" hidden><label>'+esc(t('hd_reason'))+'</label><input type="text" class="hfdReason" data-k="dateChangeReason" aria-label="'+esc(t('hd_reason'))+'" maxlength="300" placeholder="'+esc(t('hd_reasonPh'))+'" autocomplete="off"></div>' +
+    '<div class="hfd-confirm" hidden></div></div>');
+  var inp = qs('.hfdDate', node), reason = qs('.hfdReason', node), def = '';
+  function changed(){ return !!def && !!inp.value && inp.value !== def; }
+  function sync(){
+    var c = changed(), w = qs('.hfd-changed', node);
+    w.hidden = !c; qs('.hfd-reason', node).hidden = !c;
+    if (c) w.innerHTML = icon_('alert') + '<p>' + esc(jrFill_(t('hd_youChanged'), { from: hfdDay_(def), to: hfdDay_(inp.value) })) + '</p>';
+    var cf = qs('.hfd-confirm', node); cf.hidden = true; cf.innerHTML = '';
+  }
+  inp.addEventListener('input', sync); inp.addEventListener('change', sync);
+  return {
+    node: node, host: qs('.hfd-confirm', node), changed: changed,
+    set: function(dates){
+      if (!dates || !dates.defaultDate) { node.hidden = true; def = ''; return; }
+      def = dates.defaultDate;
+      inp.value = def; reason.value = '';
+      var first = (dates.entryDates || [])[0];
+      if (first) inp.min = first; else inp.removeAttribute('min');
+      var sv = qs('.hfd-several', node);
+      if (dates.dateMismatch && (dates.entryDates || []).length > 1) { sv.hidden = false; sv.innerHTML = icon_('alert') + '<p>' + esc(jrFill_(t('hd_several'), { dates: dates.entryDates.map(hfdDay_).join(' / '), date: hfdDay_(def) })) + '</p>'; }
+      else { sv.hidden = true; sv.innerHTML = ''; }
+      node.hidden = false; sync();
+    },
+    payload: function(){ return changed() ? { handoffDate: inp.value, dateChangeReason: reason.value.trim() } : {}; },
+    reasonOk: function(){ return !changed() || !!reason.value.trim(); },
+    flag: function(){
+      var box = reason.closest('.field'); box.classList.add('f-bad');
+      reason.addEventListener('input', function(){ box.classList.remove('f-bad'); }, { once: true });
+      try { reason.focus(); } catch (e) {}
+    },
+    from: function(){ return def; }, to: function(){ return inp.value; }, why: function(){ return reason.value.trim(); }
+  };
+}
+// Sending with a changed date asks once more, showing both dates (and needs the reason first).
+// items: [{ f: hfdField_(), label }]; host: where the confirmation shows. Nothing changed: go at once.
+function hfdGate_(host, items, go){
+  var ch = items.filter(function(x){ return x.f.changed(); });
+  if (!ch.length) { go(); return; }
+  var bad = ch.filter(function(x){ return !x.f.reasonOk(); });
+  if (bad.length) { bad[0].f.flag(); return; }
+  host.hidden = false;
+  host.innerHTML = '<div class="hfd-cf" role="alertdialog" aria-label="'+esc(t('hd_confirmTitle'))+'"><b>'+icon_('alert')+esc(t('hd_confirmTitle'))+'</b>' +
+    ch.map(function(x){ return '<p>'+(x.label ? '<strong>'+esc(x.label)+'</strong> ' : '')+esc(jrFill_(t('hd_confirmText'), { from: hfdDay_(x.f.from()), to: hfdDay_(x.f.to()), r: x.f.why() }))+'</p>'; }).join('') +
+    '<div class="hfd-cfa"><button type="button" class="btn hfdYes">'+esc(t('hd_confirmSend'))+'</button><button type="button" class="btn secondary hfdNo">'+esc(t('hd_back'))+'</button></div></div>';
+  qs('.hfdYes', host).addEventListener('click', function(){ host.hidden = true; host.innerHTML = ''; go(); });
+  qs('.hfdNo', host).addEventListener('click', function(){ host.hidden = true; host.innerHTML = ''; });
+  try { qs('.hfdYes', host).focus(); } catch (e) {}
+}
 function handoffItem(h, showConfirm, showResolve){
   // The receiving step is exactly where "what am I actually confirming?"
   // matters most: opened, the statement shows at once there, and behind a
@@ -15590,13 +15790,14 @@ function handoffItem(h, showConfirm, showResolve){
         '<b class="ho-k">'+txBadge_(h)+esc(t('kind_'+h.kind))+(Number(h.revision) > 1 ? ' <em class="ho-ver">'+esc(t('batch_rev').replace('{n}', h.revision))+'</em>' : '')+'</b>' +
         '<b class="ho-amt"><bdi dir="ltr">'+money(h.amount)+'</bdi></b>' +
         '<i class="ho-who">'+esc(hoSumLine_(h))+'</i>' +
-        '<span class="ho-foot"><span class="ho-st">'+statusBadge(h.status) + (hoReturnNote_(h) ? '<em class="ho-rn">'+esc(hoReturnNote_(h))+'</em>' : '') +
+        '<span class="ho-foot"><span class="ho-st">'+statusBadge(h.status) + hfdChip_(h) + (hoReturnNote_(h) ? '<em class="ho-rn">'+esc(hoReturnNote_(h))+'</em>' : '') +
           (short ? '<em class="'+(short > 0 ? 'neg' : 'pos')+'">'+esc(t(short > 0 ? 'ho_short' : 'ho_over')).replace('{x}', '<bdi dir="ltr">'+money(Math.abs(short))+'</bdi>')+'</em>' : '') + '</span>' +
-        '<small class="ho-when">'+esc(fmtStamp_(h.createdAt))+'</small></span>' +
+        '<small class="ho-when">'+esc(fmtStamp_(h.createdAt))+(h.handoffDate ? '<span class="ho-hdate">'+esc(t('hd_date'))+': <bdi dir="ltr">'+esc(h.handoffDate)+'</bdi></span>' : '')+'</small></span>' +
       '</span>' +
       '<span class="ho-chev">'+icon_('chevron')+'</span>' +
     '</button>' +
     '<div class="ho-body" hidden>' +
+      hfdWarn_(h) +
       handoffRoute_(h) +
       hoRevisionBlock_(h) +
       (h.disputeNote ? '<div class="muted ho-note">'+icon_('alert')+'<span>'+esc(h.disputeNote)+'</span></div>' : '') +
@@ -16040,6 +16241,8 @@ function colSheets_(D, periodTxt){
     { name: t('col_requests'), rows: req }
   ];
 }
+// what is chosen in the Handoffs bar, kept across redraws of the screen (2026-10-14)
+var HF_STATE_ = {};
 function renderHandoffs(body){
   body.innerHTML = '<div class="card">'+esc(t('loading'))+'</div>';
   var role = state.user.role;
@@ -16058,11 +16261,17 @@ function renderHandoffs(body){
           '<div class="field"><select id="hCar">'+myCars.map(function(c){return '<option value="'+c.id+'">'+esc(c.label)+'</option>';}).join('')+'</select></div>' +
           '<button class="btn" id="hCreateCar">'+esc(t('handoff_createCar'))+'</button><div id="hCarMsg"></div></div>');
         body.appendChild(crc);
+        var hfdCar = hfdField_();
+        qs('#hCreateCar', crc).parentNode.insertBefore(hfdCar.node, qs('#hCreateCar', crc));
+        function carDry_(){ api('createHandoff', { kind: 'car_to_location', carId: qs('#hCar', crc).value, dryRun: true }, { silent: true }).then(function(dr){ hfdCar.set(dr.ok && dr.dates ? dr.dates : null); }); }
+        carDry_(); qs('#hCar', crc).addEventListener('change', carDry_);
         qs('#hCreateCar', crc).addEventListener('click', function(){
           var carId = qs('#hCar',crc).value;
-          api('createHandoff', {kind:'car_to_location', carId: carId}).then(function(res2){
-            qs('#hCarMsg',crc).innerHTML = res2.ok ? '<div class="msg ok">'+esc(t('ok_saved'))+'</div>' : '<div class="msg err">'+esc(errMsg_(res2))+'</div>';
-            if(res2.ok) render();
+          hfdGate_(hfdCar.host, [{ f: hfdCar }], function(){
+            api('createHandoff', Object.assign({kind:'car_to_location', carId: carId}, hfdCar.payload())).then(function(res2){
+              qs('#hCarMsg',crc).innerHTML = res2.ok ? '<div class="msg ok">'+esc(t('ok_saved'))+'</div>' : '<div class="msg err">'+esc(errMsg_(res2))+'</div>';
+              if(res2.ok) render(); else markErrField_(crc, res2);
+            });
           });
         });
       }
@@ -16076,11 +16285,18 @@ function renderHandoffs(body){
         (role==='admin' ? '<div class="field"><select id="hLoc">'+(state.meta.locations||[]).map(function(l){return '<option value="'+l.id+'">'+esc(l.city+' — '+l.name)+'</option>';}).join('')+'</select></div>' : '') +
         '<button class="btn" id="hCreateLoc">'+esc(t('handoff_createLocation'))+'</button><div id="hLocMsg"></div></div>');
       body.appendChild(lc);
+      var hfdLoc = hfdField_();
+      qs('#hCreateLoc', lc).parentNode.insertBefore(hfdLoc.node, qs('#hCreateLoc', lc));
+      function locIdNow_(){ return role==='admin' ? qs('#hLoc',lc).value : locId; }
+      function locDry_(){ api('createHandoff', { kind: 'location_to_cluster', locationId: locIdNow_(), dryRun: true }, { silent: true }).then(function(dr){ hfdLoc.set(dr.ok && dr.dates ? dr.dates : null); }); }
+      locDry_(); if (role==='admin') qs('#hLoc', lc).addEventListener('change', locDry_);
       qs('#hCreateLoc', lc).addEventListener('click', function(){
-        var lid = role==='admin' ? qs('#hLoc',lc).value : locId;
-        api('createHandoff', {kind:'location_to_cluster', locationId: lid}).then(function(res2){
-          qs('#hLocMsg',lc).innerHTML = res2.ok ? '<div class="msg ok">'+esc(t('ok_saved'))+'</div>' : '<div class="msg err">'+esc(errMsg_(res2))+'</div>';
-          if(res2.ok) render();
+        var lid = locIdNow_();
+        hfdGate_(hfdLoc.host, [{ f: hfdLoc }], function(){
+          api('createHandoff', Object.assign({kind:'location_to_cluster', locationId: lid}, hfdLoc.payload())).then(function(res2){
+            qs('#hLocMsg',lc).innerHTML = res2.ok ? '<div class="msg ok">'+esc(t('ok_saved'))+'</div>' : '<div class="msg err">'+esc(errMsg_(res2))+'</div>';
+            if(res2.ok) render(); else markErrField_(lc, res2);
+          });
         });
       });
     }
@@ -16100,10 +16316,11 @@ function renderHandoffs(body){
         (role==='admin' ? '<div class="field"><label>'+esc(t('admin_cluster'))+'</label><select id="hClu">'+(state.meta.clusters||[]).map(function(c){return '<option value="'+c.id+'">'+esc(c.name)+'</option>';}).join('')+'</select></div>' : '') +
         '<div class="ac-state"></div>' +
         '<div class="ac-brs"></div>' +
+        '<div class="hfd-confirm hfd-cfbox" hidden></div>' +
         '<button class="btn" id="hCreateClu">'+icon_('paperPlane')+esc(t('ac_sendAll'))+'</button><div id="hCluMsg"></div></div>');
       body.appendChild(cc);
       function clusterId_(){ return role==='admin' ? qs('#hClu',cc).value : (myCluster && myCluster.id); }
-      var acRows = [], ownEntries = null, fixNode = null, fixLoc = null;
+      var acRows = [], ownEntries = null, fixNode = null, fixLoc = null, acF = {};
       // what each branch has ready, who it goes to, and where its last request stands
       function drawAreaState_(){
         var cid = clusterId_();
@@ -16120,6 +16337,13 @@ function renderHandoffs(body){
         // a request sent before collectors moved to branches covers the whole area
         var areaWaiting = all.filter(function(h){ return h.kind === 'cluster_to_collector' && h.clusterId === cid && !h.locationId && h.status === 'pending_deputy'; })[0];
         paintArea_(areaWaiting);
+        // each branch's date: the entries' own date, from the server's preview of this very send
+        acF = {};
+        api('createHandoff', { kind: 'cluster_to_collector', clusterId: cid, dryRun: true }, { silent: true }).then(function(dr){
+          if (clusterId_() !== cid) return;
+          if (dr.ok && dr.previews) dr.previews.forEach(function(p){ var ff = hfdField_(); ff.set(p.dates); acF[p.locationId] = ff; });
+          paintArea_();
+        });
         // branch days the area manager entered himself travel in his request too
         if (!cl) return;
         api('listEntries', {}, { silent: true }).then(function(er){
@@ -16168,9 +16392,14 @@ function renderHandoffs(body){
             '<div class="ac-bamt"><b><bdi dir="ltr">'+money(ready ? r.amount : 0)+'</bdi></b><i>'+esc(ready ? from.join(' + ') : t('ac_brNothing'))+'</i></div>' +
             '<button type="button" class="btn secondary ac-bsend" data-loc="'+esc(r.loc.id)+'"'+(ready && r.collector ? '' : ' disabled')+'>'+icon_('paperPlane')+esc(t('ac_sendBranch'))+'</button>' +
             '<div class="ac-bst">'+st+'</div>' +
+            '<div class="ac-bdate"></div>' +
           '</div>';
         }).join('') : '<div class="muted">'+esc(t('org_noBranch'))+'</div>';
         btn.disabled = !acRows.some(function(r){ return r.amount > 0 && r.collector; });
+        acRows.forEach(function(r){
+          var ff = acF[r.loc.id], hostEl = qs('.ac-br[data-loc="'+r.loc.id+'"] .ac-bdate', cc);
+          if (ff && hostEl && r.amount > 0 && r.collector) hostEl.appendChild(ff.node);
+        });
         mountFix_();
       }
       // a returned request its own area manager (or an admin standing in) may correct and send again
@@ -16259,12 +16488,18 @@ function renderHandoffs(body){
           (r.collector ? '<div class="muted ho-fix-col">'+icon_('user')+'<span>'+esc(t('ho_fixCollector').replace('{who}', userName(r.collector)))+'</span></div>' : '') +
           '<div class="field"><label for="hoFixNote">'+esc(t('ho_fixNote'))+'</label><textarea id="hoFixNote" rows="3" maxlength="1000" placeholder="'+esc(t('ho_fixNotePh'))+'"></textarea></div>' +
           '<button type="button" class="btn" id="hoFixSend">'+icon_('paperPlane')+esc(t('ho_fixSend'))+'</button><div class="ho-fix-msg"></div></div>');
+        var hfdFx = hfdField_();
+        qs('#hoFixSend', fixNode).parentNode.insertBefore(hfdFx.node, qs('#hoFixSend', fixNode));
+        api('createHandoff', { kind: 'cluster_to_collector', clusterId: clusterId_(), locationId: r.loc.id, resubmitOf: h.id, dryRun: true }, { silent: true }).then(function(dr){
+          hfdFx.set(dr.ok && dr.previews && dr.previews[0] ? dr.previews[0].dates : null);
+        });
         qs('.ho-fix-x', fixNode).addEventListener('click', closeFix_);
         qs('.ho-fix-open', fixNode).addEventListener('click', function(){ state.entryPreset = { back: true, fixId: h.id }; goScreen_('entries'); });
         qs('#hoFixSend', fixNode).addEventListener('click', function(ev){
           var sendB = ev.currentTarget, noteEl = qs('#hoFixNote', fixNode), msgEl = qs('.ho-fix-msg', fixNode);
+          hfdGate_(hfdFx.host, [{ f: hfdFx }], function(){
           sendB.disabled = true;
-          api('createHandoff', { kind: 'cluster_to_collector', clusterId: clusterId_(), locationId: r.loc.id, resubmitOf: h.id, correctionNote: noteEl.value.trim() }).then(function(rs2){
+          api('createHandoff', Object.assign({ kind: 'cluster_to_collector', clusterId: clusterId_(), locationId: r.loc.id, resubmitOf: h.id, correctionNote: noteEl.value.trim() }, hfdFx.payload())).then(function(rs2){
             sendB.disabled = false;
             if (!rs2.ok){
               msgEl.innerHTML = '<div class="msg err">'+esc(errMsg_(rs2))+'</div>';
@@ -16276,19 +16511,27 @@ function renderHandoffs(body){
             sendB.disabled = true; FIX_OPEN_ = null;
             setTimeout(function(){ fixNode = null; fixLoc = null; render(); }, 1400);
           });
+          });
         });
         syncFix_();
       }
       function sendArea_(locId, btnEl){
-        btnEl.disabled = true;
-        var req = {kind:'cluster_to_collector', clusterId: clusterId_()};
-        if (locId) req.locationId = locId;
-        api('createHandoff', req).then(function(res2){
-          btnEl.disabled = false;
-          var msg = res2.ok ? t('ac_sentN').replace('{n}', (res2.handoffs || [res2.handoff]).length)
-            : (res2.error === 'no_collector' && res2.locationId ? t('err_noCollectorAt').replace('{x}', locationName(res2.locationId)) : errMsg_(res2));
-          qs('#hCluMsg',cc).innerHTML = '<div class="msg '+(res2.ok ? 'ok' : 'err')+'">'+esc(msg)+'</div>';
-          if(res2.ok) setTimeout(render, 900);
+        var ids = (locId ? [locId] : Object.keys(acF)).filter(function(id){ return acF[id]; });
+        hfdGate_(qs('.hfd-cfbox', cc), ids.map(function(id){ return { f: acF[id], label: locationName(id) }; }), function(){
+          btnEl.disabled = true;
+          var req = {kind:'cluster_to_collector', clusterId: clusterId_()};
+          if (locId) req.locationId = locId;
+          var dates = {}, reasons = {};
+          ids.forEach(function(id){ if (acF[id].changed()) { dates[id] = acF[id].to(); reasons[id] = acF[id].why(); } });
+          if (Object.keys(dates).length) { req.handoffDates = dates; req.dateChangeReasons = reasons; }
+          api('createHandoff', req).then(function(res2){
+            btnEl.disabled = false;
+            var msg = res2.ok ? t('ac_sentN').replace('{n}', (res2.handoffs || [res2.handoff]).length)
+              : (res2.error === 'no_collector' && res2.locationId ? t('err_noCollectorAt').replace('{x}', locationName(res2.locationId)) : errMsg_(res2));
+            qs('#hCluMsg',cc).innerHTML = '<div class="msg '+(res2.ok ? 'ok' : 'err')+'">'+esc(msg)+'</div>';
+            if (!res2.ok) markErrField_(res2.locationId && acF[res2.locationId] ? acF[res2.locationId].node : cc, res2);
+            if(res2.ok) setTimeout(render, 900);
+          });
         });
       }
       drawAreaState_();
@@ -16321,6 +16564,9 @@ function renderHandoffs(body){
         '</div>' +
         '<button class="btn" id="hDeposit">'+esc(t('handoff_deposit'))+'</button><div id="hDepMsg"></div></div>');
       body.appendChild(dc);
+      var hfdDep = hfdField_();
+      qs('#hDeposit', dc).parentNode.insertBefore(hfdDep.node, qs('#hDeposit', dc));
+      api('recordDeposit', { dryRun: true }, { silent: true }).then(function(dr){ hfdDep.set(dr.ok && dr.dates ? dr.dates : null); });
       // Collector to collector (2026-10-11): what this collector holds goes to another
       // one, e.g. after his branch was given a new collector. It stays his until confirmed.
       if (role === 'collector') {
@@ -16334,15 +16580,21 @@ function renderHandoffs(body){
             '<button class="btn" id="hCcGo">'+esc(t('cc_send'))+'</button>' : '<div class="muted">'+esc(t('cc_none'))+'</div>') +
           '<div id="hCcMsg"></div></div>');
         body.appendChild(c2);
-        var ccGo = qs('#hCcGo', c2);
-        if (ccGo) ccGo.addEventListener('click', function(){
+        var ccGo = qs('#hCcGo', c2), hfdCc = hfdField_();
+        if (ccGo) {
+          ccGo.parentNode.insertBefore(hfdCc.node, ccGo);
+          var ccDry_ = function(){ api('createHandoff', { kind: 'collector_to_collector', toUserId: qs('#hCcTo', c2).value, dryRun: true }, { silent: true }).then(function(dr){ hfdCc.set(dr.ok && dr.dates ? dr.dates : null); }); };
+          ccDry_(); qs('#hCcTo', c2).addEventListener('change', ccDry_);
+        }
+        if (ccGo) ccGo.addEventListener('click', function(){ hfdGate_(hfdCc.host, [{ f: hfdCc }], function(){
           ccGo.disabled = true;
-          api('createHandoff', { kind: 'collector_to_collector', toUserId: qs('#hCcTo', c2).value, note: qs('#hCcNote', c2).value.trim() }).catch(function(){ return { ok: false, error: 'network' }; }).then(function(r){
+          api('createHandoff', Object.assign({ kind: 'collector_to_collector', toUserId: qs('#hCcTo', c2).value, note: qs('#hCcNote', c2).value.trim() }, hfdCc.payload())).catch(function(){ return { ok: false, error: 'network' }; }).then(function(r){
             ccGo.disabled = false;
+            if (!r.ok) markErrField_(c2, r);
             qs('#hCcMsg', c2).innerHTML = '<div class="msg '+(r.ok ? 'ok' : 'err')+'">'+esc(r.ok ? t('cc_sent') : errMsg_(r))+'</div>';
             if (r.ok) setTimeout(render, 900);
           });
-        });
+        }); });
       }
 
       var pickedFile = null;
@@ -16369,11 +16621,14 @@ function renderHandoffs(body){
         if (!(depAmt > 0)) { qs('#hDepMsg',dc).innerHTML = '<div class="msg err">'+esc(t('err_depAmountRequired'))+'</div>'; qs('#hDepAmt', dc).classList.add('f-bad'); qs('#hDepAmt', dc).focus(); return; }
         if (!String(bankRef || '').trim()) { qs('#hDepMsg',dc).innerHTML = '<div class="msg err">'+esc(t('err_depositNeedsReference'))+'</div>'; qs('#hBankRef', dc).classList.add('f-bad'); qs('#hBankRef', dc).focus(); return; }
         qs('#hDepAmt', dc).classList.remove('f-bad'); qs('#hBankRef', dc).classList.remove('f-bad');
+        function go_(){
         function submit(fileData){
           var payload = { bankReference: bankRef, depositAmount: depAmt };
+          Object.assign(payload, hfdDep.payload());
           if (fileData) { payload.fileBase64 = fileData.base64; payload.fileName = fileData.name; payload.fileMime = fileData.mime; }
           api('recordDeposit', payload).then(function(res2){
             qs('#hDepMsg',dc).innerHTML = res2.ok ? '<div class="msg ok">'+esc(t('ok_saved'))+'</div>' : '<div class="msg err">'+esc(errMsg_(res2))+'</div>';
+            if(!res2.ok) markErrField_(dc, res2);
             if(res2.ok) { render(); heldPopup_(t('hp_banked').replace('{amount}', money(res2.handoff ? res2.handoff.amount : depAmt))); }
           });
         }
@@ -16387,6 +16642,8 @@ function renderHandoffs(body){
         } else {
           submit(null);
         }
+        }
+        hfdGate_(hfdDep.host, [{ f: hfdDep }], go_);
       });
     }
 
@@ -16408,7 +16665,8 @@ function renderHandoffs(body){
         ['disputed', t('handoff_disputed')], ['rejected', t('handoff_rejected')], ['deposit', t('st_deposited')]],
       people: (state.meta.users||[]).map(function(u){ return [u.id, u.name]; }),
       labels: { person: 'handoff_from' },
-      onChange: function(){ renderHandoffs(body); }
+      state: HF_STATE_,
+      onChange: function(){ draw_(); }
     });
     // Two or more ways to send cash (an admin sees all four): one tab row, one
     // form at a time, remembered for the session
@@ -16440,69 +16698,82 @@ function renderHandoffs(body){
             credit: Number(b.creditSales||0) > 0, delivery: Number(b.deliveryFee||0) > 0, other: Number(b.otherCash||0) > 0,
             expense: Number(b.expenses||0) > 0, deposit: Number(b.directDeposit||0) > 0 || h.kind === 'deposit' }; })(h.breakdown),
         text: [h.txNo, userName(h.fromUserId), userName(h.toUserId), t('kind_'+h.kind), t('handoff_'+h.status),
-          locationName(h.locationId), h.bankReference, h.note, money(h.amount)].join(' ')
+          locationName(h.locationId), h.bankReference, h.note, h.handoffDate, money(h.amount)].join(' ')
       };
     }
-    var visible = hFilter.sort(res.handoffs.filter(function(h){ return hFilter.match(hNorm(h)); }), hNorm);
-    hFilter.count(visible.length, res.handoffs.length);
-    var pending = visible.filter(function(h){
-      if (h.status==='pending' && (h.toUserId===state.user.id || role==='admin')) return true;
-      return h.status==='pending_deputy' && (role==='deputy_operations_manager' || role==='operations_manager' || role==='admin');
-    });
-    var disputed = visible.filter(function(h){ return h.status==='disputed'; });
-    // a disputed one has its own card for admin and finance: not listed twice
-    var history = visible.filter(function(h){ return pending.indexOf(h)<0 && !((role==='admin'||role==='finance') && h.status==='disputed'); });
+    // The lists, the analysis, the pivots and the export all follow the one bar. A change in
+    // the bar redraws only these (2026-10-14): the bar is never rebuilt, so what was chosen
+    // stays chosen and the search box keeps its focus.
+    var waitBox = el('<div class="ho-dyn"></div>');
+    body.insertBefore(waitBox, body.firstChild);
+    var anNode = null, pvNode = null, hc = null, cpNode = null, hoSending = false, hoReady = false;
+    function put_(prev, nu){ if (prev && prev.parentNode) prev.parentNode.replaceChild(nu, prev); else body.appendChild(nu); return nu; }
+    function draw_(){
+      var visible = hFilter.sort(res.handoffs.filter(function(h){ return hFilter.match(hNorm(h)); }), hNorm);
+      hFilter.count(visible.length, res.handoffs.length);
+      var pending = visible.filter(function(h){
+        if (h.status==='pending' && (h.toUserId===state.user.id || role==='admin')) return true;
+        return h.status==='pending_deputy' && (role==='deputy_operations_manager' || role==='operations_manager' || role==='admin');
+      });
+      var disputed = visible.filter(function(h){ return h.status==='disputed'; });
+      // a disputed one has its own card for admin and finance: not listed twice
+      var history = visible.filter(function(h){ return pending.indexOf(h)<0 && !((role==='admin'||role==='finance') && h.status==='disputed'); });
+      waitBox.innerHTML = ''; cpNode = null;
 
-    if (pending.length){
-      var pc = el('<div class="card ho-wait no-collapse"><h2 class="ho-h">'+esc(t('handoff_pending'))+' <span class="rp-n">'+pending.length+'</span> <span class="ho-wsum num"><bdi dir="ltr">'+money(pending.reduce(function(a, h){ return a + Number(h.amount || 0); }, 0))+'</bdi></span></h2><div id="pList"></div></div>');
-      body.insertBefore(pc, body.firstChild);
-      var pl = qs('#pList', pc);
-      qs('h2', pc).appendChild(hoAllToggle_(pl));
-      // many waiting: grouped by city, then branch, each with its count, amount and oldest wait (2026-10-06)
-      hoGrouped_(pl, pending, function(h){ return handoffItem(h, true); });
-    }
-
-    if (disputed.length && (role==='admin' || role==='finance')){
-      var dcw = el('<div class="card ho-wait bad no-collapse"><h2 class="ho-h">'+esc(t('handoff_disputed'))+' <span class="rp-n">'+disputed.length+'</span></h2><div id="dList"></div></div>');
-      body.insertBefore(dcw, pending.length ? qs('.ho-wait', body).nextSibling : body.firstChild);
-      var dl = qs('#dList', dcw);
-      qs('h2', dcw).appendChild(hoAllToggle_(dl));
-      hoGrouped_(dl, disputed, function(h){ return handoffItem(h, false, true); });
-    }
-
-    // how much each collector must collect, from where and since when (2026-10-05)
-    if (['collector','admin','finance','deputy_operations_manager','accountant','operations_manager'].indexOf(role) >= 0) {
-      var cpAny = (res.handoffs||[]).some(function(h){ return h.kind === 'cluster_to_collector'; });
-      if (cpAny || role === 'collector') {
-        var cpCard = collectPivotCard_(res.handoffs || [], { mine: role === 'collector', onRequest: cpOpenRequest_ });
-        var cpAfter = Array.prototype.slice.call(qsa('.ho-wait', body)).pop();
-        body.insertBefore(cpCard, cpAfter ? cpAfter.nextSibling : body.firstChild);
+      if (pending.length){
+        var pc = el('<div class="card ho-wait no-collapse"><h2 class="ho-h">'+esc(t('handoff_pending'))+' <span class="rp-n">'+pending.length+'</span> <span class="ho-wsum num"><bdi dir="ltr">'+money(pending.reduce(function(a, h){ return a + Number(h.amount || 0); }, 0))+'</bdi></span></h2><div id="pList"></div></div>');
+        waitBox.appendChild(pc);
+        var pl = qs('#pList', pc);
+        qs('h2', pc).appendChild(hoAllToggle_(pl));
+        // many waiting: grouped by city, then branch, each with its count, amount and oldest wait (2026-10-06)
+        hoGrouped_(pl, pending, function(h){ return handoffItem(h, true); });
       }
-    }
 
-    // the analysis of what the filters show: figures, ratios, charts; the pivot by levels apart
-    var anNode = hoAnalysis_(visible), pvNode = hoPivotCard_(visible);
-    body.appendChild(anNode);
-    body.appendChild(pvNode);
-    // its rows fold themselves, so the card is never clipped
-    var hc = el('<div class="card no-collapse"><div class="rp-head"><h2>'+esc(t('nav_handoffs'))+'</h2></div><div id="hList"></div></div>');
-    qs('.rp-head', hc).appendChild(exButtons_(function(){ return [{ name: t('nav_handoffs'), rows: handoffsAoa_(visible) }]; }, function(){ return t('nav_handoffs'); }, function(){ return { filters: hFilter.pairs() }; }));
-    body.appendChild(hc);
-    var hl = qs('#hList', hc);
-    qs('.rp-head', hc).appendChild(hoAllToggle_(hl));
-    if (!history.length){ hl.innerHTML = '<div class="'+(hFilter.active() ? 'lf-empty' : 'muted')+'">'+esc(t(hFilter.active() ? 'lf_noMatch' : 'noData'))+'</div>'; }
-    // 40 at a time, never silently cut
-    var shown = 0;
-    function more(){
-      history.slice(shown, shown + 40).forEach(function(h){ hl.appendChild(handoffItem(h, false, false)); });
-      shown = Math.min(history.length, shown + 40);
-      var old = qs('.ho-more', hc); if (old) old.remove();
-      if (shown < history.length) {
-        var b = el('<button type="button" class="btn secondary ho-more">'+esc(t('ho_showMore').replace('{n}', shown).replace('{total}', history.length))+'</button>');
-        b.addEventListener('click', more); hc.appendChild(b);
+      if (disputed.length && (role==='admin' || role==='finance')){
+        var dcw = el('<div class="card ho-wait bad no-collapse"><h2 class="ho-h">'+esc(t('handoff_disputed'))+' <span class="rp-n">'+disputed.length+'</span></h2><div id="dList"></div></div>');
+        waitBox.appendChild(dcw);
+        var dl = qs('#dList', dcw);
+        qs('h2', dcw).appendChild(hoAllToggle_(dl));
+        hoGrouped_(dl, disputed, function(h){ return handoffItem(h, false, true); });
       }
+
+      // how much each collector must collect, from where and since when (2026-10-05):
+      // the requests the bar lets through, over the bar's own dates
+      if (['collector','admin','finance','deputy_operations_manager','accountant','operations_manager'].indexOf(role) >= 0) {
+        var cpAny = (res.handoffs||[]).some(function(h){ return h.kind === 'cluster_to_collector'; });
+        if (cpAny || role === 'collector') {
+          cpNode = collectPivotCard_(res.handoffs || [], { mine: role === 'collector', onRequest: cpOpenRequest_,
+            include: function(h){ return hFilter.match(hNorm(h)); },
+            period: function(){ var v = hFilter.values(); return { from: v.from, to: v.to }; } });
+          waitBox.appendChild(cpNode);
+        }
+      }
+
+      // the analysis of what the filters show: figures, ratios, charts; the pivot by levels apart
+      anNode = put_(anNode, hoAnalysis_(visible));
+      pvNode = put_(pvNode, hoPivotCard_(visible));
+      // its rows fold themselves, so the card is never clipped
+      var hcn = el('<div class="card no-collapse"><div class="rp-head"><h2>'+esc(t('nav_handoffs'))+'</h2></div><div id="hList"></div></div>');
+      qs('.rp-head', hcn).appendChild(exButtons_(function(){ return [{ name: t('nav_handoffs'), rows: handoffsAoa_(visible) }]; }, function(){ return t('nav_handoffs'); }, function(){ return { filters: hFilter.pairs() }; }));
+      hc = put_(hc, hcn);
+      var hl = qs('#hList', hcn);
+      qs('.rp-head', hcn).appendChild(hoAllToggle_(hl));
+      if (!history.length){ hl.innerHTML = '<div class="'+(hFilter.active() ? 'lf-empty' : 'muted')+'">'+esc(t(hFilter.active() ? 'lf_noMatch' : 'noData'))+'</div>'; }
+      // 40 at a time, never silently cut
+      var shown = 0;
+      function more(){
+        history.slice(shown, shown + 40).forEach(function(h){ hl.appendChild(handoffItem(h, false, false)); });
+        shown = Math.min(history.length, shown + 40);
+        var oldMore = qs('.ho-more', hcn); if (oldMore) oldMore.remove();
+        if (shown < history.length) {
+          var b = el('<button type="button" class="btn secondary ho-more">'+esc(t('ho_showMore').replace('{n}', shown).replace('{total}', history.length))+'</button>');
+          b.addEventListener('click', more); hcn.appendChild(b);
+        }
+      }
+      more();
+      if (hoReady) applyVis_();
     }
-    more();
+    draw_();
 
     // ---- the layout (2026-10-06): my handovers first, then one view at a time ----
     // A header with what waits on me, what I sent and the last handover; "Hand over
@@ -16538,20 +16809,24 @@ function renderHandoffs(body){
     var lastBtn = qs('.hh-last', hub); if (lastBtn) lastBtn.addEventListener('click', function(){ drawerOpen_(handoffDocView_(lastH)); });
     var sendBack = el('<div class="draft-bar el-backbar" role="navigation">'+icon_('back')+'<span>'+esc(t('hh_backHint'))+'</span><button type="button" class="btn secondary">'+esc(t('hh_back'))+'</button></div>');
     if (sendNodes.length) body.insertBefore(sendBack, sendNodes[0]);
-    var waits = qsa('.ho-wait', body), cpNode = typeof cpCard !== 'undefined' ? cpCard : null;
-    function showHo_(sending){
-      var tab = hoTab;
+    // what shows: the sending view, or the hub with one of its tabs; redone after every redraw
+    function applyVis_(){
+      var sending = hoSending, tab = hoTab;
       hub.hidden = sending; sendBack.hidden = !sending;
       sendNodes.forEach(function(n){ n.hidden = !sending; });
-      // a send form chosen by its tab keeps its own display rule
-      if (sending && typeof tabsRow !== 'undefined' && tabsRow) { var on = qs('.ho-send-b.on', tabsRow); if (on) on.click(); }
-      waits.forEach(function(n){ n.hidden = sending; });
+      waitBox.hidden = sending;
       hFilter.node.hidden = sending;
       anNode.hidden = sending || tab !== 'analysis';
       if (cpNode) cpNode.hidden = sending || tab !== 'analysis';
       pvNode.hidden = sending || tab !== 'pivot';
       hc.hidden = sending || tab !== 'list';
       qsa('.hh-tabs button', hub).forEach(function(b){ var o = b.getAttribute('data-v') === tab; b.classList.toggle('on', o); b.setAttribute('aria-selected', String(o)); });
+    }
+    function showHo_(sending){
+      hoSending = !!sending;
+      applyVis_();
+      // a send form chosen by its tab keeps its own display rule
+      if (sending && typeof tabsRow !== 'undefined' && tabsRow) { var on = qs('.ho-send-b.on', tabsRow); if (on) on.click(); }
       window.scrollTo(0, 0);
     }
     qs('.hh-tabs', hub).addEventListener('click', function(ev){
@@ -16569,6 +16844,7 @@ function renderHandoffs(body){
       FIX_OPEN_ = last ? last.id : null; render();
     });
     // a correction asked for (from Home, the bell or the counter) opens on the sending view
+    hoReady = true;
     showHo_(!!FIX_OPEN_ && sendNodes.length > 0);
     if (FIX_OPEN_) setTimeout(function(){ var fx = qs('#hoFix'); if (fx) fx.scrollIntoView({ block: 'start', behavior: 'smooth' }); }, 900);
   });
@@ -18200,6 +18476,18 @@ function plGet_(action, params){
 function plDirty_(){ PL_CACHE_ = {}; }
 function plCanSee_(){ return ['admin', 'finance', 'accountant'].indexOf(state.user.role) >= 0; }
 function plMonthAdd_(m, n){ var i = Number(m.slice(0, 4)) * 12 + Number(m.slice(5, 7)) - 1 + n, mo = i % 12 + 1; return Math.floor(i / 12) + '-' + (mo < 10 ? '0' : '') + mo; }
+// The months the costs tab covers (2026-10-14): a custom range of two or more months is read as
+// exactly those months (at most 12); one month, or a month picked from the list, keeps the
+// 6-month trend ending in it. Whole months: the costs are monthly.
+function plCostMonths_(from, to, custom){
+  var mTo = String(to).slice(0, 7), mFrom = String(from).slice(0, 7);
+  if (mFrom > mTo) { var x = mFrom; mFrom = mTo; mTo = x; }
+  function idx(m){ return Number(m.slice(0, 4)) * 12 + Number(m.slice(5, 7)); }
+  var n = idx(mTo) - idx(mFrom) + 1;
+  if (!custom || n <= 1) return { from: plMonthAdd_(mTo, -5), to: mTo, n: 6, trend: true, capped: false, asked: n };
+  if (n > 12) return { from: plMonthAdd_(mTo, -11), to: mTo, n: 12, trend: false, capped: true, asked: n };
+  return { from: mFrom, to: mTo, n: n, trend: false, capped: false, asked: n };
+}
 function plMonthDays_(m){ return new Date(Date.UTC(Number(m.slice(0, 4)), Number(m.slice(5, 7)), 0)).getUTCDate(); }
 function plMonthEnd_(m){ var d = plMonthDays_(m); return m + '-' + (d < 10 ? '0' : '') + d; }
 function plLocale_(){ return state.lang === 'ar' ? 'ar-SA-u-ca-gregory-nu-latn' : state.lang === 'ur' ? 'ur-PK-u-nu-latn' : 'en-GB'; }
@@ -19114,8 +19402,7 @@ function renderProfit(body){
 
   // ---- every monthly expense ----
   function costs(res){
-    var r = plRange_(), mTo = r[1].slice(0, 7), mFrom = PL_.custom ? r[0].slice(0, 7) : plMonthAdd_(mTo, -5);
-    if ((Number(mTo.slice(0, 4)) * 12 + Number(mTo.slice(5, 7))) - (Number(mFrom.slice(0, 4)) * 12 + Number(mFrom.slice(5, 7))) > 11) mFrom = plMonthAdd_(mTo, -11);
+    var r = plRange_(), cm = plCostMonths_(r[0], r[1], PL_.custom), mTo = cm.to, mFrom = cm.from;
     plGet_('getCostReport', { monthFrom: mFrom, monthTo: mTo }).then(function(cr){
       if (PL_.tab !== 'costs') return;
       if (!cr.ok) { fail(cr); return; }
@@ -19174,7 +19461,7 @@ function renderProfit(body){
       if (top.length === 1) open[top[0].key] = true;
       out.innerHTML = '';
       var card = el('<div class="card rp-card pv-card pl-costs" data-noexport="1"><div class="rp-head pv-head"><div><h2>'+esc(t('pl_costsTitle'))+'</h2>' +
-        '<p class="muted pl-sub">'+esc(plNodeName_(F))+' · '+esc(plMonthName_(cr.months[0]))+' – '+esc(plMonthName_(cr.months[nM - 1]))+'</p></div></div>' +
+        '<p class="muted pl-sub">'+esc(plNodeName_(F))+' · '+esc(plMonthName_(cr.months[0]))+' – '+esc(plMonthName_(cr.months[nM - 1]))+' · '+esc(cm.trend ? t('pl_costsTrend6') : t('pl_costsRange').replace('{n}', cm.n))+(cm.capped ? ' · '+esc(t('pl_costsCapped').replace('{asked}', cm.asked)) : '')+'</p></div></div>' +
         '<div class="pv-tools"><div class="pl-byhost"></div><div class="pv-depth" role="group"><span class="pv-depth-l">'+esc(t('pv_openTo'))+'</span>' +
           [1, 2, 3, 4, 5].map(function(d){ return '<button type="button" data-depth="'+d+'"><b>'+d+'</b></button>'; }).join('') + '</div></div>' +
         (rows.length ? '<div class="tbl-scroll rp-scroll"><table class="rp-table pv-table pl-table" data-nosort><thead><tr><th>'+esc(t('pv_level'))+'</th>' +
@@ -22323,40 +22610,44 @@ function renderAdminConfig(content){
   });
 }
 
+// what is chosen in the audit bar, kept across redraws (2026-10-14)
+var AU_STATE_ = {};
+// The bar's date range, words and person go to the server, which filters the whole log
+// before it limits the answer (the screen used to search only the latest 200 rows).
 function renderAdminAudit(content){
-  content.innerHTML = '<div class="card">'+esc(t('loading'))+'</div>';
-  api('listAudit', { limit: 200 }).then(function(res){
-    if(!res.ok){ content.innerHTML = '<div class="msg err">'+esc(errMsg_(res))+'</div>'; return; }
-    content.innerHTML = '';
-    var auditFilter = listFilters_({
-      fields: ['text','date','person'],
-      people: (state.meta.users||[]).map(function(u){ return [u.id, u.name]; }),
-      labels: { person: 'admin_name' },
-      sortAmount: false,
-      onChange: draw
-    });
-    content.appendChild(auditFilter.node);
-    var card = el('<div class="card"><div class="tbl-scroll" id="auditBody"></div></div>');
-    content.appendChild(card);
-    function draw(){
-      var shown = res.audit.filter(function(a){
-        return auditFilter.match({
-          date: (a.at||'').slice(0,10), people: [a.userId],
-          text: [a.action, userName(a.userId), a.detail, (a.at||'').slice(0,19)].join(' ')
-        });
-      });
-      shown = auditFilter.sort(shown, function(a){ return { date: a.at || '' }; });
-      auditFilter.count(shown.length, res.audit.length);
-      var body2 = qs('#auditBody', card);
-      if (!shown.length){ body2.innerHTML = '<div class="lf-empty">'+esc(t('lf_noMatch'))+'</div>'; return; }
-      body2.innerHTML = '<table><thead><tr><th>'+esc(t('handoff_created'))+'</th><th>action</th><th>'+esc(t('admin_name'))+'</th><th></th></tr></thead><tbody>' +
-        shown.map(function(a){
+  content.innerHTML = '';
+  var seq = 0, timer = null;
+  var auditFilter = listFilters_({
+    fields: ['text','date','person'],
+    people: (state.meta.users||[]).map(function(u){ return [u.id, u.name]; }),
+    labels: { person: 'admin_name' },
+    sortAmount: false,
+    state: AU_STATE_,
+    onChange: function(){ clearTimeout(timer); timer = setTimeout(load, 250); }
+  });
+  content.appendChild(auditFilter.node);
+  var card = el('<div class="card"><div class="tbl-scroll" id="auditBody" aria-live="polite">'+esc(t('loading'))+'</div></div>');
+  content.appendChild(card);
+  function load(){
+    var v = auditFilter.values(), box = qs('#auditBody', card);
+    if (v.from && v.to && v.from > v.to) { box.innerHTML = '<div class="msg err" role="alert">'+esc(t('err_invalidRange'))+'</div>'; return; }
+    var mine = ++seq;
+    box.setAttribute('aria-busy', 'true');
+    api('listAudit', { limit: 200, dateFrom: v.from, dateTo: v.to, text: v.text, userId: v.person, order: auditFilter.sortMode() === 'old' ? 'old' : 'new' }, { silent: true }).then(function(res){
+      if (mine !== seq) return;
+      box.removeAttribute('aria-busy');
+      if (!res.ok) { box.innerHTML = '<div class="msg err">'+esc(errMsg_(res))+'</div>'; return; }
+      auditFilter.count(res.audit.length, res.matched);
+      if (!res.audit.length) { box.innerHTML = '<div class="lf-empty">'+esc(t(auditFilter.active() ? 'lf_noMatch' : 'noData'))+'</div>'; return; }
+      box.innerHTML = '<table><thead><tr><th>'+esc(t('handoff_created'))+'</th><th>action</th><th>'+esc(t('admin_name'))+'</th><th></th></tr></thead><tbody>' +
+        res.audit.map(function(a){
           return '<tr><td>'+esc((a.at||'').slice(0,19).replace('T',' '))+'</td><td>'+esc(a.action)+'</td><td>'+esc(userName(a.userId))+'</td><td>'+esc(a.detail||'')+'</td></tr>';
         }).join('') + '</tbody></table>' +
-        '<div class="muted" style="margin-top:8px;font-size:11.5px;">'+esc(t('lf_showing').replace('{n}', shown.length).replace('{total}', res.audit.length))+'</div>';
-    }
-    draw();
-  });
+        '<div class="muted" style="margin-top:8px;font-size:11.5px;">'+esc(t('lf_showing').replace('{n}', res.audit.length).replace('{total}', res.matched) + ' · ' + t('au_logTotal').replace('{t}', res.total))+'</div>' +
+        (res.matched > res.audit.length ? '<div class="msg" style="margin-top:8px;">'+esc(t('au_capped').replace('{n}', res.audit.length).replace('{m}', res.matched))+'</div>' : '');
+    });
+  }
+  load();
 }
 
 // ---------------- render dispatcher ----------------

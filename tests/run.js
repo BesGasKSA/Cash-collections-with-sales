@@ -5313,5 +5313,154 @@ console.log('--- a day is never entered twice (2026-10-12) ---');
     'and its figure is exactly what is saved (500 − 20 − 30 = 450; got ' + (dr.breakdown && dr.breakdown.netCashOwed) + ' / ' + saved.netCashOwed + ')');
 })();
 
+// ---- the audit log filters before it limits (2026-10-14) ----
+(function () {
+  var base = Date.UTC(2025, 0, 1);
+  for (var i = 0; i < 230; i++) {
+    ctx.writeRow(SHEETS.AUDIT, { action: i % 2 ? 'oldA_probe' : 'oldB_probe', userId: i % 5 === 0 ? sara.id : musa.id, detail: 'old row ' + i, at: new Date(base + i * 3600000).toISOString() });
+  }
+  ctx.writeRow(SHEETS.AUDIT, { action: 'needle_action', userId: ali.id, detail: 'the one needle detail', at: new Date(base + 2 * 86400000).toISOString() });
+  for (var j = 0; j < 210; j++) ctx.writeRow(SHEETS.AUDIT, { action: 'newer_probe', userId: musa.id, detail: 'newer ' + j, at: new Date(Date.UTC(2026, 5, 1) + j * 60000).toISOString() });
+  var plain = call({ action: 'listAudit', token: adminTok, limit: 200 });
+  check(plain.ok && plain.audit.length === 200 && !plain.audit.some(function (a) { return a.action === 'needle_action'; }), 'the latest 200 rows alone do not hold the old needle');
+  check(plain.matched >= 441 && plain.total === plain.matched, 'without filters matched equals the whole log (' + plain.matched + '/' + plain.total + ')');
+  var byText = call({ action: 'listAudit', token: adminTok, limit: 200, text: 'NEEDLE detail' });
+  check(byText.ok && byText.audit.length === 1 && byText.audit[0].action === 'needle_action' && byText.matched === 1 && byText.total === plain.total, 'a text search finds a row older than the latest 200, case-blind, and reports matched/total');
+  var byDate = call({ action: 'listAudit', token: adminTok, limit: 200, dateFrom: '2025-01-02', dateTo: '2025-01-02' });
+  check(byDate.ok && byDate.audit.length === 24 && byDate.audit.every(function (a) { return a.at.slice(0, 10) === '2025-01-02'; }), 'a one-day range returns just that UTC day (got ' + (byDate.audit && byDate.audit.length) + ')');
+  var byRange = call({ action: 'listAudit', token: adminTok, limit: 10, dateFrom: '2025-01-01', dateTo: '2025-01-05' });
+  check(byRange.ok && byRange.audit.length === 10 && byRange.matched > 10, 'the limit applies after the filter: ' + (byRange.audit && byRange.audit.length) + ' of ' + byRange.matched);
+  var byAction = call({ action: 'listAudit', token: adminTok, limit: 500, auditAction: 'oldA_probe' });
+  check(byAction.ok && byAction.matched === 115 && byAction.audit.every(function (a) { return a.action === 'oldA_probe'; }), 'an action filter keeps only that action (' + byAction.matched + ')');
+  var byUser = call({ action: 'listAudit', token: adminTok, limit: 500, userId: sara.id, auditAction: 'oldB_probe' });
+  check(byUser.ok && byUser.audit.length > 0 && byUser.audit.every(function (a) { return a.userId === sara.id && a.action === 'oldB_probe'; }), 'filters combine');
+  var byName = call({ action: 'listAudit', token: adminTok, limit: 500, text: 'ali', dateFrom: '2025-01-03', dateTo: '2025-01-03' });
+  check(byName.ok && byName.audit.some(function (a) { return a.action === 'needle_action'; }), 'the text search also reads the person\'s name');
+  var oldest = call({ action: 'listAudit', token: adminTok, limit: 3, order: 'old' });
+  check(oldest.ok && oldest.audit.length === 3 && oldest.audit[0].at <= oldest.audit[1].at && oldest.audit[0].at < plain.audit[0].at, 'order old puts the oldest first');
+  var none = call({ action: 'listAudit', token: adminTok, limit: 50, text: 'zzz-no-such-thing' });
+  check(none.ok && none.audit.length === 0 && none.matched === 0 && none.total === plain.total, 'no match is an empty list, not an error');
+})();
+
+(function () {
+  check(call({ action: 'listAudit', token: adminTok, dateFrom: '2025/01/02' }).error === 'invalid_date', 'a malformed audit date is refused');
+  check(call({ action: 'listAudit', token: adminTok, dateFrom: '2025-01-05', dateTo: '2025-01-01' }).error === 'invalid_range', 'a reversed audit range is refused');
+  var big = call({ action: 'listAudit', token: adminTok, limit: 999999 });
+  check(big.ok && big.audit.length <= 2000, 'the limit is capped');
+  check(call({ action: 'listAudit', token: wafaTok, text: 'needle' }).audit.length === 1, 'an accountant filters the log too');
+})();
+
+console.log('--- a handover has its own date, defaulted from its entries (2026-10-14) ---');
+(function () {
+  function mk(name, email, role) { return call({ action: 'adminCreateUser', token: adminTok, data: { name: name, email: email, role: role, phone: role === 'collector' ? '0550000000' : undefined } }).user; }
+  var mgr = mk('Hd Area Manager', 'hdmgr.fx@bestgas.sa', 'cluster_manager'), colX = mk('Hd Collector X', 'hdcolx.fx@bestgas.sa', 'collector'), colY = mk('Hd Collector Y', 'hdcoly.fx@bestgas.sa', 'collector');
+  var bm = mk('Hd Branch Manager', 'hdbm.fx@bestgas.sa', 'store_manager'), drv = mk('Hd Driver', 'hddrv.fx@bestgas.sa', 'driver');
+  var mgrTok = acceptInvite('hdmgr.fx@bestgas.sa'), xTok = acceptInvite('hdcolx.fx@bestgas.sa'), yTok = acceptInvite('hdcoly.fx@bestgas.sa'), bmTok = acceptInvite('hdbm.fx@bestgas.sa'), drvTok = acceptInvite('hddrv.fx@bestgas.sa');
+  var area = call({ action: 'adminSaveEntity', token: adminTok, kind: 'cluster', data: { name: 'Hd Area', clusterManagerUserId: mgr.id } }).entity;
+  var loc = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: 'Riyadh', name: 'Hd Branch', clusterId: area.id, collectorUserId: colX.id } }).entity;
+  var store = call({ action: 'adminSaveEntity', token: adminTok, kind: 'store', data: { locationId: loc.id, name: 'Hd Store', storeManagerUserId: bm.id } }).entity;
+  var car = call({ action: 'adminSaveEntity', token: adminTok, kind: 'car', data: { locationId: loc.id, label: 'Hd Car', driverUserId: drv.id } }).entity;
+  check(area && loc && store && car, 'a branch with a store and a car');
+  var today = ctx.todayRiyadh_();
+  function ago(n) { var p = today.split('-'); var d = new Date(Date.UTC(+p[0], +p[1] - 1, +p[2] - n)); return d.toISOString().slice(0, 10); }
+  var D1 = ago(1), D3 = ago(3), D5 = ago(5);
+  var e1 = call({ action: 'createDailyEntry', token: drvTok, date: D3, sourceType: 'car', sourceId: car.id, cashSales: 300 });
+  check(e1.ok, 'the driver enters a car day three days back (' + (e1.error || '') + ')');
+  // car hop: one date, so the default is that date and nothing is flagged
+  var dry = call({ action: 'createHandoff', token: drvTok, kind: 'car_to_location', carId: car.id, dryRun: true });
+  check(dry.ok && dry.dryRun && dry.dates.defaultDate === D3 && dry.dates.entryDates.join() === D3 && dry.dates.dateMismatch === false, 'the preview offers the entry date and no warning (' + JSON.stringify(dry.dates) + ')');
+  check(ctx.readSheet(SHEETS.HANDOFFS).filter(function (h) { return h.carId === car.id; }).length === 0, 'a preview writes nothing');
+  var car1 = call({ action: 'createHandoff', token: drvTok, kind: 'car_to_location', carId: car.id });
+  check(car1.ok && car1.handoff.handoffDate === D3 && car1.handoff.entryDate === D3 && !car1.handoff.dateChanged, 'without a date the handover takes the entries date and carries no flag');
+  check(call({ action: 'confirmHandoff', token: bmTok, id: car1.handoff.id }).ok, 'the branch manager receives the car');
+  // location hop: store day D1 + the car's D3 -> two dates, default the latest
+  check(call({ action: 'createDailyEntry', token: bmTok, date: D1, sourceType: 'store', sourceId: store.id, cashSales: 700 }).ok, 'a store day one day back');
+  var ldry = call({ action: 'createHandoff', token: bmTok, kind: 'location_to_cluster', locationId: loc.id, dryRun: true });
+  check(ldry.ok && ldry.dates.entryDates.join() === D3 + ',' + D1 && ldry.dates.defaultDate === D1 && ldry.dates.dateMismatch === true, 'the branch send lists both dates and defaults to the latest (' + JSON.stringify(ldry.dates) + ')');
+  var bad = function (extra, code, label) { var r = call(Object.assign({ action: 'createHandoff', token: bmTok, kind: 'location_to_cluster', locationId: loc.id }, extra)); check(r.error === code, label + ' (' + (r.error || 'ok') + ')'); };
+  bad({ handoffDate: today }, 'date_reason_required', 'a changed date without a reason is refused');
+  bad({ handoffDate: today, dateChangeReason: '   ' }, 'date_reason_required', 'a blank reason is refused');
+  bad({ handoffDate: ago(-1), dateChangeReason: 'x' }, 'handoff_date_future', 'a date in the future is refused');
+  bad({ handoffDate: D5, dateChangeReason: 'x' }, 'handoff_date_before_entries', 'a date before the oldest entry is refused');
+  bad({ handoffDate: '2026-02-31', dateChangeReason: 'x' }, 'invalid_handoff_date', 'an impossible date is refused');
+  bad({ handoffDate: 'tomorrow', dateChangeReason: 'x' }, 'invalid_handoff_date', 'a malformed date is refused');
+  check(ctx.readSheet(SHEETS.HANDOFFS).filter(function (h) { return h.kind === 'location_to_cluster' && h.locationId === loc.id; }).length === 0, 'a refused date writes nothing');
+  var spoof = call({ action: 'createHandoff', token: bmTok, kind: 'location_to_cluster', locationId: loc.id, handoffDate: today, dateChangeReason: 'sent late, after the count', entryDate: '2020-01-01' });
+  var loc1 = spoof;
+  var stored = loc1.ok && ctx.getById_(SHEETS.HANDOFFS, loc1.handoff.id);
+  check(loc1.ok && stored.handoffDate === today && stored.entryDate === D1 && stored.dateChanged === true && stored.dateChangeReason === 'sent late, after the count' && stored.dateChangedBy === bm.id,
+    'a changed date with a reason is stored with the entry date the server worked out (a client entryDate is ignored), the flag, the reason and who (' + (loc1.error || '') + ')');
+  check(ctx.readSheet(SHEETS.AUDIT).some(function (a) { return a.action === 'handoff_date_changed' && a.detail === loc1.handoff.id && a.userId === bm.id; }), 'the change is audited as handoff_date_changed');
+  var lst = call({ action: 'listHandoffs', token: mgrTok }), seen = lst.handoffs.filter(function (h) { return h.id === loc1.handoff.id; })[0];
+  check(seen && seen.dateChanged === true && seen.handoffDate === today && seen.entryDate === D1 && seen.dateMismatch === true && seen.entryDates.join() === D3 + ',' + D1 && seen.dateChangeReason, 'the flag, both dates and every entry date show through listHandoffs');
+  check(call({ action: 'confirmHandoff', token: mgrTok, id: loc1.handoff.id }).ok, 'the area manager confirms');
+  // area -> collector: the walk goes through the branch handover to the car's entries
+  var adry = call({ action: 'createHandoff', token: mgrTok, kind: 'cluster_to_collector', clusterId: area.id, locationId: loc.id, dryRun: true });
+  check(adry.ok && adry.previews.length === 1 && adry.previews[0].dates.entryDates.join() === D3 + ',' + D1 && adry.previews[0].dates.defaultDate === D1, 'the area preview walks down to every entry date (' + JSON.stringify(adry.previews || adry) + ')');
+  check(call({ action: 'createHandoff', token: mgrTok, kind: 'cluster_to_collector', clusterId: area.id, locationId: loc.id, handoffDate: D5, dateChangeReason: 'x' }).error === 'handoff_date_before_entries', 'the area request refuses a date before the entries too');
+  var clu = call({ action: 'createHandoff', token: mgrTok, kind: 'cluster_to_collector', clusterId: area.id, locationId: loc.id });
+  check(clu.ok && clu.handoff.handoffDate === D1 && clu.handoff.entryDate === D1 && !clu.handoff.dateChanged, 'the area request defaults to the latest entry date, no flag (' + (clu.error || '') + ')');
+  var cl2 = call({ action: 'listHandoffs', token: mgrTok }).handoffs.filter(function (h) { return h.id === clu.handoff.id; })[0];
+  check(cl2 && cl2.dateMismatch === true && cl2.entryDates.join() === D3 + ',' + D1, 'its entry dates still list both days');
+  var cr = call({ action: 'collectionsData', token: mgrTok }), crow = cr.ok && cr.requests.filter(function (r) { return r.id === clu.handoff.id; })[0];
+  check(crow && crow.handoffDate === D1 && crow.entryDates.join() === D3 + ',' + D1, 'the Collections rows carry the dates');
+  check(call({ action: 'deputyValidateHandoff', token: walidTok, id: clu.handoff.id }).ok, 'the deputy validates');
+  check(call({ action: 'confirmHandoff', token: xTok, id: clu.handoff.id }).ok, 'X receives');
+  // collector -> collector
+  var cdry = call({ action: 'createHandoff', token: xTok, kind: 'collector_to_collector', toUserId: colY.id, dryRun: true });
+  check(cdry.ok && cdry.dates.entryDates.join() === D3 + ',' + D1 && cdry.dates.dateMismatch, 'the collector hand-on preview walks through every hop');
+  var c2c = call({ action: 'createHandoff', token: xTok, kind: 'collector_to_collector', toUserId: colY.id, handoffDate: D3, dateChangeReason: 'matches the older day' });
+  check(c2c.ok && c2c.handoff.handoffDate === D3 && c2c.handoff.dateChanged === true && c2c.handoff.entryDate === D1, 'a hand-on may carry another date with a reason, the default stays the servers (' + (c2c.error || '') + ')');
+  check(call({ action: 'confirmHandoff', token: yTok, id: c2c.handoff.id }).ok, 'Y confirms');
+  // deposit: the flag survives the collector hop
+  var ddry = call({ action: 'recordDeposit', token: yTok, dryRun: true });
+  check(ddry.ok && ddry.dates.entryDates.join() === D3 + ',' + D1 && ddry.dates.defaultDate === D1 && ddry.dates.dateMismatch === true, 'the deposit preview walks through the collector hop to the entries (' + JSON.stringify(ddry.dates || ddry) + ')');
+  check(call({ action: 'recordDeposit', token: yTok, bankReference: 'HD-1', handoffDate: today, dateChangeReason: '' }).error === 'date_reason_required', 'a deposit date change needs a reason too');
+  var dep = call({ action: 'recordDeposit', token: yTok, bankReference: 'HD-1' });
+  check(dep.ok && dep.handoff.handoffDate === D1 && dep.handoff.entryDate === D1 && !dep.handoff.dateChanged && dep.handoff.entryDates.join() === D3 + ',' + D1, 'the deposit defaults to the latest entry date (' + (dep.error || '') + ')');
+  var all = call({ action: 'listHandoffs', token: adminTok }).handoffs;
+  var dd = all.filter(function (h) { return h.id === dep.handoff.id; })[0];
+  check(dd && dd.dateMismatch === true && dd.entryDates.join() === D3 + ',' + D1, 'listHandoffs gives the deposit its entry dates');
+  // a row from before this build is derived: its entries date, no flag
+  var old = ctx.readSheet(SHEETS.HANDOFFS).filter(function (h) { return h.id === car1.handoff.id; })[0];
+  delete old.handoffDate; delete old.entryDate; ctx.writeRow(SHEETS.HANDOFFS, old);
+  var oldSeen = call({ action: 'listHandoffs', token: adminTok }).handoffs.filter(function (h) { return h.id === car1.handoff.id; })[0];
+  check(oldSeen && oldSeen.handoffDate === D3 && !oldSeen.dateChanged, 'a handover saved before this build shows its entries date and no flag');
+})();
+
+console.log('--- filters that drive everything: pure helpers (2026-10-14) ---');
+(function () {
+  var pctx = vm.createContext({});
+  ['plMonthAdd_', 'plCostMonths_'].forEach(function (n) { var src = clientFn_(n); check(!!src, n + ' exists'); if (src) vm.runInContext(src, pctx); });
+  if (pctx.plCostMonths_) {
+    var m1 = pctx.plCostMonths_('2026-10-01', '2026-10-14', false);
+    check(m1.trend && m1.from === '2026-05' && m1.to === '2026-10' && m1.n === 6, 'a single month keeps the 6-month trend');
+    var m1c = pctx.plCostMonths_('2026-10-03', '2026-10-20', true);
+    check(m1c.trend && m1c.from === '2026-05', 'a custom range inside one month is still the trend');
+    var m3 = pctx.plCostMonths_('2026-08-15', '2026-10-14', true);
+    check(!m3.trend && m3.from === '2026-08' && m3.to === '2026-10' && m3.n === 3 && !m3.capped, 'a multi-month range covers exactly its months');
+    var m2y = pctx.plCostMonths_('2024-01-01', '2026-10-14', true);
+    check(m2y.capped && m2y.n === 12 && m2y.from === '2025-11' && m2y.to === '2026-10' && m2y.asked === 34, 'a range over 12 months shows the last 12 and says how long it was asked');
+    var mrev = pctx.plCostMonths_('2026-10-14', '2026-08-01', true);
+    check(!mrev.trend && mrev.from === '2026-08' && mrev.to === '2026-10', 'a reversed range is read the right way round');
+    var mj = pctx.plCostMonths_('2025-11-01', '2026-02-10', true);
+    check(mj.from === '2025-11' && mj.to === '2026-02' && mj.n === 4, 'a range across a year end');
+  }
+  var cpc = vm.createContext({ t: function (k) { return k; }, money: function (n) { return Number(n || 0).toFixed(2); } });
+  var cps = clientFn_('collectPivotTree_'); vm.runInContext(cps, cpc);
+  var loc = { b1: { clusterId: 'A1' }, b3: { clusterId: 'A2' } };
+  function h(id, to, l, st, amt, day, extra) { return Object.assign({ id: id, kind: 'cluster_to_collector', toUserId: to, fromUserId: 'am', locationId: l, clusterId: loc[l].clusterId, status: st, amount: amt, createdAt: day + 'T09:00:00.000Z' }, extra || {}); }
+  var list = [h('p1', 'c1', 'b1', 'pending', 100, '2026-10-02'), h('p2', 'c1', 'b3', 'pending', 40, '2026-10-03'), h('p3', 'c2', 'b3', 'confirmed', 60, '2026-10-02', { consumedBy: 'dd' }),
+    { id: 'dd', kind: 'deposit', fromUserId: 'c2', amount: 60, status: 'completed', createdAt: '2026-10-04T09:00:00.000Z' }];
+  var meta = { locOf: function (id) { return loc[id] || {}; }, dayOf: function (i) { return String(i).slice(0, 10); }, from: '2026-10-01', to: '2026-10-31' };
+  var all = cpc.collectPivotTree_(list, meta);
+  var only = cpc.collectPivotTree_(list, Object.assign({}, meta, { include: function (x) { return x.locationId === 'b3'; } }));
+  check(all.total.toCollect === 140 && all.total.deposited === 60, 'without a filter everything counts');
+  check(only.total.toCollect === 40 && only.roots.length === 2 && only.roots.every(function (r) { return r.kids.every(function (a) { return a.key === 'A2'; }); }), 'the pivot counts only the requests the filter lets through');
+  check(only.total.deposited === 60, 'a request kept still finds its deposit among the unfiltered handovers');
+  var byStatus = cpc.collectPivotTree_(list, Object.assign({}, meta, { include: function (x) { return x.status === 'confirmed'; } }));
+  check(byStatus.total.toCollect === 0 && byStatus.total.deposited === 60, 'a status filter removes the open ones from to-collect');
+})();
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);
