@@ -5313,5 +5313,179 @@ console.log('--- a day is never entered twice (2026-10-12) ---');
     'and its figure is exactly what is saved (500 − 20 − 30 = 450; got ' + (dr.breakdown && dr.breakdown.netCashOwed) + ' / ' + saved.netCashOwed + ')');
 })();
 
+// ---------- Dashboard: every figure follows the filter (2026-10-14) ----------
+console.log('--- dashboard filters: handovers, held cash, comparison, trend, shortfall ---');
+(function () {
+  // a system of its own: nothing from the other sections is in these totals
+  var ctx = harness.buildContext(), SHEETS = ctx.SHEETS;
+  function call(payload) { try { return ctx.route_(payload); } catch (e) { return { ok: false, error: String(e && e.message || e) }; } }
+  (function () { var salt = ctx.randomSalt_(); ctx.writeRow(SHEETS.USERS, { id: ctx.Utilities.getUuid(), name: 'Fd Admin', email: 'fd.admin@bestgas.sa', role: 'admin', active: true, language: 'en', salt: salt, pass: ctx.hashPw_('Bootstrap#1', salt), mustChangePw: false }); })();
+  var adminTok = call({ action: 'login', email: 'fd.admin@bestgas.sa', password: 'Bootstrap#1' }).token;
+  function acceptInvite(email) {
+    var log = ctx._debug.mailLog, tok = null;
+    for (var i = log.length - 1; i >= 0 && !tok; i--) if (log[i].to === email) { var m = /[?&]invite=([A-Za-z0-9]+)/.exec(log[i].body); if (m) tok = m[1]; }
+    call({ action: 'acceptInvite', inviteToken: tok, password: 'RealPass#1' });
+    return call({ action: 'login', email: email, password: 'RealPass#1' }).token;
+  }
+  var fx = function (name, email, role) { return call({ action: 'adminCreateUser', token: adminTok, data: { name: name, email: email, role: role, phone: role === 'collector' ? '0550000000' : undefined } }).user; };
+  var mA = fx('Fd Area Manager A', 'fdmga.fx@bestgas.sa', 'cluster_manager'), mB = fx('Fd Area Manager B', 'fdmgb.fx@bestgas.sa', 'cluster_manager');
+  var cX = fx('Fd Collector X', 'fdcx.fx@bestgas.sa', 'collector'), cY = fx('Fd Collector Y', 'fdcy.fx@bestgas.sa', 'collector');
+  var mATok = acceptInvite('fdmga.fx@bestgas.sa');
+  var areaA = call({ action: 'adminSaveEntity', token: adminTok, kind: 'cluster', data: { name: 'Fd Area A', clusterManagerUserId: mA.id } }).entity;
+  var areaB = call({ action: 'adminSaveEntity', token: adminTok, kind: 'cluster', data: { name: 'Fd Area B', clusterManagerUserId: mB.id } }).entity;
+  function locOf(city, name, area, col) { return call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: city, name: name, clusterId: area.id, collectorUserId: col.id } }).entity; }
+  var A1 = locOf('Riyadh', 'Fd A1', areaA, cX), A2 = locOf('Riyadh', 'Fd A2', areaA, cX), B1 = locOf('Jeddah', 'Fd B1', areaB, cY);
+  check(areaA && areaB && A1 && A2 && B1, 'dashboard filters: two areas and three branches in two cities');
+  function dayN(n) { var d = new Date(ctx.todayRiyadh_() + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() - n); return d.toISOString().slice(0, 10); }
+  function ts(n) { return dayN(n) + 'T09:00:00.000Z'; }
+  var seq = 0;
+  function H(o) {
+    var h = Object.assign({ id: 'fdh' + (++seq), status: 'confirmed', consumedBy: null, sourceEntryIds: [], sourceHandoffIds: [], fromUserId: mA.id, toUserId: cX.id }, o);
+    h.createdAt = ts(o.day); h.confirmedAt = ts(o.confDay != null ? o.confDay : o.day); delete h.day; delete h.confDay;
+    ctx.writeRow(SHEETS.HANDOFFS, h); return h;
+  }
+  // requests (area -> collector) on several days and stages
+  var R1 = H({ kind: 'cluster_to_collector', locationId: A1.id, clusterId: areaA.id, amount: 1000, day: 0 });
+  var R2 = H({ kind: 'cluster_to_collector', locationId: A1.id, clusterId: areaA.id, amount: 500, status: 'pending_deputy', day: 0 });
+  var D1 = H({ kind: 'deposit', fromUserId: cX.id, toUserId: null, amount: 1000, status: 'completed', day: 1 });
+  var R3 = H({ kind: 'cluster_to_collector', locationId: A2.id, clusterId: areaA.id, amount: 700, day: 1, confDay: 2, consumedBy: D1.id });
+  var R4 = H({ kind: 'cluster_to_collector', locationId: B1.id, clusterId: areaB.id, fromUserId: mB.id, amount: 300, day: 1, confDay: 2, consumedBy: D1.id });
+  D1.sourceHandoffIds = [R3.id, R4.id]; ctx.writeRow(SHEETS.HANDOFFS, D1);
+  var R5 = H({ kind: 'cluster_to_collector', locationId: B1.id, clusterId: areaB.id, fromUserId: mB.id, amount: 400, status: 'pending', day: 3 });
+  var D2 = H({ kind: 'deposit', fromUserId: cY.id, toUserId: null, amount: 200, status: 'completed', day: 2 });
+  var C1 = H({ kind: 'collector_to_collector', fromUserId: cX.id, toUserId: cY.id, amount: 200, day: 2, consumedBy: D2.id });
+  var R6 = H({ kind: 'cluster_to_collector', locationId: A1.id, clusterId: areaA.id, amount: 200, day: 3, consumedBy: C1.id });
+  C1.sourceHandoffIds = [R6.id]; ctx.writeRow(SHEETS.HANDOFFS, C1); D2.sourceHandoffIds = [C1.id]; ctx.writeRow(SHEETS.HANDOFFS, D2);
+  var R7 = H({ kind: 'cluster_to_collector', locationId: A2.id, clusterId: areaA.id, amount: 600, status: 'disputed', day: 5 });
+  // earlier hops, a direct deposit and two shortfalls
+  var L1 = H({ kind: 'location_to_cluster', locationId: A1.id, clusterId: areaA.id, fromUserId: cX.id, toUserId: mA.id, amount: 1100, day: 0 });
+  var CT1 = H({ kind: 'car_to_location', locationId: A1.id, clusterId: areaA.id, status: 'pending', amount: 90, day: 0 });
+  var DD1 = H({ kind: 'deposit', direct: true, locationId: A1.id, fromUserId: mA.id, toUserId: null, amount: 50, status: 'completed', day: 0 });
+  var S1 = H({ kind: 'car_to_location', locationId: A1.id, clusterId: areaA.id, amount: 90, shortfall: 10, consumedBy: L1.id, day: 0 });
+  var S2 = H({ kind: 'car_to_location', locationId: B1.id, clusterId: areaB.id, fromUserId: mB.id, amount: 80, shortfall: 20, consumedBy: L1.id, day: 3 });
+  // sales entries (net = cash sales here)
+  function E(loc, n, amt) { ctx.writeRow(SHEETS.ENTRIES, { id: 'fde' + (++seq), date: dayN(n), locationId: loc.id, sourceType: 'store', sourceId: 'fdstore', cashSales: amt, posSales: 0, creditSales: 0, enteredBy: mA.id, createdAt: ts(n) }); }
+  E(A1, 0, 1000); E(A2, 1, 700); E(B1, 1, 300); E(B1, 3, 400); E(A1, 3, 200); E(A2, 5, 600);
+  function dash(f, tok) { return call(Object.assign({ action: 'getDashboardAll', token: tok || adminTok }, f)); }
+  function ids(res) { return (res.handoffs.handoffs || []).map(function (h) { return h.id; }).sort(); }
+  function sorted(list) { return list.map(function (h) { return h.id; }).sort(); }
+  function sumAmt(list) { return list.reduce(function (s, h) { return s + Number(h.amount || 0); }, 0); }
+  function depOf(res, id) { return (res.handoffs.handoffs || []).filter(function (h) { return h.id === id; })[0]; }
+  function collected(res) { return (res.handoffs.handoffs || []).filter(function (h) { return h.kind === 'deposit' && !h.direct && h.status !== 'voided'; }).reduce(function (s, h) { return s + Number(h.amount); }, 0); }
+
+  // no filter: nothing changes
+  var u = dash({});
+  check(u.ok && u.handoffs.handoffs.length === ctx.readSheet(SHEETS.HANDOFFS).length && depOf(u, D1.id).amount === 1000 && depOf(u, D2.id).amount === 200, 'dashboard filters: with no filter the bundle is the whole company, as before');
+  var heldAllRows = u.handoffs.handoffs.filter(function (h) { return h.status === 'confirmed' && !h.consumedBy && h.kind !== 'deposit'; });
+  close(u.dashboard.companyOutstanding, sumAmt(heldAllRows), 'unfiltered company outstanding = every held row');
+
+  // period only: today
+  var T0 = dash({ dateFrom: dayN(0), dateTo: dayN(0) });
+  check(JSON.stringify(ids(T0)) === JSON.stringify(sorted([R1, R2, L1, CT1, DD1, S1])), 'today: only the handovers made today (got ' + ids(T0).length + ')');
+  close(T0.dashboard.companyOutstanding, 1000 + 1100, 'today: company outstanding is today\'s held cash only');
+  check(T0.dashboard.companyHeldByHolder[cX.id] === 1000 && T0.dashboard.companyHeldByHolder[mA.id] === 1100, 'today: held by holder follows the filter');
+  check(collected(T0) === 0, 'today: no deposit from another day is counted as collected');
+  check(T0.report.totals.netCashOwed - collected(T0) >= 0, 'today: remaining is never negative because of deposits outside the filter');
+  check(T0.handoffIds && T0.handoffIds.length === ctx.readSheet(SHEETS.HANDOFFS).length, 'the bundle names every handover id so a day in another period is not read as waiting for the deputy');
+
+  // area B, all dates: only B's part of the shared deposit
+  var AB = dash({ clusterId: areaB.id });
+  check(JSON.stringify(ids(AB)) === JSON.stringify(sorted([R4, R5, S2, D1])), 'area B: its requests and the deposit that banked them');
+  close(depOf(AB, D1.id).amount, 300, 'area B: the shared deposit counts only B\'s 300');
+  close(depOf(AB, D1.id).fullAmount, 1000, 'area B: the deposit still says its full amount');
+  close(AB.dashboard.companyOutstanding, 0, 'area B: nothing held');
+  close(collected(AB), 300, 'area B: collected = its part of the deposit');
+  var CJ = dash({ city: 'Jeddah' });
+  check(JSON.stringify(ids(CJ)) === JSON.stringify(ids(AB)), 'city Jeddah gives the same handovers as area B');
+
+  // branch + period through a collector-to-collector hand-on
+  var B3 = dash({ locationId: A1.id, dateFrom: dayN(3), dateTo: dayN(3) });
+  check(JSON.stringify(ids(B3)) === JSON.stringify(sorted([R6, C1, D2])), 'branch A1 on day 3: the request, the hand-on and the deposit it ended in (got ' + ids(B3).length + ')');
+  close(depOf(B3, D2.id).amount, 200, 'the deposit counts the 200 that came from this request');
+  close(collected(B3), 200, 'branch A1 day 3: collected 200');
+  // period + branch, deposit shared with another area
+  var B1d = dash({ locationId: A2.id, dateFrom: dayN(1), dateTo: dayN(1) });
+  check(JSON.stringify(ids(B1d)) === JSON.stringify(sorted([R3, D1])) && depOf(B1d, D1.id).amount === 700, 'branch A2 on day 1: 700 of the shared deposit');
+  // area A all dates: no deposit amount outside the filter
+  var AA = dash({ clusterId: areaA.id });
+  close(collected(AA), 700 + 200, 'area A: collected = 700 + 200, never B\'s 300');
+  check(ids(AA).indexOf(R4.id) < 0 && ids(AA).indexOf(S2.id) < 0, 'area A: none of B\'s handovers');
+  // every figure = sum over filtered rows (parts add up to the whole)
+  [T0, AB, B3, B1d, AA].forEach(function (res, i) {
+    var rows = res.handoffs.handoffs;
+    var held = rows.filter(function (h) { return h.status === 'confirmed' && !h.consumedBy && h.kind !== 'deposit'; });
+    close(res.dashboard.companyOutstanding, sumAmt(held), 'filter #' + i + ': company outstanding = sum of the filtered held rows');
+    var byH = res.dashboard.companyHeldByHolder, tot = Object.keys(byH).reduce(function (s, k) { return s + byH[k]; }, 0);
+    close(tot, res.dashboard.companyOutstanding, 'filter #' + i + ': the holders add up to the outstanding figure');
+    rows.forEach(function (h) { if (h.kind === 'deposit' && h.fullAmount != null) check(h.amount <= h.fullAmount + 0.005 && h.amount > 0, 'filter #' + i + ': a deposit never counts more than it banked'); });
+  });
+  // the report side follows the same filter
+  close(AB.report.totals.netCashOwed, 700, 'area B: sales net follows the filter (300 + 400)');
+  close(T0.report.totals.netCashOwed, 1000, 'today: sales net 1,000');
+
+  // an area manager can only narrow his own scope
+  var own = dash({}, mATok), foreign = dash({ locationId: B1.id }, mATok), foreignArea = dash({ clusterId: areaB.id }, mATok);
+  check(own.ok && own.handoffs.handoffs.length > 0 && own.dashboard.companyOutstanding === undefined, 'an area manager sees his own handovers and no company figure');
+  check(foreign.ok && foreign.handoffs.handoffs.length === 0 && foreignArea.ok && foreignArea.handoffs.handoffs.length === 0, 'asking for another area\'s branch returns nothing extra');
+  var narrowed = dash({ locationId: A1.id }, mATok);
+  check(narrowed.handoffs.handoffs.every(function (h) { return own.handoffs.handoffs.some(function (o) { return o.id === h.id; }); }), 'a filter only narrows what the role already sees');
+
+  // comparison: the chosen period against the one right before it
+  var c1 = call({ action: 'getDashboardComparison', token: adminTok, dateFrom: dayN(1), dateTo: dayN(0), locationId: B1.id });
+  check(c1.ok && c1.current.gross === 300 && c1.previous.gross === 400, 'comparison: B1 for 2 days vs the 2 days before (got ' + JSON.stringify(c1.current) + ' / ' + JSON.stringify(c1.previous) + ')');
+  check(c1.period && c1.period.current.from === dayN(1) && c1.period.previous.from === dayN(3) && c1.period.previous.to === dayN(2), 'comparison: the previous period has the same length, right before');
+  var c2 = call({ action: 'getDashboardComparison', token: adminTok, dateFrom: dayN(6), dateTo: dayN(0), clusterId: areaA.id });
+  check(c2.ok && c2.current.gross === 2500 && c2.previous.gross === 0, 'comparison: area A over 7 days (2,500) against an empty week');
+  var c3 = call({ action: 'getDashboardComparison', token: adminTok });
+  check(c3.ok && c3.period && c3.period.days === 7, 'comparison: with no period the older last-7-days answer is kept (the screen shows none for "all")');
+  var c4 = call({ action: 'getDashboardComparison', token: adminTok, dateFrom: dayN(0), dateTo: dayN(0), city: 'Jeddah' });
+  check(c4.ok && c4.current.gross === 0 && c4.previous.gross === 300, 'comparison: city filter honoured (Jeddah: nothing today, 300 yesterday)');
+  var c5 = call({ action: 'getDashboardComparison', token: adminTok, dateFrom: dayN(1), dateTo: dayN(1), city: 'Riyadh' });
+  check(c5.ok && c5.current.gross === 700, 'comparison: city Riyadh on a single day');
+
+  // held trend: the chosen period, the same place
+  var tr = call({ action: 'getHeldCashTrend', token: adminTok, dateFrom: dayN(3), dateTo: dayN(0) });
+  check(tr.ok && tr.dates.length === 4 && tr.dates[0] === dayN(3) && tr.dates[3] === dayN(0), 'held trend: covers exactly the chosen period');
+  function heldOn(t, day, uid) { var s = t.series.filter(function (x) { return x.date === day; })[0]; return (s && s.byHolder[uid]) || 0; }
+  close(heldOn(tr, dayN(2), cX.id), 700 + 300 + 80, 'held trend (company): X held 1,000 + the 80 car hop two days ago');
+  var trB = call({ action: 'getHeldCashTrend', token: adminTok, dateFrom: dayN(3), dateTo: dayN(0), clusterId: areaB.id });
+  close(heldOn(trB, dayN(2), cX.id), 300 + 80, 'held trend (area B): only B\'s 300 of what X held');
+  var trAll = call({ action: 'getHeldCashTrend', token: adminTok });
+  check(trAll.ok && trAll.dates.length === 14, 'held trend: with no period it stays the last 14 days');
+  var trLong = call({ action: 'getHeldCashTrend', token: adminTok, dateFrom: dayN(100), dateTo: dayN(0) });
+  check(trLong.ok && trLong.dates.length <= 16 && trLong.weekly === true && trLong.dates[trLong.dates.length - 1] === dayN(0), 'held trend: a long period is shown by week');
+  var trMid = call({ action: 'getHeldCashTrend', token: adminTok, dateFrom: dayN(61), dateTo: dayN(0) });
+  check(trMid.ok && trMid.dates.length === 62 && !trMid.weekly, 'held trend: 62 days is still daily');
+
+  // shortfall by entrant takes the same filters
+  var sfAll = call({ action: 'getShortfallByEntrant', token: adminTok });
+  var sfB = call({ action: 'getShortfallByEntrant', token: adminTok, locationId: B1.id });
+  var sfT = call({ action: 'getShortfallByEntrant', token: adminTok, dateFrom: dayN(0), dateTo: dayN(0) });
+  var sfTot = function (r) { return r.byEntrant.reduce(function (s, e) { return s + e.totalShortfall; }, 0); };
+  check(sfAll.ok && sfTot(sfAll) >= 30 - 0.005, 'shortfall: unfiltered includes both');
+  close(sfTot(sfB), 20, 'shortfall: branch B1 only');
+  close(sfTot(sfT), 10, 'shortfall: today only');
+  var sfA = call({ action: 'getShortfallByEntrant', token: adminTok, clusterId: areaA.id });
+  close(sfTot(sfA), 10, 'shortfall: area A only');
+
+  // client: the "what is counted" line and the Customers tiles
+  var lineSrc = clientFn_('dashFilterLine_');
+  check(!!lineSrc, 'dashboard: the "what is counted" line is a pure function');
+  if (lineSrc) {
+    var lineFn = new Function('t', 'clusterName', 'locationName', lineSrc + ' return dashFilterLine_;')(function (k) { return k; }, function (id) { return id === 'a' ? 'North Area' : id; }, function (id) { return id; });
+    var s1 = lineFn({ from: '2026-10-01', to: '2026-10-14', city: '', clusterId: 'a', locationId: '' });
+    check(/2026-10-01/.test(s1) && /2026-10-14/.test(s1) && /North Area/.test(s1), 'the line names the dates and the area (' + s1 + ')');
+    check(lineFn({ from: '', to: '', city: '', clusterId: '', locationId: '' }).indexOf('dash_allDates') >= 0, 'with no filter the line says all dates');
+  }
+  var cusSrc = clientFn_('cusTotals_');
+  check(!!cusSrc, 'customers: header totals are a pure function of the rows shown');
+  if (cusSrc) {
+    var cusFn = new Function(cusSrc + ' return cusTotals_;')();
+    var cr = [{ balance: 100, uninvoiced: 5, paid: 10 }, { balance: -20, uninvoiced: 0, paid: 30 }, { balance: 50, uninvoiced: 7, paid: 0 }];
+    var tt = cusFn(cr.slice(0, 1)), t2 = cusFn(cr);
+    check(tt.owed === 100 && tt.owing === 1 && tt.uninvoiced === 5 && tt.paid === 10 && t2.owed === 150 && t2.owing === 2 && t2.uninvoiced === 12 && t2.paid === 40, 'customers: the tiles sum exactly the rows given (' + JSON.stringify(t2) + ')');
+  }
+})();
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);

@@ -3404,6 +3404,8 @@
   .wa-nophone{font-size:12.5px;color:var(--c-danger);margin:0;}
   .rp-main{margin-top:10px;}
   .df-bar .grid{margin-top:4px;}
+  .df-line{margin:10px 2px 0;font-size:13px;line-height:1.5;color:var(--muted);}
+  .df-line b{color:var(--text,inherit);font-weight:700;}
   .ch-card2{border:1.5px solid color-mix(in srgb,#C27C1E 45%,#fff);background:linear-gradient(180deg,color-mix(in srgb,#C27C1E 7%,#fff),#fff 60%);}
   .ch2-head{display:flex;gap:12px;align-items:center;margin-bottom:10px;}
   .ch2-head h2{margin:0;}
@@ -4133,6 +4135,7 @@ var L = {
     dash_totalToCollect:'إجمالي المستحق تحصيله', dash_deposited:'تم إيداعه بالبنك', dash_remainingToDeposit:'المتبقي للإيداع',
     dash_comparisonTitle:'آخر 7 أيام مقابل الأسبوع السابق', dash_comparisonPrevious:'الأسبوع السابق', dash_comparisonGross:'إجمالي المبيعات',
     dash_heldTrendTitle:'اتجاه النقدية المحتفظ بها لكل شخص (14 يوماً)', dash_heldTrendHint:'من كان يحتفظ بنقدية مؤكَّدة ولم تُسلَّم للمرحلة التالية بعد، في نهاية كل يوم خلال آخر 14 يوماً.',
+    dash_forFilter:'لهذا الفلتر', dash_allDates:'كل الفترات', dash_wholeCompany:'كل الشركة', dash_counting:'المحتسب', dash_cmpNeedPeriod:'اختر فترة (اليوم، الأسبوع، الشهر...) لتظهر مقارنتها بالفترة التي قبلها.', dash_cmpTitle2:'الفترة المختارة مقابل الفترة التي قبلها', dash_cmpPrev2:'الفترة السابقة', dash_heldTrendTitle2:'اتجاه النقدية المحتفظ بها لكل شخص خلال الفترة', dash_heldTrendHint2:'من كان يحتفظ بنقدية مؤكَّدة ولم تُسلَّم للمرحلة التالية في نهاية كل يوم من الفترة المختارة، وللمكان المختار.', dash_trendWeekly:'الفترة طويلة، فتظهر نقطة لكل أسبوع.', dash_depositShare:'الإيداع الذي ضمّ نقدية جهات أخرى يُحتسب هنا بحصة هذا الفلتر فقط.',
     dash_locationsReporting:'الفروع المُبلِّغة', dash_avgPerLocation:'متوسط لكل فرع', dash_topLocation:'أعلى فرع', dash_topProduct:'أعلى منتج',
     dash_bySourceType:'حسب نوع المصدر', dash_byCity:'حسب المدينة', dash_totalHandoffs:'إجمالي التسليمات', dash_disputeRate:'نسبة الاعتراضات',
     dash_avgHandoffAmount:'متوسط مبلغ التسليم', dash_statusBreakdown:'حسب الحالة', dash_kindBreakdown:'حسب مرحلة السلسلة',
@@ -4317,6 +4320,7 @@ var L = {
     dash_totalToCollect:'Total to collect', dash_deposited:'Deposited to bank', dash_remainingToDeposit:'Remaining to deposit',
     dash_comparisonTitle:'Last 7 days vs. the week before', dash_comparisonPrevious:'Previous week', dash_comparisonGross:'Gross sales',
     dash_heldTrendTitle:'Held cash by person — 14-day trend', dash_heldTrendHint:'Who was holding confirmed cash not yet handed to the next stage, at the end of each of the last 14 days.',
+    dash_forFilter:'for this filter', dash_allDates:'All dates', dash_wholeCompany:'Whole company', dash_counting:'Counting', dash_cmpNeedPeriod:'Choose a period (today, week, month...) to compare it with the one before.', dash_cmpTitle2:'Chosen period vs. the period before', dash_cmpPrev2:'Previous period', dash_heldTrendTitle2:'Held cash by person over the period', dash_heldTrendHint2:'Who was holding confirmed cash not yet handed to the next stage, at the end of each day of the chosen period, for the chosen place.', dash_trendWeekly:'A long period: one point per week.', dash_depositShare:'A deposit that banked other places\' cash counts here only this filter\'s share.',
     dash_locationsReporting:'Locations reporting', dash_avgPerLocation:'Avg. per location', dash_topLocation:'Top location', dash_topProduct:'Top product',
     dash_bySourceType:'By source type', dash_byCity:'By city', dash_totalHandoffs:'Total handoffs', dash_disputeRate:'Dispute rate',
     dash_avgHandoffAmount:'Avg. handoff amount', dash_statusBreakdown:'By status', dash_kindBreakdown:'By chain step',
@@ -4501,6 +4505,7 @@ var L = {
     dash_totalToCollect:'کل وصولی', dash_deposited:'بینک میں جمع', dash_remainingToDeposit:'باقی جمع کرنا',
     dash_comparisonTitle:'پچھلے 7 دن بمقابلہ اس سے پچھلا ہفتہ', dash_comparisonPrevious:'پچھلا ہفتہ', dash_comparisonGross:'کل فروخت',
     dash_heldTrendTitle:'فی شخص محفوظ نقدی — 14 دن کا رجحان', dash_heldTrendHint:'پچھلے 14 دنوں میں سے ہر دن کے اختتام پر کس کے پاس تصدیق شدہ نقدی موجود تھی جو ابھی اگلے مرحلے کو حوالے نہیں ہوئی۔',
+    dash_forFilter:'اس فلٹر کے لیے', dash_allDates:'تمام تاریخیں', dash_wholeCompany:'پوری کمپنی', dash_counting:'شمار', dash_cmpNeedPeriod:'پچھلی مدت سے موازنہ دیکھنے کے لیے مدت (آج، ہفتہ، مہینہ...) منتخب کریں۔', dash_cmpTitle2:'منتخب مدت بمقابلہ اس سے پچھلی مدت', dash_cmpPrev2:'پچھلی مدت', dash_heldTrendTitle2:'مدت کے دوران فی شخص محفوظ نقدی کا رجحان', dash_heldTrendHint2:'منتخب مدت کے ہر دن کے اختتام پر، منتخب جگہ کے لیے، کس کے پاس تصدیق شدہ نقدی تھی جو اگلے مرحلے کو حوالے نہیں ہوئی۔', dash_trendWeekly:'مدت لمبی ہے، اس لیے ہفتے میں ایک نقطہ دکھایا گیا ہے۔', dash_depositShare:'جس ڈپازٹ میں دوسری جگہوں کی نقدی شامل تھی وہ یہاں صرف اس فلٹر کے حصے کے طور پر شمار ہوتا ہے۔',
     dash_locationsReporting:'رپورٹ کرنے والے مقامات', dash_avgPerLocation:'اوسط فی مقام', dash_topLocation:'سرفہرست مقام', dash_topProduct:'سرفہرست پروڈکٹ',
     dash_bySourceType:'ذریعہ کی قسم کے مطابق', dash_byCity:'شہر کے مطابق', dash_totalHandoffs:'کل ترسیل', dash_disputeRate:'اعتراض کی شرح',
     dash_avgHandoffAmount:'اوسط ترسیل رقم', dash_statusBreakdown:'حالت کے مطابق', dash_kindBreakdown:'سلسلے کے مرحلے کے مطابق',
@@ -9498,7 +9503,7 @@ function openMetric_(key, ctx, extra){
     bankedAtSource: function(){ return { title: t('report_directDeposit'), items: ent(function(e){ return entryAmt_(e).banked; }, 'banked') }; },
     net:         function(){ return { title: t('dash_totalToCollect'), items: ent(function(e){ return entryAmt_(e).net; }, 'net') }; },
     outstanding: function(){ return { title: t('report_outstanding'), items: ent(function(e){ return !e.consumedBy && entryAmt_(e).net; }, 'net') }; },
-    deposited:   function(){ return { title: t('dash_deposited'), items: hof(function(h){ return h.kind === 'deposit' && h.status !== 'voided'; }) }; },
+    deposited:   function(){ return { title: t('dash_deposited'), items: hof(function(h){ return h.kind === 'deposit' && h.status !== 'voided'; }), note: handoffs.some(function(h){ return h.filtered; }) ? t('dash_depositShare') : '' }; },
     pending:     function(){ return { title: t('handoff_pending'), items: hof(function(h){ return h.status === 'pending'; }) }; },
     disputed:    function(){ return { title: t('handoff_disputed'), items: hof(function(h){ return h.status === 'disputed'; }) }; },
     allHandoffs: function(){ return { title: t('dash_totalHandoffs'), items: hof(function(h){ return h.kind !== 'deposit'; }) }; },
@@ -9707,7 +9712,7 @@ function eqForScreen_(entries, handoffs, report, open){
 // expenses and credit already taken off still showed as held, and cash on
 // its way between two people was missing. Three kinds of holding, and a
 // total that matches the remaining figure.
-function whereIsCashPanel_(entries, dash, open, handoffs){
+function whereIsCashPanel_(entries, dash, open, handoffs, allIds){
   var notYet = {};
   entries.forEach(function(e){
     if (e.consumedBy || e.voided) return;
@@ -9721,7 +9726,8 @@ function whereIsCashPanel_(entries, dash, open, handoffs){
     transit[h.toUserId] = (transit[h.toUserId] || 0) + Number(h.amount || 0);
   });
   // an area batch still with the deputy: its lines are taken, no handover exists yet
-  var hIds = {}; (handoffs || []).forEach(function(h){ hIds[h.id] = 1; });
+  // (with a dashboard filter the list is only part of them: allIds names every handover)
+  var hIds = {}; (handoffs || []).forEach(function(h){ hIds[h.id] = 1; }); (allIds || []).forEach(function(id){ hIds[id] = 1; });
   var batchHeld = {};
   entries.forEach(function(e){ if (!e.voided && e.consumedBy && !hIds[e.consumedBy] && e.batchId) batchHeld[e.enteredBy] = (batchHeld[e.enteredBy] || 0) + entryAmt_(e).net; });
   var rowsP = Object.keys(batchHeld).filter(function(uid){ return batchHeld[uid] > 0.004; }).map(function(uid){ return { label: userName(uid), sub: t('dash_awaitingDeputy'), amount: batchHeld[uid], color: 'var(--c-credit)', onClick: open('pending') }; });
@@ -9729,7 +9735,7 @@ function whereIsCashPanel_(entries, dash, open, handoffs){
   var held = dash && dash.companyHeldByHolder ? dash.companyHeldByHolder : {};
   var rowsB = Object.keys(held).map(function(uid){ return { label: userName(uid), sub: t('dash_heldConfirmedNotDeposited'), amount: held[uid], color: 'var(--c-deposit)', onClick: open('holderHandoffs', { uid: uid }) }; });
   var all = rowsA.concat(rowsP, rowsT, rowsB).sort(function(a,b){ return b.amount - a.amount; });
-  var p = panel_(t('dash_whereIsCash'), { hint: t('dash_cashLocationNote') });
+  var p = panel_(t('dash_whereIsCash'), { hint: t('dash_cashLocationNote') + (dashFilterOn_() ? ' · ' + t('dash_forFilter') : '') });
   p.appendChild(barRows_(all));
   var sumAll = all.reduce(function(a2, r){ return a2 + r.amount; }, 0);
   if (all.length) p.appendChild(el('<div class="wc-total"><span>'+esc(t('dash_whereTotal'))+'</span><b class="num">'+esc(money(sumAll))+'</b></div>'));
@@ -9809,15 +9815,23 @@ function channelsCard_(entries){
 }
 // ---- C. the dashboard's own filter bar: period, city, area, branch ----
 var DASH_F_ = null;
+function dashFilterOn_(){ var F = DASH_F_; return !!(F && (F.from || F.to || F.city || F.clusterId || F.locationId)); }
+// what the dashboard counts, in words: the dates, then the place ("1 Oct – 14 Oct · North Area")
+function dashFilterLine_(F){
+  var when = F.from && F.to ? (F.from === F.to ? F.from : F.from + ' – ' + F.to) : F.from ? F.from + ' →' : F.to ? '→ ' + F.to : t('dash_allDates');
+  var where = [F.city, F.clusterId ? clusterName(F.clusterId) : '', F.locationId ? locationName(F.locationId) : ''].filter(Boolean).join(' · ') || t('dash_wholeCompany');
+  return when + ' · ' + where;
+}
 function dashFilterBar_(onChange){
   var F = DASH_F_ || (DASH_F_ = { p: 'all', from: '', to: '', city: '', clusterId: '', locationId: '' });
   var meta = state.meta || {}, locs = meta.locations || [], cls = meta.clusters || [];
   var cities = []; locs.forEach(function(l){ if (l.city && cities.indexOf(l.city) < 0) cities.push(l.city); }); cities.sort();
-  var bar = el('<div class="card df-bar no-collapse"><div class="col-chips">' + ['today', 'yesterday', 'week', 'month', 'lastMonth', 'all'].map(function(p){ return '<button type="button" class="col-chip'+(F.p === p ? ' on' : '')+'" data-p="'+p+'">'+esc(t('rp_p_' + p))+'</button>'; }).join('') + '</div>' +
+  var bar = el('<div class="card df-bar no-collapse"><div class="col-chips">' + ['today', 'yesterday', 'week', 'month', 'lastMonth', 'all'].map(function(p){ return '<button type="button" class="col-chip'+(F.p === p ? ' on' : '')+'" data-p="'+p+'" aria-pressed="'+(F.p === p ? 'true' : 'false')+'">'+esc(t('rp_p_' + p))+'</button>'; }).join('') + '</div>' +
     '<div class="grid"><div class="field"><label>'+esc(t('report_from'))+'</label><input type="date" class="dfFrom" value="'+esc(F.from)+'"></div><div class="field"><label>'+esc(t('report_to'))+'</label><input type="date" class="dfTo" value="'+esc(F.to)+'"></div>' +
     '<div class="field"><label>'+esc(t('report_city'))+'</label><select class="dfCity"><option value="">'+esc(t('report_allCities'))+'</option>'+cities.map(function(c){ return '<option value="'+esc(c)+'"'+(F.city === c ? ' selected' : '')+'>'+esc(c)+'</option>'; }).join('')+'</select></div>' +
     (cls.length > 1 ? '<div class="field"><label>'+esc(t('admin_cluster'))+'</label><select class="dfArea"><option value="">'+esc(t('report_allAreas'))+'</option>'+cls.map(function(c){ return '<option value="'+esc(c.id)+'"'+(F.clusterId === c.id ? ' selected' : '')+'>'+esc(c.name)+'</option>'; }).join('')+'</select></div>' : '') +
-    '<div class="field"><label>'+esc(t('report_location'))+'</label><select class="dfLoc"><option value="">'+esc(t('report_allLocations'))+'</option>'+locs.filter(function(l){ return (!F.city || l.city === F.city) && (!F.clusterId || l.clusterId === F.clusterId); }).map(function(l){ return '<option value="'+esc(l.id)+'"'+(F.locationId === l.id ? ' selected' : '')+'>'+esc(l.city + ' — ' + l.name)+'</option>'; }).join('')+'</select></div></div></div>');
+    '<div class="field"><label>'+esc(t('report_location'))+'</label><select class="dfLoc"><option value="">'+esc(t('report_allLocations'))+'</option>'+locs.filter(function(l){ return (!F.city || l.city === F.city) && (!F.clusterId || l.clusterId === F.clusterId); }).map(function(l){ return '<option value="'+esc(l.id)+'"'+(F.locationId === l.id ? ' selected' : '')+'>'+esc(l.city + ' — ' + l.name)+'</option>'; }).join('')+'</select></div></div>' +
+    '<p class="df-line" role="status" aria-live="polite">'+esc(t('dash_counting'))+': <b>'+esc(dashFilterLine_(F))+'</b></p></div>');
   function ymd(d){ return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
   function range(p){
     var td = localToday_(), x = td.split('-').map(Number), d = new Date(x[0], x[1] - 1, x[2]);
@@ -9838,7 +9852,7 @@ function dashPayload_(){
   if (F.from) p.dateFrom = F.from; if (F.to) p.dateTo = F.to; if (F.city) p.city = F.city; if (F.clusterId) p.clusterId = F.clusterId; if (F.locationId) p.locationId = F.locationId;
   return p;
 }
-function renderDashboard(body){
+function renderDashboard(body, animate){
   body.innerHTML = skeleton_();
   // One combined request, drawn instantly from the last copy (apiCached).
   apiCached('getDashboardAll', dashPayload_(), body, function(all){
@@ -9851,7 +9865,8 @@ function renderDashboard(body){
     function open(key, extra){ return function(){ openMetric_(key, ctx, extra); }; }
     body.innerHTML = '';
     var T = report.totals;
-    body.appendChild(dashFilterBar_(function(){ renderDashboard(body); }));
+    body.appendChild(dashFilterBar_(function(){ renderDashboard(body, true); }));
+    var onF = dashFilterOn_(), forF = onF ? ' · ' + t('dash_forFilter') : '';
     var dChan = channelsCard_(entries);
 
     // ---- the equation: sales + additions − deductions = net cash ----
@@ -9873,7 +9888,7 @@ function renderDashboard(body){
     body.appendChild(secTitle_(t('dash_keyFigures')));
     body.appendChild(tiles_([
       { label: t('report_outstanding'), value: money(report.outstanding.netCashOwed), icon: 'clock', color: 'var(--c-hold)', foot: esc(t('dash_notYetHandedOff')), onClick: open('outstanding') },
-      { label: t('home_companyOutstanding'), value: dash.companyOutstanding != null ? money(dash.companyOutstanding) : '—', icon: 'wallet', color: 'var(--green)', foot: esc(t('dash_heldConfirmedNotDeposited')), onClick: open('held') },
+      { label: t('home_companyOutstanding'), value: dash.companyOutstanding != null ? money(dash.companyOutstanding) : '—', icon: 'wallet', color: 'var(--green)', foot: esc(t('dash_heldConfirmedNotDeposited') + forF), onClick: open('held') },
       { label: t('handoff_pending'), value: byStatus.pending, icon: 'handoffs', color: 'var(--c-hold)', foot: '<span class="num">'+esc(money(pendingAmt))+'</span>', onClick: open('pending') },
       { label: t('handoff_disputed'), value: byStatus.disputed, icon: 'alert', color: byStatus.disputed ? 'var(--c-danger)' : 'var(--green)', foot: '<span class="num">'+esc(money(disputedAmt))+'</span>', onClick: open('disputed') },
       { label: t('dash_deposits'), value: depositList.length, icon: 'bank', color: 'var(--green)', foot: '<span class="num">'+esc(money(st.deposited))+'</span>', onClick: open('deposited') },
@@ -9881,7 +9896,7 @@ function renderDashboard(body){
     ]));
 
     // ---- where the cash is ----
-    body.appendChild(whereIsCashPanel_(entries, dash, open, handoffs));
+    body.appendChild(whereIsCashPanel_(entries, dash, open, handoffs, all.handoffIds));
 
     // ---- branches: the league and the days each one reported ----
     body.appendChild(secTitle_(t('bh_section')));
@@ -9919,16 +9934,21 @@ function renderDashboard(body){
     g2.appendChild(prodPanel);
     body.appendChild(g2);
 
-    var cmpPanel = panel_(t('dash_comparisonTitle'), { noCollapse: true });
+    var cmpPanel = panel_(t('dash_cmpTitle2'), { noCollapse: true });
     cmpPanel.appendChild(el('<div id="dashComparison" class="muted">'+esc(t('loading'))+'</div>'));
     body.appendChild(cmpPanel);
-    api('getDashboardComparison', {}, { silent: true }).then(function(cmp){
+    var cmpF = dashPayload_();
+    if (!(cmpF.dateFrom && cmpF.dateTo)) { qs('#dashComparison', cmpPanel).textContent = t('dash_cmpNeedPeriod'); }
+    else api('getDashboardComparison', cmpF, { silent: true }).then(function(cmp){
       var wrap = qs('#dashComparison', cmpPanel);
       if (!wrap) return;
       if (!cmp.ok){ wrap.innerHTML = '<div class="msg err">'+esc(errMsg_(cmp))+'</div>'; return; }
       wrap.className = '';
-      wrap.innerHTML = comparisonRow_(t('dash_comparisonGross'), cmp.current.gross, cmp.previous.gross) +
-                       comparisonRow_(t('report_net'), cmp.current.netCashOwed, cmp.previous.netCashOwed);
+      var pp = cmp.period || {};
+      function rng(r){ return r ? (r.from === r.to ? r.from : r.from + ' – ' + r.to) : ''; }
+      wrap.innerHTML = (pp.current ? '<div class="muted" style="font-size:12.5px;margin-bottom:6px;"><bdi dir="ltr">'+esc(rng(pp.current))+'</bdi> · '+esc(t('dash_cmpPrev2'))+' <bdi dir="ltr">'+esc(rng(pp.previous))+'</bdi></div>' : '') +
+                       comparisonRow_(t('dash_comparisonGross'), cmp.current.gross, cmp.previous.gross, t('dash_cmpPrev2')) +
+                       comparisonRow_(t('report_net'), cmp.current.netCashOwed, cmp.previous.netCashOwed, t('dash_cmpPrev2'));
     });
 
     if (report.cylinderByLocation && report.cylinderByLocation.length){
@@ -9982,10 +10002,10 @@ function renderDashboard(body){
       body.appendChild(agingPanel);
     }
 
-    var heldTrendCard = panel_(t('dash_heldTrendTitle'), { hint: t('dash_heldTrendHint') });
+    var heldTrendCard = panel_(t('dash_heldTrendTitle2'), { hint: t('dash_heldTrendHint2') });
     heldTrendCard.appendChild(el('<div id="dashHeldTrend" class="muted">'+esc(t('loading'))+'</div>'));
     body.appendChild(heldTrendCard);
-    api('getHeldCashTrend', {}, { silent: true }).then(function(trend){
+    api('getHeldCashTrend', dashPayload_(), { silent: true }).then(function(trend){
       var wrap = qs('#dashHeldTrend', heldTrendCard);
       if (!wrap) return;
       if (!trend.ok){ wrap.innerHTML = '<div class="msg err">'+esc(errMsg_(trend))+'</div>'; return; }
@@ -9997,6 +10017,7 @@ function renderDashboard(body){
       wrap.className = '';
       wrap.innerHTML = '';
       wrap.appendChild(lineChart(trend.dates, series));
+      if (trend.weekly) wrap.appendChild(el('<div class="muted" style="font-size:12.5px;margin-top:6px;">'+esc(t('dash_trendWeekly'))+'</div>'));
     });
 
     var recent = handoffs.slice(0, 25);
@@ -10007,6 +10028,8 @@ function renderDashboard(body){
       }), { bars: false }));
       body.appendChild(recentPanel);
     }
+    // a changed filter: the figures count up to their new values (transform-free; none under reduced motion)
+    if (animate && !(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches)) countUp_(body);
   });
 }
 
@@ -16819,7 +16842,7 @@ function kpiRow(items){
 // divide-by-zero NaN).
 // A change against last week: a percentage only when last week had
 // something to compare with; from nothing, growth has no percentage.
-function comparisonRow_(label, current, previous){
+function comparisonRow_(label, current, previous, prevLabel){
   current = Number(current || 0); previous = Number(previous || 0);
   var badge;
   if (previous > 0) {
@@ -16828,7 +16851,7 @@ function comparisonRow_(label, current, previous){
   } else badge = '<span class="cmp-badge none">'+esc(t('dash_noCompare'))+'</span>';
   return '<div class="cmp-row"><div class="cmp-main"><div class="cmp-l">'+esc(label)+'</div>' +
       '<div class="cmp-v num">'+money(current)+'</div>' +
-      '<div class="cmp-p">'+esc(t('dash_comparisonPrevious'))+': '+(previous > 0 ? money(previous) : esc(t('dash_prevNone')))+'</div></div>' + badge + '</div>';
+      '<div class="cmp-p">'+esc(prevLabel || t('dash_comparisonPrevious'))+': '+(previous > 0 ? money(previous) : esc(t('dash_prevNone')))+'</div></div>' + badge + '</div>';
 }
 
 var CHART_PALETTE = ['#4D6D51','#8fae7a','#b3820f','#3b5540','#c14a30','#98988f'];
@@ -17148,7 +17171,8 @@ function renderReport(body){
           '<div class="muted" style="font-size:12px;margin-bottom:10px;">'+esc(t('report_shortfallHint'))+'</div>' +
           '<div id="rShortfall">'+esc(t('loading'))+'</div></div>');
         out.appendChild(shortfallCard);
-        api('getShortfallByEntrant', {}).then(function(res3){
+        var sfF = {}; ['dateFrom', 'dateTo', 'city', 'clusterId', 'locationId'].forEach(function(k){ if (payload[k]) sfF[k] = payload[k]; });
+        api('getShortfallByEntrant', sfF).then(function(res3){
           var wrap = qs('#rShortfall', shortfallCard);
           if (!res3.ok){ wrap.innerHTML = '<div class="msg err">'+esc(errMsg_(res3))+'</div>'; return; }
           if (!res3.byEntrant.length){ wrap.innerHTML = '<div class="muted">'+esc(t('report_shortfallNone'))+'</div>'; return; }
@@ -18351,6 +18375,12 @@ function plExBar_(onXlsx, onPdf){
 var CUS_ = { id: null, tab: 'statement', filter: 'all', q: '', from: '', to: '' };
 function cusCanWrite_(){ return ['admin', 'finance'].indexOf(state.user.role) >= 0; }
 function cusName_(id){ var c = byId((state.meta || {}).customers, id); return c ? c.name : '—'; }
+// The Customers header tiles: exactly what the table shows (search and chips applied)
+function cusTotals_(list){
+  var owing = list.filter(function(r){ return r.balance > 0.004; });
+  return { owed: owing.reduce(function(a, r){ return a + r.balance; }, 0), owing: owing.length,
+    uninvoiced: list.reduce(function(a, r){ return a + (r.uninvoiced || 0); }, 0), paid: list.reduce(function(a, r){ return a + (r.paid || 0); }, 0) };
+}
 function cusAmt_(n){ return '<bdi dir="ltr" class="num">'+money(n)+'</bdi>'; }
 // a balance in words: owes us, paid in advance, or settled
 function cusBalTxt_(b){ return b > 0.004 ? t('cus_owes') : b < -0.004 ? t('cus_advance') : t('cus_settled'); }
@@ -18367,18 +18397,20 @@ function renderCustomers(body){
       var r = by[c.id] || { customerId: c.id, sales: 0, fees: 0, owed: 0, paid: 0, paidCash: 0, paidBank: 0, balance: 0, uninvoiced: 0, invoices: 0, lastSale: '', lastPayment: '' };
       return Object.assign({ c: c }, r);
     });
-    var owing = rows.filter(function(r){ return r.balance > 0.004; });
-    var totalOwed = owing.reduce(function(s, r){ return s + r.balance; }, 0);
-    var unInv = rows.reduce(function(s, r){ return s + r.uninvoiced; }, 0);
-    var paid = rows.reduce(function(s, r){ return s + r.paid; }, 0);
     wrap.innerHTML = '';
     var head = el('<div class="card cus-hero"><div class="cus-hero-t"><h2>'+icon_('customers')+esc(t('cus_title'))+'</h2><p class="muted">'+esc(t('cus_lead'))+'</p></div></div>');
-    head.appendChild(tiles_([
-      { label: t('cus_tOwed'), value: money(totalOwed), icon: 'credit', color: 'var(--amber, #B7791F)' },
-      { label: t('cus_tOwing'), value: String(owing.length), icon: 'customers' },
-      { label: t('cus_tUninvoiced'), value: money(unInv), icon: 'doc', color: '#2F5D8A' },
-      { label: t('cus_tPaid'), value: money(paid), icon: 'bank' }
-    ]));
+    var tilesHost = el('<div class="cus-tiles"></div>');
+    head.appendChild(tilesHost);
+    function paintTiles(list){
+      var T = cusTotals_(list);
+      tilesHost.innerHTML = '';
+      tilesHost.appendChild(tiles_([
+        { label: t('cus_tOwed'), value: money(T.owed), icon: 'credit', color: 'var(--amber, #B7791F)' },
+        { label: t('cus_tOwing'), value: String(T.owing), icon: 'customers' },
+        { label: t('cus_tUninvoiced'), value: money(T.uninvoiced), icon: 'doc', color: '#2F5D8A' },
+        { label: t('cus_tPaid'), value: money(T.paid), icon: 'bank' }
+      ]));
+    }
     if (!((state.meta.config || {}).company || {}).vatNumber) head.appendChild(el('<div class="el-voidinfo cus-nocomp">'+icon_('alert')+'<span>'+esc(t('cus_noCompany'))+'</span></div>'));
     wrap.appendChild(head);
     var card = el('<div class="card"><div class="cus-bar"><div class="cus-search">'+icon_('search')+'<input type="search" placeholder="'+esc(t('cus_search'))+'" value="'+esc(CUS_.q)+'"></div>' +
@@ -18397,6 +18429,7 @@ function renderCustomers(body){
         if (CUS_.filter === 'active' && !(r.owed > 0 || r.paid > 0)) return false;
         return !q || normName_(r.c.name + ' ' + (r.c.code || '') + ' ' + (r.c.city || '') + ' ' + (r.c.vatNumber || '')).indexOf(q) >= 0;
       }).sort(function(a, b){ return b.balance - a.balance || String(a.c.code || '').localeCompare(String(b.c.code || '')); });
+      paintTiles(list);
       qs('.cus-count', card).textContent = t('cus_countOf').replace('{n}', list.length).replace('{m}', rows.length);
       tb.innerHTML = list.length ? list.map(function(r){
         var bal = r.balance;
