@@ -2257,11 +2257,63 @@ function actionRecordDeposit_(req, user) {
   return { ok: true, handoff: deposit };
 }
 
+// ---------- One filter for every dashboard figure (2026-10-14) ----------
+// A handover belongs to a period/place filter when its creation day (Riyadh) is
+// in [dateFrom, dateTo] and its branch, area and city match. An area request is
+// then followed (followRequest_, the Collections screen's own path) to its hand-ons
+// and its deposit, which come along with ONLY the part that came from requests in
+// the filter: a deposit that banked two areas' cash counts one area's share, never
+// the whole. No filter: the rows come back untouched.
+var DASH_FILTER_KEYS_ = ['dateFrom', 'dateTo', 'city', 'clusterId', 'locationId'];
+function dashFilterOn_(f) { return DASH_FILTER_KEYS_.some(function (k) { return !!(f && f[k]); }); }
+function riyadhDay_(iso) {
+  var t = Date.parse(iso); if (isNaN(t)) return String(iso || '').slice(0, 10); return new Date(t + 3 * 3600000).toISOString().slice(0, 10); // Riyadh is UTC+3 all year
+}
+// rows: what the viewer's role already sees; allRows: the whole sheet (to follow chains)
+function filterHandoffs_(rows, req, allRows, placeOnly) {
+  var f = {}; DASH_FILTER_KEYS_.forEach(function (k) { if (req && req[k] && !(placeOnly && (k === 'dateFrom' || k === 'dateTo'))) f[k] = req[k]; });
+  if (!dashFilterOn_(f)) return rows;
+  var byId = Object.create(null), scoped = Object.create(null), locById = Object.create(null);
+  allRows.forEach(function (h) { byId[h.id] = h; });
+  rows.forEach(function (h) { scoped[h.id] = 1; });
+  readSheet(SHEETS.LOCATIONS).forEach(function (l) { locById[l.id] = l; });
+  function inF(h) {
+    var day = riyadhDay_(h.createdAt);
+    if (f.dateFrom && day < f.dateFrom) return false;
+    if (f.dateTo && day > f.dateTo) return false;
+    if (f.locationId && h.locationId !== f.locationId) return false;
+    if (f.clusterId) { var lc = h.locationId ? locById[h.locationId] : null; if ((h.clusterId || (lc && lc.clusterId) || null) !== f.clusterId) return false; }
+    if (f.city) { var l = h.locationId ? locById[h.locationId] : null; if (!l || l.city !== f.city) return false; }
+    return true;
+  }
+  var out = rows.filter(function (h) {
+    if (h.kind === 'collector_to_collector' || (h.kind === 'deposit' && !h.direct)) return false;
+    return inF(h);
+  });
+  // the share of each hand-on and deposit that came from requests in the filter
+  var part = Object.create(null);
+  allRows.forEach(function (h) {
+    if (h.kind !== 'cluster_to_collector' || !inF(h)) return;
+    var fr = followRequest_(h, byId);
+    if (!fr) return;
+    fr.hops.forEach(function (hp) { part[hp.id] = (part[hp.id] || 0) + hp.carried; });
+    if (fr.dep) part[fr.dep.id] = (part[fr.dep.id] || 0) + fr.now;
+  });
+  rows.forEach(function (h) {
+    if (!part[h.id] || !scoped[h.id]) return;
+    var c = {}; Object.keys(h).forEach(function (k) { c[k] = h[k]; });
+    c.fullAmount = Number(h.amount || 0); c.amount = Math.round(part[h.id] * 100) / 100; c.filtered = true;
+    out.push(c);
+  });
+  return out;
+}
+
 function actionListHandoffs_(req, user) {
-  var rows = readSheet(SHEETS.HANDOFFS);
+  var all = readSheet(SHEETS.HANDOFFS), rows = all;
   if (!isCompanyWide_(user.role)) {
     rows = rows.filter(function (h) { return (h.fromUserId === user.id || h.toUserId === user.id) && inActiveArea_(user, h); });
   }
+  rows = filterHandoffs_(rows, req, all);
   if (req.status) rows = rows.filter(function (h) { return h.status === req.status; });
   if (req.kind) rows = rows.filter(function (h) { return h.kind === req.kind; });
   rows.sort(function (a, b) { return new Date(b.createdAt) - new Date(a.createdAt); });
@@ -2299,35 +2351,44 @@ function collectionsScope_(user) {
   });
   return function (h) { return !!(h.locationId && locs[h.locationId]); };
 }
+// Follows one area request to where its cash stands now. The one definition
+// of that path: the Collections screen and the dashboard's filtered figures
+// both read it. Returns null for a status that is not followed. Each hop says
+// what it carried (carried) and the result what is left of the request (now).
+function followRequest_(h, byId) {
+  var hops = [], cur = h, holder = h.toUserId, stage, stageAt = h.createdAt, dep = null, n = 0;
+  // a hop received short carries its share of the gap: the request's cash shrinks in proportion
+  var now = Number(h.amount || 0), hopShort = 0;
+  if (h.status === 'pending_deputy') stage = 'deputy';
+  else if (h.status === 'pending') { stage = 'pending'; stageAt = h.deputyValidatedAt || h.createdAt; }
+  else if (h.status === 'returned' || h.status === 'disputed' || h.status === 'rejected') stage = h.status;
+  else if (h.status === 'confirmed') {
+    stage = 'held'; stageAt = h.resolvedAt || h.confirmedAt || h.createdAt;
+    while (cur.consumedBy && byId[cur.consumedBy] && n++ < 20) {
+      var nx = byId[cur.consumedBy];
+      if (nx.kind === 'collector_to_collector') {
+        hops.push({ id: nx.id, txNo: nx.txNo || '', fromUserId: nx.fromUserId, toUserId: nx.toUserId, status: nx.status, at: nx.createdAt, confirmedAt: nx.confirmedAt || null, amount: Number(nx.amount || 0), shortfall: Number(nx.shortfall || 0), carried: now });
+        holder = nx.toUserId;
+        if (nx.status !== 'confirmed') { stage = nx.status === 'disputed' ? 'disputed' : 'moving'; stageAt = nx.createdAt; break; }
+        var decl = nx.originalAmount != null ? Number(nx.originalAmount) : Number(nx.amount || 0);
+        if (decl > 0 && Math.abs(decl - Number(nx.amount || 0)) > 0.004) { var after = Math.round(now * Number(nx.amount || 0) / decl * 100) / 100; hopShort += now - after; now = after; hops[hops.length - 1].carried = now; }
+        stageAt = nx.confirmedAt || nx.createdAt; cur = nx; continue;
+      }
+      if (nx.kind === 'deposit' && nx.status !== 'voided') { dep = nx; stage = 'deposited'; stageAt = nx.createdAt; holder = nx.fromUserId; }
+      break;
+    }
+  } else return null;
+  return { hops: hops, holder: holder, stage: stage, stageAt: stageAt, dep: dep, now: now, hopShort: hopShort };
+}
 function actionCollectionsData_(req, user) {
   var rows = readSheet(SHEETS.HANDOFFS), byId = Object.create(null);
   rows.forEach(function (h) { byId[h.id] = h; });
   var wide = isCompanyWide_(user.role), see = collectionsScope_(user), out = [];
   rows.forEach(function (h) {
     if (h.kind !== 'cluster_to_collector') return;
-    // follow the cash through collector → collector hand-ons to where it is now
-    var hops = [], cur = h, holder = h.toUserId, stage, stageAt = h.createdAt, dep = null, n = 0;
-    // a hop received short carries its share of the gap: the request's cash shrinks in proportion
-    var now = Number(h.amount || 0), hopShort = 0;
-    if (h.status === 'pending_deputy') stage = 'deputy';
-    else if (h.status === 'pending') { stage = 'pending'; stageAt = h.deputyValidatedAt || h.createdAt; }
-    else if (h.status === 'returned' || h.status === 'disputed' || h.status === 'rejected') stage = h.status;
-    else if (h.status === 'confirmed') {
-      stage = 'held'; stageAt = h.resolvedAt || h.confirmedAt || h.createdAt;
-      while (cur.consumedBy && byId[cur.consumedBy] && n++ < 20) {
-        var nx = byId[cur.consumedBy];
-        if (nx.kind === 'collector_to_collector') {
-          hops.push({ id: nx.id, txNo: nx.txNo || '', fromUserId: nx.fromUserId, toUserId: nx.toUserId, status: nx.status, at: nx.createdAt, confirmedAt: nx.confirmedAt || null, amount: Number(nx.amount || 0), shortfall: Number(nx.shortfall || 0) });
-          holder = nx.toUserId;
-          if (nx.status !== 'confirmed') { stage = nx.status === 'disputed' ? 'disputed' : 'moving'; stageAt = nx.createdAt; break; }
-          var decl = nx.originalAmount != null ? Number(nx.originalAmount) : Number(nx.amount || 0);
-          if (decl > 0 && Math.abs(decl - Number(nx.amount || 0)) > 0.004) { var after = Math.round(now * Number(nx.amount || 0) / decl * 100) / 100; hopShort += now - after; now = after; }
-          stageAt = nx.confirmedAt || nx.createdAt; cur = nx; continue;
-        }
-        if (nx.kind === 'deposit' && nx.status !== 'voided') { dep = nx; stage = 'deposited'; stageAt = nx.createdAt; holder = nx.fromUserId; }
-        break;
-      }
-    } else return;
+    var f = followRequest_(h, byId);
+    if (!f) return;
+    var hops = f.hops, holder = f.holder, stage = f.stage, stageAt = f.stageAt, dep = f.dep, now = f.now, hopShort = f.hopShort;
     if (!see(h, hops, holder)) return;
     var depSeen = dep && (wide || dep.fromUserId === user.id);
     out.push({
@@ -2576,6 +2637,8 @@ function actionDashboard_(req, user) {
   };
 
   if (isCompanyWide_(user.role)) {
+    // the company figures follow the dashboard's period and place (filterHandoffs_)
+    handoffs = filterHandoffs_(handoffs, req, readSheet(SHEETS.HANDOFFS));
     var allHeld = handoffs.filter(function (h) { return h.status === 'confirmed' && !h.consumedBy; });
     var byHolder = {};
     allHeld.forEach(function (h) { byHolder[h.toUserId] = (byHolder[h.toUserId] || 0) + Number(h.amount || 0); });
@@ -3014,7 +3077,10 @@ function actionDashboardAll_(req, user) {
   if (!handoffs.ok) return handoffs;
   var dashboard = actionDashboard_(req, user);
   if (!dashboard.ok) return dashboard;
-  return { ok: true, report: report, handoffs: handoffs, dashboard: dashboard };
+  // every handover id the viewer's role sees, filtered or not: an entry whose handover lies
+  // outside the filter is not "waiting for the deputy"
+  var scopedIds = readSheet(SHEETS.HANDOFFS).filter(function (h) { return isCompanyWide_(user.role) || ((h.fromUserId === user.id || h.toUserId === user.id) && inActiveArea_(user, h)); }).map(function (h) { return h.id; });
+  return { ok: true, report: report, handoffs: handoffs, dashboard: dashboard, handoffIds: scopedIds };
 }
 
 // ---------- Sales report ----------
@@ -3238,10 +3304,14 @@ function actionSalesReport_(req, user) {
 // shortfall is attributed to that driver directly (h.fromUserId).
 function actionShortfallByEntrant_(req, user) {
   requireCompanyWide_(user);
-  var flagged = readSheet(SHEETS.HANDOFFS).filter(function (h) {
+  // the report's own period and place (a hop belongs to the filter by its creation day and branch)
+  var allH = readSheet(SHEETS.HANDOFFS), inFilter = dashFilterOn_(req) ? Object.create(null) : null;
+  if (inFilter) filterHandoffs_(allH, req, allH).forEach(function (h) { inFilter[h.id] = 1; });
+  var pool = inFilter ? allH.filter(function (h) { return inFilter[h.id]; }) : allH;
+  var flagged = pool.filter(function (h) {
     return h.kind === 'location_to_cluster' && h.shortfall != null && Math.abs(Number(h.shortfall)) > 0.01;
   });
-  var flaggedCar = readSheet(SHEETS.HANDOFFS).filter(function (h) {
+  var flaggedCar = pool.filter(function (h) {
     return h.kind === 'car_to_location' && h.shortfall != null && Math.abs(Number(h.shortfall)) > 0.01;
   });
 
@@ -3287,19 +3357,28 @@ function actionShortfallByEntrant_(req, user) {
 // configure a date range first. `date` on daily_entries is a plain
 // YYYY-MM-DD string (same as everywhere else this app filters by date), so
 // comparing as strings avoids any timezone ambiguity from parsing into Date.
+function addDaysIso_(iso, n) {
+  var d = new Date(iso + 'T12:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10);
+}
+// (2026-10-14) The chosen period against the period of the same length right
+// before it, with the same city/area/branch.
 function actionDashboardComparison_(req, user) {
   requireCompanyWide_(user);
+  // no period asked (an older screen): the last 7 days against the 7 before, as it always was.
+  // The dashboard itself does not call this for "all" and shows no comparison.
+  req = Object.assign({}, req);
+  if (!req.dateFrom || !req.dateTo || req.dateFrom > req.dateTo) { req.dateTo = todayRiyadh_(); req.dateFrom = addDaysIso_(req.dateTo, -6); }
   var entries = readSheet(SHEETS.ENTRIES).filter(function (e) { return !e.voided; });
-
-  function isoDateOffset_(daysAgo) {
-    var d = new Date();
-    d.setDate(d.getDate() - daysAgo);
-    return d.toISOString().slice(0, 10);
-  }
-  var todayStr = isoDateOffset_(0);
-  var currentStart = isoDateOffset_(6);
-  var previousStart = isoDateOffset_(13);
-  var previousEnd = isoDateOffset_(7);
+  var locById = {}; readSheet(SHEETS.LOCATIONS).forEach(function (l) { locById[l.id] = l; });
+  entries = entries.filter(function (e) {
+    var l = locById[e.locationId];
+    if (req.locationId && e.locationId !== req.locationId) return false;
+    if (req.clusterId && !(l && l.clusterId === req.clusterId)) return false;
+    if (req.city && !(l && l.city === req.city)) return false;
+    return true;
+  });
+  var span = Math.round((new Date(req.dateTo + 'T12:00:00Z') - new Date(req.dateFrom + 'T12:00:00Z')) / 86400000) + 1;
+  var previousEnd = addDaysIso_(req.dateFrom, -1), previousStart = addDaysIso_(previousEnd, -(span - 1));
 
   function rangeTotals_(fromStr, toStr) {
     var inRange = entries.filter(function (e) { return e.date >= fromStr && e.date <= toStr; });
@@ -3310,8 +3389,9 @@ function actionDashboardComparison_(req, user) {
 
   return {
     ok: true,
-    current: rangeTotals_(currentStart, todayStr),
-    previous: rangeTotals_(previousStart, previousEnd)
+    current: rangeTotals_(req.dateFrom, req.dateTo),
+    previous: rangeTotals_(previousStart, previousEnd),
+    period: { current: { from: req.dateFrom, to: req.dateTo }, previous: { from: previousStart, to: previousEnd }, days: span }
   };
 }
 
@@ -3327,8 +3407,15 @@ function actionDashboardComparison_(req, user) {
 // rows themselves.
 function actionHeldCashTrend_(req, user) {
   requireCompanyWide_(user);
-  var days = 14;
-  var handoffs = readSheet(SHEETS.HANDOFFS);
+  // (2026-10-14) the chosen period and place; no period: the last 14 days. Over 62 days: one point a week.
+  var allH = readSheet(SHEETS.HANDOFFS);
+  var handoffs = filterHandoffs_(allH, req, allH, true);
+  var todayStr = todayRiyadh_();
+  var endDay = req.dateTo && req.dateTo < todayStr ? req.dateTo : todayStr;
+  var startDay = req.dateFrom || addDaysIso_(endDay, -13);
+  if (startDay > endDay) startDay = endDay;
+  var spanDays = Math.round((new Date(endDay + 'T12:00:00Z') - new Date(startDay + 'T12:00:00Z')) / 86400000) + 1;
+  var weekly = spanDays > 62;
 
   function isoDateOffset_(daysAgo) {
     var d = new Date();
@@ -3337,7 +3424,7 @@ function actionHeldCashTrend_(req, user) {
   }
 
   var createdAtById = {};
-  handoffs.forEach(function (h) { createdAtById[h.id] = h.createdAt; });
+  allH.forEach(function (h) { createdAtById[h.id] = h.createdAt; });
 
   var windows = handoffs.map(function (h) {
     if (h.status !== 'confirmed') return null;
@@ -3356,7 +3443,8 @@ function actionHeldCashTrend_(req, user) {
   windows.forEach(function (w) { holderIds[w.holderId] = true; });
 
   var dates = [];
-  for (var i = days - 1; i >= 0; i--) dates.push(isoDateOffset_(i));
+  if (weekly) { for (var wd = endDay; wd >= startDay; wd = addDaysIso_(wd, -7)) dates.unshift(wd); }
+  else { for (var di = 0; di < spanDays; di++) dates.push(addDaysIso_(startDay, di)); }
 
   var series = dates.map(function (dayStr) {
     var byHolder = {};
@@ -3368,7 +3456,7 @@ function actionHeldCashTrend_(req, user) {
     return { date: dayStr, byHolder: byHolder };
   });
 
-  return { ok: true, dates: dates, holderIds: Object.keys(holderIds), series: series };
+  return { ok: true, dates: dates, holderIds: Object.keys(holderIds), series: series, weekly: weekly };
 }
 
 function actionListAudit_(req, user) {
