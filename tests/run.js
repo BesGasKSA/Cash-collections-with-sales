@@ -5169,6 +5169,8 @@ console.log('--- a branch changes collector; the old one keeps what he holds unt
   check(cdB.ok && cdB.requests.length === 3 && cdB.requests.every(function (r) { return r.locationId === loc.id; }), 'collections: the branch manager follows his own branch\'s cash');
   var cdY = call({ action: 'collectionsData', token: yTok });
   check(cdY.ok && cdY.requests.length === 3 && cdRow(cdY, r1.handoff.id).depositRef === 'CC-Y-1', 'collections: Y sees what reached him, X\'s request included, and his own bank reference');
+  check(cdRow(cdM, r1.handoff.id).depositHasSlip === null && cdRow(cdY, r1.handoff.id).depositHasSlip === false && cdRow(cdA, r1.handoff.id).depositHasSlip === false, 'collections: the slip flag goes only to the depositor and company-wide roles');
+  check(cdRow(cdM, r1.handoff.id).depositBy === colY.id, 'collections: the depositor is named');
   check(!call({ action: 'collectionsData' }).ok, 'collections: needs a sign-in');
   // nobody outside the chain sees it
   var outCol = mk('Cc Outsider Collector', 'ccout.fx@bestgas.sa', 'collector'), outBm = mk('Cc Other Branch Manager', 'ccobm.fx@bestgas.sa', 'store_manager');

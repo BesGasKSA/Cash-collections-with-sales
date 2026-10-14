@@ -2336,7 +2336,8 @@ function actionCollectionsData_(req, user) {
       fromUserId: h.fromUserId, toUserId: h.toUserId, status: h.status, createdAt: h.createdAt,
       confirmedAt: h.confirmedAt || null, holder: holder, stage: stage, stageAt: stageAt, hops: hops,
       depositId: dep ? dep.id : null, depositNo: dep ? (dep.txNo || '') : '', depositedAt: dep ? dep.createdAt : null,
-      depositRef: depSeen ? (dep.bankReference || '') : '', reconciled: !!(dep && dep.reconciled)
+      depositRef: depSeen ? (dep.bankReference || '') : '', reconciled: !!(dep && dep.reconciled),
+      depositHasSlip: depSeen ? !!dep.attachmentId : null, depositBy: dep ? dep.fromUserId : null
     });
   });
   out.sort(function (a, b) { var x = String(a.createdAt), y = String(b.createdAt); return x === y ? 0 : (y < x ? -1 : 1); });
