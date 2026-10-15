@@ -5719,5 +5719,44 @@ console.log('--- a receipt of 0 is refused: report a problem instead ---');
   check(!rz.ok && rz.error === 'received_zero', 'settling a dispute as received with 0 is refused too (got ' + (rz.error || 'ok') + ')');
 })();
 
+// ---------- the admin corrects a receipt recorded as 0 (2026-10-15) ----------
+console.log('--- correcting a receipt recorded wrong ---');
+(function () {
+  var ctx = harness.buildContext(), SHEETS = ctx.SHEETS;
+  function call(payload) { try { return ctx.route_(payload); } catch (e) { return { ok: false, error: String(e && e.message || e) }; } }
+  (function () { var salt = ctx.randomSalt_(); ctx.writeRow(SHEETS.USERS, { id: ctx.Utilities.getUuid(), name: 'Rc Admin', email: 'rc.admin@bestgas.sa', role: 'admin', active: true, language: 'en', salt: salt, pass: ctx.hashPw_('Bootstrap#1', salt), mustChangePw: false }); })();
+  var adminTok = call({ action: 'login', email: 'rc.admin@bestgas.sa', password: 'Bootstrap#1' }).token;
+  function acceptInvite(email) {
+    var log = ctx._debug.mailLog, tok = null;
+    for (var i = log.length - 1; i >= 0 && !tok; i--) if (log[i].to === email) { var m = /[?&]invite=([A-Za-z0-9]+)/.exec(log[i].body); if (m) tok = m[1]; }
+    call({ action: 'acceptInvite', inviteToken: tok, password: 'RealPass#1' });
+    return call({ action: 'login', email: email, password: 'RealPass#1' }).token;
+  }
+  var col = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Rc Collector', email: 'rc.col@bestgas.sa', role: 'collector', phone: '0550000002' } }).user;
+  var fin = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Rc Finance', email: 'rc.fin@bestgas.sa', role: 'finance' } }).user;
+  var finTok = acceptInvite('rc.fin@bestgas.sa');
+  var at = new Date().toISOString();
+  function W(h) { ctx.writeRow(SHEETS.HANDOFFS, h); return h; }
+  var dep = W({ id: 'rcdep', kind: 'deposit', status: 'completed', fromUserId: col.id, amount: 700, createdAt: at, sourceHandoffIds: ['rcA', 'rcB', 'rcC'] });
+  var A = W({ id: 'rcA', kind: 'cluster_to_collector', status: 'confirmed', toUserId: col.id, fromUserId: 'someone', confirmedBy: col.id, amount: 0, receivedAmount: 0, originalAmount: 500, shortfall: 500, consumedBy: 'rcdep', createdAt: at, breakdown: { netCashOwed: 0, shortfall: 500 } });
+  var B = W({ id: 'rcB', kind: 'cluster_to_collector', status: 'confirmed', toUserId: col.id, fromUserId: 'someone', confirmedBy: col.id, amount: 700, createdAt: at, consumedBy: 'rcdep' });
+  var C = W({ id: 'rcC', kind: 'cluster_to_collector', status: 'confirmed', toUserId: col.id, fromUserId: 'someone', confirmedBy: col.id, amount: 0, receivedAmount: 0, originalAmount: 300, shortfall: 300, consumedBy: 'rcdep', createdAt: at });
+  function row(id) { return ctx.readSheet(SHEETS.HANDOFFS).filter(function (h) { return h.id === id; })[0]; }
+  check(call({ action: 'adminCorrectReceipt', token: finTok, id: 'rcA', receivedAmount: 500, reason: 'x' }).error === 'forbidden', 'only the admin corrects a receipt');
+  check(call({ action: 'adminCorrectReceipt', token: adminTok, id: 'rcA', receivedAmount: 500 }).error === 'note_required', 'a reason is required');
+  check(call({ action: 'adminCorrectReceipt', token: adminTok, id: 'rcA', receivedAmount: 0, reason: 'x' }).error === 'received_zero', 'it never corrects to 0');
+  check(call({ action: 'adminCorrectReceipt', token: adminTok, id: 'rcA', receivedAmount: 600, reason: 'x' }).error === 'invalid_amount', 'never more than was declared');
+  var r = call({ action: 'adminCorrectReceipt', token: adminTok, id: 'rcA', receivedAmount: 500, reason: 'collector had the cash' });
+  var a2 = row('rcA'), d2 = row('rcdep');
+  check(r.ok && a2.amount === 500 && a2.shortfall === 0 && a2.breakdown.shortfall === 0 && a2.breakdown.netCashOwed === 500, 'the receipt now says 500 received, no shortfall');
+  check(a2.receiptCorrections.length === 1 && a2.receiptCorrections[0].fromAmount === 0 && a2.receiptCorrections[0].reason === 'collector had the cash', 'the first figure and the reason are kept');
+  check(!a2.consumedBy && a2.leftDepositId === 'rcdep' && d2.sourceHandoffIds.join(',') === 'rcB,rcC' && d2.amount === 700, 'it leaves the deposit, which stays what the bank received');
+  var held = ctx.readSheet(SHEETS.HANDOFFS).filter(function (h) { return h.status === 'confirmed' && !h.consumedBy && h.toUserId === col.id; });
+  check(held.length === 1 && held[0].id === 'rcA', 'the collector holds that cash again, to bank it');
+  check(ctx.readSheet(SHEETS.AUDIT).some(function (x) { return x.action === 'receipt_corrected' && String(x.detail).indexOf('rcA') === 0; }), 'the correction is in the audit trail');
+  W(Object.assign(row('rcdep'), { reconciled: true }));
+  check(call({ action: 'adminCorrectReceipt', token: adminTok, id: 'rcC', receivedAmount: 300, reason: 'x' }).error === 'receipt_passed_on', 'a deposit matched to the bank cannot lose a request');
+})();
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);

@@ -950,6 +950,7 @@ function route_(req) {
     runStaleCheck: function () { return actionRunStaleCheck_(req, user); },
     adminInstallStaleTrigger: function () { return actionAdminInstallStaleTrigger_(req, user); },
     acknowledgeSecondApproval: function () { return actionAcknowledgeSecondApproval_(req, user); },
+    adminCorrectReceipt: function () { return withCashLock_(function () { return actionAdminCorrectReceipt_(req, user); }); },
 
     // operational risk / complaint register (see Risk.gs)
     createRiskItem: function () { return actionCreateRiskItem_(req, user); },

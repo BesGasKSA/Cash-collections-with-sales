@@ -2137,6 +2137,47 @@ function notifyDeputyPendingHandoff_(h) {
   }).forEach(function (u) { nmHandoffMail_(u, h.resubmitOf ? 'deputy_validate_rev' : 'deputy_validate', h, { open: 'deputy_validate' }); });
 }
 
+// ---------- Correcting a receipt recorded wrong (2026-10-15) ----------
+// A collector confirmed requests as received with 0 although the cash had reached him (the
+// user confirmed it). Nothing is deleted: the admin, never a party to the request, gives the
+// amount actually received and a reason. The request keeps its first figures in
+// receiptCorrections, its shortfall and breakdown follow the new amount, and the change is
+// audited. If a deposit already holds it, the deposit stays what the bank received: the request
+// leaves that deposit and is cash the collector still holds, to be banked (or matched) again.
+// A deposit already matched to the bank statement, or a request passed on to another
+// collector, refuses (receipt_passed_on).
+function actionAdminCorrectReceipt_(req, user) {
+  requireAdmin_(user);
+  var h = getById_(SHEETS.HANDOFFS, req.id);
+  if (!h) return { ok: false, error: 'not_found' };
+  if (h.kind !== 'cluster_to_collector' && h.kind !== 'collector_to_collector') return { ok: false, error: 'invalid_kind' };
+  if (h.status !== 'confirmed') return { ok: false, error: 'not_confirmed' };
+  if (h.fromUserId === user.id || h.toUserId === user.id || h.confirmedBy === user.id || h.createdBy === user.id) return { ok: false, error: 'conflict_of_interest' };
+  var reason = String(req.reason || '').trim();
+  if (!reason || reason.length > 1000) return { ok: false, error: 'note_required' };
+  var declared = h.originalAmount != null ? Number(h.originalAmount) : Number(h.amount || 0);
+  var now = Number(h.amount || 0);
+  var to = Number(req.receivedAmount);
+  if (!isFinite(to) || to <= 0.004) return { ok: false, error: 'received_zero' };
+  if (to > declared + 0.004) return { ok: false, error: 'invalid_amount' };
+  if (Math.abs(to - now) < 0.005) return { ok: false, error: 'nothing_to_change' };
+  var dep = h.consumedBy ? getById_(SHEETS.HANDOFFS, h.consumedBy) : null;
+  if (dep && (dep.kind !== 'deposit' || dep.reconciled)) return { ok: false, error: 'receipt_passed_on' };
+  var delta = Math.round((to - now) * 100) / 100;
+  (h.receiptCorrections = h.receiptCorrections || []).push({ at: new Date().toISOString(), by: user.id, reason: reason, fromAmount: now, toAmount: to, depositId: dep ? dep.id : null });
+  h.amount = to; h.receivedAmount = to;
+  h.shortfall = Math.round((declared - to) * 100) / 100;
+  if (h.breakdown) h.breakdown = Object.assign({}, h.breakdown, { netCashOwed: to, shortfall: Math.round((Number(h.breakdown.shortfall || 0) - delta) * 100) / 100 });
+  if (dep) {
+    dep.sourceHandoffIds = (dep.sourceHandoffIds || []).filter(function (id) { return id !== h.id; });
+    (dep.correctedOut = dep.correctedOut || []).push({ handoffId: h.id, at: new Date().toISOString(), by: user.id });
+    writeRow(SHEETS.HANDOFFS, dep);
+    h.consumedBy = null; h.leftDepositId = dep.id;
+  }
+  writeRow(SHEETS.HANDOFFS, h);
+  logAudit_('receipt_corrected', user.id, h.id + ' ' + now + ' -> ' + to + (dep ? ' (left ' + (dep.txNo || dep.id) + ')' : '') + ': ' + reason);
+  return { ok: true, handoff: h, depositId: dep ? dep.id : null };
+}
 function actionAcknowledgeSecondApproval_(req, user) {
   requireAdminOrFinance_(user);
   var h = getById_(SHEETS.HANDOFFS, req.id);
