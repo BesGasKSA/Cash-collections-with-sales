@@ -1704,6 +1704,15 @@ function actionListAreaBulkBatches_(req, user) {
   }
   if (req.status) rows = rows.filter(function (b) { return b.status === req.status; });
   rows.sort(function (a, b) { return new Date(b.createdAt) - new Date(a.createdAt); });
+  // the batch's own day is the day of its entries, like a handover's (2026-10-15): the Deputy
+  // screen's date filter places it by handoffDate, the latest of its entry dates
+  var eDate = Object.create(null);
+  readSheet(SHEETS.ENTRIES).forEach(function (e) { if (e.date) eDate[e.id] = String(e.date).slice(0, 10); });
+  rows.forEach(function (b) {
+    var ds = {}; (b.entryIds || []).forEach(function (id) { if (eDate[id]) ds[eDate[id]] = 1; });
+    b.entryDates = Object.keys(ds).sort();
+    if (!b.handoffDate && b.entryDates.length) b.handoffDate = b.entryDates[b.entryDates.length - 1];
+  });
   return { ok: true, batches: rows };
 }
 
@@ -2344,8 +2353,9 @@ function actionRecordDeposit_(req, user) {
 }
 
 // ---------- One filter for every dashboard figure (2026-10-14) ----------
-// A handover belongs to a period/place filter when its creation day (Riyadh) is
-// in [dateFrom, dateTo] and its branch, area and city match. An area request is
+// A handover belongs to a period/place filter when its day is in [dateFrom, dateTo]:
+// the business day of its entries (hoDay_, 2026-10-15), never the day it was made,
+// so a period means the same days on every screen, and its branch, area and city match. An area request is
 // then followed (followRequest_, the Collections screen's own path) to its hand-ons
 // and its deposit, which come along with ONLY the part that came from requests in
 // the filter: a deposit that banked two areas' cash counts one area's share, never
@@ -2363,8 +2373,9 @@ function filterHandoffs_(rows, req, allRows, placeOnly) {
   allRows.forEach(function (h) { byId[h.id] = h; });
   rows.forEach(function (h) { scoped[h.id] = 1; });
   readSheet(SHEETS.LOCATIONS).forEach(function (l) { locById[l.id] = l; });
+  var dctx = (f.dateFrom || f.dateTo) ? hoDateCtx_() : null;
   function inF(h) {
-    var day = riyadhDay_(h.createdAt);
+    var day = dctx ? hoDay_(dctx, h) : '';
     if (f.dateFrom && day < f.dateFrom) return false;
     if (f.dateTo && day > f.dateTo) return false;
     if (f.locationId && h.locationId !== f.locationId) return false;
@@ -2450,6 +2461,10 @@ function hoStampDate_(c, h, given, reason, user) {
   h.dateChangedBy = user.id; h.dateChangedAt = new Date().toISOString();
   return null;
 }
+// The one date rule (2026-10-15): a handover, request or deposit belongs to the business day
+// of its entries, its stored handoffDate (the latest entry date unless changed with a reason);
+// a row saved before handoffDate existed gets it from the walk. Never its createdAt.
+function hoDay_(c, h) { return h.handoffDate || hoDateInfo_(c, h).defaultDate; }
 function hoAuditDate_(h, user) { if (h.dateChanged) logAudit_('handoff_date_changed', user.id, h.id); }
 // what a read returns: the live entry dates, the stored (or default) handoffDate, the flag and its reason
 function hoDecorate_(c, h, row) {
@@ -3460,7 +3475,7 @@ function actionSalesReport_(req, user) {
 // shortfall is attributed to that driver directly (h.fromUserId).
 function actionShortfallByEntrant_(req, user) {
   requireCompanyWide_(user);
-  // the report's own period and place (a hop belongs to the filter by its creation day and branch)
+  // the report's own period and place (a hop belongs to the filter by the day of its entries and its branch)
   var allH = readSheet(SHEETS.HANDOFFS), inFilter = dashFilterOn_(req) ? Object.create(null) : null;
   if (inFilter) filterHandoffs_(allH, req, allH).forEach(function (h) { inFilter[h.id] = 1; });
   var pool = inFilter ? allH.filter(function (h) { return inFilter[h.id]; }) : allH;

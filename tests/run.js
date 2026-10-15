@@ -4259,7 +4259,7 @@ check(ltR.ok && ltR.item.title.length <= 200 && ltR.item.description.length <= 4
 
 console.log('--- the collector pivot: collector > area > branch > day > request ---');
 var cpCtx = vm.createContext({});
-var cpSrc = clientFn_('collectPivotTree_');
+var cpSrc = clientFn_('hoDay_') + clientFn_('collectPivotTree_');
 check(!!cpSrc, 'collectPivotTree_ exists');
 if (cpSrc) vm.runInContext(cpSrc, cpCtx);
 if (cpCtx.collectPivotTree_) {
@@ -5180,7 +5180,7 @@ console.log('--- a branch changes collector; the old one keeps what he holds unt
   var cdO = call({ action: 'collectionsData', token: outColTok }), cdOB = call({ action: 'collectionsData', token: outBmTok });
   check(cdO.ok && !cdO.requests.some(function (r) { return r.locationId === loc.id; }), 'collections: a collector outside the chain sees none of it');
   check(cdOB.ok && !cdOB.requests.some(function (r) { return r.locationId === loc.id; }), 'collections: another branch\'s manager sees none of it');
-  var ccSrc = clientFn_('colDay_') + clientFn_('colCompute_');
+  var ccSrc = clientFn_('hoDay_') + clientFn_('colDay_') + clientFn_('colCompute_');
   check(!!ccSrc, 'collections: the screen code can be loaded');
   if (ccSrc) {
     var cc = new Function('localToday_', ccSrc + ' return colCompute_;')(function () { return day; });
@@ -5672,7 +5672,7 @@ console.log('--- filters that drive everything: pure helpers (2026-10-14) ---');
     check(mj.from === '2025-11' && mj.to === '2026-02' && mj.n === 4, 'a range across a year end');
   }
   var cpc = vm.createContext({ t: function (k) { return k; }, money: function (n) { return Number(n || 0).toFixed(2); } });
-  var cps = clientFn_('collectPivotTree_'); vm.runInContext(cps, cpc);
+  var cps = clientFn_('hoDay_') + clientFn_('collectPivotTree_'); vm.runInContext(cps, cpc);
   var loc = { b1: { clusterId: 'A1' }, b3: { clusterId: 'A2' } };
   function h(id, to, l, st, amt, day, extra) { return Object.assign({ id: id, kind: 'cluster_to_collector', toUserId: to, fromUserId: 'am', locationId: l, clusterId: loc[l].clusterId, status: st, amount: amt, createdAt: day + 'T09:00:00.000Z' }, extra || {}); }
   var list = [h('p1', 'c1', 'b1', 'pending', 100, '2026-10-02'), h('p2', 'c1', 'b3', 'pending', 40, '2026-10-03'), h('p3', 'c2', 'b3', 'confirmed', 60, '2026-10-02', { consumedBy: 'dd' }),
@@ -5756,6 +5756,104 @@ console.log('--- correcting a receipt recorded wrong ---');
   check(ctx.readSheet(SHEETS.AUDIT).some(function (x) { return x.action === 'receipt_corrected' && String(x.detail).indexOf('rcA') === 0; }), 'the correction is in the audit trail');
   W(Object.assign(row('rcdep'), { reconciled: true }));
   check(call({ action: 'adminCorrectReceipt', token: adminTok, id: 'rcC', receivedAmount: 300, reason: 'x' }).error === 'receipt_passed_on', 'a deposit matched to the bank cannot lose a request');
+})();
+
+console.log('--- the same date gives the same figures on every screen (2026-10-15) ---');
+(function () {
+  // Entries of the 12th and the 13th, handed over on the 14th (today here): a car hop received
+  // 10 short, the branch sends both days together, the area request reaches the collector.
+  // After that, 200 more of the 13th stay with the branch and 150 with the car.
+  function mk(name, email, role) { return call({ action: 'adminCreateUser', token: adminTok, data: { name: name, email: email, role: role, phone: role === 'collector' ? '0550000000' : undefined } }).user; }
+  var mgr = mk('Sf Area Manager', 'sfmgr.fx@bestgas.sa', 'cluster_manager'), col = mk('Sf Collector', 'sfcol.fx@bestgas.sa', 'collector');
+  var bm = mk('Sf Branch Manager', 'sfbm.fx@bestgas.sa', 'store_manager'), drv = mk('Sf Driver', 'sfdrv.fx@bestgas.sa', 'driver');
+  var mgrTok = acceptInvite('sfmgr.fx@bestgas.sa'), colTok = acceptInvite('sfcol.fx@bestgas.sa'), bmTok = acceptInvite('sfbm.fx@bestgas.sa'), drvTok = acceptInvite('sfdrv.fx@bestgas.sa');
+  var area = call({ action: 'adminSaveEntity', token: adminTok, kind: 'cluster', data: { name: 'Sf Area', clusterManagerUserId: mgr.id } }).entity;
+  var loc = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: 'Sfcity', name: 'Sf Branch', clusterId: area.id, collectorUserId: col.id } }).entity;
+  var store = call({ action: 'adminSaveEntity', token: adminTok, kind: 'store', data: { locationId: loc.id, name: 'Sf Store', storeManagerUserId: bm.id } }).entity;
+  var car = call({ action: 'adminSaveEntity', token: adminTok, kind: 'car', data: { locationId: loc.id, label: 'Sf Car', driverUserId: drv.id } }).entity;
+  var car2 = call({ action: 'adminSaveEntity', token: adminTok, kind: 'car', data: { locationId: loc.id, label: 'Sf Car 2', driverUserId: drv.id } }).entity;
+  check(area && loc && store && car, 'same figures: a branch with a store and a car');
+  var today = ctx.todayRiyadh_();
+  function ago(n) { var p = today.split('-'); return new Date(Date.UTC(+p[0], +p[1] - 1, +p[2] - n)).toISOString().slice(0, 10); }
+  var D12 = ago(2), D13 = ago(1);
+  function ent(tok, date, type, id, cash) { var r = call({ action: 'createDailyEntry', token: tok, date: date, sourceType: type, sourceId: id, cashSales: cash }); check(r.ok, 'same figures: entry ' + date + ' ' + type + ' ' + cash + (r.ok ? '' : ': ' + r.error)); return r; }
+  ent(bmTok, D12, 'store', store.id, 500);
+  ent(drvTok, D13, 'car', car.id, 300);
+  ent(bmTok, D13, 'store', store.id, 1000);
+  var carH = call({ action: 'createHandoff', token: drvTok, kind: 'car_to_location', carId: car.id });
+  check(carH.ok && call({ action: 'confirmHandoff', token: bmTok, id: carH.handoff.id, receivedAmount: 290 }).ok, 'same figures: the car hop is received 10 short');
+  var locH = call({ action: 'createHandoff', token: bmTok, kind: 'location_to_cluster', locationId: loc.id });
+  check(locH.ok && Math.abs(locH.handoff.amount - 1790) < 0.005, 'same figures: the branch sends both days together (1,790) (' + (locH.error || (locH.handoff && locH.handoff.amount)) + ')');
+  check(call({ action: 'confirmHandoff', token: mgrTok, id: locH.handoff.id }).ok, 'same figures: the area manager receives it');
+  var req = call({ action: 'createHandoff', token: mgrTok, kind: 'cluster_to_collector', clusterId: area.id, locationId: loc.id });
+  check(req.ok && req.handoff.handoffDate === D13, 'same figures: the request is dated by its latest entries, the 13th (' + (req.error || '') + ')');
+  check(call({ action: 'deputyValidateHandoff', token: walidTok, id: req.handoff.id }).ok && call({ action: 'confirmHandoff', token: colTok, id: req.handoff.id }).ok, 'same figures: validated and received by the collector');
+  // a late line of the 13th the branch has not handed over yet (the closed day refuses it through the screen, so it is written as it would stand)
+  ctx.writeRow(SHEETS.ENTRIES, { id: 'sf-late', date: D13, locationId: loc.id, sourceType: 'store', sourceId: store.id, cashSales: 200, posSales: 0, creditSales: 0, enteredBy: bm.id, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() });
+  ent(drvTok, D13, 'car', car2.id, 150);     // still with the second car
+
+  var f13 = { dateFrom: D13, dateTo: D13, locationId: loc.id };
+  // 1. the Entries screen: the entries of the day, the client's own net
+  var entries13 = call({ action: 'listEntries', token: adminTok }).entries.filter(function (e) { return e.locationId === loc.id && e.date === D13 && !e.voided; });
+  var entriesNet = entries13.reduce(function (s, e) { return s + clientCtx.entryAmt_(e).net; }, 0);
+  close(entriesNet, 1650, 'same figures: Entries net for the 13th = 300 + 1,000 + 200 + 150');
+  // 2. the dashboard: net cash to hand over, and what the collector holds
+  var dash = call(Object.assign({ action: 'getDashboardAll', token: adminTok }, f13));
+  close(dash.report.totals.netCashOwed, entriesNet, 'same figures: Dashboard net cash to hand over = Entries net');
+  var hos = dash.handoffs.handoffs;
+  var reqSum = hos.filter(function (h) { return h.kind === 'cluster_to_collector'; }).reduce(function (s, h) { return s + Number(h.amount); }, 0);
+  close(reqSum, 1790, 'same figures: the dashboard places the request on the 13th, the day of its entries (was the day it was made)');
+  close(dash.dashboard.companyOutstanding, 1790, 'same figures: the dashboard says the collector holds the 13th\'s 1,790');
+  // 3. the Collections screen, loaded with the screen's own code
+  var cd = call({ action: 'collectionsData', token: adminTok });
+  var ccSrc = clientFn_('hoDay_') + clientFn_('colDay_') + clientFn_('colCompute_');
+  var cc = new Function('localToday_', ccSrc + ' return colCompute_;')(function () { return today; });
+  var C13 = cc(cd.requests, { from: D13, to: D13, branch: loc.id, today: today });
+  close(C13.T.total, 1790, 'same figures: Collections counts the request on the 13th');
+  close(C13.T.total, reqSum, 'same figures: Collections total = the dashboard\'s requests for the day');
+  close(C13.T.held, dash.dashboard.companyOutstanding, 'same figures: Collections held = Dashboard held');
+  // 4. the Handoffs screen: its rows filtered to the day by the screen's own date rule
+  var hoDaySrc = clientFn_('hoDay_');
+  check(!!hoDaySrc, 'same figures: one client date rule, hoDay_');
+  var hoDay = hoDaySrc ? new Function(hoDaySrc + ' return hoDay_;')() : function () { return ''; };
+  var all = call({ action: 'listHandoffs', token: adminTok }).handoffs.filter(function (h) { return h.locationId === loc.id; });
+  var onDay = all.filter(function (h) { return hoDay(h) === D13; });
+  check(onDay.length === 3, 'same figures: the Handoffs screen shows the car hop, the branch hop and the request on the 13th (got ' + onDay.length + ')');
+  var byKind = {}; onDay.forEach(function (h) { byKind[h.kind] = (byKind[h.kind] || 0) + Number(h.amount); });
+  close(byKind.cluster_to_collector || 0, C13.T.total, 'same figures: Handoffs (area requests) = Collections total');
+  close(byKind.location_to_cluster || 0, C13.T.total, 'same figures: Handoffs (branch hop) = the same cash one hop down');
+  check(JSON.stringify(onDay.map(function (h) { return h.id; }).sort()) === JSON.stringify(call(Object.assign({ action: 'listHandoffs', token: adminTok }, f13)).handoffs.map(function (h) { return h.id; }).sort()),
+    'same figures: the server\'s date filter and the screen\'s give the same handovers');
+  check(all.filter(function (h) { return hoDay(h) === today; }).length === 0, 'same figures: nothing is placed on the day it was handed over');
+  // the documented stage difference: Entries net - not yet handed over - still with the car - short + other days carried = handed over
+  close(entriesNet - 200 - 150 - 10 + 500, C13.T.total, 'same figures: Entries and Collections differ only by the labelled stages (not handed over 200, with the car 150, short 10, the 12th carried 500)');
+  // the 12th: its cash travelled inside a handover dated the 13th
+  var C12 = cc(cd.requests, { from: D12, to: D12, branch: loc.id, today: today });
+  check(C12.T.total === 0 && call(Object.assign({ action: 'getDashboardAll', token: adminTok }, { dateFrom: D12, dateTo: D12, locationId: loc.id })).report.totals.netCashOwed === 500,
+    'same figures: a handover that mixes days counts on its latest day (12th: entries 500, handed over 0)');
+  // the collector's pivot uses the same day
+  var cpc = vm.createContext({ t: function (k) { return k; } }); vm.runInContext(hoDaySrc + clientFn_('collectPivotTree_'), cpc);
+  var tree = cpc.collectPivotTree_(all, { from: D13, to: D13 });
+  close(tree.total.held, 1790, 'same figures: the collector pivot holds the 13th\'s request');
+  check(tree.roots.length && tree.roots[0].kids[0].kids[0].kids[0].key === D13, 'same figures: the pivot\'s day level is the day of the entries');
+  // every screen reads the one rule
+  check(/hoDay_\(h\)/.test(clientFn_('renderHandoffs')), 'same figures: the Handoffs filter dates a row by hoDay_');
+  check(/hoDay_\(/.test(clientFn_('renderDeputyReview')), 'same figures: the Deputy screen dates a request by hoDay_');
+  check(/hoDay_\(/.test(clientFn_('hoPivotCard_')) && /hoDay_\(/.test(clientFn_('hoAnalysis_')), 'same figures: the handover pivot and analysis group days by hoDay_');
+  check(/hoDay_\(r\)/.test(clientFn_('colCompute_')), 'same figures: Collections dates a request by hoDay_');
+  // a deposit made later still counts on the request's day in the collector pivot, as on Collections
+  var dLater = { id: 'sf-dep', kind: 'deposit', fromUserId: col.id, amount: 1790, status: 'completed', createdAt: new Date().toISOString() };
+  var withDep = all.map(function (h) { return h.id === req.handoff.id ? Object.assign({}, h, { consumedBy: 'sf-dep' }) : h; }).concat([dLater]);
+  var tDep = cpc.collectPivotTree_(withDep, { from: D13, to: D13 });
+  close(tDep.total.deposited, 1790, 'same figures: the pivot counts a deposit made on the 14th under the 13th it carries');
+  var cdDep = cd.requests.map(function (r) { return r.id === req.handoff.id ? Object.assign({}, r, { stage: 'deposited', depositId: 'sf-dep', depositedAt: dLater.createdAt }) : r; });
+  close(cc(cdDep, { from: D13, to: D13, branch: loc.id, today: today }).T.deposited, tDep.total.deposited, 'same figures: Collections deposited = the pivot\'s deposited for the day');
+  // an area batch is placed by its entries' day too
+  var e12 = call({ action: 'listEntries', token: adminTok }).entries.filter(function (e) { return e.locationId === loc.id && e.date === D12; })[0];
+  ctx.writeRow(SHEETS.AREA_BULK_BATCHES, { id: 'sf-batch', clusterId: area.id, uploadedBy: mgr.id, status: 'pending_deputy', entryIds: [e12.id], perLocation: [], breakdown: { netCashOwed: 500 }, createdAt: new Date().toISOString() });
+  var sb = call({ action: 'listAreaBulkBatches', token: adminTok }).batches.filter(function (b) { return b.id === 'sf-batch'; })[0];
+  check(sb && sb.handoffDate === D12 && hoDay(sb) === D12, 'same figures: an area batch carries the day of its entries (' + (sb && sb.handoffDate) + ')');
+  ctx.writeRow(SHEETS.AREA_BULK_BATCHES, Object.assign({}, sb, { status: 'deputy_rejected', entryIds: [] }));
 })();
 
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
