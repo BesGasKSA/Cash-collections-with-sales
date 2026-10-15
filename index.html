@@ -19816,15 +19816,19 @@ function renderProfit(body){
     if (roots.length === 1) open[roots[0].key] = true;
     var baseDepth = plPath_(res, roots[0].key).length - 1;
     var LV = ['city', 'cluster', 'location', 'unit'].slice(Math.max(0, baseDepth - 1));
-    var COLS = [['net', 'pl_net'], ['gm', 'pl_gm'], ['cm', 'pl_cm'], ['profit', 'pl_profit'], ['pp', 'pl_profitPct'], ['cogs', 'pl_cogs', 1], ['gmp', 'pl_gmPct', 1], ['direct', 'pl_directCosts', 1], ['ovh', 'pl_overheads', 1], ['qty', 'pl_qty', 1], ['pu', 'pl_perUnitProfit', 1]];
+    // income-statement order: sales, (cost of goods), gross margin, (own costs), contribution, (overheads), net profit
+    var COLS = [['net', 'pl_net'], ['cogs', 'pl_cogs', 1], ['gm', 'pl_gm'], ['gmp', 'pl_gmPct', 1], ['direct', 'pl_directCosts', 1], ['cm', 'pl_cm'], ['ovh', 'pl_overheads', 1], ['profit', 'pl_profit'], ['pp', 'pl_profitPct'], ['qty', 'pl_qty', 1], ['pu', 'pl_perUnitProfit', 1]];
+    var LESS_ = { cogs: 1, direct: 1, ovh: 1 };
     function cell(n, c){
       var T = n.T;
       if (c === 'qty') return '<bdi dir="ltr" class="num">'+Math.round(T.qty).toLocaleString('en-US')+'</bdi>';
       if (c === 'pu') return T.qty ? plAmt_(T.profit / T.qty) : '<span class="muted">—</span>';
       if (c === 'gmp') return plPctHtml_(T.gm, T.net);
       if (c === 'pp') return plPctHtml_(T.profit, T.net);
-      if (c === 'direct') return '<bdi dir="ltr" class="num">'+money(T.commission + T.expenses + T.fixed)+'</bdi>';
-      if (c === 'net' || c === 'cogs' || c === 'ovh') return '<bdi dir="ltr" class="num">'+money(T[c])+'</bdi>';
+      function br(v){ return '<bdi dir="ltr" class="num pl-less-n">'+(Math.abs(v) > 0.004 ? '(' + money(v) + ')' : money(0))+'</bdi>'; }
+      if (c === 'direct') return br(T.commission + T.expenses + T.fixed);
+      if (c === 'cogs' || c === 'ovh') return br(T[c]);
+      if (c === 'net') return '<bdi dir="ltr" class="num">'+money(T[c])+'</bdi>';
       return plAmt_(T[c]);
     }
     var card = el('<div class="card rp-card pv-card pl-levels" data-noexport="1">' +
@@ -19833,7 +19837,7 @@ function renderProfit(body){
         LV.map(function(l, i){ return '<button type="button" data-depth="'+(i + 1)+'"><b>'+(i + 1)+'</b><span>'+esc(t('pl_lv_' + l))+'</span></button>'; }).join('') + '</div>' +
         '<label class="pv-q"><span class="sr-only">'+esc(t('pv_search'))+'</span>'+icon_('search')+'<input type="search" placeholder="'+esc(t('pl_search'))+'"></label></div>' +
       '<div class="tbl-scroll rp-scroll"><table class="rp-table pv-table pl-table" data-nosort><thead><tr><th>'+esc(t('pv_level'))+'</th>' +
-        COLS.map(function(c){ return '<th class="n'+(c[2] ? ' pv-wide' : '')+'">'+esc(t(c[1]))+'</th>'; }).join('') + '</tr></thead><tbody></tbody>' +
+        COLS.map(function(c){ return '<th class="n'+(c[2] ? ' pv-wide' : '')+'">'+(LESS_[c[0]] ? '<small>'+esc(t('is_less'))+'</small> ' : '')+esc(t(c[1]))+'</th>'; }).join('') + '</tr></thead><tbody></tbody>' +
         '<tfoot><tr><td>'+esc(plNodeName_(F))+'</td>'+COLS.map(function(c){ return '<td class="n'+(c[2] ? ' pv-wide' : '')+'">'+cell(F, c[0])+'</td>'; }).join('')+'</tr></tfoot></table></div></div>');
     var tb = qs('tbody', card);
     function hits(n){ if (!q) return true; if (normName_(plNodeName_(n)).indexOf(q) >= 0) return true; return (ix.kids[n.key] || []).some(hits); }
