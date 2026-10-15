@@ -5856,5 +5856,104 @@ console.log('--- the same date gives the same figures on every screen (2026-10-1
   ctx.writeRow(SHEETS.AREA_BULK_BATCHES, Object.assign({}, sb, { status: 'deputy_rejected', entryIds: [] }));
 })();
 
+console.log('--- the key figures come from the entries of the period, followed to the bank (2026-10-15) ---');
+(function () {
+  // Entries of the 12th and the 13th; the 12th and part of the 13th are handed over and deposited on
+  // the 14th (today here), one car hop received 10 short. The rest of the 13th sits at every stage.
+  function mk(name, email, role) { return call({ action: 'adminCreateUser', token: adminTok, data: { name: name, email: email, role: role, phone: role === 'collector' ? '0550000000' : undefined } }).user; }
+  var mgr = mk('Kc Area Manager', 'kcmgr.fx@bestgas.sa', 'cluster_manager'), col = mk('Kc Collector', 'kccol.fx@bestgas.sa', 'collector');
+  var bm = mk('Kc Branch Manager', 'kcbm.fx@bestgas.sa', 'store_manager'), drv = mk('Kc Driver', 'kcdrv.fx@bestgas.sa', 'driver');
+  var mgrTok = acceptInvite('kcmgr.fx@bestgas.sa'), colTok = acceptInvite('kccol.fx@bestgas.sa'), bmTok = acceptInvite('kcbm.fx@bestgas.sa'), drvTok = acceptInvite('kcdrv.fx@bestgas.sa');
+  var area = call({ action: 'adminSaveEntity', token: adminTok, kind: 'cluster', data: { name: 'Kc Area', clusterManagerUserId: mgr.id } }).entity;
+  function L(n) { return call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: 'Kccity', name: 'Kc Branch ' + n, clusterId: area.id, collectorUserId: col.id } }).entity; }
+  var L1 = L(1), L2 = L(2), L3 = L(3), L4 = L(4), L5 = L(5);
+  var S1 = call({ action: 'adminSaveEntity', token: adminTok, kind: 'store', data: { locationId: L1.id, name: 'Kc Store 1', storeManagerUserId: bm.id } }).entity;
+  var bmTokOf = {};
+  function S(l, n) {
+    var u = mk('Kc Branch Manager ' + n, 'kcbm' + n + '.fx@bestgas.sa', 'store_manager'); bmTokOf[l.id] = acceptInvite('kcbm' + n + '.fx@bestgas.sa');
+    return call({ action: 'adminSaveEntity', token: adminTok, kind: 'store', data: { locationId: l.id, name: 'Kc Store ' + n, storeManagerUserId: u.id } }).entity;
+  }
+  var S2 = S(L2, 2), S3 = S(L3, 3), S4 = S(L4, 4), S5 = S(L5, 5);
+  function car(n) { return call({ action: 'adminSaveEntity', token: adminTok, kind: 'car', data: { locationId: L1.id, label: 'Kc Car ' + n, driverUserId: drv.id } }).entity; }
+  var C1 = car(1), C2 = car(2), C3 = car(3);
+  var today = ctx.todayRiyadh_();
+  function ago(n) { var p = today.split('-'); return new Date(Date.UTC(+p[0], +p[1] - 1, +p[2] - n)).toISOString().slice(0, 10); }
+  var D12 = ago(2), D13 = ago(1);
+  function ent(tok, date, type, id, cash, extra) {
+    var r = call(Object.assign({ action: 'createDailyEntry', token: tok, date: date, sourceType: type, sourceId: id, cashSales: cash }, extra || {}));
+    check(r.ok, 'key figures: entry ' + date + ' ' + type + ' ' + cash + (r.ok ? '' : ': ' + r.error)); return r;
+  }
+  function ok(r, label) { check(r && r.ok, 'key figures: ' + label + (r && r.ok ? '' : ': ' + (r && r.error))); return r || {}; }
+  // branch 1: the 12th and the 13th all the way to the bank, the car hop short
+  ent(bmTok, D12, 'store', S1.id, 500);
+  ent(drvTok, D13, 'car', C1.id, 300);
+  ent(bmTok, D13, 'store', S1.id, 1000, { posSales: 200, expenseAmount: 40, expenseItemId: expenseId, expenseReason: 'fuel', deliveryFeeBankAmount: 115 });
+  var ch = ok(call({ action: 'createHandoff', token: drvTok, kind: 'car_to_location', carId: C1.id }), 'car 1 hands over');
+  ok(call({ action: 'confirmHandoff', token: bmTok, id: ch.handoff.id, receivedAmount: 290 }), 'the branch receives the car 10 short');
+  var lh = ok(call({ action: 'createHandoff', token: bmTok, kind: 'location_to_cluster', locationId: L1.id }), 'branch 1 sends both days');
+  ok(call({ action: 'confirmHandoff', token: mgrTok, id: lh.handoff.id }), 'the area manager receives branch 1');
+  function request(l) { return ok(call({ action: 'createHandoff', token: mgrTok, kind: 'cluster_to_collector', clusterId: area.id, locationId: l.id }), 'the request for ' + l.name); }
+  var r1 = request(L1);
+  ok(call({ action: 'deputyValidateHandoff', token: walidTok, id: r1.handoff.id }), 'the deputy validates branch 1');
+  ok(call({ action: 'confirmHandoff', token: colTok, id: r1.handoff.id }), 'the collector receives branch 1');
+  ok(call({ action: 'recordDeposit', token: colTok, bankReference: 'KC-1' }), 'the collector banks it on the 14th');
+  // the rest of the 13th, one branch per stage
+  ent(drvTok, D13, 'car', C2.id, 150); ok(call({ action: 'createHandoff', token: drvTok, kind: 'car_to_location', carId: C2.id }), 'car 2 on its way to the branch');
+  ent(drvTok, D13, 'car', C3.id, 70);  // not handed over
+  function storeDay(l, s, cash) { ent(bmTokOf[l.id], D13, 'store', s.id, cash); return ok(call({ action: 'createHandoff', token: bmTokOf[l.id], kind: 'location_to_cluster', locationId: l.id }), l.name + ' sends'); }
+  storeDay(L2, S2, 400);                                            // branch -> area, waiting
+  var h3 = storeDay(L3, S3, 600); ok(call({ action: 'confirmHandoff', token: mgrTok, id: h3.handoff.id }), 'area receives 3'); request(L3);   // waiting for the deputy
+  var h4 = storeDay(L4, S4, 700); ok(call({ action: 'confirmHandoff', token: mgrTok, id: h4.handoff.id }), 'area receives 4');
+  var r4 = request(L4); ok(call({ action: 'deputyValidateHandoff', token: walidTok, id: r4.handoff.id }), 'validated 4');                     // on the way
+  var h5 = storeDay(L5, S5, 800); ok(call({ action: 'confirmHandoff', token: mgrTok, id: h5.handoff.id }), 'area receives 5');
+  var r5 = request(L5); ok(call({ action: 'deputyValidateHandoff', token: walidTok, id: r5.handoff.id }), 'validated 5');
+  ok(call({ action: 'confirmHandoff', token: colTok, id: r5.handoff.id }), 'the collector holds 5');                                         // held
+
+  function r2(v) { return Math.round(Number(v || 0) * 100) / 100; }
+  var dash = call({ action: 'getDashboardAll', token: adminTok, dateFrom: D13, dateTo: D13, clusterId: area.id });
+  var c = dash.ok && dash.report && dash.report.cohort;
+  check(!!c, 'key figures: the dashboard bundle carries the entries\' cohort');
+  if (!c) return;
+  var T = c.totals, st = T.stages || {};
+  close(T.net, 3880, 'key figures: cash to collect = the 13th\'s entries (860 + 300 + 150 + 70 + 400 + 600 + 700 + 800)');
+  close(T.net, dash.report.totals.netCashOwed, 'key figures: = computeNet_ of the same entries');
+  close(T.deposited, 1150, 'key figures: deposited = the 13th\'s part that reached the bank (860 + 290), not the deposit\'s 1,650');
+  close(T.short, 10, 'key figures: the short receipt is its own line');
+  close(st.notHanded, 70, 'key figures: not handed over 70');
+  close(st.carBranch, 150, 'key figures: car to branch 150');
+  close(st.branchArea, 400, 'key figures: branch to area 400');
+  close(st.deputy, 600, 'key figures: waiting for the deputy 600');
+  close(st.onway, 700, 'key figures: on the way to the collector 700');
+  close(st.held, 800, 'key figures: held by a collector 800');
+  check(r2(T.remaining) === r2(T.net - T.deposited), 'key figures: remaining = cash to collect - deposited, to the cent');
+  var partsC = Math.round(T.short * 100) + ['notHanded', 'carBranch', 'branchArea', 'deputy', 'onway', 'held'].reduce(function (s, k) { return s + Math.round((st[k] || 0) * 100); }, 0);
+  check(partsC === Math.round(T.remaining * 100), 'key figures: the stages and the short line add up to remaining, to the cent (' + partsC + ' vs ' + Math.round(T.remaining * 100) + ')');
+  close(T.sales, 4220, 'key figures: total sales = cash + card of the entries');
+  var D = T.deductions || {}, A = T.additions || {};
+  var dedC = Object.keys(D).reduce(function (s, k) { return s + Math.round(D[k] * 100); }, 0), addC = Object.keys(A).reduce(function (s, k) { return s + Math.round(A[k] * 100); }, 0);
+  check(Math.round(T.sales * 100) - Math.round(T.pos * 100) - Math.round(T.direct * 100) - dedC + addC === Math.round(T.net * 100),
+    'key figures: sales - card - direct deposits - deductions + other collections = cash to collect, to the cent');
+  close(D.delivery, 100, 'key figures: the delivery fee net of VAT is its own deduction');
+  close(D.expenses, 40, 'key figures: expenses are their own deduction');
+  ['delivery', 'expenses', 'credit', 'creditDelivery', 'channelCom', 'discounts', 'transfers'].forEach(function (k) { check(D.hasOwnProperty(k), 'key figures: deduction line ' + k + ' is listed'); });
+  // the same figures from the sales report and, entry by entry, for the Entries screen
+  var rep = call({ action: 'getSalesReport', token: adminTok, dateFrom: D13, dateTo: D13, clusterId: area.id });
+  check(rep.ok && rep.cohort && JSON.stringify(rep.cohort.totals) === JSON.stringify(T), 'key figures: the sales report carries the same figures');
+  var le = call({ action: 'listEntries', token: adminTok });
+  var mine = le.entries.filter(function (e) { return e.date === D13 && [L1.id, L2.id, L3.id, L4.id, L5.id].indexOf(e.locationId) >= 0; });
+  var sumSrc = clientFn_('cohortSum_');
+  check(!!sumSrc && !!le.cohort, 'key figures: the Entries list carries each entry\'s place in the chain');
+  if (sumSrc && le.cohort) {
+    var cs = new Function(sumSrc + ' return cohortSum_;')()(mine, le.cohort);
+    check(r2(cs.net) === r2(T.net) && r2(cs.deposited) === r2(T.deposited) && r2(cs.short) === r2(T.short) && r2(cs.stages.held) === r2(st.held) && r2(cs.stages.notHanded) === r2(st.notHanded),
+      'key figures: the Entries screen sums the same net, deposited, short and stages (' + JSON.stringify(cs) + ')');
+  }
+  // the 12th: all of it banked
+  var c12 = call({ action: 'getDashboardAll', token: adminTok, dateFrom: D12, dateTo: D12, clusterId: area.id }).report.cohort.totals;
+  check(r2(c12.net) === 500 && r2(c12.deposited) === 500 && r2(c12.remaining) === 0, 'key figures: the 12th is 500, all deposited');
+  // the screen draws its cards from the cohort, in one top-to-bottom sum
+  check(/cohort/.test(clientFn_('keyMoneyTiles_')), 'key figures: the dashboard cards read the cohort');
+})();
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);

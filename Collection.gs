@@ -923,7 +923,8 @@ function actionListEntries_(req, user) {
     var jc = jrCtx_(user);
     rows.forEach(function (e) { try { var sg = jrStage_(jc, e); if (sg) e.stage = sg; } catch (x) { /* the list still stands */ } });
   } catch (x) { /* the list still stands */ }
-  return { ok: true, entries: rows };
+  // each entry's place in the chain and its share, for the Entries screen's key figures (2026-10-15)
+  return { ok: true, entries: rows, cohort: entryCohort_(rows).byEntry };
 }
 
 // Cash or approvals still in motion around a person: entries they wrote
@@ -3453,8 +3454,81 @@ function actionSalesReport_(req, user) {
     ok: true, totals: totals, outstanding: outstanding,
     byLocation: locationRows, byProduct: productRows, byDate: dateRows, byCustomer: customerRows,
     cylinderByLocation: cylinderByLocation,
+    cohort: entryCohort_(entries),
     entries: entries
   };
+}
+
+// ---------- The key figures, from the entries of the period (2026-10-15) ----------
+// Every card is a figure of the SAME entries (entry date in the period, place filters):
+// sales, card, direct deposits, each deduction and addition, the net (computeNet_ per
+// entry), then each entry followed up its chain (consumedBy -> handover -> ... -> deposit)
+// to where its cash sits now. A hop received short or over scales what the entry still
+// carries (as followRequest_ does) and the gap is its own line, so
+//   net = deposited + short + not handed + car>branch + branch>area + deputy + on the way + held
+// to the cent. Deposits are never taken by their own date here. Handovers are indexed once.
+var COHORT_STAGES_ = ['notHanded', 'carBranch', 'branchArea', 'deputy', 'onway', 'held'];
+function cohortStage_(h) {
+  if (h.kind === 'deposit') return h.status === 'voided' ? 'held' : 'deposited';
+  if (h.kind === 'car_to_location') return h.status === 'rejected' ? 'notHanded' : 'carBranch';
+  if (h.kind === 'location_to_cluster') return h.status === 'rejected' ? 'carBranch' : 'branchArea';
+  if (h.kind === 'cluster_to_collector') {
+    if (h.status === 'pending_deputy') return 'deputy';
+    if (h.status === 'confirmed') return 'held';
+    if (h.status === 'returned' || h.status === 'rejected' || h.status === 'voided') return 'branchArea';
+    return 'onway';
+  }
+  if (h.kind === 'collector_to_collector') return h.status === 'confirmed' || h.status === 'rejected' ? 'held' : 'onway';
+  return 'notHanded';
+}
+function entryCohort_(entries, c) {
+  c = c || {};
+  var byId = c.hById, bById = c.bById;
+  if (!byId) { byId = Object.create(null); readSheet(SHEETS.HANDOFFS).forEach(function (h) { byId[h.id] = h; }); }
+  if (!bById) { bById = Object.create(null); readSheet(SHEETS.AREA_BULK_BATCHES).forEach(function (b) { bById[b.id] = b; }); }
+  function cents(v) { return Math.round(Number(v || 0) * 100); }
+  var K = { sales: 0, pos: 0, direct: 0, net: 0, deposited: 0, short: 0 }, stg = {}, byEntry = {};
+  COHORT_STAGES_.forEach(function (k) { stg[k] = 0; });
+  var ded = { delivery: 0, expenses: 0, credit: 0, creditDelivery: 0, channelCom: 0, discounts: 0, transfers: 0 };
+  var add = { otherCash: 0, creditDeliveryFees: 0, channelDeliveryFees: 0 };
+  (entries || []).forEach(function (e) {
+    if (e.voided) return;
+    var b = computeNet_([e]), n = cents(b.netCashOwed);
+    K.sales += cents(b.storeCash + b.carCash + b.posCash + b.posSales); K.pos += cents(b.posSales); K.direct += cents(b.directDeposit);
+    ded.expenses += cents(b.expenses); ded.credit += cents(b.creditSales); ded.creditDelivery += cents(b.creditDeliveryUnpaid + b.creditCommissions);
+    ded.channelCom += cents(b.channelCommissions); ded.discounts += cents(b.discounts); ded.transfers += cents(b.bankTransfers);
+    add.otherCash += cents(b.otherCash); add.creditDeliveryFees += cents(b.creditDeliveryFees); add.channelDeliveryFees += cents(b.channelDeliveryFees);
+    // the delivery line takes the VAT's rounding so the lines add up to this entry's net exactly
+    ded.delivery += cents(b.storeCash + b.carCash + b.posCash + b.posSales) - cents(b.posSales) - cents(b.directDeposit) - cents(b.expenses) - cents(b.creditSales)
+      - cents(b.creditDeliveryUnpaid + b.creditCommissions) - cents(b.channelCommissions) - cents(b.discounts) - cents(b.bankTransfers)
+      + cents(b.otherCash) + cents(b.creditDeliveryFees) + cents(b.channelDeliveryFees) - n;
+    K.net += n;
+    // follow the cash up the chain
+    var stage = 'notHanded', f = 1, cur = e.consumedBy ? byId[e.consumedBy] : null, hops = 0;
+    if (e.consumedBy && !cur) { var bt = bById[e.consumedBy]; stage = bt ? (bt.status === 'pending_deputy' ? 'deputy' : 'branchArea') : 'notHanded'; }
+    while (cur && hops++ < 25) {
+      stage = cohortStage_(cur);
+      if (cur.kind !== 'deposit' && cur.status === 'confirmed' && cur.originalAmount != null) {
+        var decl = Number(cur.originalAmount), got = Number(cur.amount || 0);
+        if (decl > 0 && Math.abs(decl - got) > 0.004) f = f * got / decl;
+      }
+      if (stage === 'deposited' || cur.status !== 'confirmed' || !cur.consumedBy) break;
+      var nx = byId[cur.consumedBy];
+      if (!nx || (nx.kind === 'deposit' && nx.status === 'voided')) break;
+      cur = nx;
+    }
+    var carried = Math.round(n * f), sh = n - carried;
+    K.short += sh;
+    if (stage === 'deposited') K.deposited += carried; else stg[stage] += carried;
+    byEntry[e.id] = { s: stage, n: n / 100, c: carried / 100, k: sh / 100 };
+  });
+  function sar(x) { return x / 100; }
+  var out = { sales: sar(K.sales), pos: sar(K.pos), direct: sar(K.direct), net: sar(K.net), deposited: sar(K.deposited), short: sar(K.short),
+    remaining: sar(K.net - K.deposited), deductions: {}, additions: {}, stages: {} };
+  Object.keys(ded).forEach(function (k) { out.deductions[k] = sar(ded[k]); });
+  Object.keys(add).forEach(function (k) { out.additions[k] = sar(add[k]); });
+  COHORT_STAGES_.forEach(function (k) { out.stages[k] = sar(stg[k]); });
+  return { totals: out, byEntry: byEntry };
 }
 
 // ---------- Shortfall accountability ----------
