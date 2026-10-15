@@ -1330,7 +1330,7 @@ function createClusterHandoff_(req, user) {
     if (priorErr) return { ok: false, error: priorErr };
     if (req.locationId && req.locationId !== prior.locationId) return { ok: false, error: 'invalid_location' };
     correctionNote = String(req.correctionNote || '').trim();
-    if (!correctionNote || correctionNote.length > 1000) return { ok: false, error: 'note_required' };
+    if (!req.dryRun && (!correctionNote || correctionNote.length > 1000)) return { ok: false, error: 'note_required' };
     onlyLoc = prior.locationId;
   }
   function wanted(locId) { return !onlyLoc || locId === onlyLoc; }
@@ -1811,6 +1811,7 @@ function actionDeputyApproveBatch_(req, user) {
   var already = {};
   readSheet(SHEETS.HANDOFFS).forEach(function (h) { if (h.viaBulkBatch === batch.id && h.kind === 'cluster_to_collector') already[h.locationId] = h; });
   var handoffOfEntry = {};
+  var dctxB = hoDateCtx_();
   var handoffs = plans.map(function (p) {
     if (already[p.pl.locationId]) {
       p.entryIds.forEach(function (id) { handoffOfEntry[id] = already[p.pl.locationId].id; });
@@ -1833,6 +1834,7 @@ function actionDeputyApproveBatch_(req, user) {
       createdAt: new Date().toISOString(),
       viaBulkBatch: batch.id
     };
+    try { hoStampDate_(dctxB, handoff, null, null, user); } catch (eD) {}
     writeRow(SHEETS.HANDOFFS, handoff);
     p.entryIds.forEach(function (id) { handoffOfEntry[id] = handoff.id; });
     return handoff;
@@ -1937,6 +1939,8 @@ function actionConfirmHandoff_(req, user) {
   var received = req.receivedAmount === undefined || req.receivedAmount === null || req.receivedAmount === ''
     ? declared : Number(req.receivedAmount);
   if (!isFinite(received) || received < 0) return { ok: false, error: 'invalid_amount' };
+  // nothing received is not a receipt: report a problem instead (2026-10-15)
+  if (declared > 0 && received <= 0.004) return { ok: false, error: 'received_zero' };
   var shortfall = Math.round((declared - received) * 100) / 100;
 
   h.receivedAmount = received;
@@ -2205,6 +2209,7 @@ function actionResolveDispute_(req, user) {
     var received = req.receivedAmount === undefined || req.receivedAmount === null || req.receivedAmount === ''
       ? declared : Number(req.receivedAmount);
     if (!isFinite(received) || received < 0) return { ok: false, error: 'invalid_amount' };
+    if (declared > 0 && received <= 0.004) return { ok: false, error: 'received_zero' };
     var shortfall = Math.round((declared - received) * 100) / 100;
     h.receivedAmount = received;
     if (Math.abs(shortfall) > 0.01) {

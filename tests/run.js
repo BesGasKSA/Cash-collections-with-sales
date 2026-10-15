@@ -5687,5 +5687,37 @@ console.log('--- filters that drive everything: pure helpers (2026-10-14) ---');
   check(byStatus.total.toCollect === 0 && byStatus.total.deposited === 60, 'a status filter removes the open ones from to-collect');
 })();
 
+// ---------- nobody confirms receiving 0 (2026-10-15) ----------
+console.log('--- a receipt of 0 is refused: report a problem instead ---');
+(function () {
+  var ctx = harness.buildContext(), SHEETS = ctx.SHEETS;
+  function call(payload) { try { return ctx.route_(payload); } catch (e) { return { ok: false, error: String(e && e.message || e) }; } }
+  (function () { var salt = ctx.randomSalt_(); ctx.writeRow(SHEETS.USERS, { id: ctx.Utilities.getUuid(), name: 'Zr Admin', email: 'zr.admin@bestgas.sa', role: 'admin', active: true, language: 'en', salt: salt, pass: ctx.hashPw_('Bootstrap#1', salt), mustChangePw: false }); })();
+  var adminTok = call({ action: 'login', email: 'zr.admin@bestgas.sa', password: 'Bootstrap#1' }).token;
+  function acceptInvite(email) {
+    var log = ctx._debug.mailLog, tok = null;
+    for (var i = log.length - 1; i >= 0 && !tok; i--) if (log[i].to === email) { var m = /[?&]invite=([A-Za-z0-9]+)/.exec(log[i].body); if (m) tok = m[1]; }
+    call({ action: 'acceptInvite', inviteToken: tok, password: 'RealPass#1' });
+    return call({ action: 'login', email: email, password: 'RealPass#1' }).token;
+  }
+  var col = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Zr Collector', email: 'zr.col@bestgas.sa', role: 'collector', phone: '0550000001' } }).user;
+  var mgr = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Zr Manager', email: 'zr.mgr@bestgas.sa', role: 'cluster_manager' } }).user;
+  var colTok = acceptInvite('zr.col@bestgas.sa');
+  var now = new Date().toISOString();
+  function H(o) { var h = Object.assign({ id: 'zr' + Math.random().toString(36).slice(2), kind: 'cluster_to_collector', status: 'pending', fromUserId: mgr.id, toUserId: col.id, amount: 5000, createdAt: now, sourceEntryIds: [], sourceHandoffIds: [] }, o); ctx.writeRow(SHEETS.HANDOFFS, h); return h; }
+  var a = H({}), b = H({}), c = H({ status: 'disputed' });
+  var z = call({ action: 'confirmHandoff', token: colTok, id: a.id, receivedAmount: 0 });
+  check(!z.ok && z.error === 'received_zero', 'confirming a receipt of 0 is refused (got ' + (z.error || 'ok') + ')');
+  check(ctx.readSheet(SHEETS.HANDOFFS).filter(function (h) { return h.id === a.id; })[0].status === 'pending', 'and the request stays waiting, untouched');
+  var tiny = call({ action: 'confirmHandoff', token: colTok, id: a.id, receivedAmount: '0.00' });
+  check(!tiny.ok && tiny.error === 'received_zero', '"0.00" is refused the same way');
+  var part = call({ action: 'confirmHandoff', token: colTok, id: b.id, receivedAmount: 4900 });
+  check(part.ok && Math.abs(part.handoff.shortfall - 100) < 0.005, 'a real short receipt still goes through (shortfall 100)');
+  var full = call({ action: 'confirmHandoff', token: colTok, id: a.id });
+  check(full.ok && full.handoff.amount === 5000, 'confirming the full amount still works');
+  var rz = call({ action: 'resolveDispute', token: adminTok, id: c.id, resolution: 'confirm', receivedAmount: 0, note: 'x' });
+  check(!rz.ok && rz.error === 'received_zero', 'settling a dispute as received with 0 is refused too (got ' + (rz.error || 'ok') + ')');
+})();
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);
