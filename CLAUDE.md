@@ -1840,8 +1840,23 @@ Deputy screen filtered by `createdAt`. Live: of 216 lines of 13 Oct, 190 were ha
   same per-entry figures for its own filter (`cohortSum_`). Collections shows only what reached a
   collector ("Handed over to collectors"); Handoffs adds the same cash once per hop ("Amount over every
   hop"). One name per figure in ar/en/ur: Net cash to hand over, Deposited, Remaining.
-- Tests: "the same date gives the same figures" and "the key figures come from the entries" in
-  `tests/run.js` (`TZ=UTC node tests/run.js`).
+- **Cents (review, 2026-10-15).** Per-entry cents are shared by largest remainder, ties by id
+  (`cohortCents_` on both sides): the parts add up to round2 of the exact net, so the cohort net equals
+  the report net and the delivery line takes the VAT rounding. `byEntry` is `{s, r: raw net, f: share
+  carried}`; the client's `cohortAlloc_` rebuilds every line in cents from it and `entryAmt_`. An approved
+  area batch with no handover (the branch netted to nothing) is `settled`, a line outside Remaining. A
+  receipt corrected down keeps `originalAmount`; older corrections scale from `receiptCorrections[0]`.
+- **Every dashboard drawer is a pivot (2026-10-17).** `openMetric_` = `metricData_` (the items) +
+  `drillPivotView_` (city > area > branch > source > day > transaction, `drillTree_` is pure: cents,
+  count and share per level; search; Excel/PDF with the grouped tree; a transaction opens its document).
+  A card that comes from the cohort drills into the same cents (`ctx.cohort`: gross, pos,
+  bankedAtSource, net, outstanding, part with `lines`/`alines`, stage), so the drawer's total is the card
+  to the cent. A test checks 34 cards against their drawers.
+- Tests: "the same date gives the same figures", "the key figures come from the entries", "review
+  fixes", "every dashboard card opens a pivot" and "the client parses" in `tests/run.js`
+  (`TZ=UTC node tests/run.js`). The last one compiles every inline script of index.html: `clientFn_`
+  lifts single functions, so a bracket missing between two of them once passed every test while the
+  page did not start at all.
 
 ## Traps
 

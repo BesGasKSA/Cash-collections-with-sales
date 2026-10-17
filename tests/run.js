@@ -6251,5 +6251,17 @@ console.log('--- comparison: periods by entry date, the dashboard\'s figures, ch
   check(dSales.d === -300 && dSales.tone === 'bad' && Math.round(dSales.pct) === -25 && dRem.tone === 'bad' && dRem.pct === null && dDays.tone === 'good' && cx.cmpDelta_(5, 5, 'net').tone === 'flat' && cx.cmpDelta_(6, 5, 'requests').tone === 'flat', 'comparison: a change is good or bad by the figure\'s own direction');
 })();
 
+console.log('--- the client parses: every inline script of index.html compiles (2026-10-17) ---');
+(function () {
+  // clientFn_ lifts single functions out, so a bracket missing between two of them passed every test
+  // while the real page did not start at all. Compile each inline script as the browser would.
+  var re = /<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g, m, n = 0, errs = [];
+  while ((m = re.exec(clientHtml))) {
+    n++;
+    try { new vm.Script(m[1], { filename: 'inline-' + n }); } catch (e) { errs.push('script ' + n + ': ' + e.message); }
+  }
+  check(n > 0 && errs.length === 0, 'index.html: all ' + n + ' inline scripts compile' + (errs.length ? ' (' + errs.join('; ') + ')' : ''));
+})();
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);

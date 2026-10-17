@@ -64,3 +64,21 @@ The only console errors are the mock server's 404 on `GET /api` (it answers POST
   entry date would make those screens match Entries exactly too, but it goes against the agreed rule.
 - `listEntries` now runs `computeNet_` once per visible entry. That is fine for a few thousand rows; worth timing on live.
 - `index.protected.html` was not rebuilt.
+
+## Review fixes and drawers as pivots (2026-10-17)
+
+- Cents shared by largest remainder: the cohort net equals the report net to the cent. Before the fix, three
+  10.00 delivery fees gave 273.90 against 273.91.
+- Settled area batches sit on their own line, outside Remaining. A receipt corrected down is scaled.
+- The dashboard has one Deposited figure. Tile, statement and equation all drill by stage.
+- Every dashboard drawer is a city > area > branch > source > day > transaction pivot.
+- Browser check (mock, all dates and 2026-10-16), card vs drawer: Total sales 8,852.00 / 8,852.00, Net
+  8,852.00 / 8,852.00, Deposited 1,790.00 / 1,790.00, Remaining 7,062.00 / 7,062.00, Branch to area
+  7,052.00 / 7,052.00, Received short 10.00 / 10.00, Held 7,052.00 / 7,052.00, Deposits tile 1,790.00 /
+  1,790.00. On the 16th: 1,300 / 1,290 / 10, every line equal to its drawer. Arabic at 390 px: no
+  horizontal scroll. A transaction opens its document.
+- Found while checking: a missing bracket stopped the whole page from starting, and the unit tests did not
+  see it. Fixed, and `tests/run.js` now compiles the page's script.
+- Main's comparison screen summed per-entry cents (121,482.90 against the report's 121,482.91). It now rounds
+  once. It still has its own deposited rule, without the short scaling; moving it onto `cohortAlloc_` would
+  make it match the key figures exactly.

@@ -10713,7 +10713,7 @@ function salesAndCollectionStatements_(report, handoffs, open){
       { label: t('dash_deposited'), amount: collected, kind: 'deduct', color: 'var(--c-deposit)', onClick: CT ? open('stage', { title: t('kf_dep'), stages: ['deposited'] }) : open('deposited') }
     ].concat(CT && Math.abs(Number(CT.settled || 0)) > 0.004 ? [{ label: t('kf_settled'), amount: Number(CT.settled), kind: 'deduct', color: 'var(--c-deposit)', onClick: open('stage', { title: t('kf_settled'), stages: ['settled'] }) }] : []).concat([
       { label: t('dash_remainingToDeposit'), amount: remaining, kind: 'final', color: 'var(--c-deposit)', onClick: CT ? open('stage', { title: t('kf_rem'), stages: COHORT_ST_, short: true }) : open('remaining') }
-    ])
+    ]))
   }));
   return { node: g, remaining: remaining, totalToCollect: totalToCollect, gross: gross, deposited: deposited };
 }
