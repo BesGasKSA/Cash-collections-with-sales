@@ -5935,7 +5935,7 @@ console.log('--- the key figures come from the entries of the period, followed t
   var r1 = request(L1);
   ok(call({ action: 'deputyValidateHandoff', token: walidTok, id: r1.handoff.id }), 'the deputy validates branch 1');
   ok(call({ action: 'confirmHandoff', token: colTok, id: r1.handoff.id }), 'the collector receives branch 1');
-  ok(call({ action: 'recordDeposit', token: colTok, bankReference: 'KC-1' }), 'the collector banks it on the 14th');
+  ok(call({ action: 'recordDeposit', token: colTok, attachmentId: depSlip(colTok), bankReference: 'KC-1' }), 'the collector banks it on the 14th');
   // the rest of the 13th, one branch per stage
   ent(drvTok, D13, 'car', C2.id, 150); ok(call({ action: 'createHandoff', token: drvTok, kind: 'car_to_location', carId: C2.id }), 'car 2 on its way to the branch');
   ent(drvTok, D13, 'car', C3.id, 70);  // not handed over
