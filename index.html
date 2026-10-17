@@ -4534,6 +4534,31 @@
     .ms-toast,.ms-toast.out,.act-go,.act-panel{transition:none !important;}
   }
   /* ===== end phone social layer ===== */
+  /* ---------- data levels (2026-10-17): group-by chips, breadcrumb, the pivot tree ---------- */
+  .crp-lvcard .col-chips{align-items:center;}
+  .crp-chl{flex:none;font-size:12px;font-weight:700;color:var(--muted);margin-inline-end:2px;}
+  .crp-crumbs{display:flex;flex-wrap:wrap;align-items:center;gap:4px 6px;margin:2px 0 10px;}
+  .crp-crumb{display:inline-flex;flex-direction:column;align-items:flex-start;border:1px solid var(--border);background:#fff;border-radius:10px;padding:4px 10px;font:inherit;font-size:13px;font-weight:700;color:var(--green);cursor:pointer;min-height:36px;justify-content:center;}
+  .crp-crumb small{font-size:10.5px;font-weight:600;color:var(--muted);}
+  .crp-crumb.on{background:var(--green);border-color:var(--green);color:#fff;}
+  .crp-crumb.on small{color:var(--cream);}
+  .crp-crumb:hover:not(.on){background:color-mix(in srgb,var(--green) 8%,#fff);}
+  .crp-crumb:focus-visible,.crp-dd:focus-visible{outline:3px solid color-mix(in srgb,var(--green) 55%,#fff);outline-offset:2px;}
+  .crp-sep{color:var(--muted);font-weight:700;}
+  .crp-lvtools{display:flex;gap:8px;justify-content:flex-end;margin-top:10px;}
+  .crp-lvtools .btn{min-height:36px;padding:6px 12px;font-size:13px;}
+  .crp-lvt .pv-name{white-space:nowrap;}
+  .crp-lvt tbody tr.pv-d1 td{background:color-mix(in srgb,var(--green) 5%,#fff);}
+  .crp-lvt tbody tr.crp-rq td{font-size:12.5px;}
+  .crp-lvt .col-dot{margin-top:4px;}
+  .crp-dd{display:inline-grid;place-items:center;width:26px;height:26px;margin-inline-start:6px;border:1px solid var(--border);border-radius:8px;background:#fff;color:var(--green);cursor:pointer;flex:none;}
+  .crp-dd .ic2{width:14px;height:14px;transform:scaleX(var(--fx,1));}
+  .crp-dd:hover{background:var(--green);color:#fff;}
+  .cmp-crumbs{margin-top:8px;}
+  .cmp-next{display:block;font-size:11px;font-weight:600;color:var(--green);}
+  .cmp-drill{cursor:pointer;}
+  .cmp-drill:hover th,.cmp-drill:hover td{background:color-mix(in srgb,var(--green) 6%,#fff);}
+  @media (max-width:820px){ .crp-lvtools{justify-content:flex-start;} .crp-chl{display:none;} }
 </style>
 </head>
 <body>
@@ -5335,6 +5360,23 @@ var L = {
       cmp_breakdown: 'تفصیل', cmp_breakdownHint: 'ہر علاقے، برانچ، کلکٹر یا شہر کا ایک عدد انہی مدتوں میں', cmp_by: 'تفصیل بلحاظ',
       cmp_m_sales: 'فروخت', cmp_m_card: 'کارڈ (POS)', cmp_m_direct: 'براہ راست جمع (موازنہ)', cmp_m_other: 'دیگر کٹوتیاں', cmp_m_additions: 'اضافے (دیگر وصولیاں)', cmp_m_net: 'وصول طلب نقدی',
       cmp_m_deposited: 'جمع شدہ', cmp_m_remaining: 'باقی', cmp_m_short: 'کمی', cmp_m_requests: 'درخواستیں', cmp_m_days: 'بینک تک اوسط دن' }
+  };
+  ['ar', 'en', 'ur'].forEach(function(lg){ Object.keys(X[lg]).forEach(function(k){ L[lg][k] = X[lg][k]; }); });
+})();
+(function(){
+  var X = {
+    en: { crp_levels: 'Levels', crp_levelsHint: 'City, area, branch, collector, day, request. Tap a bar or a row’s arrow to go one level down; the trail above takes you back up.',
+      crp_groupBy: 'Group by', crp_all: 'All', crp_lv_city: 'City', crp_lv_area: 'Area', crp_lv_branch: 'Branch', crp_lv_collector: 'Collector', crp_lv_day: 'Day', crp_lv_req: 'Request', crp_lv_owner: 'Store, car or POS',
+      crp_byLevel: 'By {lv}', crp_lvSub: '{n} requests · {p} of the level above · banked {b} · out {r}', crp_lvMore: '{n} more in the table below', crp_count: 'Requests', crp_pctParent: '% of the level above',
+      crp_drillTo: 'Go into {x}', crp_openAll: 'Open all', crp_closeAll: 'Close all', cmp_drillHint: 'Tap a row to go one level down' },
+    ar: { crp_levels: 'المستويات', crp_levelsHint: 'المدينة، المنطقة، الفرع، المحصل، اليوم، الطلب. اضغط شريطا أو سهم الصف للنزول مستوى؛ والمسار أعلاه يعيدك.',
+      crp_groupBy: 'التجميع حسب', crp_all: 'الكل', crp_lv_city: 'المدينة', crp_lv_area: 'المنطقة', crp_lv_branch: 'الفرع', crp_lv_collector: 'المحصل', crp_lv_day: 'اليوم', crp_lv_req: 'الطلب', crp_lv_owner: 'المتجر أو السيارة أو نقطة البيع',
+      crp_byLevel: 'حسب {lv}', crp_lvSub: '{n} طلب · {p} من المستوى الأعلى · أودع {b} · متبقي {r}', crp_lvMore: '{n} أخرى في الجدول أدناه', crp_count: 'الطلبات', crp_pctParent: '% من المستوى الأعلى',
+      crp_drillTo: 'الدخول إلى {x}', crp_openAll: 'فتح الكل', crp_closeAll: 'طي الكل', cmp_drillHint: 'اضغط صفا للنزول مستوى' },
+    ur: { crp_levels: 'سطحیں', crp_levelsHint: 'شہر، علاقہ، برانچ، کلکٹر، دن، درخواست۔ ایک سطح نیچے جانے کے لیے پٹی یا قطار کا تیر دبائیں؛ اوپر کا راستہ واپس لے جاتا ہے۔',
+      crp_groupBy: 'گروپ بلحاظ', crp_all: 'سب', crp_lv_city: 'شہر', crp_lv_area: 'علاقہ', crp_lv_branch: 'برانچ', crp_lv_collector: 'کلکٹر', crp_lv_day: 'دن', crp_lv_req: 'درخواست', crp_lv_owner: 'اسٹور، گاڑی یا POS',
+      crp_byLevel: '{lv} کے لحاظ سے', crp_lvSub: '{n} درخواستیں · اوپر کی سطح کا {p} · جمع {b} · باقی {r}', crp_lvMore: 'نیچے جدول میں {n} مزید', crp_count: 'درخواستیں', crp_pctParent: 'اوپر کی سطح کا %',
+      crp_drillTo: '{x} میں جائیں', crp_openAll: 'سب کھولیں', crp_closeAll: 'سب بند کریں', cmp_drillHint: 'ایک سطح نیچے جانے کے لیے قطار دبائیں' }
   };
   ['ar', 'en', 'ur'].forEach(function(lg){ Object.keys(X[lg]).forEach(function(k){ L[lg][k] = X[lg][k]; }); });
 })();
@@ -18443,7 +18485,7 @@ var CRP_REPS_ = {
     G.forEach(function(g, i){
       var b = el('<button type="button" class="crp-mixrow"><span class="crp-mn"><b>'+esc(nameFn(g.key))+'</b><small class="num">'+esc(money(g.total) + ' · ' + crpPctTxt_(g.pct[0]) + ' ' + t('crp_mix_cash'))+'</small></span>' +
         crpStack_(CRP_MIX_.map(function(k){ return { label: t('crp_mix_' + k), value: g.v[k], color: CRP_MIX_C_[k] }; }), { i: i }) + '</button>');
-      b.addEventListener('click', function(){ c.open(nameFn(g.key), g.rows); });
+      b.addEventListener('click', function(){ if (by === 'city' || by === 'area' || by === 'branch' || by === 'collector' || by === 'day') c.drill(by, g.key); else c.open(nameFn(g.key), g.rows); });
       list.appendChild(b);
     });
     gc.appendChild(list);
@@ -18479,7 +18521,7 @@ var CRP_REPS_ = {
       var mv = crpMovers_(c.D[p[0]], c.Dp[p[0]], 'total');
       var card = c.card(t('crp_mv_' + p[0]), t('crp_mvHint'));
       card.appendChild(crpHBars_(mv.slice(0, 10).map(function(r){ return { label: p[1](r.key), sub: colFill_(t('crp_mvSub'), { a: money(r.prev), b: money(r.cur) }), value: r.delta, color: r.delta >= 0 ? '#2E7D4F' : '#C14A30',
-        valTxt: (r.delta >= 0 ? '▲ ' : '▼ ') + money(Math.abs(r.delta)), onClick: function(){ c.open(p[1](r.key), c.D.rows.filter(function(x){ return (p[2] === 'branch' ? x.r.locationId || '_' : p[2] === 'area' ? x.area : x.r.holder || '_') === r.key; })); } }; })));
+        valTxt: (r.delta >= 0 ? '▲ ' : '▼ ') + money(Math.abs(r.delta)), onClick: r.key !== '_' ? function(){ c.drill(p[2], r.key); } : function(){ c.open(p[1](r.key), c.D.rows.filter(function(x){ return (p[2] === 'branch' ? x.r.locationId || '_' : p[2] === 'area' ? x.area : x.r.holder || '_') === r.key; })); } }; })));
       card.appendChild(crpTable_(c, { name: t('crp_mv_' + p[0]), rows: mv, cols: [
         { l: t('col_x_name'), v: function(r){ return p[1](r.key); } }, { l: t('crp_prev'), t: 'money', v: function(r){ return r.prev; } }, { l: t('crp_now'), t: 'money', v: function(r){ return r.cur; } },
         { l: t('crp_change'), t: 'money', v: function(r){ return r.delta; }, h: function(r){ return '<span class="'+(r.delta < 0 ? 'crp-neg' : 'crp-pos')+'">'+(r.delta < 0 ? '▼ ' : r.delta > 0 ? '▲ ' : '')+esc(money(Math.abs(r.delta)))+'</span>'; } },
@@ -18502,7 +18544,7 @@ var CRP_REPS_ = {
     rc.appendChild(crpHBars_(L2.slice().sort(function(a, b){ return (b.total ? b.deposited / b.total : 0) - (a.total ? a.deposited / a.total : 0); }).map(function(g){
       var p = g.total ? g.deposited / g.total * 100 : 0;
       return { label: c.nm.col(g.key), sub: colFill_(t('crp_rankSub'), { b: money(g.deposited), r: money(g.remaining) }), value: p, valTxt: crpPctTxt_(p), color: p >= 80 ? '#2E7D4F' : p >= 50 ? '#C27C1E' : '#C14A30',
-        onClick: function(){ c.open(c.nm.col(g.key), c.D.rows.filter(function(x){ return (x.r.holder || '_') === g.key; })); } }; })));
+        onClick: function(){ if (g.key !== '_') c.drill('collector', g.key); else c.open(c.nm.col(g.key), c.D.rows.filter(function(x){ return (x.r.holder || '_') === g.key; })); } }; })));
     m.appendChild(rc);
     var hc = c.card(t('crp_holdNow'), t('col_cTableHint'));
     hc.appendChild(crpHBars_(L2.filter(function(g){ return g.remaining > 0.004; }).sort(function(a, b){ return b.remaining - a.remaining; }).map(function(g){ return { label: c.nm.col(g.key), value: g.remaining, color: '#C27C1E', onClick: function(){ c.open(c.nm.col(g.key), c.D.rows.filter(function(x){ return (x.r.holder || '_') === g.key && x.st !== 'deposited'; })); } }; })));
@@ -18537,7 +18579,7 @@ var CRP_REPS_ = {
       var nm = c.nm.holder(g.key), since = g.since ? colDay_(g.since) : '';
       var b = el('<button type="button" class="crp-mixrow"><span class="crp-mn"><b>'+esc(nm)+'</b><small class="num">'+esc(money(g.amount) + ' · ' + colFill_(t('col_reqN'), { n: g.n }) + (since ? ' · ' + colFill_(t('col_since'), { d: since }) : ''))+'</small></span>' +
         '<span class="crp-abs" style="width:'+(g.amount / mx * 100).toFixed(2)+'%">'+crpStack_(stages.map(function(k){ return { label: t('col_st_' + k), value: g.st[k], color: COL_C_[k] }; }), { i: i })+'</span></button>');
-      b.addEventListener('click', function(){ c.open(nm, g.rows); });
+      b.addEventListener('click', function(){ if (g.key.indexOf('am:') === 0 || g.key === '_') c.open(nm, g.rows); else c.drill('collector', g.key); });
       list.appendChild(b);
     });
     if (!L2.length) list.appendChild(el(emptyOk_(t('crp_nothingOut'))));
@@ -18626,7 +18668,7 @@ var CRP_REPS_ = {
     L2.forEach(function(b, i){
       var row = el('<button type="button" class="crp-mixrow"><span class="crp-mn"><b>'+esc(c.nm.br(b.key))+'</b><small class="num">'+esc(colFill_(t('crp_bsSub'), { n: money(b.net), b: money(b.banked), o: money(b.open) }))+'</small></span>' +
         '<span class="crp-abs" style="width:'+(b.net / mx * 100).toFixed(2)+'%">'+crpStack_([{ label: t('col_card_dep'), value: b.banked, color: COL_C_.deposited }, { label: t('col_card_rem'), value: b.open, color: '#C27C1E' }], { i: i })+'</span></button>');
-      row.addEventListener('click', function(){ c.open(c.nm.br(b.key), c.D.rows.filter(function(x){ return (x.r.locationId || '_') === b.key; })); });
+      row.addEventListener('click', function(){ if (b.key !== '_') { c.drill('branch', b.key); return; } c.open(c.nm.br(b.key), c.D.rows.filter(function(x){ return (x.r.locationId || '_') === b.key; })); });
       list.appendChild(row);
     });
     bc.appendChild(el(crpLegend_([{ label: t('col_card_dep'), color: COL_C_.deposited }, { label: t('col_card_rem'), color: '#C27C1E' }])));
@@ -18662,7 +18704,7 @@ var CRP_REPS_ = {
       H.days.forEach(function(d){
         var cell = rw.cells[d], a = cell ? cell.amt : 0, tip = c.nm.br(rw.key) + ' · ' + d + ': ' + money(a);
         var b = el('<button type="button" class="crp-hc'+(cell ? '' : ' none')+'" style="--a:'+(cell && H.max ? (0.18 + 0.82 * a / H.max).toFixed(3) : 0)+';--i:'+Math.min(ri, 10)+'" title="'+esc(tip)+'" aria-label="'+esc(tip)+'"'+(cell ? '' : ' disabled')+'></button>');
-        if (cell) b.addEventListener('click', function(){ c.open(tip, cell.rows); });
+        if (cell) b.addEventListener('click', function(){ if (rw.key !== '_') { c.S.branch = rw.key; c.drill('day', d); } else c.open(tip, cell.rows); });
         host.appendChild(b);
       });
     });
@@ -18687,7 +18729,7 @@ var CRP_REPS_ = {
     chips.addEventListener('click', function(ev){ var b = ev.target.closest('.col-chip'); if (!b) return; c.S.gran = b.dataset.k; c.redraw(); });
     gc.appendChild(chips);
     gc.appendChild(el('<h3 class="col-sh">'+esc(t('col_dailyReq'))+'</h3>'));
-    gc.appendChild(crpCols_(B.map(function(b){ return { label: lab(b.key), short: gran === 'day' ? b.key.slice(8) : gran === 'month' ? b.key.slice(5) : b.key.slice(5), value: b.sent, onClick: function(){ c.open(lab(b.key), b.rows); } }; }), { color: '#4D6D51' }));
+    gc.appendChild(crpCols_(B.map(function(b){ return { label: lab(b.key), short: gran === 'day' ? b.key.slice(8) : gran === 'month' ? b.key.slice(5) : b.key.slice(5), value: b.sent, onClick: function(){ if (gran === 'day') c.drill('day', b.key); else c.open(lab(b.key), b.rows); } }; }), { color: '#4D6D51' }));
     gc.appendChild(el('<h3 class="col-sh">'+esc(t('col_dailyBank'))+'</h3>'));
     gc.appendChild(crpCols_(B.map(function(b){ return { label: lab(b.key), short: gran === 'day' ? b.key.slice(8) : b.key.slice(5), value: b.banked, onClick: b.brows.length ? function(){ c.open(lab(b.key), b.brows); } : null }; }), { color: COL_C_.deposited }));
     gc.appendChild(el('<h3 class="col-sh">'+esc(t('crp_openRun'))+'</h3>'));
@@ -18709,7 +18751,7 @@ var CRP_REPS_ = {
     A.rows.forEach(function(g, i){
       var b = el('<button type="button" class="crp-mixrow"><span class="crp-mn"><b>'+esc(c.nm.col(g.key))+'</b><small class="num">'+esc(money(g.total) + ' · ' + colFill_(t('col_reqN'), { n: g.n }))+'</small></span>' +
         '<span class="crp-abs" style="width:'+(g.total / mx * 100).toFixed(2)+'%">'+crpStack_([0, 1, 2, 3].map(function(k){ return { label: t('col_age_' + k), value: g.b[k], color: CRP_AGE_C_[k] }; }), { i: i })+'</span></button>');
-      b.addEventListener('click', function(){ c.open(c.nm.col(g.key), g.rows); });
+      b.addEventListener('click', function(){ if (g.key !== '_') c.drill('collector', g.key); else c.open(c.nm.col(g.key), g.rows); });
       list.appendChild(b);
     });
     if (!A.rows.length) list.appendChild(el(emptyOk_(t('crp_nothingOut'))));
@@ -18950,6 +18992,148 @@ function crpExList_(c, ex){
 function crpEmpty_(msg){ return el('<div class="card crp-card no-collapse"><div class="muted rp-empty">'+esc(msg)+'</div></div>'); }
 function crpShortDate_(iso){ try { return new Date(iso + 'T00:00:00').toLocaleDateString(state.lang === 'ar' ? 'ar-SA-u-ca-gregory-nu-latn' : state.lang === 'ur' ? 'ur-PK-u-nu-latn' : 'en-GB', { day: 'numeric', month: 'short' }); } catch (e) { return iso; } }
 function crpMonthName_(ym){ try { return new Date(ym + '-01T00:00:00').toLocaleDateString(state.lang === 'ar' ? 'ar-SA-u-ca-gregory-nu-latn' : state.lang === 'ur' ? 'ur-PK-u-nu-latn' : 'en-GB', { month: 'short', year: 'numeric' }); } catch (e) { return ym; } }
+// ---- data levels (2026-10-17): city › area › branch › collector › day › request, on every report ----
+// A level is a filter of the screen: drilling sets it, the breadcrumb clears what is below. The tree is
+// pure (crpTree_, tested): sums in cents, every node is the sum of its children, % of the parent adds up
+// to 100.0, and its count is the requests under it.
+var CRP_LV_ = ['city', 'area', 'branch', 'collector', 'day'];
+function crpLvKey_(lv, x){
+  if (lv === 'city') return x.city || '_';
+  if (lv === 'area') return x.area || '_';
+  if (lv === 'branch') return x.r.locationId || '_';
+  if (lv === 'collector') return x.r.holder || '_';
+  if (lv === 'day') return x.day || '_';
+  return '_';
+}
+// pure: the levels still open under the chosen group-by, given the filters already set
+function crpLevelsFrom_(start, S){
+  var i = Math.max(0, CRP_LV_.indexOf(start));
+  return CRP_LV_.slice(i).filter(function(lv){ return !S[lv]; });
+}
+// pure: rows → a tree over the levels; each node {key, lv, d, n, total, deposited, remaining, short, pct, rows, kids}
+function crpTree_(rows, levels, keyOf){
+  keyOf = keyOf || crpLvKey_;
+  function node(key, lv, d){ return { key: key, lv: lv, d: d, n: 0, c: { total: 0, deposited: 0, short: 0 }, rows: [], kids: [], m: {} }; }
+  function put(n, x, amt, dep, sh){ n.n++; n.c.total += amt; n.c.deposited += dep; n.c.short += sh; n.rows.push(x); }
+  var root = node('', null, 0);
+  rows.forEach(function(x){
+    var amt = crpC_(x.r.amount), dep = x.st === 'deposited' ? amt : 0, sh = crpC_(x.r.shortfall);
+    var cur = root; put(cur, x, amt, dep, sh);
+    levels.forEach(function(lv, i){
+      var k = keyOf(lv, x), nx = cur.m[k];
+      if (!nx) { nx = cur.m[k] = node(k, lv, i + 1); cur.kids.push(nx); }
+      cur = nx; put(cur, x, amt, dep, sh);
+    });
+  });
+  function fin(n){
+    n.total = n.c.total / 100; n.deposited = n.c.deposited / 100; n.remaining = (n.c.total - n.c.deposited) / 100; n.short = n.c.short / 100;
+    delete n.m;
+    n.kids.sort(function(a, b){ return a.lv === 'day' ? (a.key < b.key ? 1 : a.key > b.key ? -1 : 0) : (b.c.total - a.c.total); });
+    var p = crpPct_(n.kids.map(function(k){ return k.c.total; }));
+    n.kids.forEach(function(k, i){ k.pct = p[i]; fin(k); });
+  }
+  fin(root); root.pct = n0(root) ? 100 : 0;
+  function n0(r){ return r.c.total > 0; }
+  return root;
+}
+// pure: a tree as sheet rows with Excel grouping (outline = depth), requests as the last level, the total last
+function crpTreeSheet_(root, names, reqRow){
+  var rows = [], outline = [];
+  (function walk(n){
+    n.kids.forEach(function(k){
+      rows.push([names(k)].concat([k.n, k.total, k.pct, k.deposited, k.remaining, k.short])); outline.push(k.d - 1);
+      if (k.kids.length) walk(k);
+      else if (reqRow) k.rows.forEach(function(x){ rows.push(reqRow(x)); outline.push(k.d); });
+    });
+  })(root);
+  return { rows: rows, outline: outline };
+}
+function crpLvName_(c, lv, k){
+  if (lv === 'city') return c.nm.city(k);
+  if (lv === 'area') return c.nm.area(k);
+  if (lv === 'branch') return c.nm.br(k);
+  if (lv === 'collector') return c.nm.col(k);
+  if (lv === 'day') return k === '_' ? t('report_unspecified') : crpShortDate_(k) + ' ' + k.slice(0, 4);
+  return k;
+}
+// the breadcrumb: All › City › Area › Branch › Collector › Day; a crumb clears what is under it
+function crpCrumbs_(c){
+  var S = c.S, set = CRP_LV_.filter(function(lv){ return S[lv]; });
+  var w = el('<nav class="crp-crumbs" aria-label="'+esc(t('crp_levels'))+'"></nav>');
+  var all = el('<button type="button" class="crp-crumb'+(set.length ? '' : ' on')+'">'+esc(t('crp_all'))+'</button>');
+  all.addEventListener('click', function(){ CRP_LV_.forEach(function(lv){ S[lv] = ''; }); c.redraw(true); });
+  w.appendChild(all);
+  set.forEach(function(lv, i){
+    w.appendChild(el('<span class="crp-sep" aria-hidden="true">'+esc(crumbSep_().trim())+'</span>'));
+    var b = el('<button type="button" class="crp-crumb'+(i === set.length - 1 ? ' on' : '')+'"'+(i === set.length - 1 ? ' aria-current="true"' : '')+'><small>'+esc(t('crp_lv_' + lv))+'</small>'+esc(crpLvName_(c, lv, S[lv]))+'</button>');
+    b.addEventListener('click', function(){ set.slice(i + 1).forEach(function(l2){ S[l2] = ''; }); c.redraw(true); });
+    w.appendChild(b);
+  });
+  return w;
+}
+// the levels card on every report: group-by chips, breadcrumb, a chart of the level that drills, the pivot tree
+function crpLevelsCard_(c, rows){
+  var S = c.S, start = CRP_LV_.indexOf(S.lv) >= 0 ? S.lv : 'city';
+  var levels = crpLevelsFrom_(start, S);
+  var card = el('<section class="card crp-card crp-lvcard no-collapse"><h2>'+esc(t('crp_levels'))+'</h2><p class="muted crp-hint">'+esc(t('crp_levelsHint'))+'</p></section>');
+  var chips = el('<div class="col-chips" role="group" aria-label="'+esc(t('crp_groupBy'))+'"><span class="crp-chl">'+esc(t('crp_groupBy'))+'</span>' + CRP_LV_.map(function(lv){
+    return '<button type="button" class="col-chip'+(lv === start ? ' on' : '')+'" data-lv="'+lv+'" aria-pressed="'+(lv === start)+'">'+esc(t('crp_lv_' + lv))+'</button>'; }).join('') + '</div>');
+  chips.addEventListener('click', function(ev){ var b = ev.target.closest('.col-chip'); if (!b) return; S.lv = b.dataset.lv; S.tOpen = {}; c.redraw(); });
+  card.appendChild(chips);
+  card.appendChild(crpCrumbs_(c));
+  var root = crpTree_(rows, levels);
+  var lv0 = levels[0];
+  if (lv0) {
+    card.appendChild(el('<h3 class="col-sh">'+esc(colFill_(t('crp_byLevel'), { lv: t('crp_lv_' + lv0) }))+'</h3>'));
+    card.appendChild(crpHBars_(root.kids.slice(0, 25).map(function(k){
+      return { label: crpLvName_(c, lv0, k.key), sub: colFill_(t('crp_lvSub'), { n: k.n, p: crpPctTxt_(k.pct), b: money(k.deposited), r: money(k.remaining) }), value: k.total, valTxt: money(k.total) + ' · ' + crpPctTxt_(k.pct),
+        onClick: function(){ c.drill(lv0, k.key); } }; })));
+    if (root.kids.length > 25) card.appendChild(el('<p class="muted crp-hint">'+esc(colFill_(t('crp_lvMore'), { n: root.kids.length - 25 }))+'</p>'));
+  }
+  // the tree table: subtotals at every level, % of the parent, the count; requests at the bottom
+  S.tOpen = S.tOpen || {};
+  var host = el('<div class="crp-tw pv-table-w" data-noexport></div>');
+  function draw(){
+    var html = '', reqCap = 60;
+    (function walk(n, path, show){
+      n.kids.forEach(function(k){
+        var p = path + '|' + k.lv + ':' + k.key, open = !!S.tOpen[p], hasKids = k.kids.length > 0 || k.rows.length > 0;
+        if (show) html += '<tr class="pv-row pv-d'+Math.min(k.d, 4)+' crp-lvr" data-p="'+esc(p)+'" data-lv="'+k.lv+'" data-k="'+esc(k.key)+'" tabindex="0" aria-expanded="'+open+'" aria-level="'+k.d+'">' +
+          '<td class="pv-name" style="--d:'+(k.d - 1)+'"><span class="pv-in"><span class="pv-tog" aria-hidden="true"></span><span class="pv-txt"><b>'+esc(crpLvName_(c, k.lv, k.key))+'</b><small>'+esc(t('crp_lv_' + k.lv))+'</small></span>' +
+            '<button type="button" class="crp-dd" data-dd="1" aria-label="'+esc(colFill_(t('crp_drillTo'), { x: crpLvName_(c, k.lv, k.key) }))+'">'+icon_('chevron')+'</button>'  + '</span></td>' +
+          '<td class="num">'+k.n+'</td><td class="num"><b>'+esc(money(k.total))+'</b></td><td class="num">'+esc(crpPctTxt_(k.pct))+'</td><td class="num">'+esc(money(k.deposited))+'</td><td class="num">'+esc(money(k.remaining))+'</td><td class="num">'+(k.short ? esc(money(k.short)) : '—')+'</td></tr>';
+        if (!show || !open || !hasKids) return;
+        if (k.kids.length) walk(k, p, true);
+        else k.rows.slice(0, reqCap).forEach(function(x){
+          html += '<tr class="pv-row pv-d4 crp-rq" data-id="'+esc(x.r.id)+'" tabindex="0"><td class="pv-name" style="--d:'+k.d+'"><span class="pv-in"><span class="col-dot" style="--c:'+(COL_C_[x.st] || '#767b71')+'" aria-hidden="true"></span><span class="pv-txt"><b>'+esc(x.r.txNo || t('crp_lv_req'))+'</b><small>'+esc([x.day, t('col_st_' + x.st), userName(x.r.holder)].filter(Boolean).join(' · '))+'</small></span></span></td>' +
+            '<td class="num">1</td><td class="num">'+esc(money(x.r.amount))+'</td><td class="num"></td><td class="num">'+(x.st === 'deposited' ? esc(money(x.r.amount)) : '—')+'</td><td class="num">'+(x.st !== 'deposited' ? esc(money(x.r.amount)) : '—')+'</td><td class="num">'+(Number(x.r.shortfall || 0) ? esc(money(x.r.shortfall)) : '—')+'</td></tr>';
+        });
+      });
+    })(root, '', true);
+    host.innerHTML = '<table class="crp-tbl pv-table crp-lvt" data-nosort><thead><tr><th scope="col">'+esc(levels.map(function(lv){ return t('crp_lv_' + lv); }).concat([t('crp_lv_req')]).join(' › '))+'</th><th scope="col" class="num">'+esc(t('crp_count'))+'</th><th scope="col" class="num">'+esc(t('col_card_total'))+'</th><th scope="col" class="num">'+esc(t('crp_pctParent'))+'</th><th scope="col" class="num">'+esc(t('col_card_dep'))+'</th><th scope="col" class="num">'+esc(t('col_card_rem'))+'</th><th scope="col" class="num">'+esc(t('col_k_short'))+'</th></tr></thead><tbody>' + html + '</tbody>' +
+      '<tfoot><tr class="crp-tot"><th scope="row">'+esc(t('rp_total'))+'</th><td class="num">'+root.n+'</td><td class="num">'+esc(money(root.total))+'</td><td class="num">'+esc(crpPctTxt_(root.pct))+'</td><td class="num">'+esc(money(root.deposited))+'</td><td class="num">'+esc(money(root.remaining))+'</td><td class="num">'+(root.short ? esc(money(root.short)) : '—')+'</td></tr></tfoot></table>';
+  }
+  draw();
+  function act(tr, ev){
+    if (tr.classList.contains('crp-rq')) { colOpenDoc_(tr.dataset.id); return; }
+    if (ev && ev.target.closest('[data-dd]')) { c.drill(tr.dataset.lv, tr.dataset.k); return; }
+    var p = tr.dataset.p; S.tOpen[p] = !S.tOpen[p]; crpSave_(); draw();
+    var again = host.querySelector('tr[data-p="'+(window.CSS && CSS.escape ? CSS.escape(p) : p)+'"]'); if (again) again.focus();
+  }
+  host.addEventListener('click', function(ev){ var tr = ev.target.closest('tr.pv-row'); if (tr) act(tr, ev); });
+  host.addEventListener('keydown', function(ev){ if (ev.key !== 'Enter' && ev.key !== ' ') return; var tr = ev.target.closest('tr.pv-row'); if (tr) { ev.preventDefault(); act(tr, ev); } });
+  var tools = el('<div class="crp-lvtools"><button type="button" class="btn ghost crp-xa">'+esc(t('crp_openAll'))+'</button><button type="button" class="btn ghost crp-xc">'+esc(t('crp_closeAll'))+'</button></div>');
+  qs('.crp-xa', tools).addEventListener('click', function(){ (function walk(n, path){ n.kids.forEach(function(k){ var p = path + '|' + k.lv + ':' + k.key; if (k.kids.length) { S.tOpen[p] = true; walk(k, p); } }); })(root, ''); crpSave_(); draw(); });
+  qs('.crp-xc', tools).addEventListener('click', function(){ S.tOpen = {}; crpSave_(); draw(); });
+  card.appendChild(tools);
+  card.appendChild(host);
+  // the workbook: the whole tree, grouped, with its requests
+  var hdr = [levels.map(function(lv){ return t('crp_lv_' + lv); }).concat([t('crp_lv_req')]).join(' > '), t('crp_count'), t('col_card_total'), t('crp_pctParent'), t('col_card_dep'), t('col_card_rem'), t('col_k_short')];
+  var sh = crpTreeSheet_(root, function(k){ return crpLvName_(c, k.lv, k.key); }, function(x){ return [(x.r.txNo || '') + ' ' + x.day, 1, crpR2_(x.r.amount), '', x.st === 'deposited' ? crpR2_(x.r.amount) : 0, x.st !== 'deposited' ? crpR2_(x.r.amount) : 0, crpR2_(x.r.shortfall || 0)]; });
+  var srows = [hdr].concat(sh.rows.map(function(r){ return r.map(function(v, i){ return i === 3 && typeof v === 'number' ? crpPctTxt_(v) : i >= 2 && typeof v === 'number' ? crpR2_(v) : v; }); }), [[t('rp_total'), root.n, root.total, crpPctTxt_(root.pct), root.deposited, root.remaining, root.short]]);
+  c.sheets.push({ name: t('crp_levels').slice(0, 31), rows: srows, outline: sh.outline, note: c.sentence, noBars: true });
+  return card;
+}
 // ---- one period picker for the reports and the comparison (Zoho-style list) ----
 var PRD_LIST_ = ['today', 'yesterday', 'thisWeek', 'lastWeek', 'month', 'lastMonth', 'thisQuarter', 'lastQuarter', 'thisYear', 'lastYear', 'ytd', '7d', '30d', '90d', 'all', 'custom'];
 function prdIso_(d){ var p = function(n){ return (n < 10 ? '0' : '') + n; }; return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()); }
@@ -19001,7 +19185,7 @@ var CRP_IC_ = { summary: 'dashboard', mix: 'layers', exceptions: 'alert', movers
 COL_C_.returned = COL_C_.returned || '#B5642A'; COL_C_.disputed = COL_C_.disputed || '#C14A30'; COL_C_.rejected = COL_C_.rejected || '#767b71';
 function crpState_(){
   if (CRP_) return CRP_;
-  CRP_ = { rep: 'summary', preset: 'month', from: '', to: '', city: '', area: '', branch: '', collector: '', stage: '', q: '', gran: 'day', mixBy: 'branch', who: '', more: false };
+  CRP_ = { rep: 'summary', preset: 'month', from: '', to: '', city: '', area: '', branch: '', collector: '', day: '', stage: '', q: '', gran: 'day', mixBy: 'branch', who: '', more: false, lv: 'city', tOpen: {} };
   try { var s = JSON.parse(sessionStorage.getItem('bgc_crp') || 'null'); if (s) Object.keys(s).forEach(function(k){ CRP_[k] = s[k]; }); } catch (e) {}
   if (!CRP_REPS_[CRP_.rep]) CRP_.rep = 'summary';
   return CRP_;
@@ -19064,7 +19248,7 @@ function crpBuild_(body, reqs){
     var areas = uniq(function(r){ var a = r.clusterId || locOf(r.locationId).clusterId; return a && (!S.city || locOf(r.locationId).city === S.city) ? [a, clusterName(a)] : null; });
     var branches = uniq(function(r){ var l = locOf(r.locationId); return r.locationId && (!S.city || l.city === S.city) && (!S.area || (r.clusterId || l.clusterId) === S.area) ? [r.locationId, l.name || locationName(r.locationId)] : null; });
     var cols = uniq(function(r){ return r.holder ? [r.holder, userName(r.holder)] : null; });
-    var nF = ['city', 'area', 'branch', 'collector', 'stage'].filter(function(k){ return S[k]; }).length;
+    var nF = ['city', 'area', 'branch', 'collector', 'day', 'stage'].filter(function(k){ return S[k]; }).length;
     bar.innerHTML = '<div class="crp-b1"><div class="field crp-pf"><label>'+esc(t('col_period'))+'</label>'+prdSelect_(S.preset)+'</div>' +
       '<div class="crp-dates"'+(S.preset === 'custom' ? '' : ' hidden')+'><div class="field"><label>'+esc(t('inv_from'))+'</label><input type="date" class="cFrom" value="'+esc(S.from)+'"></div><div class="field"><label>'+esc(t('inv_to'))+'</label><input type="date" class="cTo" value="'+esc(S.to)+'"></div></div>' +
       '<button type="button" class="btn ghost crp-more" aria-expanded="'+(!!S.more)+'">'+icon_('menu')+'<span>'+esc(t('crp_filters'))+(nF ? ' (' + nF + ')' : '')+'</span></button></div>' +
@@ -19076,19 +19260,21 @@ function crpBuild_(body, reqs){
     ['.cFrom', '.cTo'].forEach(function(s){ qs(s, bar).addEventListener('change', function(){ S.from = qs('.cFrom', bar).value; S.to = qs('.cTo', bar).value; redraw(true); }); });
     qsa('select[data-k]', bar).forEach(function(s){ s.addEventListener('change', function(){ var k = s.dataset.k; S[k] = s.value; if (k === 'city') { S.area = ''; S.branch = ''; } if (k === 'area') S.branch = ''; redraw(true); }); });
     qs('.crp-more', bar).addEventListener('click', function(){ S.more = !S.more; crpSave_(); var f = qs('.crp-b2', bar); if (S.more) f.removeAttribute('data-fold'); else f.setAttribute('data-fold', '1'); this.setAttribute('aria-expanded', String(!!S.more)); });
-    var clr = qs('.crp-clear', bar); if (clr) clr.addEventListener('click', function(){ S.city = S.area = S.branch = S.collector = S.stage = ''; redraw(true); });
+    var clr = qs('.crp-clear', bar); if (clr) clr.addEventListener('click', function(){ S.city = S.area = S.branch = S.collector = S.day = S.stage = ''; redraw(true); });
   }
   function redraw(withBar){ crpSave_(); if (withBar) paintBar(); paint(); }
   // ---- the chosen report ----
   function paint(){
     var R = prdRange_(S.preset, localToday_(), S.from, S.to);
+    // a day drilled to narrows the period to that day
+    if (S.day) R = { from: S.day, to: S.day };
     var base = { from: R.from, to: R.to, city: S.city, area: S.area, branch: S.branch, collector: S.collector, locOf: locOf };
     var rq = reqs.filter(function(r){ return crpStageOk_(r, S.stage); });
-    var D = colCompute_(rq, base), P = prdShift_(R, S.preset, 'period', 1);
+    var D = colCompute_(rq, base), P = prdShift_(R, S.day ? '1d' : S.preset, 'period', 1);
     var Dp = P ? colCompute_(rq, { from: P.from, to: P.to, city: S.city, area: S.area, branch: S.branch, collector: S.collector, locOf: locOf }) : null;
     var side = (!S.stage || S.stage === 'problem') ? crpSide_(reqs, base) : [];
     var periodTxt = R.from ? t('inv_period').replace('{from}', R.from).replace('{to}', R.to) : t('col_p_all');
-    var parts = [periodTxt].concat([['city', S.city], ['area', S.area && clusterName(S.area)], ['branch', S.branch && locationName(S.branch)], ['collector', S.collector && userName(S.collector)], ['stage', S.stage && t(S.stage === 'problem' ? 'crp_st_problem' : 'col_st_' + S.stage)]].filter(function(x){ return x[1]; }).map(function(x){ return x[1]; }));
+    var parts = [periodTxt].concat([['city', S.city], ['area', S.area && clusterName(S.area)], ['branch', S.branch && locationName(S.branch)], ['collector', S.collector && userName(S.collector)], ['day', S.day], ['stage', S.stage && t(S.stage === 'problem' ? 'crp_st_problem' : 'col_st_' + S.stage)]].filter(function(x){ return x[1]; }).map(function(x){ return x[1]; }));
     var sentence = parts.join(' · ');
     var sent = qs('.crp-sent', bar);
     if (sent) sent.innerHTML = '<b>'+esc(t('col_counted'))+':</b> '+esc(sentence)+(P ? ' <span class="muted">'+esc(colFill_(t('crp_cmpTo'), { from: P.from, to: P.to }))+'</span>' : '');
@@ -19097,6 +19283,8 @@ function crpBuild_(body, reqs){
       D: D, Dp: Dp, P: P, side: side, S: S, R: R, today: localToday_(), sheets: [], sentence: sentence,
       enter: !(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches),
       redraw: redraw,
+      // a click on a level's bar, slice, tile or row: that level becomes a filter, the next one shows
+      drill: function(lv, key){ if (CRP_LV_.indexOf(lv) < 0 || !key || key === '_') return; S[lv] = key; if (lv === 'city') { S.area = ''; S.branch = ''; } if (lv === 'area') S.branch = ''; S.tOpen = {}; redraw(true); window.scrollTo({ top: 0, behavior: 'smooth' }); },
       open: function(title, rows){ drawerOpen_(colListView_(title, rows || [])); },
       card: function(title, hint){ return el('<section class="card crp-card no-collapse"><h2>'+esc(title)+'</h2>'+(hint ? '<p class="muted crp-hint">'+esc(hint)+'</p>' : '')+'</section>'); },
       // every request ever made in the place filters (the statement's dates are the moves, not the requests)
@@ -19116,11 +19304,23 @@ function crpBuild_(body, reqs){
     main.appendChild(hero);
     if (!D.T.n && !side.length && !D.T.returned && id !== 'statement') {
       var em = el('<div class="card crp-card no-collapse crp-empty"><div class="muted rp-empty">'+esc(t(reqs.length ? 'col_noneHere' : 'col_none'))+'</div>'+(reqs.length ? '<button type="button" class="btn ghost">'+esc(t('crp_showAll'))+'</button>' : '')+'</div>');
-      var eb = qs('button', em); if (eb) eb.addEventListener('click', function(){ S.preset = 'all'; S.city = S.area = S.branch = S.collector = S.stage = ''; redraw(true); });
+      var eb = qs('button', em); if (eb) eb.addEventListener('click', function(){ S.preset = 'all'; S.city = S.area = S.branch = S.collector = S.day = S.stage = ''; redraw(true); });
       main.appendChild(em);
       return;
     }
-    try { CRP_REPS_[id](ctx, main); }
+    try {
+      CRP_REPS_[id](ctx, main);
+      // the levels card: after the KPI strip, on every report but the ledger
+      if (id !== 'statement') {
+        // the rows the report is about: the problems, the corrected receipts, the date warnings, or every request
+        var lvRows = id === 'returns' ? side
+          : id === 'corrections' ? D.rows.concat(side).filter(function(x){ var rp = x.r.rp || {}; return (rp.corrections || []).length || (rp.hopCorrections || []).length; })
+          : id === 'dates' ? D.rows.concat(side).filter(function(x){ return x.r.dateChanged || x.r.dateMismatch; })
+          : D.rows;
+        var lc = crpLevelsCard_(ctx, lvRows), k1 = qs('.crp-kpis', main);
+        if (k1 && k1.nextSibling) main.insertBefore(lc, k1.nextSibling); else main.appendChild(lc);
+      }
+    }
     catch (e) { main.appendChild(el('<div class="msg err">'+esc(String(e && e.message || e))+'</div>')); if (window.console) console.error(e); }
   }
   paintBar();
@@ -19136,6 +19336,13 @@ var CMP_M_ = ['sales', 'card', 'direct', 'other', 'additions', 'net', 'deposited
 // which way is good: 1 up, -1 down, 0 neither
 var CMP_GOOD_ = { sales: 1, card: 0, direct: 0, other: -1, additions: 0, net: 1, deposited: 1, remaining: -1, short: -1, requests: 0, days: -1 };
 var CMP_ = null;
+// the breakdown's levels, top to bottom; a drilled level becomes a filter of the screen
+var CMP_LV_ = ['city', 'area', 'branch', 'owner', 'collector', 'day'];
+// pure: the level under the one drilled (a branch's collector is known, so it is skipped)
+function cmpNextLevel_(lv, S){
+  for (var i = CMP_LV_.indexOf(lv) + 1; i < CMP_LV_.length; i++) { var n = CMP_LV_[i]; if (S[n]) continue; if (n === 'collector' && S.branch) continue; return n; }
+  return null;
+}
 function cmpState_(){
   if (CMP_) return CMP_;
   CMP_ = { preset: 'month', from: '', to: '', mode: 'period', n: 2, city: '', area: '', branch: '', collector: '', by: 'area', metric: 'net' };
@@ -19260,15 +19467,17 @@ function cmpDraw_(body, S, periods, entries, handoffs){
     var l = locOf(e.locationId);
     if (S.city && l.city !== S.city) return false; if (S.area && l.clusterId !== S.area) return false;
     if (S.branch && e.locationId !== S.branch) return false; if (S.collector && colOfLoc(e.locationId) !== S.collector) return false;
+    if (S.owner && (e.sourceType + ':' + e.sourceId) !== S.owner) return false;
     return true;
   }
-  var by = ['area', 'branch', 'collector', 'city'].indexOf(S.by) >= 0 ? S.by : 'area';
-  var keyOf = { area: function(e){ return locOf(e.locationId).clusterId || '_'; }, branch: function(e){ return e.locationId || '_'; }, collector: function(e){ return colOfLoc(e.locationId) || '_'; }, city: function(e){ return locOf(e.locationId).city || '_'; } }[by];
-  var nameOf = { area: function(k){ return k === '_' ? t('report_unspecified') : clusterName(k); }, branch: function(k){ return k === '_' ? t('report_unspecified') : locationName(k); }, collector: function(k){ return k === '_' ? t('report_unspecified') : userName(k); }, city: function(k){ return k === '_' ? t('report_unspecified') : k; } }[by];
+  var by = CMP_LV_.indexOf(S.by) >= 0 ? S.by : 'area';
+  var ownerName = {}; entries.forEach(function(e){ var k = e.sourceType + ':' + e.sourceId; if (!ownerName[k]) ownerName[k] = (sourceName_(e) || t('report_unspecified')) + ' \u00B7 ' + t('entry_source_' + e.sourceType); });
+  var keyOf = { area: function(e){ return locOf(e.locationId).clusterId || '_'; }, branch: function(e){ return e.locationId || '_'; }, collector: function(e){ return colOfLoc(e.locationId) || '_'; }, city: function(e){ return locOf(e.locationId).city || '_'; }, owner: function(e){ return e.sourceType + ':' + e.sourceId; }, day: function(e){ return String(e.date || '').slice(0, 10) || '_'; } }[by];
+  var nameOf = { area: function(k){ return k === '_' ? t('report_unspecified') : clusterName(k); }, branch: function(k){ return k === '_' ? t('report_unspecified') : locationName(k); }, collector: function(k){ return k === '_' ? t('report_unspecified') : userName(k); }, city: function(k){ return k === '_' ? t('report_unspecified') : k; }, owner: function(k){ return ownerName[k] || t('report_unspecified'); }, day: function(k){ return k === '_' ? t('report_unspecified') : crpShortDate_(k) + ' ' + k.slice(0, 4); } }[by];
   var P = cmpCompute_(entries, handoffs, periods, { include: include, keyOf: keyOf });
   var cols2 = P.slice().reverse(); // oldest to newest: time runs with the reading direction
   var labels = cols2.map(function(p){ return cmpLabel_(p, S.preset); });
-  var place = [S.city, S.area && clusterName(S.area), S.branch && locationName(S.branch), S.collector && userName(S.collector)].filter(Boolean);
+  var place = [S.city, S.area && clusterName(S.area), S.branch && locationName(S.branch), S.owner && (entries.filter(function(e){ return e.sourceType + ':' + e.sourceId === S.owner; }).map(function(e){ return sourceName_(e); })[0] || ''), S.collector && userName(S.collector)].filter(Boolean);
   var sentence = labels.slice().reverse().join(' · ') + (place.length ? ' — ' + place.join(' · ') : '');
   qs('.crp-sent', bar).innerHTML = '<b>'+esc(t('cmp_comparing'))+':</b> '+esc(sentence);
   var sheets = [];
@@ -19307,18 +19516,38 @@ function cmpDraw_(body, S, periods, entries, handoffs){
   var keys = {}; cols2.forEach(function(p){ Object.keys(p.G).forEach(function(k){ keys[k] = 1; }); });
   var klist = Object.keys(keys).sort(function(a, b){ var x = (P[0].G[b] || {})[metric] || 0, y = (P[0].G[a] || {})[metric] || 0; return x - y; });
   var bc = el('<section class="card crp-card no-collapse"><h2>'+esc(t('cmp_breakdown'))+'</h2><p class="muted crp-hint">'+esc(t('cmp_breakdownHint'))+'</p><div class="cmp-bb"><div class="col-chips" role="group" aria-label="'+esc(t('cmp_by'))+'">' +
-    ['area', 'branch', 'collector', 'city'].map(function(k){ return '<button type="button" class="col-chip'+(k === by ? ' on' : '')+'" data-by="'+k+'" aria-pressed="'+(k === by)+'">'+esc(t('crp_by_' + k))+'</button>'; }).join('') + '</div><div class="field cmp-mf"><label>'+esc(t('cmp_metric'))+'</label><select class="cmp-ms">' +
+    CMP_LV_.map(function(k){ return '<button type="button" class="col-chip'+(k === by ? ' on' : '')+'" data-by="'+k+'" aria-pressed="'+(k === by)+'">'+esc(t('crp_lv_' + k))+'</button>'; }).join('') + '</div><div class="field cmp-mf"><label>'+esc(t('cmp_metric'))+'</label><select class="cmp-ms">' +
     rows.map(function(r){ return '<option value="'+r[0]+'"'+(r[0] === metric ? ' selected' : '')+'>'+esc(t('cmp_m_' + r[0]))+'</option>'; }).join('') + '</select></div></div></section>');
   qs('.col-chips', bc).addEventListener('click', function(ev){ var b = ev.target.closest('.col-chip'); if (!b) return; S.by = b.dataset.by; cmpSave_(); cmpDraw_(body, S, periods, entries, handoffs); });
   qs('.cmp-ms', bc).addEventListener('change', function(ev){ S.metric = ev.target.value; cmpSave_(); cmpDraw_(body, S, periods, entries, handoffs); });
-  var bHead = '<thead><tr><th scope="col">'+esc(t('crp_by_' + by))+'</th>' + labels.map(function(l, i){ return '<th scope="col" class="num'+(i === labels.length - 1 ? ' cmp-cur' : '')+'">'+esc(l)+'</th>'; }).join('') + '</tr></thead>';
+  var bHead = '<thead><tr><th scope="col">'+esc(t('crp_lv_' + by))+'</th>' + labels.map(function(l, i){ return '<th scope="col" class="num'+(i === labels.length - 1 ? ' cmp-cur' : '')+'">'+esc(l)+'</th>'; }).join('') + '</tr></thead>';
   function cell(v, prev, i){ var dl = i ? cmpDelta_(v, prev, metric) : null; return '<b>'+esc(cmpFmt_(metric, v))+'</b>' + (dl && dl.d ? '<span class="cmp-dl '+dl.tone+'">'+(dl.d > 0 ? '▲ ' : '▼ ')+esc(dl.pct != null ? crpPctTxt_(Math.abs(dl.pct)) : t('crp_new'))+'</span>' : ''); }
-  var bBody = klist.map(function(k){ return '<tr><th scope="row">'+esc(nameOf(k))+'</th>' + cols2.map(function(p, i){ var g = p.G[k], v = g ? g[metric] : (metric === 'days' ? null : 0), pg = i ? cols2[i - 1].G[k] : null, pv = i ? (pg ? pg[metric] : (metric === 'days' ? null : 0)) : null;
+  var nextLv = cmpNextLevel_(by, S);
+  var bBody = klist.map(function(k){ return '<tr'+(nextLv && k !== '_' ? ' class="crp-tr cmp-drill" tabindex="0" data-k="'+esc(k)+'"' : '')+'><th scope="row">'+esc(nameOf(k))+(nextLv && k !== '_' ? '<small class="cmp-next">'+esc(t('crp_lv_' + nextLv))+' \u203A</small>' : '')+'</th>' + cols2.map(function(p, i){ var g = p.G[k], v = g ? g[metric] : (metric === 'days' ? null : 0), pg = i ? cols2[i - 1].G[k] : null, pv = i ? (pg ? pg[metric] : (metric === 'days' ? null : 0)) : null;
     return '<td class="num'+(i === cols2.length - 1 ? ' cmp-cur' : '')+'">'+cell(v, pv, i)+'</td>'; }).join('') + '</tr>'; }).join('');
   var bFoot = '<tfoot><tr class="crp-tot"><th scope="row">'+esc(t('rp_total'))+'</th>' + cols2.map(function(p, i){ return '<td class="num'+(i === cols2.length - 1 ? ' cmp-cur' : '')+'">'+cell(p.T[metric], i ? cols2[i - 1].T[metric] : null, i)+'</td>'; }).join('') + '</tr></tfoot>';
-  bc.appendChild(el('<div class="crp-tw cmp-tw" data-noexport><table class="crp-tbl cmp-tbl" data-nosort>'+bHead+'<tbody>'+bBody+'</tbody>'+bFoot+'</table></div>'));
+  // the trail back up, then the table: a row drills into the next level
+  var set = CMP_LV_.filter(function(lv){ return S[lv]; });
+  var crumbs = el('<nav class="crp-crumbs cmp-crumbs" aria-label="'+esc(t('crp_levels'))+'"></nav>');
+  var allB = el('<button type="button" class="crp-crumb'+(set.length ? '' : ' on')+'">'+esc(t('crp_all'))+'</button>');
+  allB.addEventListener('click', function(){ CMP_LV_.forEach(function(lv){ S[lv] = ''; }); S.by = 'area'; cmpSave_(); renderComparison(body); });
+  crumbs.appendChild(allB);
+  var cmpName = { city: function(k){ return k; }, area: clusterName, branch: locationName, owner: function(k){ return ownerName[k] || k; }, collector: userName, day: function(k){ return k; } };
+  set.forEach(function(lv, i){
+    crumbs.appendChild(el('<span class="crp-sep" aria-hidden="true">'+esc(crumbSep_().trim())+'</span>'));
+    var cb = el('<button type="button" class="crp-crumb'+(i === set.length - 1 ? ' on' : '')+'"><small>'+esc(t('crp_lv_' + lv))+'</small>'+esc(cmpName[lv](S[lv]))+'</button>');
+    cb.addEventListener('click', function(){ set.slice(i + 1).forEach(function(l2){ S[l2] = ''; }); S.by = cmpNextLevel_(lv, S) || S.by; cmpSave_(); renderComparison(body); });
+    crumbs.appendChild(cb);
+  });
+  bc.appendChild(crumbs);
+  if (nextLv) bc.appendChild(el('<p class="muted crp-hint">'+esc(t('cmp_drillHint'))+'</p>'));
+  var btw = el('<div class="crp-tw cmp-tw" data-noexport><table class="crp-tbl cmp-tbl" data-nosort>'+bHead+'<tbody>'+bBody+'</tbody>'+bFoot+'</table></div>');
+  function drillRow(tr){ if (!tr || !nextLv) return; S[by] = tr.dataset.k; if (by === 'city') { S.area = ''; S.branch = ''; } if (by === 'area') S.branch = ''; S.by = cmpNextLevel_(by, S) || by; cmpSave_(); renderComparison(body); }
+  btw.addEventListener('click', function(ev){ drillRow(ev.target.closest('tr.cmp-drill')); });
+  btw.addEventListener('keydown', function(ev){ if (ev.key === 'Enter' || ev.key === ' ') { var tr = ev.target.closest('tr.cmp-drill'); if (tr) { ev.preventDefault(); drillRow(tr); } } });
+  bc.appendChild(btw);
   root.appendChild(bc);
-  var bs = [[t('crp_by_' + by)].concat(labels)];
+  var bs = [[t('crp_lv_' + by)].concat(labels)];
   klist.forEach(function(k){ bs.push([nameOf(k)].concat(cols2.map(function(p){ var g = p.G[k]; return crpXv_(g ? g[metric] : 0, metric === 'requests' || metric === 'days' ? 'int' : 'money'); }))); });
   bs.push([t('rp_total')].concat(cols2.map(function(p){ return crpXv_(p.T[metric], metric === 'requests' || metric === 'days' ? 'int' : 'money'); })));
   sheets.push({ name: (t('cmp_breakdown') + ' - ' + t('cmp_m_' + metric)).slice(0, 31), rows: bs, note: sentence });
