@@ -1000,10 +1000,12 @@ function entrySalesTotal_(e) {
 //
 // netCashOwed = cash(branch+car+pos) + otherCash - deliveryFee + vatOnDelivery
 //               - expenses - directDeposit - creditSales
-function computeNet_(entries) {
+// vatHist: pass the VAT history when calling once per entry, so config_ is read once (2026-10-15)
+function computeNet_(entries, vatHist) {
   var storeCash = 0, carCash = 0, posCash = 0, deliveryFee = 0, posSales = 0, creditSales = 0;
   var otherCash = 0, expenses = 0, directDeposit = 0, bankTransfers = 0, creditDeliveryFees = 0, creditCommissions = 0;
-  var channelDeliveryFees = 0, channelCommissions = 0, creditDeliveryUnpaid = 0, vatOnDelivery = 0, discounts = 0, vatHist = vatHistory_();
+  var channelDeliveryFees = 0, channelCommissions = 0, creditDeliveryUnpaid = 0, vatOnDelivery = 0, discounts = 0;
+  vatHist = vatHist || vatHistory_();
   entries.forEach(function (e) {
     // The credit customer's delivery fee is earned but paid later with the goods,
     // never in cash: from 2026-10-04 it is shown with the sales AND taken off
@@ -1708,7 +1710,7 @@ function actionListAreaBulkBatches_(req, user) {
   // the batch's own day is the day of its entries, like a handover's (2026-10-15): the Deputy
   // screen's date filter places it by handoffDate, the latest of its entry dates
   var eDate = Object.create(null);
-  readSheet(SHEETS.ENTRIES).forEach(function (e) { if (e.date) eDate[e.id] = String(e.date).slice(0, 10); });
+  readSheet(SHEETS.ENTRIES).forEach(function (e) { if (e.date && !e.voided) eDate[e.id] = String(e.date).slice(0, 10); });
   rows.forEach(function (b) {
     var ds = {}; (b.entryIds || []).forEach(function (id) { if (eDate[id]) ds[eDate[id]] = 1; });
     b.entryDates = Object.keys(ds).sort();
@@ -2174,6 +2176,8 @@ function actionAdminCorrectReceipt_(req, user) {
   var dep = h.consumedBy ? getById_(SHEETS.HANDOFFS, h.consumedBy) : null;
   if (dep && (dep.kind !== 'deposit' || dep.reconciled)) return { ok: false, error: 'receipt_passed_on' };
   var delta = Math.round((to - now) * 100) / 100;
+  // the declared amount stays on record, so every reader scales what this hop carried (2026-10-15)
+  if (h.originalAmount == null) h.originalAmount = declared;
   (h.receiptCorrections = h.receiptCorrections || []).push({ at: new Date().toISOString(), by: user.id, reason: reason, fromAmount: now, toAmount: to, depositId: dep ? dep.id : null });
   h.amount = to; h.receivedAmount = to;
   h.shortfall = Math.round((declared - to) * 100) / 100;
@@ -2416,6 +2420,8 @@ function filterHandoffs_(rows, req, allRows, placeOnly) {
 var HO_DATE_DEPTH_ = 12;
 var HO_DATE_FIELDS_ = ['handoffDate', 'entryDate', 'entryDates', 'dateChanged', 'dateChangeReason', 'dateChangedBy', 'dateChangedAt'];
 function hoDateCtx_() {
+  // a read that bundles several actions (getDashboardAll) shares one context
+  var ex = exec_(); if (ex.hoCtx) return ex.hoCtx;
   var c = { hById: Object.create(null), eById: Object.create(null), memo: Object.create(null) };
   readSheet(SHEETS.HANDOFFS).forEach(function (h) { c.hById[h.id] = h; });
   readSheet(SHEETS.ENTRIES).forEach(function (e) { c.eById[e.id] = e; });
@@ -3243,6 +3249,11 @@ function actionGetJourney_(req, user) {
 // original functions here costs no extra Sheet reads over calling them
 // separately.
 function actionDashboardAll_(req, user) {
+  // one read of handovers and entries for every date walk below; nothing here writes
+  var ex = exec_(); ex.hoCtx = null; ex.hoCtx = hoDateCtx_();
+  try { return dashboardAllInner_(req, user); } finally { ex.hoCtx = null; }
+}
+function dashboardAllInner_(req, user) {
   var report = actionSalesReport_(req, user);
   if (!report.ok) return report;
   var handoffs = actionListHandoffs_(req, user);
@@ -3481,50 +3492,84 @@ function cohortStage_(h) {
   if (h.kind === 'collector_to_collector') return h.status === 'confirmed' || h.status === 'rejected' ? 'held' : 'onway';
   return 'notHanded';
 }
+// what a confirmed hop was declared at: its originalAmount, or for a receipt corrected
+// before originalAmount was kept, the first correction's starting figure
+function cohortDeclared_(h) {
+  if (h.originalAmount != null) return Number(h.originalAmount);
+  if (h.receiptCorrections && h.receiptCorrections.length) return Number(h.receiptCorrections[0].fromAmount);
+  return null;
+}
+// one entry's place in the chain: { s: stage, f: the share it still carries after short hops }
+function cohortWalk_(e, byId, bById) {
+  var stage = 'notHanded', f = 1, cur = e.consumedBy ? byId[e.consumedBy] : null, hops = 0;
+  if (e.consumedBy && !cur) {
+    var bt = bById[e.consumedBy];
+    // an approved batch whose branch netted to nothing has no handover: settled at the branch
+    stage = !bt ? 'notHanded' : bt.status === 'pending_deputy' ? 'deputy' : bt.status === 'deputy_approved' ? 'settled' : 'branchArea';
+  }
+  while (cur && hops++ < 25) {
+    stage = cohortStage_(cur);
+    if (cur.kind !== 'deposit' && cur.status === 'confirmed') {
+      var decl = cohortDeclared_(cur), got = Number(cur.amount || 0);
+      if (decl != null && decl > 0 && Math.abs(decl - got) > 0.004) f = f * got / decl;
+    }
+    if (stage === 'deposited' || cur.status !== 'confirmed' || !cur.consumedBy) break;
+    var nx = byId[cur.consumedBy];
+    if (!nx || (nx.kind === 'deposit' && nx.status === 'voided')) break;
+    cur = nx;
+  }
+  return { s: stage, f: f };
+}
+// Shares a total of whole cents over raw (unrounded) amounts by the largest remainder, ties by id,
+// so the parts add up to round(total) exactly. The client's cohortSum_ does the same.
+function cohortCents_(raws, ids) {
+  var total = Math.round(raws.reduce(function (s, v) { return s + v; }, 0) * 100);
+  var fl = raws.map(function (v) { return Math.floor(v * 100 + 1e-7); });
+  var left = total - fl.reduce(function (s, v) { return s + v; }, 0);
+  var order = raws.map(function (v, i) { return i; }).sort(function (a, b) {
+    var ra = raws[a] * 100 - fl[a], rb = raws[b] * 100 - fl[b];
+    return rb - ra > 1e-9 ? 1 : ra - rb > 1e-9 ? -1 : (String(ids[a]) < String(ids[b]) ? -1 : 1);
+  });
+  for (var k = 0; left > 0 && k < order.length; k++, left--) fl[order[k]]++;
+  for (k = order.length - 1; left < 0 && k >= 0; k--, left++) fl[order[k]]--;
+  return fl;
+}
 function entryCohort_(entries, c) {
   c = c || {};
-  var byId = c.hById, bById = c.bById;
+  var byId = c.hById, bById = c.bById, hist = vatHistory_();
   if (!byId) { byId = Object.create(null); readSheet(SHEETS.HANDOFFS).forEach(function (h) { byId[h.id] = h; }); }
   if (!bById) { bById = Object.create(null); readSheet(SHEETS.AREA_BULK_BATCHES).forEach(function (b) { bById[b.id] = b; }); }
   function cents(v) { return Math.round(Number(v || 0) * 100); }
-  var K = { sales: 0, pos: 0, direct: 0, net: 0, deposited: 0, short: 0 }, stg = {}, byEntry = {};
+  var live = (entries || []).filter(function (e) { return e && !e.voided; });
+  var nets = live.map(function (e) { return computeNet_([e], hist); });
+  var raws = nets.map(function (b) { return b.netCashOwed; }), ids = live.map(function (e) { return e.id; });
+  var nC = cohortCents_(raws, ids);
+  var K = { sales: 0, pos: 0, direct: 0, net: 0, deposited: 0, short: 0, settled: 0 }, stg = {}, byEntry = {};
   COHORT_STAGES_.forEach(function (k) { stg[k] = 0; });
   var ded = { delivery: 0, expenses: 0, credit: 0, creditDelivery: 0, channelCom: 0, discounts: 0, transfers: 0 };
   var add = { otherCash: 0, creditDeliveryFees: 0, channelDeliveryFees: 0 };
-  (entries || []).forEach(function (e) {
-    if (e.voided) return;
-    var b = computeNet_([e]), n = cents(b.netCashOwed);
-    K.sales += cents(b.storeCash + b.carCash + b.posCash + b.posSales); K.pos += cents(b.posSales); K.direct += cents(b.directDeposit);
-    ded.expenses += cents(b.expenses); ded.credit += cents(b.creditSales); ded.creditDelivery += cents(b.creditDeliveryUnpaid + b.creditCommissions);
-    ded.channelCom += cents(b.channelCommissions); ded.discounts += cents(b.discounts); ded.transfers += cents(b.bankTransfers);
-    add.otherCash += cents(b.otherCash); add.creditDeliveryFees += cents(b.creditDeliveryFees); add.channelDeliveryFees += cents(b.channelDeliveryFees);
-    // the delivery line takes the VAT's rounding so the lines add up to this entry's net exactly
-    ded.delivery += cents(b.storeCash + b.carCash + b.posCash + b.posSales) - cents(b.posSales) - cents(b.directDeposit) - cents(b.expenses) - cents(b.creditSales)
-      - cents(b.creditDeliveryUnpaid + b.creditCommissions) - cents(b.channelCommissions) - cents(b.discounts) - cents(b.bankTransfers)
-      + cents(b.otherCash) + cents(b.creditDeliveryFees) + cents(b.channelDeliveryFees) - n;
+  live.forEach(function (e, i) {
+    var b = nets[i], n = nC[i];
+    var sales = cents(b.storeCash + b.carCash + b.posCash + b.posSales), pos = cents(b.posSales), direct = cents(b.directDeposit);
+    var lines = { expenses: cents(b.expenses), credit: cents(b.creditSales), creditDelivery: cents(b.creditDeliveryUnpaid + b.creditCommissions),
+      channelCom: cents(b.channelCommissions), discounts: cents(b.discounts), transfers: cents(b.bankTransfers) };
+    var adds = { otherCash: cents(b.otherCash), creditDeliveryFees: cents(b.creditDeliveryFees), channelDeliveryFees: cents(b.channelDeliveryFees) };
+    K.sales += sales; K.pos += pos; K.direct += direct;
+    Object.keys(lines).forEach(function (k) { ded[k] += lines[k]; });
+    Object.keys(adds).forEach(function (k) { add[k] += adds[k]; });
+    // the delivery line (net of VAT) is what is left, so the lines add up to this entry's cents exactly
+    var other = Object.keys(lines).reduce(function (s, k) { return s + lines[k]; }, 0), plus = Object.keys(adds).reduce(function (s, k) { return s + adds[k]; }, 0);
+    ded.delivery += sales - pos - direct - other + plus - n;
     K.net += n;
-    // follow the cash up the chain
-    var stage = 'notHanded', f = 1, cur = e.consumedBy ? byId[e.consumedBy] : null, hops = 0;
-    if (e.consumedBy && !cur) { var bt = bById[e.consumedBy]; stage = bt ? (bt.status === 'pending_deputy' ? 'deputy' : 'branchArea') : 'notHanded'; }
-    while (cur && hops++ < 25) {
-      stage = cohortStage_(cur);
-      if (cur.kind !== 'deposit' && cur.status === 'confirmed' && cur.originalAmount != null) {
-        var decl = Number(cur.originalAmount), got = Number(cur.amount || 0);
-        if (decl > 0 && Math.abs(decl - got) > 0.004) f = f * got / decl;
-      }
-      if (stage === 'deposited' || cur.status !== 'confirmed' || !cur.consumedBy) break;
-      var nx = byId[cur.consumedBy];
-      if (!nx || (nx.kind === 'deposit' && nx.status === 'voided')) break;
-      cur = nx;
-    }
-    var carried = Math.round(n * f), sh = n - carried;
+    var w = cohortWalk_(e, byId, bById);
+    var carried = Math.round(n * w.f), sh = n - carried;
     K.short += sh;
-    if (stage === 'deposited') K.deposited += carried; else stg[stage] += carried;
-    byEntry[e.id] = { s: stage, n: n / 100, c: carried / 100, k: sh / 100 };
+    if (w.s === 'deposited') K.deposited += carried; else if (w.s === 'settled') K.settled += carried; else stg[w.s] += carried;
+    byEntry[e.id] = { s: w.s, r: raws[i], f: w.f };
   });
   function sar(x) { return x / 100; }
-  var out = { sales: sar(K.sales), pos: sar(K.pos), direct: sar(K.direct), net: sar(K.net), deposited: sar(K.deposited), short: sar(K.short),
-    remaining: sar(K.net - K.deposited), deductions: {}, additions: {}, stages: {} };
+  var out = { sales: sar(K.sales), pos: sar(K.pos), direct: sar(K.direct), net: sar(K.net), deposited: sar(K.deposited), settled: sar(K.settled), short: sar(K.short),
+    remaining: sar(K.net - K.deposited - K.settled), deductions: {}, additions: {}, stages: {} };
   Object.keys(ded).forEach(function (k) { out.deductions[k] = sar(ded[k]); });
   Object.keys(add).forEach(function (k) { out.additions[k] = sar(add[k]); });
   COHORT_STAGES_.forEach(function (k) { out.stages[k] = sar(stg[k]); });

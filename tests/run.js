@@ -5856,6 +5856,13 @@ console.log('--- the same date gives the same figures on every screen (2026-10-1
   ctx.writeRow(SHEETS.AREA_BULK_BATCHES, Object.assign({}, sb, { status: 'deputy_rejected', entryIds: [] }));
 })();
 
+// the client's cohort code (cents shared exactly as the server does), loaded with entryAmt_ into clientCtx
+function cohortClient_() {
+  if (!clientCtx.cohortAlloc_) vm.runInContext(['COHORT_ST_', 'COHORT_DED_', 'COHORT_ADD_', 'DRILL_LV_'].map(function (n) { return clientVar_(n, '];'); }).join('\n') + '\n' +
+    ['cohortCents_', 'cohortAlloc_', 'cohortSum_', 'drillTree_', 'hoDay_'].map(clientFn_).join('\n'), clientCtx);
+  return clientCtx;
+}
+function cohortSumFn_() { return cohortClient_().cohortSum_; }
 console.log('--- the key figures come from the entries of the period, followed to the bank (2026-10-15) ---');
 (function () {
   // Entries of the 12th and the 13th; the 12th and part of the 13th are handed over and deposited on
@@ -5944,7 +5951,7 @@ console.log('--- the key figures come from the entries of the period, followed t
   var sumSrc = clientFn_('cohortSum_');
   check(!!sumSrc && !!le.cohort, 'key figures: the Entries list carries each entry\'s place in the chain');
   if (sumSrc && le.cohort) {
-    var cs = new Function(sumSrc + ' return cohortSum_;')()(mine, le.cohort);
+    var cs = cohortSumFn_()(mine, le.cohort);
     check(r2(cs.net) === r2(T.net) && r2(cs.deposited) === r2(T.deposited) && r2(cs.short) === r2(T.short) && r2(cs.stages.held) === r2(st.held) && r2(cs.stages.notHanded) === r2(st.notHanded),
       'key figures: the Entries screen sums the same net, deposited, short and stages (' + JSON.stringify(cs) + ')');
   }
@@ -5953,6 +5960,140 @@ console.log('--- the key figures come from the entries of the period, followed t
   check(r2(c12.net) === 500 && r2(c12.deposited) === 500 && r2(c12.remaining) === 0, 'key figures: the 12th is 500, all deposited');
   // the screen draws its cards from the cohort, in one top-to-bottom sum
   check(/cohort/.test(clientFn_('keyMoneyTiles_')), 'key figures: the dashboard cards read the cohort');
+})();
+
+console.log('--- key figures, review fixes: cents, settled batches, corrected receipts (2026-10-15) ---');
+(function () {
+  function mk(name, email, role) { return call({ action: 'adminCreateUser', token: adminTok, data: { name: name, email: email, role: role, phone: role === 'collector' ? '0550000000' : undefined } }).user; }
+  function ok(r, label) { check(r && r.ok, 'review: ' + label + (r && r.ok ? '' : ': ' + (r && r.error))); return r || {}; }
+  var mgr = mk('Rv Area Manager', 'rvmgr.fx@bestgas.sa', 'cluster_manager'), col = mk('Rv Collector', 'rvcol.fx@bestgas.sa', 'collector');
+  var bm = mk('Rv Branch Manager', 'rvbm.fx@bestgas.sa', 'store_manager'), drv = mk('Rv Driver', 'rvdrv.fx@bestgas.sa', 'driver');
+  var mgrTok = acceptInvite('rvmgr.fx@bestgas.sa'), colTok = acceptInvite('rvcol.fx@bestgas.sa'), bmTok = acceptInvite('rvbm.fx@bestgas.sa'), drvTok = acceptInvite('rvdrv.fx@bestgas.sa');
+  var area = call({ action: 'adminSaveEntity', token: adminTok, kind: 'cluster', data: { name: 'Rv Area', clusterManagerUserId: mgr.id } }).entity;
+  var loc = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: 'Rvcity', name: 'Rv Branch', clusterId: area.id, collectorUserId: col.id } }).entity;
+  var store = call({ action: 'adminSaveEntity', token: adminTok, kind: 'store', data: { locationId: loc.id, name: 'Rv Store', storeManagerUserId: bm.id } }).entity;
+  function car(n) { return call({ action: 'adminSaveEntity', token: adminTok, kind: 'car', data: { locationId: loc.id, label: 'Rv Car ' + n, driverUserId: drv.id } }).entity; }
+  var C1 = car(1), C2 = car(2);
+  var today = ctx.todayRiyadh_();
+  function ago(n) { var p = today.split('-'); return new Date(Date.UTC(+p[0], +p[1] - 1, +p[2] - n)).toISOString().slice(0, 10); }
+  var D13 = ago(1), D11 = ago(3);
+  function r2(v) { return Math.round(Number(v || 0) * 100) / 100; }
+  function f13() { return call({ action: 'getDashboardAll', token: adminTok, dateFrom: D13, dateTo: D13, clusterId: area.id }); }
+
+  // 1. three entries, each with a 10.00 delivery fee: VAT in fractions of a cent
+  ok(call({ action: 'createDailyEntry', token: bmTok, date: D13, sourceType: 'store', sourceId: store.id, cashSales: 100, deliveryFeeBankAmount: 10 }), 'store day with delivery');
+  ok(call({ action: 'createDailyEntry', token: drvTok, date: D13, sourceType: 'car', sourceId: C1.id, cashSales: 100, deliveryFeeBankAmount: 10 }), 'car 1 day with delivery');
+  ok(call({ action: 'createDailyEntry', token: drvTok, date: D13, sourceType: 'car', sourceId: C2.id, cashSales: 100, deliveryFeeBankAmount: 10 }), 'car 2 day with delivery');
+  var d = f13(), T = d.report.cohort.totals, RT = d.report.totals;
+  check(r2(T.net) === r2(RT.netCashOwed) && r2(T.net) === 273.91, 'review: the cohort net equals the report net to the cent (' + T.net + ' vs ' + RT.netCashOwed + ')');
+  check(r2(T.deductions.delivery) === r2(RT.deliveryFee - RT.vatOnDelivery), 'review: the delivery line equals the fees net of VAT to the cent (' + T.deductions.delivery + ')');
+  var dedC = Object.keys(T.deductions).reduce(function (s, k) { return s + Math.round(T.deductions[k] * 100); }, 0), addC = Object.keys(T.additions).reduce(function (s, k) { return s + Math.round(T.additions[k] * 100); }, 0);
+  check(Math.round(T.sales * 100) - Math.round(T.pos * 100) - Math.round(T.direct * 100) - dedC + addC === Math.round(T.net * 100), 'review: the lines still add up to the net');
+  var sumSrc = clientFn_('cohortSum_');
+  var le = call({ action: 'listEntries', token: adminTok });
+  var mine = le.entries.filter(function (e) { return e.locationId === loc.id && e.date === D13; });
+  var cs = cohortSumFn_()(mine, le.cohort);
+  check(r2(cs.net) === 273.91 && r2(cs.remaining) === 273.91, 'review: the Entries screen gives the same 273.91 for its own filter (' + cs.net + ')');
+  // the VAT history is read once per cohort, not once per entry
+  var vh = ctx.vatHistory_, calls = 0; ctx.vatHistory_ = function () { calls++; return vh(); };
+  ctx.entryCohort_(mine.concat(mine).concat(mine));
+  ctx.vatHistory_ = vh;
+  check(calls === 1, 'review: the cohort reads the VAT history once (' + calls + ' reads)');
+
+  // 2. an approved area batch whose branch nets below zero: settled, outside Remaining
+  ctx.writeRow(SHEETS.AREA_BULK_BATCHES, { id: 'rv-batch', clusterId: area.id, uploadedBy: mgr.id, status: 'deputy_approved', entryIds: ['rv-neg'], perLocation: [], breakdown: { netCashOwed: -50 }, createdAt: new Date().toISOString() });
+  ctx.writeRow(SHEETS.ENTRIES, { id: 'rv-neg', date: D13, locationId: loc.id, sourceType: 'store', sourceId: store.id, cashSales: 100, expenseAmount: 150, posSales: 0, creditSales: 0, enteredBy: mgr.id, consumedBy: 'rv-batch', batchId: 'rv-batch', createdAt: new Date().toISOString() });
+  d = f13(); T = d.report.cohort.totals;
+  check(r2(T.settled) === -50, 'review: a batch settled at the branch is its own line (' + T.settled + ')');
+  check(r2(T.stages.branchArea) === 0 && r2(T.remaining) === r2(T.net - T.deposited - T.settled) && T.remaining >= 0, 'review: Remaining leaves it out and never goes negative (' + T.remaining + ')');
+  var partsC = Math.round(T.short * 100) + Object.keys(T.stages).reduce(function (s, k) { return s + Math.round(T.stages[k] * 100); }, 0);
+  check(partsC === Math.round(T.remaining * 100), 'review: the stages still add up to Remaining');
+  var cs2 = cohortSumFn_()(call({ action: 'listEntries', token: adminTok }).entries.filter(function (e) { return e.locationId === loc.id && e.date === D13; }), call({ action: 'listEntries', token: adminTok }).cohort);
+  check(r2(cs2.settled) === -50 && r2(cs2.remaining) === r2(T.remaining), 'review: the Entries screen sees the same settled line');
+  ctx.writeRow(SHEETS.ENTRIES, Object.assign(ctx.readSheet(SHEETS.ENTRIES).filter(function (e) { return e.id === 'rv-neg'; })[0], { voided: true }));
+
+  // 3. a receipt corrected downward after a full receipt
+  ok(call({ action: 'createDailyEntry', token: bmTok, date: D11, sourceType: 'store', sourceId: store.id, cashSales: 100 }), 'the 11th, 100');
+  var lh = ok(call({ action: 'createHandoff', token: bmTok, kind: 'location_to_cluster', locationId: loc.id }), 'branch sends');
+  ok(call({ action: 'confirmHandoff', token: mgrTok, id: lh.handoff.id }), 'area receives');
+  var rq = ok(call({ action: 'createHandoff', token: mgrTok, kind: 'cluster_to_collector', clusterId: area.id, locationId: loc.id }), 'request');
+  ok(call({ action: 'deputyValidateHandoff', token: walidTok, id: rq.handoff.id }), 'validated');
+  ok(call({ action: 'confirmHandoff', token: colTok, id: rq.handoff.id }), 'received in full');
+  var cr = ok(call({ action: 'adminCorrectReceipt', token: adminTok, id: rq.handoff.id, receivedAmount: r2(rq.handoff.amount - 40), reason: 'counted again' }), 'the admin corrects the receipt down by 40');
+  check(cr.handoff && cr.handoff.originalAmount != null && r2(cr.handoff.originalAmount) === r2(rq.handoff.amount), 'review: the correction keeps the declared amount as originalAmount');
+  function c11() { return call({ action: 'getDashboardAll', token: adminTok, dateFrom: D11, dateTo: D11, clusterId: area.id }).report.cohort.totals; }
+  // the request also carried the 13th's open store day, so the 11th's 100 bears its share of the 40
+  var decl = Number(rq.handoff.amount), want = r2(100 - Math.round(10000 * (decl - 40) / decl) / 100);
+  var t11 = c11();
+  check(r2(t11.short) === want && r2(t11.stages.held) === r2(t11.net - want), 'review: the corrected receipt shows its share of the 40 short and the rest held (want ' + want + ', ' + JSON.stringify(t11.stages) + ' short ' + t11.short + ')');
+  var row = ctx.readSheet(SHEETS.HANDOFFS).filter(function (h) { return h.id === rq.handoff.id; })[0]; delete row.originalAmount; ctx.writeRow(SHEETS.HANDOFFS, row);
+  check(r2(c11().short) === want, 'review: a correction saved before this fix still scales, from receiptCorrections');
+
+  // 9. a batch's dates leave voided entries out
+  ctx.writeRow(SHEETS.ENTRIES, { id: 'rv-void', date: ago(9), locationId: loc.id, sourceType: 'store', sourceId: store.id, cashSales: 5, voided: true, enteredBy: mgr.id });
+  ctx.writeRow(SHEETS.ENTRIES, { id: 'rv-live', date: ago(8), locationId: loc.id, sourceType: 'store', sourceId: store.id, cashSales: 5, enteredBy: mgr.id, consumedBy: 'rv-b2' });
+  ctx.writeRow(SHEETS.AREA_BULK_BATCHES, { id: 'rv-b2', clusterId: area.id, uploadedBy: mgr.id, status: 'deputy_rejected', entryIds: ['rv-void', 'rv-live'], perLocation: [], breakdown: { netCashOwed: 5 }, createdAt: new Date().toISOString() });
+  var b2 = call({ action: 'listAreaBulkBatches', token: adminTok }).batches.filter(function (b) { return b.id === 'rv-b2'; })[0];
+  check(b2 && b2.entryDates.join() === ago(8), 'review: a batch\'s entry dates leave its voided entries out (' + (b2 && b2.entryDates) + ')');
+  ctx.writeRow(SHEETS.ENTRIES, Object.assign(ctx.readSheet(SHEETS.ENTRIES).filter(function (e) { return e.id === 'rv-live'; })[0], { voided: true }));
+
+  // the screens: one net, one Deposited, every drill-down adds up to its line
+  check(/cohort/.test(clientFn_('salesAndCollectionStatements_')) && /'stage'/.test(clientFn_('salesAndCollectionStatements_')), 'review: the collection statement takes net, deposited and remaining from the cohort and drills by stage');
+  check(/opts\.net/.test(clientFn_('netEquation_')) && /cohort/.test(clientFn_('eqForScreen_')), 'review: the equation can take its net from the cohort, and the dashboard\'s does');
+  check(/hoDay_\(h\)/.test(clientFn_('handoffsAoa_')), 'review: the handover export dates a row by hoDay_');
+  check(/\.card\.kfl\{/.test(clientHtml), 'review: the ledger card style beats .card (trap 7)');
+})();
+
+console.log('--- every dashboard card opens a pivot whose total is the card, to the cent (2026-10-17) ---');
+(function () {
+  var C = cohortClient_();
+  var dctx = vm.createContext({ t: function (k) { return k; }, money: function (n) { return Number(n || 0).toFixed(2); }, vatRateClient_: function () { return 0.15; },
+    state: { meta: { locations: [] } }, byId: function () { return null; }, userName: function (x) { return x; }, drillSetData_: function () {},
+    entryRowData_: function (e, a) { return { kind: 'entry', ref: e, amount: a, title: e.id, sub: e.date }; },
+    handoffRowData_: function (h, a) { return { kind: 'handoff', ref: h, amount: a == null ? Number(h.amount || 0) : a, title: h.id, sub: '' }; } });
+  var src = ['COHORT_ST_', 'COHORT_DED_', 'COHORT_ADD_', 'DRILL_LV_'].map(function (n) { return clientVar_(n, '];'); }).join('\n') + '\n' +
+    ['vatRateFor_', 'entryAmt_', 'cohortCents_', 'cohortAlloc_', 'drillTree_', 'hoDay_', 'metricData_'].map(clientFn_).join('\n');
+  check(!!clientFn_('metricData_') && !!clientFn_('drillTree_') && !!clientFn_('drillPivotView_'), 'drill: the card data, the tree and the pivot view are client functions');
+  vm.runInContext(src, dctx);
+  var res = call({ action: 'getDashboardAll', token: adminTok });
+  check(res.ok && res.report.cohort, 'drill: the whole company, every stage of the test data');
+  var R = res.report, T = R.cohort.totals, H = res.handoffs.handoffs, ctxM = { entries: R.entries, handoffs: H, cohort: R.cohort.byEntry };
+  function place(it) { var r = it.ref || {}; return [['c', 'c'], ['a', 'a'], [r.locationId || '_', r.locationId || '_'], [it.kind, it.kind], [it.kind === 'entry' ? r.date : dctx.hoDay_(r), 'd']]; }
+  function drawer(key, extra) { return dctx.drillTree_(dctx.metricData_(key, ctxM, extra || {}).items, place); }
+  function sumC(o) { return Object.keys(o).reduce(function (s, k) { return s + Math.round(o[k] * 100); }, 0); }
+  function sumH(st) { return Math.round(H.filter(function (h) { return h.status === st; }).reduce(function (s, h) { return s + Number(h.amount || 0); }, 0) * 100); }
+  var cards = [
+    ['Total sales', 'gross', null, Math.round(T.sales * 100)],
+    ['Card sales', 'pos', null, Math.round(T.pos * 100)],
+    ['Direct deposits', 'bankedAtSource', null, Math.round(T.direct * 100)],
+    ['Other deductions', 'part', { lines: C.COHORT_DED_ }, sumC(T.deductions)],
+    ['Other collections', 'part', { alines: C.COHORT_ADD_ }, sumC(T.additions)],
+    ['Net cash to hand over', 'net', null, Math.round(T.net * 100)],
+    ['Deposited', 'stage', { stages: ['deposited'] }, Math.round(T.deposited * 100)],
+    ['Settled', 'stage', { stages: ['settled'] }, Math.round(T.settled * 100)],
+    ['Remaining', 'stage', { stages: C.COHORT_ST_, short: true }, Math.round(T.remaining * 100)],
+    ['Received short', 'stage', { stages: [], short: true }, Math.round(T.short * 100)],
+    ['Still outstanding (tile)', 'outstanding', null, Math.round(T.stages.notHanded * 100)],
+    ['Held, not deposited (tile)', 'held', null, Math.round(Number(res.dashboard.companyOutstanding || 0) * 100)],
+    ['Pending (tile)', 'pending', null, sumH('pending')],
+    ['Disputed (tile)', 'disputed', null, sumH('disputed')],
+    ['Cash sales (statement)', 'cash', null, Math.round((R.totals.storeCash + R.totals.carCash + R.totals.posCash) * 100)],
+    ['Credit (statement)', 'credit', null, Math.round(R.totals.creditSales * 100)],
+    ['Other cash (statement)', 'otherCash', null, Math.round(R.totals.otherCash * 100)],
+    ['Expenses (statement)', 'expenses', null, Math.round(R.totals.expenses * 100)]
+  ];
+  C.COHORT_DED_.forEach(function (k) { cards.push(['Deduction ' + k, 'part', { lines: [k] }, Math.round(T.deductions[k] * 100)]); });
+  C.COHORT_ADD_.forEach(function (k) { cards.push(['Addition ' + k, 'part', { alines: [k] }, Math.round(T.additions[k] * 100)]); });
+  C.COHORT_ST_.forEach(function (k) { cards.push(['Stage ' + k, 'stage', { stages: [k] }, Math.round(T.stages[k] * 100)]); });
+  var bad = [];
+  cards.forEach(function (c) { var tr = drawer(c[1], c[2]); if (tr.cents !== c[3]) bad.push(c[0] + ': card ' + c[3] / 100 + ' drawer ' + tr.cents / 100); });
+  check(bad.length === 0, 'drill: every card\'s drawer total equals the card to the cent (' + cards.length + ' cards' + (bad.length ? '; ' + bad.join('; ') : '') + ')');
+  // the tree: every level adds up to its parent, six levels at most, a leaf is one transaction
+  var tr = drawer('gross'), okSum = true, maxD = 0, leaves = 0;
+  (function walk(n) { if (n.kids.length) { var s = n.kids.reduce(function (a, k) { return a + k.cents; }, 0); if (s !== n.cents) okSum = false; } n.kids.forEach(function (k) { maxD = Math.max(maxD, k.depth); if (k.lvl === 'tx') leaves++; walk(k); }); })(tr);
+  check(okSum && maxD === 5 && leaves === tr.n && tr.kids.every(function (k) { return k.lvl === 'city'; }), 'drill: city > area > branch > source > day > transaction, every level adds up (' + maxD + ' deep, ' + leaves + ' transactions)');
+  check(/drillPivotView_\(/.test(clientFn_('openMetric_')), 'drill: the dashboard\'s drawers draw the pivot');
+  check(/outline/.test(clientFn_('drillPivotView_')) && /entryDocView_/.test(clientFn_('drillPivotView_')), 'drill: the Excel export carries the tree, and a transaction opens its document');
 })();
 
 console.log('\n' + pass + ' passed, ' + fail + ' failed');

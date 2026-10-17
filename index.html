@@ -664,7 +664,10 @@
   @media (min-width:701px){ .dl-bar{bottom:20px;} }
   .rp-all-bar{display:flex;gap:8px;flex-wrap:wrap;}
   .rp-cap{font-size:12px;margin:-2px 0 8px;}
-  .kfl{padding:14px 16px;display:flex;flex-direction:column;gap:0;margin-bottom:12px;}
+  .dv-lv{display:inline-block;margin-inline-end:6px;color:var(--muted);font-size:11px;font-weight:600;}
+  .dv-sub{display:block;color:var(--muted);font-size:11.5px;font-weight:400;}
+  .dv-table tr.pv-r{cursor:pointer;}
+  .card.kfl{padding:14px 16px;display:flex;flex-direction:column;gap:0;margin-bottom:12px;}
   .kfl-hint{margin:0 0 8px;color:var(--muted);font-size:12.5px;}
   .kfl-row{display:grid;grid-template-columns:22px minmax(0,1fr) auto;align-items:baseline;gap:8px;width:100%;padding:9px 4px;border:0;border-top:1px solid var(--border-soft);background:none;color:inherit;font:inherit;text-align:start;cursor:pointer;}
   .kfl-row:hover,.kfl-row:focus-visible{background:rgba(77,109,81,.07);}
@@ -4931,7 +4934,7 @@ function dirFor(lang){ return lang==='en' ? 'ltr' : 'rtl'; }
       doc_cylOut:'أسطوانات خارجة', doc_cylIn:'أسطوانات راجعة', doc_enteredBy:'أدخلها', doc_createdAt:'وقت الإدخال', doc_note:'ملاحظة',
       doc_from:'من', doc_to:'إلى', doc_status:'الحالة', doc_confirmedAt:'وقت التأكيد', doc_bankRef:'المرجع البنكي', doc_resolutionNote:'ملاحظة الحل',
       journey_entered:'أُدخلت بواسطة',
-      dash_overview:'الملخص المالي', dash_keyFigures:'مؤشرات رئيسية', pl_npPct:'هامش صافي الربح %', is_title:'قائمة الدخل', is_amount:'المبلغ', is_pct:'% من صافي المبيعات', is_less:'ناقص:', is_add:'زائد:', is_gross:'المبيعات شاملة الضريبة', is_vat:'ضريبة القيمة المضافة على المبيعات', is_delivery:'إيراد التوصيل', is_revenue:'إجمالي الإيرادات', is_cogs:'تكلفة البضاعة المباعة', is_commission:'العمولات', is_takings:'مصروفات دُفعت من الإيراد', in_skip:'اضغط للتخطي', in_s1:'تحصيل', in_s2:'تسليم', in_s3:'إيداع', hs_title:'فترة المعاملات', hs_first:'أول معاملة', hs_last:'آخر معاملة', hs_sub:'{d} يوم · {n} معاملة', kf_sales:'إجمالي المبيعات', kf_salesFoot:'نقدي وشبكة، الآجل ضمنها', kf_pos:'مبيعات الشبكة (POS)', kf_posFoot:'تُسدَّد إلى البنك مباشرة', kf_direct:'الموازنات المودعة في البنك', kf_directFoot:'أودعت من الفروع مباشرة', kf_other:'إجمالي الخصومات الأخرى', kf_otherFoot:'توصيل، مصروفات، آجل، تحويلات، عمولات', kf_otherAdd:'بعد إضافة {x} تحصيلات أخرى', kf_net:'صافي النقد المطلوب تسليمه', kf_netFoot:'الصافي بعد كل الخصومات', kf_dep:'المودَع', kf_depFoot:'ما أودعه المحصّلون في البنك', kf_rem:'المتبقي', kf_remFoot:'لم يُودع بعد', kf_eq:'المبيعات {s} − الشبكة {p} − الموازنات {d} − خصومات أخرى {o}{a} = صافي النقد المطلوب تسليمه {n} · المودع {dep} · المتبقي {r}', kf_eqAdd:' + تحصيلات أخرى {x}', kf_status:'حالة التسليمات', kf_ledgerHint:'اقرأ من الأعلى إلى الأسفل: كل سطر من قيود هذه الفترة، وكل إجمالي هو مجموع الأسطر التي فوقه.', kf_add:'تحصيلات أخرى', kf_depFoot2:'الجزء من هذه القيود الذي وصل إلى البنك', kf_remFoot2:'أين هو الآن، أدناه', kf_l_delivery:'رسوم التوصيل قبل الضريبة', kf_l_expenses:'المصروفات', kf_l_credit:'المبيعات الآجلة', kf_l_creditDelivery:'توصيل الآجل وعمولاته', kf_l_channelCom:'عمولات قنوات البيع', kf_l_discounts:'الخصومات', kf_l_transfers:'التحويلات البنكية', kf_l_otherCash:'نقد آخر محصَّل', kf_l_creditFees:'رسوم توصيل عملاء الآجل', kf_l_channelFees:'رسوم توصيل قنوات البيع', kf_s_notHanded:'لم يُسلَّم بعد', kf_s_carBranch:'من السيارة إلى الفرع', kf_s_branchArea:'من الفرع إلى المنطقة', kf_s_deputy:'من المنطقة إلى المحصل، بانتظار النائب', kf_s_onway:'من المنطقة إلى المحصل، في الطريق', kf_s_held:'لدى المحصل', kf_s_short:'نقص عند الاستلام في الطريق', kf_stageSub:'حصة كل قيد في هذه المرحلة', kf_remSplit:'أين نقد هذه القيود الآن', sf_whereTotal:'المجموع لدى الأشخاص', sf_whereGap:'يختلف عن المتبقي لأن تسليمًا يجمع أكثر من يوم يُحتسب في آخر أيامه، أو لأن جزءًا من نقد هذه الأيام في تسليم مؤرَّخ بيوم لاحق.', sf_rule:'التاريخ هو يوم المبيعات: يُحتسب التسليم في يوم قيوده (آخرها إذا جمع أكثر من يوم)، لا في يوم إنشائه.', sf_dashDiff:'صافي النقد المطلوب تسليمه يأتي من قيود الفترة. المسلَّم والمودَع يتبعان تسليمات الأيام نفسها؛ التسليم الذي يجمع أكثر من يوم يُحتسب في آخرها.', sf_colDiff:'الفرق عن لوحة المعلومات: صافي النقد المطلوب تسليمه يشمل كل مبيعات الفترة، وهذه الشاشة تحسب ما وصل إلى المحصلين فقط. الفرق نقد لم يُسلَّم بعد، أو ما زال مع السيارة، أو استُلم ناقصًا، أو تسليم يجمع أكثر من يوم فيُحتسب في آخرها.', sf_hoDiff:'الفرق: النقد نفسه يظهر مرة عند كل مرحلة (السيارة ← الفرع ← المنطقة ← المحصل)، فاجمع مرحلة واحدة. يُحتسب التسليم في يوم قيوده.', sf_entDiff:'هذا صافي النقد المطلوب تسليمه لهذه القيود. شاشتا التسليمات والتحصيل تحسبان ما سُلِّم فقط، في يوم قيوده.', dash_salesAnalysis:'تحليل المبيعات', dash_collectionsAnalysis:'تحليل التحصيل',
+      dash_overview:'الملخص المالي', dash_keyFigures:'مؤشرات رئيسية', pl_npPct:'هامش صافي الربح %', is_title:'قائمة الدخل', is_amount:'المبلغ', is_pct:'% من صافي المبيعات', is_less:'ناقص:', is_add:'زائد:', is_gross:'المبيعات شاملة الضريبة', is_vat:'ضريبة القيمة المضافة على المبيعات', is_delivery:'إيراد التوصيل', is_revenue:'إجمالي الإيرادات', is_cogs:'تكلفة البضاعة المباعة', is_commission:'العمولات', is_takings:'مصروفات دُفعت من الإيراد', in_skip:'اضغط للتخطي', in_s1:'تحصيل', in_s2:'تسليم', in_s3:'إيداع', hs_title:'فترة المعاملات', hs_first:'أول معاملة', hs_last:'آخر معاملة', hs_sub:'{d} يوم · {n} معاملة', kf_sales:'إجمالي المبيعات', kf_salesFoot:'نقدي وشبكة، الآجل ضمنها', kf_pos:'مبيعات الشبكة (POS)', kf_posFoot:'تُسدَّد إلى البنك مباشرة', kf_direct:'الموازنات المودعة في البنك', kf_directFoot:'أودعت من الفروع مباشرة', kf_other:'إجمالي الخصومات الأخرى', kf_otherFoot:'توصيل، مصروفات، آجل، تحويلات، عمولات', kf_otherAdd:'بعد إضافة {x} تحصيلات أخرى', kf_net:'صافي النقد المطلوب تسليمه', kf_netFoot:'الصافي بعد كل الخصومات', kf_dep:'المودَع', kf_depFoot:'ما أودعه المحصّلون في البنك', kf_rem:'المتبقي', kf_remFoot:'لم يُودع بعد', kf_eq:'المبيعات {s} − الشبكة {p} − الموازنات {d} − خصومات أخرى {o}{a} = صافي النقد المطلوب تسليمه {n} · المودع {dep} · المتبقي {r}', kf_eqAdd:' + تحصيلات أخرى {x}', kf_status:'حالة التسليمات', kf_settled:'مسوّى في الفرع', kf_settledFoot:'دفعة منطقة معتمدة لم يبقَ منها ما يُسلَّم', dv_search:'ابحث عن مدينة أو منطقة أو فرع أو مصدر أو يوم أو معاملة', dv_count:'العدد', dv_amount:'المبلغ', dv_share:'% من البطاقة', dv_lv_city:'المدينة', dv_lv_area:'المنطقة', dv_lv_branch:'الفرع', dv_lv_source:'المصدر', dv_lv_day:'اليوم', kf_ledgerHint:'اقرأ من الأعلى إلى الأسفل: كل سطر من قيود هذه الفترة، وكل إجمالي هو مجموع الأسطر التي فوقه.', kf_add:'تحصيلات أخرى', kf_depFoot2:'الجزء من هذه القيود الذي وصل إلى البنك', kf_remFoot2:'أين هو الآن، أدناه', kf_l_delivery:'رسوم التوصيل قبل الضريبة', kf_l_expenses:'المصروفات', kf_l_credit:'المبيعات الآجلة', kf_l_creditDelivery:'توصيل الآجل وعمولاته', kf_l_channelCom:'عمولات قنوات البيع', kf_l_discounts:'الخصومات', kf_l_transfers:'التحويلات البنكية', kf_l_otherCash:'نقد آخر محصَّل', kf_l_creditFees:'رسوم توصيل عملاء الآجل', kf_l_channelFees:'رسوم توصيل قنوات البيع', kf_s_notHanded:'لم يُسلَّم بعد', kf_s_carBranch:'في الفرع / من السيارة إلى الفرع', kf_s_branchArea:'من الفرع إلى المنطقة', kf_s_deputy:'من المنطقة إلى المحصل، بانتظار النائب', kf_s_onway:'في الطريق (إلى المحصل أو بين المحصلين)', kf_s_held:'لدى المحصل', kf_s_short:'نقص عند الاستلام في الطريق', kf_stageSub:'حصة كل قيد في هذه المرحلة', kf_remSplit:'أين نقد هذه القيود الآن', sf_whereTotal:'المجموع لدى الأشخاص', sf_whereGap:'يختلف عن المتبقي لأن تسليمًا يجمع أكثر من يوم يُحتسب في آخر أيامه، أو لأن جزءًا من نقد هذه الأيام في تسليم مؤرَّخ بيوم لاحق.', sf_rule:'التاريخ هو يوم المبيعات: يُحتسب التسليم في يوم قيوده (آخرها إذا جمع أكثر من يوم)، لا في يوم إنشائه.', sf_dashDiff:'صافي النقد المطلوب تسليمه يأتي من قيود الفترة. المسلَّم والمودَع يتبعان تسليمات الأيام نفسها؛ التسليم الذي يجمع أكثر من يوم يُحتسب في آخرها.', sf_colDiff:'الفرق عن لوحة المعلومات: صافي النقد المطلوب تسليمه يشمل كل مبيعات الفترة، وهذه الشاشة تحسب ما وصل إلى المحصلين فقط. الفرق نقد لم يُسلَّم بعد، أو ما زال مع السيارة، أو استُلم ناقصًا، أو تسليم يجمع أكثر من يوم فيُحتسب في آخرها.', sf_hoDiff:'الفرق: النقد نفسه يظهر مرة عند كل مرحلة (السيارة ← الفرع ← المنطقة ← المحصل)، فاجمع مرحلة واحدة. يُحتسب التسليم في يوم قيوده.', sf_entDiff:'هذا صافي النقد المطلوب تسليمه لهذه القيود. شاشتا التسليمات والتحصيل تحسبان ما سُلِّم فقط، في يوم قيوده.', dash_salesAnalysis:'تحليل المبيعات', dash_collectionsAnalysis:'تحليل التحصيل',
       dash_statementSales:'ملخص المبيعات', dash_statementCollect:'ملخص التحصيل والإيداع',
       dash_posHint:'تُسوّى مباشرة في البنك — ليست نقدية للتحصيل', dash_creditHint:'مطالبات على العملاء — تُخصم لأنها ضمن المبيعات ولم تُحصَّل نقداً',
       dash_deliveryDeductHint:'تُدفع مباشرة للبنك — لا تستلمها يد السائق', dash_vatOnDeliveryFoot:'على رسوم التوصيل فقط',
@@ -4953,7 +4956,7 @@ function dirFor(lang){ return lang==='en' ? 'ltr' : 'rtl'; }
       doc_cylOut:'Cylinders out', doc_cylIn:'Cylinders in', doc_enteredBy:'Entered by', doc_createdAt:'Entered at', doc_note:'Note',
       doc_from:'From', doc_to:'To', doc_status:'Status', doc_confirmedAt:'Confirmed at', doc_bankRef:'Bank reference', doc_resolutionNote:'Resolution note',
       journey_entered:'Entered by',
-      dash_overview:'Financial summary', dash_keyFigures:'Key figures', pl_npPct:'Net margin %', is_title:'Income statement', is_amount:'Amount', is_pct:'% of net sales', is_less:'Less:', is_add:'Add:', is_gross:'Sales including VAT', is_vat:'VAT on sales', is_delivery:'Delivery income', is_revenue:'Total revenue', is_cogs:'Cost of goods sold (COGS)', is_commission:'Commissions', is_takings:'Expenses paid from takings', in_skip:'Tap to skip', in_s1:'Collect', in_s2:'Hand over', in_s3:'Bank', hs_title:'Transactions on file', hs_first:'First transaction', hs_last:'Last transaction', hs_sub:'{d} days · {n} transactions', kf_sales:'Total sales', kf_salesFoot:'cash and card, credit inside', kf_pos:'Card (POS) sales', kf_posFoot:'settled to the bank directly', kf_direct:'Direct deposits in the bank', kf_directFoot:'banked by the branches themselves', kf_other:'Total other deductions', kf_otherFoot:'delivery, expenses, credit, transfers, commissions', kf_otherAdd:'after adding {x} other collections', kf_net:'Net cash to hand over', kf_netFoot:'net after every deduction', kf_dep:'Deposited', kf_depFoot:'banked by the collectors', kf_rem:'Remaining', kf_remFoot:'not banked yet', kf_eq:'Sales {s} − card {p} − direct deposits {d} − other deductions {o}{a} = net cash to hand over {n} · deposited {dep} · remaining {r}', kf_eqAdd:' + other collections {x}', kf_status:'Handover status', kf_ledgerHint:'Read top to bottom: every line comes from the entries of this period, and each total is the sum of the lines above it.', kf_add:'Other collections', kf_depFoot2:'the part of these entries that reached the bank', kf_remFoot2:'where it is now, below', kf_l_delivery:'Delivery fees, before VAT', kf_l_expenses:'Expenses', kf_l_credit:'Credit sales', kf_l_creditDelivery:'Credit delivery fees and commissions', kf_l_channelCom:'Sales channel commissions', kf_l_discounts:'Discounts', kf_l_transfers:'Bank transfers', kf_l_otherCash:'Other cash collected', kf_l_creditFees:'Credit customers\' delivery fees', kf_l_channelFees:'Sales channel delivery fees', kf_s_notHanded:'Not handed over yet', kf_s_carBranch:'Car to branch', kf_s_branchArea:'Branch to area', kf_s_deputy:'Area to collector, waiting for the deputy', kf_s_onway:'Area to collector, on the way', kf_s_held:'Held by a collector', kf_s_short:'Received short on the way', kf_stageSub:'Each entry\'s share at this stage', kf_remSplit:'Where the cash of these entries is now', sf_whereTotal:'Total held by people', sf_whereGap:'This differs from Remaining because a handover that carries several days counts on its latest day, or part of these days\' cash sits in a handover dated later.', sf_rule:'Dates are the business day of the sales: a handover counts on the day of its entries (the latest one when it carries several days), not the day it was made.', sf_dashDiff:'Net cash to hand over comes from the entries of the period. Handed over and deposited follow the handovers of the same days; a handover that carries several days counts on its latest day.', sf_colDiff:'How this differs from the Dashboard: net cash to hand over counts every sale of the period; this screen counts only what has reached a collector. The gap is cash not yet handed over, still with a car, received short, or a handover that carries several days (counted on its latest day).', sf_hoDiff:'How this differs: the same cash shows once at every hop (car → branch → area → collector), so add up one hop at a time. A handover counts on the day of its entries.', sf_entDiff:'This is the net cash to hand over for these entries. The Handoffs and Collections screens count only what has been handed over, on the day of its entries.', dash_salesAnalysis:'Sales analysis', dash_collectionsAnalysis:'Collections analysis',
+      dash_overview:'Financial summary', dash_keyFigures:'Key figures', pl_npPct:'Net margin %', is_title:'Income statement', is_amount:'Amount', is_pct:'% of net sales', is_less:'Less:', is_add:'Add:', is_gross:'Sales including VAT', is_vat:'VAT on sales', is_delivery:'Delivery income', is_revenue:'Total revenue', is_cogs:'Cost of goods sold (COGS)', is_commission:'Commissions', is_takings:'Expenses paid from takings', in_skip:'Tap to skip', in_s1:'Collect', in_s2:'Hand over', in_s3:'Bank', hs_title:'Transactions on file', hs_first:'First transaction', hs_last:'Last transaction', hs_sub:'{d} days · {n} transactions', kf_sales:'Total sales', kf_salesFoot:'cash and card, credit inside', kf_pos:'Card (POS) sales', kf_posFoot:'settled to the bank directly', kf_direct:'Direct deposits in the bank', kf_directFoot:'banked by the branches themselves', kf_other:'Total other deductions', kf_otherFoot:'delivery, expenses, credit, transfers, commissions', kf_otherAdd:'after adding {x} other collections', kf_net:'Net cash to hand over', kf_netFoot:'net after every deduction', kf_dep:'Deposited', kf_depFoot:'banked by the collectors', kf_rem:'Remaining', kf_remFoot:'not banked yet', kf_eq:'Sales {s} − card {p} − direct deposits {d} − other deductions {o}{a} = net cash to hand over {n} · deposited {dep} · remaining {r}', kf_eqAdd:' + other collections {x}', kf_status:'Handover status', kf_settled:'Settled at the branch', kf_settledFoot:'an approved area batch with nothing left to hand over', dv_search:'Search a city, area, branch, source, day or transaction', dv_count:'Count', dv_amount:'Amount', dv_share:'% of the card', dv_lv_city:'City', dv_lv_area:'Area', dv_lv_branch:'Branch', dv_lv_source:'Source', dv_lv_day:'Day', kf_ledgerHint:'Read top to bottom: every line comes from the entries of this period, and each total is the sum of the lines above it.', kf_add:'Other collections', kf_depFoot2:'the part of these entries that reached the bank', kf_remFoot2:'where it is now, below', kf_l_delivery:'Delivery fees, before VAT', kf_l_expenses:'Expenses', kf_l_credit:'Credit sales', kf_l_creditDelivery:'Credit delivery fees and commissions', kf_l_channelCom:'Sales channel commissions', kf_l_discounts:'Discounts', kf_l_transfers:'Bank transfers', kf_l_otherCash:'Other cash collected', kf_l_creditFees:'Credit customers\' delivery fees', kf_l_channelFees:'Sales channel delivery fees', kf_s_notHanded:'Not handed over yet', kf_s_carBranch:'At the branch / car to branch', kf_s_branchArea:'Branch to area', kf_s_deputy:'Area to collector, waiting for the deputy', kf_s_onway:'On the way (to or between collectors)', kf_s_held:'Held by a collector', kf_s_short:'Received short on the way', kf_stageSub:'Each entry\'s share at this stage', kf_remSplit:'Where the cash of these entries is now', sf_whereTotal:'Total held by people', sf_whereGap:'This differs from Remaining because a handover that carries several days counts on its latest day, or part of these days\' cash sits in a handover dated later.', sf_rule:'Dates are the business day of the sales: a handover counts on the day of its entries (the latest one when it carries several days), not the day it was made.', sf_dashDiff:'Net cash to hand over comes from the entries of the period. Handed over and deposited follow the handovers of the same days; a handover that carries several days counts on its latest day.', sf_colDiff:'How this differs from the Dashboard: net cash to hand over counts every sale of the period; this screen counts only what has reached a collector. The gap is cash not yet handed over, still with a car, received short, or a handover that carries several days (counted on its latest day).', sf_hoDiff:'How this differs: the same cash shows once at every hop (car → branch → area → collector), so add up one hop at a time. A handover counts on the day of its entries.', sf_entDiff:'This is the net cash to hand over for these entries. The Handoffs and Collections screens count only what has been handed over, on the day of its entries.', dash_salesAnalysis:'Sales analysis', dash_collectionsAnalysis:'Collections analysis',
       dash_statementSales:'Sales summary', dash_statementCollect:'Collection & deposit summary',
       dash_posHint:'Settles straight to the bank — not cash to collect', dash_creditHint:'Owed by customers — deducted: part of sales, but no cash came in',
       dash_deliveryDeductHint:'Paid straight to the bank — never in the driver\'s hand', dash_vatOnDeliveryFoot:'On delivery fees only',
@@ -4975,7 +4978,7 @@ function dirFor(lang){ return lang==='en' ? 'ltr' : 'rtl'; }
       doc_cylOut:'باہر جانے والے سلنڈر', doc_cylIn:'واپس آنے والے سلنڈر', doc_enteredBy:'درج کرنے والا', doc_createdAt:'اندراج کا وقت', doc_note:'نوٹ',
       doc_from:'از', doc_to:'بنام', doc_status:'حیثیت', doc_confirmedAt:'تصدیق کا وقت', doc_bankRef:'بینک حوالہ', doc_resolutionNote:'حل کا نوٹ',
       journey_entered:'درج کیا',
-      dash_overview:'مالی خلاصہ', dash_keyFigures:'اہم اعداد', pl_npPct:'خالص منافع %', is_title:'آمدنی کا گوشوارہ', is_amount:'رقم', is_pct:'خالص فروخت کا %', is_less:'منفی:', is_add:'جمع:', is_gross:'فروخت بشمول VAT', is_vat:'فروخت پر VAT', is_delivery:'ڈیلیوری آمدنی', is_revenue:'کل آمدنی', is_cogs:'فروخت شدہ مال کی لاگت', is_commission:'کمیشن', is_takings:'آمدنی سے ادا کردہ اخراجات', in_skip:'چھوڑنے کے لیے ٹیپ کریں', in_s1:'وصولی', in_s2:'حوالگی', in_s3:'بینک جمع', hs_title:'لین دین کی مدت', hs_first:'پہلا لین دین', hs_last:'آخری لین دین', hs_sub:'{d} دن · {n} لین دین', kf_sales:'کل فروخت', kf_salesFoot:'نقد اور کارڈ، ادھار شامل', kf_pos:'کارڈ (POS) فروخت', kf_posFoot:'براہ راست بینک میں', kf_direct:'بینک میں براہ راست جمع', kf_directFoot:'برانچوں نے خود جمع کیا', kf_other:'دیگر کٹوتیوں کا کل', kf_otherFoot:'ڈیلیوری، اخراجات، ادھار، ٹرانسفر، کمیشن', kf_otherAdd:'{x} دیگر وصولیاں شامل کرنے کے بعد', kf_net:'حوالے کرنے کے لیے خالص نقد', kf_netFoot:'تمام کٹوتیوں کے بعد خالص', kf_dep:'جمع شدہ', kf_depFoot:'وصول کنندگان نے بینک میں جمع کیا', kf_rem:'باقی', kf_remFoot:'ابھی جمع نہیں ہوا', kf_eq:'فروخت {s} − کارڈ {p} − براہ راست جمع {d} − دیگر کٹوتیاں {o}{a} = حوالے کرنے کے لیے خالص نقد {n} · جمع {dep} · باقی {r}', kf_eqAdd:' + دیگر وصولیاں {x}', kf_status:'حوالگی کی صورتحال', kf_ledgerHint:'اوپر سے نیچے پڑھیں: ہر سطر اس مدت کی اندراجات سے ہے، اور ہر کل اپنے اوپر کی سطروں کا مجموعہ ہے۔', kf_add:'دیگر وصولیاں', kf_depFoot2:'ان اندراجات کا وہ حصہ جو بینک تک پہنچا', kf_remFoot2:'اب کہاں ہے، نیچے', kf_l_delivery:'ڈیلیوری فیس، VAT سے پہلے', kf_l_expenses:'اخراجات', kf_l_credit:'ادھار فروخت', kf_l_creditDelivery:'ادھار ڈیلیوری فیس اور کمیشن', kf_l_channelCom:'سیلز چینل کمیشن', kf_l_discounts:'رعایتیں', kf_l_transfers:'بینک ٹرانسفر', kf_l_otherCash:'دیگر وصول شدہ نقد', kf_l_creditFees:'ادھار گاہکوں کی ڈیلیوری فیس', kf_l_channelFees:'سیلز چینل ڈیلیوری فیس', kf_s_notHanded:'ابھی حوالے نہیں ہوا', kf_s_carBranch:'گاڑی سے برانچ', kf_s_branchArea:'برانچ سے ایریا', kf_s_deputy:'ایریا سے کلکٹر، نائب کے انتظار میں', kf_s_onway:'ایریا سے کلکٹر، راستے میں', kf_s_held:'کلکٹر کے پاس', kf_s_short:'راستے میں کم وصول ہوا', kf_stageSub:'اس مرحلے پر ہر اندراج کا حصہ', kf_remSplit:'ان اندراجات کا نقد اب کہاں ہے', sf_whereTotal:'لوگوں کے پاس کل', sf_whereGap:'یہ باقی سے مختلف ہے کیونکہ کئی دن والی حوالگی آخری دن شمار ہوتی ہے، یا ان دنوں کی کچھ نقدی بعد کی تاریخ والی حوالگی میں ہے۔', sf_rule:'تاریخ فروخت کا کاروباری دن ہے: حوالگی اپنی اندراجات کے دن شمار ہوتی ہے (کئی دن ہوں تو آخری دن)، بنانے کے دن نہیں۔', sf_dashDiff:'حوالے کرنے کے لیے خالص نقد مدت کی اندراجات سے آتا ہے۔ حوالے اور جمع شدہ انہی دنوں کی حوالگیوں کے مطابق ہیں؛ کئی دن والی حوالگی آخری دن شمار ہوتی ہے۔', sf_colDiff:'ڈیش بورڈ سے فرق: حوالے کرنے کے لیے خالص نقد مدت کی ہر فروخت گنتا ہے؛ یہ اسکرین صرف وہ گنتی ہے جو کلکٹر تک پہنچا۔ فرق وہ نقد ہے جو ابھی حوالے نہیں ہوا، ابھی گاڑی کے پاس ہے، کم وصول ہوا، یا کئی دن والی حوالگی جو آخری دن شمار ہوتی ہے۔', sf_hoDiff:'فرق: وہی نقد ہر مرحلے پر ایک بار دکھتا ہے (گاڑی ← برانچ ← ایریا ← کلکٹر)، اس لیے ایک وقت میں ایک مرحلہ جمع کریں۔ حوالگی اپنی اندراجات کے دن شمار ہوتی ہے۔', sf_entDiff:'یہ ان اندراجات کے لیے حوالے کرنے کا خالص نقد ہے۔ حوالگی اور وصولی کی اسکرینیں صرف حوالے شدہ رقم گنتی ہیں، اندراجات کے دن کے مطابق۔', dash_salesAnalysis:'سیلز تجزیہ', dash_collectionsAnalysis:'وصولی تجزیہ',
+      dash_overview:'مالی خلاصہ', dash_keyFigures:'اہم اعداد', pl_npPct:'خالص منافع %', is_title:'آمدنی کا گوشوارہ', is_amount:'رقم', is_pct:'خالص فروخت کا %', is_less:'منفی:', is_add:'جمع:', is_gross:'فروخت بشمول VAT', is_vat:'فروخت پر VAT', is_delivery:'ڈیلیوری آمدنی', is_revenue:'کل آمدنی', is_cogs:'فروخت شدہ مال کی لاگت', is_commission:'کمیشن', is_takings:'آمدنی سے ادا کردہ اخراجات', in_skip:'چھوڑنے کے لیے ٹیپ کریں', in_s1:'وصولی', in_s2:'حوالگی', in_s3:'بینک جمع', hs_title:'لین دین کی مدت', hs_first:'پہلا لین دین', hs_last:'آخری لین دین', hs_sub:'{d} دن · {n} لین دین', kf_sales:'کل فروخت', kf_salesFoot:'نقد اور کارڈ، ادھار شامل', kf_pos:'کارڈ (POS) فروخت', kf_posFoot:'براہ راست بینک میں', kf_direct:'بینک میں براہ راست جمع', kf_directFoot:'برانچوں نے خود جمع کیا', kf_other:'دیگر کٹوتیوں کا کل', kf_otherFoot:'ڈیلیوری، اخراجات، ادھار، ٹرانسفر، کمیشن', kf_otherAdd:'{x} دیگر وصولیاں شامل کرنے کے بعد', kf_net:'حوالے کرنے کے لیے خالص نقد', kf_netFoot:'تمام کٹوتیوں کے بعد خالص', kf_dep:'جمع شدہ', kf_depFoot:'وصول کنندگان نے بینک میں جمع کیا', kf_rem:'باقی', kf_remFoot:'ابھی جمع نہیں ہوا', kf_eq:'فروخت {s} − کارڈ {p} − براہ راست جمع {d} − دیگر کٹوتیاں {o}{a} = حوالے کرنے کے لیے خالص نقد {n} · جمع {dep} · باقی {r}', kf_eqAdd:' + دیگر وصولیاں {x}', kf_status:'حوالگی کی صورتحال', kf_settled:'برانچ پر طے شدہ', kf_settledFoot:'منظور شدہ ایریا بیچ جس میں حوالے کرنے کو کچھ نہیں بچا', dv_search:'شہر، ایریا، برانچ، ذریعہ، دن یا لین دین تلاش کریں', dv_count:'تعداد', dv_amount:'رقم', dv_share:'کارڈ کا %', dv_lv_city:'شہر', dv_lv_area:'ایریا', dv_lv_branch:'برانچ', dv_lv_source:'ذریعہ', dv_lv_day:'دن', kf_ledgerHint:'اوپر سے نیچے پڑھیں: ہر سطر اس مدت کی اندراجات سے ہے، اور ہر کل اپنے اوپر کی سطروں کا مجموعہ ہے۔', kf_add:'دیگر وصولیاں', kf_depFoot2:'ان اندراجات کا وہ حصہ جو بینک تک پہنچا', kf_remFoot2:'اب کہاں ہے، نیچے', kf_l_delivery:'ڈیلیوری فیس، VAT سے پہلے', kf_l_expenses:'اخراجات', kf_l_credit:'ادھار فروخت', kf_l_creditDelivery:'ادھار ڈیلیوری فیس اور کمیشن', kf_l_channelCom:'سیلز چینل کمیشن', kf_l_discounts:'رعایتیں', kf_l_transfers:'بینک ٹرانسفر', kf_l_otherCash:'دیگر وصول شدہ نقد', kf_l_creditFees:'ادھار گاہکوں کی ڈیلیوری فیس', kf_l_channelFees:'سیلز چینل ڈیلیوری فیس', kf_s_notHanded:'ابھی حوالے نہیں ہوا', kf_s_carBranch:'برانچ پر / گاڑی سے برانچ', kf_s_branchArea:'برانچ سے ایریا', kf_s_deputy:'ایریا سے کلکٹر، نائب کے انتظار میں', kf_s_onway:'راستے میں (کلکٹر تک یا کلکٹرز کے درمیان)', kf_s_held:'کلکٹر کے پاس', kf_s_short:'راستے میں کم وصول ہوا', kf_stageSub:'اس مرحلے پر ہر اندراج کا حصہ', kf_remSplit:'ان اندراجات کا نقد اب کہاں ہے', sf_whereTotal:'لوگوں کے پاس کل', sf_whereGap:'یہ باقی سے مختلف ہے کیونکہ کئی دن والی حوالگی آخری دن شمار ہوتی ہے، یا ان دنوں کی کچھ نقدی بعد کی تاریخ والی حوالگی میں ہے۔', sf_rule:'تاریخ فروخت کا کاروباری دن ہے: حوالگی اپنی اندراجات کے دن شمار ہوتی ہے (کئی دن ہوں تو آخری دن)، بنانے کے دن نہیں۔', sf_dashDiff:'حوالے کرنے کے لیے خالص نقد مدت کی اندراجات سے آتا ہے۔ حوالے اور جمع شدہ انہی دنوں کی حوالگیوں کے مطابق ہیں؛ کئی دن والی حوالگی آخری دن شمار ہوتی ہے۔', sf_colDiff:'ڈیش بورڈ سے فرق: حوالے کرنے کے لیے خالص نقد مدت کی ہر فروخت گنتا ہے؛ یہ اسکرین صرف وہ گنتی ہے جو کلکٹر تک پہنچا۔ فرق وہ نقد ہے جو ابھی حوالے نہیں ہوا، ابھی گاڑی کے پاس ہے، کم وصول ہوا، یا کئی دن والی حوالگی جو آخری دن شمار ہوتی ہے۔', sf_hoDiff:'فرق: وہی نقد ہر مرحلے پر ایک بار دکھتا ہے (گاڑی ← برانچ ← ایریا ← کلکٹر)، اس لیے ایک وقت میں ایک مرحلہ جمع کریں۔ حوالگی اپنی اندراجات کے دن شمار ہوتی ہے۔', sf_entDiff:'یہ ان اندراجات کے لیے حوالے کرنے کا خالص نقد ہے۔ حوالگی اور وصولی کی اسکرینیں صرف حوالے شدہ رقم گنتی ہیں، اندراجات کے دن کے مطابق۔', dash_salesAnalysis:'سیلز تجزیہ', dash_collectionsAnalysis:'وصولی تجزیہ',
       dash_statementSales:'سیلز خلاصہ', dash_statementCollect:'وصولی اور ڈپازٹ خلاصہ',
       dash_posHint:'براہ راست بینک میں — وصولی کی نقدی نہیں', dash_creditHint:'گاہکوں پر واجب — منہا، کیونکہ فروخت میں شامل مگر نقدی نہیں آئی',
       dash_deliveryDeductHint:'براہ راست بینک کو ادا — ڈرائیور کے ہاتھ میں نہیں', dash_vatOnDeliveryFoot:'صرف ترسیل چارجز پر',
@@ -7529,6 +7532,8 @@ function creditRollup_(entries){
 //         title, onPart(part) }
 function netEquation_(opts){
   var T = eqTotals_(opts.entries);
+  // a screen that has the cohort gives its net, so this card and the key figures read the same cents
+  if (opts.net != null) T.net = Number(opts.net);
   function line(p, minus){
     return '<button type="button" class="eq-line" data-part="'+p+'"><span>'+esc(t(EQ_PARTS_[p].label))+'</span>' +
       '<b class="num">'+esc(money(T[p]))+'</b></button>';
@@ -7549,7 +7554,7 @@ function netEquation_(opts){
   var addLines = EQ_ADD_.filter(function(p){ return eqNonZero_(T[p]); }).map(function(p){ return line(p); }).join('') ||
     '<div class="eq-none">'+esc(t('eq_noAdditions'))+'</div>';
   var collected = opts.collected != null ? Number(opts.collected) : null;
-  var remaining = collected != null ? T.net - collected : null;
+  var remaining = opts.remaining != null ? Number(opts.remaining) : collected != null ? T.net - collected : null;
   var pct = collected != null && T.net > 0 ? Math.max(0, Math.min(100, collected / T.net * 100)) : 0;
   var netLines = collected == null ? '' :
     '<div class="eq-prog"><div class="eq-bar"><span style="width:'+pct.toFixed(1)+'%"></span></div>' +
@@ -8097,7 +8102,7 @@ function handoffsAoa_(list){
   var rows = [head], total = 0;
   list.forEach(function(h){
     total += Number(h.amount || 0);
-    rows.push([String(h.createdAt || '').slice(0, 10), t('kind_' + h.kind), userName(h.fromUserId), h.toUserId ? userName(h.toUserId) : '',
+    rows.push([hoDay_(h), t('kind_' + h.kind), userName(h.fromUserId), h.toUserId ? userName(h.toUserId) : '',
       h.locationId ? locationName(h.locationId) : '', h.clusterId ? clusterName(h.clusterId) : '', Math.round(Number(h.amount || 0) * 100) / 100,
       t('handoff_' + h.status), h.confirmedAt ? fmtStamp_(h.confirmedAt) : '', Number(h.shortfall || 0) ? Math.round(Math.abs(h.shortfall) * 100) / 100 : '',
       h.bankReference || '', [h.note, h.disputeNote, h.returnNote].filter(Boolean).join(' · ')]);
@@ -9725,7 +9730,7 @@ function batchDocView_(batchId){
 
 // ---------- metric breakdowns ----------
 // ctx: {entries, handoffs} — `key` names which figure was clicked.
-function openMetric_(key, ctx, extra){
+function metricData_(key, ctx, extra){
   extra = extra || {};
   var entries = ctx.entries || [];
   var handoffs = ctx.handoffs || [];
@@ -9783,8 +9788,23 @@ function openMetric_(key, ctx, extra){
     part:        function(){ var fs = extra.fields || []; return { title: extra.title, items: entries.map(function(e){ var a = entryAmt_(e); return { e: e, v: fs.reduce(function(s, f){ return s + Number(a[f] || 0); }, 0) }; }).filter(function(x){ return Math.abs(x.v) > 0.004; }).map(function(x){ return entryRowData_(x.e, x.v); }) }; },
     stage:       function(){ var cb = ctx.cohort || {}, ss = extra.stages || []; return { title: extra.title, sub: t('kf_stageSub'), items: entries.map(function(e){ var x = cb[e.id]; if (!x) return null; var v = (ss.indexOf(x.s) >= 0 ? Number(x.c) : 0) + (extra.short ? Number(x.k) : 0); return Math.abs(v) > 0.004 ? entryRowData_(e, v) : null; }).filter(Boolean) }; }
   };
-  var d = defs[key] ? defs[key]() : { title: key, items: [] };
-  openTxList_({ title: d.title, sub: d.sub || t('ui_tapForDetails'), items: d.items, note: d.note });
+  // a card that comes from the entries' cohort drills into the same cents, so its breakdown adds up to it exactly
+  if (ctx.cohort) {
+    var AL = null, al = function(){ return AL || (AL = cohortAlloc_(entries, ctx.cohort)); };
+    var coh = function(fn){ var A = al(); return entries.map(function(e){ var x = A.byId[e.id]; if (!x) return null; var v = fn(x); return v ? entryRowData_(e, v / 100) : null; }).filter(Boolean); };
+    defs.gross = function(){ return { title: t('dash_grossSales'), items: coh(function(x){ return x.sales; }) }; };
+    defs.pos = function(){ return { title: t('report_pos'), items: coh(function(x){ return x.pos; }) }; };
+    defs.bankedAtSource = function(){ return { title: t('report_directDeposit'), items: coh(function(x){ return x.direct; }) }; };
+    defs.net = function(){ return { title: t('kf_net'), items: coh(function(x){ return x.n; }) }; };
+    defs.outstanding = function(){ return { title: t('report_outstanding'), items: coh(function(x){ return x.s === 'notHanded' ? x.c : 0; }) }; };
+    if (extra.lines || extra.alines) defs.part = function(){ return { title: extra.title, items: coh(function(x){ return (extra.lines || []).reduce(function(s, k){ return s + (x.l[k] || 0); }, 0) + (extra.alines || []).reduce(function(s, k){ return s + (x.a[k] || 0); }, 0); }) }; };
+    defs.stage = function(){ var ss = extra.stages || []; return { title: extra.title, sub: t('kf_stageSub'), items: coh(function(x){ return (ss.indexOf(x.s) >= 0 ? x.c : 0) + (extra.short ? x.k : 0); }) }; };
+  }
+  return defs[key] ? defs[key]() : { title: key, items: [] };
+}
+function openMetric_(key, ctx, extra){
+  var d = metricData_(key, ctx, extra || {});
+  drawerOpen_(drillPivotView_({ title: d.title, sub: d.sub || t('ui_tapForDetails'), items: d.items, note: d.note }));
 }
 
 // ---------- entrance: once real content lands, animate it and count numbers up ----------
@@ -9886,21 +9906,137 @@ function sumDeposits_(handoffs){
 // report and handovers as the equation, and the line under them shows they add up.
 // ---- the key figures from the entries of the period (2026-10-15) ----
 // The server's entryCohort_ follows every entry to where its cash is now; byEntry holds, per entry,
-// its stage (s), net (n), what it still carries (c) and what was lost short on the way (k).
+// its stage (s), its raw net (r) and the share it still carries after short hops (f). The cents are
+// shared out here exactly as the server does (cohortCents_ = the server's), so any set of entries
+// gives figures that add up to the cent, and a drill-down adds up to its line.
 var COHORT_ST_ = ['notHanded', 'carBranch', 'branchArea', 'deputy', 'onway', 'held'];
-// pure: the same figures for any set of entries (the Entries screen's filter), summed in cents
-function cohortSum_(entries, byEntry){
-  var K = { net: 0, deposited: 0, short: 0 }, S = {}, ks = ['notHanded', 'carBranch', 'branchArea', 'deputy', 'onway', 'held'];
-  ks.forEach(function(k){ S[k] = 0; });
-  function c(v){ return Math.round(Number(v || 0) * 100); }
-  (entries || []).forEach(function(e){
-    var x = byEntry && e && byEntry[e.id]; if (!x || e.voided) return;
-    K.net += c(x.n); K.short += c(x.k);
-    if (x.s === 'deposited') K.deposited += c(x.c); else if (S.hasOwnProperty(x.s)) S[x.s] += c(x.c);
+var COHORT_DED_ = ['delivery', 'expenses', 'credit', 'creditDelivery', 'channelCom', 'discounts', 'transfers'];
+var COHORT_ADD_ = ['otherCash', 'creditDeliveryFees', 'channelDeliveryFees'];
+// largest remainder, ties by id: the parts add up to round(total) exactly
+function cohortCents_(raws, ids){
+  var total = Math.round(raws.reduce(function(s, v){ return s + v; }, 0) * 100);
+  var fl = raws.map(function(v){ return Math.floor(v * 100 + 1e-7); });
+  var left = total - fl.reduce(function(s, v){ return s + v; }, 0);
+  var order = raws.map(function(v, i){ return i; }).sort(function(a, b){
+    var ra = raws[a] * 100 - fl[a], rb = raws[b] * 100 - fl[b];
+    return rb - ra > 1e-9 ? 1 : ra - rb > 1e-9 ? -1 : (String(ids[a]) < String(ids[b]) ? -1 : 1);
   });
-  var out = { net: K.net / 100, deposited: K.deposited / 100, short: K.short / 100, remaining: (K.net - K.deposited) / 100, stages: {} };
-  ks.forEach(function(k){ out.stages[k] = S[k] / 100; });
+  for (var k = 0; left > 0 && k < order.length; k++, left--) fl[order[k]]++;
+  for (k = order.length - 1; left < 0 && k >= 0; k--, left++) fl[order[k]]--;
+  return fl;
+}
+// pure: per entry, every line in cents ({n, c, k, s, sales, pos, direct, l:{deduction lines}, a:{additions}}), and their sums
+function cohortAlloc_(entries, byEntry){
+  function c(v){ return Math.round(Number(v || 0) * 100); }
+  var live = (entries || []).filter(function(e){ return e && !e.voided && byEntry && byEntry[e.id]; });
+  var nC = cohortCents_(live.map(function(e){ return Number(byEntry[e.id].r || 0); }), live.map(function(e){ return e.id; }));
+  var out = { byId: {}, T: { sales: 0, pos: 0, direct: 0, net: 0, deposited: 0, settled: 0, short: 0, stages: {}, l: {}, a: {} } }, T = out.T;
+  COHORT_ST_.forEach(function(k){ T.stages[k] = 0; }); COHORT_DED_.forEach(function(k){ T.l[k] = 0; }); COHORT_ADD_.forEach(function(k){ T.a[k] = 0; });
+  live.forEach(function(e, i){
+    var x = byEntry[e.id], a = entryAmt_(e), n = nC[i];
+    var r = { s: x.s, n: n, sales: c(a.cash + a.pos), pos: c(a.pos), direct: c(a.banked), l: {}, a: {} };
+    r.l.expenses = c(a.expense); r.l.credit = c(a.credit); r.l.creditDelivery = c(a.creditFeeOff + a.commission); r.l.channelCom = c(a.chCom);
+    r.l.discounts = c(a.discount); r.l.transfers = c(a.transfer);
+    r.a.otherCash = c(a.other); r.a.creditDeliveryFees = c(a.creditFee); r.a.channelDeliveryFees = c(a.chFee);
+    var other = 0, plus = 0; Object.keys(r.l).forEach(function(k){ other += r.l[k]; }); Object.keys(r.a).forEach(function(k){ plus += r.a[k]; });
+    r.l.delivery = r.sales - r.pos - r.direct - other + plus - n;
+    r.c = Math.round(n * Number(x.f == null ? 1 : x.f)); r.k = n - r.c;
+    out.byId[e.id] = r;
+    T.sales += r.sales; T.pos += r.pos; T.direct += r.direct; T.net += n; T.short += r.k;
+    COHORT_DED_.forEach(function(k){ T.l[k] += r.l[k]; }); COHORT_ADD_.forEach(function(k){ T.a[k] += r.a[k]; });
+    if (x.s === 'deposited') T.deposited += r.c; else if (x.s === 'settled') T.settled += r.c; else if (T.stages.hasOwnProperty(x.s)) T.stages[x.s] += r.c;
+  });
   return out;
+}
+// pure: the same figures for any set of entries (the Entries screen's filter)
+function cohortSum_(entries, byEntry){
+  var T = cohortAlloc_(entries, byEntry).T, out = { net: T.net / 100, deposited: T.deposited / 100, settled: T.settled / 100, short: T.short / 100,
+    remaining: (T.net - T.deposited - T.settled) / 100, stages: {} };
+  COHORT_ST_.forEach(function(k){ out.stages[k] = T.stages[k] / 100; });
+  return out;
+}
+// ---- every card's breakdown is a pivot: city > area > branch > source > day > transaction (2026-10-17) ----
+// pure: items (row data with .ref and .amount) -> a tree whose every level carries its cents, count and share
+var DRILL_LV_ = ['city', 'area', 'branch', 'source', 'day', 'tx'];
+function drillTree_(items, placeOf){
+  var root = { lvl: 'all', key: '', name: '', cents: 0, n: 0, kids: [], map: {}, depth: -1 };
+  (items || []).forEach(function(it){
+    if (!it || it.group) return;
+    var v = Math.round(Number(it.amount || 0) * 100), path = placeOf(it), node = root;
+    root.cents += v; root.n++;
+    for (var i = 0; i < path.length; i++) {
+      var k = String(path[i][0] == null ? '_' : path[i][0]);
+      var ch = node.map[k];
+      if (!ch) { ch = { lvl: DRILL_LV_[i], key: k, name: path[i][1], cents: 0, n: 0, kids: [], map: {}, depth: i }; node.map[k] = ch; node.kids.push(ch); }
+      ch.cents += v; ch.n++; node = ch;
+    }
+    node.kids.push({ lvl: 'tx', key: 'tx' + root.n, name: it.title, sub: it.sub, cents: v, n: 1, kids: [], item: it, depth: path.length });
+  });
+  (function sort(n){ n.kids.sort(function(a, b){ return a.lvl === 'day' ? (a.key < b.key ? 1 : -1) : (Math.abs(b.cents) - Math.abs(a.cents)) || String(a.name).localeCompare(String(b.name)); }); n.kids.forEach(sort); })(root);
+  return root;
+}
+// where an item sits: city, area, branch, source, day
+function drillPlace_(it){
+  var r = it.ref || {}, meta = state.meta || {}, l = byId(meta.locations, r.locationId) || {};
+  var city = l.city || t('report_unspecified'), area = l.clusterId || r.clusterId || '';
+  var src = it.kind === 'entry' ? [r.sourceType + ':' + (r.sourceId || ''), sourceName_(r) || t('entry_source_' + r.sourceType)] : ['k:' + r.kind, t('kind_' + r.kind)];
+  var day = it.kind === 'entry' ? String(r.date || '').slice(0, 10) : hoDay_(r);
+  return [[city, city], [area || '_', area ? clusterName(area) : t('report_unspecified')], [r.locationId || '_', r.locationId ? locationName(r.locationId) : t('report_unspecified')], src, [day || '_', day || '—']];
+}
+function drillPivotView_(o){
+  return {
+    title: o.title, sub: o.sub, crumb: o.title,
+    render: function(body, foot){
+      var items = txMergeItems_((o.items || []).filter(function(it){ return !it.group; }));
+      var root = drillTree_(items, drillPlace_), total = root.cents, open = {}, q = '';
+      if (o.note) body.appendChild(el('<div class="msg" style="background:var(--warn-bg);color:var(--warn);margin-bottom:12px;">'+esc(o.note)+'</div>'));
+      var search = el('<div class="dr-search">'+icon_('search')+'<input type="search" placeholder="'+esc(t('dv_search'))+'" aria-label="'+esc(t('dv_search'))+'"></div>');
+      var tools = el('<div class="tbl-tools"></div>');
+      var wrap = el('<div class="tbl-scroll rp-scroll"></div>');
+      body.appendChild(search); body.appendChild(tools); body.appendChild(wrap);
+      (function mark(n, p){ n.kids.forEach(function(k, i){ k._p = p + '/' + i; mark(k, k._p); }); })(root, '');
+      // a single child opens by itself, so a one-city set starts at its branches
+      (function auto(n){ if (n.kids.length === 1 && n.kids[0].lvl !== 'tx') { open[n.kids[0]._p] = 1; auto(n.kids[0]); } })(root);
+      function pct(c){ return total ? (Math.round(c / total * 1000) / 10).toLocaleString('en-US') + '%' : '—'; }
+      function text(n){ return (String(n.name || '') + ' ' + String(n.sub || '')).toLowerCase(); }
+      function hits(n){ return !q || text(n).indexOf(q) >= 0 || n.kids.some(hits); }
+      function rows(n, out){
+        n.kids.forEach(function(k){
+          if (!hits(k)) return;
+          var leaf = k.lvl === 'tx', isOpen = q ? true : !!open[k._p];
+          out.push('<tr class="pv-r d'+Math.min(k.depth, 5)+(leaf ? ' dv-leaf' : '')+'" data-p="'+esc(k._p)+'"><td><span class="pv-name" style="padding-inline-start:'+(k.depth * 16)+'px">' +
+            (leaf ? '' : '<span class="pv-tog'+(isOpen ? ' open' : '')+'" aria-hidden="true">'+icon_('chevron')+'</span>') +
+            (leaf ? '' : '<small class="dv-lv">'+esc(t('dv_lv_' + k.lvl))+'</small>') + esc(k.name) + (leaf && k.sub ? '<small class="dv-sub">'+esc(k.sub)+'</small>' : '') + '</span></td>' +
+            '<td class="n num">'+k.n+'</td><td class="n num"><bdi dir="ltr">'+esc(money(k.cents / 100))+'</bdi></td><td class="n num">'+pct(k.cents)+'</td></tr>');
+          if (!leaf && isOpen) rows(k, out);
+        });
+        return out;
+      }
+      var byP = {}; (function idx(n){ n.kids.forEach(function(k){ byP[k._p] = k; idx(k); }); })(root);
+      function draw(){
+        wrap.innerHTML = '<table class="rp-table pv-table dv-table" data-nosort><thead><tr><th>'+esc(t('pv_level'))+'</th><th class="n">'+esc(t('dv_count'))+'</th><th class="n">'+esc(t('dv_amount'))+'</th><th class="n">'+esc(t('dv_share'))+'</th></tr></thead><tbody>' +
+          (root.n ? rows(root, []).join('') : '<tr><td colspan="4" class="muted">'+esc(t('ui_noTx'))+'</td></tr>') +
+          '</tbody><tfoot><tr class="pv-total"><td>'+esc(t('rp_total'))+'</td><td class="n num">'+root.n+'</td><td class="n num"><bdi dir="ltr">'+esc(money(total / 100))+'</bdi></td><td class="n num">100%</td></tr></tfoot></table>';
+        foot.hidden = false;
+        foot.innerHTML = '<span class="lb">'+esc(t('ui_totalListed'))+'</span><span class="v num">'+esc(money(total / 100))+'</span>';
+      }
+      wrap.addEventListener('click', function(ev){
+        var tr = ev.target.closest('tr.pv-r'); if (!tr) return;
+        var n = byP[tr.getAttribute('data-p')]; if (!n) return;
+        if (n.item) { drawerPush_(n.item.kind === 'entry' ? entryDocView_(n.item.ref) : handoffDocView_(n.item.ref)); return; }
+        open[n._p] = !open[n._p]; draw();
+      });
+      qs('input', search).addEventListener('input', function(ev){ q = ev.target.value.trim().toLowerCase(); draw(); });
+      // Excel and PDF carry the whole tree, grouped
+      tools.appendChild(exButtons_(function(){
+        var rowsX = [[t('pv_level'), t('dv_count'), t('dv_amount'), t('dv_share')]], outline = [];
+        (function walk(n){ n.kids.forEach(function(k){ rowsX.push([(k.lvl === 'tx' ? '' : t('dv_lv_' + k.lvl) + ': ') + k.name + (k.sub ? ' · ' + k.sub : ''), k.n, k.cents / 100, total ? Math.round(k.cents / total * 1000) / 10 : 0]); outline.push(k.depth); walk(k); }); })(root);
+        rowsX.push([t('rp_total'), root.n, total / 100, 100]); outline.push(0);
+        return [{ name: o.title, rows: rowsX, outline: outline }];
+      }, function(){ return o.title; }));
+      draw();
+    }
+  };
 }
 // the remaining cash, where it sits now: one clickable line per stage, and the short line
 function cohortStagesHtml_(R){
@@ -9929,18 +10065,19 @@ function cohortLedger_(C, open, forF){
     KFL_ADD_.map(function(d){ return row('', t(d[1]), T.additions[d[0]] || 0, 'data-apart="'+d[0]+'"', 'kfl-sub'); }).join('') +
     row('=', t('kf_net'), T.net, 'data-k="net"', 'kfl-sum', t('kf_netFoot')) +
     row('\u2212', t('kf_dep'), T.deposited, 'data-st="deposited"', '', t('kf_depFoot2')) +
+    (Math.abs(Number(T.settled || 0)) > 0.004 ? row('\u2212', t('kf_settled'), T.settled, 'data-st="settled"', '', t('kf_settledFoot')) : '') +
     row('=', t('kf_rem'), T.remaining, 'data-st="_rem"', 'kfl-sum kfl-rem', t('kf_remFoot2')) +
     cohortStagesHtml_(T) + '</div>';
   var node = el(h);
   qsa('.kfl-row', node).forEach(function(b){ b.addEventListener('click', function(){
-    if (b.dataset.k === '_ded' || b.dataset.k === '_add') { open('part', { title: t(b.dataset.k === '_ded' ? 'kf_other' : 'kf_add'), fields: [].concat.apply([], (b.dataset.k === '_ded' ? KFL_DED_ : KFL_ADD_).map(function(d){ return d[2]; })) })(); return; }
+    if (b.dataset.k === '_ded' || b.dataset.k === '_add') { var gd = b.dataset.k === '_ded', gl = (gd ? KFL_DED_ : KFL_ADD_).map(function(d){ return d[0]; }); open('part', { title: t(gd ? 'kf_other' : 'kf_add'), fields: [].concat.apply([], (gd ? KFL_DED_ : KFL_ADD_).map(function(d){ return d[2]; })), lines: gd ? gl : null, alines: gd ? null : gl })(); return; }
     if (b.dataset.k) { open(b.dataset.k)(); return; }
     var d = b.dataset.part ? KFL_DED_.filter(function(x){ return x[0] === b.dataset.part; })[0] : b.dataset.apart ? KFL_ADD_.filter(function(x){ return x[0] === b.dataset.apart; })[0] : null;
-    if (d) { open('part', { title: t(d[1]), fields: d[2] })(); return; }
+    if (d) { open('part', { title: t(d[1]), fields: d[2], lines: b.dataset.part ? [d[0]] : null, alines: b.dataset.apart ? [d[0]] : null })(); return; }
     var s = b.dataset.st;
     if (s === '_rem') open('stage', { title: t('kf_rem'), stages: COHORT_ST_, short: true })();
     else if (s === 'short') open('stage', { title: t('kf_s_short'), stages: [], short: true })();
-    else if (s) open('stage', { title: s === 'deposited' ? t('kf_dep') : t('kf_s_' + s), stages: [s] })();
+    else if (s) open('stage', { title: s === 'deposited' ? t('kf_dep') : s === 'settled' ? t('kf_settled') : t('kf_s_' + s), stages: [s] })();
   }); });
   return node;
 }
@@ -9980,11 +10117,13 @@ function salesAndCollectionStatements_(report, handoffs, open){
   // commissions and Souq Gas (2026-10-03). The net already takes off the
   // الموازنات banked at the source, so only what the collectors banked
   // comes off it below.
-  var totalToCollect = Number(T.netCashOwed||0);
-  var deposited = sumDeposits_(handoffs);
+  var CT = report.cohort && report.cohort.totals ? report.cohort.totals : null;
+  var totalToCollect = CT ? Number(CT.net) : Number(T.netCashOwed||0);
+  if (CT) deliveryBase = Number(CT.deductions.delivery || 0);
+  var deposited = CT ? Number(CT.deposited) : sumDeposits_(handoffs);
   var collected = report.cohort && report.cohort.totals ? Number(report.cohort.totals.deposited || 0) : (handoffs||[]).filter(function(h){ return h.kind === 'deposit' && !h.direct && h.status !== 'voided'; })
     .reduce(function(a2, h){ return a2 + Number(h.amount||0); }, 0);
-  var remaining = report.cohort && report.cohort.totals ? Number(report.cohort.totals.remaining || 0) : totalToCollect - collected;
+  var remaining = CT ? Number(CT.remaining || 0) : totalToCollect - collected;
   function opt(v, row){ return Number(v||0) ? [row] : []; }
   var g = el('<div class="g2"></div>');
   g.appendChild(statement_({
@@ -10014,7 +10153,7 @@ function salesAndCollectionStatements_(report, handoffs, open){
     ].concat(opt(otherCash, { label: t('report_otherCash'), amount: otherCash, color: 'var(--c-credit)', onClick: open('otherCash') }))
      .concat(opt(T.creditDeliveryFees, { label: t('eq_aCreditDelivery'), amount: Number(T.creditDeliveryFees||0), color: 'var(--c-delivery)' }))
      .concat(opt(T.channelDeliveryFees, { label: t('eq_aChannelDelivery'), amount: Number(T.channelDeliveryFees||0), color: 'var(--c-delivery)' }))
-     .concat([{ label: t('dash_deliveryFeeBeforeVat'), hint: t('dash_deliveryDeductHint'), amount: deliveryBase, kind: 'deduct', color: 'var(--c-delivery)', onClick: open('deliveryBase') }])
+     .concat([{ label: t('dash_deliveryFeeBeforeVat'), hint: t('dash_deliveryDeductHint'), amount: deliveryBase, kind: 'deduct', color: 'var(--c-delivery)', onClick: CT ? open('part', { title: t('dash_deliveryFeeBeforeVat'), lines: ['delivery'] }) : open('deliveryBase') }])
      .concat(opt(expenses, { label: t('report_expenses'), amount: expenses, kind: 'deduct', color: 'var(--c-danger)', onClick: open('expenses') }))
      .concat(opt(T.creditSales, { label: t('report_credit'), hint: t('dash_creditHint'), amount: T.creditSales, kind: 'deduct', color: 'var(--c-credit)', onClick: open('credit') }))
      .concat(opt(T.creditDeliveryUnpaid, { label: t('eq_dCreditDelivery'), amount: Number(T.creditDeliveryUnpaid||0), kind: 'deduct', color: 'var(--c-credit)' }))
@@ -10025,8 +10164,9 @@ function salesAndCollectionStatements_(report, handoffs, open){
      .concat(opt(T.directDeposit, { label: t('report_directDeposit'), amount: Number(T.directDeposit||0), kind: 'deduct', color: 'var(--c-deposit)', onClick: open('bankedAtSource') }))
      .concat([
       { label: t('dash_totalToCollect'), amount: totalToCollect, kind: 'sub', color: 'var(--green)', onClick: open('net') },
-      { label: t('dash_deposited'), amount: collected, kind: 'deduct', color: 'var(--c-deposit)', onClick: open('deposited') },
-      { label: t('dash_remainingToDeposit'), amount: remaining, kind: 'final', color: 'var(--c-deposit)', onClick: open('remaining') }
+      { label: t('dash_deposited'), amount: collected, kind: 'deduct', color: 'var(--c-deposit)', onClick: CT ? open('stage', { title: t('kf_dep'), stages: ['deposited'] }) : open('deposited') }
+    ].concat(CT && Math.abs(Number(CT.settled || 0)) > 0.004 ? [{ label: t('kf_settled'), amount: Number(CT.settled), kind: 'deduct', color: 'var(--c-deposit)', onClick: open('stage', { title: t('kf_settled'), stages: ['settled'] }) }] : []).concat([
+      { label: t('dash_remainingToDeposit'), amount: remaining, kind: 'final', color: 'var(--c-deposit)', onClick: CT ? open('stage', { title: t('kf_rem'), stages: COHORT_ST_, short: true }) : open('remaining') }
     ])
   }));
   return { node: g, remaining: remaining, totalToCollect: totalToCollect, gross: gross, deposited: deposited };
@@ -10040,7 +10180,9 @@ function eqForScreen_(entries, handoffs, report, open){
   // subtracting the entries' الموازنات from all deposits could go below zero)
   var collected = report.cohort && report.cohort.totals ? Number(report.cohort.totals.deposited || 0) : (handoffs || []).filter(function(h){ return h.kind === 'deposit' && !h.direct && h.status !== 'voided'; })
     .reduce(function(a2, h){ return a2 + Number(h.amount || 0); }, 0);
-  return netEquation_({ entries: entries, collected: collected, onSpecial: function(which){
+  var CT = report.cohort && report.cohort.totals ? report.cohort.totals : null;
+  return netEquation_({ entries: entries, collected: collected, net: CT ? CT.net : null, remaining: CT ? CT.remaining : null, onSpecial: function(which){
+    if (CT) { if (which === 'deposited') open('stage', { title: t('kf_dep'), stages: ['deposited'] })(); else open('stage', { title: t('kf_rem'), stages: COHORT_ST_, short: true })(); return; }
     if (which === 'deposited') open('deposited')(); else open('remaining')();
   } }).node;
 }
@@ -10232,11 +10374,11 @@ function renderDashboard(body, animate){
     body.appendChild(sfNote_('sf_dashDiff'));
     body.appendChild(secTitle_(t('kf_status')));
     body.appendChild(tiles_([
-      { label: t('report_outstanding'), value: money(report.outstanding.netCashOwed), icon: 'clock', color: 'var(--c-hold)', foot: esc(t('dash_notYetHandedOff')), onClick: open('outstanding') },
+      { label: t('report_outstanding'), value: money(report.cohort ? report.cohort.totals.stages.notHanded : report.outstanding.netCashOwed), icon: 'clock', color: 'var(--c-hold)', foot: esc(t('dash_notYetHandedOff')), onClick: open('outstanding') },
       { label: t('home_companyOutstanding'), value: dash.companyOutstanding != null ? money(dash.companyOutstanding) : '—', icon: 'wallet', color: 'var(--green)', foot: esc(t('dash_heldConfirmedNotDeposited') + forF), onClick: open('held') },
       { label: t('handoff_pending'), value: byStatus.pending, icon: 'handoffs', color: 'var(--c-hold)', foot: '<span class="num">'+esc(money(pendingAmt))+'</span>', onClick: open('pending') },
       { label: t('handoff_disputed'), value: byStatus.disputed, icon: 'alert', color: byStatus.disputed ? 'var(--c-danger)' : 'var(--green)', foot: '<span class="num">'+esc(money(disputedAmt))+'</span>', onClick: open('disputed') },
-      { label: t('dash_deposits'), value: depositList.length, icon: 'bank', color: 'var(--green)', foot: '<span class="num">'+esc(money(st.deposited))+'</span>', onClick: open('deposited') },
+      { label: t('dash_deposits'), value: depositList.length, icon: 'bank', color: 'var(--green)', foot: '<span class="num">'+esc(money(st.deposited))+'</span>', onClick: report.cohort ? open('stage', { title: t('kf_dep'), stages: ['deposited'] }) : open('deposited') },
       { label: t('dash_locationsReporting'), value: locCount, icon: 'pin', color: 'var(--green)', foot: esc(t('dash_avgPerLocation'))+': <span class="num">'+esc(money(locCount ? st.gross/locCount : 0))+'</span>', onClick: function(){ locationsView_(report, open); } }
     ]));
 
@@ -13978,10 +14120,10 @@ function renderEntries(body){
       { onClick: open_(t('eh_cancelled'), ofState('voided'), function(rows){ return eqTotals_(rows).sales; }, { cancelled: true }), label: t('eh_cancelled'), value: String(by.voided.n), icon: 'ban', color: 'var(--muted)', foot: esc(t('eb_tapToSee')) }
     ]));
     var CS = entCohort ? cohortSum_(live, entCohort) : null;
-    dash.appendChild(netEquation_({ entries: live, collected: CS ? CS.deposited : null }).node);
+    dash.appendChild(netEquation_({ entries: live, collected: CS ? CS.deposited : null, net: CS ? CS.net : null, remaining: CS ? CS.remaining : null }).node);
     if (CS) {
-      var stBox = el('<div class="kfl card no-collapse" role="group" aria-label="'+esc(t('kf_remSplit'))+'"><p class="kfl-hint">'+esc(t('kf_remSplit'))+'</p>'+cohortStagesHtml_(CS)+'</div>');
-      qsa('.kfl-row', stBox).forEach(function(b){ b.addEventListener('click', function(){ var s = b.dataset.st, cb = entCohort; drawerOpen_(txListView_({ title: t('kf_s_' + s), sub: t('kf_stageSub'), items: live.map(function(e){ var x = cb[e.id]; if (!x) return null; var v = s === 'short' ? Number(x.k) : x.s === s ? Number(x.c) : 0; return Math.abs(v) > 0.004 ? entryRowData_(e, v) : null; }).filter(Boolean) })); }); });
+      var stBox = el('<div class="kfl card no-collapse" role="group" aria-label="'+esc(t('kf_remSplit'))+'"><p class="kfl-hint">'+esc(t('kf_remSplit'))+'</p>'+cohortStagesHtml_(CS)+(Math.abs(CS.settled) > 0.004 ? '<button type="button" class="kfl-row kfl-sub" data-st="settled"><span class="kfl-op" aria-hidden="true"></span><span class="kfl-l">'+esc(t('kf_settled'))+'</span><b class="num">'+esc(money(CS.settled))+'</b></button>' : '')+'</div>');
+      qsa('.kfl-row', stBox).forEach(function(b){ b.addEventListener('click', function(){ var s = b.dataset.st, A = cohortAlloc_(live, entCohort); drawerOpen_(drillPivotView_({ title: s === 'settled' ? t('kf_settled') : t('kf_s_' + s), sub: t('kf_stageSub'), items: live.map(function(e){ var x = A.byId[e.id]; if (!x) return null; var v = s === 'short' ? x.k : x.s === s ? x.c : 0; return v ? entryRowData_(e, v / 100) : null; }).filter(Boolean) })); }); });
       dash.appendChild(stBox);
     }
     dash.appendChild(sfNote_('sf_entDiff'));
