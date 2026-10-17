@@ -5913,5 +5913,39 @@ console.log('--- comparison: periods by entry date, the dashboard\'s figures, ch
   check(dSales.d === -300 && dSales.tone === 'bad' && Math.round(dSales.pct) === -25 && dRem.tone === 'bad' && dRem.pct === null && dDays.tone === 'good' && cx.cmpDelta_(5, 5, 'net').tone === 'flat' && cx.cmpDelta_(6, 5, 'requests').tone === 'flat', 'comparison: a change is good or bad by the figure\'s own direction');
 })();
 
+console.log('--- data levels: the pivot tree adds up at every level, to the cent (2026-10-17) ---');
+(function () {
+  var names = ['colDay_', 'colCompute_', 'crpC_', 'crpPct_', 'crpLvKey_', 'crpLevelsFrom_', 'crpTree_', 'crpTreeSheet_'];
+  var src = [clientVar_('CRP_LV_', ';')].concat(names.map(function (n) { var s = clientFn_(n); check(!!s, 'levels: ' + n + ' exists'); return s; })).join('\n');
+  var K = new Function('localToday_', src + '\nreturn {' + names.map(function (n) { return n + ':' + n; }).join(',') + ', CRP_LV_: CRP_LV_};')(function () { return '2026-10-14'; });
+  var loc = { b1: { city: 'Riyadh', clusterId: 'a1' }, b2: { city: 'Riyadh', clusterId: 'a2' }, b3: { city: 'Jeddah', clusterId: 'a3' } };
+  function q(id, l, day, amt, stage, holder, short) { return { id: id, locationId: l, clusterId: loc[l].clusterId, createdAt: day + 'T09:00:00.000Z', amount: amt, stage: stage, holder: holder, shortfall: short || 0, depositedAt: stage === 'deposited' ? day + 'T12:00:00.000Z' : null, depositId: stage === 'deposited' ? 'd' : null }; }
+  var reqs = [q('1', 'b1', '2026-10-01', 100.1, 'deposited', 'k1'), q('2', 'b1', '2026-10-02', 200.2, 'held', 'k1', 3.3), q('3', 'b2', '2026-10-02', 0.3, 'pending', 'k2'),
+    q('4', 'b3', '2026-10-03', 999.99, 'deposited', 'k2'), q('5', 'b3', '2026-10-03', 0.01, 'held', 'k3'), q('6', 'b2', '2026-10-04', 33.33, 'deputy', 'k2')];
+  var D = K.colCompute_(reqs, { today: '2026-10-14', from: '2026-10-01', to: '2026-10-14', locOf: function (id) { return loc[id] || {}; } });
+  var root = K.crpTree_(D.rows, ['city', 'area', 'branch', 'collector', 'day']);
+  function c(v) { return Math.round(v * 100); }
+  check(c(root.total) === c(D.T.total) && c(root.deposited) === c(D.T.deposited) && c(root.remaining) === c(D.T.remaining) && root.n === D.T.n && c(root.short) === c(D.T.short), 'levels: the tree\'s top equals the screen\'s totals');
+  var bad = [];
+  (function walk(n) {
+    if (!n.kids.length) return;
+    var sum = n.kids.reduce(function (s, k) { return s + c(k.total); }, 0), dep = n.kids.reduce(function (s, k) { return s + c(k.deposited); }, 0), cnt = n.kids.reduce(function (s, k) { return s + k.n; }, 0), pc = n.kids.reduce(function (s, k) { return s + Math.round(k.pct * 10); }, 0);
+    if (sum !== c(n.total) || dep !== c(n.deposited) || cnt !== n.n || (n.total > 0 && pc !== 1000) || c(n.remaining) !== c(n.total) - c(n.deposited)) bad.push((n.lv || 'root') + ':' + n.key);
+    n.kids.forEach(walk);
+  })(root);
+  check(!bad.length, 'levels: every node is the sum of its children, its count and its % of the parent add up (' + bad.join(',') + ')');
+  check(root.kids.length === 2 && root.kids[0].key === 'Jeddah' && root.kids[1].kids.length === 2, 'levels: cities, largest first, then their areas');
+  var deep = root.kids[1].kids.filter(function (k) { return k.key === 'a1'; })[0].kids[0].kids[0];
+  check(deep.lv === 'collector' && deep.kids.length === 2 && deep.kids[0].key === '2026-10-02' && deep.kids.every(function (d) { return d.rows.length === 1; }), 'levels: collector, then days newest first, with their requests');
+  check(JSON.stringify(K.crpLevelsFrom_('area', { area: '', branch: 'b1', collector: '', day: '' })) === '["area","collector","day"]' && K.crpLevelsFrom_('city', { city: 'Riyadh' })[0] === 'area', 'levels: a level set as a filter is skipped');
+  var sh = K.crpTreeSheet_(root, function (k) { return k.key; }, function (x) { return [x.r.id]; });
+  check(sh.rows.length === sh.outline.length && sh.outline[0] === 0 && sh.outline.filter(function (d) { return d === 0; }).length === 2 && sh.outline.indexOf(5) > 0, 'levels: the workbook groups every level, requests deepest');
+  var top = sh.rows.filter(function (r, i) { return sh.outline[i] === 0; }).reduce(function (s, r) { return s + c(r[2]); }, 0);
+  check(top === c(D.T.total), 'levels: the workbook\'s first level adds up to the total');
+  // the comparison's next level
+  var nl = new Function(clientVar_('CMP_LV_', ';') + '\n' + clientFn_('cmpNextLevel_') + '\nreturn cmpNextLevel_;')();
+  check(nl('city', {}) === 'area' && nl('branch', { branch: 'b1' }) === 'owner' && nl('owner', { branch: 'b1', owner: 'store:s1' }) === 'day' && nl('area', { branch: '' }) === 'branch' && nl('day', {}) === null, 'comparison: drilling goes city, area, branch, store/car/POS, (collector), day');
+})();
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);
