@@ -894,6 +894,7 @@ function route_(req) {
     uploadEntryPhoto: function () { return actionUploadEntryPhoto_(req, user); },
     listHandoffs: function () { return actionListHandoffs_(req, user); },
     collectionsData: function () { return actionCollectionsData_(req, user); },
+    collectionReports: function () { return actionCollectionReports_(req, user); },
     adminSetWhatsApp: function () { return actionAdminSetWhatsApp_(req, user); },
     addInventoryMove: function () { return actionAddInventoryMove_(req, user); },
     recordStockCount: function () { return actionRecordStockCount_(req, user); },
