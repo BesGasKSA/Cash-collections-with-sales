@@ -4336,6 +4336,37 @@
     .crp-kpis{padding-inline:12px;} .crp-eq{margin-inline:12px;} .crp-find input[type=search]{border:0;box-shadow:none;background:none;padding:9px 0;}
     .crp-ht h2{font-size:19px;}
   }
+  /* ---------- Comparison (2026-10-15): periods side by side ---------- */
+  .cmp .crp-hero{margin-bottom:14px;}
+  .cmp > .card{margin-bottom:14px;}
+  .cmp-tbl td{vertical-align:top;}
+  .cmp-tbl td b{display:block;font-weight:700;}
+  .cmp-tbl th.cmp-cur,.cmp-tbl td.cmp-cur{background:color-mix(in srgb,var(--green) 7%,#fff);}
+  .cmp-tbl thead th.cmp-cur{color:var(--green);}
+  .cmp-tbl tr.cmp-strong th,.cmp-tbl tr.cmp-strong td b{font-weight:800;}
+  .cmp-tbl tr.cmp-strong{background:color-mix(in srgb,var(--cream) 45%,#fff);}
+  .cmp-tbl tr.cmp-sep th,.cmp-tbl tr.cmp-sep td{border-top:2px solid #E4E8E2;}
+  .cmp-op{display:inline-block;width:16px;color:var(--muted);font-weight:800;}
+  .cmp-tbl tbody th[scope=row],.cmp-tbl thead th:first-child,.cmp-tbl tfoot th{position:sticky;inset-inline-start:0;z-index:1;background:#fff;}
+  .cmp-tbl tr.cmp-strong th[scope=row]{background:color-mix(in srgb,var(--cream) 45%,#fff);}
+  .cmp-dl{display:inline-block;margin-top:3px;font-size:11px;font-weight:700;border-radius:999px;padding:1px 7px;white-space:nowrap;font-style:normal;}
+  .cmp-dl.good{background:color-mix(in srgb,#2E7D4F 13%,#fff);color:#23633e;}
+  .cmp-dl.bad{background:color-mix(in srgb,#C14A30 12%,#fff);color:#a43c25;}
+  .cmp-dl.flat{background:#EEF0EC;color:#4A564D;}
+  .cmp-sm{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px;}
+  .cmp-mini{border:1px solid var(--border);border-radius:12px;padding:10px 12px;background:#fff;display:flex;flex-direction:column;gap:4px;animation:crpIn .32s cubic-bezier(0,0,.2,1) both;}
+  .cmp-mh{display:flex;justify-content:space-between;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--muted);}
+  .cmp-mini > b{font-size:17px;}
+  .cmp-mb{display:flex;align-items:flex-end;gap:3px;height:56px;margin-top:4px;border-bottom:1px solid var(--border);}
+  .cmp-bw{flex:1;height:100%;display:flex;align-items:flex-end;}
+  .cmp-bw i{display:block;width:100%;height:100%;border-radius:3px 3px 0 0;background:color-mix(in srgb,var(--green) 40%,#fff);transform-origin:bottom;transform:scaleY(var(--p));animation-delay:calc(var(--i,0) * 40ms);}
+  .cmp-bw i.cur{background:var(--green);}
+  .cmp-bb{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:end;justify-content:space-between;}
+  .cmp-bb .col-chips{margin:0;}
+  .cmp-mf{margin:0;min-width:180px;}
+  .cmp-n{max-width:120px;}
+  @media (prefers-reduced-motion:reduce){ .cmp-mini{animation:none;} }
+  @media (max-width:820px){ .cmp-sm{grid-template-columns:repeat(2,minmax(0,1fr));} .cmp .crp-hero{margin-bottom:8px;} .cmp-n{max-width:none;} }
 </style>
 </head>
 <body>
@@ -5111,6 +5142,32 @@ var L = {
       col_x_name:'نام', col_x_bankPct:'جمع %', col_x_reqs:'درخواستیں', col_x_oldest:'سب سے پرانی کھلی', col_x_item:'مد', col_x_amount:'رقم (ریال)', col_x_returned:'واپس کی گئی درخواستیں', col_x_disputed:'اعتراض والی درخواستیں', col_x_rejected:'مسترد درخواستیں',
       col_x_day:'دن', col_x_no:'نمبر', col_x_from:'ایریا منیجر', col_x_to:'کلکٹر', col_x_holder:'ابھی کس کے پاس', col_x_stage:'مرحلہ', col_x_age:'کھلے دن', col_x_bankDay:'جمع کی تاریخ', col_x_depNo:'جمع نمبر', col_x_ref:'بینک حوالہ', col_x_summary:'خلاصہ',
       col_card_total:'کل وصولی', col_depLine:'وصولی کا {p}% \u00B7 آخری جمع {d}', col_depLineNone:'وصولی کا {p}% \u00B7 ابھی کچھ جمع نہیں', col_remLine:'ڈپٹی کے پاس {a} \u00B7 راستے میں {b} \u00B7 کلکٹرز کے پاس {c}', col_card_dep:'کل جمع شدہ', col_card_rem:'کل باقی', col_cardTotalSub:'فلٹر میں {n} درخواستیں', col_lastDep:'آخری جمع {d}', col_noDep:'ابھی کچھ جمع نہیں', col_ofCollection:'کل وصولی کا {p}%', col_oldestOpen:'سب سے پرانی کھلی {n} دن', col_nothingRem:'جمع کرانے کو کچھ باقی نہیں', col_formula:'{tc} {total} \u2212 {td} {dep} = {tr} {rem}', col_counted:'شمار', col_countedAll:'تمام شہر، علاقے اور کلکٹرز', col_removeF:'فلٹر ہٹائیں: {x}', col_cRemChart:'ہر کلکٹر کا باقی', col_th_collector:'کلکٹر', col_th_branches:'برانچیں', col_th_reqs:'درخواستیں', col_th_total:'کل', col_th_dep:'جمع شدہ', col_th_rem:'باقی', col_th_pct:'جمع %', col_th_days:'جمع میں دن', col_th_oldest:'سب سے پرانی کھلی', col_th_short:'کمی / زیادہ', col_th_last:'آخری جمع', col_th_share:'باقی میں حصہ', col_details:'تفصیل', col_showing:'{n} میں سے {k} کلکٹر', col_cTableHint:'پوری اسکرین کو اس کلکٹر تک محدود کرنے کے لیے صف دبائیں۔ دوبارہ دبائیں تو ہٹ جائے گا۔', col_dayN:'{n} د', col_depHint2:'صرف وہ جمع جن میں اس فلٹر کی کوئی درخواست ہے، ہر ایک میں اسی فلٹر کا حصہ۔ درخواستوں کے لیے جمع دبائیں؛ دستاویز کا بٹن جمع اور رسید کھولتا ہے۔', col_depOfTotal:'{x} کی کل جمع میں سے', col_depN:'{n} درخواستیں', col_x_branches:'برانچیں', col_x_remaining:'باقی', col_x_lastDep:'آخری جمع', col_x_share:'باقی میں حصہ (%)', col_x_depFull:'پوری جمع', col_x_filters:'فلٹر', col_cDrawerSub:'{n} درخواستیں، برانچ پھر دن کے لحاظ سے', col_noOpen:'کوئی نہیں' }
+  };
+  ['ar', 'en', 'ur'].forEach(function(lg){ Object.keys(X[lg]).forEach(function(k){ L[lg][k] = X[lg][k]; }); });
+})();
+(function(){
+  var X = {
+    en: { nav_comparison: 'Comparison', cmp_kicker: 'Compare periods', cmp_sub: 'This period against the ones before, by the date of the entries: every figure, its change and which way is good',
+      cmp_with: 'Compare with', cmp_prevPeriods: 'Previous period(s)', cmp_prevYears: 'Previous year(s)', cmp_n: 'Number of periods', cmp_comparing: 'Comparing', cmp_to: 'to',
+      cmp_metric: 'Figure', cmp_table: 'Period by period', cmp_tableHint: 'Each column is a period, the newest last. Under each figure, its change against the column before: green when it went the good way, red when not.',
+      cmp_small: 'Each figure across the periods', cmp_smallHint: 'One small chart per figure, each on its own scale; the darker bar is the chosen period.',
+      cmp_breakdown: 'Breakdown', cmp_breakdownHint: 'One figure per area, branch, collector or city across the same periods', cmp_by: 'Breakdown by',
+      cmp_m_sales: 'Sales', cmp_m_card: 'Card (POS)', cmp_m_direct: 'Direct deposits', cmp_m_other: 'Other deductions', cmp_m_additions: 'Additions (other collections)', cmp_m_net: 'Cash to collect',
+      cmp_m_deposited: 'Deposited', cmp_m_remaining: 'Remaining', cmp_m_short: 'Shortfalls', cmp_m_requests: 'Requests', cmp_m_days: 'Average days to the bank' },
+    ar: { nav_comparison: 'المقارنة', cmp_kicker: 'مقارنة الفترات', cmp_sub: 'هذه الفترة مقابل الفترات السابقة حسب تاريخ الإدخالات: كل رقم وتغيره وأي اتجاه هو الأفضل',
+      cmp_with: 'قارن مع', cmp_prevPeriods: 'الفترات السابقة', cmp_prevYears: 'السنوات السابقة', cmp_n: 'عدد الفترات', cmp_comparing: 'المقارنة', cmp_to: 'حتى',
+      cmp_metric: 'الرقم', cmp_table: 'فترة بفترة', cmp_tableHint: 'كل عمود فترة، والأحدث في الآخر. تحت كل رقم تغيره عن العمود السابق: أخضر إن تحسن، وأحمر إن لم يتحسن.',
+      cmp_small: 'كل رقم عبر الفترات', cmp_smallHint: 'رسم صغير لكل رقم بمقياسه الخاص؛ العمود الأغمق هو الفترة المختارة.',
+      cmp_breakdown: 'التفصيل', cmp_breakdownHint: 'رقم واحد لكل منطقة أو فرع أو محصل أو مدينة عبر الفترات نفسها', cmp_by: 'التفصيل حسب',
+      cmp_m_sales: 'المبيعات', cmp_m_card: 'الشبكة (نقاط البيع)', cmp_m_direct: 'الموازنات', cmp_m_other: 'خصومات أخرى', cmp_m_additions: 'إضافات (تحصيلات أخرى)', cmp_m_net: 'النقدية المستحقة',
+      cmp_m_deposited: 'المودع', cmp_m_remaining: 'المتبقي', cmp_m_short: 'العجز', cmp_m_requests: 'الطلبات', cmp_m_days: 'متوسط الأيام حتى الإيداع' },
+    ur: { nav_comparison: 'موازنہ', cmp_kicker: 'مدتوں کا موازنہ', cmp_sub: 'یہ مدت پچھلی مدتوں کے مقابلے میں، اندراج کی تاریخ کے لحاظ سے: ہر عدد، اس کی تبدیلی اور کون سی سمت بہتر ہے',
+      cmp_with: 'موازنہ کریں', cmp_prevPeriods: 'پچھلی مدت(یں)', cmp_prevYears: 'پچھلے سال', cmp_n: 'مدتوں کی تعداد', cmp_comparing: 'موازنہ', cmp_to: 'تک',
+      cmp_metric: 'عدد', cmp_table: 'مدت بہ مدت', cmp_tableHint: 'ہر کالم ایک مدت ہے، سب سے نئی آخر میں۔ ہر عدد کے نیچے پچھلے کالم سے تبدیلی: بہتری ہو تو سبز، نہ ہو تو سرخ۔',
+      cmp_small: 'ہر عدد مدتوں میں', cmp_smallHint: 'ہر عدد کا چھوٹا چارٹ، اپنے پیمانے پر؛ گہری پٹی چنی گئی مدت ہے۔',
+      cmp_breakdown: 'تفصیل', cmp_breakdownHint: 'ہر علاقے، برانچ، کلکٹر یا شہر کا ایک عدد انہی مدتوں میں', cmp_by: 'تفصیل بلحاظ',
+      cmp_m_sales: 'فروخت', cmp_m_card: 'کارڈ (POS)', cmp_m_direct: 'براہ راست جمع (موازنہ)', cmp_m_other: 'دیگر کٹوتیاں', cmp_m_additions: 'اضافے (دیگر وصولیاں)', cmp_m_net: 'وصول طلب نقدی',
+      cmp_m_deposited: 'جمع شدہ', cmp_m_remaining: 'باقی', cmp_m_short: 'کمی', cmp_m_requests: 'درخواستیں', cmp_m_days: 'بینک تک اوسط دن' }
   };
   ['ar', 'en', 'ur'].forEach(function(lg){ Object.keys(X[lg]).forEach(function(k){ L[lg][k] = X[lg][k]; }); });
 })();
@@ -6670,6 +6727,7 @@ var ICONS = {
 };
 ICONS.collections = ICONS.wallet;
 ICONS.colReports = ICONS.trend;
+ICONS.comparison = ICONS.dashboard;
 function icon_(name){ return '<svg class="ic2" viewBox="0 0 24 24" aria-hidden="true">'+(ICONS[name]||'')+'</svg>'; }
 
 function navItemsForRole_(){
@@ -6687,6 +6745,8 @@ function navItemsForRole_(){
   // every collections report, same reach as the Collections screen (2026-10-15)
   items.push(['colReports','nav_colReports']);
   if (['admin','finance','accountant','operations_manager','deputy_operations_manager','cluster_manager','store_manager'].indexOf(role)>=0) items.push(['report','nav_report']);
+  // periods side by side, for those who read the sales report (2026-10-15)
+  if (['admin','finance','accountant','operations_manager','deputy_operations_manager','cluster_manager','store_manager'].indexOf(role)>=0) items.push(['comparison','nav_comparison']);
   if (['admin','finance','deputy_operations_manager'].indexOf(role)>=0) items.push(['reconciliation','nav_reconciliation']);
   if (['admin','finance','accountant','operations_manager','deputy_operations_manager','cluster_manager','store_manager'].indexOf(role)>=0) items.push(['inventory','nav_inventory']);
   // profit and costs: the admin, finance and the accountant (a salary is in there)
@@ -6980,7 +7040,7 @@ function renderShell(){
 
   watchCollapsibles_(body);
   if (state.lastAnimatedScreen !== state.screen) { state.lastAnimatedScreen = state.screen; watchEntrance_(body); }
-  var renderers = { home: renderHome, dashboard: renderDashboard, entries: renderEntries, areaBulk: renderAreaBulk, deputyReview: renderDeputyReview, handoffs: renderHandoffs, collections: renderCollections, colReports: renderColReports, report: renderReport, reconciliation: renderReconciliation, inventory: renderInventory, profit: renderProfit, customers: renderCustomers, risk: renderRisk, admin: renderAdmin, users: renderAdmin };
+  var renderers = { home: renderHome, dashboard: renderDashboard, entries: renderEntries, areaBulk: renderAreaBulk, deputyReview: renderDeputyReview, handoffs: renderHandoffs, collections: renderCollections, colReports: renderColReports, comparison: renderComparison, report: renderReport, reconciliation: renderReconciliation, inventory: renderInventory, profit: renderProfit, customers: renderCustomers, risk: renderRisk, admin: renderAdmin, users: renderAdmin };
   (renderers[state.screen] || renderHome)(body);
   // the bell, the hero and (once per sign-in) the welcome popup read one list
   refreshPending_(state.pendKicked ? null : { popup: true });
@@ -18179,27 +18239,14 @@ function crpMonthName_(ym){ try { return new Date(ym + '-01T00:00:00').toLocaleD
 var PRD_LIST_ = ['today', 'yesterday', 'thisWeek', 'lastWeek', 'month', 'lastMonth', 'thisQuarter', 'lastQuarter', 'thisYear', 'lastYear', 'ytd', '7d', '30d', '90d', 'all', 'custom'];
 function prdIso_(d){ var p = function(n){ return (n < 10 ? '0' : '') + n; }; return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()); }
 function prdD_(iso){ return new Date(iso + 'T00:00:00'); }
-// pure: a preset and today → {from, to} (weeks start on Sunday, as the calendar does)
+// pure: a preset and today → {from, to}. The shared presets are the profitability screen's own
+// (plPresetRange_); this list only adds year to date, all time and custom dates.
+var PRD_ALIAS_ = { month: 'thisMonth', '7d': 'last7', '30d': 'last30', '90d': 'last90', ytd: 'thisYear' };
 function prdRange_(preset, today, from, to){
-  var d = prdD_(today), y = d.getFullYear(), mo = d.getMonth(), a, b;
-  function add(n){ var x = prdD_(today); x.setDate(x.getDate() + n); return prdIso_(x); }
-  switch (preset) {
-    case 'today': return { from: today, to: today };
-    case 'yesterday': return { from: add(-1), to: add(-1) };
-    case 'thisWeek': return { from: add(-d.getDay()), to: today };
-    case 'lastWeek': return { from: add(-d.getDay() - 7), to: add(-d.getDay() - 1) };
-    case 'month': return { from: today.slice(0, 8) + '01', to: today };
-    case 'lastMonth': a = new Date(y, mo - 1, 1); b = new Date(y, mo, 0); return { from: prdIso_(a), to: prdIso_(b) };
-    case 'thisQuarter': return { from: prdIso_(new Date(y, mo - mo % 3, 1)), to: today };
-    case 'lastQuarter': a = new Date(y, mo - mo % 3 - 3, 1); b = new Date(y, mo - mo % 3, 0); return { from: prdIso_(a), to: prdIso_(b) };
-    case 'thisYear': case 'ytd': return { from: y + '-01-01', to: today };
-    case 'lastYear': return { from: (y - 1) + '-01-01', to: (y - 1) + '-12-31' };
-    case '7d': return { from: add(-6), to: today };
-    case '30d': return { from: add(-29), to: today };
-    case '90d': return { from: add(-89), to: today };
-    case 'all': return { from: '', to: '' };
-    default: return { from: from || '', to: to || '' };
-  }
+  var p = PRD_ALIAS_[preset] || preset;
+  if (PL_PRESETS_.indexOf(p) >= 0) { var r = plPresetRange_(p, today); return { from: r[0], to: r[1] }; }
+  if (preset === 'all') return { from: '', to: '' };
+  return { from: from || '', to: to || '' };
 }
 // pure: the k-th period before {from,to}: a calendar unit steps by its unit, anything else by its own length; mode 'year' steps a year
 function prdShift_(R, preset, mode, k){
@@ -18363,6 +18410,199 @@ function crpBuild_(body, reqs){
   }
   paintBar();
   paint();
+}
+// ---------- Comparison (2026-10-15): this period against the ones before, Zoho Books style ----------
+// Rooted in entry dates, like the dashboard: one getSalesReport over the whole span and the
+// handovers the viewer sees; each entry is followed through its handovers to the bank.
+// cmpCompute_ is pure (tested in tests/run.js) and takes the entries and handovers as they come,
+// so a server cohort (entryCohort_) can feed it later without touching the screen. The figures
+// per entry come from entryAmt_ and EQ_PARTS_ (the client's one copy of the net formula).
+var CMP_M_ = ['sales', 'card', 'direct', 'other', 'additions', 'net', 'deposited', 'remaining', 'short', 'requests', 'days'];
+// which way is good: 1 up, -1 down, 0 neither
+var CMP_GOOD_ = { sales: 1, card: 0, direct: 0, other: -1, additions: 0, net: 1, deposited: 1, remaining: -1, short: -1, requests: 0, days: -1 };
+var CMP_ = null;
+function cmpState_(){
+  if (CMP_) return CMP_;
+  CMP_ = { preset: 'month', from: '', to: '', mode: 'period', n: 2, city: '', area: '', branch: '', collector: '', by: 'area', metric: 'net' };
+  try { var s = JSON.parse(sessionStorage.getItem('bgc_cmp') || 'null'); if (s) Object.keys(s).forEach(function(k){ CMP_[k] = s[k]; }); } catch (e) {}
+  if (CMP_.preset === 'all') CMP_.preset = 'month';
+  return CMP_;
+}
+function cmpSave_(){ try { sessionStorage.setItem('bgc_cmp', JSON.stringify(CMP_)); } catch (e) {} }
+// pure: the periods, newest first: the chosen one, then n before it (by period or by year)
+function cmpPeriods_(preset, today, from, to, mode, n){
+  var R = prdRange_(preset, today, from, to), out = [{ from: R.from, to: R.to, k: 0 }];
+  for (var k = 1; k <= Math.max(0, Math.min(12, n || 0)); k++) { var p = prdShift_(R, preset, mode, k); if (p) out.push({ from: p.from, to: p.to, k: k }); }
+  return out;
+}
+// pure: entries (with locationId, date, consumedBy) and handovers → each period's figures, in total and per group
+function cmpCompute_(entries, handoffs, periods, o){
+  o = o || {};
+  var byId = Object.create(null);
+  (handoffs || []).forEach(function(h){ byId[h.id] = h; });
+  // an entry followed to the bank: the handovers it went through, its request, its deposit
+  function follow(e){
+    var path = [], h = e.consumedBy ? byId[e.consumedBy] : null, req = null, dep = null, n = 0;
+    while (h && n++ < 25) {
+      if (h.status === 'voided' || h.status === 'rejected' || h.status === 'returned') { dep = null; break; }
+      if (h.kind === 'deposit') { dep = h; break; }
+      path.push(h); if (h.kind === 'cluster_to_collector') req = h;
+      h = h.consumedBy ? byId[h.consumedBy] : null;
+    }
+    return { path: path, req: req, dep: dep };
+  }
+  function zero(){ var m = { _req: {}, _hand: {}, _days: [] }; CMP_M_.forEach(function(k){ m[k] = 0; }); return m; }
+  function add(m, e, a, f){
+    var other = EQ_PARTS_.deductions.of(a) - a.pos - a.banked, adds = EQ_PARTS_.additions.of(a);
+    m.sales += Math.round((a.cash + a.pos) * 100); m.card += Math.round(a.pos * 100); m.direct += Math.round(a.banked * 100);
+    // the dashboard's own split: sales - card - direct - other + additions = net
+    m.other += Math.round(other * 100); m.additions += Math.round(adds * 100);
+    var net = Math.round(a.net * 100); m.net += net; if (f.dep) m.deposited += net;
+    f.path.forEach(function(h){ if (!m._hand[h.id]) { m._hand[h.id] = 1; m.short += Math.round(Number(h.shortfall || 0) * 100); } });
+    if (f.req && !m._req[f.req.id]) { m._req[f.req.id] = 1; m.requests++; if (f.dep) m._days.push(Math.max(0, Math.round((new Date(String(f.dep.createdAt).slice(0, 10) + 'T00:00:00') - new Date(String(f.req.createdAt).slice(0, 10) + 'T00:00:00')) / 86400000))); }
+  }
+  function fin(m){
+    var out = {}; ['sales', 'card', 'direct', 'other', 'additions', 'net', 'deposited', 'short'].forEach(function(k){ out[k] = m[k] / 100; });
+    out.remaining = (m.net - m.deposited) / 100; out.requests = m.requests;
+    out.days = m._days.length ? Math.round(m._days.reduce(function(s, v){ return s + v; }, 0) / m._days.length * 10) / 10 : null;
+    return out;
+  }
+  var res = periods.map(function(p){ return { from: p.from, to: p.to, k: p.k, T: zero(), G: {} }; });
+  (entries || []).forEach(function(e){
+    if (e.voided) return;
+    if (o.include && !o.include(e)) return;
+    var d = String(e.date || '').slice(0, 10), a = null, f = null;
+    res.forEach(function(p){
+      if (p.from && d < p.from) return; if (p.to && d > p.to) return;
+      if (!a) { a = entryAmt_(e); f = follow(e); }
+      add(p.T, e, a, f);
+      if (o.keyOf) { var key = o.keyOf(e) || '_'; add(p.G[key] || (p.G[key] = zero()), e, a, f); }
+    });
+  });
+  return res.map(function(p){ var g = {}; Object.keys(p.G).forEach(function(k){ g[k] = fin(p.G[k]); }); return { from: p.from, to: p.to, k: p.k, T: fin(p.T), G: g }; });
+}
+// pure: the change of a figure against the column before it, and whether that is good
+function cmpDelta_(cur, prev, metric){
+  if (cur == null || prev == null) return null;
+  var d = Math.round((cur - prev) * 100) / 100, g = CMP_GOOD_[metric] || 0;
+  return { d: d, pct: prev ? d / Math.abs(prev) * 100 : null, tone: !d || !g ? 'flat' : (d > 0) === (g > 0) ? 'good' : 'bad' };
+}
+function cmpFmt_(k, v){ return v == null ? '—' : k === 'requests' ? String(v) : k === 'days' ? (Math.round(v * 10) / 10).toFixed(1) : money(v); }
+function cmpLabel_(p, preset){
+  if (/month/i.test(preset) && p.from && p.from.slice(8) === '01' && p.to.slice(0, 7) === p.from.slice(0, 7)) return crpMonthName_(p.from.slice(0, 7)) + (p.to === prdIso_(new Date(Number(p.to.slice(0, 4)), Number(p.to.slice(5, 7)), 0)) ? '' : ' ' + t('cmp_to') + ' ' + p.to.slice(8));
+  if (p.from === p.to) return crpShortDate_(p.from) + ' ' + p.from.slice(0, 4);
+  return crpShortDate_(p.from) + ' – ' + crpShortDate_(p.to) + ' ' + p.to.slice(0, 4);
+}
+function renderComparison(body){
+  var S = cmpState_(), meta = state.meta || {};
+  body.innerHTML = crpSkeleton_();
+  var periods = cmpPeriods_(S.preset, localToday_(), S.from, S.to, S.mode, S.n);
+  var span = { dateFrom: periods.reduce(function(m, p){ return !m || p.from < m ? p.from : m; }, ''), dateTo: periods.reduce(function(m, p){ return !m || p.to > m ? p.to : m; }, '') };
+  var rep = null, hos = null;
+  function go(){
+    if (!rep || !hos) return;
+    if (!rep.ok) { body.innerHTML = '<div class="msg err">'+esc(errMsg_(rep))+'</div>'; return; }
+    cmpDraw_(body, S, periods, rep.entries || [], (hos.ok && hos.handoffs) || []);
+  }
+  apiCached('getSalesReport', span, body, function(r){ rep = r; go(); });
+  apiCached('listHandoffs', {}, body, function(r){ hos = r; go(); });
+}
+function cmpDraw_(body, S, periods, entries, handoffs){
+  var meta = state.meta || {}, locOf = function(id){ return byId(meta.locations, id) || {}; };
+  function colOfLoc(id){ return branchCollectorOf_(byId(meta.locations, id)) || ''; }
+  var enter = !(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+  body.innerHTML = '';
+  var root = el('<div class="crp cmp"></div>');
+  body.appendChild(root);
+  var tbEl = document.querySelector('.tb'), top = tbEl ? tbEl.offsetHeight : 0;
+  // ---- the bar ----
+  function uniq(fn){ var seen = {}, out = []; entries.forEach(function(e){ var x = fn(e); if (x && x[0] && !seen[x[0]]) { seen[x[0]] = 1; out.push(x); } }); return out.sort(function(a, b){ return String(a[1]).localeCompare(String(b[1]), state.lang || 'ar'); }); }
+  function opts(list, sel, all){ return '<option value="">'+esc(all)+'</option>' + list.map(function(x){ return '<option value="'+esc(x[0])+'"'+(x[0] === sel ? ' selected' : '')+'>'+esc(x[1])+'</option>'; }).join(''); }
+  var cities = uniq(function(e){ var c = locOf(e.locationId).city; return c ? [c, c] : null; });
+  var areas = uniq(function(e){ var l = locOf(e.locationId); return l.clusterId && (!S.city || l.city === S.city) ? [l.clusterId, clusterName(l.clusterId)] : null; });
+  var branches = uniq(function(e){ var l = locOf(e.locationId); return e.locationId && (!S.city || l.city === S.city) && (!S.area || l.clusterId === S.area) ? [e.locationId, l.name || locationName(e.locationId)] : null; });
+  var cols = uniq(function(e){ var c = colOfLoc(e.locationId); return c ? [c, userName(c)] : null; });
+  var bar = el('<div class="card crp-bar cmp-bar no-collapse" role="region" aria-label="'+esc(t('crp_filters'))+'" style="top:'+top+'px"><div class="crp-b1">' +
+    '<div class="field crp-pf"><label>'+esc(t('col_period'))+'</label>'+prdSelect_(S.preset).replace('<option value="all"', '<option hidden value="all"')+'</div>' +
+    '<div class="crp-dates"'+(S.preset === 'custom' ? '' : ' hidden')+'><div class="field"><label>'+esc(t('inv_from'))+'</label><input type="date" class="cFrom" value="'+esc(S.from)+'"></div><div class="field"><label>'+esc(t('inv_to'))+'</label><input type="date" class="cTo" value="'+esc(S.to)+'"></div></div>' +
+    '<div class="field"><label>'+esc(t('cmp_with'))+'</label><select data-k="mode"><option value="period"'+(S.mode === 'period' ? ' selected' : '')+'>'+esc(t('cmp_prevPeriods'))+'</option><option value="year"'+(S.mode === 'year' ? ' selected' : '')+'>'+esc(t('cmp_prevYears'))+'</option></select></div>' +
+    '<div class="field cmp-n"><label>'+esc(t('cmp_n'))+'</label><select data-k="n">'+[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(function(i){ return '<option value="'+i+'"'+(i === Number(S.n) ? ' selected' : '')+'>'+i+'</option>'; }).join('')+'</select></div>' +
+    '<button type="button" class="btn ghost crp-more" aria-expanded="'+(!!S.more)+'">'+icon_('menu')+'<span>'+esc(t('crp_filters'))+'</span></button></div>' +
+    '<div class="crp-b2"'+(S.more ? '' : ' data-fold="1"')+'>' + [['city', cities, 'col_allCities'], ['area', areas, 'col_allAreas'], ['branch', branches, 'col_allBranches'], ['collector', cols, 'col_allCollectors']].map(function(x){
+      return '<div class="field"><label>'+esc(t('col_f_' + x[0]))+'</label><select data-k="'+x[0]+'">'+opts(x[1], S[x[0]], t(x[2]))+'</select></div>'; }).join('') + '</div><div class="crp-sent" role="status"></div></div>');
+  root.appendChild(bar);
+  function again(){ cmpSave_(); renderComparison(body); }
+  qs('.prd-sel', bar).addEventListener('change', function(ev){ S.preset = ev.target.value; if (S.preset === 'custom' && !S.from) { var r0 = prdRange_('month', localToday_()); S.from = r0.from; S.to = r0.to; } again(); });
+  ['.cFrom', '.cTo'].forEach(function(s){ qs(s, bar).addEventListener('change', function(){ S.from = qs('.cFrom', bar).value; S.to = qs('.cTo', bar).value; if (S.from && S.to) again(); }); });
+  qsa('select[data-k]', bar).forEach(function(s){ s.addEventListener('change', function(){ var k = s.dataset.k; S[k] = k === 'n' ? Number(s.value) : s.value; if (k === 'city') { S.area = ''; S.branch = ''; } if (k === 'area') S.branch = ''; again(); }); });
+  qs('.crp-more', bar).addEventListener('click', function(){ S.more = !S.more; cmpSave_(); var f = qs('.crp-b2', bar); if (S.more) f.removeAttribute('data-fold'); else f.setAttribute('data-fold', '1'); this.setAttribute('aria-expanded', String(!!S.more)); });
+  // ---- the figures ----
+  function include(e){
+    var l = locOf(e.locationId);
+    if (S.city && l.city !== S.city) return false; if (S.area && l.clusterId !== S.area) return false;
+    if (S.branch && e.locationId !== S.branch) return false; if (S.collector && colOfLoc(e.locationId) !== S.collector) return false;
+    return true;
+  }
+  var by = ['area', 'branch', 'collector', 'city'].indexOf(S.by) >= 0 ? S.by : 'area';
+  var keyOf = { area: function(e){ return locOf(e.locationId).clusterId || '_'; }, branch: function(e){ return e.locationId || '_'; }, collector: function(e){ return colOfLoc(e.locationId) || '_'; }, city: function(e){ return locOf(e.locationId).city || '_'; } }[by];
+  var nameOf = { area: function(k){ return k === '_' ? t('report_unspecified') : clusterName(k); }, branch: function(k){ return k === '_' ? t('report_unspecified') : locationName(k); }, collector: function(k){ return k === '_' ? t('report_unspecified') : userName(k); }, city: function(k){ return k === '_' ? t('report_unspecified') : k; } }[by];
+  var P = cmpCompute_(entries, handoffs, periods, { include: include, keyOf: keyOf });
+  var cols2 = P.slice().reverse(); // oldest to newest: time runs with the reading direction
+  var labels = cols2.map(function(p){ return cmpLabel_(p, S.preset); });
+  var place = [S.city, S.area && clusterName(S.area), S.branch && locationName(S.branch), S.collector && userName(S.collector)].filter(Boolean);
+  var sentence = labels.slice().reverse().join(' · ') + (place.length ? ' — ' + place.join(' · ') : '');
+  qs('.crp-sent', bar).innerHTML = '<b>'+esc(t('cmp_comparing'))+':</b> '+esc(sentence);
+  var sheets = [];
+  var hero = el('<header class="card crp-hero no-collapse" data-noicon><div class="crp-hi">'+icon_('trend')+'</div><div class="crp-ht"><span class="crp-hk">'+esc(t('cmp_kicker'))+'</span><h2>'+esc(t('nav_comparison'))+'</h2><p>'+esc(t('cmp_sub'))+'</p></div></header>');
+  hero.appendChild(exButtons_(function(){ return sheets; }, function(){ return t('nav_comparison'); }, function(){ return { note: sentence }; }));
+  root.appendChild(hero);
+  if (!entries.length) { root.appendChild(crpEmpty_(t('crp_nothing'))); return; }
+  // the money table: sales, less deductions, net, less deposited, remaining
+  var showAdd = P.some(function(p){ return Math.abs(p.T.additions) > 0.004; });
+  var rows = [['sales', ''], ['card', '−'], ['direct', '−'], ['other', '−']].concat(showAdd ? [['additions', '+']] : [], [['net', '='], ['deposited', '−'], ['remaining', '='], ['short', ''], ['requests', ''], ['days', '']]);
+  var head = '<thead><tr><th scope="col">'+esc(t('cmp_metric'))+'</th>' + labels.map(function(l, i){ return '<th scope="col" class="num'+(i === labels.length - 1 ? ' cmp-cur' : '')+'">'+esc(l)+'</th>'; }).join('') + '</tr></thead>';
+  var bodyH = rows.map(function(r){
+    var k = r[0], strong = k === 'net' || k === 'remaining' || k === 'sales';
+    return '<tr class="'+(strong ? 'cmp-strong' : '')+(k === 'short' ? ' cmp-sep' : '')+'"><th scope="row"><span class="cmp-op" aria-hidden="true">'+r[1]+'</span>'+esc(t('cmp_m_' + k))+'</th>' + cols2.map(function(p, i){
+      var v = p.T[k], prev = i ? cols2[i - 1].T[k] : null, dl = i ? cmpDelta_(v, prev, k) : null;
+      return '<td class="num'+(i === cols2.length - 1 ? ' cmp-cur' : '')+'"><b>'+esc(cmpFmt_(k, v))+'</b>' + (dl && dl.d ? '<span class="cmp-dl '+dl.tone+'">'+(dl.d > 0 ? '▲ ' : dl.d < 0 ? '▼ ' : '')+esc(k === 'requests' ? String(Math.abs(dl.d)) : k === 'days' ? (Math.round(Math.abs(dl.d) * 10) / 10).toFixed(1) : money(Math.abs(dl.d)))+(dl.pct != null && dl.d ? ' · ' + esc(crpPctTxt_(Math.abs(dl.pct))) : '')+'</span>' : '') + '</td>'; }).join('') + '</tr>'; }).join('');
+  var mc = el('<section class="card crp-card no-collapse"><h2>'+esc(t('cmp_table'))+'</h2><p class="muted crp-hint">'+esc(t('cmp_tableHint'))+'</p><div class="crp-tw cmp-tw" data-noexport><table class="crp-tbl cmp-tbl" data-nosort>'+head+'<tbody>'+bodyH+'</tbody></table></div></section>');
+  root.appendChild(mc);
+  var sh = [[t('cmp_metric')].concat(labels.reduce(function(a, l, i){ return a.concat(i ? [l, t('crp_change'), t('crp_changePct')] : [l]); }, []))];
+  rows.forEach(function(r){ var k = r[0]; sh.push([t('cmp_m_' + k)].concat(cols2.reduce(function(a, p, i){ var v = p.T[k]; var dl = i ? cmpDelta_(v, cols2[i - 1].T[k], k) : null;
+    return a.concat(i ? [crpXv_(v, k === 'requests' || k === 'days' ? 'int' : 'money'), dl ? crpXv_(dl.d, 'money') : '', dl && dl.pct != null ? crpPctTxt_(dl.pct) : ''] : [crpXv_(v, k === 'requests' || k === 'days' ? 'int' : 'money')]); }, []))); });
+  sheets.push({ name: t('cmp_table'), rows: sh, note: sentence, noBars: true });
+  // small multiples: one chart per figure, one bar per period, each on its own scale
+  var sm = el('<section class="card crp-card no-collapse"><h2>'+esc(t('cmp_small'))+'</h2><p class="muted crp-hint">'+esc(t('cmp_smallHint'))+'</p><div class="cmp-sm"></div></section>');
+  var smHost = qs('.cmp-sm', sm);
+  rows.forEach(function(r){
+    var k = r[0], vals = cols2.map(function(p){ return p.T[k] == null ? 0 : Math.abs(p.T[k]); }), mx = Math.max.apply(null, vals.concat([0]));
+    var cur = cols2[cols2.length - 1].T[k], dl = cols2.length > 1 ? cmpDelta_(cur, cols2[cols2.length - 2].T[k], k) : null;
+    var c = el('<div class="cmp-mini"><div class="cmp-mh"><span>'+esc(t('cmp_m_' + k))+'</span>'+(dl && dl.d ? '<em class="cmp-dl '+dl.tone+'">'+(dl.d > 0 ? '▲' : '▼')+(dl.pct != null ? ' ' + esc(crpPctTxt_(Math.abs(dl.pct))) : '')+'</em>' : '')+'</div><b class="num">'+esc(cmpFmt_(k, cur))+'</b><div class="cmp-mb" role="img" aria-label="'+esc(t('cmp_m_' + k) + ': ' + cols2.map(function(p, i){ return labels[i] + ' ' + cmpFmt_(k, p.T[k]); }).join(', '))+'">' +
+      vals.map(function(v, i){ return '<span class="cmp-bw" title="'+esc(labels[i] + ': ' + cmpFmt_(k, cols2[i].T[k]))+'"><i class="crp-gy'+(i === vals.length - 1 ? ' cur' : '')+'" style="--p:'+(mx ? (v / mx).toFixed(4) : 0)+';--i:'+i+'"></i></span>'; }).join('') + '</div></div>');
+    smHost.appendChild(c);
+  });
+  root.appendChild(sm);
+  // the breakdown: per area, branch, collector or city, one figure across the periods
+  var metric = CMP_M_.indexOf(S.metric) >= 0 ? S.metric : 'net';
+  var keys = {}; cols2.forEach(function(p){ Object.keys(p.G).forEach(function(k){ keys[k] = 1; }); });
+  var klist = Object.keys(keys).sort(function(a, b){ var x = (P[0].G[b] || {})[metric] || 0, y = (P[0].G[a] || {})[metric] || 0; return x - y; });
+  var bc = el('<section class="card crp-card no-collapse"><h2>'+esc(t('cmp_breakdown'))+'</h2><p class="muted crp-hint">'+esc(t('cmp_breakdownHint'))+'</p><div class="cmp-bb"><div class="col-chips" role="group" aria-label="'+esc(t('cmp_by'))+'">' +
+    ['area', 'branch', 'collector', 'city'].map(function(k){ return '<button type="button" class="col-chip'+(k === by ? ' on' : '')+'" data-by="'+k+'" aria-pressed="'+(k === by)+'">'+esc(t('crp_by_' + k))+'</button>'; }).join('') + '</div><div class="field cmp-mf"><label>'+esc(t('cmp_metric'))+'</label><select class="cmp-ms">' +
+    rows.map(function(r){ return '<option value="'+r[0]+'"'+(r[0] === metric ? ' selected' : '')+'>'+esc(t('cmp_m_' + r[0]))+'</option>'; }).join('') + '</select></div></div></section>');
+  qs('.col-chips', bc).addEventListener('click', function(ev){ var b = ev.target.closest('.col-chip'); if (!b) return; S.by = b.dataset.by; cmpSave_(); cmpDraw_(body, S, periods, entries, handoffs); });
+  qs('.cmp-ms', bc).addEventListener('change', function(ev){ S.metric = ev.target.value; cmpSave_(); cmpDraw_(body, S, periods, entries, handoffs); });
+  var bHead = '<thead><tr><th scope="col">'+esc(t('crp_by_' + by))+'</th>' + labels.map(function(l, i){ return '<th scope="col" class="num'+(i === labels.length - 1 ? ' cmp-cur' : '')+'">'+esc(l)+'</th>'; }).join('') + '</tr></thead>';
+  function cell(v, prev, i){ var dl = i ? cmpDelta_(v, prev, metric) : null; return '<b>'+esc(cmpFmt_(metric, v))+'</b>' + (dl && dl.d ? '<span class="cmp-dl '+dl.tone+'">'+(dl.d > 0 ? '▲ ' : '▼ ')+esc(dl.pct != null ? crpPctTxt_(Math.abs(dl.pct)) : t('crp_new'))+'</span>' : ''); }
+  var bBody = klist.map(function(k){ return '<tr><th scope="row">'+esc(nameOf(k))+'</th>' + cols2.map(function(p, i){ var g = p.G[k], v = g ? g[metric] : (metric === 'days' ? null : 0), pg = i ? cols2[i - 1].G[k] : null, pv = i ? (pg ? pg[metric] : (metric === 'days' ? null : 0)) : null;
+    return '<td class="num'+(i === cols2.length - 1 ? ' cmp-cur' : '')+'">'+cell(v, pv, i)+'</td>'; }).join('') + '</tr>'; }).join('');
+  var bFoot = '<tfoot><tr class="crp-tot"><th scope="row">'+esc(t('rp_total'))+'</th>' + cols2.map(function(p, i){ return '<td class="num'+(i === cols2.length - 1 ? ' cmp-cur' : '')+'">'+cell(p.T[metric], i ? cols2[i - 1].T[metric] : null, i)+'</td>'; }).join('') + '</tr></tfoot>';
+  bc.appendChild(el('<div class="crp-tw cmp-tw" data-noexport><table class="crp-tbl cmp-tbl" data-nosort>'+bHead+'<tbody>'+bBody+'</tbody>'+bFoot+'</table></div>'));
+  root.appendChild(bc);
+  var bs = [[t('crp_by_' + by)].concat(labels)];
+  klist.forEach(function(k){ bs.push([nameOf(k)].concat(cols2.map(function(p){ var g = p.G[k]; return crpXv_(g ? g[metric] : 0, metric === 'requests' || metric === 'days' ? 'int' : 'money'); }))); });
+  bs.push([t('rp_total')].concat(cols2.map(function(p){ return crpXv_(p.T[metric], metric === 'requests' || metric === 'days' ? 'int' : 'money'); })));
+  sheets.push({ name: (t('cmp_breakdown') + ' - ' + t('cmp_m_' + metric)).slice(0, 31), rows: bs, note: sentence });
 }
 // what is chosen in the Handoffs bar, kept across redraws of the screen (2026-10-14)
 var HF_STATE_ = {};
@@ -20624,8 +20864,9 @@ function plDayName_(d){
 // the dates the screen asks for: a month (up to today while it runs), or a range
 // Period presets (Zoho Books' list); weeks start on Sunday, as in Saudi Arabia.
 var PL_PRESETS_ = ['today', 'yesterday', 'thisWeek', 'lastWeek', 'thisMonth', 'lastMonth', 'thisQuarter', 'lastQuarter', 'thisYear', 'lastYear', 'last7', 'last30', 'last90'];
-function plPresetRange_(p){
-  var td = localToday_(), x = td.split('-').map(Number), d = new Date(Date.UTC(x[0], x[1] - 1, x[2]));
+// today may be given (the reports' tests pass a fixed day)
+function plPresetRange_(p, today){
+  var td = today || localToday_(), x = td.split('-').map(Number), d = new Date(Date.UTC(x[0], x[1] - 1, x[2]));
   function ymd(dt){ return dt.toISOString().slice(0, 10); }
   function add(dt, n){ var c = new Date(dt.getTime()); c.setUTCDate(c.getUTCDate() + n); return c; }
   var y = x[0], m = x[1] - 1, q = Math.floor(m / 3);
