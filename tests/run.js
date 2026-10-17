@@ -6096,5 +6096,160 @@ console.log('--- every dashboard card opens a pivot whose total is the card, to 
   check(/outline/.test(clientFn_('drillPivotView_')) && /entryDocView_/.test(clientFn_('drillPivotView_')), 'drill: the Excel export carries the tree, and a transaction opens its document');
 })();
 
+console.log('--- collection reports: the same rows as Collections, and every pure report helper adds up to the cent (2026-10-15) ---');
+(function () {
+  // server: collectionReports is collectionsData plus fields, same scope for every role
+  [['admin', adminTok], ['finance', financeTok], ['deputy', walidTok]].forEach(function (p) {
+    var a = call({ action: 'collectionsData', token: p[1] }), b = call({ action: 'collectionReports', token: p[1] });
+    var same = a.ok && b.ok && a.requests.length === b.requests.length && a.requests.every(function (r, i) { var q = b.requests[i]; return q.id === r.id && q.amount === r.amount && q.stage === r.stage && q.holder === r.holder; });
+    check(same, 'reports: ' + p[0] + ' gets exactly the Collections rows (' + (a.requests || []).length + ')');
+    check(b.ok && b.requests.every(function (r) { return r.rp && Array.isArray(r.rp.corrections) && Array.isArray(r.rp.hopCorrections); }), 'reports: every row carries its report fields');
+  });
+  check(!call({ action: 'collectionReports' }).ok, 'reports: needs a sign-in');
+  var corrected = ctx.readSheet(SHEETS.HANDOFFS).filter(function (h) { return h.kind === 'cluster_to_collector' && (h.receiptCorrections || []).length; });
+  if (corrected.length) {
+    var rAll = call({ action: 'collectionReports', token: adminTok }).requests;
+    var hit = rAll.filter(function (r) { return r.id === corrected[0].id; })[0];
+    check(!hit || (hit.rp.corrections.length === corrected[0].receiptCorrections.length && hit.rp.corrections[0].toAmount === corrected[0].receiptCorrections[0].toAmount), 'reports: a corrected receipt carries its corrections');
+  }
+  var withMix = call({ action: 'collectionReports', token: adminTok }).requests.filter(function (r) { return r.rp && r.rp.mix; });
+  check(withMix.length > 0, 'reports: requests carry the mix of their takings');
+
+  // client: load the pure helpers with colCompute_ itself
+  var names = ['hoDay_', 'colDay_', 'colCompute_', 'crpC_', 'crpStageOk_', 'crpSide_', 'crpPct_', 'crpBucket_', 'crpTrend_', 'crpAgeB_', 'crpAgingBy_', 'crpTransit_', 'crpHopDrops_', 'crpShort_', 'crpHrs_', 'crpDeputy_',
+    'crpTransfers_', 'crpEvents_', 'crpStatement_', 'crpBranchStmt_', 'crpMixOf_', 'crpMix_', 'crpMovers_', 'crpExceptions_', 'crpHeat_', 'cpDays_', 'prdIso_', 'prdD_', 'plPresetRange_', 'prdRange_', 'prdShift_'];
+  var src = names.map(function (n) { var s = clientFn_(n); check(!!s, 'reports: ' + n + ' exists'); return s; }).join('\n');
+  var mixSrc = [clientVar_('CRP_MIX_', ';'), clientVar_('PL_PRESETS_', ';'), clientVar_('PRD_ALIAS_', ';')].join('\n');
+  var K = new Function('localToday_', mixSrc + '\n' + src + '\nreturn {' + names.map(function (n) { return n + ':' + n; }).join(',') + '};')(function () { return '2026-10-14'; });
+  var loc = { b1: { city: 'Riyadh', clusterId: 'a1' }, b2: { city: 'Riyadh', clusterId: 'a1' }, b3: { city: 'Jeddah', clusterId: 'a2' } };
+  var locOf = function (id) { return loc[id] || {}; };
+  function q(id, o) {
+    var r = { id: id, txNo: 'H-' + id, fromUserId: o.am || 'am1', toUserId: o.to || 'k1', holder: o.holder || o.to || 'k1', locationId: o.loc, clusterId: loc[o.loc].clusterId, createdAt: o.day + 'T09:00:00.000Z',
+      amount: o.amount, sentAmount: o.sent != null ? o.sent : o.amount, shortfall: o.short || 0, stage: o.stage, status: o.status || (o.stage === 'deputy' ? 'pending_deputy' : o.stage === 'pending' ? 'pending' : o.stage === 'returned' ? 'returned' : o.stage === 'disputed' ? 'disputed' : 'confirmed'),
+      confirmedAt: o.conf ? o.conf + 'T10:00:00.000Z' : null, stageAt: (o.stageAt || o.day) + 'T11:00:00.000Z', hops: o.hops || [], depositId: o.dep || null, depositNo: o.dep ? 'D-' + o.dep : '', depositedAt: o.depAt ? o.depAt + 'T12:00:00.000Z' : null,
+      depositBy: o.depBy || null, reconciled: !!o.rec, dateChanged: !!o.dch, dateMismatch: !!o.dmx, handoffDate: o.day, entryDates: [o.day],
+      rp: { deputyAt: o.depAtD ? o.depAtD : (o.stage === 'deputy' || o.stage === 'returned' ? null : o.day + 'T15:00:00.000Z'), returnedAt: o.retAt || null, returnReason: o.reason || '', corrections: o.corr || [], hopCorrections: [], mix: o.mix || null } };
+    return r;
+  }
+  var reqs = [
+    q('r1', { loc: 'b1', day: '2026-10-10', amount: 1000, stage: 'deposited', conf: '2026-10-10', dep: 'd1', depAt: '2026-10-12', depBy: 'k1', rec: true, mix: { cashSales: 1300, card: 400, credit: 200, transfer: 50, direct: 0, other: 30, dFee: 20, cFee: 5, chFee: 15 } }),
+    q('r2', { loc: 'b2', day: '2026-10-11', amount: 450.5, short: 49.5, stage: 'held', conf: '2026-10-11', mix: { cashSales: 500, card: 0, credit: 0, transfer: 0, direct: 0, other: 0, dFee: 0, cFee: 0, chFee: 0 } }),
+    // received by k1, handed to k2 (received 290 of 300), banked by k2
+    q('r3', { loc: 'b1', day: '2026-10-12', amount: 290, sent: 300, short: 10, stage: 'deposited', conf: '2026-10-12', holder: 'k2', dep: 'd2', depAt: '2026-10-13', depBy: 'k2',
+      hops: [{ id: 'h1', txNo: 'HCC-1', fromUserId: 'k1', toUserId: 'k2', status: 'confirmed', at: '2026-10-12T13:00:00.000Z', confirmedAt: '2026-10-12T14:00:00.000Z', amount: 290, shortfall: 10, carried: 290 }] }),
+    q('r4', { loc: 'b3', day: '2026-10-13', amount: 0.1, stage: 'pending', to: 'k2' }),
+    q('r5', { loc: 'b3', day: '2026-10-13', amount: 700.33, stage: 'deputy', to: 'k2', am: 'am2' }),
+    q('r6', { loc: 'b3', day: '2026-10-01', amount: 99.99, stage: 'held', conf: '2026-10-02', to: 'k2', dch: true }),
+    q('r7', { loc: 'b2', day: '2026-10-12', amount: 80, stage: 'returned', retAt: '2026-10-12T18:00:00.000Z', reason: 'wrong day' }),
+    q('r8', { loc: 'b1', day: '2026-09-15', amount: 400, stage: 'deposited', conf: '2026-09-15', dep: 'd0', depAt: '2026-09-16', depBy: 'k1' })
+  ];
+  var base = { today: '2026-10-14', from: '2026-10-01', to: '2026-10-14', locOf: locOf };
+  var D = K.colCompute_(reqs, base), T = D.T;
+  function c(v) { return Math.round(v * 100); }
+  check(c(T.total) === c(1000 + 450.5 + 290 + 0.1 + 700.33 + 99.99) && c(T.deposited) === c(1290) && c(T.remaining) === c(T.total) - c(1290), 'reports: the period\'s totals are the Collections figures');
+  var tr = K.crpTrend_(D, 'day'), trW = K.crpTrend_(D, 'week'), trM = K.crpTrend_(D, 'month');
+  [tr, trW, trM].forEach(function (b, i) {
+    check(b.reduce(function (s, x) { return s + c(x.sent); }, 0) === c(T.total) && b.reduce(function (s, x) { return s + c(x.banked); }, 0) === c(T.deposited) && c(b[b.length - 1].open) === c(T.remaining), 'reports: trend by ' + ['day', 'week', 'month'][i] + ' adds up to sent, banked and still out');
+  });
+  check(trW[0].key === '2026-09-27' && trM.length === 1 && trM[0].key === '2026-10', 'reports: weeks start on Sunday, months group by month');
+  var ag = K.crpAgingBy_(D);
+  check(ag.tot.every(function (v, i) { return c(v) === c(D.aging[i]); }) && c(ag.total) === c(T.remaining), 'reports: aging per collector adds up to the screen\'s aging and to what is out');
+  var trn = K.crpTransit_(D);
+  check(trn.reduce(function (s, g) { return s + c(g.amount); }, 0) === c(T.remaining) && trn.some(function (g) { return g.key === 'am:am2' && c(g.amount) === c(700.33); }), 'reports: cash in transit adds up to what is out; the deputy\'s wait sits with the area manager');
+  var sh = K.crpShort_(D);
+  check(c(sh.T.net) === c(T.short) && c(sh.T.receipt) === c(49.5) && c(sh.T.transfer) === c(10) && sh.people.some(function (p) { return p.key === 'k1' && c(p.short) === c(10); }), 'reports: shortfalls split into receipt 49.50 and hand-on 10.00, the hand-on charged to its sender');
+  var side = K.crpSide_(reqs, base);
+  check(side.length === 1 && side[0].st === 'returned' && side[0].r.id === 'r7', 'reports: a returned request is found through the same filter');
+  check(K.crpSide_(reqs, { today: '2026-10-14', from: '2026-10-01', to: '2026-10-14', locOf: locOf, branch: 'b1' }).length === 0, 'reports: the side rows follow the place filters');
+  var dq = K.crpDeputy_(D.rows.concat(side), '2026-10-14T09:00:00.000Z');
+  check(dq.n === 6 && dq.wait.length === 1 && Math.abs(dq.avg - (6 * 5 + 9) / 6) < 1e-9 && dq.ams.length === 1, 'reports: deputy time counts validations and returns, the waiting one apart (avg ' + dq.avg + ')');
+  var tf = K.crpTransfers_(D.rows);
+  check(tf.list.length === 1 && tf.list[0].before === 300 && tf.list[0].after === 290 && tf.pairs[0].amount === 300, 'reports: a hand-on carries what was sent and what arrived');
+  // statements: the closing balance is exactly what the collector holds
+  var all = K.colCompute_(reqs, { today: '2026-10-14', locOf: locOf }).rows;
+  ['k1', 'k2'].forEach(function (k) {
+    var st = K.crpStatement_(all, k, '', '');
+    var held = all.filter(function (x) { return x.st === 'held' && x.r.holder === k; }).reduce(function (s, x) { return s + c(x.r.amount); }, 0);
+    check(st.opening === 0 && c(st.closing) === held, 'reports: ' + k + '\'s statement closes on what he holds (' + st.closing + ')');
+    var p = K.crpStatement_(all, k, '2026-10-01', '2026-10-14');
+    check(c(p.opening) + c(p.received) - c(p.handed) - c(p.banked) === c(p.closing) && c(p.closing) === held, 'reports: ' + k + '\'s period statement: opening + in - out = closing');
+  });
+  var k1p = K.crpStatement_(all, 'k1', '2026-10-01', '2026-10-14');
+  check(c(k1p.opening) === 0 && c(k1p.received) === c(1000 + 450.5 + 300) && c(k1p.handed) === c(300) && c(k1p.banked) === c(1000), 'reports: k1 received 1,750.50, handed on 300, banked 1,000 in October');
+  var bs = K.crpBranchStmt_(D);
+  check(bs.reduce(function (s, b) { return s + c(b.net); }, 0) === c(T.total) && bs.reduce(function (s, b) { return s + c(b.declared) - c(b.short) - c(b.net); }, 0) === 0 && bs.reduce(function (s, b) { return s + c(b.banked) + c(b.open); }, 0) === c(T.total), 'reports: branch statements: declared - short = net = banked + out');
+  // composition: kinds add up to the total and the shares to 100.0
+  var M = K.crpMix_(D.rows);
+  var kinds = K.CRP_MIX_ || ['cash', 'card', 'credit', 'transfer', 'direct', 'other', 'fee', 'chFee'];
+  check(kinds.reduce(function (s, k) { return s + c(M.T.v[k]); }, 0) === c(M.T.total), 'reports: the kinds of collection add up to the total');
+  check(Math.round(M.T.pct.reduce(function (s, v) { return s + v; }, 0) * 10) === 1000, 'reports: the shares add up to 100.0%');
+  check(c(M.T.v.card) === c(400) && c(M.T.v.credit) === c(200) && c(M.T.v.fee) === c(25) && c(M.T.v.cash) === c(1300 - 200 - 50 - 20 + 500 + 300 + 0.1 + 700.33 + 99.99), 'reports: cash is the sales less credit, transfers, direct deposits and the bank delivery fee; requests without a breakdown count as cash');
+  var Mb = K.crpMix_(D.rows, function (x) { return x.r.locationId; });
+  check(Mb.groups.reduce(function (s, g) { return s + c(g.total); }, 0) === c(M.T.total) && Mb.groups.every(function (g) { return Math.round(g.pct.reduce(function (s, v) { return s + v; }, 0) * 10) === 1000; }), 'reports: per branch the kinds add up, and each branch\'s shares to 100.0%');
+  check(K.crpPct_([1, 1, 1]).join() === '33.4,33.3,33.3' && K.crpPct_([0, 0]).join() === '0,0', 'reports: shares are rounded so they always make 100.0');
+  // comparison helpers, exceptions, heat
+  var Dp = K.colCompute_(reqs, { today: '2026-10-14', from: '2026-09-01', to: '2026-09-30', locOf: locOf });
+  var mv = K.crpMovers_(D.branches, Dp.branches, 'total');
+  check(mv.reduce(function (s, r) { return s + c(r.delta); }, 0) === c(T.total) - c(Dp.T.total), 'reports: the movers\' changes add up to the change of the total');
+  var ex = K.crpExceptions_(D, side, '2026-10-14');
+  function exN(id) { var e = ex.filter(function (x) { return x.id === id; })[0]; return e ? e.n : 0; }
+  check(exN('old') === 1 && exN('short') === 2 && exN('problem') === 1 && exN('dates') === 1 && exN('heldLong') === 2, 'reports: exceptions find the old, the short, the open return, the date change and the cash held long');
+  var H = K.crpHeat_(D);
+  check(H.rows.reduce(function (s, r) { return s + c(r.total); }, 0) === c(T.total), 'reports: the branch calendar adds up to the total');
+  check(K.crpStageOk_({ stage: 'moving' }, 'onway') && K.crpStageOk_({ stage: 'disputed' }, 'problem') && !K.crpStageOk_({ stage: 'held' }, 'deposited'), 'reports: the stage filter groups pending and moving, and the problems');
+  // the period picker and the periods before
+  var pr = K.prdRange_;
+  check(pr('thisWeek', '2026-10-14').from === '2026-10-11' && pr('lastWeek', '2026-10-14').to === '2026-10-10' && pr('thisQuarter', '2026-10-14').from === '2026-10-01' && pr('lastQuarter', '2026-10-14').from === '2026-07-01' && pr('lastQuarter', '2026-10-14').to === '2026-09-30', 'periods: weeks and quarters');
+  check(pr('ytd', '2026-10-14').from === '2026-01-01' && pr('lastYear', '2026-10-14').to === '2025-12-31' && pr('90d', '2026-10-14').from === '2026-07-17' && pr('lastMonth', '2026-03-10').to === '2026-02-28', 'periods: year to date, last year, 90 days, a short February');
+  var ps = K.prdShift_;
+  check(JSON.stringify(ps({ from: '2026-10-01', to: '2026-10-14' }, 'month', 'period', 1)) === '{"from":"2026-09-01","to":"2026-09-14"}', 'periods: this month to the 14th compares with last month to the 14th');
+  check(JSON.stringify(ps({ from: '2026-09-01', to: '2026-09-30' }, 'lastMonth', 'period', 1)) === '{"from":"2026-08-01","to":"2026-08-31"}', 'periods: a whole month compares with the whole month before');
+  check(JSON.stringify(ps({ from: '2026-07-01', to: '2026-09-30' }, 'lastQuarter', 'period', 2)) === '{"from":"2026-01-01","to":"2026-03-31"}', 'periods: two quarters back');
+  check(JSON.stringify(ps({ from: '2026-10-01', to: '2026-10-14' }, 'month', 'year', 1)) === '{"from":"2025-10-01","to":"2025-10-14"}', 'periods: the same dates a year before');
+  check(JSON.stringify(ps({ from: '2026-10-08', to: '2026-10-14' }, '7d', 'period', 1)) === '{"from":"2026-10-01","to":"2026-10-07"}' && ps({ from: '', to: '' }, 'all', 'period', 1) === null, 'periods: rolling days step by their length; all time has nothing before');
+})();
+
+console.log('--- comparison: periods by entry date, the dashboard\'s figures, changes coloured by good or bad (2026-10-15) ---');
+(function () {
+  var cx = vm.createContext({ state: { meta: { config: { vatRate: 0.15 } } } });
+  var src = [clientVar_('CMP_M_', ';'), clientVar_('CMP_GOOD_', ';'), clientVar_('EQ_PARTS_', '\n};'), clientVar_('PL_PRESETS_', ';'), clientVar_('PRD_ALIAS_', ';')].concat(['vatRateClient_', 'vatRateFor_', 'entryAmt_', 'localToday_', 'prdIso_', 'prdD_', 'plPresetRange_', 'prdRange_', 'prdShift_', 'cmpPeriods_', 'cmpCompute_', 'cmpDelta_'].map(function (n) { var s = clientFn_(n); check(!!s, 'comparison: ' + n + ' exists'); return s; }));
+  vm.runInContext(src.join('\n'), cx);
+  // the whole file against the server's own report: sales and cash to collect tie to the cent
+  var rep = call({ action: 'getSalesReport', token: adminTok }), hos = call({ action: 'listHandoffs', token: adminTok });
+  check(rep.ok && hos.ok, 'comparison: the report and the handovers load');
+  var all = cx.cmpCompute_(rep.entries, hos.handoffs, [{ from: '', to: '', k: 0 }], {})[0].T;
+  var Tt = rep.totals;
+  check(Math.round(all.sales * 100) === Math.round((Tt.storeCash + Tt.carCash + Tt.posCash + Tt.posSales) * 100), 'comparison: sales equal the report\'s sales (' + all.sales + ')');
+  check(Math.round(all.net * 100) === Math.round(Tt.netCashOwed * 100), 'comparison: cash to collect equals the report\'s net (' + all.net + ' / ' + Tt.netCashOwed + ')');
+  check(Math.round((all.sales - all.card - all.direct - all.other + all.additions) * 100) === Math.round(all.net * 100), 'comparison: sales - card - direct - other + additions = cash to collect');
+  check(Math.round((all.deposited + all.remaining) * 100) === Math.round(all.net * 100) && all.deposited > 0 && all.requests > 0, 'comparison: deposited + remaining = cash to collect');
+  // a fixture: two months, one day banked, one held, one short
+  var E = [
+    { id: 'e1', date: '2026-09-10', locationId: 'b1', cashSales: 1000, posSales: 200, vatRate: 0.15, consumedBy: 'l1' },
+    { id: 'e2', date: '2026-10-05', locationId: 'b1', cashSales: 600, directDepositAmount: 100, vatRate: 0.15, consumedBy: 'l2' },
+    { id: 'e3', date: '2026-10-06', locationId: 'b2', cashSales: 300, expenseAmount: 20, vatRate: 0.15 },
+    { id: 'e4', date: '2026-10-07', locationId: 'b2', cashSales: 50, voided: true }
+  ];
+  var H = [
+    { id: 'l1', kind: 'location_to_cluster', status: 'confirmed', consumedBy: 'c1', createdAt: '2026-09-10T10:00:00Z' },
+    { id: 'c1', kind: 'cluster_to_collector', status: 'confirmed', consumedBy: 'd1', createdAt: '2026-09-10T12:00:00Z', shortfall: 0 },
+    { id: 'd1', kind: 'deposit', status: 'completed', createdAt: '2026-09-13T09:00:00Z' },
+    { id: 'l2', kind: 'location_to_cluster', status: 'confirmed', consumedBy: 'c2', createdAt: '2026-10-05T10:00:00Z' },
+    { id: 'c2', kind: 'cluster_to_collector', status: 'confirmed', createdAt: '2026-10-05T12:00:00Z', shortfall: 25 }
+  ];
+  var per = cx.cmpPeriods_('month', '2026-10-15', '', '', 'period', 1);
+  check(per.length === 2 && per[0].from === '2026-10-01' && per[0].to === '2026-10-15' && per[1].from === '2026-09-01' && per[1].to === '2026-09-15', 'comparison: this month to the 15th against last month to the 15th');
+  var per3 = cx.cmpPeriods_('lastMonth', '2026-10-15', '', '', 'period', 3);
+  check(per3.length === 4 && per3[3].from === '2026-06-01' && per3[3].to === '2026-06-30', 'comparison: three whole months back');
+  check(cx.cmpPeriods_('month', '2026-10-15', '', '', 'year', 2)[2].from === '2024-10-01' && cx.cmpPeriods_('month', '2026-10-15', '', '', 'period', 40).length === 13, 'comparison: years back, and never more than 12 periods');
+  var R = cx.cmpCompute_(E, H, [{ from: '2026-10-01', to: '2026-10-31' }, { from: '2026-09-01', to: '2026-09-30' }], { keyOf: function (e) { return e.locationId; } });
+  var oct = R[0].T, sep = R[1].T;
+  check(sep.sales === 1200 && sep.card === 200 && sep.net === 1000 && sep.deposited === 1000 && sep.remaining === 0 && sep.requests === 1 && sep.days === 3, 'comparison: September: 1,200 sold, 1,000 to collect, banked in 3 days');
+  check(oct.sales === 900 && oct.direct === 100 && oct.net === 780 && oct.deposited === 0 && oct.remaining === 780 && oct.short === 25 && oct.requests === 1 && oct.days === null, 'comparison: October: the voided day left out, 780 to collect, still out, 25 short');
+  check(R[0].G.b1.net + R[0].G.b2.net === oct.net && R[0].G.b2.other === 20, 'comparison: the breakdown adds up to the total');
+  var dSales = cx.cmpDelta_(900, 1200, 'sales'), dRem = cx.cmpDelta_(780, 0, 'remaining'), dDays = cx.cmpDelta_(2, 3, 'days');
+  check(dSales.d === -300 && dSales.tone === 'bad' && Math.round(dSales.pct) === -25 && dRem.tone === 'bad' && dRem.pct === null && dDays.tone === 'good' && cx.cmpDelta_(5, 5, 'net').tone === 'flat' && cx.cmpDelta_(6, 5, 'requests').tone === 'flat', 'comparison: a change is good or bad by the figure\'s own direction');
+})();
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);

@@ -2583,6 +2583,42 @@ function actionCollectionsData_(req, user) {
   return { ok: true, requests: out };
 }
 
+// ---------- Collection reports (2026-10-15): collectionsData plus what the reports read ----------
+// Read-only and additive: the very rows of collectionsData (same scope, same stages, same
+// amounts), each with a few more fields of its own handover: the deputy's decision and its
+// time, a return, a dispute and how it ended, the version that replaced a returned request,
+// receipt corrections (its own and its hops'), and the mix of the takings behind it, read
+// from the breakdown it was sent with. Reasons go only to company-wide roles and the
+// request's own parties.
+function actionCollectionReports_(req, user) {
+  var base = actionCollectionsData_(req, user);
+  if (!base.ok) return base;
+  var byId = Object.create(null);
+  readSheet(SHEETS.HANDOFFS).forEach(function (h) { byId[h.id] = h; });
+  var wide = isCompanyWide_(user.role);
+  function n(b, k) { return Math.round(Number((b || {})[k] || 0) * 100) / 100; }
+  base.requests.forEach(function (r) {
+    var h = byId[r.id]; if (!h) return;
+    var party = wide || h.fromUserId === user.id || h.toUserId === user.id || r.holder === user.id;
+    var nx = h.resubmittedAs ? byId[h.resubmittedAs] : null, b = h.breakdown || null;
+    r.rp = {
+      createdBy: h.createdBy || h.fromUserId || null,
+      deputyAt: h.deputyValidatedAt || null, deputyBy: h.deputyValidatedBy || null,
+      returnedAt: h.deputyReturnedAt || null, returnedBy: h.deputyReturnedBy || null, returnReason: party ? (h.returnReason || '') : '',
+      fixedAt: nx ? nx.createdAt : null, fixedNo: nx ? (nx.txNo || '') : '', superseded: !!h.supersededBy, resubmitOf: h.resubmitOf || null,
+      disputedAt: h.disputedAt || null, disputedBy: h.disputedBy || null, disputeNote: party ? (h.disputeNote || '') : '',
+      resolvedAt: h.resolvedAt || null, resolvedBy: h.resolvedBy || null, resolutionNote: party ? (h.resolutionNote || '') : '',
+      corrections: (h.receiptCorrections || []).map(function (c) { return { at: c.at, by: c.by, fromAmount: c.fromAmount, toAmount: c.toAmount, depositId: c.depositId || null, reason: party ? (c.reason || '') : '' }; }),
+      leftDepositId: h.leftDepositId || null,
+      hopCorrections: (r.hops || []).reduce(function (a, hp) { var x = byId[hp.id]; return a.concat(((x && x.receiptCorrections) || []).map(function (c) { return { hopId: hp.id, at: c.at, by: c.by, fromAmount: c.fromAmount, toAmount: c.toAmount, reason: party ? (c.reason || '') : '' }; })); }, []),
+      // the parts as typed (the client splits them into kinds; no net figure is worked out here)
+      mix: b ? { cashSales: Math.round((n(b, 'storeCash') + n(b, 'carCash') + n(b, 'posCash')) * 100) / 100, card: n(b, 'posSales'), credit: n(b, 'creditSales'), transfer: n(b, 'bankTransfers'),
+        direct: n(b, 'directDeposit'), other: n(b, 'otherCash'), dFee: n(b, 'deliveryFee'), cFee: n(b, 'creditDeliveryFees'), chFee: n(b, 'channelDeliveryFees') } : null
+    };
+  });
+  return base;
+}
+
 // ---------- Attachments (deposit slips) — private Drive, never public ----------
 
 function depositsFolder_() {
