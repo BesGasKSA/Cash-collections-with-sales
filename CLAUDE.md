@@ -1655,8 +1655,34 @@ should have history for the numbers changes in all areas; it's very sensitive".
   shown: remaining chart + sortable table, phone = cards; with a collector chosen the rest are dimmed
   from `D0`, the same filters minus the collector), Bank deposits, then the charts. Bars and figures
   animate on every redraw (not only the first), none under reduced motion. `colFill_` fills repeated
-  placeholders (`fillTemplate_` is local to another function). Known gap: the server sends no
-  `depositHasSlip`/`depositBy`, so the slip tag is hidden and the depositor falls back to the holder.
+  placeholders (`fillTemplate_` is local to another function). The server sends
+  `depositHasSlip` (to the depositor and company-wide roles) and `depositBy`; the deposit row's
+  "Slip attached" tag follows it.
+
+## The bank deposit needs its slip (2026-10-17)
+
+- **Server** (`actionRecordDeposit_`): no slip, no deposit (`deposit_needs_photo`). The slip
+  goes up first through `uploadEntryPhoto` (collectors are in `ENTRY_PHOTO_ROLES_` now) and
+  the deposit names it as `attachmentId`: it must exist, be the depositor's own upload and
+  unused, else `invalid_photo`; on save `claimPhoto_` marks it used by the deposit. An older
+  screen that still sends `fileBase64` inline is accepted. The check runs after the
+  held-cash, amount and date checks; `dryRun` (the date preview) still answers without a
+  slip. Deposits recorded before carry whatever they had and are never rewritten. الموازنات
+  are unchanged (`checkDepositSlip_`): the form needs a photo, an admin's file import and
+  the area manager's Excel batch may still skip it.
+- **Client** `slipField_({label, onChange})` is the one slip field (collector home's
+  `chDepositSheet_`, the Handovers deposit card, every الموازنة line): two big buttons
+  ("Take photo": `accept="image/*" capture="environment"`; "Choose from gallery or files":
+  `image/*,application/pdf`), then a thumbnail (or a PDF tile) with Retake / Remove and a
+  status line (`role=status`) with an indeterminate bar while it is prepared and uploaded.
+  `photoToB64_` makes photos at most 1600px on the long side, JPEG 0.8, upright through
+  `createImageBitmap(file, {imageOrientation:'from-image'})` (falls back to `<img>`, which
+  modern browsers also draw upright). PDFs go as they are, up to the server's 8,000,000
+  base64 characters. `slipGate_` keeps the deposit button disabled with a line under it
+  ("Attach the bank slip to continue" / "Wait for the slip to finish uploading"). A deposit
+  refused with `invalid_photo` clears the field. Strings `slip_*` (ar/en/ur).
+- **Viewing**: the deposit's document shows the slip (`getFile`); its row on Handovers
+  carries "Slip attached" (`.ho-slip`), and the Collections deposit row its tag.
 
 ## What is waiting on a person: welcome popup, bell, home hero (2026-10-05)
 

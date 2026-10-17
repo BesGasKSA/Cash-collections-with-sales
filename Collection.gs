@@ -444,7 +444,8 @@ function claimPhoto_(photoId, entryId) {
   writeRow(SHEETS.ENTRY_PHOTOS, ph);
 }
 // The photo goes up before the entry, so the entry request stays small.
-var ENTRY_PHOTO_ROLES_ = ['admin', 'store_manager', 'driver', 'cluster_manager', 'branch_worker'];
+// The collector uploads his bank slip the same way before recordDeposit (2026-10-17).
+var ENTRY_PHOTO_ROLES_ = ['admin', 'store_manager', 'driver', 'cluster_manager', 'branch_worker', 'collector'];
 function actionUploadEntryPhoto_(req, user) {
   if (ENTRY_PHOTO_ROLES_.indexOf(user.role) < 0) return { ok: false, error: 'forbidden' };
   var b64 = String(req.fileBase64 || '');
@@ -2312,10 +2313,18 @@ function actionRecordDeposit_(req, user) {
   var derr = hoStampDate_(dctx, dcand, req.handoffDate, req.dateChangeReason, user);
   if (derr) return { ok: false, error: derr };
 
-  var attachmentId = null;
-  if (req.fileBase64) {
+  // A bank deposit needs its slip (2026-10-17): a photo or PDF the depositor
+  // uploaded first (uploadEntryPhoto, one use, only by its uploader), or one an
+  // older screen still sends inline. Deposits recorded before keep what they had.
+  var attachmentId = null, slipPhoto = null;
+  if (req.attachmentId) {
+    slipPhoto = getById_(SHEETS.ENTRY_PHOTOS, String(req.attachmentId));
+    if (!slipPhoto || slipPhoto.uploadedBy !== user.id || slipPhoto.usedBy) return { ok: false, error: 'invalid_photo' };
+    attachmentId = slipPhoto.id;
+  } else if (req.fileBase64) {
+    if (String(req.fileBase64).length > 8000000) return { ok: false, error: 'invalid_input' };
     attachmentId = saveDepositSlip_(req.fileBase64, req.fileName, req.fileMime);
-  }
+  } else return { ok: false, error: 'deposit_needs_photo' };
 
   var deposit = {
     id: Utilities.getUuid(),
@@ -2337,6 +2346,7 @@ function actionRecordDeposit_(req, user) {
   };
   HO_DATE_FIELDS_.forEach(function (k) { if (dcand[k] !== undefined) deposit[k] = dcand[k]; });
   writeRow(SHEETS.HANDOFFS, deposit);
+  if (slipPhoto) claimPhoto_(slipPhoto.id, deposit.id);
   held.forEach(function (h) { h.consumedBy = deposit.id; writeRow(SHEETS.HANDOFFS, h); });
   logAudit_('record_deposit', user.id, deposit.id);
   hoAuditDate_(deposit, user);

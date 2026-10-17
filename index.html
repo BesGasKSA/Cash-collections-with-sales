@@ -1676,6 +1676,7 @@
   .ho-st .badge{padding:1px 8px;font-size:10.5px;white-space:nowrap;}
   .ho-st em{font-style:normal;font-size:10.5px;font-weight:700;white-space:nowrap;}
   .ho-st em.neg{color:var(--danger);} .ho-st em.pos{color:var(--ok);}
+  .ho-st em.ho-slip{color:var(--green-dark);background:var(--green-pale);border-radius:999px;padding:1px 7px;}
   .ho-when{font-size:10.5px;color:var(--muted-2);white-space:nowrap;text-align:end;}
   .ho-chev svg.ic2{width:15px;height:15px;opacity:.5;display:block;transform:scaleX(var(--fx));transition:transform .2s cubic-bezier(.2,.8,.2,1);}
   .ho-item.open .ho-chev svg.ic2{transform:rotate(90deg);opacity:.8;}
@@ -2568,14 +2569,45 @@
   .cp-foot .btn svg{width:16px;height:16px;}
   .err-t{color:var(--c-danger);font-weight:700;font-size:13px;}
   @media (min-width:900px){ .cp-list{grid-template-columns:repeat(2,minmax(0,1fr));} }
-  .dp-photo{margin-top:6px;padding:10px 12px;border:1px dashed var(--border);border-radius:12px;background:var(--card);}
-  .dp-photo-l{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:700;margin-bottom:8px;}
-  .dp-photo-l svg{width:16px;height:16px;}
-  .dp-photo-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
-  .dp-photo-row .btn{min-height:44px;}
-  .dpThumb{width:56px;height:56px;object-fit:cover;border-radius:10px;border:1px solid var(--border-soft);}
-  .dpPhotoState{font-size:12.5px;font-weight:700;}
-  .dpPhotoState.busy{color:var(--muted);} .dpPhotoState.ok{color:var(--green-dark);} .dpPhotoState.err{color:var(--c-danger);}
+  .dp-photo{margin-top:6px;}
+  /* the bank-slip field, one look everywhere a slip is asked for (2026-10-17) */
+  .slipf{margin:4px 0 12px;padding:12px;border:1.5px dashed var(--border);border-radius:14px;background:var(--card);}
+  .slipf.f-bad{border-color:var(--c-danger,#C14A30);background:color-mix(in srgb,var(--c-danger,#C14A30) 5%,var(--card));}
+  .slipf[data-state="ok"]{border-style:solid;border-color:color-mix(in srgb,var(--green) 45%,var(--border));}
+  .slipf-l{display:flex;align-items:center;gap:6px;font-size:14px;font-weight:700;color:var(--text);}
+  .slipf-l .ic2{width:18px;height:18px;flex:none;}
+  .slipf-l .req{color:var(--c-danger,#C14A30);}
+  .slipf-hint{margin:4px 0 10px;font-size:12.5px;line-height:1.6;color:var(--muted);}
+  .slipf-pick{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .slipf-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-height:88px;padding:10px 8px;border:1.5px solid color-mix(in srgb,var(--green) 35%,var(--border));border-radius:14px;background:color-mix(in srgb,var(--green) 7%,var(--card));color:var(--green-dark);font:inherit;font-size:14px;font-weight:700;line-height:1.35;text-align:center;cursor:pointer;touch-action:manipulation;transition:transform .12s ease-out,background-color .15s ease-out;}
+  .slipf-btn .ic2{width:28px;height:28px;}
+  .slipf-btn:hover{background:color-mix(in srgb,var(--green) 13%,var(--card));}
+  .slipf-btn:active,.slipf-act:active{transform:scale(.97);}
+  .slipf-btn:focus-visible,.slipf-act:focus-visible{outline:3px solid #1F5E8C;outline-offset:2px;}
+  .slipf-have{display:grid;grid-template-columns:64px minmax(0,1fr);gap:10px 12px;align-items:center;margin-top:2px;}
+  .slipf-have[hidden],.slipf-pick[hidden]{display:none;}
+  .slipf-th{width:64px;height:64px;border-radius:10px;border:1px solid var(--border);overflow:hidden;display:grid;place-items:center;background:var(--bg);}
+  .slipf-th img{width:100%;height:100%;object-fit:cover;display:block;}
+  .slipf-pdf{font-weight:800;font-size:13px;color:var(--c-danger,#C14A30);}
+  .slipf-info{min-width:0;display:flex;flex-direction:column;gap:5px;}
+  .slipf-name{font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  html[dir="rtl"] .slipf-name{text-align:right;}
+  .slipf-st{font-size:13px;font-weight:700;line-height:1.5;}
+  .slipf-st.busy{color:var(--muted);} .slipf-st.ok{color:var(--green-dark);} .slipf-st.err{color:var(--c-danger,#C14A30);}
+  .slipf-bar{display:block;height:6px;border-radius:3px;background:var(--border-soft);overflow:hidden;position:relative;}
+  .slipf-bar[hidden]{display:none;}
+  .slipf-bar i{position:absolute;top:0;bottom:0;left:0;width:40%;border-radius:3px;background:var(--green);animation:slipfBar 1.1s ease-in-out infinite;}
+  html[dir="rtl"] .slipf-bar i{left:auto;right:0;animation-name:slipfBarR;}
+  @keyframes slipfBar{0%{transform:translateX(-100%);}100%{transform:translateX(250%);}}
+  @keyframes slipfBarR{0%{transform:translateX(100%);}100%{transform:translateX(-250%);}}
+  .slipf-acts{grid-column:1 / -1;display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .slipf-act{display:flex;align-items:center;justify-content:center;gap:6px;min-height:48px;padding:6px 8px;border:1px solid var(--border);border-radius:12px;background:var(--card);color:var(--text);font:inherit;font-size:14px;font-weight:700;cursor:pointer;touch-action:manipulation;transition:transform .12s ease-out;}
+  .slipf-act .ic2{width:18px;height:18px;flex:none;}
+  .slipf-act.danger{color:var(--c-danger,#C14A30);}
+  .slip-gate{margin:8px 0 0;font-size:13px;font-weight:700;line-height:1.5;color:var(--muted);text-align:center;}
+  .slip-gate[hidden]{display:none;}
+  .ch-cta:disabled,#hDeposit:disabled{opacity:.55;cursor:not-allowed;transform:none;}
+  @media (prefers-reduced-motion:reduce){.slipf-bar i{animation:none;width:100%;opacity:.45;}.slipf-btn,.slipf-act{transition:none;}}
   .ciOwn{font-size:11.5px;font-weight:800;color:var(--green-dark);background:var(--green-pale);border-radius:999px;padding:1px 8px;margin-inline-start:4px;}
   .eLine.bad{outline:2px solid var(--c-danger);outline-offset:2px;border-radius:12px;}
   #eSubmit.busy{opacity:.7;pointer-events:none;}
@@ -3566,7 +3598,7 @@
   .ch-steps em{font-style:normal;background:#F2EEE4;color:#35503A;border-radius:999px;padding:0 6px;margin-inline-start:2px;}
   .ch-cta{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:54px;margin-top:16px;border:0;border-radius:14px;background:#F2EEE4;color:#2B4230;font:inherit;font-size:16px;font-weight:800;cursor:pointer;transition:transform .1s cubic-bezier(.2,0,0,1);}
   .ch-cta .ic2{width:22px;height:22px;}
-  .ch-cta:active,.ch-ok:active,.ch-other:active,.ch-link:active,.ch-photo:active{transform:scale(.97);}
+  .ch-cta:active,.ch-ok:active,.ch-other:active,.ch-link:active{transform:scale(.97);}
   .ch-none{margin:14px 0 0;font-size:13.5px;opacity:.9;}
   .ch-sec{background:#fff;border-radius:18px;padding:16px;}
   .ch-h{display:flex;align-items:center;gap:8px;font-size:16px;margin:0 0 12px;}
@@ -3599,8 +3631,6 @@
   .ch-link .ic2{width:18px;height:18px;}
   .ch-dep .field{margin-bottom:12px;}
   .ch-hint{font-size:12px;margin-top:4px;}
-  .ch-photo{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:50px;border:1.5px dashed #C9D2C6;border-radius:12px;background:#F7F8F5;color:var(--green);font:inherit;font-weight:700;cursor:pointer;}
-  .chdPrev{display:block;max-width:140px;max-height:140px;border-radius:10px;margin-top:8px;}
   .ch-dep .ch-cta{background:#2E7D4F;color:#fff;}
   @keyframes chRise{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
   .ch-rise{animation:chRise .3s cubic-bezier(0,0,.2,1) both;animation-delay:calc(var(--i,0) * 40ms);}
@@ -4892,6 +4922,30 @@ var L = {
   };
   ['ar', 'en', 'ur'].forEach(function(lg){ Object.keys(X[lg]).forEach(function(k){ L[lg][k] = X[lg][k]; }); });
 })();
+// The bank-slip field (2026-10-17)
+(function(){
+  var X = {
+    en: { slip_hint:'Required. Take a clear photo of the whole slip, or choose a photo or PDF.', slip_take:'Take photo', slip_choose:'Choose from gallery or files',
+      slip_retake:'Retake', slip_remove:'Remove', slip_compressing:'Preparing the photo...', slip_reading:'Reading the file...', slip_uploading:'Uploading the slip...',
+      slip_ready:'Slip attached', slip_failed:'The slip did not upload. Try again.', slip_failedNet:'No connection. The slip did not upload; try again.',
+      slip_unreadable:'This file could not be read. Take a photo, or choose a JPG, PNG or PDF.', slip_tooBig:'This file is too large. Take a photo instead, or choose a smaller PDF.',
+      slip_type:'Only a photo or a PDF can be attached.', slip_preview:'Preview of the deposit slip', slip_needed:'Attach the bank slip to continue.',
+      slip_waitUpload:'Wait for the slip to finish uploading.', handoff_slip:'Bank deposit slip' },
+    ar: { slip_hint:'إلزامي. صوّر الإيصال كاملًا بوضوح، أو اختر صورة أو ملف PDF.', slip_take:'التقاط صورة', slip_choose:'اختيار من المعرض أو الملفات',
+      slip_retake:'إعادة التصوير', slip_remove:'إزالة', slip_compressing:'جارٍ تجهيز الصورة...', slip_reading:'جارٍ قراءة الملف...', slip_uploading:'جارٍ رفع الإيصال...',
+      slip_ready:'تم إرفاق الإيصال', slip_failed:'لم يُرفع الإيصال. حاول مرة أخرى.', slip_failedNet:'لا يوجد اتصال. لم يُرفع الإيصال، حاول مرة أخرى.',
+      slip_unreadable:'تعذّرت قراءة هذا الملف. صوّر الإيصال، أو اختر صورة JPG أو PNG أو ملف PDF.', slip_tooBig:'الملف كبير جدًا. صوّر الإيصال بدلًا منه، أو اختر ملف PDF أصغر.',
+      slip_type:'يمكن إرفاق صورة أو ملف PDF فقط.', slip_preview:'معاينة إيصال الإيداع', slip_needed:'أرفق إيصال الإيداع البنكي للمتابعة.',
+      slip_waitUpload:'انتظر حتى يكتمل رفع الإيصال.', handoff_slip:'إيصال الإيداع البنكي' },
+    ur: { slip_hint:'لازمی۔ پوری رسید کی صاف تصویر لیں، یا تصویر یا PDF منتخب کریں۔', slip_take:'تصویر لیں', slip_choose:'گیلری یا فائلوں سے منتخب کریں',
+      slip_retake:'دوبارہ تصویر لیں', slip_remove:'ہٹائیں', slip_compressing:'تصویر تیار ہو رہی ہے...', slip_reading:'فائل پڑھی جا رہی ہے...', slip_uploading:'رسید اپ لوڈ ہو رہی ہے...',
+      slip_ready:'رسید منسلک ہو گئی', slip_failed:'رسید اپ لوڈ نہیں ہوئی۔ دوبارہ کوشش کریں۔', slip_failedNet:'کنکشن نہیں ہے۔ رسید اپ لوڈ نہیں ہوئی، دوبارہ کوشش کریں۔',
+      slip_unreadable:'یہ فائل پڑھی نہیں جا سکی۔ تصویر لیں، یا JPG، PNG یا PDF منتخب کریں۔', slip_tooBig:'فائل بہت بڑی ہے۔ اس کی جگہ تصویر لیں، یا چھوٹی PDF منتخب کریں۔',
+      slip_type:'صرف تصویر یا PDF منسلک کی جا سکتی ہے۔', slip_preview:'جمع رسید کا پیش منظر', slip_needed:'آگے بڑھنے کے لیے بینک رسید منسلک کریں۔',
+      slip_waitUpload:'رسید کے اپ لوڈ ہونے کا انتظار کریں۔', handoff_slip:'بینک جمع رسید' }
+  };
+  ['ar', 'en', 'ur'].forEach(function(lg){ Object.keys(X[lg]).forEach(function(k){ L[lg][k] = X[lg][k]; }); });
+})();
 function t(k){ var l=L[state.lang]||L.ar; return l[k]!==undefined ? l[k] : (L.en[k]!==undefined?L.en[k]:k); }
 function dirFor(lang){ return lang==='en' ? 'ltr' : 'rtl'; }
 // ---- labels for the v2 design (shell, statements, drill-down, documents) ----
@@ -6148,6 +6202,8 @@ var ICONS = {
   bell: '<path class="d" d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>',
   logout: '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/>',
   menu: '<path d="M4 7h16M4 12h16M4 17h16"/>',
+  camera: '<path class="d" d="M3 9a2 2 0 0 1 2-2h2.5L9 4.5h6L16.5 7H19a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M3 9a2 2 0 0 1 2-2h2.5L9 4.5h6L16.5 7H19a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><circle cx="12" cy="13" r="3.5"/>',
+  gallery: '<rect class="d" x="3" y="4" width="18" height="16" rx="2"/><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.8"/><path d="m21 16-5-5-8.5 9"/>',
   chevron: '<path d="M9 18l6-6-6-6"/>',
   back: '<path d="M15 18l-6-6 6-6"/>',
   plus: '<path d="M12 5v14M5 12h14"/>',
@@ -10746,40 +10802,39 @@ function chDepositSheet_(heldAmt){
     sub: t('ch_bankSub'),
     render: function(b){
       var f = el('<div class="ch-dep">' +
-        '<div class="field"><label>'+esc(t('dep_amount'))+'</label><input class="chdAmt" type="text" inputmode="decimal" placeholder="0.00" autocomplete="off"><div class="muted ch-hint">'+esc(t('dep_amountHint'))+'</div></div>' +
-        '<div class="field"><label>'+esc(t('handoff_bankRef'))+'</label><input class="chdRef" autocomplete="off"></div>' +
-        '<div class="field"><label>'+esc(t('handoff_slip'))+'</label><button type="button" class="ch-photo">'+icon_('doc')+'<span>'+esc(t('handoff_takePhoto'))+'</span></button>' +
-          '<input class="chdFile" type="file" accept="image/*" capture="environment" hidden><img class="chdPrev" hidden alt=""></div>' +
+        '<div class="field"><label for="chdAmt">'+esc(t('dep_amount'))+'</label><input id="chdAmt" class="chdAmt" type="text" inputmode="decimal" placeholder="0.00" autocomplete="off"><div class="muted ch-hint">'+esc(t('dep_amountHint'))+'</div></div>' +
+        '<div class="field"><label for="chdRef">'+esc(t('handoff_bankRef'))+'</label><input id="chdRef" class="chdRef" autocomplete="off"></div>' +
+        '<div class="chdSlip"></div>' +
         '<div class="chdDate"></div>' +
-        '<button type="button" class="ch-cta chdGo">'+icon_('check')+'<span>'+esc(t('ch_confirmDeposit'))+'</span></button><div class="chdMsg"></div></div>');
-      var file = null;
+        '<button type="button" class="ch-cta chdGo" aria-describedby="chdGate">'+icon_('check')+'<span>'+esc(t('ch_confirmDeposit'))+'</span></button>' +
+        '<p class="slip-gate" id="chdGate" aria-live="polite"></p><div class="chdMsg"></div></div>');
+      // the slip is required (2026-10-17): the button waits for it
+      var gate = null, slip = slipField_({ onChange: function(){ if (gate) gate(); } });
+      qs('.chdSlip', f).appendChild(slip.node);
+      gate = slipGate_(qs('.chdGo', f), qs('.slip-gate', f), slip);
       var hfdSh = hfdField_(); qs('.chdDate', f).appendChild(hfdSh.node);
       api('recordDeposit', { dryRun: true }, { silent: true }).then(function(dr){ hfdSh.set(dr.ok && dr.dates ? dr.dates : null); });
-      qs('.ch-photo', f).addEventListener('click', function(){ qs('.chdFile', f).click(); });
-      qs('.chdFile', f).addEventListener('change', function(){
-        file = this.files && this.files[0]; if (!file) return;
-        var rd = new FileReader(); rd.onload = function(){ var im = qs('.chdPrev', f); im.src = rd.result; im.hidden = false; }; rd.readAsDataURL(file);
-      });
       qs('.chdGo', f).addEventListener('click', function(ev){
         var amt = numFromInput_(qs('.chdAmt', f)), ref = qs('.chdRef', f).value.trim(), msg = qs('.chdMsg', f), btn = ev.currentTarget;
         if (!(amt > 0)) { msg.innerHTML = '<div class="msg err">'+esc(t('err_depAmountRequired'))+'</div>'; return; }
         if (!ref) { msg.innerHTML = '<div class="msg err">'+esc(t('err_depositNeedsReference'))+'</div>'; return; }
+        if (!slip.id()) { msg.innerHTML = '<div class="msg err">'+esc(t('err_depositNeedsPhoto'))+'</div>'; slip.flag(); return; }
         function run_(){
-        btn.disabled = true;
-        function send(fd){
-          var p = { bankReference: ref, depositAmount: amt };
+          btn.disabled = true;
+          var p = { bankReference: ref, depositAmount: amt, attachmentId: slip.id() };
           Object.assign(p, hfdSh.payload());
-          if (fd) { p.fileBase64 = fd.base64; p.fileName = fd.name; p.fileMime = fd.mime; }
           api('recordDeposit', p).then(function(r){
-            btn.disabled = false;
-            if (!r.ok) { msg.innerHTML = '<div class="msg err">'+esc(errMsg_(r))+'</div>'; markErrField_(f, r); return; }
+            gate();
+            if (!r.ok) {
+              msg.innerHTML = '<div class="msg err">'+esc(errMsg_(r))+'</div>'; markErrField_(f, r);
+              // a slip the server will not take (already used): pick it again
+              if (r.error === 'invalid_photo' || r.error === 'deposit_needs_photo') { slip.reset(); slip.flag(); }
+              return;
+            }
             drawerClose_();
             render();
             heldPopup_(t('hp_banked').replace('{amount}', money(r.handoff ? r.handoff.amount : amt)));
           });
-        }
-        if (file) { var rd = new FileReader(); rd.onload = function(){ send({ base64: String(rd.result).split(',')[1], name: file.name, mime: file.type }); }; rd.readAsDataURL(file); }
-        else send(null);
         }
         hfdGate_(hfdSh.host, [{ f: hfdSh }], run_);
       });
@@ -11149,26 +11204,166 @@ function branchIdsForEntry_(){
 // One collapsible money block for the entry screen. Colour comes from the
 // same category tokens the dashboard statements use, so "delivery", "banked"
 // and "expense" mean the same colour wherever they appear.
-// A picked photo, scaled to at most 1600px and sent as JPEG: a phone camera
-// shot is several MB, and the slip only needs to be readable.
+/// A picked photo, made small before it goes up (2026-10-17): longest side 1600px,
+// JPEG at 0.8. createImageBitmap reads the EXIF orientation, so a phone held
+// sideways still sends an upright slip; without it the browser's <img> already
+// draws upright. A transparent PNG gets white behind it, not black.
+var SLIP_MAX_PX_ = 1600, SLIP_JPEG_Q_ = 0.8, SLIP_B64_MAX_ = 8000000;
 function photoToB64_(file, cb){
-  var reader = new FileReader();
-  reader.onerror = function(){ cb(null); };
-  reader.onload = function(){
-    var img = new Image();
-    img.onerror = function(){ cb(null); };
-    img.onload = function(){
-      try {
-        var scale = Math.min(1, 1600 / Math.max(img.width, img.height));
-        var c = document.createElement('canvas');
-        c.width = Math.round(img.width * scale); c.height = Math.round(img.height * scale);
-        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
-        cb({ base64: c.toDataURL('image/jpeg', 0.82).split(',')[1], name: String(file.name || 'slip').replace(/\.[^.]+$/, '') + '.jpg' });
-      } catch (e) { cb(null); }
+  var done = false;
+  function out(v){ if (!done) { done = true; cb(v); } }
+  function draw(src, w, h){
+    var scale = Math.min(1, SLIP_MAX_PX_ / Math.max(w, h));
+    var c = document.createElement('canvas');
+    c.width = Math.max(1, Math.round(w * scale)); c.height = Math.max(1, Math.round(h * scale));
+    var g = c.getContext('2d');
+    g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height);
+    g.drawImage(src, 0, 0, c.width, c.height);
+    return { base64: c.toDataURL('image/jpeg', SLIP_JPEG_Q_).split(',')[1], name: String(file.name || 'slip').replace(/\.[^.]+$/, '') + '.jpg', mime: 'image/jpeg' };
+  }
+  function viaImg(){
+    var reader = new FileReader();
+    reader.onerror = function(){ out(null); };
+    reader.onload = function(){
+      var img = new Image();
+      img.onerror = function(){ out(null); };
+      img.onload = function(){
+        try { out(draw(img, img.naturalWidth || img.width, img.naturalHeight || img.height)); } catch (e) { out(null); }
+      };
+      img.src = reader.result;
     };
-    img.src = reader.result;
+    reader.readAsDataURL(file);
+  }
+  var p = null;
+  if (window.createImageBitmap) { try { p = createImageBitmap(file, { imageOrientation: 'from-image' }); } catch (e) { p = null; } }
+  if (!p) { viaImg(); return; }
+  p.then(function(bm){
+    var r = null;
+    try { r = draw(bm, bm.width, bm.height); if (bm.close) bm.close(); } catch (e) { r = null; }
+    if (r) out(r); else viaImg();
+  }, function(){ viaImg(); });
+}
+function fileToB64_(file, cb){
+  var r = new FileReader();
+  r.onerror = function(){ cb(null); };
+  r.onload = function(){ cb(String(r.result || '').split(',')[1] || null); };
+  r.readAsDataURL(file);
+}
+// One bank-slip field for every place a slip is asked for (2026-10-17): two big
+// buttons (camera; gallery or files), then a preview with retake and remove while
+// it is made small and uploaded (uploadEntryPhoto, one use, only by its uploader).
+// opts: label, onChange(field). Returns { node, id(), busy(), reset(), restore(id), flag() }.
+var SLIP_SEQ_ = 0;
+function slipField_(opts){
+  opts = opts || {};
+  var uid = 'slf' + (++SLIP_SEQ_), last = 'cam', token = 0, cur = { id: null, busy: false };
+  var node = el('<div class="slipf" role="group" aria-labelledby="'+uid+'l" data-state="empty">' +
+    '<div class="slipf-l" id="'+uid+'l">'+icon_('doc')+'<span>'+esc(opts.label || t('handoff_slip'))+'</span><span class="req" aria-hidden="true">*</span></div>' +
+    '<p class="slipf-hint" id="'+uid+'h">'+esc(t('slip_hint'))+'</p>' +
+    '<div class="slipf-pick">' +
+      '<button type="button" class="slipf-btn slipf-cam" aria-describedby="'+uid+'h">'+icon_('camera')+'<span>'+esc(t('slip_take'))+'</span></button>' +
+      '<button type="button" class="slipf-btn slipf-gal" aria-describedby="'+uid+'h">'+icon_('gallery')+'<span>'+esc(t('slip_choose'))+'</span></button>' +
+    '</div>' +
+    '<div class="slipf-have" hidden>' +
+      '<div class="slipf-th"><img alt="" hidden><span class="slipf-pdf" hidden>PDF</span></div>' +
+      '<div class="slipf-info"><b class="slipf-name" dir="auto"></b><span class="slipf-st" role="status" aria-live="polite"></span>' +
+        '<span class="slipf-bar" hidden aria-hidden="true"><i></i></span></div>' +
+      '<div class="slipf-acts"><button type="button" class="slipf-act slipf-re">'+icon_('camera')+'<span>'+esc(t('slip_retake'))+'</span></button>' +
+        '<button type="button" class="slipf-act danger slipf-rm">'+icon_('close')+'<span>'+esc(t('slip_remove'))+'</span></button></div>' +
+    '</div>' +
+    '<input class="slipf-in-cam" type="file" accept="image/*" capture="environment" hidden data-native tabindex="-1" aria-hidden="true">' +
+    '<input class="slipf-in-gal" type="file" accept="image/*,application/pdf" hidden data-native tabindex="-1" aria-hidden="true">' +
+  '</div>');
+  var inCam = qs('.slipf-in-cam', node), inGal = qs('.slipf-in-gal', node), img = qs('.slipf-th img', node);
+  function paint(stName, text){
+    node.dataset.state = stName;
+    var s = qs('.slipf-st', node);
+    s.className = 'slipf-st ' + stName; s.textContent = text || '';
+    qs('.slipf-bar', node).hidden = stName !== 'busy';
+    qs('.slipf-pick', node).hidden = stName !== 'empty';
+    qs('.slipf-have', node).hidden = stName === 'empty';
+    node.setAttribute('aria-busy', stName === 'busy' ? 'true' : 'false');
+    if (stName === 'ok') node.classList.remove('f-bad');
+  }
+  function emit(){ if (opts.onChange) opts.onChange(field); }
+  function take(file, from){
+    if (!file) return;
+    last = from;
+    var my = ++token;
+    cur.id = null; cur.busy = true;
+    var isPdf = /^application\/pdf$/i.test(file.type || '') || /\.pdf$/i.test(file.name || '');
+    var isImg = /^image\//i.test(file.type || '') || /\.(jpe?g|png|gif|webp|hei[cf])$/i.test(file.name || '');
+    qs('.slipf-name', node).textContent = file.name || t('handoff_slip');
+    img.hidden = true; img.removeAttribute('src'); qs('.slipf-pdf', node).hidden = !isPdf;
+    function fail(k){ if (my !== token) return; cur.busy = false; cur.id = null; paint('err', t(k)); emit(); }
+    if (!isPdf && !isImg) { fail('slip_type'); return; }
+    paint('busy', t(isPdf ? 'slip_reading' : 'slip_compressing')); emit();
+    function send(b64, name, mime){
+      if (my !== token) return;
+      if (!b64) return fail('slip_unreadable');
+      if (b64.length > SLIP_B64_MAX_) return fail('slip_tooBig');
+      paint('busy', t('slip_uploading'));
+      api('uploadEntryPhoto', { fileBase64: b64, fileName: name, fileMime: mime }, { silent: true }).then(function(res){
+        if (my !== token) return;
+        if (!res || !res.ok) return fail(res && res.error === 'network' ? 'slip_failedNet' : 'slip_failed');
+        cur.busy = false; cur.id = res.fileId;
+        paint('ok', t('slip_ready')); emit();
+      });
+    }
+    if (isPdf) fileToB64_(file, function(b){ send(b, String(file.name || 'slip.pdf').slice(0, 80), 'application/pdf'); });
+    else photoToB64_(file, function(o){
+      if (o && my === token) { img.src = 'data:image/jpeg;base64,' + o.base64; img.alt = t('slip_preview'); img.hidden = false; }
+      send(o && o.base64, o && o.name, 'image/jpeg');
+    });
+  }
+  function reset(){
+    token++; cur.id = null; cur.busy = false;
+    img.removeAttribute('src'); img.hidden = true; qs('.slipf-name', node).textContent = '';
+    paint('empty'); emit();
+  }
+  // a slip uploaded before the screen was redrawn (a kept draft): its id still stands
+  function restore(id){
+    if (!id) { reset(); return; }
+    token++; cur.id = id; cur.busy = false;
+    qs('.slipf-name', node).textContent = t('handoff_slip'); qs('.slipf-pdf', node).hidden = true; img.hidden = true;
+    paint('ok', t('slip_ready')); emit();
+  }
+  qs('.slipf-cam', node).addEventListener('click', function(){ inCam.click(); });
+  qs('.slipf-gal', node).addEventListener('click', function(){ inGal.click(); });
+  [[inCam, 'cam'], [inGal, 'gal']].forEach(function(p){
+    p[0].addEventListener('change', function(){ var f = this.files && this.files[0]; this.value = ''; take(f, p[1]); });
+  });
+  qs('.slipf-re', node).addEventListener('click', function(){ (last === 'cam' ? inCam : inGal).click(); });
+  qs('.slipf-rm', node).addEventListener('click', function(){ reset(); try { qs('.slipf-cam', node).focus(); } catch (e) {} });
+  var field = {
+    node: node,
+    id: function(){ return cur.id; },
+    busy: function(){ return cur.busy; },
+    reset: reset, restore: restore,
+    // the slip is what is missing: outline it and bring it into view
+    flag: function(){
+      node.classList.add('f-bad');
+      try {
+        node.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        var b = qs(cur.id ? '.slipf-re' : '.slipf-cam', node);
+        if (b && b.offsetParent !== null) b.focus({ preventScroll: true });
+      } catch (e) {}
+    }
   };
-  reader.readAsDataURL(file);
+  paint('empty');
+  return field;
+}
+// The button that records a deposit waits for the slip: disabled, with a line
+// under it saying why (2026-10-17).
+function slipGate_(btn, hint, field){
+  function sync(){
+    var ok = !!field.id();
+    btn.disabled = !ok;
+    hint.hidden = ok;
+    hint.textContent = field.busy() ? t('slip_waitUpload') : t('slip_needed');
+  }
+  sync();
+  return sync;
 }
 function moneyBlock_(id, colorKey, iconName, titleKey, hintKey, bodyHtml){
   return '<section class="me" id="'+id+'" data-state="closed" style="--c:var(--c-'+colorKey+')">' +
@@ -12493,28 +12688,15 @@ function renderEntries(body){
         var n = qs('.mlNo', row); if (n) n.textContent = (i + 1);
       });
     }
-    function setPhoto_(row, stateName, text){
-      var st = qs('.dpPhotoState', row);
-      st.className = 'dpPhotoState ' + stateName;
-      st.textContent = text || '';
-    }
-    function pick_(row, input){
-      var f = input.files && input.files[0];
-      input.value = '';
-      if (!f) return;
-      delete row.dataset.photoId;
-      row.dataset.uploading = '1';
-      setPhoto_(row, 'busy', t('entry_photoUploading'));
-      photoToB64_(f, function(img){
-        if (!img) { delete row.dataset.uploading; setPhoto_(row, 'err', t('entry_photoFailed')); return; }
-        var th = qs('.dpThumb', row); th.src = 'data:image/jpeg;base64,' + img.base64; th.hidden = false;
-        api('uploadEntryPhoto', { fileBase64: img.base64, fileName: img.name, fileMime: 'image/jpeg' }, { silent: true }).then(function(res){
-          delete row.dataset.uploading;
-          if (!res.ok) { setPhoto_(row, 'err', t('entry_photoFailed')); return; }
-          row.dataset.photoId = res.fileId;
-          setPhoto_(row, 'ok', t('entry_photoReady'));
-        });
-      });
+    // the line's slip is the shared slip field (2026-10-17); the row keeps its id
+    // in dataset.photoId, which rows(), problem() and the draft already read
+    function slipFor_(row){
+      var s = slipField_({ label: t('entry_depositPhoto'), onChange: function(f){
+        if (f.id()) row.dataset.photoId = f.id(); else delete row.dataset.photoId;
+        if (f.busy()) row.dataset.uploading = '1'; else delete row.dataset.uploading;
+      } });
+      row._slip = s;
+      return s.node;
     }
     function add(){
       var row = el('<div class="mline dpLine">' +
@@ -12526,21 +12708,14 @@ function renderEntries(body){
           '<div class="field"><label>'+esc(t('entry_depositRef'))+'<span class="req">*</span></label><input class="dpRef" dir="ltr"></div>' +
           '<div class="field"><label>'+esc(t('entry_depositNote'))+'</label><input class="dpNote" placeholder="'+esc(t('entry_depositNotePlaceholder'))+'"></div>' +
         '</div>' +
-        '<div class="dp-photo"><span class="dp-photo-l">'+icon_('doc')+esc(t('entry_depositPhoto'))+'<span class="req">*</span></span>' +
-          '<div class="dp-photo-row"><button type="button" class="btn secondary dpCam">'+esc(t('handoff_takePhoto'))+'</button>' +
-          '<button type="button" class="btn secondary dpFile">'+esc(t('handoff_chooseFile'))+'</button>' +
-          '<img class="dpThumb" hidden alt="'+esc(t('entry_depositPhoto'))+'"><span class="dpPhotoState" aria-live="polite"></span></div>' +
-          '<input class="dpCamIn" type="file" accept="image/*" capture="environment" hidden><input class="dpFileIn" type="file" accept="image/*" hidden></div>' +
+        '<div class="dp-photo"></div>' +
       '</div>');
+      qs('.dp-photo', row).appendChild(slipFor_(row));
       list.appendChild(row);
       lockDevice_(qs('.dpDevice', row));
       wireCommaInput_(qs('.mlAmount', row), true);
       ['input','blur'].forEach(function(ev){ qs('.mlAmount', row).addEventListener(ev, recompute); });
       qs('.mlDel', row).addEventListener('click', function(){ row.remove(); recompute(); });
-      qs('.dpCam', row).addEventListener('click', function(){ qs('.dpCamIn', row).click(); });
-      qs('.dpFile', row).addEventListener('click', function(){ qs('.dpFileIn', row).click(); });
-      qs('.dpCamIn', row).addEventListener('change', function(){ pick_(row, this); });
-      qs('.dpFileIn', row).addEventListener('change', function(){ pick_(row, this); });
       recompute();
       return row;
     }
@@ -13408,7 +13583,7 @@ function renderEntries(body){
     fill(depositLines, 'eDepositLines', d.deposit, function(row, r){
       set(qs('.dpDevice', row), r.d); set(qs('.dpRef', row), r.ref); set(qs('.dpNote', row), r.n); set(qs('.mlAmount', row), r.a);
       // the slip was uploaded before the refresh: its id still stands
-      if (r.ph) { row.dataset.photoId = r.ph; var st = qs('.dpPhotoState', row); st.className = 'dpPhotoState ok'; st.textContent = t('entry_photoReady'); }
+      if (r.ph) { if (row._slip) row._slip.restore(r.ph); else row.dataset.photoId = r.ph; }
     });
     set(qs('#eNote', form), d.note);
     // the sections that were confirmed, in order, each through its own check
@@ -16067,7 +16242,9 @@ function handoffItem(h, showConfirm, showResolve){
         '<b class="ho-amt"><bdi dir="ltr">'+money(h.amount)+'</bdi></b>' +
         '<i class="ho-who">'+esc(hoSumLine_(h))+'</i>' +
         '<span class="ho-foot"><span class="ho-st">'+statusBadge(h.status) + hfdChip_(h) + (hoReturnNote_(h) ? '<em class="ho-rn">'+esc(hoReturnNote_(h))+'</em>' : '') +
-          (short ? '<em class="'+(short > 0 ? 'neg' : 'pos')+'">'+esc(t(short > 0 ? 'ho_short' : 'ho_over')).replace('{x}', '<bdi dir="ltr">'+money(Math.abs(short))+'</bdi>')+'</em>' : '') + '</span>' +
+          (short ? '<em class="'+(short > 0 ? 'neg' : 'pos')+'">'+esc(t(short > 0 ? 'ho_short' : 'ho_over')).replace('{x}', '<bdi dir="ltr">'+money(Math.abs(short))+'</bdi>')+'</em>' : '') +
+          // a deposit carrying its bank slip says so on its row; the slip opens in its document (2026-10-17)
+          (h.kind === 'deposit' && h.attachmentId ? '<em class="ho-slip">'+esc(t('col_slipYes'))+'</em>' : '') + '</span>' +
         '<small class="ho-when">'+esc(fmtStamp_(h.createdAt))+(h.handoffDate ? '<span class="ho-hdate">'+esc(t('hd_date'))+': <bdi dir="ltr">'+esc(h.handoffDate)+'</bdi></span>' : '')+'</small></span>' +
       '</span>' +
       '<span class="ho-chev">'+icon_('chevron')+'</span>' +
@@ -17026,17 +17203,13 @@ function renderHandoffs(body){
       var dc = el('<div class="card"><h2>'+esc(t('handoff_deposit'))+'</h2>' +
         '<div class="field"><label>'+esc(t('dep_amount'))+'</label><input id="hDepAmt" type="text" inputmode="decimal" autocomplete="off" placeholder="0.00"><div class="muted" style="font-size:12px;margin-top:4px;">'+esc(t('dep_amountHint'))+'</div></div>' +
         '<div class="field"><label>'+esc(t('handoff_bankRef'))+'</label><input id="hBankRef"></div>' +
-        '<div class="field"><label>'+esc(t('handoff_slip'))+'</label>' +
-          '<div class="row">' +
-            '<button type="button" class="btn secondary" id="hSlipCameraBtn">'+esc(t('handoff_takePhoto'))+'</button>' +
-            '<button type="button" class="btn secondary" id="hSlipFileBtn">'+esc(t('handoff_chooseFile'))+'</button>' +
-          '</div>' +
-          '<input id="hSlipCamera" type="file" accept="image/*" capture="environment" hidden>' +
-          '<input id="hSlipFile" type="file" accept="image/*" hidden>' +
-          '<img id="hSlipPreview" hidden style="max-width:160px;max-height:160px;border-radius:8px;margin-top:8px;display:block;">' +
-        '</div>' +
-        '<button class="btn" id="hDeposit">'+esc(t('handoff_deposit'))+'</button><div id="hDepMsg"></div></div>');
+        '<div id="hSlipBox"></div>' +
+        '<button class="btn" id="hDeposit" aria-describedby="hDepGate">'+esc(t('handoff_deposit'))+'</button><p class="slip-gate" id="hDepGate" aria-live="polite"></p><div id="hDepMsg"></div></div>');
       body.appendChild(dc);
+      // the bank slip is required (2026-10-17): the button waits for it
+      var hDepGate = null, hSlip = slipField_({ onChange: function(){ if (hDepGate) hDepGate(); } });
+      qs('#hSlipBox', dc).appendChild(hSlip.node);
+      hDepGate = slipGate_(qs('#hDeposit', dc), qs('#hDepGate', dc), hSlip);
       var hfdDep = hfdField_();
       qs('#hDeposit', dc).parentNode.insertBefore(hfdDep.node, qs('#hDeposit', dc));
       api('recordDeposit', { dryRun: true }, { silent: true }).then(function(dr){ hfdDep.set(dr.ok && dr.dates ? dr.dates : null); });
@@ -17070,23 +17243,6 @@ function renderHandoffs(body){
         }); });
       }
 
-      var pickedFile = null;
-      var preview = qs('#hSlipPreview', dc);
-      function onPicked(input){
-        return function(){
-          var f = input.files && input.files[0];
-          if (!f) return;
-          pickedFile = f;
-          var reader = new FileReader();
-          reader.onload = function(){ preview.src = reader.result; preview.hidden = false; };
-          reader.readAsDataURL(f);
-        };
-      }
-      qs('#hSlipCameraBtn', dc).addEventListener('click', function(){ qs('#hSlipCamera', dc).click(); });
-      qs('#hSlipFileBtn', dc).addEventListener('click', function(){ qs('#hSlipFile', dc).click(); });
-      qs('#hSlipCamera', dc).addEventListener('change', onPicked(qs('#hSlipCamera', dc)));
-      qs('#hSlipFile', dc).addEventListener('change', onPicked(qs('#hSlipFile', dc)));
-
       qs('#hDeposit', dc).addEventListener('click', function(){
         var bankRef = qs('#hBankRef', dc).value;
         // the amount banked is typed first and checked against the cash held (2026-10-12)
@@ -17094,27 +17250,21 @@ function renderHandoffs(body){
         if (!(depAmt > 0)) { qs('#hDepMsg',dc).innerHTML = '<div class="msg err">'+esc(t('err_depAmountRequired'))+'</div>'; qs('#hDepAmt', dc).classList.add('f-bad'); qs('#hDepAmt', dc).focus(); return; }
         if (!String(bankRef || '').trim()) { qs('#hDepMsg',dc).innerHTML = '<div class="msg err">'+esc(t('err_depositNeedsReference'))+'</div>'; qs('#hBankRef', dc).classList.add('f-bad'); qs('#hBankRef', dc).focus(); return; }
         qs('#hDepAmt', dc).classList.remove('f-bad'); qs('#hBankRef', dc).classList.remove('f-bad');
+        if (!hSlip.id()) { qs('#hDepMsg',dc).innerHTML = '<div class="msg err">'+esc(t('err_depositNeedsPhoto'))+'</div>'; hSlip.flag(); return; }
         function go_(){
-        function submit(fileData){
-          var payload = { bankReference: bankRef, depositAmount: depAmt };
+          var btnD = qs('#hDeposit', dc);
+          btnD.disabled = true;
+          var payload = { bankReference: bankRef, depositAmount: depAmt, attachmentId: hSlip.id() };
           Object.assign(payload, hfdDep.payload());
-          if (fileData) { payload.fileBase64 = fileData.base64; payload.fileName = fileData.name; payload.fileMime = fileData.mime; }
           api('recordDeposit', payload).then(function(res2){
+            hDepGate();
             qs('#hDepMsg',dc).innerHTML = res2.ok ? '<div class="msg ok">'+esc(t('ok_saved'))+'</div>' : '<div class="msg err">'+esc(errMsg_(res2))+'</div>';
-            if(!res2.ok) markErrField_(dc, res2);
+            if(!res2.ok) {
+              markErrField_(dc, res2);
+              if (res2.error === 'invalid_photo' || res2.error === 'deposit_needs_photo') { hSlip.reset(); hSlip.flag(); }
+            }
             if(res2.ok) { render(); heldPopup_(t('hp_banked').replace('{amount}', money(res2.handoff ? res2.handoff.amount : depAmt))); }
           });
-        }
-        if (pickedFile){
-          var reader = new FileReader();
-          reader.onload = function(){
-            var base64 = reader.result.split(',')[1];
-            submit({ base64: base64, name: pickedFile.name, mime: pickedFile.type });
-          };
-          reader.readAsDataURL(pickedFile);
-        } else {
-          submit(null);
-        }
         }
         hfdGate_(hfdDep.host, [{ f: hfdDep }], go_);
       });

@@ -115,6 +115,10 @@ function slip(tok, row) {
   if (dev) row.directDepositPosId = dev.id;
   return row;
 }
+// A collector's bank deposit carries a slip he uploaded first (2026-10-17).
+function depSlip(tok) {
+  return call({ action: 'uploadEntryPhoto', token: tok, fileBase64: 'iVBORw0KGgo=', fileName: 'bank-slip.png', fileMime: 'image/png' }).fileId;
+}
 
 console.log('--- xlsx formula check: store cash 7000 + car cash 5000 - delivery 5000 + vat-on-delivery ---');
 var e1 = call({ action: 'createDailyEntry', token: aliTok, date: '2026-09-01', sourceType: 'store', sourceId: store.entity.id, cashSales: 7000 });
@@ -145,8 +149,33 @@ check(handoff2.handoff.perLocation && handoff2.handoff.perLocation.length === 1
 var confirm2 = call({ action: 'confirmHandoff', token: musaTok, id: handoff2.handoff.id });
 check(confirm2.ok && confirm2.handoff.status === 'confirmed', 'collector confirms receipt');
 
-var deposit = call({ action: 'recordDeposit', token: musaTok, bankReference: 'REF-001' });
+console.log('--- a bank deposit needs its slip (2026-10-17) ---');
+// a deposit recorded before the rule, with no slip: it must stay exactly as it was
+var legacyDep = { id: 'legacy-dep-1', kind: 'deposit', fromUserId: musa.id, toUserId: null, amount: 10, bankReference: 'OLD-1', attachmentId: null,
+  sourceEntryIds: [], sourceHandoffIds: [], consumedBy: null, status: 'completed', createdAt: '2026-08-01T08:00:00.000Z' };
+ctx.writeRow(SHEETS.HANDOFFS, legacyDep);
+var legacyBefore = JSON.stringify(ctx.getById_(SHEETS.HANDOFFS, 'legacy-dep-1'));
+var heldBefore = ctx.collectorHeld_(musa.id).map(function (h) { return h.id; }).join(',');
+check(call({ action: 'recordDeposit', token: musaTok, dryRun: true }).ok, 'the date preview still answers before a slip is chosen');
+var noSlip = call({ action: 'recordDeposit', token: musaTok, bankReference: 'REF-001' });
+check(!noSlip.ok && noSlip.error === 'deposit_needs_photo', 'a deposit without its slip is refused (deposit_needs_photo)');
+check(ctx.collectorHeld_(musa.id).map(function (h) { return h.id; }).join(',') === heldBefore, 'a refused deposit leaves the cash with the collector');
+var saraSlip = call({ action: 'uploadEntryPhoto', token: saraTok, fileBase64: 'iVBORw0KGgo=', fileName: 'x.png', fileMime: 'image/png' });
+check(saraSlip.ok, 'an area manager can upload a photo');
+check(call({ action: 'recordDeposit', token: musaTok, attachmentId: saraSlip.fileId, bankReference: 'REF-001' }).error === 'invalid_photo', 'a slip someone else uploaded is refused');
+check(call({ action: 'recordDeposit', token: musaTok, attachmentId: 'no-such-file', bankReference: 'REF-001' }).error === 'invalid_photo', 'an unknown slip id is refused');
+check(call({ action: 'uploadEntryPhoto', token: hassanTok, fileBase64: '' }).error === 'invalid_input', 'an empty upload is refused');
+var musaSlip = call({ action: 'uploadEntryPhoto', token: musaTok, fileBase64: 'JVBERi0xLjQK', fileName: 'slip.pdf', fileMime: 'application/pdf' });
+check(musaSlip.ok && !!musaSlip.fileId, 'the collector uploads his slip (a PDF here) before depositing');
+var deposit = call({ action: 'recordDeposit', token: musaTok, attachmentId: musaSlip.fileId, bankReference: 'REF-001' });
 check(deposit.ok && deposit.handoff.status === 'completed', 'collector records deposit, chain closes');
+check(deposit.handoff.attachmentId === musaSlip.fileId, 'the deposit stores the slip as its attachmentId');
+check(ctx.getById_(SHEETS.ENTRY_PHOTOS, musaSlip.fileId).usedBy === deposit.handoff.id, 'the slip is claimed by that deposit');
+check(call({ action: 'getFile', token: musaTok, fileId: musaSlip.fileId }).ok, 'the depositor opens the slip from the deposit');
+check(call({ action: 'getFile', token: adminTok, fileId: musaSlip.fileId }).ok, 'admin opens the slip too');
+check(call({ action: 'getFile', token: aliTok, fileId: musaSlip.fileId }).error === 'forbidden', 'a branch manager cannot open a deposit slip that is not his');
+check(JSON.stringify(ctx.getById_(SHEETS.HANDOFFS, 'legacy-dep-1')) === legacyBefore, 'a deposit recorded before the rule is untouched');
+check(call({ action: 'listHandoffs', token: adminTok }).handoffs.some(function (h) { return h.id === 'legacy-dep-1' && !h.attachmentId; }), 'the old slip-less deposit still lists as it was');
 close(deposit.handoff.amount, 7652.173913043478, 'deposit amount matches the whole chain');
 check(!!deposit.handoff.breakdown, 'deposit carries a breakdown too');
 close(deposit.handoff.breakdown.netCashOwed, 7652.173913043478, 'deposit breakdown net matches the flat amount');
@@ -186,7 +215,10 @@ check(resolve3b.ok && resolve3b.handoff.status === 'confirmed', 'admin confirms 
 var closeOut = deputyValidates(call({ action: 'createHandoff', token: saraTok, kind: 'cluster_to_collector', clusterId: cluster.entity.id }));
 check(closeOut.ok, 'cluster manager closes out the 1000 handoff separately');
 call({ action: 'confirmHandoff', token: musaTok, id: closeOut.handoff.id, receivedAmount: closeOut.handoff.amount });
-call({ action: 'recordDeposit', token: musaTok, bankReference: 'REF-CLEANUP' });
+check(call({ action: 'recordDeposit', token: musaTok, attachmentId: musaSlip.fileId, bankReference: 'REF-CLEANUP' }).error === 'invalid_photo', 'a slip already used by one deposit is refused for the next');
+// an older screen that still sends the file inline keeps working
+var inlineDep = call({ action: 'recordDeposit', token: musaTok, fileBase64: 'iVBORw0KGgo=', fileName: 'slip.png', fileMime: 'image/png', bankReference: 'REF-CLEANUP' });
+check(inlineDep.ok && !!inlineDep.handoff.attachmentId, 'a slip sent inline with the deposit is accepted and stored');
 
 console.log('--- partial receipt: confirming with a lower amount accepts it immediately, no blocking ---');
 var e4 = call({ action: 'createDailyEntry', token: aliTok, date: '2026-09-03', sourceType: 'store', sourceId: store.entity.id, cashSales: 2000 });
@@ -210,7 +242,7 @@ var exactConfirm = call({ action: 'confirmHandoff', token: musaTok, id: handoff4
 check(exactConfirm.ok && exactConfirm.handoff.status === 'confirmed', 'confirming with a matching amount still confirms normally, no variance fields set');
 check(exactConfirm.handoff.originalAmount === undefined, 'no variance means no originalAmount is recorded');
 
-var deposit4 = call({ action: 'recordDeposit', token: musaTok, bankReference: 'REF-002' });
+var deposit4 = call({ action: 'recordDeposit', token: musaTok, attachmentId: depSlip(musaTok), bankReference: 'REF-002' });
 check(deposit4.ok, 'collector deposits the corrected amount');
 close(deposit4.handoff.amount, 1800, 'deposit reflects the real cash collected, not the original inflated declaration');
 
@@ -455,7 +487,7 @@ close(reconHandoff1.handoff.amount, 555, 'fresh location, so the handoff amount 
 call({ action: 'confirmHandoff', token: reconMgrTok, id: reconHandoff1.handoff.id });
 var reconHandoff2 = deputyValidates(call({ action: 'createHandoff', token: reconMgrTok, kind: 'cluster_to_collector', clusterId: reconCluster.id }));
 call({ action: 'confirmHandoff', token: reconColTok, id: reconHandoff2.handoff.id });
-var reconDeposit = call({ action: 'recordDeposit', token: reconColTok, bankReference: 'BANKREF-555' });
+var reconDeposit = call({ action: 'recordDeposit', token: reconColTok, attachmentId: depSlip(reconColTok), bankReference: 'BANKREF-555' });
 check(reconDeposit.ok, 'deposit recorded for reconciliation scenario');
 close(reconDeposit.handoff.amount, 555, 'deposit amount is exactly the entry amount (store-only, no VAT/delivery)');
 
@@ -1108,7 +1140,7 @@ check(entryAfterApprove.consumedBy === deputyApprove.handoff.id, "each entry's c
 
 var collectorConfirm = call({ action: 'confirmHandoff', token: musaTok, id: deputyApprove.handoff.id, receivedAmount: deputyApprove.handoff.amount });
 check(collectorConfirm.ok, 'the collector can confirm a bulk-originated handoff exactly like a normal one');
-var deposit = call({ action: 'recordDeposit', token: musaTok, bankReference: 'BULK-DEP-1' });
+var deposit = call({ action: 'recordDeposit', token: musaTok, attachmentId: depSlip(musaTok), bankReference: 'BULK-DEP-1' });
 check(deposit.ok, 'and deposit it — the rest of the chain is completely unmodified for a bulk-originated handoff');
 
 console.log('--- areaBulkBatchDetail: the product-level VAT breakdown survives after submission, not just during the dry-run preview ---');
@@ -1970,7 +2002,7 @@ check(call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', id: b
 check(call({ action: 'createHandoff', token: bcMgrTok, kind: 'cluster_to_collector', clusterId: bcArea.id, locationId: location2.entity ? location2.entity.id : location2.id }).error === 'not_found', 'a branch of another area cannot be sent from this one');
 check(call({ action: 'confirmHandoff', token: bcColBTok, id: rA.id }).error === 'receiver_only', 'collector B cannot confirm branch A\'s cash');
 check(call({ action: 'confirmHandoff', token: bcColATok, id: rA.id }).ok && call({ action: 'confirmHandoff', token: bcColBTok, id: rB.id }).ok, 'each collector confirms their own branch');
-var depA = call({ action: 'recordDeposit', token: bcColATok, bankReference: 'BC-A-1' });
+var depA = call({ action: 'recordDeposit', token: bcColATok, attachmentId: depSlip(bcColATok), bankReference: 'BC-A-1' });
 check(depA.ok && depA.handoff.amount === 1000, 'and banks only what they received');
 
 // a CSV batch spanning both branches splits the same way on the deputy's approval
@@ -4522,7 +4554,7 @@ var jrRecvC = jrStep(j4, 'received', 2);
 check(jrRecvC && jrRecvC.byName === 'Jr Collector' && jrRecvC.amount === 790 && jrRecvC.short === 10, 'the collector\'s step shows 790 and the shortfall of 10');
 check(jrLast(j4).k === 'pass_wait' && jrLast(j4).toName === 'Jr Collector', 'then he is to deposit it');
 // the deposit and the bank match
-var jrD = call({ action: 'recordDeposit', token: jrCol.tok, bankReference: 'JR-REF-77' });
+var jrD = call({ action: 'recordDeposit', token: jrCol.tok, attachmentId: depSlip(jrCol.tok), bankReference: 'JR-REF-77' });
 check(jrD.ok && jrD.handoff.amount === 790, 'the collector deposits 790');
 var j5 = jrJ(adminTok, { entryId: jrE1.entry.id });
 check(jrLast(j5).k === 'match_wait' && jrStep(j5, 'deposited').ref === 'JR-REF-77' && jrStep(j5, 'deposited').amount === 790, 'deposited with its bank reference, waiting for the statement');
@@ -5148,7 +5180,7 @@ console.log('--- a branch changes collector; the old one keeps what he holds unt
   check(call({ action: 'confirmHandoff', token: yTok, id: r2.handoff.id }).ok, 'Y receives the branch\'s next request');
   check(call({ action: 'recordDeposit', token: yTok, bankReference: 'CC-Y-1', depositAmount: 1499 }).error === 'deposit_amount_mismatch', 'a deposit whose typed amount is not the cash held is refused; he recounts');
   check(call({ action: 'recordDeposit', token: yTok, bankReference: 'CC-Y-1', depositAmount: 0 }).error === 'deposit_amount_required', 'a zero amount is refused');
-  var dep = call({ action: 'recordDeposit', token: yTok, bankReference: 'CC-Y-1', depositAmount: 1500 });
+  var dep = call({ action: 'recordDeposit', token: yTok, attachmentId: depSlip(yTok), bankReference: 'CC-Y-1', depositAmount: 1500 });
   check(dep.ok && Math.abs(dep.handoff.amount - 1500) < 0.005, 'Y banks both: what X handed over and what the branch sent (got ' + (dep.handoff && dep.handoff.amount) + ')');
   check(dep.ok && (dep.handoff.perCluster || []).filter(function (p) { return p.clusterId === area.id; }).reduce(function (s, p) { return s + Number(p.amount || 0); }, 0) === 1500, 'the deposit still names the area for every riyal');
   // still blocked: a collector holding cash cannot be deactivated
@@ -5169,7 +5201,7 @@ console.log('--- a branch changes collector; the old one keeps what he holds unt
   check(cdB.ok && cdB.requests.length === 3 && cdB.requests.every(function (r) { return r.locationId === loc.id; }), 'collections: the branch manager follows his own branch\'s cash');
   var cdY = call({ action: 'collectionsData', token: yTok });
   check(cdY.ok && cdY.requests.length === 3 && cdRow(cdY, r1.handoff.id).depositRef === 'CC-Y-1', 'collections: Y sees what reached him, X\'s request included, and his own bank reference');
-  check(cdRow(cdM, r1.handoff.id).depositHasSlip === null && cdRow(cdY, r1.handoff.id).depositHasSlip === false && cdRow(cdA, r1.handoff.id).depositHasSlip === false, 'collections: the slip flag goes only to the depositor and company-wide roles');
+  check(cdRow(cdM, r1.handoff.id).depositHasSlip === null && cdRow(cdY, r1.handoff.id).depositHasSlip === true && cdRow(cdA, r1.handoff.id).depositHasSlip === true, 'collections: the slip flag (true: the deposit carries its slip) goes only to the depositor and company-wide roles');
   check(cdRow(cdM, r1.handoff.id).depositBy === colY.id, 'collections: the depositor is named');
   check(!call({ action: 'collectionsData' }).ok, 'collections: needs a sign-in');
   // nobody outside the chain sees it
@@ -5641,7 +5673,7 @@ console.log('--- a handover has its own date, defaulted from its entries (2026-1
   var ddry = call({ action: 'recordDeposit', token: yTok, dryRun: true });
   check(ddry.ok && ddry.dates.entryDates.join() === D3 + ',' + D1 && ddry.dates.defaultDate === D1 && ddry.dates.dateMismatch === true, 'the deposit preview walks through the collector hop to the entries (' + JSON.stringify(ddry.dates || ddry) + ')');
   check(call({ action: 'recordDeposit', token: yTok, bankReference: 'HD-1', handoffDate: today, dateChangeReason: '' }).error === 'date_reason_required', 'a deposit date change needs a reason too');
-  var dep = call({ action: 'recordDeposit', token: yTok, bankReference: 'HD-1' });
+  var dep = call({ action: 'recordDeposit', token: yTok, attachmentId: depSlip(yTok), bankReference: 'HD-1' });
   check(dep.ok && dep.handoff.handoffDate === D1 && dep.handoff.entryDate === D1 && !dep.handoff.dateChanged && dep.handoff.entryDates.join() === D3 + ',' + D1, 'the deposit defaults to the latest entry date (' + (dep.error || '') + ')');
   var all = call({ action: 'listHandoffs', token: adminTok }).handoffs;
   var dd = all.filter(function (h) { return h.id === dep.handoff.id; })[0];
