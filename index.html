@@ -4347,6 +4347,8 @@
   .cmp-tbl tr.cmp-strong{background:color-mix(in srgb,var(--cream) 45%,#fff);}
   .cmp-tbl tr.cmp-sep th,.cmp-tbl tr.cmp-sep td{border-top:2px solid #E4E8E2;}
   .cmp-op{display:inline-block;width:16px;color:var(--muted);font-weight:800;}
+  .cmp-tbl tbody th[scope=row],.cmp-tbl thead th:first-child,.cmp-tbl tfoot th{position:sticky;inset-inline-start:0;z-index:1;background:#fff;}
+  .cmp-tbl tr.cmp-strong th[scope=row]{background:color-mix(in srgb,var(--cream) 45%,#fff);}
   .cmp-dl{display:inline-block;margin-top:3px;font-size:11px;font-weight:700;border-radius:999px;padding:1px 7px;white-space:nowrap;font-style:normal;}
   .cmp-dl.good{background:color-mix(in srgb,#2E7D4F 13%,#fff);color:#23633e;}
   .cmp-dl.bad{background:color-mix(in srgb,#C14A30 12%,#fff);color:#a43c25;}
@@ -18237,27 +18239,14 @@ function crpMonthName_(ym){ try { return new Date(ym + '-01T00:00:00').toLocaleD
 var PRD_LIST_ = ['today', 'yesterday', 'thisWeek', 'lastWeek', 'month', 'lastMonth', 'thisQuarter', 'lastQuarter', 'thisYear', 'lastYear', 'ytd', '7d', '30d', '90d', 'all', 'custom'];
 function prdIso_(d){ var p = function(n){ return (n < 10 ? '0' : '') + n; }; return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()); }
 function prdD_(iso){ return new Date(iso + 'T00:00:00'); }
-// pure: a preset and today → {from, to} (weeks start on Sunday, as the calendar does)
+// pure: a preset and today → {from, to}. The shared presets are the profitability screen's own
+// (plPresetRange_); this list only adds year to date, all time and custom dates.
+var PRD_ALIAS_ = { month: 'thisMonth', '7d': 'last7', '30d': 'last30', '90d': 'last90', ytd: 'thisYear' };
 function prdRange_(preset, today, from, to){
-  var d = prdD_(today), y = d.getFullYear(), mo = d.getMonth(), a, b;
-  function add(n){ var x = prdD_(today); x.setDate(x.getDate() + n); return prdIso_(x); }
-  switch (preset) {
-    case 'today': return { from: today, to: today };
-    case 'yesterday': return { from: add(-1), to: add(-1) };
-    case 'thisWeek': return { from: add(-d.getDay()), to: today };
-    case 'lastWeek': return { from: add(-d.getDay() - 7), to: add(-d.getDay() - 1) };
-    case 'month': return { from: today.slice(0, 8) + '01', to: today };
-    case 'lastMonth': a = new Date(y, mo - 1, 1); b = new Date(y, mo, 0); return { from: prdIso_(a), to: prdIso_(b) };
-    case 'thisQuarter': return { from: prdIso_(new Date(y, mo - mo % 3, 1)), to: today };
-    case 'lastQuarter': a = new Date(y, mo - mo % 3 - 3, 1); b = new Date(y, mo - mo % 3, 0); return { from: prdIso_(a), to: prdIso_(b) };
-    case 'thisYear': case 'ytd': return { from: y + '-01-01', to: today };
-    case 'lastYear': return { from: (y - 1) + '-01-01', to: (y - 1) + '-12-31' };
-    case '7d': return { from: add(-6), to: today };
-    case '30d': return { from: add(-29), to: today };
-    case '90d': return { from: add(-89), to: today };
-    case 'all': return { from: '', to: '' };
-    default: return { from: from || '', to: to || '' };
-  }
+  var p = PRD_ALIAS_[preset] || preset;
+  if (PL_PRESETS_.indexOf(p) >= 0) { var r = plPresetRange_(p, today); return { from: r[0], to: r[1] }; }
+  if (preset === 'all') return { from: '', to: '' };
+  return { from: from || '', to: to || '' };
 }
 // pure: the k-th period before {from,to}: a calendar unit steps by its unit, anything else by its own length; mode 'year' steps a year
 function prdShift_(R, preset, mode, k){
@@ -20875,8 +20864,9 @@ function plDayName_(d){
 // the dates the screen asks for: a month (up to today while it runs), or a range
 // Period presets (Zoho Books' list); weeks start on Sunday, as in Saudi Arabia.
 var PL_PRESETS_ = ['today', 'yesterday', 'thisWeek', 'lastWeek', 'thisMonth', 'lastMonth', 'thisQuarter', 'lastQuarter', 'thisYear', 'lastYear', 'last7', 'last30', 'last90'];
-function plPresetRange_(p){
-  var td = localToday_(), x = td.split('-').map(Number), d = new Date(Date.UTC(x[0], x[1] - 1, x[2]));
+// today may be given (the reports' tests pass a fixed day)
+function plPresetRange_(p, today){
+  var td = today || localToday_(), x = td.split('-').map(Number), d = new Date(Date.UTC(x[0], x[1] - 1, x[2]));
   function ymd(dt){ return dt.toISOString().slice(0, 10); }
   function add(dt, n){ var c = new Date(dt.getTime()); c.setUTCDate(c.getUTCDate() + n); return c; }
   var y = x[0], m = x[1] - 1, q = Math.floor(m / 3);

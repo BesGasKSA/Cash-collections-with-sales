@@ -5779,9 +5779,9 @@ console.log('--- collection reports: the same rows as Collections, and every pur
 
   // client: load the pure helpers with colCompute_ itself
   var names = ['colDay_', 'colCompute_', 'crpC_', 'crpStageOk_', 'crpSide_', 'crpPct_', 'crpBucket_', 'crpTrend_', 'crpAgeB_', 'crpAgingBy_', 'crpTransit_', 'crpHopDrops_', 'crpShort_', 'crpHrs_', 'crpDeputy_',
-    'crpTransfers_', 'crpEvents_', 'crpStatement_', 'crpBranchStmt_', 'crpMixOf_', 'crpMix_', 'crpMovers_', 'crpExceptions_', 'crpHeat_', 'cpDays_', 'prdIso_', 'prdD_', 'prdRange_', 'prdShift_'];
+    'crpTransfers_', 'crpEvents_', 'crpStatement_', 'crpBranchStmt_', 'crpMixOf_', 'crpMix_', 'crpMovers_', 'crpExceptions_', 'crpHeat_', 'cpDays_', 'prdIso_', 'prdD_', 'plPresetRange_', 'prdRange_', 'prdShift_'];
   var src = names.map(function (n) { var s = clientFn_(n); check(!!s, 'reports: ' + n + ' exists'); return s; }).join('\n');
-  var mixSrc = clientVar_('CRP_MIX_', ';');
+  var mixSrc = [clientVar_('CRP_MIX_', ';'), clientVar_('PL_PRESETS_', ';'), clientVar_('PRD_ALIAS_', ';')].join('\n');
   var K = new Function('localToday_', mixSrc + '\n' + src + '\nreturn {' + names.map(function (n) { return n + ':' + n; }).join(',') + '};')(function () { return '2026-10-14'; });
   var loc = { b1: { city: 'Riyadh', clusterId: 'a1' }, b2: { city: 'Riyadh', clusterId: 'a1' }, b3: { city: 'Jeddah', clusterId: 'a2' } };
   var locOf = function (id) { return loc[id] || {}; };
@@ -5874,7 +5874,7 @@ console.log('--- collection reports: the same rows as Collections, and every pur
 console.log('--- comparison: periods by entry date, the dashboard\'s figures, changes coloured by good or bad (2026-10-15) ---');
 (function () {
   var cx = vm.createContext({ state: { meta: { config: { vatRate: 0.15 } } } });
-  var src = [clientVar_('CMP_M_', ';'), clientVar_('CMP_GOOD_', ';'), clientVar_('EQ_PARTS_', '\n};')].concat(['vatRateClient_', 'vatRateFor_', 'entryAmt_', 'prdIso_', 'prdD_', 'prdRange_', 'prdShift_', 'cmpPeriods_', 'cmpCompute_', 'cmpDelta_'].map(function (n) { var s = clientFn_(n); check(!!s, 'comparison: ' + n + ' exists'); return s; }));
+  var src = [clientVar_('CMP_M_', ';'), clientVar_('CMP_GOOD_', ';'), clientVar_('EQ_PARTS_', '\n};'), clientVar_('PL_PRESETS_', ';'), clientVar_('PRD_ALIAS_', ';')].concat(['vatRateClient_', 'vatRateFor_', 'entryAmt_', 'localToday_', 'prdIso_', 'prdD_', 'plPresetRange_', 'prdRange_', 'prdShift_', 'cmpPeriods_', 'cmpCompute_', 'cmpDelta_'].map(function (n) { var s = clientFn_(n); check(!!s, 'comparison: ' + n + ' exists'); return s; }));
   vm.runInContext(src.join('\n'), cx);
   // the whole file against the server's own report: sales and cash to collect tie to the cent
   var rep = call({ action: 'getSalesReport', token: adminTok }), hos = call({ action: 'listHandoffs', token: adminTok });
