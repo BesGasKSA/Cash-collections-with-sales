@@ -1577,7 +1577,7 @@ should have history for the numbers changes in all areas; it's very sensitive".
   cost-profile screen's prefix, `cp_title`/`cp_hint` collided once**). Columns: waiting
   for the deputy (`pending_deputy`), waiting to be received (`pending`), received not
   deposited (`confirmed`, no `consumedBy`), deposited (`consumedBy` points at a live
-  deposit made inside the chosen period), to collect = deputy + pending, oldest open
+  deposit; since 2026-10-15 a deposit counts on the request's own day, `hoDay_`), to collect = deputy + pending, oldest open
   day (amber past the stale threshold, red past twice it). Returned and disputed
   requests are only counts on their collector, area and branch; rejected ones nothing.
 - Mounted on the Handoffs screen under the waiting cards for collector, admin, finance,
@@ -1834,6 +1834,55 @@ sales as entered (cash + card; credit is inside)
   on the same tab was shown the previous one's cached profit report).
 - **The daily sales board** (`branchBoard_`) switches level: city, area, branch,
   store or car (remembered in `bgc_bhLevel`).
+
+## Same date, same figures on every screen (2026-10-15)
+
+Complaint: "13 Oct on Entries is not 13 Oct on Handoffs". Cause: Entries, the sales report and the
+dashboard's net filtered entries by `date`, while the dashboard handover figures (`filterHandoffs_`),
+Collections (`colCompute_`), the Handoffs filter, pivot and analysis, the collector pivot and the
+Deputy screen filtered by `createdAt`. Live: of 216 lines of 13 Oct, 190 were handed over on the 14th.
+
+- **One date rule.** A period means the business day of the sales. A handover, request, deposit or area
+  batch belongs to the day of its entries: `handoffDate` (the latest entry date unless changed with a
+  reason). Server `hoDay_(ctx, h)` (Collection.gs, falls back to `hoDateInfo_` for old rows), client
+  `hoDay_(h)` (index.html, falls back to the Riyadh day of `createdAt` only for a row with no date).
+  `filterHandoffs_` uses it, so the dashboard, `listHandoffs` and the shortfall report follow. Area
+  batches get `handoffDate`/`entryDates` in `listAreaBulkBatches`. Never filter a money figure by
+  `createdAt` again; the held-cash trend is the one deliberate timeline (real days).
+- **A handover that mixes days counts on its latest day.** That is the one place the handover screens
+  (Handoffs, Collections) can still differ from the entries of a day; each says so in an `sfNote_`.
+- **The key figures come from the entries** (`entryCohort_` in Collection.gs, in `getSalesReport` and
+  so in `getDashboardAll` as `report.cohort`; `listEntries` returns `cohort` = its `byEntry`). For the
+  filtered entries: sales, card, direct deposits, each deduction (delivery net of VAT, expenses, credit,
+  credit delivery/commissions, channel commissions, discounts, transfers), other collections, the net
+  (`computeNet_` per entry, in cents), then each entry followed `consumedBy` -> handover -> ... ->
+  deposit to its stage (`notHanded`, `carBranch`, `branchArea`, `deputy`, `onway`, `held`,
+  `deposited`). A hop received short or over scales what the entry still carries; the gap is `short`.
+  net = deposited + short + the six stages, to the cent; the delivery line takes the VAT rounding so the
+  lines add up to the net exactly. Deposits are never taken by their own date for these figures.
+- **Client.** `keyMoneyTiles_` draws `cohortLedger_`: one card, read top to bottom (sales − card −
+  direct − deductions + other collections = net − deposited = remaining, then where it is now), every
+  line opens its entries (`openMetric_` `part` / `stage`, `ctx.cohort`). The Entries screen sums the
+  same per-entry figures for its own filter (`cohortSum_`). Collections shows only what reached a
+  collector ("Handed over to collectors"); Handoffs adds the same cash once per hop ("Amount over every
+  hop"). One name per figure in ar/en/ur: Net cash to hand over, Deposited, Remaining.
+- **Cents (review, 2026-10-15).** Per-entry cents are shared by largest remainder, ties by id
+  (`cohortCents_` on both sides): the parts add up to round2 of the exact net, so the cohort net equals
+  the report net and the delivery line takes the VAT rounding. `byEntry` is `{s, r: raw net, f: share
+  carried}`; the client's `cohortAlloc_` rebuilds every line in cents from it and `entryAmt_`. An approved
+  area batch with no handover (the branch netted to nothing) is `settled`, a line outside Remaining. A
+  receipt corrected down keeps `originalAmount`; older corrections scale from `receiptCorrections[0]`.
+- **Every dashboard drawer is a pivot (2026-10-17).** `openMetric_` = `metricData_` (the items) +
+  `drillPivotView_` (city > area > branch > source > day > transaction, `drillTree_` is pure: cents,
+  count and share per level; search; Excel/PDF with the grouped tree; a transaction opens its document).
+  A card that comes from the cohort drills into the same cents (`ctx.cohort`: gross, pos,
+  bankedAtSource, net, outstanding, part with `lines`/`alines`, stage), so the drawer's total is the card
+  to the cent. A test checks 34 cards against their drawers.
+- Tests: "the same date gives the same figures", "the key figures come from the entries", "review
+  fixes", "every dashboard card opens a pivot" and "the client parses" in `tests/run.js`
+  (`TZ=UTC node tests/run.js`). The last one compiles every inline script of index.html: `clientFn_`
+  lifts single functions, so a bracket missing between two of them once passed every test while the
+  page did not start at all.
 
 ## Traps
 
