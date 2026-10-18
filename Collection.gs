@@ -2599,7 +2599,8 @@ function actionDataHealthCheck_(req, user) {
   }
   var holder = Object.create(null); // source id -> live parent ids
   H.forEach(function (h) {
-    if (HEALTH_DEAD_[h.status]) return;
+    // a direct deposit (الموازنة) only points at the entry it came from; the entry itself travels on up the chain
+    if (HEALTH_DEAD_[h.status] || (h.kind === 'deposit' && h.direct)) return;
     (h.sourceHandoffIds || []).concat(h.sourceEntryIds || []).forEach(function (id) { (holder[id] = holder[id] || []).push(h.id); });
   });
   H.forEach(function (h) {
@@ -2610,7 +2611,7 @@ function actionDataHealthCheck_(req, user) {
     srcH.forEach(function (x, i) { if (!x) add('orphan', h, 'source handover missing: ' + h.sourceHandoffIds[i]); });
     srcE.forEach(function (x, i) { if (!x) add('orphan', h, 'source entry missing: ' + h.sourceEntryIds[i]); });
     srcE.forEach(function (e) { if (e && e.voided) add('voided', h, 'cancelled entry inside a live handover: ' + (e.txNo || e.id)); });
-    srcH.concat(srcE).forEach(function (x) { if (x && x.consumedBy && x.consumedBy !== h.id && !batchIds[x.consumedBy]) add('link', h, 'source ' + (x.txNo || x.id) + ' points at another holder ' + x.consumedBy); });
+    if (!(h.kind === 'deposit' && h.direct)) srcH.concat(srcE).forEach(function (x) { if (x && x.consumedBy && x.consumedBy !== h.id && !batchIds[x.consumedBy]) add('link', h, 'source ' + (x.txNo || x.id) + ' points at another holder ' + x.consumedBy); });
     // shortfall bookkeeping
     if (h.originalAmount != null) {
       var sh = r2(Number(h.originalAmount) - Number(h.amount || 0));
