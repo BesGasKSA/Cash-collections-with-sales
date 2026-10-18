@@ -6329,5 +6329,38 @@ console.log('--- the client parses: every inline script of index.html compiles (
   check(n > 0 && errs.length === 0, 'index.html: all ' + n + ' inline scripts compile' + (errs.length ? ' (' + errs.join('; ') + ')' : ''));
 })();
 
+// ---------- the data health check finds every break (2026-10-18) ----------
+console.log('--- data health check ---');
+(function () {
+  var ctx = harness.buildContext(), SHEETS = ctx.SHEETS;
+  function call(payload) { try { return ctx.route_(payload); } catch (e) { return { ok: false, error: String(e && e.message || e) }; } }
+  (function () { var salt = ctx.randomSalt_(); ctx.writeRow(SHEETS.USERS, { id: 'hcadmin', name: 'Hc Admin', email: 'hc.admin@bestgas.sa', role: 'admin', active: true, language: 'en', salt: salt, pass: ctx.hashPw_('Bootstrap#1', salt), mustChangePw: false }); })();
+  var tok = call({ action: 'login', email: 'hc.admin@bestgas.sa', password: 'Bootstrap#1' }).token;
+  var at = '2026-10-10T09:00:00.000Z';
+  function E(id, cash, by) { ctx.writeRow(SHEETS.ENTRIES, { id: id, date: '2026-10-10', sourceType: 'store', sourceId: 'st1', locationId: 'loc1', cashSales: cash, posSales: 0, enteredBy: 'u1', consumedBy: by || null, createdAt: at, submissionId: 's-' + id }); }
+  function H(o) { ctx.writeRow(SHEETS.HANDOFFS, Object.assign({ createdAt: at, sourceEntryIds: [], sourceHandoffIds: [] }, o)); }
+  // a clean chain: entry 500 -> branch 500 -> area request 500 -> deposit 500
+  E('e1', 500, 'L1'); H({ id: 'L1', kind: 'location_to_cluster', status: 'confirmed', amount: 500, sourceEntryIds: ['e1'], consumedBy: 'R1' });
+  H({ id: 'R1', kind: 'cluster_to_collector', status: 'confirmed', amount: 500, sourceHandoffIds: ['L1'], consumedBy: 'D1' });
+  H({ id: 'D1', kind: 'deposit', status: 'completed', amount: 500, sourceHandoffIds: ['R1'] });
+  var clean = call({ action: 'dataHealthCheck', token: tok });
+  check(clean.ok && clean.issues.length === 0, 'a clean chain gives no issue (got ' + JSON.stringify(clean.byKind) + ')');
+  // breaks
+  E('e2', 300, 'L2'); H({ id: 'L2', kind: 'location_to_cluster', status: 'confirmed', amount: 320, sourceEntryIds: ['e2'] });       // sum off by 20
+  H({ id: 'R2', kind: 'cluster_to_collector', status: 'confirmed', amount: 700, sourceHandoffIds: ['L1'] });                        // L1 held twice + sum off
+  H({ id: 'R3', kind: 'cluster_to_collector', status: 'confirmed', amount: 0, originalAmount: 400, shortfall: 400, sourceHandoffIds: [] }); // received 0
+  H({ id: 'D2', kind: 'deposit', status: 'completed', amount: 999, sourceHandoffIds: ['R1'] });                                     // deposit off, R1 held twice
+  E('e3', 100, 'GONE');                                                                                                           // orphan
+  var r = call({ action: 'dataHealthCheck', token: tok });
+  function has(kind, id) { return r.issues.some(function (i) { return i.kind === kind && (!id || i.id === id); }); }
+  check(has('sum', 'L2') && r.issues.filter(function (i) { return i.id === 'L2' && i.kind === 'sum'; })[0].gap === 20, 'a handover that claims more than its sources is caught, with the gap');
+  check(has('link'), 'a source held by two live handovers is caught');
+  check(has('short', 'R3'), 'a receipt of 0 without a correction is caught');
+  check(has('deposit', 'D2'), 'a deposit that differs from its requests is caught');
+  check(has('orphan'), 'an entry consumed by a missing handover is caught');
+  check(!has('sum', 'L1') && !has('deposit', 'D1'), 'the clean chain stays clean next to the broken ones');
+  check(call({ action: 'dataHealthCheck' }).ok === false, 'it needs a sign-in');
+})();
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);
