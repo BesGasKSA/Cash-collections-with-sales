@@ -38,6 +38,7 @@ var NM_ = {
       batch_pending: { s: 'Area upload of {amount} SAR waiting for your approval', h: 'An area upload is waiting for your approval', l: '{from} uploaded the day of {place}: {amount} SAR in cash to hand over.', b: 'Review the upload', t: 'action' },
       batch_rejected: { s: 'Your area upload of {amount} SAR was rejected', h: 'Your area upload was rejected', l: '{by} rejected your upload of {amount} SAR. Correct it and send it again.', b: 'Correct the upload', t: 'bad' },
       batch_approved: { s: 'Approved: your area upload of {amount} SAR', h: 'Your area upload was approved', l: '{by} approved your upload of {amount} SAR. It is now on its way to the collectors.', b: 'View the upload', t: 'good' },
+      stock_short: { s: 'Sold without stock: {item} at {branch}', h: 'A sale was saved without stock', l: '{by} saved a sale of {sold} {item} at {branch} on {date} with only {onHand} on hand. The sale is kept; the stock is short by {short} until a purchase, a transfer or a count covers it.', b: 'Open the stock', t: 'warn', item: 'Stock item', onHand: 'On hand before the sale', sold: 'Selling', short: 'Short by', date: 'Sale date', place: 'Branch' },
       risk: { s: 'High-severity report: {title}', h: 'A high-severity report was filed', l: '{by} filed a high-severity report. Review it in the risk register.', b: 'Open the register', t: 'warn' }
     },
     f: { no: 'Request number', kind: 'Type', from: 'From', to: 'To', place: 'Branch', area: 'Area', city: 'City', created: 'Created', status: 'Status now', declared: 'Declared', received: 'Received', short: 'Short', over: 'Over', reason: 'Reason', note: 'Note', disputeNote: 'Dispute note', resolution: 'Settlement note', correction: 'What was corrected', rev: 'Version', prev: 'Previous version', ref: 'Bank reference', hours: 'Waiting', limit: 'Limit', title: 'Title', desc: 'Description', by: 'Reported by', severity: 'Severity', amount: 'Amount', handedBy: 'Handed over by', receivedBy: 'Received by' },
@@ -77,6 +78,7 @@ var NM_ = {
       batch_pending: { s: 'رفع بيانات منطقة بمبلغ {amount} ريال بانتظار اعتمادك', h: 'رفع بيانات منطقة بانتظار اعتمادك', l: 'رفع {from} يوم {place}: {amount} ريال نقداً للتسليم.', b: 'مراجعة الرفع', t: 'action' },
       batch_rejected: { s: 'رُفض رفع بياناتك بمبلغ {amount} ريال', h: 'رُفض رفع بياناتك', l: 'رفض {by} رفعك بمبلغ {amount} ريال. صحّحه وأرسله من جديد.', b: 'تصحيح الرفع', t: 'bad' },
       batch_approved: { s: 'اعتُمد رفع بياناتك بمبلغ {amount} ريال', h: 'اعتُمد رفع بياناتك', l: 'اعتمد {by} رفعك بمبلغ {amount} ريال، وهو الآن في طريقه إلى المحصّلين.', b: 'عرض الرفع', t: 'good' },
+      stock_short: { s: 'بيع بلا مخزون: {item} في {branch}', h: 'سُجّل بيع دون مخزون كافٍ', l: 'سجّل {by} بيع {sold} من {item} في {branch} بتاريخ {date} والمتوفر {onHand} فقط. البيع محفوظ، والمخزون ناقص بمقدار {short} حتى يغطيه شراء أو تحويل أو جرد.', b: 'فتح المخزون', t: 'warn', item: 'الصنف المخزني', onHand: 'المتوفر قبل البيع', sold: 'الكمية المباعة', short: 'النقص', date: 'تاريخ البيع', place: 'الفرع' },
       risk: { s: 'بلاغ عالي الخطورة: {title}', h: 'سُجّل بلاغ عالي الخطورة', l: 'سجّل {by} بلاغاً عالي الخطورة. راجعه في سجل المخاطر.', b: 'فتح السجل', t: 'warn' }
     },
     f: { no: 'رقم الطلب', kind: 'النوع', from: 'من', to: 'إلى', place: 'الفرع', area: 'المنطقة', city: 'المدينة', created: 'تاريخ الإنشاء', status: 'الحالة الآن', declared: 'المُعلن', received: 'المُستلم', short: 'النقص', over: 'الزيادة', reason: 'السبب', note: 'ملاحظة', disputeNote: 'سبب الاعتراض', resolution: 'ملاحظة الحسم', correction: 'ما تم تصحيحه', rev: 'النسخة', prev: 'النسخة السابقة', ref: 'المرجع البنكي', hours: 'مدة الانتظار', limit: 'الحد', title: 'العنوان', desc: 'الوصف', by: 'المُبلِّغ', severity: 'الخطورة', amount: 'المبلغ', handedBy: 'سلّمه', receivedBy: 'استلمه' },
@@ -116,6 +118,7 @@ var NM_ = {
       batch_pending: { s: '{amount} ریال کا علاقائی اپ لوڈ آپ کی منظوری کا منتظر', h: 'ایک علاقائی اپ لوڈ آپ کی منظوری کا منتظر ہے', l: '{from} نے {place} کا دن اپ لوڈ کیا: حوالگی کے لیے {amount} ریال نقد۔', b: 'اپ لوڈ دیکھیں', t: 'action' },
       batch_rejected: { s: 'آپ کا {amount} ریال کا اپ لوڈ مسترد ہو گیا', h: 'آپ کا علاقائی اپ لوڈ مسترد ہو گیا', l: '{by} نے آپ کا {amount} ریال کا اپ لوڈ مسترد کر دیا۔ درست کر کے دوبارہ بھیجیں۔', b: 'اپ لوڈ درست کریں', t: 'bad' },
       batch_approved: { s: 'منظور: آپ کا {amount} ریال کا علاقائی اپ لوڈ', h: 'آپ کا علاقائی اپ لوڈ منظور ہو گیا', l: '{by} نے آپ کا {amount} ریال کا اپ لوڈ منظور کر دیا۔ اب یہ کلکٹرز کی طرف جا رہا ہے۔', b: 'اپ لوڈ دیکھیں', t: 'good' },
+      stock_short: { s: 'اسٹاک کے بغیر فروخت: {branch} میں {item}', h: 'ایک فروخت اسٹاک کے بغیر محفوظ ہوئی', l: '{by} نے {date} کو {branch} میں {item} کی {sold} فروخت محفوظ کی جبکہ صرف {onHand} موجود تھے۔ فروخت محفوظ ہے؛ خریداری، منتقلی یا گنتی سے پورا ہونے تک اسٹاک {short} کم ہے۔', b: 'اسٹاک کھولیں', t: 'warn', item: 'اسٹاک آئٹم', onHand: 'فروخت سے پہلے موجود', sold: 'فروخت', short: 'کمی', date: 'فروخت کی تاریخ', place: 'برانچ' },
       risk: { s: 'انتہائی سنگین رپورٹ: {title}', h: 'ایک انتہائی سنگین رپورٹ درج ہوئی', l: '{by} نے ایک انتہائی سنگین رپورٹ درج کی۔ رسک رجسٹر میں دیکھیں۔', b: 'رجسٹر کھولیں', t: 'warn' }
     },
     f: { no: 'درخواست نمبر', kind: 'قسم', from: 'از', to: 'بنام', place: 'برانچ', area: 'علاقہ', city: 'شہر', created: 'تاریخ', status: 'موجودہ حالت', declared: 'اعلان کردہ', received: 'وصول شدہ', short: 'کمی', over: 'زیادتی', reason: 'وجہ', note: 'نوٹ', disputeNote: 'اعتراض کی وجہ', resolution: 'فیصلے کا نوٹ', correction: 'کیا درست کیا گیا', rev: 'ورژن', prev: 'پچھلا ورژن', ref: 'بینک حوالہ', hours: 'انتظار', limit: 'حد', title: 'عنوان', desc: 'تفصیل', by: 'رپورٹ کنندہ', severity: 'سنگینی', amount: 'رقم', handedBy: 'حوالے کرنے والا', receivedBy: 'وصول کرنے والا' },
@@ -295,6 +298,23 @@ function nmRiskMailIn_(u, item, reporter) {
     subject: fill_(E.s, vars), tone: E.t, head: E.h, lead: fill_(E.l, vars), name: firstName_(u.name),
     facts: [[c.f.title, item.title || ''], [c.f.by, vars.by], [c.f.created, nmWhen_(item.createdAt || new Date().toISOString()), true]],
     notes: [[c.f.desc, item.description || '', 'bad']], button: E.b, link: nmLink_('risk_high', item.id || '')
+  });
+}
+
+// A sale saved without stock (2026-10-18): g {locationId, itemId, lines: [entries]},
+// once per branch and item a day (stockShortAfterSave_).
+function nmStockShortMail_(u, g, it, by) { try { nmStockShortMailIn_(u, g, it, by); } catch (e) { console.error('mail stock_short: ' + e); } }
+function nmStockShortMailIn_(u, g, it, by) {
+  if (!u || !u.email || u.active === false || !g || !g.lines || !g.lines.length) return;
+  var lang = userLang_(u), c = NM_[lang] || NM_.en, E = c.ev.stock_short;
+  var f = g.lines[0].stockShort, pl = nmPlace_({ locationId: g.locationId });
+  var q = function (n) { return String(Math.round(Number(n || 0) * 1000) / 1000); };
+  var item = (it ? it.name : '') + (f.state ? ' (' + (lang === 'ar' ? (f.state === 'full' ? 'مليان' : 'فارغ') : lang === 'ur' ? (f.state === 'full' ? 'بھرا' : 'خالی') : f.state) + ')' : '');
+  var vars = { item: item, branch: pl.branch, by: by ? by.name || '' : '', sold: q(f.sold), onHand: q(f.onHand), short: q(f.shortBy), date: g.lines[0].date };
+  nmSend_(u, c, lang, {
+    subject: fill_(E.s, vars), tone: E.t, head: E.h, lead: fill_(E.l, vars), name: firstName_(u.name),
+    facts: [[E.place, pl.branch], [c.f.area, pl.area], [E.item, item], [E.date, vars.date, true], [E.onHand, vars.onHand, true], [E.sold, vars.sold, true], [E.short, vars.short, true]],
+    notes: [], button: E.b, link: nmLink_('stock_short', g.locationId + '|' + g.itemId + '|' + (f.state || ''))
   });
 }
 
