@@ -2194,3 +2194,29 @@ product lines for the same source/date.
 - `byCustomer` rows carry `qty`, `items [{productId,name,qty,amount}]`, `linesWithoutQty`, `deliveryFee`, `commission`; quantities come from `creditItems` only. A line with an amount and no items has an unknown quantity: counted in `linesWithoutQty`, shown as a dash, never as 0.
 - Client: `creditRollup_(entries)` feeds the Customers tab (qty total, one qty column per item, lines without qty) and the customer profile (units, items table); pivot has the `customer` level and the `creditQty` figure (`eqTotals_().creditQty`). `pvSplit_` splits the credit amount per item and keeps the day's sale off the customer, so customer > item > day adds up.
 
+
+## Sales without stock are flagged, never refused (2026-10-18)
+
+- **Server** (`Inventory.gs`, "Sales without stock"): every sale path (createDailyEntry,
+  importDailyEntries and its dry run, bulkSubmitAreaBatch and its dry run, so the area Excel too)
+  calls `stampStockShorts_(rows)` before writing. `stockShortsFor_` groups the rows by branch, day
+  and the stock line each draws on (`saleLink`: exchange and sell_full on full, sell_empty on
+  empty, unit items on their own line) and reads the ending from `actionInventoryReport_` with the
+  unsaved rows passed as `extraEntries`: the report's arithmetic, no second formula. A line with no
+  opening is never short. Below zero: the row is saved with `stockShort {productId, itemId, state,
+  onHand, sold, shortBy}` and the response carries `stockShorts` (with `row`).
+  `stockShortAfterSave_` audits `sale_without_stock` per row and mails the branch manager, area
+  manager, admin and finance (`nmStockShortMail_`, ar/en/ur) once per branch and item a day
+  (script property `STOCK_SHORT_MAILED`, `{day, keys}`, reset each day).
+- The report puts `shortSales` / `shortSalesCount` on each row, keyed by the line the sale draws
+  on *now* (a stamp made before the inventory setup names the old product id).
+- **Pending kind `stock_short`** (`stockShortPending_`): branch manager, area manager, admin,
+  finance; one item per stock line that is short today and has flagged sales. Nothing stored:
+  a purchase, transfer in, opening or count that brings the line to zero or above closes it.
+- **Client**: amber `nsWarnHtml_` in the save confirmation (`entryServerCheck_`) and the area
+  upload's dry run; `.ns-chip` and `.ns-lines` on the Entries card; `invShortCard_` (`#invShort`)
+  on the Inventory screen and a list on the live card, each line opening `nsSalesView_` (the sales,
+  each opening its transaction); activity tone `fix`. Strings `ns_*`, `pa_stock_short`,
+  `act_v_stock_short`. Tests: "a sale without stock is saved and flagged" in `tests/run.js`.
+- `importDailyEntries` now writes its rows after the loop (so the flags see the whole day); one
+  slip photo still goes on one row only (`photoTaken`).
