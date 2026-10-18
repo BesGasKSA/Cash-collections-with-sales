@@ -1878,6 +1878,16 @@ Deputy screen filtered by `createdAt`. Live: of 216 lines of 13 Oct, 190 were ha
   A card that comes from the cohort drills into the same cents (`ctx.cohort`: gross, pos,
   bankedAtSource, net, outstanding, part with `lines`/`alines`, stage), so the drawer's total is the card
   to the cent. A test checks 34 cards against their drawers.
+- **Every card on every screen (2026-10-18).** One drawer, `cardDrawer_({title, items, placeOf, qty})`
+  = `drillPivotView_`. Items are row data with `ref`, `amount`, optional `open` and `place`; levels come
+  from `placeOf` ([key, name, level]): `drillPlace_` (City > Area > Branch > source or step > Day),
+  `placeCollector_` (Collector first), `placeLoc_`. Each screen's figure is the sum of the items its
+  drawer lists: `entCards_` (Entries tiles), `hoItems_` (Handoffs tiles, collector home),
+  `reqItems_` (Collections, collection-report KPIs; a KPI that counts another amount passes `of`),
+  `cusItems_`, `invItems_` (units), `plDrillItems_` (stores and cars by place, largest remainder),
+  `cmpItems_` (Comparison cells, the cohort's cents). `eqTotals_` sums in cents via `eqCents_` (net by
+  largest remainder, delivery takes the VAT rounding), so an equation part equals its drawer. Test:
+  "every screen's cards open a pivot" prints the card vs drawer table.
 - Tests: "the same date gives the same figures", "the key figures come from the entries", "review
   fixes", "every dashboard card opens a pivot" and "the client parses" in `tests/run.js`
   (`TZ=UTC node tests/run.js`). The last one compiles every inline script of index.html: `clientFn_`

@@ -82,3 +82,30 @@ The only console errors are the mock server's 404 on `GET /api` (it answers POST
 - Main's comparison screen summed per-entry cents (121,482.90 against the report's 121,482.91). It now rounds
   once. It still has its own deposited rule, without the short scaling; moving it onto `cohortAlloc_` would
   make it match the key figures exactly.
+
+## Every card on every screen (2026-10-18)
+
+Every clickable figure now opens the same pivot drawer. For a money card, the drawer's total is the card to the
+cent.
+
+Unit test (`TZ=UTC node tests/run.js`), card vs drawer: Entries (sales 131,673.00; open + waiting + approved =
+net 121,482.91; deductions 11,001.09), Handoffs (pending 3,678.00, deputy 1,650.00, confirmed 38,697.60, disputed
+145.00, deposited 6,281.00), Collections (21,979.30 / 4,940.00 / 17,039.30, shortfall 50.00), Comparison (all nine
+money rows, net 121,482.91 equal to the key figures), Profitability (300.01 and a loss of 10.33, shared from
+fractional unit figures) and Customers (7,618.00 / 6,818.00 / 800.00). All are equal.
+
+Browser (mock server, admin and collector, en, ar and ur at 390 px): Home, the dashboard ledger and tiles, the
+where-is-cash rows, the bars, Entries tiles, equation and stages, Handoffs tiles, Collections cards, deposit
+requests and collector details, the Sales report equation and the Branches, Areas, Sources and Days rows,
+Inventory figures (units), Profitability tiles, collection-report KPIs and Comparison cells. Each one's card equals
+its drawer.
+
+Fixed while checking:
+- The where-is-cash rows opened other lists.
+- The collection-report gross and shortfall KPIs listed request amounts instead of the figure they show.
+- The locations tile opened a plain list.
+- Entries Deposited/Remaining opened nothing.
+- The "nothing for" line used an Arabic comma in English.
+- Logging out left the last drawer's content in the page.
+
+Non-money cards (counts, days, %) open the items behind them. Their drawer total is the money, not the count.

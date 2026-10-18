@@ -676,6 +676,8 @@
   .dv-lv{display:inline-block;margin-inline-end:6px;color:var(--muted);font-size:11px;font-weight:600;}
   .dv-sub{display:block;color:var(--muted);font-size:11.5px;font-weight:400;}
   .dv-table tr.pv-r{cursor:pointer;}
+  .ch-tap,.inv-fig[role=button],td.cmp-tap{cursor:pointer;}
+  td.cmp-tap:hover b,.ch-tap:hover{text-decoration:underline;text-decoration-style:dotted;text-underline-offset:3px;}
   .card.kfl{padding:14px 16px;display:flex;flex-direction:column;gap:0;margin-bottom:12px;}
   .kfl-hint{margin:0 0 8px;color:var(--muted);font-size:12.5px;}
   .kfl-row{display:grid;grid-template-columns:22px minmax(0,1fr) auto;align-items:baseline;gap:8px;width:100%;padding:9px 4px;border:0;border-top:1px solid var(--border-soft);background:none;color:inherit;font:inherit;text-align:start;cursor:pointer;}
@@ -4568,6 +4570,9 @@
     :root body .tb .tb-ic{display:none;}
     :root body .tb .icon-btn.notif-bell{width:44px;height:44px;background:linear-gradient(145deg,#F7F4EC,var(--ms-cream));color:var(--ms-green-dd);box-shadow:inset 0 0 0 1px rgba(77,109,81,.16);}
     :root body .tb .icon-btn.notif-bell svg{stroke:var(--ms-green-dd);}
+    /* docked bars sit above the floating tab bar */
+    :root body .ms-on .e-dock{bottom:calc(104px + env(safe-area-inset-bottom));}
+    :root body .dl-bar{bottom:calc(108px + env(safe-area-inset-bottom));}
     /* the home hero: its waiting list moves into the stories row and the activity sheet */
     :root body .ms-on .hero .hero-pend{display:none;}
   }
@@ -4591,6 +4596,9 @@
     .ms-tb-ic{position:relative;width:28px;height:28px;display:grid;place-items:center;}
     .ms-tb-ic > .ic2{width:25px;height:25px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;}
     .ms-tb-ic > .ic2 .d{fill:currentColor;fill-opacity:0;transition:fill-opacity var(--ms-norm) var(--ms-ease);}
+    .ms-tb-ic .pill{position:absolute;top:-6px;inset-inline-end:-10px;min-width:18px;height:18px;padding:0 5px;border-radius:999px;display:grid;place-items:center;
+      background:var(--ms-green);color:var(--ms-cream);border:2px solid #fff;font-size:10.5px;font-weight:800;line-height:1;box-shadow:0 2px 5px rgba(42,62,46,.3);}
+    .ms-tb-ic .pill[hidden]{display:none;}
     .ms-tb-l{font-size:11px;font-weight:700;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
     .ms-tb.on{color:var(--ms-green-dd);}
     .ms-tb.on .ms-tb-ic > .ic2{stroke-width:2.3;}
@@ -4731,7 +4739,7 @@
     .ms-post-who{flex:1;min-width:0;display:flex;flex-direction:column;}
     .ms-post-who b{font-size:14.5px;font-weight:700;color:var(--ms-ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
     .ms-post-who small{font-size:12.5px;color:var(--ms-mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-    .ms-post-st{flex:none;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:700;color:var(--r1);background:color-mix(in srgb,var(--r1) 12%,#fff);}
+    .ms-post-st{display:inline-block;margin-bottom:8px;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:700;color:var(--r1);background:color-mix(in srgb,var(--r1) 12%,#fff);}
     .ms-post[data-tone="send"] .ms-post-st{color:#2E4A33;}
     .ms-post-b{margin:12px 0 10px;padding:16px;border-radius:16px;background:linear-gradient(135deg,color-mix(in srgb,var(--r1) 9%,#fff),color-mix(in srgb,var(--r2) 14%,#fff));}
     .ms-post-amt{font-size:30px;font-weight:800;letter-spacing:-.02em;color:var(--ms-ink);line-height:1.1;}
@@ -4920,7 +4928,7 @@ var ICON_B64 = 'iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAYAAAA9zQYyAAAcG0lEQVR42u2dd1cU
 // Stamped by tools/stamp-build.js at publish time so the running app can
 // say which build it is — a cached page is the usual reason a shipped change
 // seems missing.
-var BUILD_ID = '2026-10-18 08:18 · cf1aa86';
+var BUILD_ID = '2026-10-18 08:20 · 70fdb30';
 var LOGO_SRC = 'data:image/png;base64,' + LOGO_B64;
 var ICON_SRC = LOGO_SRC; // same asset — see the comment above LOGO_B64
 // The sign-in mark (2026-09-30): the logo's round emblem as a coin with a
@@ -6021,7 +6029,7 @@ function dirFor(lang){ return lang==='en' ? 'ltr' : 'rtl'; }
       doc_cylOut:'أسطوانات خارجة', doc_cylIn:'أسطوانات راجعة', doc_enteredBy:'أدخلها', doc_createdAt:'وقت الإدخال', doc_note:'ملاحظة',
       doc_from:'من', doc_to:'إلى', doc_status:'الحالة', doc_confirmedAt:'وقت التأكيد', doc_bankRef:'المرجع البنكي', doc_resolutionNote:'ملاحظة الحل',
       journey_entered:'أُدخلت بواسطة',
-      dash_overview:'الملخص المالي', dash_keyFigures:'مؤشرات رئيسية', hc_title:'فحص سلامة البيانات', hc_hint:'يتحقق على البيانات الحية أن كل تسليم يساوي ما حمله، وكل إيداع يساوي طلباته، ولا يوجد ربط مكسور أو استلام بصفر.', hc_run:'تشغيل الفحص', hc_clean:'البيانات سليمة: لا توجد أي مشكلة', hc_found:'وُجدت {n} مشكلة', hc_checked:'فُحص {h} تسليماً و{d} إيداعاً و{e} إدخالاً', hc_kind:'النوع', hc_no:'الرقم', hc_status:'الحالة', hc_what:'الوصف', hc_expected:'المتوقع', hc_actual:'المسجل', hc_gap:'الفرق', hc_k_sum:'مبلغ التسليم', hc_k_deposit:'مبلغ الإيداع', hc_k_link:'الربط', hc_k_orphan:'سجل مفقود', hc_k_short:'العجز', hc_k_voided:'إدخال ملغى', hc_k_direct:'موازنة', hc_k_day:'يوم مكرر', pp_quick:'فترات سريعة', pp_months:'الأشهر', pp_today:'اليوم', pp_yesterday:'أمس', pp_thisWeek:'هذا الأسبوع', pp_lastWeek:'الأسبوع الماضي', pp_thisMonth:'هذا الشهر', pp_lastMonth:'الشهر الماضي', pp_thisQuarter:'هذا الربع', pp_lastQuarter:'الربع الماضي', pp_thisYear:'هذه السنة', pp_lastYear:'السنة الماضية', pp_last7:'آخر 7 أيام', pp_last30:'آخر 30 يوماً', pp_last90:'آخر 90 يوماً', pp_city:'المدينة', pp_area:'المنطقة', pp_branch:'الفرع', pp_unit:'المحل أو السيارة', pp_all:'الكل', pl_emptyHidden:'أُخفيت {n} أيام بلا مبيعات ولا تكاليف', pl_npPct:'هامش صافي الربح %', is_title:'قائمة الدخل', is_amount:'المبلغ', is_pct:'% من صافي المبيعات', is_less:'ناقص:', is_add:'زائد:', is_gross:'المبيعات شاملة الضريبة', is_vat:'ضريبة القيمة المضافة على المبيعات', is_delivery:'إيراد التوصيل', is_revenue:'إجمالي الإيرادات', is_cogs:'تكلفة البضاعة المباعة', is_commission:'العمولات', is_takings:'مصروفات دُفعت من الإيراد', in_skip:'اضغط للتخطي', in_s1:'تحصيل', in_s2:'تسليم', in_s3:'إيداع', hs_title:'فترة المعاملات', hs_first:'أول معاملة', hs_last:'آخر معاملة', hs_sub:'{d} يوم · {n} معاملة', kf_sales:'إجمالي المبيعات', kf_salesFoot:'نقدي وشبكة، الآجل ضمنها', kf_pos:'مبيعات الشبكة (POS)', kf_posFoot:'تُسدَّد إلى البنك مباشرة', kf_direct:'الموازنات المودعة في البنك', kf_directFoot:'أودعت من الفروع مباشرة', kf_other:'إجمالي الخصومات الأخرى', kf_otherFoot:'توصيل، مصروفات، آجل، تحويلات، عمولات', kf_otherAdd:'بعد إضافة {x} تحصيلات أخرى', kf_net:'صافي النقد المطلوب تسليمه', kf_netFoot:'الصافي بعد كل الخصومات', kf_dep:'المودَع', kf_depFoot:'ما أودعه المحصّلون في البنك', kf_rem:'المتبقي', kf_remFoot:'لم يُودع بعد', kf_eq:'المبيعات {s} − الشبكة {p} − الموازنات {d} − خصومات أخرى {o}{a} = صافي النقد المطلوب تسليمه {n} · المودع {dep} · المتبقي {r}', kf_eqAdd:' + تحصيلات أخرى {x}', kf_status:'حالة التسليمات', kf_settled:'مسوّى في الفرع', kf_settledFoot:'دفعة منطقة معتمدة لم يبقَ منها ما يُسلَّم', dv_search:'ابحث عن مدينة أو منطقة أو فرع أو مصدر أو يوم أو معاملة', dv_count:'العدد', dv_amount:'المبلغ', dv_share:'% من البطاقة', dv_lv_city:'المدينة', dv_lv_area:'المنطقة', dv_lv_branch:'الفرع', dv_lv_source:'المصدر', dv_lv_day:'اليوم', kf_ledgerHint:'اقرأ من الأعلى إلى الأسفل: كل سطر من قيود هذه الفترة، وكل إجمالي هو مجموع الأسطر التي فوقه.', kf_add:'تحصيلات أخرى', kf_depFoot2:'الجزء من هذه القيود الذي وصل إلى البنك', kf_remFoot2:'أين هو الآن، أدناه', kf_l_delivery:'رسوم التوصيل قبل الضريبة', kf_l_expenses:'المصروفات', kf_l_credit:'المبيعات الآجلة', kf_l_creditDelivery:'توصيل الآجل وعمولاته', kf_l_channelCom:'عمولات قنوات البيع', kf_l_discounts:'الخصومات', kf_l_transfers:'التحويلات البنكية', kf_l_otherCash:'نقد آخر محصَّل', kf_l_creditFees:'رسوم توصيل عملاء الآجل', kf_l_channelFees:'رسوم توصيل قنوات البيع', kf_s_notHanded:'لم يُسلَّم بعد', kf_s_carBranch:'في الفرع / من السيارة إلى الفرع', kf_s_branchArea:'من الفرع إلى المنطقة', kf_s_deputy:'من المنطقة إلى المحصل، بانتظار النائب', kf_s_onway:'في الطريق (إلى المحصل أو بين المحصلين)', kf_s_held:'لدى المحصل', kf_s_short:'نقص عند الاستلام في الطريق', kf_stageSub:'حصة كل قيد في هذه المرحلة', kf_remSplit:'أين نقد هذه القيود الآن', sf_whereTotal:'المجموع لدى الأشخاص', sf_whereGap:'يختلف عن المتبقي لأن تسليمًا يجمع أكثر من يوم يُحتسب في آخر أيامه، أو لأن جزءًا من نقد هذه الأيام في تسليم مؤرَّخ بيوم لاحق.', sf_rule:'التاريخ هو يوم المبيعات: يُحتسب التسليم في يوم قيوده (آخرها إذا جمع أكثر من يوم)، لا في يوم إنشائه.', sf_dashDiff:'صافي النقد المطلوب تسليمه يأتي من قيود الفترة. المسلَّم والمودَع يتبعان تسليمات الأيام نفسها؛ التسليم الذي يجمع أكثر من يوم يُحتسب في آخرها.', sf_colDiff:'الفرق عن لوحة المعلومات: صافي النقد المطلوب تسليمه يشمل كل مبيعات الفترة، وهذه الشاشة تحسب ما وصل إلى المحصلين فقط. الفرق نقد لم يُسلَّم بعد، أو ما زال مع السيارة، أو استُلم ناقصًا، أو تسليم يجمع أكثر من يوم فيُحتسب في آخرها.', sf_hoDiff:'الفرق: النقد نفسه يظهر مرة عند كل مرحلة (السيارة ← الفرع ← المنطقة ← المحصل)، فاجمع مرحلة واحدة. يُحتسب التسليم في يوم قيوده.', sf_entDiff:'هذا صافي النقد المطلوب تسليمه لهذه القيود. شاشتا التسليمات والتحصيل تحسبان ما سُلِّم فقط، في يوم قيوده.', dash_salesAnalysis:'تحليل المبيعات', dash_collectionsAnalysis:'تحليل التحصيل',
+      dash_overview:'الملخص المالي', dash_keyFigures:'مؤشرات رئيسية', hc_title:'فحص سلامة البيانات', hc_hint:'يتحقق على البيانات الحية أن كل تسليم يساوي ما حمله، وكل إيداع يساوي طلباته، ولا يوجد ربط مكسور أو استلام بصفر.', hc_run:'تشغيل الفحص', hc_clean:'البيانات سليمة: لا توجد أي مشكلة', hc_found:'وُجدت {n} مشكلة', hc_checked:'فُحص {h} تسليماً و{d} إيداعاً و{e} إدخالاً', hc_kind:'النوع', hc_no:'الرقم', hc_status:'الحالة', hc_what:'الوصف', hc_expected:'المتوقع', hc_actual:'المسجل', hc_gap:'الفرق', hc_k_sum:'مبلغ التسليم', hc_k_deposit:'مبلغ الإيداع', hc_k_link:'الربط', hc_k_orphan:'سجل مفقود', hc_k_short:'العجز', hc_k_voided:'إدخال ملغى', hc_k_direct:'موازنة', hc_k_day:'يوم مكرر', pp_quick:'فترات سريعة', pp_months:'الأشهر', pp_today:'اليوم', pp_yesterday:'أمس', pp_thisWeek:'هذا الأسبوع', pp_lastWeek:'الأسبوع الماضي', pp_thisMonth:'هذا الشهر', pp_lastMonth:'الشهر الماضي', pp_thisQuarter:'هذا الربع', pp_lastQuarter:'الربع الماضي', pp_thisYear:'هذه السنة', pp_lastYear:'السنة الماضية', pp_last7:'آخر 7 أيام', pp_last30:'آخر 30 يوماً', pp_last90:'آخر 90 يوماً', pp_city:'المدينة', pp_area:'المنطقة', pp_branch:'الفرع', pp_unit:'المحل أو السيارة', pp_all:'الكل', pl_emptyHidden:'أُخفيت {n} أيام بلا مبيعات ولا تكاليف', pl_npPct:'هامش صافي الربح %', is_title:'قائمة الدخل', is_amount:'المبلغ', is_pct:'% من صافي المبيعات', is_less:'ناقص:', is_add:'زائد:', is_gross:'المبيعات شاملة الضريبة', is_vat:'ضريبة القيمة المضافة على المبيعات', is_delivery:'إيراد التوصيل', is_revenue:'إجمالي الإيرادات', is_cogs:'تكلفة البضاعة المباعة', is_commission:'العمولات', is_takings:'مصروفات دُفعت من الإيراد', in_skip:'اضغط للتخطي', in_s1:'تحصيل', in_s2:'تسليم', in_s3:'إيداع', hs_title:'فترة المعاملات', hs_first:'أول معاملة', hs_last:'آخر معاملة', hs_sub:'{d} يوم · {n} معاملة', kf_sales:'إجمالي المبيعات', kf_salesFoot:'نقدي وشبكة، الآجل ضمنها', kf_pos:'مبيعات الشبكة (POS)', kf_posFoot:'تُسدَّد إلى البنك مباشرة', kf_direct:'الموازنات المودعة في البنك', kf_directFoot:'أودعت من الفروع مباشرة', kf_other:'إجمالي الخصومات الأخرى', kf_otherFoot:'توصيل، مصروفات، آجل، تحويلات، عمولات', kf_otherAdd:'بعد إضافة {x} تحصيلات أخرى', kf_net:'صافي النقد المطلوب تسليمه', kf_netFoot:'الصافي بعد كل الخصومات', kf_dep:'المودَع', kf_depFoot:'ما أودعه المحصّلون في البنك', kf_rem:'المتبقي', kf_remFoot:'لم يُودع بعد', kf_eq:'المبيعات {s} − الشبكة {p} − الموازنات {d} − خصومات أخرى {o}{a} = صافي النقد المطلوب تسليمه {n} · المودع {dep} · المتبقي {r}', kf_eqAdd:' + تحصيلات أخرى {x}', kf_status:'حالة التسليمات', dv_lv_collector:'المحصّل', dv_lv_step:'المرحلة', dv_lv_item:'الصنف', kf_settled:'مسوّى في الفرع', kf_settledFoot:'دفعة منطقة معتمدة لم يبقَ منها ما يُسلَّم', dv_search:'ابحث عن مدينة أو منطقة أو فرع أو مصدر أو يوم أو معاملة', dv_count:'العدد', dv_amount:'المبلغ', dv_share:'% من البطاقة', dv_lv_city:'المدينة', dv_lv_area:'المنطقة', dv_lv_branch:'الفرع', dv_lv_source:'المصدر', dv_lv_day:'اليوم', kf_ledgerHint:'اقرأ من الأعلى إلى الأسفل: كل سطر من قيود هذه الفترة، وكل إجمالي هو مجموع الأسطر التي فوقه.', kf_add:'تحصيلات أخرى', kf_depFoot2:'الجزء من هذه القيود الذي وصل إلى البنك', kf_remFoot2:'أين هو الآن، أدناه', kf_l_delivery:'رسوم التوصيل قبل الضريبة', kf_l_expenses:'المصروفات', kf_l_credit:'المبيعات الآجلة', kf_l_creditDelivery:'توصيل الآجل وعمولاته', kf_l_channelCom:'عمولات قنوات البيع', kf_l_discounts:'الخصومات', kf_l_transfers:'التحويلات البنكية', kf_l_otherCash:'نقد آخر محصَّل', kf_l_creditFees:'رسوم توصيل عملاء الآجل', kf_l_channelFees:'رسوم توصيل قنوات البيع', kf_s_notHanded:'لم يُسلَّم بعد', kf_s_carBranch:'في الفرع / من السيارة إلى الفرع', kf_s_branchArea:'من الفرع إلى المنطقة', kf_s_deputy:'من المنطقة إلى المحصل، بانتظار النائب', kf_s_onway:'في الطريق (إلى المحصل أو بين المحصلين)', kf_s_held:'لدى المحصل', kf_s_short:'نقص عند الاستلام في الطريق', kf_stageSub:'حصة كل قيد في هذه المرحلة', kf_remSplit:'أين نقد هذه القيود الآن', sf_whereTotal:'المجموع لدى الأشخاص', sf_whereGap:'يختلف عن المتبقي لأن تسليمًا يجمع أكثر من يوم يُحتسب في آخر أيامه، أو لأن جزءًا من نقد هذه الأيام في تسليم مؤرَّخ بيوم لاحق.', sf_rule:'التاريخ هو يوم المبيعات: يُحتسب التسليم في يوم قيوده (آخرها إذا جمع أكثر من يوم)، لا في يوم إنشائه.', sf_dashDiff:'صافي النقد المطلوب تسليمه يأتي من قيود الفترة. المسلَّم والمودَع يتبعان تسليمات الأيام نفسها؛ التسليم الذي يجمع أكثر من يوم يُحتسب في آخرها.', sf_colDiff:'الفرق عن لوحة المعلومات: صافي النقد المطلوب تسليمه يشمل كل مبيعات الفترة، وهذه الشاشة تحسب ما وصل إلى المحصلين فقط. الفرق نقد لم يُسلَّم بعد، أو ما زال مع السيارة، أو استُلم ناقصًا، أو تسليم يجمع أكثر من يوم فيُحتسب في آخرها.', sf_hoDiff:'الفرق: النقد نفسه يظهر مرة عند كل مرحلة (السيارة ← الفرع ← المنطقة ← المحصل)، فاجمع مرحلة واحدة. يُحتسب التسليم في يوم قيوده.', sf_entDiff:'هذا صافي النقد المطلوب تسليمه لهذه القيود. شاشتا التسليمات والتحصيل تحسبان ما سُلِّم فقط، في يوم قيوده.', dash_salesAnalysis:'تحليل المبيعات', dash_collectionsAnalysis:'تحليل التحصيل',
       dash_statementSales:'ملخص المبيعات', dash_statementCollect:'ملخص التحصيل والإيداع',
       dash_posHint:'تُسوّى مباشرة في البنك — ليست نقدية للتحصيل', dash_creditHint:'مطالبات على العملاء — تُخصم لأنها ضمن المبيعات ولم تُحصَّل نقداً',
       dash_deliveryDeductHint:'تُدفع مباشرة للبنك — لا تستلمها يد السائق', dash_vatOnDeliveryFoot:'على رسوم التوصيل فقط',
@@ -6043,7 +6051,7 @@ function dirFor(lang){ return lang==='en' ? 'ltr' : 'rtl'; }
       doc_cylOut:'Cylinders out', doc_cylIn:'Cylinders in', doc_enteredBy:'Entered by', doc_createdAt:'Entered at', doc_note:'Note',
       doc_from:'From', doc_to:'To', doc_status:'Status', doc_confirmedAt:'Confirmed at', doc_bankRef:'Bank reference', doc_resolutionNote:'Resolution note',
       journey_entered:'Entered by',
-      dash_overview:'Financial summary', dash_keyFigures:'Key figures', hc_title:'Data health check', hc_hint:'Checks the live data: every handover equals what it carried, every deposit equals its requests, and no link is broken or receipt recorded as 0.', hc_run:'Run the check', hc_clean:'The data is sound: no issue found', hc_found:'{n} issues found', hc_checked:'Checked {h} handovers, {d} deposits and {e} entries', hc_kind:'Kind', hc_no:'No.', hc_status:'Status', hc_what:'What', hc_expected:'Expected', hc_actual:'Recorded', hc_gap:'Gap', hc_k_sum:'Handover amount', hc_k_deposit:'Deposit amount', hc_k_link:'Link', hc_k_orphan:'Missing record', hc_k_short:'Shortfall', hc_k_voided:'Cancelled entry', hc_k_direct:'Direct deposit', hc_k_day:'Day entered twice', pp_quick:'Quick periods', pp_months:'Months', pp_today:'Today', pp_yesterday:'Yesterday', pp_thisWeek:'This week', pp_lastWeek:'Last week', pp_thisMonth:'This month', pp_lastMonth:'Last month', pp_thisQuarter:'This quarter', pp_lastQuarter:'Last quarter', pp_thisYear:'This year', pp_lastYear:'Last year', pp_last7:'Last 7 days', pp_last30:'Last 30 days', pp_last90:'Last 90 days', pp_city:'City', pp_area:'Area', pp_branch:'Branch', pp_unit:'Store or car', pp_all:'All', pl_emptyHidden:'{n} days with no sales and no costs are hidden', pl_npPct:'Net margin %', is_title:'Income statement', is_amount:'Amount', is_pct:'% of net sales', is_less:'Less:', is_add:'Add:', is_gross:'Sales including VAT', is_vat:'VAT on sales', is_delivery:'Delivery income', is_revenue:'Total revenue', is_cogs:'Cost of goods sold (COGS)', is_commission:'Commissions', is_takings:'Expenses paid from takings', in_skip:'Tap to skip', in_s1:'Collect', in_s2:'Hand over', in_s3:'Bank', hs_title:'Transactions on file', hs_first:'First transaction', hs_last:'Last transaction', hs_sub:'{d} days · {n} transactions', kf_sales:'Total sales', kf_salesFoot:'cash and card, credit inside', kf_pos:'Card (POS) sales', kf_posFoot:'settled to the bank directly', kf_direct:'Direct deposits in the bank', kf_directFoot:'banked by the branches themselves', kf_other:'Total other deductions', kf_otherFoot:'delivery, expenses, credit, transfers, commissions', kf_otherAdd:'after adding {x} other collections', kf_net:'Net cash to hand over', kf_netFoot:'net after every deduction', kf_dep:'Deposited', kf_depFoot:'banked by the collectors', kf_rem:'Remaining', kf_remFoot:'not banked yet', kf_eq:'Sales {s} − card {p} − direct deposits {d} − other deductions {o}{a} = net cash to hand over {n} · deposited {dep} · remaining {r}', kf_eqAdd:' + other collections {x}', kf_status:'Handover status', kf_settled:'Settled at the branch', kf_settledFoot:'an approved area batch with nothing left to hand over', dv_search:'Search a city, area, branch, source, day or transaction', dv_count:'Count', dv_amount:'Amount', dv_share:'% of the card', dv_lv_city:'City', dv_lv_area:'Area', dv_lv_branch:'Branch', dv_lv_source:'Source', dv_lv_day:'Day', kf_ledgerHint:'Read top to bottom: every line comes from the entries of this period, and each total is the sum of the lines above it.', kf_add:'Other collections', kf_depFoot2:'the part of these entries that reached the bank', kf_remFoot2:'where it is now, below', kf_l_delivery:'Delivery fees, before VAT', kf_l_expenses:'Expenses', kf_l_credit:'Credit sales', kf_l_creditDelivery:'Credit delivery fees and commissions', kf_l_channelCom:'Sales channel commissions', kf_l_discounts:'Discounts', kf_l_transfers:'Bank transfers', kf_l_otherCash:'Other cash collected', kf_l_creditFees:'Credit customers\' delivery fees', kf_l_channelFees:'Sales channel delivery fees', kf_s_notHanded:'Not handed over yet', kf_s_carBranch:'At the branch / car to branch', kf_s_branchArea:'Branch to area', kf_s_deputy:'Area to collector, waiting for the deputy', kf_s_onway:'On the way (to or between collectors)', kf_s_held:'Held by a collector', kf_s_short:'Received short on the way', kf_stageSub:'Each entry\'s share at this stage', kf_remSplit:'Where the cash of these entries is now', sf_whereTotal:'Total held by people', sf_whereGap:'This differs from Remaining because a handover that carries several days counts on its latest day, or part of these days\' cash sits in a handover dated later.', sf_rule:'Dates are the business day of the sales: a handover counts on the day of its entries (the latest one when it carries several days), not the day it was made.', sf_dashDiff:'Net cash to hand over comes from the entries of the period. Handed over and deposited follow the handovers of the same days; a handover that carries several days counts on its latest day.', sf_colDiff:'How this differs from the Dashboard: net cash to hand over counts every sale of the period; this screen counts only what has reached a collector. The gap is cash not yet handed over, still with a car, received short, or a handover that carries several days (counted on its latest day).', sf_hoDiff:'How this differs: the same cash shows once at every hop (car → branch → area → collector), so add up one hop at a time. A handover counts on the day of its entries.', sf_entDiff:'This is the net cash to hand over for these entries. The Handoffs and Collections screens count only what has been handed over, on the day of its entries.', dash_salesAnalysis:'Sales analysis', dash_collectionsAnalysis:'Collections analysis',
+      dash_overview:'Financial summary', dash_keyFigures:'Key figures', hc_title:'Data health check', hc_hint:'Checks the live data: every handover equals what it carried, every deposit equals its requests, and no link is broken or receipt recorded as 0.', hc_run:'Run the check', hc_clean:'The data is sound: no issue found', hc_found:'{n} issues found', hc_checked:'Checked {h} handovers, {d} deposits and {e} entries', hc_kind:'Kind', hc_no:'No.', hc_status:'Status', hc_what:'What', hc_expected:'Expected', hc_actual:'Recorded', hc_gap:'Gap', hc_k_sum:'Handover amount', hc_k_deposit:'Deposit amount', hc_k_link:'Link', hc_k_orphan:'Missing record', hc_k_short:'Shortfall', hc_k_voided:'Cancelled entry', hc_k_direct:'Direct deposit', hc_k_day:'Day entered twice', pp_quick:'Quick periods', pp_months:'Months', pp_today:'Today', pp_yesterday:'Yesterday', pp_thisWeek:'This week', pp_lastWeek:'Last week', pp_thisMonth:'This month', pp_lastMonth:'Last month', pp_thisQuarter:'This quarter', pp_lastQuarter:'Last quarter', pp_thisYear:'This year', pp_lastYear:'Last year', pp_last7:'Last 7 days', pp_last30:'Last 30 days', pp_last90:'Last 90 days', pp_city:'City', pp_area:'Area', pp_branch:'Branch', pp_unit:'Store or car', pp_all:'All', pl_emptyHidden:'{n} days with no sales and no costs are hidden', pl_npPct:'Net margin %', is_title:'Income statement', is_amount:'Amount', is_pct:'% of net sales', is_less:'Less:', is_add:'Add:', is_gross:'Sales including VAT', is_vat:'VAT on sales', is_delivery:'Delivery income', is_revenue:'Total revenue', is_cogs:'Cost of goods sold (COGS)', is_commission:'Commissions', is_takings:'Expenses paid from takings', in_skip:'Tap to skip', in_s1:'Collect', in_s2:'Hand over', in_s3:'Bank', hs_title:'Transactions on file', hs_first:'First transaction', hs_last:'Last transaction', hs_sub:'{d} days · {n} transactions', kf_sales:'Total sales', kf_salesFoot:'cash and card, credit inside', kf_pos:'Card (POS) sales', kf_posFoot:'settled to the bank directly', kf_direct:'Direct deposits in the bank', kf_directFoot:'banked by the branches themselves', kf_other:'Total other deductions', kf_otherFoot:'delivery, expenses, credit, transfers, commissions', kf_otherAdd:'after adding {x} other collections', kf_net:'Net cash to hand over', kf_netFoot:'net after every deduction', kf_dep:'Deposited', kf_depFoot:'banked by the collectors', kf_rem:'Remaining', kf_remFoot:'not banked yet', kf_eq:'Sales {s} − card {p} − direct deposits {d} − other deductions {o}{a} = net cash to hand over {n} · deposited {dep} · remaining {r}', kf_eqAdd:' + other collections {x}', kf_status:'Handover status', dv_lv_collector:'Collector', dv_lv_step:'Step', dv_lv_item:'Item', kf_settled:'Settled at the branch', kf_settledFoot:'an approved area batch with nothing left to hand over', dv_search:'Search a city, area, branch, source, day or transaction', dv_count:'Count', dv_amount:'Amount', dv_share:'% of the card', dv_lv_city:'City', dv_lv_area:'Area', dv_lv_branch:'Branch', dv_lv_source:'Source', dv_lv_day:'Day', kf_ledgerHint:'Read top to bottom: every line comes from the entries of this period, and each total is the sum of the lines above it.', kf_add:'Other collections', kf_depFoot2:'the part of these entries that reached the bank', kf_remFoot2:'where it is now, below', kf_l_delivery:'Delivery fees, before VAT', kf_l_expenses:'Expenses', kf_l_credit:'Credit sales', kf_l_creditDelivery:'Credit delivery fees and commissions', kf_l_channelCom:'Sales channel commissions', kf_l_discounts:'Discounts', kf_l_transfers:'Bank transfers', kf_l_otherCash:'Other cash collected', kf_l_creditFees:'Credit customers\' delivery fees', kf_l_channelFees:'Sales channel delivery fees', kf_s_notHanded:'Not handed over yet', kf_s_carBranch:'At the branch / car to branch', kf_s_branchArea:'Branch to area', kf_s_deputy:'Area to collector, waiting for the deputy', kf_s_onway:'On the way (to or between collectors)', kf_s_held:'Held by a collector', kf_s_short:'Received short on the way', kf_stageSub:'Each entry\'s share at this stage', kf_remSplit:'Where the cash of these entries is now', sf_whereTotal:'Total held by people', sf_whereGap:'This differs from Remaining because a handover that carries several days counts on its latest day, or part of these days\' cash sits in a handover dated later.', sf_rule:'Dates are the business day of the sales: a handover counts on the day of its entries (the latest one when it carries several days), not the day it was made.', sf_dashDiff:'Net cash to hand over comes from the entries of the period. Handed over and deposited follow the handovers of the same days; a handover that carries several days counts on its latest day.', sf_colDiff:'How this differs from the Dashboard: net cash to hand over counts every sale of the period; this screen counts only what has reached a collector. The gap is cash not yet handed over, still with a car, received short, or a handover that carries several days (counted on its latest day).', sf_hoDiff:'How this differs: the same cash shows once at every hop (car → branch → area → collector), so add up one hop at a time. A handover counts on the day of its entries.', sf_entDiff:'This is the net cash to hand over for these entries. The Handoffs and Collections screens count only what has been handed over, on the day of its entries.', dash_salesAnalysis:'Sales analysis', dash_collectionsAnalysis:'Collections analysis',
       dash_statementSales:'Sales summary', dash_statementCollect:'Collection & deposit summary',
       dash_posHint:'Settles straight to the bank — not cash to collect', dash_creditHint:'Owed by customers — deducted: part of sales, but no cash came in',
       dash_deliveryDeductHint:'Paid straight to the bank — never in the driver\'s hand', dash_vatOnDeliveryFoot:'On delivery fees only',
@@ -6065,7 +6073,7 @@ function dirFor(lang){ return lang==='en' ? 'ltr' : 'rtl'; }
       doc_cylOut:'باہر جانے والے سلنڈر', doc_cylIn:'واپس آنے والے سلنڈر', doc_enteredBy:'درج کرنے والا', doc_createdAt:'اندراج کا وقت', doc_note:'نوٹ',
       doc_from:'از', doc_to:'بنام', doc_status:'حیثیت', doc_confirmedAt:'تصدیق کا وقت', doc_bankRef:'بینک حوالہ', doc_resolutionNote:'حل کا نوٹ',
       journey_entered:'درج کیا',
-      dash_overview:'مالی خلاصہ', dash_keyFigures:'اہم اعداد', hc_title:'ڈیٹا کی صحت کی جانچ', hc_hint:'زندہ ڈیٹا پر جانچتا ہے کہ ہر حوالگی اپنی رقم کے برابر ہے، ہر جمع اپنی درخواستوں کے برابر ہے، اور کوئی ربط ٹوٹا نہیں۔', hc_run:'جانچ چلائیں', hc_clean:'ڈیٹا درست ہے: کوئی مسئلہ نہیں', hc_found:'{n} مسائل ملے', hc_checked:'{h} حوالگیاں، {d} جمع اور {e} اندراجات جانچے گئے', hc_kind:'قسم', hc_no:'نمبر', hc_status:'حالت', hc_what:'تفصیل', hc_expected:'متوقع', hc_actual:'درج شدہ', hc_gap:'فرق', hc_k_sum:'حوالگی کی رقم', hc_k_deposit:'جمع کی رقم', hc_k_link:'ربط', hc_k_orphan:'گمشدہ ریکارڈ', hc_k_short:'کمی', hc_k_voided:'منسوخ اندراج', hc_k_direct:'براہ راست جمع', hc_k_day:'دن دو بار', pp_quick:'فوری مدتیں', pp_months:'مہینے', pp_today:'آج', pp_yesterday:'کل', pp_thisWeek:'اس ہفتے', pp_lastWeek:'پچھلے ہفتے', pp_thisMonth:'اس مہینے', pp_lastMonth:'پچھلے مہینے', pp_thisQuarter:'اس سہ ماہی', pp_lastQuarter:'پچھلی سہ ماہی', pp_thisYear:'اس سال', pp_lastYear:'پچھلے سال', pp_last7:'پچھلے 7 دن', pp_last30:'پچھلے 30 دن', pp_last90:'پچھلے 90 دن', pp_city:'شہر', pp_area:'علاقہ', pp_branch:'برانچ', pp_unit:'دکان یا گاڑی', pp_all:'سب', pl_emptyHidden:'بغیر فروخت اور لاگت کے {n} دن چھپائے گئے', pl_npPct:'خالص منافع %', is_title:'آمدنی کا گوشوارہ', is_amount:'رقم', is_pct:'خالص فروخت کا %', is_less:'منفی:', is_add:'جمع:', is_gross:'فروخت بشمول VAT', is_vat:'فروخت پر VAT', is_delivery:'ڈیلیوری آمدنی', is_revenue:'کل آمدنی', is_cogs:'فروخت شدہ مال کی لاگت', is_commission:'کمیشن', is_takings:'آمدنی سے ادا کردہ اخراجات', in_skip:'چھوڑنے کے لیے ٹیپ کریں', in_s1:'وصولی', in_s2:'حوالگی', in_s3:'بینک جمع', hs_title:'لین دین کی مدت', hs_first:'پہلا لین دین', hs_last:'آخری لین دین', hs_sub:'{d} دن · {n} لین دین', kf_sales:'کل فروخت', kf_salesFoot:'نقد اور کارڈ، ادھار شامل', kf_pos:'کارڈ (POS) فروخت', kf_posFoot:'براہ راست بینک میں', kf_direct:'بینک میں براہ راست جمع', kf_directFoot:'برانچوں نے خود جمع کیا', kf_other:'دیگر کٹوتیوں کا کل', kf_otherFoot:'ڈیلیوری، اخراجات، ادھار، ٹرانسفر، کمیشن', kf_otherAdd:'{x} دیگر وصولیاں شامل کرنے کے بعد', kf_net:'حوالے کرنے کے لیے خالص نقد', kf_netFoot:'تمام کٹوتیوں کے بعد خالص', kf_dep:'جمع شدہ', kf_depFoot:'وصول کنندگان نے بینک میں جمع کیا', kf_rem:'باقی', kf_remFoot:'ابھی جمع نہیں ہوا', kf_eq:'فروخت {s} − کارڈ {p} − براہ راست جمع {d} − دیگر کٹوتیاں {o}{a} = حوالے کرنے کے لیے خالص نقد {n} · جمع {dep} · باقی {r}', kf_eqAdd:' + دیگر وصولیاں {x}', kf_status:'حوالگی کی صورتحال', kf_settled:'برانچ پر طے شدہ', kf_settledFoot:'منظور شدہ ایریا بیچ جس میں حوالے کرنے کو کچھ نہیں بچا', dv_search:'شہر، ایریا، برانچ، ذریعہ، دن یا لین دین تلاش کریں', dv_count:'تعداد', dv_amount:'رقم', dv_share:'کارڈ کا %', dv_lv_city:'شہر', dv_lv_area:'ایریا', dv_lv_branch:'برانچ', dv_lv_source:'ذریعہ', dv_lv_day:'دن', kf_ledgerHint:'اوپر سے نیچے پڑھیں: ہر سطر اس مدت کی اندراجات سے ہے، اور ہر کل اپنے اوپر کی سطروں کا مجموعہ ہے۔', kf_add:'دیگر وصولیاں', kf_depFoot2:'ان اندراجات کا وہ حصہ جو بینک تک پہنچا', kf_remFoot2:'اب کہاں ہے، نیچے', kf_l_delivery:'ڈیلیوری فیس، VAT سے پہلے', kf_l_expenses:'اخراجات', kf_l_credit:'ادھار فروخت', kf_l_creditDelivery:'ادھار ڈیلیوری فیس اور کمیشن', kf_l_channelCom:'سیلز چینل کمیشن', kf_l_discounts:'رعایتیں', kf_l_transfers:'بینک ٹرانسفر', kf_l_otherCash:'دیگر وصول شدہ نقد', kf_l_creditFees:'ادھار گاہکوں کی ڈیلیوری فیس', kf_l_channelFees:'سیلز چینل ڈیلیوری فیس', kf_s_notHanded:'ابھی حوالے نہیں ہوا', kf_s_carBranch:'برانچ پر / گاڑی سے برانچ', kf_s_branchArea:'برانچ سے ایریا', kf_s_deputy:'ایریا سے کلکٹر، نائب کے انتظار میں', kf_s_onway:'راستے میں (کلکٹر تک یا کلکٹرز کے درمیان)', kf_s_held:'کلکٹر کے پاس', kf_s_short:'راستے میں کم وصول ہوا', kf_stageSub:'اس مرحلے پر ہر اندراج کا حصہ', kf_remSplit:'ان اندراجات کا نقد اب کہاں ہے', sf_whereTotal:'لوگوں کے پاس کل', sf_whereGap:'یہ باقی سے مختلف ہے کیونکہ کئی دن والی حوالگی آخری دن شمار ہوتی ہے، یا ان دنوں کی کچھ نقدی بعد کی تاریخ والی حوالگی میں ہے۔', sf_rule:'تاریخ فروخت کا کاروباری دن ہے: حوالگی اپنی اندراجات کے دن شمار ہوتی ہے (کئی دن ہوں تو آخری دن)، بنانے کے دن نہیں۔', sf_dashDiff:'حوالے کرنے کے لیے خالص نقد مدت کی اندراجات سے آتا ہے۔ حوالے اور جمع شدہ انہی دنوں کی حوالگیوں کے مطابق ہیں؛ کئی دن والی حوالگی آخری دن شمار ہوتی ہے۔', sf_colDiff:'ڈیش بورڈ سے فرق: حوالے کرنے کے لیے خالص نقد مدت کی ہر فروخت گنتا ہے؛ یہ اسکرین صرف وہ گنتی ہے جو کلکٹر تک پہنچا۔ فرق وہ نقد ہے جو ابھی حوالے نہیں ہوا، ابھی گاڑی کے پاس ہے، کم وصول ہوا، یا کئی دن والی حوالگی جو آخری دن شمار ہوتی ہے۔', sf_hoDiff:'فرق: وہی نقد ہر مرحلے پر ایک بار دکھتا ہے (گاڑی ← برانچ ← ایریا ← کلکٹر)، اس لیے ایک وقت میں ایک مرحلہ جمع کریں۔ حوالگی اپنی اندراجات کے دن شمار ہوتی ہے۔', sf_entDiff:'یہ ان اندراجات کے لیے حوالے کرنے کا خالص نقد ہے۔ حوالگی اور وصولی کی اسکرینیں صرف حوالے شدہ رقم گنتی ہیں، اندراجات کے دن کے مطابق۔', dash_salesAnalysis:'سیلز تجزیہ', dash_collectionsAnalysis:'وصولی تجزیہ',
+      dash_overview:'مالی خلاصہ', dash_keyFigures:'اہم اعداد', hc_title:'ڈیٹا کی صحت کی جانچ', hc_hint:'زندہ ڈیٹا پر جانچتا ہے کہ ہر حوالگی اپنی رقم کے برابر ہے، ہر جمع اپنی درخواستوں کے برابر ہے، اور کوئی ربط ٹوٹا نہیں۔', hc_run:'جانچ چلائیں', hc_clean:'ڈیٹا درست ہے: کوئی مسئلہ نہیں', hc_found:'{n} مسائل ملے', hc_checked:'{h} حوالگیاں، {d} جمع اور {e} اندراجات جانچے گئے', hc_kind:'قسم', hc_no:'نمبر', hc_status:'حالت', hc_what:'تفصیل', hc_expected:'متوقع', hc_actual:'درج شدہ', hc_gap:'فرق', hc_k_sum:'حوالگی کی رقم', hc_k_deposit:'جمع کی رقم', hc_k_link:'ربط', hc_k_orphan:'گمشدہ ریکارڈ', hc_k_short:'کمی', hc_k_voided:'منسوخ اندراج', hc_k_direct:'براہ راست جمع', hc_k_day:'دن دو بار', pp_quick:'فوری مدتیں', pp_months:'مہینے', pp_today:'آج', pp_yesterday:'کل', pp_thisWeek:'اس ہفتے', pp_lastWeek:'پچھلے ہفتے', pp_thisMonth:'اس مہینے', pp_lastMonth:'پچھلے مہینے', pp_thisQuarter:'اس سہ ماہی', pp_lastQuarter:'پچھلی سہ ماہی', pp_thisYear:'اس سال', pp_lastYear:'پچھلے سال', pp_last7:'پچھلے 7 دن', pp_last30:'پچھلے 30 دن', pp_last90:'پچھلے 90 دن', pp_city:'شہر', pp_area:'علاقہ', pp_branch:'برانچ', pp_unit:'دکان یا گاڑی', pp_all:'سب', pl_emptyHidden:'بغیر فروخت اور لاگت کے {n} دن چھپائے گئے', pl_npPct:'خالص منافع %', is_title:'آمدنی کا گوشوارہ', is_amount:'رقم', is_pct:'خالص فروخت کا %', is_less:'منفی:', is_add:'جمع:', is_gross:'فروخت بشمول VAT', is_vat:'فروخت پر VAT', is_delivery:'ڈیلیوری آمدنی', is_revenue:'کل آمدنی', is_cogs:'فروخت شدہ مال کی لاگت', is_commission:'کمیشن', is_takings:'آمدنی سے ادا کردہ اخراجات', in_skip:'چھوڑنے کے لیے ٹیپ کریں', in_s1:'وصولی', in_s2:'حوالگی', in_s3:'بینک جمع', hs_title:'لین دین کی مدت', hs_first:'پہلا لین دین', hs_last:'آخری لین دین', hs_sub:'{d} دن · {n} لین دین', kf_sales:'کل فروخت', kf_salesFoot:'نقد اور کارڈ، ادھار شامل', kf_pos:'کارڈ (POS) فروخت', kf_posFoot:'براہ راست بینک میں', kf_direct:'بینک میں براہ راست جمع', kf_directFoot:'برانچوں نے خود جمع کیا', kf_other:'دیگر کٹوتیوں کا کل', kf_otherFoot:'ڈیلیوری، اخراجات، ادھار، ٹرانسفر، کمیشن', kf_otherAdd:'{x} دیگر وصولیاں شامل کرنے کے بعد', kf_net:'حوالے کرنے کے لیے خالص نقد', kf_netFoot:'تمام کٹوتیوں کے بعد خالص', kf_dep:'جمع شدہ', kf_depFoot:'وصول کنندگان نے بینک میں جمع کیا', kf_rem:'باقی', kf_remFoot:'ابھی جمع نہیں ہوا', kf_eq:'فروخت {s} − کارڈ {p} − براہ راست جمع {d} − دیگر کٹوتیاں {o}{a} = حوالے کرنے کے لیے خالص نقد {n} · جمع {dep} · باقی {r}', kf_eqAdd:' + دیگر وصولیاں {x}', kf_status:'حوالگی کی صورتحال', dv_lv_collector:'کلکٹر', dv_lv_step:'مرحلہ', dv_lv_item:'آئٹم', kf_settled:'برانچ پر طے شدہ', kf_settledFoot:'منظور شدہ ایریا بیچ جس میں حوالے کرنے کو کچھ نہیں بچا', dv_search:'شہر، ایریا، برانچ، ذریعہ، دن یا لین دین تلاش کریں', dv_count:'تعداد', dv_amount:'رقم', dv_share:'کارڈ کا %', dv_lv_city:'شہر', dv_lv_area:'ایریا', dv_lv_branch:'برانچ', dv_lv_source:'ذریعہ', dv_lv_day:'دن', kf_ledgerHint:'اوپر سے نیچے پڑھیں: ہر سطر اس مدت کی اندراجات سے ہے، اور ہر کل اپنے اوپر کی سطروں کا مجموعہ ہے۔', kf_add:'دیگر وصولیاں', kf_depFoot2:'ان اندراجات کا وہ حصہ جو بینک تک پہنچا', kf_remFoot2:'اب کہاں ہے، نیچے', kf_l_delivery:'ڈیلیوری فیس، VAT سے پہلے', kf_l_expenses:'اخراجات', kf_l_credit:'ادھار فروخت', kf_l_creditDelivery:'ادھار ڈیلیوری فیس اور کمیشن', kf_l_channelCom:'سیلز چینل کمیشن', kf_l_discounts:'رعایتیں', kf_l_transfers:'بینک ٹرانسفر', kf_l_otherCash:'دیگر وصول شدہ نقد', kf_l_creditFees:'ادھار گاہکوں کی ڈیلیوری فیس', kf_l_channelFees:'سیلز چینل ڈیلیوری فیس', kf_s_notHanded:'ابھی حوالے نہیں ہوا', kf_s_carBranch:'برانچ پر / گاڑی سے برانچ', kf_s_branchArea:'برانچ سے ایریا', kf_s_deputy:'ایریا سے کلکٹر، نائب کے انتظار میں', kf_s_onway:'راستے میں (کلکٹر تک یا کلکٹرز کے درمیان)', kf_s_held:'کلکٹر کے پاس', kf_s_short:'راستے میں کم وصول ہوا', kf_stageSub:'اس مرحلے پر ہر اندراج کا حصہ', kf_remSplit:'ان اندراجات کا نقد اب کہاں ہے', sf_whereTotal:'لوگوں کے پاس کل', sf_whereGap:'یہ باقی سے مختلف ہے کیونکہ کئی دن والی حوالگی آخری دن شمار ہوتی ہے، یا ان دنوں کی کچھ نقدی بعد کی تاریخ والی حوالگی میں ہے۔', sf_rule:'تاریخ فروخت کا کاروباری دن ہے: حوالگی اپنی اندراجات کے دن شمار ہوتی ہے (کئی دن ہوں تو آخری دن)، بنانے کے دن نہیں۔', sf_dashDiff:'حوالے کرنے کے لیے خالص نقد مدت کی اندراجات سے آتا ہے۔ حوالے اور جمع شدہ انہی دنوں کی حوالگیوں کے مطابق ہیں؛ کئی دن والی حوالگی آخری دن شمار ہوتی ہے۔', sf_colDiff:'ڈیش بورڈ سے فرق: حوالے کرنے کے لیے خالص نقد مدت کی ہر فروخت گنتا ہے؛ یہ اسکرین صرف وہ گنتی ہے جو کلکٹر تک پہنچا۔ فرق وہ نقد ہے جو ابھی حوالے نہیں ہوا، ابھی گاڑی کے پاس ہے، کم وصول ہوا، یا کئی دن والی حوالگی جو آخری دن شمار ہوتی ہے۔', sf_hoDiff:'فرق: وہی نقد ہر مرحلے پر ایک بار دکھتا ہے (گاڑی ← برانچ ← ایریا ← کلکٹر)، اس لیے ایک وقت میں ایک مرحلہ جمع کریں۔ حوالگی اپنی اندراجات کے دن شمار ہوتی ہے۔', sf_entDiff:'یہ ان اندراجات کے لیے حوالے کرنے کا خالص نقد ہے۔ حوالگی اور وصولی کی اسکرینیں صرف حوالے شدہ رقم گنتی ہیں، اندراجات کے دن کے مطابق۔', dash_salesAnalysis:'سیلز تجزیہ', dash_collectionsAnalysis:'وصولی تجزیہ',
       dash_statementSales:'سیلز خلاصہ', dash_statementCollect:'وصولی اور ڈپازٹ خلاصہ',
       dash_posHint:'براہ راست بینک میں — وصولی کی نقدی نہیں', dash_creditHint:'گاہکوں پر واجب — منہا، کیونکہ فروخت میں شامل مگر نقدی نہیں آئی',
       dash_deliveryDeductHint:'براہ راست بینک کو ادا — ڈرائیور کے ہاتھ میں نہیں', dash_vatOnDeliveryFoot:'صرف ترسیل چارجز پر',
@@ -7141,6 +7149,8 @@ function logout(){
   try { HF_STATE_ = {}; DP_STATE_ = {}; AU_STATE_ = {}; } catch (e) {}
   // an open document or drill-down lives outside #app: it goes too
   try { drawerClose_(); } catch (e) {}
+  // and its content: a closed drawer kept the last person's breakdown in the page (found 2026-10-18)
+  try { if (DRAWER.root) { DRAWER.root.dr.remove(); DRAWER.root.scrim.remove(); DRAWER.root = null; } } catch (e) {}
   var sheet = qs('.bt-sheet'); if (sheet) sheet.remove();
   var pendUser = state.user && state.user.id;
   state.token=''; state.user=null; state.meta=null;
@@ -7592,6 +7602,7 @@ function renderShell(){
   '</div>');
   col.appendChild(tb);
   qs('#notifBell', tb).addEventListener('click', function(){ pendOpen_(); });
+  qs('#notifBell', tb).setAttribute('aria-label', state.notifCount ? t('act_bell').replace('{n}', state.notifCount) : t('act_bell0'));
   var areaPill = qs('#areaPill', tb);
   if (areaPill && !areaPill.classList.contains('one')) areaPill.addEventListener('click', function(){ openAreaPicker_(areaPill); });
   qs('#menuBtn', tb).addEventListener('click', openMobileMenu_);
@@ -8826,8 +8837,8 @@ function msPost_(h, i){
     '<div class="ms-post-in">' +
       '<div class="ms-post-h"><span class="ms-post-av"><span>'+esc(initials_(from))+'</span></span>' +
         '<span class="ms-post-who"><b><bdi>'+esc(from)+'</bdi></b><small><span>'+esc(t('msf_to'))+'</span> <bdi>'+esc(to)+'</bdi> · <time>'+esc(relTime_(h.createdAt))+'</time></small></span>' +
-        '<span class="ms-post-st">'+esc(st)+'</span></div>' +
-      '<div class="ms-post-b"><div class="ms-post-amt num"><bdi dir="ltr">'+money(h.amount)+'</bdi><small>'+esc(t('ui_sar'))+'</small></div>' +
+        '</div>' +
+      '<div class="ms-post-b"><span class="ms-post-st">'+esc(st)+'</span><div class="ms-post-amt num"><bdi dir="ltr">'+money(h.amount)+'</bdi><small>'+esc(t('ui_sar'))+'</small></div>' +
         '<div class="ms-post-k">'+icon_(h.kind === 'deposit' ? 'bank' : 'handoffs')+'<span>'+esc(t('kind_' + h.kind))+'</span>'+(place ? '<i aria-hidden="true">·</i><bdi>'+esc(place)+'</bdi>' : '')+'</div>' +
         (slip ? '<span class="ms-post-slip">'+icon_('doc')+esc(t('msf_slip'))+'</span>' : '') + '</div>' +
       '<div class="ms-post-f"><button type="button" class="ms-post-open">'+esc(t('msf_open'))+'</button>' +
@@ -9351,12 +9362,12 @@ var EQ_PARTS_ = {
 var EQ_SALES_ = ['cashSales', 'posSales'];
 var EQ_ADD_ = ['aOther', 'aCreditDelivery', 'aChannelDelivery'];
 var EQ_DEDUCT_ = ['dPos', 'dCredit', 'dCreditDelivery', 'dCommission', 'dChannelCommission', 'dDiscount', 'dTransfer', 'dDelivery', 'dExpense', 'dBanked'];
-function eqTotals_(entries){
-  var keys = Object.keys(EQ_PARTS_), o = { count: 0, creditQty: 0 };
-  keys.forEach(function(k){ o[k] = 0; });
+// every money part is summed in cents (eqCents_), so a figure equals the drawer that opens from it (2026-10-18)
+function eqTotals_(entries, byEntry){
+  var keys = Object.keys(EQ_PARTS_), o = { count: 0, creditQty: 0 }, C = eqCents_(entries, byEntry);
+  keys.forEach(function(k){ o[k] = C.T[k] / 100; });
   (entries || []).forEach(function(e){
-    var a = entryAmt_(e);
-    keys.forEach(function(k){ o[k] += EQ_PARTS_[k].of(a); });
+    if (!e) return;
     (e.creditItems || []).forEach(function(it){ var n = Number(it.qty || 0); if (n > 0) o.creditQty += n; });
     o.count++;
   });
@@ -9389,7 +9400,7 @@ function creditRollup_(entries){
 // opts: { entries, collected: what collectors already banked (optional),
 //         title, onPart(part) }
 function netEquation_(opts){
-  var T = eqTotals_(opts.entries);
+  var T = eqTotals_(opts.entries, opts.byEntry);
   // a screen that has the cohort gives its net, so this card and the key figures read the same cents
   if (opts.net != null) T.net = Number(opts.net);
   function line(p, minus){
@@ -9458,7 +9469,7 @@ function netEquation_(opts){
       ev.stopPropagation();
       var p = b.getAttribute('data-part');
       if (p.charAt(0) === '_') { if (opts.onSpecial) opts.onSpecial(p.slice(1)); return; }
-      if (opts.onPart) opts.onPart(p); else drawerOpen_(levelDrillView_(p, opts.entries, 0, null));
+      if (opts.onPart) opts.onPart(p); else cardDrawer_({ title: t(EQ_PARTS_[p].label), sub: opts.title || t('eq_title'), items: eqPartItems_(opts.entries, p, opts.byEntry) });
     });
   });
   // folding: one part at a time, or every part with the switch in the header
@@ -10293,7 +10304,7 @@ function pivotCard_(entries, opts){
       // a transaction opens its document with the full history; any other last level lists its rows
       var srcs = pvSources_(n.entries);
       if (n.dim === 'tx' && srcs.length) drawerOpen_(entryDocView_(srcs[0]));
-      else drawerOpen_(txListView_({ title: n.name, sub: n.tag || t('lv_' + n.dim), items: srcs.map(function(e){ return entryRowData_(e, entryAmt_(e).net); }) }));
+      else drawerOpen_(drillPivotView_({ title: n.name, sub: n.tag || t('lv_' + n.dim), items: eqPartItems_(srcs, 'net') }));
       return;
     }
     n.open = !n.open;
@@ -10399,7 +10410,7 @@ function reportTabs_(entries, res, note, filters){
   var total = { T: eqTotals_(entries) };
   var moneyCols = rpMoneyCols_(total.T);
   var countCol = { h: t('rp_count'), num: true, int: true, v: function(r){ return r.T.count; } };
-  function drill(scopeName, list){ drawerOpen_(levelDrillView_('net', list, 0, [{ level: 'x', name: scopeName }])); }
+  function drill(scopeName, list){ cardDrawer_({ title: scopeName, sub: t('eq_net'), items: eqPartItems_(list, 'net') }); }
   var branches = rpGroup_(entries, function(e){ return e.locationId || '_'; }, function(k){ return k === '_' ? t('report_unspecified') : locationName(k); })
     .sort(function(a, b){ return b.T.net - a.T.net; });
   var areas = rpGroup_(entries, function(e){ var l = byId(meta.locations, e.locationId); return (l && l.clusterId) || '_'; }, function(k){ return k === '_' ? t('report_unspecified') : clusterName(k); })
@@ -10989,7 +11000,7 @@ function barRows_(rows, opts){
   var wrap = el('<div class="rows"></div>');
   if (!rows.length) { wrap.appendChild(el('<div class="muted" style="padding:6px 2px;">'+esc(t('dash_noData'))+'</div>')); return wrap; }
   rows = rows.map(function(r){ var o = {}; Object.keys(r).forEach(function(k){ o[k] = r[k]; }); if (!opts.status) o.color = 'var(--green)'; return o; });
-  if (zeroRows.length) setTimeout(function(){ wrap.appendChild(el('<div class="rrow-zero">'+esc(t('dash_zeroRows').replace('{list}', zeroRows.map(function(r){ return r.label; }).join('، ')))+'</div>')); }, 0);
+  if (zeroRows.length) setTimeout(function(){ wrap.appendChild(el('<div class="rrow-zero">'+esc(t('dash_zeroRows').replace('{list}', zeroRows.map(function(r){ return r.label; }).join(state.lang === 'en' ? ', ' : '، ')))+'</div>')); }, 0);
   rows.forEach(function(r){
     var mark = r.icon ? icon_(r.icon) : esc(r.mark || initials_(r.label));
     var row = el('<div class="rrow'+(r.onClick?' click':'')+'" style="--c:'+(r.color||'var(--green)')+'"'+(r.onClick?' role="button" tabindex="0"':'')+'>' +
@@ -11103,7 +11114,7 @@ function txListView_(o){
     }
   };
 }
-function openTxList_(o){ drawerOpen_(txListView_(o)); }
+function openTxList_(o){ drawerOpen_(drillPivotView_(o)); }
 
 // ---------- documents ----------
 function kv_(pairs){
@@ -11825,7 +11836,7 @@ function drillTree_(items, placeOf){
     for (var i = 0; i < path.length; i++) {
       var k = String(path[i][0] == null ? '_' : path[i][0]);
       var ch = node.map[k];
-      if (!ch) { ch = { lvl: DRILL_LV_[i], key: k, name: path[i][1], cents: 0, n: 0, kids: [], map: {}, depth: i }; node.map[k] = ch; node.kids.push(ch); }
+      if (!ch) { ch = { lvl: path[i][2] || DRILL_LV_[i], key: k, name: path[i][1], cents: 0, n: 0, kids: [], map: {}, depth: i }; node.map[k] = ch; node.kids.push(ch); }
       ch.cents += v; ch.n++; node = ch;
     }
     node.kids.push({ lvl: 'tx', key: 'tx' + root.n, name: it.title, sub: it.sub, cents: v, n: 1, kids: [], item: it, depth: path.length });
@@ -11835,18 +11846,126 @@ function drillTree_(items, placeOf){
 }
 // where an item sits: city, area, branch, source, day
 function drillPlace_(it){
-  var r = it.ref || {}, meta = state.meta || {}, l = byId(meta.locations, r.locationId) || {};
-  var city = l.city || t('report_unspecified'), area = l.clusterId || r.clusterId || '';
-  var src = it.kind === 'entry' ? [r.sourceType + ':' + (r.sourceId || ''), sourceName_(r) || t('entry_source_' + r.sourceType)] : ['k:' + r.kind, t('kind_' + r.kind)];
+  var r = it.ref || {};
+  if (it.place) return it.place;
+  var src = it.kind === 'entry' ? [r.sourceType + ':' + (r.sourceId || ''), sourceName_(r) || t('entry_source_' + r.sourceType), 'source'] : ['k:' + (r.kind || 'cluster_to_collector'), t('kind_' + (r.kind || 'cluster_to_collector')), 'step'];
   var day = it.kind === 'entry' ? String(r.date || '').slice(0, 10) : hoDay_(r);
-  return [[city, city], [area || '_', area ? clusterName(area) : t('report_unspecified')], [r.locationId || '_', r.locationId ? locationName(r.locationId) : t('report_unspecified')], src, [day || '_', day || '—']];
+  return placeLoc_(r.locationId, r.clusterId).concat([src, [day || '_', day || '—', 'day']]);
+}
+// ---- one drawer for every card on every screen (2026-10-18) ----
+// cardDrawer_({title, sub, items, placeOf}) draws the same pivot everywhere. items are row data
+// ({kind, ref, amount, title, sub, open?}); placeOf(item) gives the levels as [key, name, level].
+function cardDrawer_(o){ drawerOpen_(drillPivotView_(o)); }
+// city, area and branch of a place
+function placeLoc_(locationId, clusterId){
+  var meta = state.meta || {}, l = byId(meta.locations, locationId) || {};
+  var city = l.city || '', area = l.clusterId || clusterId || '';
+  return [[city || '_', city || t('report_unspecified'), 'city'], [area || '_', area ? clusterName(area) : t('report_unspecified'), 'area'],
+    [locationId || '_', locationId ? locationName(locationId) : t('report_unspecified'), 'branch']];
+}
+// a collector-centric card: the collector first, then the place, then the day
+function placeCollector_(it){
+  var r = it.ref || {}, who = r.holder || r.toUserId || r.fromUserId || '';
+  return [[who || '_', who ? userName(who) : t('report_unspecified'), 'collector']].concat(placeLoc_(r.locationId, r.clusterId)).concat([[hoDay_(r) || '_', hoDay_(r) || '—', 'day']]);
+}
+// handovers as drawer items; amountOf(h) when the card counts something else than the amount
+function hoItems_(list, amountOf){
+  return (list || []).map(function(h){ var it = handoffRowData_(h, amountOf ? amountOf(h) : undefined); it.title = (h.txNo ? h.txNo + ' · ' : '') + it.title; return it; });
+}
+// Collections rows ({r}) as drawer items: the request opens its own document
+function reqItems_(rows, amountOf){
+  return (rows || []).map(function(x){
+    var r = x.r || x;
+    return { kind: 'request', ref: r, amount: amountOf ? amountOf(x) : Number(r.amount || 0), title: (r.txNo || t('kind_cluster_to_collector')),
+      sub: [hoDay_(r), userName(r.fromUserId) + ' \u2192 ' + userName(r.holder || r.toUserId)].join(' \u00B7 '), open: function(){ colOpenDoc_(r.id); } };
+  });
+}
+// pure: every equation part of every entry, in cents. Simple parts are the typed cents; the net is shared by
+// largest remainder (cohortCents_, from the server's raw net when byEntry has it), and delivery net of VAT is
+// what is left, so sales + additions - deductions = net holds for each entry and for any set, to the cent.
+var EQ_DED_SIMPLE_ = ['dPos', 'dCredit', 'dCreditDelivery', 'dCommission', 'dChannelCommission', 'dDiscount', 'dTransfer', 'dExpense', 'dBanked'];
+function eqCents_(entries, byEntry){
+  var list = (entries || []).filter(Boolean), keys = Object.keys(EQ_PARTS_), out = { byId: {}, T: {} };
+  keys.forEach(function(k){ out.T[k] = 0; });
+  var amts = list.map(function(e){ return entryAmt_(e); });
+  var nC = cohortCents_(list.map(function(e, i){ var x = byEntry && byEntry[e.id]; return x && x.r != null ? Number(x.r) : amts[i].net; }), list.map(function(e){ return e.id; }));
+  list.forEach(function(e, i){
+    var a = amts[i], c = {};
+    keys.forEach(function(k){ if (k !== 'net' && k !== 'dDelivery' && k !== 'deductions') c[k] = Math.round(EQ_PARTS_[k].of(a) * 100); });
+    c.net = nC[i];
+    var ded = EQ_DED_SIMPLE_.reduce(function(s, k){ return s + c[k]; }, 0);
+    c.dDelivery = c.sales + c.additions - ded - c.net; c.deductions = ded + c.dDelivery;
+    out.byId[e.id] = c;
+    keys.forEach(function(k){ out.T[k] += c[k]; });
+  });
+  return out;
+}
+// the entries behind one equation part, each with its own cents
+function eqPartItems_(entries, part, byEntry){
+  var C = eqCents_(entries, byEntry);
+  return (entries || []).map(function(e){ var c = e && C.byId[e.id]; var v = c ? c[part] : 0; return v ? entryRowData_(e, v / 100) : null; }).filter(Boolean);
+}
+
+// ---- each screen's cards as data: the figure and the items behind it, so the figure is their sum (2026-10-18) ----
+function cardsSum_(items){ return (items || []).reduce(function(s, it){ return s + Math.round(Number(it.amount || 0) * 100); }, 0) / 100; }
+// Entries: groups are the saved transactions (arrays of rows), stateOf(rows) their state, byEntry the cohort
+function entCards_(groups, stateOf, byEntry){
+  var live = [].concat.apply([], groups).filter(function(e){ return !e.voided; });
+  var C = eqCents_(live, byEntry);
+  function items(list, fn){ var out = []; list.forEach(function(rows){ rows.forEach(function(e){ var v = fn(e); if (v) out.push(entryRowData_(e, v / 100)); }); }); return out; }
+  function part(k){ return function(e){ return e.voided || !C.byId[e.id] ? 0 : C.byId[e.id][k]; }; }
+  function st(s){ return groups.filter(function(rows){ return stateOf(rows) === s; }); }
+  return {
+    sales: items(groups, part('sales')),
+    open: items(st('open'), part('net')), submitted: items(st('submitted'), part('net')), approved: items(st('approved'), part('net')),
+    deductions: items(groups, part('deductions')),
+    cancelled: items(st('voided'), function(e){ return Math.round((Number(e.cashSales || 0) + Number(e.posSales || 0)) * 100); })
+  };
+}
+// Profitability: a measure of the focus node shared over its stores and cars (largest remainder), by place
+function plDrillItems_(res, key, measure){
+  var ix = plIndex_(res), units = [];
+  (function walk(k){ (ix.kids[k] || []).forEach(function(n){ if (n.level === 'unit') units.push(n); else walk(n.key); }); })(key);
+  var F = ix.by[key];
+  if (F && F.level === 'unit') units = [F];
+  // an area listed in two cities holds the same stores twice in the tree: count each unit once
+  var seen = {}; units = units.filter(function(u){ if (seen[u.key]) return false; seen[u.key] = 1; return true; });
+  var raws = units.map(function(u){ return Number((u.T || {})[measure] || 0); }), cents = cohortCents_(raws, units.map(function(u){ return u.key; }));
+  return units.map(function(u, i){
+    var path = plPath_(res, u.key), city = path.filter(function(n){ return n.level === 'city'; })[0], area = path.filter(function(n){ return n.level === 'cluster'; })[0], loc = path.filter(function(n){ return n.level === 'location'; })[0];
+    return { kind: 'unit', ref: u, amount: cents[i] / 100, title: plNodeName_(u), sub: plLevelLabel_(u),
+      place: [[city ? city.key : '_', city ? plNodeName_(city) : t('report_unspecified'), 'city'], [area ? area.key : '_', area ? plNodeName_(area) : t('pl_noArea'), 'area'], [loc ? loc.key : '_', loc ? plNodeName_(loc) : t('report_unspecified'), 'branch']],
+      open: function(){ drawerClose_(); PL_.focus = u.key; plSave_(); render(); } };
+  }).filter(function(it){ return Math.abs(it.amount) > 0.004; });
+}
+// Customers: one figure per customer, by city
+function cusItems_(list, of){
+  return (list || []).map(function(r){ var v = of(r); return Math.abs(v) > 0.004 ? { kind: 'customer', ref: r.c, amount: Math.round(v * 100) / 100, title: r.c.name, sub: r.c.code || '',
+    place: [[r.c.city || '_', r.c.city || t('report_unspecified'), 'city']], open: function(){ drawerClose_(); CUS_.id = r.c.id; render(); } } : null; }).filter(Boolean);
+}
+// Inventory: one stock line per branch and item, in units (or value at cost)
+function invItems_(rows, field){
+  return (rows || []).map(function(r){ var v = Number(r[field] || 0); return Math.abs(v) > 0.00001 ? { kind: 'stock', ref: r, amount: v, title: invRowName_(r.stockItemId || r.productId, r.state), sub: '',
+    place: placeLoc_(r.locationId) } : null; }).filter(Boolean);
+}
+// Comparison: the entries of one period (or one group of it) behind one figure, in the cohort's cents
+var CMP_COH_ = null;
+function cmpItems_(list, byEntry, k){
+  var A = cohortAlloc_(list, byEntry || {});
+  function sum(o){ return Object.keys(o).reduce(function(s, q){ return s + o[q]; }, 0); }
+  var of = { sales: function(x){ return x.sales; }, card: function(x){ return x.pos; }, direct: function(x){ return x.direct; }, other: function(x){ return sum(x.l); }, additions: function(x){ return sum(x.a); },
+    net: function(x){ return x.n; }, deposited: function(x){ return x.s === 'deposited' ? x.c : 0; }, short: function(x){ return x.k; },
+    remaining: function(x){ return (x.s === 'deposited' || x.s === 'settled' ? 0 : x.c) + x.k; } }[k];
+  if (!of) return [];
+  return (list || []).map(function(e){ var x = A.byId[e.id]; var v = x ? of(x) : 0; return v ? entryRowData_(e, v / 100) : null; }).filter(Boolean);
 }
 function drillPivotView_(o){
+  var fmtv = function(c){ return o.qty ? (Math.round(c) / 100).toLocaleString('en-US', { maximumFractionDigits: 2 }) : money(c / 100); };
   return {
     title: o.title, sub: o.sub, crumb: o.title,
     render: function(body, foot){
       var items = txMergeItems_((o.items || []).filter(function(it){ return !it.group; }));
-      var root = drillTree_(items, drillPlace_), total = root.cents, open = {}, q = '';
+      var root = drillTree_(items, o.placeOf || drillPlace_), total = root.cents, open = {}, q = '';
       if (o.note) body.appendChild(el('<div class="msg" style="background:var(--warn-bg);color:var(--warn);margin-bottom:12px;">'+esc(o.note)+'</div>'));
       var search = el('<div class="dr-search">'+icon_('search')+'<input type="search" placeholder="'+esc(t('dv_search'))+'" aria-label="'+esc(t('dv_search'))+'"></div>');
       var tools = el('<div class="tbl-tools"></div>');
@@ -11865,7 +11984,7 @@ function drillPivotView_(o){
           out.push('<tr class="pv-r d'+Math.min(k.depth, 5)+(leaf ? ' dv-leaf' : '')+'" data-p="'+esc(k._p)+'"><td><span class="pv-name" style="padding-inline-start:'+(k.depth * 16)+'px">' +
             (leaf ? '' : '<span class="pv-tog'+(isOpen ? ' open' : '')+'" aria-hidden="true">'+icon_('chevron')+'</span>') +
             (leaf ? '' : '<small class="dv-lv">'+esc(t('dv_lv_' + k.lvl))+'</small>') + esc(k.name) + (leaf && k.sub ? '<small class="dv-sub">'+esc(k.sub)+'</small>' : '') + '</span></td>' +
-            '<td class="n num">'+k.n+'</td><td class="n num"><bdi dir="ltr">'+esc(money(k.cents / 100))+'</bdi></td><td class="n num">'+pct(k.cents)+'</td></tr>');
+            '<td class="n num">'+k.n+'</td><td class="n num"><bdi dir="ltr">'+esc(fmtv(k.cents))+'</bdi></td><td class="n num">'+pct(k.cents)+'</td></tr>');
           if (!leaf && isOpen) rows(k, out);
         });
         return out;
@@ -11874,14 +11993,14 @@ function drillPivotView_(o){
       function draw(){
         wrap.innerHTML = '<table class="rp-table pv-table dv-table" data-nosort><thead><tr><th>'+esc(t('pv_level'))+'</th><th class="n">'+esc(t('dv_count'))+'</th><th class="n">'+esc(t('dv_amount'))+'</th><th class="n">'+esc(t('dv_share'))+'</th></tr></thead><tbody>' +
           (root.n ? rows(root, []).join('') : '<tr><td colspan="4" class="muted">'+esc(t('ui_noTx'))+'</td></tr>') +
-          '</tbody><tfoot><tr class="pv-total"><td>'+esc(t('rp_total'))+'</td><td class="n num">'+root.n+'</td><td class="n num"><bdi dir="ltr">'+esc(money(total / 100))+'</bdi></td><td class="n num">100%</td></tr></tfoot></table>';
+          '</tbody><tfoot><tr class="pv-total"><td>'+esc(t('rp_total'))+'</td><td class="n num">'+root.n+'</td><td class="n num"><bdi dir="ltr">'+esc(fmtv(total))+'</bdi></td><td class="n num">100%</td></tr></tfoot></table>';
         foot.hidden = false;
-        foot.innerHTML = '<span class="lb">'+esc(t('ui_totalListed'))+'</span><span class="v num">'+esc(money(total / 100))+'</span>';
+        foot.innerHTML = '<span class="lb">'+esc(t('ui_totalListed'))+'</span><span class="v num">'+esc(fmtv(total))+'</span>';
       }
       wrap.addEventListener('click', function(ev){
         var tr = ev.target.closest('tr.pv-r'); if (!tr) return;
         var n = byP[tr.getAttribute('data-p')]; if (!n) return;
-        if (n.item) { drawerPush_(n.item.kind === 'entry' ? entryDocView_(n.item.ref) : handoffDocView_(n.item.ref)); return; }
+        if (n.item) { if (n.item.open) n.item.open(); else if (n.item.kind === 'entry') drawerPush_(entryDocView_(n.item.ref)); else if (n.item.kind === 'handoff') drawerPush_(handoffDocView_(n.item.ref)); return; }
         open[n._p] = !open[n._p]; draw();
       });
       qs('input', search).addEventListener('input', function(ev){ q = ev.target.value.trim().toLowerCase(); draw(); });
@@ -12039,7 +12158,7 @@ function eqForScreen_(entries, handoffs, report, open){
   var collected = report.cohort && report.cohort.totals ? Number(report.cohort.totals.deposited || 0) : (handoffs || []).filter(function(h){ return h.kind === 'deposit' && !h.direct && h.status !== 'voided'; })
     .reduce(function(a2, h){ return a2 + Number(h.amount || 0); }, 0);
   var CT = report.cohort && report.cohort.totals ? report.cohort.totals : null;
-  return netEquation_({ entries: entries, collected: collected, net: CT ? CT.net : null, remaining: CT ? CT.remaining : null, onSpecial: function(which){
+  return netEquation_({ entries: entries, byEntry: report.cohort ? report.cohort.byEntry : null, collected: collected, net: CT ? CT.net : null, remaining: CT ? CT.remaining : null, onSpecial: function(which){
     if (CT) { if (which === 'deposited') open('stage', { title: t('kf_dep'), stages: ['deposited'] })(); else open('stage', { title: t('kf_rem'), stages: COHORT_ST_, short: true })(); return; }
     if (which === 'deposited') open('deposited')(); else open('remaining')();
   } }).node;
@@ -12051,25 +12170,29 @@ function eqForScreen_(entries, handoffs, report, open){
 // its way between two people was missing. Three kinds of holding, and a
 // total that matches the remaining figure.
 function whereIsCashPanel_(entries, dash, open, handoffs, allIds, remaining){
-  var notYet = {};
+  // each row is the sum of the items its drawer lists (2026-10-18)
+  var notYetL = {}, notYet = {};
   entries.forEach(function(e){
     if (e.consumedBy || e.voided) return;
     var uid = e.enteredBy || '__unknown__';
-    notYet[uid] = (notYet[uid]||0) + entryAmt_(e).net;
+    (notYetL[uid] = notYetL[uid] || []).push(e);
   });
-  var rowsA = Object.keys(notYet).filter(function(uid){ return notYet[uid] > 0.004; }).map(function(uid){ return { label: userName(uid), sub: t('dash_notYetHandedOff'), amount: notYet[uid], color: 'var(--c-hold)', onClick: open('holderEntries', { uid: uid }) }; });
-  var transit = {};
+  Object.keys(notYetL).forEach(function(uid){ notYet[uid] = cardsSum_(eqPartItems_(notYetL[uid], 'net')); });
+  var rowsA = Object.keys(notYet).filter(function(uid){ return notYet[uid] > 0.004; }).map(function(uid){ return { label: userName(uid), sub: t('dash_notYetHandedOff'), amount: notYet[uid], color: 'var(--c-hold)', onClick: function(){ cardDrawer_({ title: userName(uid), sub: t('dash_notYetHandedOff'), items: eqPartItems_(notYetL[uid], 'net') }); } }; });
+  var transit = {}, transitL = {};
   (handoffs || []).forEach(function(h){
     if (h.kind === 'deposit' || ['pending', 'pending_deputy', 'disputed'].indexOf(h.status) < 0) return;
     transit[h.toUserId] = (transit[h.toUserId] || 0) + Number(h.amount || 0);
+    (transitL[h.toUserId] = transitL[h.toUserId] || []).push(h);
   });
   // an area batch still with the deputy: its lines are taken, no handover exists yet
   // (with a dashboard filter the list is only part of them: allIds names every handover)
   var hIds = {}; (handoffs || []).forEach(function(h){ hIds[h.id] = 1; }); (allIds || []).forEach(function(id){ hIds[id] = 1; });
-  var batchHeld = {};
-  entries.forEach(function(e){ if (!e.voided && e.consumedBy && !hIds[e.consumedBy] && e.batchId) batchHeld[e.enteredBy] = (batchHeld[e.enteredBy] || 0) + entryAmt_(e).net; });
-  var rowsP = Object.keys(batchHeld).filter(function(uid){ return batchHeld[uid] > 0.004; }).map(function(uid){ return { label: userName(uid), sub: t('dash_awaitingDeputy'), amount: batchHeld[uid], color: 'var(--c-credit)', onClick: open('pending') }; });
-  var rowsT = Object.keys(transit).filter(function(uid){ return transit[uid] > 0.004; }).map(function(uid){ return { label: userName(uid), sub: t('dash_inTransitTo'), amount: transit[uid], color: 'var(--c-pos)', onClick: open('pending') }; });
+  var batchHeld = {}, batchL = {};
+  entries.forEach(function(e){ if (!e.voided && e.consumedBy && !hIds[e.consumedBy] && e.batchId) (batchL[e.enteredBy] = batchL[e.enteredBy] || []).push(e); });
+  Object.keys(batchL).forEach(function(uid){ batchHeld[uid] = cardsSum_(eqPartItems_(batchL[uid], 'net')); });
+  var rowsP = Object.keys(batchHeld).filter(function(uid){ return batchHeld[uid] > 0.004; }).map(function(uid){ return { label: userName(uid), sub: t('dash_awaitingDeputy'), amount: batchHeld[uid], color: 'var(--c-credit)', onClick: function(){ cardDrawer_({ title: userName(uid), sub: t('dash_awaitingDeputy'), items: eqPartItems_(batchL[uid], 'net') }); } }; });
+  var rowsT = Object.keys(transit).filter(function(uid){ return transit[uid] > 0.004; }).map(function(uid){ return { label: userName(uid), sub: t('dash_inTransitTo'), amount: transit[uid], color: 'var(--c-pos)', onClick: function(){ cardDrawer_({ title: userName(uid), sub: t('dash_inTransitTo'), items: hoItems_(transitL[uid]) }); } }; });
   var held = dash && dash.companyHeldByHolder ? dash.companyHeldByHolder : {};
   var rowsB = Object.keys(held).map(function(uid){ return { label: userName(uid), sub: t('dash_heldConfirmedNotDeposited'), amount: held[uid], color: 'var(--c-deposit)', onClick: open('holderHandoffs', { uid: uid }) }; });
   var all = rowsA.concat(rowsP, rowsT, rowsB).sort(function(a,b){ return b.amount - a.amount; });
@@ -12100,7 +12223,7 @@ function locationsView_(report, open){
       card.appendChild(barRows_(rows.map(function(r){
         return { label: r.label, sub: t('report_net') + ': ' + money(r.net), amount: r.amount, icon: 'pin', color: 'var(--c-cash)', onClick: function(){
           var items = (report.entries||[]).filter(function(e){ return e.locationId === r.id; }).map(function(e){ return entryRowData_(e, entryAmt_(e).gross); });
-          drawerPush_(txListView_({ title: r.label, sub: t('dash_grossSales'), items: items }));
+          drawerPush_(drillPivotView_({ title: r.label, sub: t('dash_grossSales'), items: items }));
         } };
       })));
       body.appendChild(card);
@@ -12237,7 +12360,7 @@ function renderDashboard(body, animate){
       { label: t('handoff_pending'), value: byStatus.pending, icon: 'handoffs', color: 'var(--c-hold)', foot: '<span class="num">'+esc(money(pendingAmt))+'</span>', onClick: open('pending') },
       { label: t('handoff_disputed'), value: byStatus.disputed, icon: 'alert', color: byStatus.disputed ? 'var(--c-danger)' : 'var(--green)', foot: '<span class="num">'+esc(money(disputedAmt))+'</span>', onClick: open('disputed') },
       { label: t('dash_deposits'), value: depositList.length, icon: 'bank', color: 'var(--green)', foot: '<span class="num">'+esc(money(st.deposited))+'</span>', onClick: report.cohort ? open('stage', { title: t('kf_dep'), stages: ['deposited'] }) : open('deposited') },
-      { label: t('dash_locationsReporting'), value: locCount, icon: 'pin', color: 'var(--green)', foot: esc(t('dash_avgPerLocation'))+': <span class="num">'+esc(money(locCount ? st.gross/locCount : 0))+'</span>', onClick: function(){ locationsView_(report, open); } }
+      { label: t('dash_locationsReporting'), value: locCount, icon: 'pin', color: 'var(--green)', foot: esc(t('dash_avgPerLocation'))+': <span class="num">'+esc(money(locCount ? st.gross/locCount : 0))+'</span>', onClick: function(){ cardDrawer_({ title: t('dash_locationsReporting'), sub: t('dash_grossSales'), items: eqPartItems_(entries, 'sales', report.cohort ? report.cohort.byEntry : null) }); } }
     ]));
 
     // ---- where the cash is ----
@@ -12543,6 +12666,8 @@ function hoAnalysis_(list){
   if (!list.length) return wrap;
   var me = state.user.id, wide = ['admin', 'finance', 'accountant', 'operations_manager', 'deputy_operations_manager'].indexOf(state.user.role) >= 0;
   var sum = function(xs){ return xs.reduce(function(a, h){ return a + Number(h.amount || 0); }, 0); };
+  // every tile opens the handovers it adds up: City > Area > Branch > step > day > handover
+  var hoOpen = function(title, xs){ return function(){ cardDrawer_({ title: title, items: hoItems_(xs) }); }; };
   var by = function(st){ return list.filter(function(h){ return h.status === st && h.kind !== 'deposit'; }); };
   var moves = list.filter(function(h){ return h.kind !== 'deposit'; });
   var deposits = list.filter(function(h){ return h.kind === 'deposit' && h.status !== 'voided'; });
@@ -12559,18 +12684,18 @@ function hoAnalysis_(list){
   wrap.appendChild(secTitle_(t('an_title'), t('eh_followsFilter')));
   wrap.appendChild(sfNote_('sf_hoDiff'));
   wrap.appendChild(tiles_([
-    { label: t('an_hoCount'), value: String(moves.length), icon: 'handoffs', foot: esc(t('an_hoAmount'))+': <span class="num">'+esc(money(sum(moves)))+'</span>' },
-    { label: t('handoff_pending'), value: money(sum(pending)), icon: 'clock', color: 'var(--c-hold)', foot: esc(String(pending.length)) },
-    { label: t('handoff_pending_deputy'), value: money(sum(deputy)), icon: 'hourglass', color: 'var(--c-hold)', foot: esc(String(deputy.length)) },
-    { label: t('handoff_confirmed'), value: money(sum(confirmed)), icon: 'check', color: 'var(--c-deposit)', foot: esc(String(confirmed.length)) },
-    { label: t('handoff_disputed'), value: money(sum(disputed)), icon: 'alert', color: disputed.length ? 'var(--c-danger)' : 'var(--green)', foot: esc(String(disputed.length)) },
-    { label: t('st_deposited'), value: money(sum(deposits)), icon: 'bank', color: 'var(--c-deposit)', foot: esc(String(deposits.length)) }
+    { label: t('an_hoCount'), value: String(moves.length), icon: 'handoffs', foot: esc(t('an_hoAmount'))+': <span class="num">'+esc(money(sum(moves)))+'</span>', onClick: hoOpen(t('an_hoAmount'), moves) },
+    { label: t('handoff_pending'), value: money(sum(pending)), icon: 'clock', color: 'var(--c-hold)', foot: esc(String(pending.length)), onClick: hoOpen(t('handoff_pending'), pending) },
+    { label: t('handoff_pending_deputy'), value: money(sum(deputy)), icon: 'hourglass', color: 'var(--c-hold)', foot: esc(String(deputy.length)), onClick: hoOpen(t('handoff_pending_deputy'), deputy) },
+    { label: t('handoff_confirmed'), value: money(sum(confirmed)), icon: 'check', color: 'var(--c-deposit)', foot: esc(String(confirmed.length)), onClick: hoOpen(t('handoff_confirmed'), confirmed) },
+    { label: t('handoff_disputed'), value: money(sum(disputed)), icon: 'alert', color: disputed.length ? 'var(--c-danger)' : 'var(--green)', foot: esc(String(disputed.length)), onClick: hoOpen(t('handoff_disputed'), disputed) },
+    { label: t('st_deposited'), value: money(sum(deposits)), icon: 'bank', color: 'var(--c-deposit)', foot: esc(String(deposits.length)), onClick: hoOpen(t('st_deposited'), deposits) }
   ]));
   if (!wide) {
     var sent = list.filter(function(h){ return h.fromUserId === me; }), got = list.filter(function(h){ return h.toUserId === me; });
     wrap.appendChild(tiles_([
-      { label: t('an_sentByMe'), value: money(sum(sent)), icon: 'paperPlane', foot: esc(String(sent.length)) },
-      { label: t('an_toMe'), value: money(sum(got)), icon: 'wallet', foot: esc(String(got.length)) }
+      { label: t('an_sentByMe'), value: money(sum(sent)), icon: 'paperPlane', foot: esc(String(sent.length)), onClick: hoOpen(t('an_sentByMe'), sent) },
+      { label: t('an_toMe'), value: money(sum(got)), icon: 'wallet', foot: esc(String(got.length)), onClick: hoOpen(t('an_toMe'), got) }
     ]));
   }
   wrap.appendChild(ratioGrid_(t('an_ratios'), [
@@ -12749,11 +12874,15 @@ function renderCollectorHome_(body){
         : '<p class="ch-none">'+esc(t(toReceive.length ? 'ch_receiveFirst' : 'ch_allClear'))+'</p>') +
     '</section>');
     w.appendChild(hero);
+    // the figure opens what makes it: Collector > City > Area > Branch > day > handover (2026-10-18)
+    var chBig = qs('.ch-big', hero); chBig.classList.add('ch-tap'); chBig.setAttribute('role', 'button'); chBig.tabIndex = 0;
+    chBig.addEventListener('click', function(){ cardDrawer_({ title: t('ch_withMe'), items: hoItems_(held), placeOf: placeCollector_ }); });
     var cta = qs('.ch-cta', hero);
     if (cta) cta.addEventListener('click', function(){ chDepositSheet_(heldAmt); });
 
     // 2. cash to receive: one big card each
     var rc = el('<section class="ch-sec'+rise()+'"><h2 class="ch-h">'+esc(t('ch_toReceive'))+(toReceive.length ? '<span class="ch-n">'+toReceive.length+'</span>' : '')+'</h2></section>');
+    if (toReceive.length) { var rcH = qs('.ch-h', rc); rcH.classList.add('ch-tap'); rcH.setAttribute('role', 'button'); rcH.tabIndex = 0; rcH.addEventListener('click', function(){ cardDrawer_({ title: t('ch_toReceive'), items: hoItems_(toReceive), placeOf: placeCollector_ }); }); }
     if (!toReceive.length) rc.appendChild(el('<p class="ch-empty">'+esc(t('ch_noneToReceive'))+'</p>'));
     toReceive.forEach(function(h){
       var c = el('<article class="ch-card">' +
@@ -12925,7 +13054,7 @@ function renderHome(body){
 
     var entries = report ? (report.entries || []) : null;
     if (entries || handoffs) drillSetData_(entries, handoffs);
-    var ctx = { entries: entries || [], handoffs: handoffs || [] };
+    var ctx = { entries: entries || [], handoffs: handoffs || [], cohort: report && report.cohort ? report.cohort.byEntry : null };
     function open(key, extra){ return function(){ openMetric_(key, ctx, extra); }; }
     function openList(title, list){ return function(){ drillSetData_(null, handoffs || null); openMetric_('list', ctx, { title: title, handoffs: list }); }; }
 
@@ -16089,17 +16218,22 @@ function renderEntries(body){
     var ofState = function(st){ return gRows.filter(function(rows){ return groupState_(rows) === st; }); };
     var liveOf = function(rows){ return rows.filter(function(e){ return !e.voided; }); };
     var netOf = function(rows){ return eqTotals_(liveOf(rows)).net; };
-    var open_ = function(title, list, figure, extra){ return function(){ var o = { title: title, groups: list, figure: figure }; Object.keys(extra || {}).forEach(function(k){ o[k] = extra[k]; }); drawerOpen_(entBreakView_(o)); }; };
+    // each tile is the sum of the items its drawer lists, in the cohort's cents (2026-10-18)
+    var EC = entCards_(gRows, groupState_, entCohort);
+    var openC = function(title, items){ return function(){ cardDrawer_({ title: title, items: items }); }; };
     dash.appendChild(tiles_([
-      { onClick: open_(t('el_sales'), gRows.filter(function(rows){ return liveOf(rows).length; }), function(rows){ return eqTotals_(liveOf(rows)).sales; }), label: t('eh_calDays'), value: String(Object.keys(calDays).length), icon: 'entries', foot: esc(t('eh_savedEntries'))+': <span class="num">'+esc(String(groups.length - by.voided.n))+'</span> · '+esc(t('el_sales'))+': <span class="num">'+esc(money(T.sales))+'</span>' },
-      { onClick: open_(t('eh_withMe'), ofState('open'), netOf), label: t('eh_withMe'), value: money(by.open.net), icon: 'wallet', color: by.open.n ? 'var(--c-hold)' : 'var(--green)', foot: esc(String(by.open.n))+' · '+esc(t('el_open')) },
-      { onClick: open_(t('eh_waiting'), ofState('submitted'), netOf), label: t('eh_waiting'), value: money(by.submitted.net), icon: 'clock', color: 'var(--c-hold)', foot: esc(String(by.submitted.n))+' · '+esc(t('el_submitted')) },
-      { onClick: open_(t('eh_approved'), ofState('approved'), netOf), label: t('eh_approved'), value: money(by.approved.net), icon: 'check', color: 'var(--c-deposit)', foot: esc(String(by.approved.n))+' · '+esc(t('el_approved')) },
-      { onClick: open_(t('el_deduct'), gRows.filter(function(rows){ return eqTotals_(liveOf(rows)).deductions; }), function(rows){ return eqTotals_(liveOf(rows)).deductions; }, { kinds: true }), label: t('el_deduct'), value: money(T.deductions), icon: 'percent', color: 'var(--c-danger)' },
-      { onClick: open_(t('eh_cancelled'), ofState('voided'), function(rows){ return eqTotals_(rows).sales; }, { cancelled: true }), label: t('eh_cancelled'), value: String(by.voided.n), icon: 'ban', color: 'var(--muted)', foot: esc(t('eb_tapToSee')) }
+      { onClick: openC(t('el_sales'), EC.sales), label: t('eh_calDays'), value: String(Object.keys(calDays).length), icon: 'entries', foot: esc(t('eh_savedEntries'))+': <span class="num">'+esc(String(groups.length - by.voided.n))+'</span> · '+esc(t('el_sales'))+': <span class="num">'+esc(money(cardsSum_(EC.sales)))+'</span>' },
+      { onClick: openC(t('eh_withMe'), EC.open), label: t('eh_withMe'), value: money(cardsSum_(EC.open)), icon: 'wallet', color: by.open.n ? 'var(--c-hold)' : 'var(--green)', foot: esc(String(by.open.n))+' · '+esc(t('el_open')) },
+      { onClick: openC(t('eh_waiting'), EC.submitted), label: t('eh_waiting'), value: money(cardsSum_(EC.submitted)), icon: 'clock', color: 'var(--c-hold)', foot: esc(String(by.submitted.n))+' · '+esc(t('el_submitted')) },
+      { onClick: openC(t('eh_approved'), EC.approved), label: t('eh_approved'), value: money(cardsSum_(EC.approved)), icon: 'check', color: 'var(--c-deposit)', foot: esc(String(by.approved.n))+' · '+esc(t('el_approved')) },
+      { onClick: openC(t('el_deduct'), EC.deductions), label: t('el_deduct'), value: money(cardsSum_(EC.deductions)), icon: 'percent', color: 'var(--c-danger)' },
+      { onClick: openC(t('eh_cancelled'), EC.cancelled), label: t('eh_cancelled'), value: String(by.voided.n), icon: 'ban', color: 'var(--muted)', foot: esc(t('eb_tapToSee')) }
     ]));
     var CS = entCohort ? cohortSum_(live, entCohort) : null;
-    dash.appendChild(netEquation_({ entries: live, collected: CS ? CS.deposited : null, net: CS ? CS.net : null, remaining: CS ? CS.remaining : null }).node);
+    dash.appendChild(netEquation_({ entries: live, byEntry: entCohort, collected: CS ? CS.deposited : null, net: CS ? CS.net : null, remaining: CS ? CS.remaining : null, onSpecial: function(w){
+      var A = cohortAlloc_(live, entCohort || {});
+      cardDrawer_({ title: t(w === 'deposited' ? 'kf_dep' : 'kf_rem'), sub: t('kf_stageSub'), items: live.map(function(e){ var x = A.byId[e.id]; if (!x) return null; var v = w === 'deposited' ? (x.s === 'deposited' ? x.c : 0) : (x.s === 'deposited' || x.s === 'settled' ? 0 : x.c) + x.k; return v ? entryRowData_(e, v / 100) : null; }).filter(Boolean) });
+    } }).node);
     if (CS) {
       var stBox = el('<div class="kfl card no-collapse" role="group" aria-label="'+esc(t('kf_remSplit'))+'"><p class="kfl-hint">'+esc(t('kf_remSplit'))+'</p>'+cohortStagesHtml_(CS)+(Math.abs(CS.settled) > 0.004 ? '<button type="button" class="kfl-row kfl-sub" data-st="settled"><span class="kfl-op" aria-hidden="true"></span><span class="kfl-l">'+esc(t('kf_settled'))+'</span><b class="num">'+esc(money(CS.settled))+'</b></button>' : '')+'</div>');
       qsa('.kfl-row', stBox).forEach(function(b){ b.addEventListener('click', function(){ var s = b.dataset.st, A = cohortAlloc_(live, entCohort); drawerOpen_(drillPivotView_({ title: s === 'settled' ? t('kf_settled') : t('kf_s_' + s), sub: t('kf_stageSub'), items: live.map(function(e){ var x = A.byId[e.id]; if (!x) return null; var v = s === 'short' ? x.k : x.s === s ? x.c : 0; return v ? entryRowData_(e, v / 100) : null; }).filter(Boolean) })); }); });
@@ -18619,7 +18753,7 @@ function renderCollections(body){
       (fchips.length ? '<div class="col-fchips">' + fchips.map(function(x){ return '<button type="button" class="col-fchip" data-k="'+x[0]+'" aria-label="'+esc(t('col_removeF').replace('{x}', x[2]))+'"><span>'+esc(t('col_f_' + x[0]) + ': ' + x[2])+'</span><i aria-hidden="true">\u2715</i></button>'; }).join('') + '</div>' : '');
     qsa('.col-fchip', stick).forEach(function(b){ b.addEventListener('click', function(){ var k = b.dataset.k; S[k] = ''; if (k === 'city') { S.area = ''; S.branch = ''; } if (k === 'area') S.branch = ''; S.more = 0; S.dmore = 0; redraw(); }); });
     head.appendChild(exButtons_(function(){ return colSheets_(D, sentence); }, function(){ return t('nav_collections'); }, function(){ return { note: sentence }; }));
-    function tileList(title, rows, sortFn){ return function(){ drawerOpen_(colListView_(title, sortFn ? rows.slice().sort(sortFn) : rows)); }; }
+    function tileList(title, rows, sortFn, amountOf){ return function(){ drawerOpen_(colListView_(title, sortFn ? rows.slice().sort(sortFn) : rows, amountOf)); }; }
     var depRows = D.rows.filter(function(x){ return x.st === 'deposited'; }), openRows = D.rows.filter(function(x){ return x.st !== 'deposited'; });
     // ---- the three totals: collection = deposits + remaining ----
     var pDep = colPct_(T.deposited, T.total), oldD = T.oldest ? cpDays_(T.oldest, localToday_()) : 0;
@@ -18655,7 +18789,7 @@ function renderCollections(body){
     // ---- smaller figures: shortfall, days to the bank, oldest open ----
     var avg = T.daysN ? (T.daysSum / T.daysN) : 0;
     body.appendChild(tiles_([
-      { label: t('col_k_short'), value: money(Math.abs(T.short)), icon: 'alert', color: T.short > 0.004 ? 'var(--c-danger)' : 'var(--green)', foot: esc(T.short > 0.004 ? t('col_shortW') : T.short < -0.004 ? t('col_overW') : ''), onClick: tileList(t('col_k_short'), D.rows.filter(function(x){ return Math.abs(Number(x.r.shortfall || 0)) > 0.004; }), function(a, b){ return Math.abs(b.r.shortfall) - Math.abs(a.r.shortfall); }) },
+      { label: t('col_k_short'), value: money(Math.abs(T.short)), icon: 'alert', color: T.short > 0.004 ? 'var(--c-danger)' : 'var(--green)', foot: esc(T.short > 0.004 ? t('col_shortW') : T.short < -0.004 ? t('col_overW') : ''), onClick: tileList(t('col_k_short'), D.rows.filter(function(x){ return Math.abs(Number(x.r.shortfall || 0)) > 0.004; }), function(a, b){ return Math.abs(b.r.shortfall) - Math.abs(a.r.shortfall); }, function(x){ return Number(x.r.shortfall || 0); }) },
       { label: t('col_k_days'), value: avg ? (Math.round(avg * 10) / 10).toLocaleString('en-US') : '0', icon: 'clock', foot: esc(t('col_daysW')), onClick: tileList(t('col_k_days'), depRows, function(a, b){ return (b.toBank || 0) - (a.toBank || 0); }) },
       { label: t('col_k_oldest'), value: String(oldD), icon: 'hourglass', color: oldD > 3 ? 'var(--c-danger)' : 'var(--green)', foot: esc(T.oldest ? t('col_since').replace('{d}', T.oldest) : t('col_nothingOpen')), onClick: tileList(t('col_k_oldest'), openRows, function(a, b){ return (b.age || 0) - (a.age || 0); }) }
     ]));
@@ -18842,6 +18976,9 @@ function colTotalRow_(D0, list){
 }
 // a collector's requests, grouped branch then day
 function colCollectorView_(name, rows){
+  return drillPivotView_({ title: name, sub: t('col_cDrawerSub').replace('{n}', rows.length), items: reqItems_(rows), placeOf: placeCollector_ });
+}
+function colCollectorViewOld_(name, rows){
   return {
     title: name, sub: t('col_cDrawerSub').replace('{n}', rows.length), crumb: name,
     render: function(b){
@@ -18889,7 +19026,10 @@ function colDeposits_(D, S, enter, redraw){
   return card;
 }
 // the requests behind a figure, as a list in the side panel; each opens its document
-function colListView_(title, rows){
+function colListView_(title, rows, amountOf){
+  return drillPivotView_({ title: title, sub: t('col_reqN').replace('{n}', rows.length), items: reqItems_(rows, amountOf), placeOf: placeCollector_ });
+}
+function colListViewOld_(title, rows){
   return {
     title: title, sub: t('col_reqN').replace('{n}', rows.length), crumb: title,
     render: function(b){
@@ -19329,7 +19469,7 @@ function crpKpis_(ctx, list){
     var b = el('<button type="button" class="crp-kpi'+(k.tone ? ' t-' + k.tone : '')+'" role="listitem" style="--i:'+i+';--c:'+(k.color || 'var(--green)')+'"'+(k.rows ? '' : ' disabled')+'>' +
       '<span class="crp-kl">'+esc(k.l)+'</span><span class="crp-kb"><span class="crp-kv num">'+esc(val)+'</span>'+(unit ? '<small>'+esc(unit)+'</small>' : '')+'</span>' +
       (k.sub ? '<span class="crp-ks">'+esc(k.sub)+'</span>' : '') + dl + '</button>');
-    if (k.rows) b.addEventListener('click', function(){ ctx.open(k.l, k.rows); });
+    if (k.rows) b.addEventListener('click', function(){ ctx.open(k.l, k.rows, k.of); });
     g.appendChild(b);
   });
   if (ctx.enter) countUp_(g);
@@ -19337,6 +19477,8 @@ function crpKpis_(ctx, list){
 }
 // ---- the reports: each draws into the main panel from ctx (the filtered figures, the period before, the side rows) ----
 function crpR2_(v){ return Math.round(Number(v || 0) * 100) / 100; }
+// a KPI built on derived rows ({x, total}) drills into each request's own part of it
+function crpOfRows_(list, sign){ var m = {}; list.forEach(function(r){ var id = r.x.r.id; m[id] = (m[id] || 0) + Number(r.total || 0) * sign; }); return function(x){ return m[x.r.id] || 0; }; }
 function crpSumC_(rows, f){ return rows.reduce(function(s, x){ return s + crpC_(f ? f(x) : x.r.amount); }, 0) / 100; }
 var CRP_REPS_ = {
   summary: function(c, m){
@@ -19350,7 +19492,7 @@ var CRP_REPS_ = {
       { l: t('col_card_rem'), v: vRem, t: 'money', prev: Tp ? crpR2_(Tp.total - Tp.deposited) : null, good: 'down', rows: open, color: '#C27C1E', tone: vRem > 0.004 ? 'warn' : '' },
       { l: t('crp_k_bankedPct'), v: T.total ? T.deposited / T.total * 100 : 0, t: 'pct', prev: Tp ? (Tp.total ? Tp.deposited / Tp.total * 100 : 0) : null, rows: dep },
       { l: t('col_k_days'), v: avg, t: 'days', prev: avgP, good: 'down', rows: dep },
-      { l: t('crp_k_short'), v: crpR2_(Math.abs(T.short)), t: 'money', prev: Tp ? crpR2_(Math.abs(Tp.short)) : null, good: 'down', tone: Math.abs(T.short) > 0.004 ? 'bad' : '', rows: rows.filter(function(x){ return Math.abs(Number(x.r.shortfall || 0)) > 0.004; }) }
+      { l: t('crp_k_short'), v: crpR2_(Math.abs(T.short)), t: 'money', prev: Tp ? crpR2_(Math.abs(Tp.short)) : null, good: 'down', tone: Math.abs(T.short) > 0.004 ? 'bad' : '', rows: rows.filter(function(x){ return Math.abs(Number(x.r.shortfall || 0)) > 0.004; }), of: function(x){ return Number(x.r.shortfall || 0); } }
     ]));
     m.appendChild(el('<p class="crp-eq num" role="status">'+esc(colFill_(t('col_formula'), { tc: t('col_card_total'), td: t('col_card_dep'), tr: t('col_card_rem'), total: money(vTot), dep: money(vDep), rem: money(vRem) }))+'</p>'));
     // the stage funnel: sent, through the deputy, received by a collector, banked
@@ -19385,7 +19527,7 @@ var CRP_REPS_ = {
     var segs = CRP_MIX_.map(function(k){ return { k: k, label: t('crp_mix_' + k), value: M.T.v[k], color: CRP_MIX_C_[k] }; });
     var cashP = M.T.pct[0], Mp = c.Dp ? crpMix_(c.Dp.rows) : null;
     m.appendChild(crpKpis_(c, [
-      { l: t('crp_k_gross'), v: M.T.total, t: 'money', prev: Mp ? Mp.T.total : null, rows: rows, sub: colFill_(t('col_reqN'), { n: M.T.n }) },
+      { l: t('crp_k_gross'), v: M.T.total, t: 'money', prev: Mp ? Mp.T.total : null, rows: rows, of: function(x){ var v = crpMixOf_(x.r); return CRP_MIX_.reduce(function(s, k){ return s + (v[k] || 0); }, 0) / 100; }, sub: colFill_(t('col_reqN'), { n: M.T.n }) },
       { l: t('crp_mix_cash'), v: M.T.v.cash, t: 'money', prev: Mp ? Mp.T.v.cash : null, color: CRP_MIX_C_.cash, sub: crpPctTxt_(cashP) + ' ' + t('crp_ofGross') },
       { l: t('crp_k_nonCash'), v: crpR2_(M.T.total - M.T.v.cash), t: 'money', prev: Mp ? crpR2_(Mp.T.total - Mp.T.v.cash) : null, color: CRP_MIX_C_.card, sub: crpPctTxt_(M.T.total > 0 ? 100 - cashP : 0) + ' ' + t('crp_ofGross') },
       { l: t('crp_k_netCash'), v: crpR2_(T.total), t: 'money', prev: c.Dp ? crpR2_(c.Dp.T.total) : null, rows: rows, sub: t('crp_netCashSub2') }
@@ -19394,7 +19536,7 @@ var CRP_REPS_ = {
     var grid = el('<div class="crp-mixg"></div>');
     grid.appendChild(el(crpDonut_(segs, M.T.pct, money(M.T.total), t('crp_k_gross'))));
     var lg = el('<div class="crp-mixl"></div>');
-    lg.appendChild(crpHBars_(segs.map(function(s, i){ return { label: s.label, value: s.value, color: s.color, valTxt: money(s.value) + ' · ' + crpPctTxt_(M.T.pct[i]), onClick: s.value ? function(){ c.open(s.label, rows.filter(function(x){ return crpMixOf_(x.r)[s.k]; })); } : null }; })));
+    lg.appendChild(crpHBars_(segs.map(function(s, i){ return { label: s.label, value: s.value, color: s.color, valTxt: money(s.value) + ' · ' + crpPctTxt_(M.T.pct[i]), onClick: s.value ? function(){ c.open(s.label, rows.filter(function(x){ return crpMixOf_(x.r)[s.k]; }), function(x){ return (crpMixOf_(x.r)[s.k] || 0) / 100; }); } : null }; })));
     grid.appendChild(lg);
     dc.appendChild(grid);
     dc.appendChild(el('<p class="crp-note num">'+esc(colFill_(t('crp_mixBridge'), { g: money(M.T.total), n: money(T.total), d: money(crpR2_(M.T.total - T.total)) }))+'</p>'));
@@ -19778,8 +19920,8 @@ var CRP_REPS_ = {
   shorts: function(c, m){
     var Q = crpShort_(c.D), Qp = c.Dp ? crpShort_(c.Dp) : null;
     m.appendChild(crpKpis_(c, [
-      { l: t('crp_k_shortT'), v: Q.T.short, t: 'money', prev: Qp ? Qp.T.short : null, good: 'down', tone: Q.T.short > 0 ? 'bad' : '', rows: Q.rows.filter(function(r){ return r.total > 0; }).map(function(r){ return r.x; }) },
-      { l: t('crp_k_overT'), v: Q.T.over, t: 'money', prev: Qp ? Qp.T.over : null, good: 'down', rows: Q.rows.filter(function(r){ return r.total < 0; }).map(function(r){ return r.x; }) },
+      { l: t('crp_k_shortT'), v: Q.T.short, t: 'money', prev: Qp ? Qp.T.short : null, good: 'down', tone: Q.T.short > 0 ? 'bad' : '', rows: Q.rows.filter(function(r){ return r.total > 0; }).map(function(r){ return r.x; }), of: crpOfRows_(Q.rows.filter(function(r){ return r.total > 0; }), 1) },
+      { l: t('crp_k_overT'), v: Q.T.over, t: 'money', prev: Qp ? Qp.T.over : null, good: 'down', rows: Q.rows.filter(function(r){ return r.total < 0; }).map(function(r){ return r.x; }), of: crpOfRows_(Q.rows.filter(function(r){ return r.total < 0; }), -1) },
       { l: t('crp_k_netShort'), v: Q.T.net, t: 'money', good: 'down' },
       { l: t('crp_atReceipt'), v: Q.T.receipt, t: 'money' }, { l: t('crp_atHop'), v: Q.T.transfer, t: 'money' }
     ]));
@@ -20218,7 +20360,7 @@ function crpBuild_(body, reqs){
       redraw: redraw,
       // a click on a level's bar, slice, tile or row: that level becomes a filter, the next one shows
       drill: function(lv, key){ if (CRP_LV_.indexOf(lv) < 0 || !key || key === '_') return; S[lv] = key; if (lv === 'city') { S.area = ''; S.branch = ''; } if (lv === 'area') S.branch = ''; S.tOpen = {}; redraw(true); window.scrollTo({ top: 0, behavior: 'smooth' }); },
-      open: function(title, rows){ drawerOpen_(colListView_(title, rows || [])); },
+      open: function(title, rows, of){ drawerOpen_(colListView_(title, rows || [], of)); },
       card: function(title, hint){ return el('<section class="card crp-card no-collapse"><h2>'+esc(title)+'</h2>'+(hint ? '<p class="muted crp-hint">'+esc(hint)+'</p>' : '')+'</section>'); },
       // every request ever made in the place filters (the statement's dates are the moves, not the requests)
       all: function(){ if (!allMemo) { var o = { city: S.city, area: S.area, branch: S.branch, locOf: locOf }; allMemo = colCompute_(reqs, o).rows.concat(crpSide_(reqs, o)); } return allMemo; },
@@ -20326,7 +20468,7 @@ function cmpCompute_(entries, handoffs, periods, o){
     out.days = m._days.length ? Math.round(m._days.reduce(function(s, v){ return s + v; }, 0) / m._days.length * 10) / 10 : null;
     return out;
   }
-  var res = periods.map(function(p){ return { from: p.from, to: p.to, k: p.k, T: zero(), G: {} }; });
+  var res = periods.map(function(p){ return { from: p.from, to: p.to, k: p.k, T: zero(), G: {}, L: [], GL: {} }; });
   (entries || []).forEach(function(e){
     if (e.voided) return;
     if (o.include && !o.include(e)) return;
@@ -20334,11 +20476,13 @@ function cmpCompute_(entries, handoffs, periods, o){
     res.forEach(function(p){
       if (p.from && d < p.from) return; if (p.to && d > p.to) return;
       if (!a) { a = entryAmt_(e); f = follow(e); }
-      add(p.T, e, a, f);
-      if (o.keyOf) { var key = o.keyOf(e) || '_'; add(p.G[key] || (p.G[key] = zero()), e, a, f); }
+      add(p.T, e, a, f); p.L.push(e);
+      if (o.keyOf) { var key = o.keyOf(e) || '_'; add(p.G[key] || (p.G[key] = zero()), e, a, f); (p.GL[key] = p.GL[key] || []).push(e); }
     });
   });
-  return res.map(function(p){ var g = {}; Object.keys(p.G).forEach(function(k){ g[k] = fin(p.G[k]); }); return { from: p.from, to: p.to, k: p.k, T: fin(p.T), G: g }; });
+  // with the cohort, every money figure is the sum of the cents its drawer lists (cmpItems_)
+  function coh(out, list){ if (!o.byEntry) return out; ['sales', 'card', 'direct', 'other', 'additions', 'net', 'deposited', 'remaining', 'short'].forEach(function(k){ out[k] = cardsSum_(cmpItems_(list, o.byEntry, k)); }); return out; }
+  return res.map(function(p){ var g = {}; Object.keys(p.G).forEach(function(k){ g[k] = coh(fin(p.G[k]), p.GL[k] || []); }); return { from: p.from, to: p.to, k: p.k, T: coh(fin(p.T), p.L), G: g, L: p.L }; });
 }
 // pure: the change of a figure against the column before it, and whether that is good
 function cmpDelta_(cur, prev, metric){
@@ -20363,7 +20507,7 @@ function renderComparison(body){
     if (!rep.ok) { body.innerHTML = '<div class="msg err">'+esc(errMsg_(rep))+'</div>'; return; }
     cmpDraw_(body, S, periods, rep.entries || [], (hos.ok && hos.handoffs) || []);
   }
-  apiCached('getSalesReport', span, body, function(r){ rep = r; go(); });
+  apiCached('getSalesReport', span, body, function(r){ rep = r; CMP_COH_ = r && r.cohort ? r.cohort.byEntry : null; go(); });
   apiCached('listHandoffs', {}, body, function(r){ hos = r; go(); });
 }
 function cmpDraw_(body, S, periods, entries, handoffs){
@@ -20407,7 +20551,7 @@ function cmpDraw_(body, S, periods, entries, handoffs){
   var ownerName = {}; entries.forEach(function(e){ var k = e.sourceType + ':' + e.sourceId; if (!ownerName[k]) ownerName[k] = (sourceName_(e) || t('report_unspecified')) + ' \u00B7 ' + t('entry_source_' + e.sourceType); });
   var keyOf = { area: function(e){ return locOf(e.locationId).clusterId || '_'; }, branch: function(e){ return e.locationId || '_'; }, collector: function(e){ return colOfLoc(e.locationId) || '_'; }, city: function(e){ return locOf(e.locationId).city || '_'; }, owner: function(e){ return e.sourceType + ':' + e.sourceId; }, day: function(e){ return String(e.date || '').slice(0, 10) || '_'; } }[by];
   var nameOf = { area: function(k){ return k === '_' ? t('report_unspecified') : clusterName(k); }, branch: function(k){ return k === '_' ? t('report_unspecified') : locationName(k); }, collector: function(k){ return k === '_' ? t('report_unspecified') : userName(k); }, city: function(k){ return k === '_' ? t('report_unspecified') : k; }, owner: function(k){ return ownerName[k] || t('report_unspecified'); }, day: function(k){ return k === '_' ? t('report_unspecified') : crpShortDate_(k) + ' ' + k.slice(0, 4); } }[by];
-  var P = cmpCompute_(entries, handoffs, periods, { include: include, keyOf: keyOf });
+  var P = cmpCompute_(entries, handoffs, periods, { include: include, keyOf: keyOf, byEntry: CMP_COH_ });
   var cols2 = P.slice().reverse(); // oldest to newest: time runs with the reading direction
   var labels = cols2.map(function(p){ return cmpLabel_(p, S.preset); });
   var place = [S.city, S.area && clusterName(S.area), S.branch && locationName(S.branch), S.owner && (entries.filter(function(e){ return e.sourceType + ':' + e.sourceId === S.owner; }).map(function(e){ return sourceName_(e); })[0] || ''), S.collector && userName(S.collector)].filter(Boolean);
@@ -20426,9 +20570,12 @@ function cmpDraw_(body, S, periods, entries, handoffs){
     var k = r[0], strong = k === 'net' || k === 'remaining' || k === 'sales';
     return '<tr class="'+(strong ? 'cmp-strong' : '')+(k === 'short' ? ' cmp-sep' : '')+'"><th scope="row"><span class="cmp-op" aria-hidden="true">'+r[1]+'</span>'+esc(t('cmp_m_' + k))+'</th>' + cols2.map(function(p, i){
       var v = p.T[k], prev = i ? cols2[i - 1].T[k] : null, dl = i ? cmpDelta_(v, prev, k) : null;
-      return '<td class="num'+(i === cols2.length - 1 ? ' cmp-cur' : '')+'"><b>'+esc(cmpFmt_(k, v))+'</b>' + (dl && dl.d ? '<span class="cmp-dl '+dl.tone+'">'+(dl.d > 0 ? '▲ ' : dl.d < 0 ? '▼ ' : '')+esc(k === 'requests' ? String(Math.abs(dl.d)) : k === 'days' ? (Math.round(Math.abs(dl.d) * 10) / 10).toFixed(1) : money(Math.abs(dl.d)))+(dl.pct != null && dl.d ? ' · ' + esc(crpPctTxt_(Math.abs(dl.pct))) : '')+'</span>' : '') + '</td>'; }).join('') + '</tr>'; }).join('');
+      return '<td class="num'+(i === cols2.length - 1 ? ' cmp-cur' : '')+(CMP_COH_ && ['requests', 'days'].indexOf(k) < 0 ? ' cmp-tap" data-ci="'+i+'" data-k="'+k : '')+'"><b>'+esc(cmpFmt_(k, v))+'</b>' + (dl && dl.d ? '<span class="cmp-dl '+dl.tone+'">'+(dl.d > 0 ? '▲ ' : dl.d < 0 ? '▼ ' : '')+esc(k === 'requests' ? String(Math.abs(dl.d)) : k === 'days' ? (Math.round(Math.abs(dl.d) * 10) / 10).toFixed(1) : money(Math.abs(dl.d)))+(dl.pct != null && dl.d ? ' · ' + esc(crpPctTxt_(Math.abs(dl.pct))) : '')+'</span>' : '') + '</td>'; }).join('') + '</tr>'; }).join('');
   var mc = el('<section class="card crp-card no-collapse"><h2>'+esc(t('cmp_table'))+'</h2><p class="muted crp-hint">'+esc(t('cmp_tableHint'))+'</p><div class="crp-tw cmp-tw" data-noexport><table class="crp-tbl cmp-tbl" data-nosort>'+head+'<tbody>'+bodyH+'</tbody></table></div></section>');
   root.appendChild(mc);
+  // a money cell opens the entries of that period behind it, in the same cents
+  mc.addEventListener('click', function(ev){ var td = ev.target.closest('td.cmp-tap'); if (!td) return; var p = cols2[Number(td.dataset.ci)], k = td.dataset.k;
+    cardDrawer_({ title: t('cmp_m_' + k) + ' \u00B7 ' + labels[Number(td.dataset.ci)], items: cmpItems_(p.L || [], CMP_COH_, k) }); });
   var sh = [[t('cmp_metric')].concat(labels.reduce(function(a, l, i){ return a.concat(i ? [l, t('crp_change'), t('crp_changePct')] : [l]); }, []))];
   rows.forEach(function(r){ var k = r[0]; sh.push([t('cmp_m_' + k)].concat(cols2.reduce(function(a, p, i){ var v = p.T[k]; var dl = i ? cmpDelta_(v, cols2[i - 1].T[k], k) : null;
     return a.concat(i ? [crpXv_(v, k === 'requests' || k === 'days' ? 'int' : 'money'), dl ? crpXv_(dl.d, 'money') : '', dl && dl.pct != null ? crpPctTxt_(dl.pct) : ''] : [crpXv_(v, k === 'requests' || k === 'days' ? 'int' : 'money')]); }, []))); });
@@ -21545,11 +21692,11 @@ function renderReport(body){
       // report filters are active), and every transaction opens its document.
       var rEntries = res.entries || [];
       drillSetData_(rEntries, null);
-      var rCtx = { entries: rEntries, handoffs: DRILL.handoffs || [] };
+      var rCtx = { entries: rEntries, handoffs: DRILL.handoffs || [], cohort: res.cohort ? res.cohort.byEntry : null };
       function rOpen(key){ return function(){ openMetric_(key, rCtx); }; }
       // the report reads as the equation, then the detail behind it, level
       // by level, with every table ready for Excel
-      out.appendChild(netEquation_({ entries: rEntries, title: t('rp_eqTitle') }).node);
+      out.appendChild(netEquation_({ entries: rEntries, byEntry: res.cohort ? res.cohort.byEntry : null, title: t('rp_eqTitle') }).node);
       var chCard = channelsCard_(rEntries);
       if (chCard) out.appendChild(chCard);
       var rNote = t('rp_notePeriod').replace('{from}', payload.dateFrom || t('rp_fromStart')).replace('{to}', payload.dateTo || t('rp_toToday')) +
@@ -22449,13 +22596,15 @@ function renderInventory(body){
         var c = p[0], zero = !tot[c];
         var big = showVal ? invFig_(tot[c + 'Value'], true) + '<small class="u">'+esc(t('ui_sar'))+'</small>' : invFig_(tot[c]);
         var small = showVal ? esc(t('inv_qtyShort'))+' '+invFig_(tot[c]) : (anyCost ? invFig_(tot[c + 'Value'], true)+' '+esc(t('ui_sar')) : '');
-        return '<div class="inv-fig inv-'+c+(zero ? ' zero' : '')+'"><span>'+esc(t('inv_' + c))+(p[1] ? ' <em class="inv-tag inv-tag-'+p[1]+'">'+esc(t('inv_tag_' + p[1]))+'</em>' : '')+'</span>' +
+        return '<div class="inv-fig inv-'+c+(zero ? ' zero' : '')+'" data-c="'+c+'" role="button" tabindex="0"><span>'+esc(t('inv_' + c))+(p[1] ? ' <em class="inv-tag inv-tag-'+p[1]+'">'+esc(t('inv_tag_' + p[1]))+'</em>' : '')+'</span>' +
           '<b class="num">'+big+'</b>'+(small ? '<small>'+small+'</small>' : '')+'</div>';
       }).join('') + '</div>' +
       (useVal && !anyCost ? '<div class="inv-warn">'+icon_('alert')+'<span>'+esc(t('inv_noCosts'))+'</span></div>' : '') +
       (uncounted.length ? '<div class="inv-warn">'+icon_('alert')+'<span>'+esc(t('inv_uncounted').replace('{n}', uncounted.length))+'</span></div>' : '') +
       (rows.some(function(r){ return r.salesWithoutQty; }) ? '<div class="inv-warn">'+icon_('alert')+'<span>'+esc(t('inv_noQtyWarn').replace('{n}', rows.reduce(function(a, r){ return a + r.salesWithoutQty; }, 0)).replace('{amt}', money(rows.reduce(function(a, r){ return a + r.salesWithoutQtyAmount; }, 0))))+'</span></div>' : '') +
       '</section>');
+    // every figure opens the stock lines behind it, City > Area > Branch > item (2026-10-18)
+    qsa('.inv-fig', eq).forEach(function(f){ f.addEventListener('click', function(){ var c = f.dataset.c; cardDrawer_({ title: t('inv_' + c), qty: !showVal, items: invItems_(rows, showVal ? c + 'Value' : c) }); }); });
     // the movement by item, at the level chosen (2026-10-07): quantities never add up across items, amounts do
     var nsCard = invShortCard_(rows);
     if (nsCard) out.appendChild(nsCard);
@@ -22913,10 +23062,10 @@ function renderCustomers(body){
       var T = cusTotals_(list);
       tilesHost.innerHTML = '';
       tilesHost.appendChild(tiles_([
-        { label: t('cus_tOwed'), value: money(T.owed), icon: 'credit', color: 'var(--amber, #B7791F)' },
-        { label: t('cus_tOwing'), value: String(T.owing), icon: 'customers' },
-        { label: t('cus_tUninvoiced'), value: money(T.uninvoiced), icon: 'doc', color: '#2F5D8A' },
-        { label: t('cus_tPaid'), value: money(T.paid), icon: 'bank' }
+        { label: t('cus_tOwed'), value: money(T.owed), icon: 'credit', color: 'var(--amber, #B7791F)', onClick: function(){ cardDrawer_({ title: t('cus_tOwed'), items: cusItems_(list, function(r){ return r.balance > 0.004 ? r.balance : 0; }) }); } },
+        { label: t('cus_tOwing'), value: String(T.owing), icon: 'customers', onClick: function(){ cardDrawer_({ title: t('cus_tOwing'), items: cusItems_(list, function(r){ return r.balance > 0.004 ? r.balance : 0; }) }); } },
+        { label: t('cus_tUninvoiced'), value: money(T.uninvoiced), icon: 'doc', color: '#2F5D8A', onClick: function(){ cardDrawer_({ title: t('cus_tUninvoiced'), items: cusItems_(list, function(r){ return r.uninvoiced || 0; }) }); } },
+        { label: t('cus_tPaid'), value: money(T.paid), icon: 'bank', onClick: function(){ cardDrawer_({ title: t('cus_tPaid'), items: cusItems_(list, function(r){ return r.paid || 0; }) }); } }
       ]));
     }
     if (!((state.meta.config || {}).company || {}).vatNumber) head.appendChild(el('<div class="el-voidinfo cus-nocomp">'+icon_('alert')+'<span>'+esc(t('cus_noCompany'))+'</span></div>'));
@@ -23505,15 +23654,17 @@ function renderProfit(body){
     var beDay = contribRatio > 0 ? fixedAll / contribRatio / days : null, unitMargin = T.qty ? (T.gm - T.commission - T.expenses) / T.qty : 0;
     var beUnits = unitMargin > 0 ? fixedAll / unitMargin / days : null;
     var S = plSeries_(res, F.key), profitDays = S.profit.filter(function(v){ return v >= 0; }).length;
+    // a tile opens the stores and cars under this place, City > Area > Branch > store or car (2026-10-18)
+    function plOpen(m, title, qty){ return function(){ cardDrawer_({ title: title + ' \u00B7 ' + plNodeName_(F), items: plDrillItems_(res, F.key, m), qty: !!qty }); }; }
     out.appendChild(tiles_([
-      { label: t('pl_net'), value: money(T.net), icon: 'cash', color: 'var(--c-cash)', foot: delta(T.net, prev && prev.net) },
-      { label: t('pl_gmPct'), value: (plPct_(T.gm, T.net) == null ? '—' : Math.abs(plPct_(T.gm, T.net)).toLocaleString('en-US') + '%'), icon: 'percent', color: T.gm < 0 ? 'var(--c-danger)' : 'var(--green)', foot: esc(t('pl_gm')) + ' ' + plAmt_(T.gm) },
-      { label: t('pl_cmPct'), value: (plPct_(T.cm, T.net) == null ? '—' : Math.abs(plPct_(T.cm, T.net)).toLocaleString('en-US') + '%'), icon: 'layers', color: T.cm < 0 ? 'var(--c-danger)' : 'var(--green)', foot: esc(t('pl_cm')) + ' ' + plAmt_(T.cm) },
-      { label: t(T.profit < 0 ? 'pl_netLoss' : 'pl_profit'), value: money(Math.abs(T.profit)), icon: 'trend', color: T.profit < 0 ? 'var(--c-danger)' : 'var(--green)', foot: delta(T.profit, prev && prev.profit) },
+      { label: t('pl_net'), value: money(T.net), icon: 'cash', color: 'var(--c-cash)', foot: delta(T.net, prev && prev.net), onClick: plOpen('net', t('pl_net')) },
+      { label: t('pl_gmPct'), value: (plPct_(T.gm, T.net) == null ? '—' : Math.abs(plPct_(T.gm, T.net)).toLocaleString('en-US') + '%'), icon: 'percent', color: T.gm < 0 ? 'var(--c-danger)' : 'var(--green)', foot: esc(t('pl_gm')) + ' ' + plAmt_(T.gm), onClick: plOpen('gm', t('pl_gm')) },
+      { label: t('pl_cmPct'), value: (plPct_(T.cm, T.net) == null ? '—' : Math.abs(plPct_(T.cm, T.net)).toLocaleString('en-US') + '%'), icon: 'layers', color: T.cm < 0 ? 'var(--c-danger)' : 'var(--green)', foot: esc(t('pl_cm')) + ' ' + plAmt_(T.cm), onClick: plOpen('cm', t('pl_cm')) },
+      { label: t(T.profit < 0 ? 'pl_netLoss' : 'pl_profit'), value: money(Math.abs(T.profit)), icon: 'trend', color: T.profit < 0 ? 'var(--c-danger)' : 'var(--green)', foot: delta(T.profit, prev && prev.profit), onClick: plOpen('profit', t(T.profit < 0 ? 'pl_netLoss' : 'pl_profit')) },
       { label: t('pl_costPerDay'), value: money(fixedAll / days), icon: 'clock', color: 'var(--c-hold)', foot: esc(t('pl_costPerDayFoot').replace('{a}', money(fixedAll)).replace('{n}', days)) },
       { label: t('pl_breakEven'), value: beDay == null ? '—' : money(beDay), icon: 'check', color: 'var(--c-deposit)',
         foot: beDay == null ? esc(t('pl_beNone')) : esc(t('pl_beFoot').replace('{a}', money(revenue / days))) + (beUnits != null ? ' · ' + esc(t('pl_beUnits').replace('{n}', (Math.ceil(beUnits * 10) / 10).toLocaleString('en-US'))) : '') },
-      { label: t('pl_qty'), value: Math.round(T.qty).toLocaleString('en-US'), icon: 'inventory', foot: T.qty ? esc(t('pl_perUnit')) + ' ' + plAmt_(T.profit / T.qty) : '' },
+      { label: t('pl_qty'), value: Math.round(T.qty).toLocaleString('en-US'), icon: 'inventory', onClick: plOpen('qty', t('pl_qty'), true), foot: T.qty ? esc(t('pl_perUnit')) + ' ' + plAmt_(T.profit / T.qty) : '' },
       res.bucket === 'day' ? { label: t('pl_profitDays'), value: profitDays + ' / ' + S.profit.length, icon: 'clock', color: 'var(--green)', foot: esc(t('pl_profitDaysFoot')) } : null
     ]));
 
