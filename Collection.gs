@@ -444,7 +444,8 @@ function claimPhoto_(photoId, entryId) {
   writeRow(SHEETS.ENTRY_PHOTOS, ph);
 }
 // The photo goes up before the entry, so the entry request stays small.
-var ENTRY_PHOTO_ROLES_ = ['admin', 'store_manager', 'driver', 'cluster_manager', 'branch_worker'];
+// The collector uploads his bank slip the same way before recordDeposit (2026-10-17).
+var ENTRY_PHOTO_ROLES_ = ['admin', 'store_manager', 'driver', 'cluster_manager', 'branch_worker', 'collector'];
 function actionUploadEntryPhoto_(req, user) {
   if (ENTRY_PHOTO_ROLES_.indexOf(user.role) < 0) return { ok: false, error: 'forbidden' };
   var b64 = String(req.fileBase64 || '');
@@ -2326,10 +2327,18 @@ function actionRecordDeposit_(req, user) {
   var derr = hoStampDate_(dctx, dcand, req.handoffDate, req.dateChangeReason, user);
   if (derr) return { ok: false, error: derr };
 
-  var attachmentId = null;
-  if (req.fileBase64) {
+  // A bank deposit needs its slip (2026-10-17): a photo or PDF the depositor
+  // uploaded first (uploadEntryPhoto, one use, only by its uploader), or one an
+  // older screen still sends inline. Deposits recorded before keep what they had.
+  var attachmentId = null, slipPhoto = null;
+  if (req.attachmentId) {
+    slipPhoto = getById_(SHEETS.ENTRY_PHOTOS, String(req.attachmentId));
+    if (!slipPhoto || slipPhoto.uploadedBy !== user.id || slipPhoto.usedBy) return { ok: false, error: 'invalid_photo' };
+    attachmentId = slipPhoto.id;
+  } else if (req.fileBase64) {
+    if (String(req.fileBase64).length > 8000000) return { ok: false, error: 'invalid_input' };
     attachmentId = saveDepositSlip_(req.fileBase64, req.fileName, req.fileMime);
-  }
+  } else return { ok: false, error: 'deposit_needs_photo' };
 
   var deposit = {
     id: Utilities.getUuid(),
@@ -2351,6 +2360,7 @@ function actionRecordDeposit_(req, user) {
   };
   HO_DATE_FIELDS_.forEach(function (k) { if (dcand[k] !== undefined) deposit[k] = dcand[k]; });
   writeRow(SHEETS.HANDOFFS, deposit);
+  if (slipPhoto) claimPhoto_(slipPhoto.id, deposit.id);
   held.forEach(function (h) { h.consumedBy = deposit.id; writeRow(SHEETS.HANDOFFS, h); });
   logAudit_('record_deposit', user.id, deposit.id);
   hoAuditDate_(deposit, user);
@@ -2558,6 +2568,96 @@ function followRequest_(h, byId) {
   } else return null;
   return { hops: hops, holder: holder, stage: stage, stageAt: stageAt, dep: dep, now: now, hopShort: hopShort };
 }
+// ---------- Data health check (2026-10-18) ----------
+// Read-only. Walks every live handover and checks, to the cent (0.05 allowed for VAT rounding):
+//  sum      a handover's declared amount equals what its sources carried (entries' net + source handovers)
+//  deposit  a collector deposit equals the requests it banked
+//  link     every source points back at the handover that holds it (consumedBy), and no source is
+//           held by two live handovers
+//  orphan   an entry or handover consumed by something that does not exist
+//  short    shortfall = declared - received; a receipt of 0 without a correction
+//  voided   a cancelled entry inside a live handover
+//  direct   a direct deposit (الموازنة) equals its entry's amount
+//  day      two open sets of sales for one source and day
+// Admin and finance only. Nothing is written.
+var HEALTH_DEAD_ = { returned: 1, rejected: 1, voided: 1, cutover: 1 };
+function actionDataHealthCheck_(req, user) {
+  requireManager_(user);
+  var H = readSheet(SHEETS.HANDOFFS), E = readSheet(SHEETS.ENTRIES);
+  var hById = Object.create(null), eById = Object.create(null), batchIds = Object.create(null);
+  H.forEach(function (h) { hById[h.id] = h; });
+  E.forEach(function (e) { eById[e.id] = e; });
+  try { readSheet(SHEETS.AREA_BULK_BATCHES).forEach(function (b) { batchIds[b.id] = b; }); } catch (eB) {}
+  var vatHist = typeof vatHistory_ === 'function' ? vatHistory_() : null;
+  var issues = [], checked = { handovers: 0, deposits: 0, entries: E.length };
+  function r2(v) { return Math.round(Number(v || 0) * 100) / 100; }
+  function add(kind, h, msg, expected, actual) {
+    issues.push({ kind: kind, id: h ? h.id : null, txNo: h ? (h.txNo || '') : '', hKind: h ? h.kind : '', status: h ? h.status : '',
+      locationId: h ? (h.locationId || null) : null, at: h ? (h.createdAt || null) : null, msg: msg,
+      expected: expected == null ? null : r2(expected), actual: actual == null ? null : r2(actual),
+      gap: expected == null || actual == null ? null : r2(actual - expected) });
+  }
+  var holder = Object.create(null); // source id -> live parent ids
+  H.forEach(function (h) {
+    // a direct deposit (الموازنة) only points at the entry it came from; the entry itself travels on up the chain
+    if (HEALTH_DEAD_[h.status] || (h.kind === 'deposit' && h.direct)) return;
+    (h.sourceHandoffIds || []).concat(h.sourceEntryIds || []).forEach(function (id) { (holder[id] = holder[id] || []).push(h.id); });
+  });
+  H.forEach(function (h) {
+    if (HEALTH_DEAD_[h.status]) return;
+    var declared = h.originalAmount != null ? Number(h.originalAmount) : Number(h.amount || 0);
+    var srcH = (h.sourceHandoffIds || []).map(function (id) { return hById[id]; });
+    var srcE = (h.sourceEntryIds || []).map(function (id) { return eById[id]; });
+    srcH.forEach(function (x, i) { if (!x) add('orphan', h, 'source handover missing: ' + h.sourceHandoffIds[i]); });
+    srcE.forEach(function (x, i) { if (!x) add('orphan', h, 'source entry missing: ' + h.sourceEntryIds[i]); });
+    srcE.forEach(function (e) { if (e && e.voided) add('voided', h, 'cancelled entry inside a live handover: ' + (e.txNo || e.id)); });
+    if (!(h.kind === 'deposit' && h.direct)) srcH.concat(srcE).forEach(function (x) { if (x && x.consumedBy && x.consumedBy !== h.id && !batchIds[x.consumedBy]) add('link', h, 'source ' + (x.txNo || x.id) + ' points at another holder ' + x.consumedBy); });
+    // shortfall bookkeeping
+    if (h.originalAmount != null) {
+      var sh = r2(Number(h.originalAmount) - Number(h.amount || 0));
+      if (Math.abs(sh - r2(h.shortfall)) > 0.05) add('short', h, 'shortfall does not equal declared - received', sh, h.shortfall);
+    }
+    if (h.status === 'confirmed' && declared > 0.004 && Number(h.amount || 0) <= 0.004 && !(h.receiptCorrections || []).length) add('short', h, 'received 0 recorded', declared, 0);
+    if (h.kind === 'deposit') {
+      if (h.direct) {
+        var dd = srcE.reduce(function (a, e) { return a + (e ? Number(e.directDepositAmount || 0) : 0); }, 0);
+        if (srcE.length && Math.abs(r2(dd) - r2(h.amount)) > 0.05) add('direct', h, 'direct deposit differs from its entry', dd, h.amount);
+        return;
+      }
+      checked.deposits++;
+      var dsum = srcH.reduce(function (a, x) { return a + (x ? Number(x.amount || 0) : 0); }, 0);
+      if (Math.abs(r2(dsum) - r2(h.amount)) > 0.05) add('deposit', h, 'deposit differs from the requests it banked', dsum, h.amount);
+      return;
+    }
+    checked.handovers++;
+    if (h.viaBulkBatch) return; // built from the deputy-approved batch's own figures
+    var fromH = srcH.reduce(function (a, x) { return a + (x ? Number(x.amount || 0) : 0); }, 0);
+    var liveE = srcE.filter(function (e) { return e && !e.voided; });
+    var fromE = liveE.length ? Number(computeNet_(liveE, vatHist).netCashOwed || 0) : 0;
+    if (!srcH.length && !srcE.length) return;
+    var expect = fromH + fromE;
+    if (Math.abs(r2(expect) - r2(declared)) > 0.05) add('sum', h, 'declared amount differs from what its sources carried', expect, declared);
+  });
+  Object.keys(holder).forEach(function (id) {
+    if (holder[id].length > 1) add('link', hById[holder[id][0]], 'source ' + id + ' is held by ' + holder[id].length + ' live handovers: ' + holder[id].join(', '));
+  });
+  E.forEach(function (e) {
+    if (e.consumedBy && !hById[e.consumedBy] && !batchIds[e.consumedBy]) add('orphan', null, 'entry ' + (e.txNo || e.id) + ' consumed by a missing handover ' + e.consumedBy);
+  });
+  // a source and day with two open sets of sales
+  var open = Object.create(null);
+  E.forEach(function (e) {
+    if (e.voided || e.consumedBy) return;
+    if (!(Number(e.cashSales || 0) || Number(e.posSales || 0))) return;
+    var k = e.sourceType + '|' + e.sourceId + '|' + String(e.date).slice(0, 10), sub = e.submissionId || e.txNo || e.id;
+    (open[k] = open[k] || {})[sub] = 1;
+  });
+  Object.keys(open).forEach(function (k) { var n = Object.keys(open[k]).length; if (n > 1) add('day', null, 'source and day with ' + n + ' open sets of sales: ' + k); });
+  var byKind = {};
+  issues.forEach(function (i) { byKind[i.kind] = (byKind[i.kind] || 0) + 1; });
+  return { ok: true, at: new Date().toISOString(), checked: checked, issues: issues, byKind: byKind };
+}
+
 function actionCollectionsData_(req, user) {
   var rows = readSheet(SHEETS.HANDOFFS), byId = Object.create(null);
   rows.forEach(function (h) { byId[h.id] = h; });
