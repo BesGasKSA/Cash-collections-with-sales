@@ -3715,6 +3715,18 @@
   .pa-row:last-child{border-bottom:0;}
   .pa-ic{flex:none;width:36px;height:36px;border-radius:10px;background:var(--green-pale);display:flex;align-items:center;justify-content:center;}
   .pa-ic .ic2{width:19px;height:19px;stroke:var(--green-dark);}
+  .pa-row[data-kind="stock_short"] .pa-ic{background:#FCF3DE;}
+  .pa-row[data-kind="stock_short"] .pa-ic .ic2{stroke:#9A5B00;}
+  .ns-warn{display:flex;gap:10px;align-items:flex-start;margin:12px 0 4px;padding:12px 14px;border-radius:12px;background:#FCF3DE;border-inline-start:4px solid #E3B04B;color:#5C3D00;font-size:13.5px;line-height:1.6;text-align:start;}
+  .ns-warn .ic2{flex:0 0 20px;width:20px;height:20px;stroke:#9A5B00;margin-top:2px;}
+  .ns-warn ul{margin:4px 0;padding-inline-start:18px;} .ns-warn small{display:block;color:#7A5300;}
+  .ns-chip{display:inline-flex;align-items:center;gap:4px;margin-inline-start:6px;padding:2px 8px;border-radius:999px;background:#FCF3DE;color:#8A5A00;font-size:11.5px;font-weight:700;white-space:nowrap;}
+  .ns-chip .ic2{width:13px;height:13px;stroke:#9A5B00;}
+  .ns-lines{list-style:none;margin:0 0 8px;padding:0;} .ns-lines li{display:flex;gap:8px;align-items:flex-start;padding:8px 10px;border-radius:10px;background:#FCF3DE;color:#5C3D00;font-size:13px;margin-bottom:6px;} .ns-lines .ic2{flex:0 0 16px;width:16px;height:16px;stroke:#9A5B00;}
+  .card.ns-card{border:1.5px solid #E3B04B;background:#FFFBF2;} .card.ns-card h2{display:flex;align-items:center;gap:8px;color:#8A5A00;} .card.ns-card h2 .ic2{width:20px;height:20px;stroke:#9A5B00;}
+  .ns-list{display:flex;flex-direction:column;gap:8px;} .ns-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 12px;border-radius:12px;background:#FCF3DE;color:#5C3D00;font-size:13.5px;} .ns-row > span{flex:1 1 180px;min-width:0;overflow-wrap:anywhere;} .ns-row .ic2{flex:0 0 18px;width:18px;height:18px;stroke:#9A5B00;} .ns-row.focus{box-shadow:0 0 0 2px #C98A1B;}
+  .ns-live{margin-bottom:12px;} .ns-live > b{display:flex;align-items:center;gap:6px;color:#8A5A00;margin-bottom:6px;font-size:13.5px;} .ns-live > b .ic2{width:16px;height:16px;stroke:#9A5B00;}
+  .ns-sale{cursor:pointer;} .ns-sale:hover td{background:#FFF7E6;} .ns-q{color:#8A5A00;}
   .pa-row[data-kind="dispute_open"] .pa-ic,.pa-row[data-kind="risk_high"] .pa-ic,.pa-row[data-kind="batch_rejected"] .pa-ic,.pa-row[data-kind="returned_fix"] .pa-ic{background:var(--danger-bg);}
   .pa-row[data-kind="dispute_open"] .pa-ic .ic2,.pa-row[data-kind="risk_high"] .pa-ic .ic2,.pa-row[data-kind="batch_rejected"] .pa-ic .ic2,.pa-row[data-kind="returned_fix"] .pa-ic .ic2{stroke:var(--danger);}
   .pa-tx{min-width:0;flex:1;display:flex;flex-direction:column;gap:2px;}
@@ -7691,7 +7703,8 @@ function setNotifCount(n){
       pa_dispute_open:'A dispute is waiting to be settled',
       pa_second_approval:'A large handover needs a second approval',
       pa_deposit_due:'Cash in your hands, ready to deposit in the bank ({n})',
-      pa_risk_high:'{n} high-severity risks are open'
+      pa_risk_high:'{n} high-severity risks are open',
+      pa_stock_short:'Sold without stock: {item}, short {q}'
     },
     ar: {
       pa_one:'لديك إجراء واحد بانتظارك', pa_many:'لديك {n} من الإجراءات بانتظارك',
@@ -7707,7 +7720,8 @@ function setNotifCount(n){
       pa_dispute_open:'نزاع بانتظار الفصل فيه',
       pa_second_approval:'تسليم كبير يحتاج موافقة ثانية',
       pa_deposit_due:'مبلغ بحوزتك جاهز للإيداع في البنك ({n})',
-      pa_risk_high:'{n} من المخاطر العالية الخطورة مفتوحة'
+      pa_risk_high:'{n} من المخاطر العالية الخطورة مفتوحة',
+      pa_stock_short:'بيع بلا مخزون: {item}، نقص {q}'
     },
     ur: {
       pa_one:'آپ کا 1 کام منتظر ہے', pa_many:'آپ کے {n} کام منتظر ہیں',
@@ -7723,7 +7737,8 @@ function setNotifCount(n){
       pa_dispute_open:'ایک تنازع فیصلے کا منتظر ہے',
       pa_second_approval:'ایک بڑی حوالگی کو دوسری منظوری چاہیے',
       pa_deposit_due:'آپ کے پاس رقم بینک میں جمع کرانے کے لیے تیار ({n})',
-      pa_risk_high:'{n} زیادہ شدت کے خطرات کھلے ہیں'
+      pa_risk_high:'{n} زیادہ شدت کے خطرات کھلے ہیں',
+      pa_stock_short:'اسٹاک کے بغیر فروخت: {item}، کمی {q}'
     }
   };
   Object.keys(add).forEach(function(lang){
@@ -7733,10 +7748,10 @@ function setNotifCount(n){
 
 // kind -> icon, screen, and what to open there
 var PEND_ICON_ = { confirm_receipt:'wallet', deputy_validate:'check', deputy_batch:'doc', returned_fix:'back', batch_rejected:'back',
-  send_ready:'paperPlane', car_handover:'paperPlane', dispute_open:'alert', second_approval:'check', deposit_due:'bank', risk_high:'alert' };
+  send_ready:'paperPlane', car_handover:'paperPlane', dispute_open:'alert', second_approval:'check', deposit_due:'bank', stock_short:'inventory', risk_high:'alert' };
 var PEND_SCREEN_ = { confirm_receipt:'handoffs', deputy_validate:'deputyReview', deputy_batch:'deputyReview', returned_fix:'handoffs',
   batch_rejected:'areaBulk', send_ready:'handoffs', car_handover:'handoffs', dispute_open:'handoffs', second_approval:'handoffs',
-  deposit_due:'handoffs', risk_high:'risk' };
+  deposit_due:'handoffs', stock_short:'inventory', risk_high:'risk' };
 // a rejected batch the area upload screen should open for correction, once
 var PEND_FIX_BATCH_ = null;
 
@@ -7748,6 +7763,10 @@ function pendPlace_(it){
   var l = it.locationId ? byId(state.meta && state.meta.locations, it.locationId) : null;
   return l ? l.name : '';
 }
+// a row's sentence: the count, and for a sale without stock the stock line and how short it is
+function pendText_(it){
+  return pendFill_(t('pa_' + it.kind), { n: it.count || 1, item: it.stockItemId ? invRowName_(it.stockItemId, it.state || '') : '', q: invQty_(it.shortBy || 0) });
+}
 function pendKey_(){ return 'bgc_pendShown_' + (state.user ? state.user.id : ''); }
 
 // One row: icon, what is waiting (and where), the amount, and a Go button.
@@ -7758,7 +7777,7 @@ function pendRow_(it, compact){
   var place = pendPlace_(it);
   var row = el('<div class="pa-row" data-kind="' + esc(it.kind) + '">' +
     '<span class="pa-ic">' + icon_(PEND_ICON_[it.kind] || 'alert') + '</span>' +
-    '<span class="pa-tx"><span class="pa-s">' + esc(pendFill_(t('pa_' + it.kind), { n: it.count || 1 })) + '</span>' +
+    '<span class="pa-tx"><span class="pa-s">' + esc(pendText_(it)) + '</span>' +
       (place ? '<small>' + esc(place) + '</small>' : '') + '</span>' +
     amt +
     '<button type="button" class="pa-go">' + esc(t('pa_go')) + '</button>' +
@@ -7777,6 +7796,7 @@ function pendGo_(it){
   else if (it.kind === 'returned_fix') { FIX_OPEN_ = it.refId; scroll = '#hoFix'; }
   else if (it.kind === 'batch_rejected') { PEND_FIX_BATCH_ = it.refId; scroll = '#abFix'; }
   else if (it.kind === 'deposit_due') scroll = '#hDeposit';
+  else if (it.kind === 'stock_short') { var nsp = String(it.refId || '').split('|'); if (nsp[0]) INV_.loc = nsp[0]; INV_FOCUS_ = it.refId || null; scroll = '#invShort'; }
   if (state.screen === scr) render(); else goScreen_(scr, true);
   if (scroll) pendScroll_(scroll, 0);
 }
@@ -7796,6 +7816,87 @@ function pendClose_(){
 }
 
 // The welcome popup: centred on a desktop, a bottom sheet on a phone.
+// ---------- Sales without stock (2026-10-18) ----------
+// The server flags a sale that takes a stock line below zero on its day (stockShort
+// on the entry, stockShorts from every save and dry run). It is never refused: the
+// screens say it, amber, before saving, on the entry card, and on the stock screens.
+(function(){
+  var add = {
+    en: { ns_warnTitle:'Not enough stock', ns_warnLine:'No stock for {item}: on hand {have}, selling {sell}',
+      ns_warnHint:'The day can still be saved. The sale is flagged until a purchase, a transfer or a count covers it.',
+      ns_chip:'No stock', ns_detail:'Sold without stock: {item}, on hand {have}, selling {sell}, short {q}',
+      ns_cardTitle:'Sold without stock', ns_cardHint:'These stock lines went below zero with sales saved without stock. Record the purchase, transfer or count that covers them.',
+      ns_line:'{item} at {branch}: short {q}', ns_sales:'The sales behind it ({n})', ns_salesTitle:'Sales saved without stock',
+      ns_colSale:'Sale', ns_colHave:'On hand', ns_colSell:'Selling', ns_colShort:'Short' },
+    ar: { ns_warnTitle:'المخزون غير كافٍ', ns_warnLine:'لا يوجد مخزون من {item}: المتوفر {have}، والمباع {sell}',
+      ns_warnHint:'يمكن حفظ اليوم، ويُعلَّم البيع حتى يغطيه شراء أو تحويل أو جرد.',
+      ns_chip:'بلا مخزون', ns_detail:'بيع بلا مخزون: {item}، المتوفر {have}، المباع {sell}، النقص {q}',
+      ns_cardTitle:'مبيعات بلا مخزون', ns_cardHint:'نزل رصيد هذه الأصناف تحت الصفر بمبيعات سُجّلت دون مخزون. سجّل الشراء أو التحويل أو الجرد الذي يغطيها.',
+      ns_line:'{item} في {branch}: نقص {q}', ns_sales:'المبيعات وراءه ({n})', ns_salesTitle:'مبيعات سُجّلت بلا مخزون',
+      ns_colSale:'البيع', ns_colHave:'المتوفر', ns_colSell:'المباع', ns_colShort:'النقص' },
+    ur: { ns_warnTitle:'اسٹاک کافی نہیں', ns_warnLine:'{item} کا اسٹاک نہیں: موجود {have}، فروخت {sell}',
+      ns_warnHint:'دن پھر بھی محفوظ ہو سکتا ہے۔ خریداری، منتقلی یا گنتی سے پورا ہونے تک فروخت نشان زد رہے گی۔',
+      ns_chip:'اسٹاک نہیں', ns_detail:'اسٹاک کے بغیر فروخت: {item}، موجود {have}، فروخت {sell}، کمی {q}',
+      ns_cardTitle:'اسٹاک کے بغیر فروخت', ns_cardHint:'یہ اسٹاک لائنیں اسٹاک کے بغیر محفوظ فروخت سے صفر سے نیچے گئیں۔ انہیں پورا کرنے والی خریداری، منتقلی یا گنتی درج کریں۔',
+      ns_line:'{branch} میں {item}: کمی {q}', ns_sales:'اس کے پیچھے فروخت ({n})', ns_salesTitle:'اسٹاک کے بغیر محفوظ فروخت',
+      ns_colSale:'فروخت', ns_colHave:'موجود', ns_colSell:'فروخت شدہ', ns_colShort:'کمی' }
+  };
+  Object.keys(add).forEach(function(lang){ Object.keys(add[lang]).forEach(function(k){ L[lang][k] = add[lang][k]; }); });
+})();
+// the stock line a pending item points at, kept until the stock screen shows it
+var INV_FOCUS_ = null;
+function nsFill_(key, f){
+  return pendFill_(t(key), { item: invRowName_(f.itemId, f.state || ''), have: invQty_(f.onHand), sell: invQty_(f.sold), q: invQty_(f.shortBy) });
+}
+// The amber warning before saving: one line per stock line (rows of one line share its figures).
+function nsWarnHtml_(list){
+  var seen = {}, lines = [];
+  (list || []).forEach(function(f){ var k = (f.locationId || '') + '|' + (f.date || '') + '|' + f.itemId + '|' + (f.state || ''); if (seen[k]) return; seen[k] = 1; lines.push('<li>' + esc(nsFill_('ns_warnLine', f)) + '</li>'); });
+  if (!lines.length) return '';
+  return '<div class="ns-warn" role="alert">' + icon_('alert') + '<div><b>' + esc(t('ns_warnTitle')) + '</b><ul>' + lines.join('') + '</ul><small>' + esc(t('ns_warnHint')) + '</small></div></div>';
+}
+// The sales behind a short stock line, each opening its transaction.
+function nsSalesView_(r){
+  return {
+    title: t('ns_salesTitle'), sub: invRowName_(r.stockItemId, r.state || '') + ' · ' + locationName(r.locationId), crumb: t('ns_salesTitle'),
+    render: function(body){
+      var list = r.shortSales || [];
+      body.innerHTML = '<div class="tbl-scroll"><table class="rp-table ns-table"><thead><tr><th>' + esc(t('ns_colSale')) + '</th><th>' + esc(t('inv_item')) + '</th><th class="n">' + esc(t('ns_colHave')) + '</th><th class="n">' + esc(t('ns_colSell')) + '</th><th class="n">' + esc(t('ns_colShort')) + '</th></tr></thead><tbody>' +
+        list.map(function(x, i){
+          var no = x.txNo ? x.txNo + (Number(x.txLine) > 1 ? '/' + x.txLine : '') : '';
+          return '<tr class="ns-sale" data-i="' + i + '" tabindex="0" role="button"><td><bdi dir="ltr">' + esc(x.date) + '</bdi>' + (no ? ' <span class="tx-no" dir="ltr">' + esc(no) + '</span>' : '') + '<small class="muted" style="display:block">' + esc(userName(x.enteredBy)) + '</small></td>' +
+            '<td>' + esc(productName_(x.productId)) + '</td><td class="n num">' + invQty_(x.onHand) + '</td><td class="n num">' + invQty_(x.sold != null ? x.sold : x.qty) + '</td><td class="n num"><b class="ns-q">' + invQty_(x.shortBy) + '</b></td></tr>';
+        }).join('') + '</tbody></table></div>';
+      qsa('.ns-sale', body).forEach(function(tr){
+        function open(){ var x = list[Number(tr.dataset.i)]; drawerPush_(entryDocView_({ id: x.id, txNo: x.txNo, submissionId: x.submissionId, date: x.date, locationId: r.locationId, enteredBy: x.enteredBy })); }
+        tr.addEventListener('click', open);
+        tr.addEventListener('keydown', function(e){ if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } });
+      });
+    }
+  };
+}
+// The stock lines short with sales saved without stock: on the live card and the stock screen.
+function nsShortList_(rows){
+  var short = (rows || []).filter(function(r){ return r.short && r.shortSales && r.shortSales.length; });
+  if (!short.length) return null;
+  var box = el('<div class="ns-list"></div>');
+  short.forEach(function(r){
+    var k = r.locationId + '|' + r.stockItemId + '|' + (r.state || ''), focus = INV_FOCUS_ === k;
+    var row = el('<div class="ns-row' + (focus ? ' focus' : '') + '">' + icon_('alert') + '<span>' + esc(pendFill_(t('ns_line'), { item: invRowName_(r.stockItemId, r.state || ''), branch: locationName(r.locationId), q: invQty_(r.ending) })) + '</span>' +
+      '<button type="button" class="btn secondary ns-open">' + esc(pendFill_(t('ns_sales'), { n: r.shortSalesCount || r.shortSales.length })) + '</button></div>');
+    qs('.ns-open', row).addEventListener('click', function(){ drawerOpen_(nsSalesView_(r)); });
+    box.appendChild(row);
+  });
+  return box;
+}
+function invShortCard_(rows){
+  var list = nsShortList_(rows);
+  if (!list) return null;
+  var card = el('<section class="card ns-card no-collapse" id="invShort"><h2>' + icon_('alert') + '<span>' + esc(t('ns_cardTitle')) + '</span></h2><p class="muted inv-eq-hint">' + esc(t('ns_cardHint')) + '</p></section>');
+  card.appendChild(list);
+  if (INV_FOCUS_) INV_FOCUS_ = null;
+  return card;
+}
 // Before a day is saved (2026-10-12): the server works out the rows exactly as the
 // save will (dry run, nothing written) and the person confirms that figure. What
 // is confirmed is what is saved, whatever the screen's own preview says.
@@ -7810,6 +7911,7 @@ function entryServerCheck_(rows, previewNet, go, stop){
       '<div class="pa-top"><span class="pa-bell">'+icon_('check')+'</span><div><div class="pa-hi">'+esc(t('sc_hi'))+'</div><h2 id="scTitle">'+esc(t('sc_title'))+'</h2></div></div>' +
       '<div class="hp-body"><div class="hp-k">'+esc(t('entry_netOwed'))+'</div><div class="hp-big num">'+money(net)+'<small>'+esc(t('ui_sar'))+'</small></div>' +
         (differs ? '<div class="hp-row sc-diff"><span>'+esc(t('sc_diff').replace('{p}', money(previewNet)))+'</span></div>' : '') +
+        nsWarnHtml_(res.stockShorts) +
         '<div class="sc-lines"></div></div>' +
       '<div class="pa-foot sc-foot"><button type="button" class="btn secondary sc-back">'+esc(t('sc_back'))+'</button><button type="button" class="btn sc-go">'+esc(t('sc_save'))+'</button></div></div></div>');
     try { qs('.sc-lines', ov).innerHTML = breakdownGrid(b); } catch (e) {}
@@ -7985,19 +8087,19 @@ function pendHeroPaint_(){
       act_close:'Close', act_bell:'Activity, {n} waiting', act_bell0:'Activity', act_dismiss:'Dismiss',
       act_v_confirm_receipt:'Receive', act_v_deputy_validate:'Review', act_v_deputy_batch:'Review', act_v_returned_fix:'Fix',
       act_v_batch_rejected:'Fix', act_v_send_ready:'Send', act_v_car_handover:'Hand over', act_v_dispute_open:'Settle',
-      act_v_second_approval:'Approve', act_v_deposit_due:'Deposit', act_v_risk_high:'Open' },
+      act_v_second_approval:'Approve', act_v_deposit_due:'Deposit', act_v_risk_high:'Open', act_v_stock_short:'Check stock' },
     ar: { act_title:'النشاط', act_now:'الآن', act_today:'اليوم', act_earlier:'سابقًا', act_waiting:'{n} بانتظارك',
       act_caught:'أنجزت كل شيء', act_caughtSub:'لا شيء بانتظارك الآن. يظهر هنا كل جديد لحظة وصوله.',
       act_close:'إغلاق', act_bell:'النشاط، {n} بانتظارك', act_bell0:'النشاط', act_dismiss:'إخفاء',
       act_v_confirm_receipt:'استلم', act_v_deputy_validate:'راجِع', act_v_deputy_batch:'راجِع', act_v_returned_fix:'صحّح',
       act_v_batch_rejected:'صحّح', act_v_send_ready:'أرسل', act_v_car_handover:'سلّم', act_v_dispute_open:'افصل',
-      act_v_second_approval:'اعتمد', act_v_deposit_due:'أودِع', act_v_risk_high:'افتح' },
+      act_v_second_approval:'اعتمد', act_v_deposit_due:'أودِع', act_v_risk_high:'افتح', act_v_stock_short:'راجِع المخزون' },
     ur: { act_title:'سرگرمی', act_now:'ابھی', act_today:'آج', act_earlier:'پہلے', act_waiting:'{n} آپ کے منتظر',
       act_caught:'سب کام مکمل', act_caughtSub:'ابھی آپ کا کوئی کام منتظر نہیں۔ نیا کام آتے ہی یہاں نظر آئے گا۔',
       act_close:'بند کریں', act_bell:'سرگرمی، {n} منتظر', act_bell0:'سرگرمی', act_dismiss:'ہٹائیں',
       act_v_confirm_receipt:'وصول کریں', act_v_deputy_validate:'جائزہ لیں', act_v_deputy_batch:'جائزہ لیں', act_v_returned_fix:'درست کریں',
       act_v_batch_rejected:'درست کریں', act_v_send_ready:'بھیجیں', act_v_car_handover:'حوالے کریں', act_v_dispute_open:'فیصلہ کریں',
-      act_v_second_approval:'منظور کریں', act_v_deposit_due:'جمع کریں', act_v_risk_high:'کھولیں' }
+      act_v_second_approval:'منظور کریں', act_v_deposit_due:'جمع کریں', act_v_risk_high:'کھولیں', act_v_stock_short:'اسٹاک دیکھیں' }
   };
   Object.keys(add).forEach(function(lang){ Object.keys(add[lang]).forEach(function(k){ L[lang][k] = add[lang][k]; }); });
 })();
@@ -8007,7 +8109,7 @@ function msStill_(){ return !!(window.matchMedia && window.matchMedia('(prefers-
 function msBuzz_(ms){ try { if (navigator.vibrate && msPhone_() && (!navigator.userActivation || navigator.userActivation.hasBeenActive)) navigator.vibrate(ms || 10); } catch (e) {} }
 // kind -> ring tone (decorative: the sentence always says what it is)
 var MS_TONE_ = { confirm_receipt:'rcv', deputy_validate:'val', deputy_batch:'val', second_approval:'val', returned_fix:'fix', batch_rejected:'fix',
-  send_ready:'send', car_handover:'send', dispute_open:'bad', risk_high:'bad', deposit_due:'bank' };
+  send_ready:'send', car_handover:'send', dispute_open:'bad', risk_high:'bad', deposit_due:'bank', stock_short:'fix' };
 // Now (the last hour) / Today / Earlier, by when the item started waiting
 function actGroup_(it){
   if (!it.since) return 'now';
@@ -8026,13 +8128,13 @@ function actRow_(it, i){
   var row = el('<article class="act-row" data-kind="'+esc(it.kind)+'" data-tone="'+tone+'" style="--i:'+Math.min(i || 0, 8)+'">' +
     '<span class="act-av" aria-hidden="true"><span class="act-ring"></span><span class="act-face">'+(place ? esc(initials_(place)) : icon_(PEND_ICON_[it.kind] || 'alert'))+'</span>' +
       '<span class="act-kind">'+icon_(PEND_ICON_[it.kind] || 'alert')+'</span></span>' +
-    '<div class="act-tx"><p class="act-s">'+esc(pendFill_(t('pa_' + it.kind), { n: it.count || 1 }))+'</p>' +
+    '<div class="act-tx"><p class="act-s">'+esc(pendText_(it))+'</p>' +
       '<span class="act-meta">'+(place ? '<bdi>'+esc(place)+'</bdi>' : '')+(place && age ? '<i aria-hidden="true">·</i>' : '')+(age ? '<time'+(it.since ? ' datetime="'+esc(it.since)+'"' : '')+'>'+esc(age)+'</time>' : '')+'</span>' +
       (amt ? '<b class="act-chip num"><bdi dir="ltr">'+amt+'</bdi><small>'+esc(t('ui_sar'))+'</small></b>' : '') + '</div>' +
     '<button type="button" class="act-go">'+esc(verb)+'</button>' +
   '</article>');
   var go = qs('.act-go', row);
-  go.setAttribute('aria-label', verb + ': ' + pendFill_(t('pa_' + it.kind), { n: it.count || 1 }) + (place ? ', ' + place : '') + (amt ? ', ' + amt : ''));
+  go.setAttribute('aria-label', verb + ': ' + pendText_(it) + (place ? ', ' + place : '') + (amt ? ', ' + amt : ''));
   go.addEventListener('click', function(){ msBuzz_(8); pendGo_(it); });
   return row;
 }
@@ -15351,6 +15453,8 @@ function renderEntries(body){
     if (vatBack && live.length) detail += '<div class="el-vat">'+esc(t('report_vat'))+': <bdi dir="ltr">'+money(vatBack)+'</bdi></div>';
     var notes = rows.map(function(e){ return e.note; }).filter(Boolean);
     if (notes.length) detail += '<div class="el-note">'+esc(t('entry_note'))+': '+esc(notes.filter(function(n, i){ return notes.indexOf(n) === i; }).join(' · '))+'</div>';
+    var nsRows = rows.filter(function(e){ return !e.voided && e.stockShort; });
+    if (nsRows.length) detail = '<ul class="ns-lines">' + nsRows.map(function(e){ return '<li>' + icon_('alert') + '<span>' + esc(nsFill_('ns_detail', e.stockShort)) + '</span></li>'; }).join('') + '</ul>' + detail;
     var vr = rows.filter(function(e){ return e.voided && e.voidReason; })[0];
     if (vr) detail += '<div class="el-voidinfo">'+icon_('close')+'<span><b>'+esc(t('el_voidReason'))+':</b> '+esc(vr.voidReason)+' — '+esc(userName(vr.voidedBy))+' · <bdi dir="ltr">'+esc(fmtStamp_(vr.voidedAt))+'</bdi></span></div>';
     if (st === 'submitted' || st === 'approved') detail += '<div class="el-lock">'+icon_('key')+'<span>'+esc(t(st === 'approved' ? 'el_lockedApproved' : 'el_lockedSubmitted'))+'</span></div>';
@@ -15363,7 +15467,7 @@ function renderEntries(body){
     var stRow = live[0] || rows[0], sg = st === 'voided' ? null : stRow.stage;
     var node = el('<article class="el-row st-'+st+'">' +
       '<div class="el-main"><span class="el-ic">'+icon_(icon)+'</span><div class="el-who">'+txBadge_(e0, true)+'<b>'+esc(sourceName_(e0))+'</b>' +
-        '<span>'+esc(t('entry_source_'+e0.sourceType))+' · '+esc(locationName(e0.locationId))+'</span></div></div>' +
+        '<span>'+esc(t('entry_source_'+e0.sourceType))+' · '+esc(locationName(e0.locationId))+'</span>' + (nsRows.length ? '<span class="ns-chip" title="'+esc(nsFill_('ns_detail', nsRows[0].stockShort))+'">'+icon_('alert')+esc(t('ns_chip'))+'</span>' : '') + '</div></div>' +
       '<div class="el-date"><b><bdi dir="ltr">'+esc(e0.date)+'</bdi></b><span>'+esc(userName(e0.enteredBy))+'</span></div>' +
       '<div class="el-fig"><span>'+esc(t('el_sales'))+'</span><b><bdi dir="ltr">'+money(sales)+'</bdi></b></div>' +
       '<div class="el-fig ded"><span>'+esc(t('el_deduct'))+'</span><b><bdi dir="ltr">'+(deduct ? money(deduct) : '—')+'</bdi></b></div>' +
@@ -16331,6 +16435,7 @@ function renderAreaBulk(body){
         handoffDetailRows(res.batch) +
         productBreakdownBlock_(pendingRows.filter(function(r){ return r.productId && r.qty > 0; })) +
         (b.deliveryFee > 0 ? vatExplainBlock_(b) : '') +
+        nsWarnHtml_(res.stockShorts) +
         '<button class="btn" id="abSubmit" style="margin-top:14px;">'+esc(t('areaBulk_submit'))+'</button>';
       qs('#abSubmit', calcWrap).addEventListener('click', function(){
         // a correction goes whole, as the next version of its own batch
@@ -21045,6 +21150,8 @@ function invLiveCard_(opts){
         (unitHtml ? '<div class="inv-live-grid">'+unitHtml+'</div>' : '') : '<div class="muted">'+esc(t('inv_liveEmpty'))+'</div>') +
       '<div class="inv-live-foot"><span class="muted">'+esc(t('inv_liveAsOf').replace('{t}', at))+(Object.keys(branches).length > 1 ? ' · '+esc(t('inv_liveBranches').replace('{n}', Object.keys(branches).length)) : '')+(nUn ? ' · '+esc(t('inv_liveUncounted').replace('{n}', nUn)) : '')+'</span>' +
       (total ? '<span>'+esc(t('inv_liveTotal'))+' <b>'+money(Math.abs(total))+' '+esc(t('ui_sar'))+'</b></span>' : '')+'</div>';
+    var nsl = nsShortList_(rows);
+    if (nsl) { var nsh = el('<div class="ns-live"><b>'+icon_('alert')+esc(t('ns_cardTitle'))+'</b></div>'); nsh.appendChild(nsl); box.insertBefore(nsh, box.firstChild); }
   }
   // quiet: the minute's refresh shows no loading cover. A newer request wins;
   // one asked for while another runs goes out as soon as it lands.
@@ -21522,6 +21629,8 @@ function renderInventory(body){
       (rows.some(function(r){ return r.salesWithoutQty; }) ? '<div class="inv-warn">'+icon_('alert')+'<span>'+esc(t('inv_noQtyWarn').replace('{n}', rows.reduce(function(a, r){ return a + r.salesWithoutQty; }, 0)).replace('{amt}', money(rows.reduce(function(a, r){ return a + r.salesWithoutQtyAmount; }, 0))))+'</span></div>' : '') +
       '</section>');
     // the movement by item, at the level chosen (2026-10-07): quantities never add up across items, amounts do
+    var nsCard = invShortCard_(rows);
+    if (nsCard) out.appendChild(nsCard);
     if (live) out.appendChild(invItemMoveCard_(res, rows, sumOf)); else out.appendChild(eq);
     if (live && canEdit && editLocs.length) out.appendChild(invCountCard_(res, editLocs, today, load));
     // gas and cylinders, the refill cycle with the plant, the stock card (2026-10-06)

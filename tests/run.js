@@ -4451,7 +4451,7 @@ check(paRisk.ok && !!paFind(paItems(adminTok), 'risk_high') && paFind(paItems(ad
 check(!paFind(paItems(paBm.tok), 'risk_high') && !paFind(paItems(paCol.tok), 'risk_high'), 'branch staff are not asked to handle it');
 
 // order and a handoff the collector must confirm directly
-var paKinds = ['confirm_receipt', 'deputy_validate', 'deputy_batch', 'returned_fix', 'batch_rejected', 'send_ready', 'car_handover', 'dispute_open', 'second_approval', 'deposit_due', 'risk_high'];
+var paKinds = ['confirm_receipt', 'deputy_validate', 'deputy_batch', 'returned_fix', 'batch_rejected', 'send_ready', 'car_handover', 'dispute_open', 'second_approval', 'deposit_due', 'stock_short', 'risk_high'];
 var paAdminItems = paItems(adminTok);
 check(paAdminItems.every(function (i, n) { return n === 0 || paKinds.indexOf(paAdminItems[n - 1].kind) <= paKinds.indexOf(i.kind); }), 'kinds come in the table\'s order');
 var paDA = ctx.writeRow(SHEETS.HANDOFFS, { kind: 'car_to_location', fromUserId: paDrv.u.id, toUserId: paBm.u.id, locationId: paLoc.id, amount: 60, status: 'pending', createdAt: '2020-01-01T00:00:00.000Z' });
@@ -6315,6 +6315,102 @@ console.log('--- data levels: the pivot tree adds up at every level, to the cent
   // the comparison's next level
   var nl = new Function(clientVar_('CMP_LV_', ';') + '\n' + clientFn_('cmpNextLevel_') + '\nreturn cmpNextLevel_;')();
   check(nl('city', {}) === 'area' && nl('branch', { branch: 'b1' }) === 'owner' && nl('owner', { branch: 'b1', owner: 'store:s1' }) === 'day' && nl('area', { branch: '' }) === 'branch' && nl('day', {}) === null, 'comparison: drilling goes city, area, branch, store/car/POS, (collector), day');
+})();
+
+console.log('--- a sale without stock is saved and flagged, never refused (2026-10-18) ---');
+(function () {
+  var nsMgr = scUser('Ns Manager', 'store_manager');
+  var nsMgrTok = acceptInvite('ns.manager@bestgas.sa');
+  var nsLoc = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: 'Riyadh', name: 'No Stock Branch', clusterId: cluster.entity.id, collectorUserId: musa.id } }).entity;
+  var nsStore = call({ action: 'adminSaveEntity', token: adminTok, kind: 'store', data: { locationId: nsLoc.id, name: 'No Stock Store', storeManagerUserId: nsMgr.id } }).entity;
+  function ent(kind, d) { var r = call({ action: 'adminSaveEntity', token: adminTok, kind: kind, data: d }); check(r.ok, 'no stock: ' + kind + ' ' + d.name + (r.ok ? '' : ': ' + r.error)); return r.entity || {}; }
+  var it = ent('stock_item', { name: 'Ns Iron', kind: 'cylinder', boxSize: 35, gasCost: 11, cylinderCost: 140 });
+  var reg = ent('stock_item', { name: 'Ns Regulator', kind: 'unit', unitCost: 20 });
+  var pEx = ent('product', { name: 'Ns Exchange', type: 'goods', unitPrice: 37, stockItemId: it.id, stockEffect: 'exchange' });
+  var pEmpty = ent('product', { name: 'Ns Body Sale', type: 'goods', unitPrice: 186, stockItemId: it.id, stockEffect: 'sell_empty' });
+  var pFull = ent('product', { name: 'Ns Full Sale', type: 'goods', unitPrice: 220, stockItemId: it.id, stockEffect: 'sell_full' });
+  var pReg = ent('product', { name: 'Ns Reg Sale', type: 'goods', unitPrice: 45, stockItemId: reg.id, stockEffect: 'unit' });
+  function mv(o) { var p = { action: 'addInventoryMove', token: adminTok, locationId: nsLoc.id }; Object.keys(o).forEach(function (k) { p[k] = o[k]; }); var r = call(p); check(r.ok, 'no stock: move ' + o.kind + ' (' + (r.error || '') + ')'); return r; }
+  mv({ stockItemId: it.id, state: 'full', kind: 'opening', qty: 5, date: '2026-10-01' });
+  mv({ stockItemId: it.id, state: 'empty', kind: 'opening', qty: 2, date: '2026-10-01' });
+  mv({ stockItemId: reg.id, kind: 'opening', qty: 3, date: '2026-10-01' });
+  var n = 0;
+  function day(date, lines, extra) {
+    var sub = 'ns-' + (++n);
+    var p = { action: 'importDailyEntries', token: adminTok, rows: lines.map(function (l) { return { date: date, sourceType: 'store', sourceId: nsStore.id, submissionId: sub, productId: l[0].id, qty: l[1], unitPrice: l[0].unitPrice, cashSales: l[1] * l[0].unitPrice }; }) };
+    if (extra) Object.keys(extra).forEach(function (k) { p[k] = extra[k]; });
+    return call(p);
+  }
+  function mails() { return ctx._debug.mailLog.filter(function (m) { return /stock_short/.test(m.body || ''); }).length; }
+  function pend(tok) { return (call({ action: 'myPendingActions', token: tok }).items || []).filter(function (i) { return i.kind === 'stock_short' && i.locationId === nsLoc.id; }); }
+
+  // within stock: no flag
+  var m0 = mails();
+  var d1 = day('2026-10-02', [[pEx, 3], [pReg, 2]]);
+  check(d1.ok && d1.created === 2 && !(d1.stockShorts || []).length, 'no stock: a sale within stock is not flagged (' + JSON.stringify(d1.stockShorts || d1.error) + ')');
+  check(ctx.readSheet(SHEETS.ENTRIES).filter(function (e) { return e.submissionId === 'ns-1' && e.stockShort; }).length === 0, 'no stock: and nothing is stamped on it');
+  check(mails() === m0 && pend(adminTok).length === 0, 'no stock: no email and nothing waiting');
+
+  // the dry run returns the flag, writes nothing
+  var before = ctx.readSheet(SHEETS.ENTRIES).length;
+  var dry = day('2026-10-03', [[pEx, 4]], { dryRun: true });
+  var f0 = (dry.stockShorts || [])[0] || {};
+  check(dry.ok && dry.dryRun && f0.itemId === it.id && f0.state === 'full' && f0.onHand === 2 && f0.sold === 4 && f0.shortBy === 2 && f0.row === 0, 'no stock: the dry run returns the flag: full, on hand 2, selling 4, short 2 (' + JSON.stringify(f0) + ')');
+  check(ctx.readSheet(SHEETS.ENTRIES).length === before && mails() === m0, 'no stock: the dry run writes nothing and sends nothing');
+
+  // beyond stock: saved and flagged, audited, mailed once
+  var d2 = day('2026-10-03', [[pEx, 4]]);
+  var e2 = ctx.readSheet(SHEETS.ENTRIES).filter(function (e) { return e.submissionId === 'ns-3'; })[0] || {};
+  check(d2.ok && d2.created === 1, 'no stock: a sale beyond stock is saved (' + (d2.error || '') + ')');
+  check(e2.stockShort && e2.stockShort.productId === pEx.id && e2.stockShort.itemId === it.id && e2.stockShort.state === 'full' && e2.stockShort.onHand === 2 && e2.stockShort.sold === 4 && e2.stockShort.shortBy === 2, 'no stock: and stamped {productId, itemId, state, onHand 2, sold 4, shortBy 2} (' + JSON.stringify(e2.stockShort) + ')');
+  check(ctx.readSheet(SHEETS.AUDIT).some(function (a) { return a.action === 'sale_without_stock' && String(a.detail).indexOf(e2.id) === 0; }), 'no stock: audited as sale_without_stock');
+  var m1 = mails();
+  var recips = ctx._debug.mailLog.filter(function (m) { return /stock_short/.test(m.body || ''); }).map(function (m) { return m.to; });
+  check(m1 > m0 && recips.indexOf('ns.manager@bestgas.sa') >= 0 && recips.indexOf('sara@bestgas.sa') >= 0 && recips.indexOf('admin@bestgas.sa') >= 0 && recips.indexOf('fatima@bestgas.sa') >= 0, 'no stock: the branch manager, the area manager, admin and finance are emailed (' + recips.join(',') + ')');
+  // a second shortage of the same branch and item the same day: no second email
+  var d3 = day('2026-10-04', [[pEx, 1]]);
+  check(d3.ok && (d3.stockShorts || []).length === 1 && d3.stockShorts[0].shortBy === 1 && d3.stockShorts[0].onHand === 0, 'no stock: the next sale on a short line is short by all it sells (' + JSON.stringify(d3.stockShorts) + ')');
+  check(mails() === m1, 'no stock: the email goes once a day per branch and item');
+
+  // cylinder effects land on their own rows: exchange takes full (empties come back), sell_empty the empties, sell_full the full
+  var dEmpty = day('2026-10-05', [[pEmpty, 12]], { dryRun: true });
+  var fe = (dEmpty.stockShorts || [])[0] || {};
+  check(fe.state === 'empty' && fe.onHand === 10 && fe.shortBy === 2, 'no stock: a body sold draws on the empties: 2 + 8 back from exchanges = 10, selling 12, short 2 (' + JSON.stringify(fe) + ')');
+  var dEmptyOk = day('2026-10-05', [[pEmpty, 10]], { dryRun: true });
+  check(dEmptyOk.ok && !(dEmptyOk.stockShorts || []).length, 'no stock: selling exactly the 10 empties is not short');
+  var dFull = day('2026-10-05', [[pFull, 2]], { dryRun: true });
+  var ff = (dFull.stockShorts || [])[0] || {};
+  check(ff.state === 'full' && ff.onHand === 0 && ff.shortBy === 2, 'no stock: a full cylinder sold draws on the full line (' + JSON.stringify(ff) + ')');
+  var dReg = day('2026-10-05', [[pReg, 2]], { dryRun: true });
+  var fr = (dReg.stockShorts || [])[0] || {};
+  check(fr.itemId === reg.id && fr.state === null && fr.onHand === 1 && fr.shortBy === 1, 'no stock: a unit item is short on its own line (' + JSON.stringify(fr) + ')');
+  check(dryOkOnly(day('2026-10-05', [[pEx, 1]], { dryRun: true })), 'no stock: an exchange while full is short is flagged on full, not on the empties');
+  function dryOkOnly(r) { return r.ok && (r.stockShorts || []).length === 1 && r.stockShorts[0].state === 'full'; }
+
+  // createDailyEntry flags too
+  var one = call({ action: 'createDailyEntry', token: adminTok, date: '2026-10-05', sourceType: 'store', sourceId: nsStore.id, productId: pFull.id, qty: 1, unitPrice: 220, cashSales: 220 });
+  check(one.ok && one.entry.stockShort && one.entry.stockShort.state === 'full' && one.entry.stockShort.shortBy === 1, 'no stock: createDailyEntry saves and flags the same way (' + (one.error || JSON.stringify(one.entry && one.entry.stockShort)) + ')');
+
+  // the stock screens and what waits
+  var rep = call({ action: 'getInventoryLive', token: nsMgrTok, locationId: nsLoc.id });
+  var fullRow = (rep.rows || []).filter(function (r) { return r.stockItemId === it.id && r.state === 'full'; })[0] || {};
+  check(fullRow.short && fullRow.ending === -4 && fullRow.shortSalesCount === 3 && fullRow.shortSales[0].id === one.entry.id, 'no stock: the live stock shows the line short by 4 with its 3 sales, newest first (' + JSON.stringify([fullRow.ending, fullRow.shortSalesCount]) + ')');
+  var pm = pend(nsMgrTok), pa = pend(saraTok), pf = pend(financeTok), pad = pend(adminTok);
+  check(pm.length === 1 && pm[0].stockItemId === it.id && pm[0].state === 'full' && pm[0].shortBy === 4 && pm[0].count === 3, 'no stock: the branch manager has it waiting: full, short 4, 3 sales (' + JSON.stringify(pm) + ')');
+  check(pa.length === 1 && pf.length === 1 && pad.length === 1, 'no stock: so do the area manager, finance and admin');
+  check(pend(musaTok).length === 0, 'no stock: a collector does not');
+  check(ctx.PENDING_KINDS_.indexOf('stock_short') >= 0, 'no stock: stock_short is a pending kind');
+
+  // a later purchase that covers the line closes it
+  mv({ stockItemId: it.id, state: 'full', kind: 'purchase', qty: 3, date: '2026-10-06' });
+  check(pend(nsMgrTok).length === 1 && pend(nsMgrTok)[0].shortBy === 1, 'no stock: a purchase of 3 leaves it short by 1, still waiting');
+  mv({ stockItemId: it.id, state: 'full', kind: 'purchase', qty: 1, date: '2026-10-06' });
+  check(pend(nsMgrTok).length === 0 && pend(adminTok).length === 0, 'no stock: the purchase that covers it closes the item for everyone');
+  var after = call({ action: 'getInventoryLive', token: nsMgrTok, locationId: nsLoc.id });
+  var fr2 = (after.rows || []).filter(function (r) { return r.stockItemId === it.id && r.state === 'full'; })[0] || {};
+  check(!fr2.short && fr2.ending === 0 && fr2.shortSalesCount === 3, 'no stock: the line is back to 0; the flagged sales stay on record');
+  // the empties line still short from the unit item? the regulator was never sold beyond stock
+  check(pend(nsMgrTok).every(function (i) { return i.stockItemId !== reg.id; }), 'no stock: dry runs left no flag behind');
 })();
 
 console.log('--- the client parses: every inline script of index.html compiles (2026-10-17) ---');
