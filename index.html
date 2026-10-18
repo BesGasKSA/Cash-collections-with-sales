@@ -4556,6 +4556,9 @@
     :root body .tb .tb-ic{display:none;}
     :root body .tb .icon-btn.notif-bell{width:44px;height:44px;background:linear-gradient(145deg,#F7F4EC,var(--ms-cream));color:var(--ms-green-dd);box-shadow:inset 0 0 0 1px rgba(77,109,81,.16);}
     :root body .tb .icon-btn.notif-bell svg{stroke:var(--ms-green-dd);}
+    /* docked bars sit above the floating tab bar */
+    :root body .ms-on .e-dock{bottom:calc(104px + env(safe-area-inset-bottom));}
+    :root body .dl-bar{bottom:calc(108px + env(safe-area-inset-bottom));}
     /* the home hero: its waiting list moves into the stories row and the activity sheet */
     :root body .ms-on .hero .hero-pend{display:none;}
   }
@@ -4579,6 +4582,9 @@
     .ms-tb-ic{position:relative;width:28px;height:28px;display:grid;place-items:center;}
     .ms-tb-ic > .ic2{width:25px;height:25px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;}
     .ms-tb-ic > .ic2 .d{fill:currentColor;fill-opacity:0;transition:fill-opacity var(--ms-norm) var(--ms-ease);}
+    .ms-tb-ic .pill{position:absolute;top:-6px;inset-inline-end:-10px;min-width:18px;height:18px;padding:0 5px;border-radius:999px;display:grid;place-items:center;
+      background:var(--ms-green);color:var(--ms-cream);border:2px solid #fff;font-size:10.5px;font-weight:800;line-height:1;box-shadow:0 2px 5px rgba(42,62,46,.3);}
+    .ms-tb-ic .pill[hidden]{display:none;}
     .ms-tb-l{font-size:11px;font-weight:700;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
     .ms-tb.on{color:var(--ms-green-dd);}
     .ms-tb.on .ms-tb-ic > .ic2{stroke-width:2.3;}
@@ -4719,7 +4725,7 @@
     .ms-post-who{flex:1;min-width:0;display:flex;flex-direction:column;}
     .ms-post-who b{font-size:14.5px;font-weight:700;color:var(--ms-ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
     .ms-post-who small{font-size:12.5px;color:var(--ms-mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-    .ms-post-st{flex:none;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:700;color:var(--r1);background:color-mix(in srgb,var(--r1) 12%,#fff);}
+    .ms-post-st{display:inline-block;margin-bottom:8px;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:700;color:var(--r1);background:color-mix(in srgb,var(--r1) 12%,#fff);}
     .ms-post[data-tone="send"] .ms-post-st{color:#2E4A33;}
     .ms-post-b{margin:12px 0 10px;padding:16px;border-radius:16px;background:linear-gradient(135deg,color-mix(in srgb,var(--r1) 9%,#fff),color-mix(in srgb,var(--r2) 14%,#fff));}
     .ms-post-amt{font-size:30px;font-weight:800;letter-spacing:-.02em;color:var(--ms-ink);line-height:1.1;}
@@ -7580,6 +7586,7 @@ function renderShell(){
   '</div>');
   col.appendChild(tb);
   qs('#notifBell', tb).addEventListener('click', function(){ pendOpen_(); });
+  qs('#notifBell', tb).setAttribute('aria-label', state.notifCount ? t('act_bell').replace('{n}', state.notifCount) : t('act_bell0'));
   var areaPill = qs('#areaPill', tb);
   if (areaPill && !areaPill.classList.contains('one')) areaPill.addEventListener('click', function(){ openAreaPicker_(areaPill); });
   qs('#menuBtn', tb).addEventListener('click', openMobileMenu_);
@@ -8724,8 +8731,8 @@ function msPost_(h, i){
     '<div class="ms-post-in">' +
       '<div class="ms-post-h"><span class="ms-post-av"><span>'+esc(initials_(from))+'</span></span>' +
         '<span class="ms-post-who"><b><bdi>'+esc(from)+'</bdi></b><small><span>'+esc(t('msf_to'))+'</span> <bdi>'+esc(to)+'</bdi> · <time>'+esc(relTime_(h.createdAt))+'</time></small></span>' +
-        '<span class="ms-post-st">'+esc(st)+'</span></div>' +
-      '<div class="ms-post-b"><div class="ms-post-amt num"><bdi dir="ltr">'+money(h.amount)+'</bdi><small>'+esc(t('ui_sar'))+'</small></div>' +
+        '</div>' +
+      '<div class="ms-post-b"><span class="ms-post-st">'+esc(st)+'</span><div class="ms-post-amt num"><bdi dir="ltr">'+money(h.amount)+'</bdi><small>'+esc(t('ui_sar'))+'</small></div>' +
         '<div class="ms-post-k">'+icon_(h.kind === 'deposit' ? 'bank' : 'handoffs')+'<span>'+esc(t('kind_' + h.kind))+'</span>'+(place ? '<i aria-hidden="true">·</i><bdi>'+esc(place)+'</bdi>' : '')+'</div>' +
         (slip ? '<span class="ms-post-slip">'+icon_('doc')+esc(t('msf_slip'))+'</span>' : '') + '</div>' +
       '<div class="ms-post-f"><button type="button" class="ms-post-open">'+esc(t('msf_open'))+'</button>' +
