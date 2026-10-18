@@ -4865,6 +4865,63 @@
     :root body .ms-on #screenBody.nav-fwd,:root body .ms-on #screenBody.nav-back{animation:none !important;transition:none !important;}
     .ms-tab.hide{transform:none;opacity:1;}
   }
+  /* ---- v2 (2026-10-18): the top bar never cuts its title; large collapsing title with the
+     Gregorian date; the tab bar gets real edges. Phones only. ---- */
+  @media (max-width:768px){
+    :root{--ms-s1:4px;--ms-s2:8px;--ms-s3:12px;--ms-s4:16px;--ms-s5:20px;--ms-s6:24px;
+      --ms-t-xs:12px;--ms-t-sm:13.5px;--ms-t-md:15px;--ms-t-lg:17px;--ms-t-xl:22px;--ms-t-2xl:30px;}
+    /* the bar: notch-safe on both sides, glass, never wider than the screen */
+    :root body .tb{display:flex;flex-wrap:nowrap;align-items:center;gap:8px;min-height:56px;max-width:100vw;
+      padding-top:max(8px,env(safe-area-inset-top));padding-bottom:8px;
+      padding-left:max(12px,env(safe-area-inset-left));padding-right:max(12px,env(safe-area-inset-right));}
+    :root body .tb-left{flex:1 1 auto;min-width:0;gap:10px !important;}
+    :root body .tb-actions{flex:0 0 auto;gap:8px;}
+    /* the small title appears only once the large one has scrolled under the bar */
+    :root body .ms-on .tb .tb-title{min-width:0;opacity:0;transform:translate3d(0,6px,0);transition:opacity var(--ms-norm) var(--ms-ease),transform var(--ms-norm) var(--ms-ease);}
+    :root body .ms-on .tb.ms-c .tb-title{opacity:1;transform:none;}
+    :root body .ms-on .tb .tb-title h1{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;white-space:normal;overflow:hidden;
+      font-size:16px;line-height:1.25;font-weight:800;overflow-wrap:anywhere;}
+    :root body .ms-on .tb .tb-title .sub{display:none;}
+    /* the area pill shrinks to its badge; the area's name moves under the large title */
+    :root body .tb .asw-pill{max-width:none;min-width:44px;min-height:44px;padding:3px;margin:0;gap:4px;}
+    :root body .tb .asw-pill .asw-t,:root body .tb .asw-pill > .ic2{display:none;}
+    :root body .tb .asw-pill .asw-av{width:36px;height:36px;}
+    :root body .tb .asw-pill .asw-n{margin-inline-end:4px;}
+    /* the large title */
+    .ms-lt{padding:14px max(16px,env(safe-area-inset-right)) 6px max(16px,env(safe-area-inset-left));}
+    .ms-lt-h{margin:0;font-size:var(--ms-t-2xl);line-height:1.15;font-weight:800;color:var(--ms-ink);letter-spacing:-.02em;overflow-wrap:anywhere;border:0;padding:0;}
+    html[dir="rtl"] .ms-lt-h{letter-spacing:0;line-height:1.3;}
+    .ms-lt-h::before{display:none !important;}
+    .ms-lt-d{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:6px 0 0;font-size:var(--ms-t-sm);font-weight:600;color:var(--ms-mute);line-height:1.4;}
+    .ms-lt-cal .ic2{width:15px;height:15px;stroke:var(--ms-green);fill:none;stroke-width:2;display:block;}
+    .ms-lt-cal .ic2 .d{fill:var(--ms-green);fill-opacity:.18;}
+    .ms-lt-sep{opacity:.6;}
+    :root body .ms-on .ms-stories-host{margin-top:4px;}
+    /* sheets measure the visible screen, not the one behind the browser's bars */
+    .act-panel{max-height:min(90vh,760px);max-height:min(90dvh,760px);}
+    .ms-sheet-p{max-height:92vh;max-height:92dvh;}
+    /* the tab bar: hairline edge, light catching the top, layered shadow, deeper glass */
+    .ms-tab{background:linear-gradient(180deg,rgba(255,255,255,.95),rgba(249,248,243,.9));border:1px solid rgba(20,28,22,.10);
+      -webkit-backdrop-filter:saturate(1.9) blur(24px);backdrop-filter:saturate(1.9) blur(24px);
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.95),inset 0 -1px 0 rgba(20,28,22,.03),0 1px 2px rgba(20,28,22,.08),0 8px 20px rgba(20,28,22,.10),0 24px 48px rgba(20,28,22,.12);
+      inset-inline:max(10px,env(safe-area-inset-left));}
+    .ms-tab::before{content:"";position:absolute;top:0;inset-inline:18%;height:1px;border-radius:1px;pointer-events:none;
+      background:linear-gradient(90deg,transparent,rgba(201,162,39,.55),transparent);}
+    /* the active tab: a capsule behind the icon, bold label, no dot */
+    .ms-tb.on::after{display:none;}
+    .ms-tb-ic{isolation:isolate;}
+    .ms-tb.on .ms-tb-ic::before{content:"";position:absolute;top:-4px;bottom:-4px;left:-14px;right:-14px;border-radius:999px;z-index:-1;
+      background:linear-gradient(180deg,#E7EFE7,#D7E5D8);box-shadow:inset 0 0 0 1px rgba(77,109,81,.22),0 2px 6px rgba(59,85,64,.14);
+      animation:msCapIn var(--ms-mod) var(--ms-spring) both;}
+    .ms-tb.on .ms-tb-l{font-weight:800;}
+    .ms-me.on .ms-tb-ic::before{display:none;}
+    /* reads show the thin top bar (below the notch), not the blocking veil */
+    #topProgress{top:env(safe-area-inset-top);height:3px;}
+  }
+  @keyframes msCapIn{from{opacity:0;transform:scaleX(.5)}to{opacity:1;transform:none}}
+  @media (prefers-reduced-motion:reduce){
+    :root body .ms-on .tb .tb-title,.ms-tb.on .ms-tb-ic::before{transition:none !important;animation:none !important;}
+  }
   /* ===== end phone social layer ===== */
   /* ---------- data levels (2026-10-17): group-by chips, breadcrumb, the pivot tree ---------- */
   .crp-lvcard .col-chips{align-items:center;}
@@ -6346,13 +6403,16 @@ function api(action, payload, opts){
   payload.token = state.token;
   // the area an area manager is working in rides on every request (area switching)
   var workArea = activeArea_(); if (workArea && payload.activeAreaId === undefined) payload.activeAreaId = workArea;
-  if (!opts.silent) startLoading(); else silentProgress_(1);
+  // a phone reads behind skeletons and a thin top bar, never the blocking veil (2026-10-18);
+  // a save still takes the veil, so a second tap cannot send it twice
+  var quiet = !!opts.silent || !!(state.user && READ_ACTIONS[action] && action !== 'login' && typeof msPhone_ === 'function' && msPhone_());
+  if (!quiet) startLoading(); else silentProgress_(1);
   return fetch(state.apiUrl, {
     method:'POST',
     headers:{'Content-Type':'text/plain;charset=utf-8'},
     body: JSON.stringify(payload)
   }).then(function(r){ return r.json(); }).then(function(res){
-    if (!opts.silent) stopLoading(); else silentProgress_(-1);
+    if (!quiet) stopLoading(); else silentProgress_(-1);
     if (res.token) { state.token = res.token; localStorage.setItem('bgc_token', res.token); }
     // a save no longer wipes the screens' last copies (2026-10-08: every screen after a save
     // then waited the whole round trip behind the loading circle); they are marked stale,
@@ -6364,7 +6424,7 @@ function api(action, payload, opts){
     if (res && res.error === 'first_login_change' && state.user && !state.user.mustChangePw) { state.user.mustChangePw = true; setTimeout(function(){ render(); }, 0); }
     return res;
   }).catch(function(err){
-    if (!opts.silent) stopLoading(); else silentProgress_(-1);
+    if (!quiet) stopLoading(); else silentProgress_(-1);
     return { ok:false, error:'network' };
   });
 }
@@ -7600,6 +7660,18 @@ function renderShell(){
   var body = el('<div id="screenBody" class="'+(state.navDir ? (state.navDir > 0 ? 'nav-fwd' : 'nav-back') : 'fade-up')+'"></div>');
   var justNavigated = !!state.navDir;
   state.navDir = 0;
+  // phone: a large title with today's Gregorian date opens every screen, and the bar
+  // shows the small title only once it has scrolled away (iOS large title, 2026-10-18).
+  // The bar's own title was cut to ~90px beside the area pill and the bell.
+  if (msPhone_()) {
+    qs('.tb-title', tb).setAttribute('aria-hidden', 'true');
+    var ltArea = state.user.role === 'cluster_manager' && state.meta ? (areaById_(state.meta.activeAreaId) || areaById_(activeArea_()) || (myAreas_().length === 1 ? myAreas_()[0] : null)) : null;
+    var lt = el('<div class="ms-lt"><h1 class="ms-lt-h">'+esc(t(current[1]))+'</h1>' +
+      '<p class="ms-lt-d"><span class="ms-lt-cal" aria-hidden="true">'+icon_('clock')+'</span><time datetime="'+esc(new Date().toISOString().slice(0, 10))+'">'+esc(dates.gregorian || '')+'</time>' +
+      (ltArea ? '<span class="ms-lt-sep" aria-hidden="true">·</span><bdi>'+esc(ltArea.name)+'</bdi>' : '') + '</p></div>');
+    main.appendChild(lt);
+    msLtWatch_(lt, tb);
+  }
   // phone: the stories row and the pull-to-refresh emblem sit above Home (2026-10-17)
   if (msPhone_() && state.screen === 'home') {
     main.appendChild(el('<span id="msPtr" class="ms-ptr" role="status" aria-label="'+esc(t('msr_pull'))+'"><span class="emblem"><img src="'+ICON_SRC+'" alt=""></span></span>'));
@@ -8628,6 +8700,33 @@ function msTabBar_(navItems, badge, justNavigated){
   }
   return bar;
 }
+
+// The large title collapses into the bar: once it scrolls under the bar, the bar's small
+// title fades in. One observer at a time; transform/opacity only.
+// A scroll listener (passive, one per frame) rather than an IntersectionObserver: the
+// observer did not report in a backgrounded tab, which left the bar without a title.
+var MS_LT_ON_ = false, MS_LT_RAF_ = 0;
+function msLtCheck_(){
+  var tb = qs('.tb'), h = qs('.ms-lt-h');
+  if (!tb) return;
+  if (!h) { tb.classList.add('ms-c'); return; }
+  tb.classList.toggle('ms-c', h.getBoundingClientRect().bottom < tb.getBoundingClientRect().bottom + 2);
+}
+function msLtWatch_(lt, tb){
+  requestAnimationFrame(msLtCheck_);
+  if (MS_LT_ON_) return;
+  MS_LT_ON_ = true;
+  var on = function(){ if (MS_LT_RAF_) return; MS_LT_RAF_ = requestAnimationFrame(function(){ MS_LT_RAF_ = 0; msLtCheck_(); }); };
+  window.addEventListener('scroll', on, { passive: true });
+  window.addEventListener('resize', on, { passive: true });
+}
+// crossing the phone width (a rotation, a split screen) redraws the shell in the other layout
+(function(){
+  if (!window.matchMedia) return;
+  var mq = window.matchMedia('(max-width:768px)');
+  var onChange = function(){ if (state.user && qs('#app.shell')) { try { render(); } catch (e) {} } };
+  if (mq.addEventListener) mq.addEventListener('change', onChange); else if (mq.addListener) mq.addListener(onChange);
+})();
 
 // ---- stories: one circle per kind of thing waiting, plus "You" ----
 var MS_SEEN_KEY_ = 'bgc_msSeen';
