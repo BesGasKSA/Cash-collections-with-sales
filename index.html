@@ -535,6 +535,15 @@
   .col-sortb.on{color:var(--green);}
   .col-sortb i{font-style:normal;font-size:9px;}
   .col-tbl td{padding:9px 4px;border-bottom:1px solid #EEF0EC;vertical-align:middle;}
+  .card.hc-card .hc-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+  .card.hc-card h2{display:flex;align-items:center;gap:8px;margin:0;}
+  .card.hc-card .hc-out{margin-top:12px;}
+  .hc-sum{display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:14px;margin-bottom:10px;}
+  .hc-sum .ic2{width:26px;height:26px;flex:none;}
+  .hc-sum b{display:block;font-size:16px;}
+  .hc-sum small{color:var(--muted);}
+  .hc-sum.ok{background:#EEF3EE;color:#2E7D4F;}
+  .hc-sum.bad{background:#FBEDEA;color:#9a3b2f;}
   .kf-eq{margin:10px 2px 0;padding:10px 14px;border-radius:12px;background:#F2EEE4;color:#4D6D51;font-weight:700;font-size:13px;line-height:1.6;}
   .col-tbl tfoot .col-tot th,.col-tbl tfoot .col-tot td{padding:12px 4px;font-weight:800;background:#F2EEE4;border-top:2px solid #4D6D51;border-bottom:none;vertical-align:middle;}
   .col-tbl tfoot .col-tot th{text-align:start;padding-inline-start:12px;color:#4D6D51;font-size:13px;}
@@ -3244,7 +3253,8 @@
   .idle-msg{display:flex;align-items:flex-start;gap:8px;text-align:start;line-height:1.6;}
   .idle-msg svg.ic2{width:16px;height:16px;flex:none;margin-top:3px;}
   /* the welcome line under the greeting (2026-10-03) */
-  .hero:has(.hero-span){grid-template-columns:minmax(0,1fr) auto auto;}
+  @media (min-width:1100px){ .hero:has(.hero-span){grid-template-columns:minmax(0,1fr) auto auto;} }
+  @media (max-width:1099px){ .hero .hero-span{grid-column:1 / -1;justify-self:start;max-width:420px;width:100%;} }
   .hero-span{position:relative;z-index:1;align-self:center;min-width:230px;padding:14px 16px;border-radius:14px;background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.18);backdrop-filter:blur(6px);display:flex;flex-direction:column;gap:6px;animation:hsIn .45s cubic-bezier(.2,.8,.2,1) both;}
   .hero-span .hs-t{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;opacity:.85;}
   .hero-span .hs-t svg{width:15px;height:15px;}
@@ -4848,6 +4858,31 @@
     .ms-tab.hide{transform:none;opacity:1;}
   }
   /* ===== end phone social layer ===== */
+  /* ---------- data levels (2026-10-17): group-by chips, breadcrumb, the pivot tree ---------- */
+  .crp-lvcard .col-chips{align-items:center;}
+  .crp-chl{flex:none;font-size:12px;font-weight:700;color:var(--muted);margin-inline-end:2px;}
+  .crp-crumbs{display:flex;flex-wrap:wrap;align-items:center;gap:4px 6px;margin:2px 0 10px;}
+  .crp-crumb{display:inline-flex;flex-direction:column;align-items:flex-start;border:1px solid var(--border);background:#fff;border-radius:10px;padding:4px 10px;font:inherit;font-size:13px;font-weight:700;color:var(--green);cursor:pointer;min-height:36px;justify-content:center;}
+  .crp-crumb small{font-size:10.5px;font-weight:600;color:var(--muted);}
+  .crp-crumb.on{background:var(--green);border-color:var(--green);color:#fff;}
+  .crp-crumb.on small{color:var(--cream);}
+  .crp-crumb:hover:not(.on){background:color-mix(in srgb,var(--green) 8%,#fff);}
+  .crp-crumb:focus-visible,.crp-dd:focus-visible{outline:3px solid color-mix(in srgb,var(--green) 55%,#fff);outline-offset:2px;}
+  .crp-sep{color:var(--muted);font-weight:700;}
+  .crp-lvtools{display:flex;gap:8px;justify-content:flex-end;margin-top:10px;}
+  .crp-lvtools .btn{min-height:36px;padding:6px 12px;font-size:13px;}
+  .crp-lvt .pv-name{white-space:nowrap;}
+  .crp-lvt tbody tr.pv-d1 td{background:color-mix(in srgb,var(--green) 5%,#fff);}
+  .crp-lvt tbody tr.crp-rq td{font-size:12.5px;}
+  .crp-lvt .col-dot{margin-top:4px;}
+  .crp-dd{display:inline-grid;place-items:center;width:26px;height:26px;margin-inline-start:6px;border:1px solid var(--border);border-radius:8px;background:#fff;color:var(--green);cursor:pointer;flex:none;}
+  .crp-dd .ic2{width:14px;height:14px;transform:scaleX(var(--fx,1));}
+  .crp-dd:hover{background:var(--green);color:#fff;}
+  .cmp-crumbs{margin-top:8px;}
+  .cmp-next{display:block;font-size:11px;font-weight:600;color:var(--green);}
+  .cmp-drill{cursor:pointer;}
+  .cmp-drill:hover th,.cmp-drill:hover td{background:color-mix(in srgb,var(--green) 6%,#fff);}
+  @media (max-width:820px){ .crp-lvtools{justify-content:flex-start;} .crp-chl{display:none;} }
 </style>
 </head>
 <body>
@@ -4873,7 +4908,7 @@ var ICON_B64 = 'iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAYAAAA9zQYyAAAcG0lEQVR42u2dd1cU
 // Stamped by tools/stamp-build.js at publish time so the running app can
 // say which build it is — a cached page is the usual reason a shipped change
 // seems missing.
-var BUILD_ID = '2026-10-18 02:34 · 64c8fe7';
+var BUILD_ID = '2026-10-18 08:08 · a5885a8';
 var LOGO_SRC = 'data:image/png;base64,' + LOGO_B64;
 var ICON_SRC = LOGO_SRC; // same asset — see the comment above LOGO_B64
 // The sign-in mark (2026-09-30): the logo's round emblem as a coin with a
@@ -5652,6 +5687,23 @@ var L = {
   };
   ['ar', 'en', 'ur'].forEach(function(lg){ Object.keys(X[lg]).forEach(function(k){ L[lg][k] = X[lg][k]; }); });
 })();
+(function(){
+  var X = {
+    en: { crp_levels: 'Levels', crp_levelsHint: 'City, area, branch, collector, day, request. Tap a bar or a row’s arrow to go one level down; the trail above takes you back up.',
+      crp_groupBy: 'Group by', crp_all: 'All', crp_lv_city: 'City', crp_lv_area: 'Area', crp_lv_branch: 'Branch', crp_lv_collector: 'Collector', crp_lv_day: 'Day', crp_lv_req: 'Request', crp_lv_owner: 'Store, car or POS',
+      crp_byLevel: 'By {lv}', crp_lvSub: '{n} requests · {p} of the level above · banked {b} · out {r}', crp_lvMore: '{n} more in the table below', crp_count: 'Requests', crp_pctParent: '% of the level above',
+      crp_drillTo: 'Go into {x}', crp_openAll: 'Open all', crp_closeAll: 'Close all', cmp_drillHint: 'Tap a row to go one level down' },
+    ar: { crp_levels: 'المستويات', crp_levelsHint: 'المدينة، المنطقة، الفرع، المحصل، اليوم، الطلب. اضغط شريطا أو سهم الصف للنزول مستوى؛ والمسار أعلاه يعيدك.',
+      crp_groupBy: 'التجميع حسب', crp_all: 'الكل', crp_lv_city: 'المدينة', crp_lv_area: 'المنطقة', crp_lv_branch: 'الفرع', crp_lv_collector: 'المحصل', crp_lv_day: 'اليوم', crp_lv_req: 'الطلب', crp_lv_owner: 'المتجر أو السيارة أو نقطة البيع',
+      crp_byLevel: 'حسب {lv}', crp_lvSub: '{n} طلب · {p} من المستوى الأعلى · أودع {b} · متبقي {r}', crp_lvMore: '{n} أخرى في الجدول أدناه', crp_count: 'الطلبات', crp_pctParent: '% من المستوى الأعلى',
+      crp_drillTo: 'الدخول إلى {x}', crp_openAll: 'فتح الكل', crp_closeAll: 'طي الكل', cmp_drillHint: 'اضغط صفا للنزول مستوى' },
+    ur: { crp_levels: 'سطحیں', crp_levelsHint: 'شہر، علاقہ، برانچ، کلکٹر، دن، درخواست۔ ایک سطح نیچے جانے کے لیے پٹی یا قطار کا تیر دبائیں؛ اوپر کا راستہ واپس لے جاتا ہے۔',
+      crp_groupBy: 'گروپ بلحاظ', crp_all: 'سب', crp_lv_city: 'شہر', crp_lv_area: 'علاقہ', crp_lv_branch: 'برانچ', crp_lv_collector: 'کلکٹر', crp_lv_day: 'دن', crp_lv_req: 'درخواست', crp_lv_owner: 'اسٹور، گاڑی یا POS',
+      crp_byLevel: '{lv} کے لحاظ سے', crp_lvSub: '{n} درخواستیں · اوپر کی سطح کا {p} · جمع {b} · باقی {r}', crp_lvMore: 'نیچے جدول میں {n} مزید', crp_count: 'درخواستیں', crp_pctParent: 'اوپر کی سطح کا %',
+      crp_drillTo: '{x} میں جائیں', crp_openAll: 'سب کھولیں', crp_closeAll: 'سب بند کریں', cmp_drillHint: 'ایک سطح نیچے جانے کے لیے قطار دبائیں' }
+  };
+  ['ar', 'en', 'ur'].forEach(function(lg){ Object.keys(X[lg]).forEach(function(k){ L[lg][k] = X[lg][k]; }); });
+})();
 // Collection reports and the comparison (2026-10-15): their strings, merged into L
 (function(){
   var X = {
@@ -5957,7 +6009,7 @@ function dirFor(lang){ return lang==='en' ? 'ltr' : 'rtl'; }
       doc_cylOut:'أسطوانات خارجة', doc_cylIn:'أسطوانات راجعة', doc_enteredBy:'أدخلها', doc_createdAt:'وقت الإدخال', doc_note:'ملاحظة',
       doc_from:'من', doc_to:'إلى', doc_status:'الحالة', doc_confirmedAt:'وقت التأكيد', doc_bankRef:'المرجع البنكي', doc_resolutionNote:'ملاحظة الحل',
       journey_entered:'أُدخلت بواسطة',
-      dash_overview:'الملخص المالي', dash_keyFigures:'مؤشرات رئيسية', pp_quick:'فترات سريعة', pp_months:'الأشهر', pp_today:'اليوم', pp_yesterday:'أمس', pp_thisWeek:'هذا الأسبوع', pp_lastWeek:'الأسبوع الماضي', pp_thisMonth:'هذا الشهر', pp_lastMonth:'الشهر الماضي', pp_thisQuarter:'هذا الربع', pp_lastQuarter:'الربع الماضي', pp_thisYear:'هذه السنة', pp_lastYear:'السنة الماضية', pp_last7:'آخر 7 أيام', pp_last30:'آخر 30 يوماً', pp_last90:'آخر 90 يوماً', pp_city:'المدينة', pp_area:'المنطقة', pp_branch:'الفرع', pp_unit:'المحل أو السيارة', pp_all:'الكل', pl_emptyHidden:'أُخفيت {n} أيام بلا مبيعات ولا تكاليف', pl_npPct:'هامش صافي الربح %', is_title:'قائمة الدخل', is_amount:'المبلغ', is_pct:'% من صافي المبيعات', is_less:'ناقص:', is_add:'زائد:', is_gross:'المبيعات شاملة الضريبة', is_vat:'ضريبة القيمة المضافة على المبيعات', is_delivery:'إيراد التوصيل', is_revenue:'إجمالي الإيرادات', is_cogs:'تكلفة البضاعة المباعة', is_commission:'العمولات', is_takings:'مصروفات دُفعت من الإيراد', in_skip:'اضغط للتخطي', in_s1:'تحصيل', in_s2:'تسليم', in_s3:'إيداع', hs_title:'فترة المعاملات', hs_first:'أول معاملة', hs_last:'آخر معاملة', hs_sub:'{d} يوم · {n} معاملة', kf_sales:'إجمالي المبيعات', kf_salesFoot:'نقدي وشبكة، الآجل ضمنها', kf_pos:'مبيعات الشبكة (POS)', kf_posFoot:'تُسدَّد إلى البنك مباشرة', kf_direct:'الموازنات المودعة في البنك', kf_directFoot:'أودعت من الفروع مباشرة', kf_other:'إجمالي الخصومات الأخرى', kf_otherFoot:'توصيل، مصروفات، آجل، تحويلات، عمولات', kf_otherAdd:'بعد إضافة {x} تحصيلات أخرى', kf_net:'صافي النقد المطلوب تسليمه', kf_netFoot:'الصافي بعد كل الخصومات', kf_dep:'المودَع', kf_depFoot:'ما أودعه المحصّلون في البنك', kf_rem:'المتبقي', kf_remFoot:'لم يُودع بعد', kf_eq:'المبيعات {s} − الشبكة {p} − الموازنات {d} − خصومات أخرى {o}{a} = صافي النقد المطلوب تسليمه {n} · المودع {dep} · المتبقي {r}', kf_eqAdd:' + تحصيلات أخرى {x}', kf_status:'حالة التسليمات', kf_settled:'مسوّى في الفرع', kf_settledFoot:'دفعة منطقة معتمدة لم يبقَ منها ما يُسلَّم', dv_search:'ابحث عن مدينة أو منطقة أو فرع أو مصدر أو يوم أو معاملة', dv_count:'العدد', dv_amount:'المبلغ', dv_share:'% من البطاقة', dv_lv_city:'المدينة', dv_lv_area:'المنطقة', dv_lv_branch:'الفرع', dv_lv_source:'المصدر', dv_lv_day:'اليوم', kf_ledgerHint:'اقرأ من الأعلى إلى الأسفل: كل سطر من قيود هذه الفترة، وكل إجمالي هو مجموع الأسطر التي فوقه.', kf_add:'تحصيلات أخرى', kf_depFoot2:'الجزء من هذه القيود الذي وصل إلى البنك', kf_remFoot2:'أين هو الآن، أدناه', kf_l_delivery:'رسوم التوصيل قبل الضريبة', kf_l_expenses:'المصروفات', kf_l_credit:'المبيعات الآجلة', kf_l_creditDelivery:'توصيل الآجل وعمولاته', kf_l_channelCom:'عمولات قنوات البيع', kf_l_discounts:'الخصومات', kf_l_transfers:'التحويلات البنكية', kf_l_otherCash:'نقد آخر محصَّل', kf_l_creditFees:'رسوم توصيل عملاء الآجل', kf_l_channelFees:'رسوم توصيل قنوات البيع', kf_s_notHanded:'لم يُسلَّم بعد', kf_s_carBranch:'في الفرع / من السيارة إلى الفرع', kf_s_branchArea:'من الفرع إلى المنطقة', kf_s_deputy:'من المنطقة إلى المحصل، بانتظار النائب', kf_s_onway:'في الطريق (إلى المحصل أو بين المحصلين)', kf_s_held:'لدى المحصل', kf_s_short:'نقص عند الاستلام في الطريق', kf_stageSub:'حصة كل قيد في هذه المرحلة', kf_remSplit:'أين نقد هذه القيود الآن', sf_whereTotal:'المجموع لدى الأشخاص', sf_whereGap:'يختلف عن المتبقي لأن تسليمًا يجمع أكثر من يوم يُحتسب في آخر أيامه، أو لأن جزءًا من نقد هذه الأيام في تسليم مؤرَّخ بيوم لاحق.', sf_rule:'التاريخ هو يوم المبيعات: يُحتسب التسليم في يوم قيوده (آخرها إذا جمع أكثر من يوم)، لا في يوم إنشائه.', sf_dashDiff:'صافي النقد المطلوب تسليمه يأتي من قيود الفترة. المسلَّم والمودَع يتبعان تسليمات الأيام نفسها؛ التسليم الذي يجمع أكثر من يوم يُحتسب في آخرها.', sf_colDiff:'الفرق عن لوحة المعلومات: صافي النقد المطلوب تسليمه يشمل كل مبيعات الفترة، وهذه الشاشة تحسب ما وصل إلى المحصلين فقط. الفرق نقد لم يُسلَّم بعد، أو ما زال مع السيارة، أو استُلم ناقصًا، أو تسليم يجمع أكثر من يوم فيُحتسب في آخرها.', sf_hoDiff:'الفرق: النقد نفسه يظهر مرة عند كل مرحلة (السيارة ← الفرع ← المنطقة ← المحصل)، فاجمع مرحلة واحدة. يُحتسب التسليم في يوم قيوده.', sf_entDiff:'هذا صافي النقد المطلوب تسليمه لهذه القيود. شاشتا التسليمات والتحصيل تحسبان ما سُلِّم فقط، في يوم قيوده.', dash_salesAnalysis:'تحليل المبيعات', dash_collectionsAnalysis:'تحليل التحصيل',
+      dash_overview:'الملخص المالي', dash_keyFigures:'مؤشرات رئيسية', hc_title:'فحص سلامة البيانات', hc_hint:'يتحقق على البيانات الحية أن كل تسليم يساوي ما حمله، وكل إيداع يساوي طلباته، ولا يوجد ربط مكسور أو استلام بصفر.', hc_run:'تشغيل الفحص', hc_clean:'البيانات سليمة: لا توجد أي مشكلة', hc_found:'وُجدت {n} مشكلة', hc_checked:'فُحص {h} تسليماً و{d} إيداعاً و{e} إدخالاً', hc_kind:'النوع', hc_no:'الرقم', hc_status:'الحالة', hc_what:'الوصف', hc_expected:'المتوقع', hc_actual:'المسجل', hc_gap:'الفرق', hc_k_sum:'مبلغ التسليم', hc_k_deposit:'مبلغ الإيداع', hc_k_link:'الربط', hc_k_orphan:'سجل مفقود', hc_k_short:'العجز', hc_k_voided:'إدخال ملغى', hc_k_direct:'موازنة', hc_k_day:'يوم مكرر', pp_quick:'فترات سريعة', pp_months:'الأشهر', pp_today:'اليوم', pp_yesterday:'أمس', pp_thisWeek:'هذا الأسبوع', pp_lastWeek:'الأسبوع الماضي', pp_thisMonth:'هذا الشهر', pp_lastMonth:'الشهر الماضي', pp_thisQuarter:'هذا الربع', pp_lastQuarter:'الربع الماضي', pp_thisYear:'هذه السنة', pp_lastYear:'السنة الماضية', pp_last7:'آخر 7 أيام', pp_last30:'آخر 30 يوماً', pp_last90:'آخر 90 يوماً', pp_city:'المدينة', pp_area:'المنطقة', pp_branch:'الفرع', pp_unit:'المحل أو السيارة', pp_all:'الكل', pl_emptyHidden:'أُخفيت {n} أيام بلا مبيعات ولا تكاليف', pl_npPct:'هامش صافي الربح %', is_title:'قائمة الدخل', is_amount:'المبلغ', is_pct:'% من صافي المبيعات', is_less:'ناقص:', is_add:'زائد:', is_gross:'المبيعات شاملة الضريبة', is_vat:'ضريبة القيمة المضافة على المبيعات', is_delivery:'إيراد التوصيل', is_revenue:'إجمالي الإيرادات', is_cogs:'تكلفة البضاعة المباعة', is_commission:'العمولات', is_takings:'مصروفات دُفعت من الإيراد', in_skip:'اضغط للتخطي', in_s1:'تحصيل', in_s2:'تسليم', in_s3:'إيداع', hs_title:'فترة المعاملات', hs_first:'أول معاملة', hs_last:'آخر معاملة', hs_sub:'{d} يوم · {n} معاملة', kf_sales:'إجمالي المبيعات', kf_salesFoot:'نقدي وشبكة، الآجل ضمنها', kf_pos:'مبيعات الشبكة (POS)', kf_posFoot:'تُسدَّد إلى البنك مباشرة', kf_direct:'الموازنات المودعة في البنك', kf_directFoot:'أودعت من الفروع مباشرة', kf_other:'إجمالي الخصومات الأخرى', kf_otherFoot:'توصيل، مصروفات، آجل، تحويلات، عمولات', kf_otherAdd:'بعد إضافة {x} تحصيلات أخرى', kf_net:'صافي النقد المطلوب تسليمه', kf_netFoot:'الصافي بعد كل الخصومات', kf_dep:'المودَع', kf_depFoot:'ما أودعه المحصّلون في البنك', kf_rem:'المتبقي', kf_remFoot:'لم يُودع بعد', kf_eq:'المبيعات {s} − الشبكة {p} − الموازنات {d} − خصومات أخرى {o}{a} = صافي النقد المطلوب تسليمه {n} · المودع {dep} · المتبقي {r}', kf_eqAdd:' + تحصيلات أخرى {x}', kf_status:'حالة التسليمات', kf_settled:'مسوّى في الفرع', kf_settledFoot:'دفعة منطقة معتمدة لم يبقَ منها ما يُسلَّم', dv_search:'ابحث عن مدينة أو منطقة أو فرع أو مصدر أو يوم أو معاملة', dv_count:'العدد', dv_amount:'المبلغ', dv_share:'% من البطاقة', dv_lv_city:'المدينة', dv_lv_area:'المنطقة', dv_lv_branch:'الفرع', dv_lv_source:'المصدر', dv_lv_day:'اليوم', kf_ledgerHint:'اقرأ من الأعلى إلى الأسفل: كل سطر من قيود هذه الفترة، وكل إجمالي هو مجموع الأسطر التي فوقه.', kf_add:'تحصيلات أخرى', kf_depFoot2:'الجزء من هذه القيود الذي وصل إلى البنك', kf_remFoot2:'أين هو الآن، أدناه', kf_l_delivery:'رسوم التوصيل قبل الضريبة', kf_l_expenses:'المصروفات', kf_l_credit:'المبيعات الآجلة', kf_l_creditDelivery:'توصيل الآجل وعمولاته', kf_l_channelCom:'عمولات قنوات البيع', kf_l_discounts:'الخصومات', kf_l_transfers:'التحويلات البنكية', kf_l_otherCash:'نقد آخر محصَّل', kf_l_creditFees:'رسوم توصيل عملاء الآجل', kf_l_channelFees:'رسوم توصيل قنوات البيع', kf_s_notHanded:'لم يُسلَّم بعد', kf_s_carBranch:'في الفرع / من السيارة إلى الفرع', kf_s_branchArea:'من الفرع إلى المنطقة', kf_s_deputy:'من المنطقة إلى المحصل، بانتظار النائب', kf_s_onway:'في الطريق (إلى المحصل أو بين المحصلين)', kf_s_held:'لدى المحصل', kf_s_short:'نقص عند الاستلام في الطريق', kf_stageSub:'حصة كل قيد في هذه المرحلة', kf_remSplit:'أين نقد هذه القيود الآن', sf_whereTotal:'المجموع لدى الأشخاص', sf_whereGap:'يختلف عن المتبقي لأن تسليمًا يجمع أكثر من يوم يُحتسب في آخر أيامه، أو لأن جزءًا من نقد هذه الأيام في تسليم مؤرَّخ بيوم لاحق.', sf_rule:'التاريخ هو يوم المبيعات: يُحتسب التسليم في يوم قيوده (آخرها إذا جمع أكثر من يوم)، لا في يوم إنشائه.', sf_dashDiff:'صافي النقد المطلوب تسليمه يأتي من قيود الفترة. المسلَّم والمودَع يتبعان تسليمات الأيام نفسها؛ التسليم الذي يجمع أكثر من يوم يُحتسب في آخرها.', sf_colDiff:'الفرق عن لوحة المعلومات: صافي النقد المطلوب تسليمه يشمل كل مبيعات الفترة، وهذه الشاشة تحسب ما وصل إلى المحصلين فقط. الفرق نقد لم يُسلَّم بعد، أو ما زال مع السيارة، أو استُلم ناقصًا، أو تسليم يجمع أكثر من يوم فيُحتسب في آخرها.', sf_hoDiff:'الفرق: النقد نفسه يظهر مرة عند كل مرحلة (السيارة ← الفرع ← المنطقة ← المحصل)، فاجمع مرحلة واحدة. يُحتسب التسليم في يوم قيوده.', sf_entDiff:'هذا صافي النقد المطلوب تسليمه لهذه القيود. شاشتا التسليمات والتحصيل تحسبان ما سُلِّم فقط، في يوم قيوده.', dash_salesAnalysis:'تحليل المبيعات', dash_collectionsAnalysis:'تحليل التحصيل',
       dash_statementSales:'ملخص المبيعات', dash_statementCollect:'ملخص التحصيل والإيداع',
       dash_posHint:'تُسوّى مباشرة في البنك — ليست نقدية للتحصيل', dash_creditHint:'مطالبات على العملاء — تُخصم لأنها ضمن المبيعات ولم تُحصَّل نقداً',
       dash_deliveryDeductHint:'تُدفع مباشرة للبنك — لا تستلمها يد السائق', dash_vatOnDeliveryFoot:'على رسوم التوصيل فقط',
@@ -5979,7 +6031,7 @@ function dirFor(lang){ return lang==='en' ? 'ltr' : 'rtl'; }
       doc_cylOut:'Cylinders out', doc_cylIn:'Cylinders in', doc_enteredBy:'Entered by', doc_createdAt:'Entered at', doc_note:'Note',
       doc_from:'From', doc_to:'To', doc_status:'Status', doc_confirmedAt:'Confirmed at', doc_bankRef:'Bank reference', doc_resolutionNote:'Resolution note',
       journey_entered:'Entered by',
-      dash_overview:'Financial summary', dash_keyFigures:'Key figures', pp_quick:'Quick periods', pp_months:'Months', pp_today:'Today', pp_yesterday:'Yesterday', pp_thisWeek:'This week', pp_lastWeek:'Last week', pp_thisMonth:'This month', pp_lastMonth:'Last month', pp_thisQuarter:'This quarter', pp_lastQuarter:'Last quarter', pp_thisYear:'This year', pp_lastYear:'Last year', pp_last7:'Last 7 days', pp_last30:'Last 30 days', pp_last90:'Last 90 days', pp_city:'City', pp_area:'Area', pp_branch:'Branch', pp_unit:'Store or car', pp_all:'All', pl_emptyHidden:'{n} days with no sales and no costs are hidden', pl_npPct:'Net margin %', is_title:'Income statement', is_amount:'Amount', is_pct:'% of net sales', is_less:'Less:', is_add:'Add:', is_gross:'Sales including VAT', is_vat:'VAT on sales', is_delivery:'Delivery income', is_revenue:'Total revenue', is_cogs:'Cost of goods sold (COGS)', is_commission:'Commissions', is_takings:'Expenses paid from takings', in_skip:'Tap to skip', in_s1:'Collect', in_s2:'Hand over', in_s3:'Bank', hs_title:'Transactions on file', hs_first:'First transaction', hs_last:'Last transaction', hs_sub:'{d} days · {n} transactions', kf_sales:'Total sales', kf_salesFoot:'cash and card, credit inside', kf_pos:'Card (POS) sales', kf_posFoot:'settled to the bank directly', kf_direct:'Direct deposits in the bank', kf_directFoot:'banked by the branches themselves', kf_other:'Total other deductions', kf_otherFoot:'delivery, expenses, credit, transfers, commissions', kf_otherAdd:'after adding {x} other collections', kf_net:'Net cash to hand over', kf_netFoot:'net after every deduction', kf_dep:'Deposited', kf_depFoot:'banked by the collectors', kf_rem:'Remaining', kf_remFoot:'not banked yet', kf_eq:'Sales {s} − card {p} − direct deposits {d} − other deductions {o}{a} = net cash to hand over {n} · deposited {dep} · remaining {r}', kf_eqAdd:' + other collections {x}', kf_status:'Handover status', kf_settled:'Settled at the branch', kf_settledFoot:'an approved area batch with nothing left to hand over', dv_search:'Search a city, area, branch, source, day or transaction', dv_count:'Count', dv_amount:'Amount', dv_share:'% of the card', dv_lv_city:'City', dv_lv_area:'Area', dv_lv_branch:'Branch', dv_lv_source:'Source', dv_lv_day:'Day', kf_ledgerHint:'Read top to bottom: every line comes from the entries of this period, and each total is the sum of the lines above it.', kf_add:'Other collections', kf_depFoot2:'the part of these entries that reached the bank', kf_remFoot2:'where it is now, below', kf_l_delivery:'Delivery fees, before VAT', kf_l_expenses:'Expenses', kf_l_credit:'Credit sales', kf_l_creditDelivery:'Credit delivery fees and commissions', kf_l_channelCom:'Sales channel commissions', kf_l_discounts:'Discounts', kf_l_transfers:'Bank transfers', kf_l_otherCash:'Other cash collected', kf_l_creditFees:'Credit customers\' delivery fees', kf_l_channelFees:'Sales channel delivery fees', kf_s_notHanded:'Not handed over yet', kf_s_carBranch:'At the branch / car to branch', kf_s_branchArea:'Branch to area', kf_s_deputy:'Area to collector, waiting for the deputy', kf_s_onway:'On the way (to or between collectors)', kf_s_held:'Held by a collector', kf_s_short:'Received short on the way', kf_stageSub:'Each entry\'s share at this stage', kf_remSplit:'Where the cash of these entries is now', sf_whereTotal:'Total held by people', sf_whereGap:'This differs from Remaining because a handover that carries several days counts on its latest day, or part of these days\' cash sits in a handover dated later.', sf_rule:'Dates are the business day of the sales: a handover counts on the day of its entries (the latest one when it carries several days), not the day it was made.', sf_dashDiff:'Net cash to hand over comes from the entries of the period. Handed over and deposited follow the handovers of the same days; a handover that carries several days counts on its latest day.', sf_colDiff:'How this differs from the Dashboard: net cash to hand over counts every sale of the period; this screen counts only what has reached a collector. The gap is cash not yet handed over, still with a car, received short, or a handover that carries several days (counted on its latest day).', sf_hoDiff:'How this differs: the same cash shows once at every hop (car → branch → area → collector), so add up one hop at a time. A handover counts on the day of its entries.', sf_entDiff:'This is the net cash to hand over for these entries. The Handoffs and Collections screens count only what has been handed over, on the day of its entries.', dash_salesAnalysis:'Sales analysis', dash_collectionsAnalysis:'Collections analysis',
+      dash_overview:'Financial summary', dash_keyFigures:'Key figures', hc_title:'Data health check', hc_hint:'Checks the live data: every handover equals what it carried, every deposit equals its requests, and no link is broken or receipt recorded as 0.', hc_run:'Run the check', hc_clean:'The data is sound: no issue found', hc_found:'{n} issues found', hc_checked:'Checked {h} handovers, {d} deposits and {e} entries', hc_kind:'Kind', hc_no:'No.', hc_status:'Status', hc_what:'What', hc_expected:'Expected', hc_actual:'Recorded', hc_gap:'Gap', hc_k_sum:'Handover amount', hc_k_deposit:'Deposit amount', hc_k_link:'Link', hc_k_orphan:'Missing record', hc_k_short:'Shortfall', hc_k_voided:'Cancelled entry', hc_k_direct:'Direct deposit', hc_k_day:'Day entered twice', pp_quick:'Quick periods', pp_months:'Months', pp_today:'Today', pp_yesterday:'Yesterday', pp_thisWeek:'This week', pp_lastWeek:'Last week', pp_thisMonth:'This month', pp_lastMonth:'Last month', pp_thisQuarter:'This quarter', pp_lastQuarter:'Last quarter', pp_thisYear:'This year', pp_lastYear:'Last year', pp_last7:'Last 7 days', pp_last30:'Last 30 days', pp_last90:'Last 90 days', pp_city:'City', pp_area:'Area', pp_branch:'Branch', pp_unit:'Store or car', pp_all:'All', pl_emptyHidden:'{n} days with no sales and no costs are hidden', pl_npPct:'Net margin %', is_title:'Income statement', is_amount:'Amount', is_pct:'% of net sales', is_less:'Less:', is_add:'Add:', is_gross:'Sales including VAT', is_vat:'VAT on sales', is_delivery:'Delivery income', is_revenue:'Total revenue', is_cogs:'Cost of goods sold (COGS)', is_commission:'Commissions', is_takings:'Expenses paid from takings', in_skip:'Tap to skip', in_s1:'Collect', in_s2:'Hand over', in_s3:'Bank', hs_title:'Transactions on file', hs_first:'First transaction', hs_last:'Last transaction', hs_sub:'{d} days · {n} transactions', kf_sales:'Total sales', kf_salesFoot:'cash and card, credit inside', kf_pos:'Card (POS) sales', kf_posFoot:'settled to the bank directly', kf_direct:'Direct deposits in the bank', kf_directFoot:'banked by the branches themselves', kf_other:'Total other deductions', kf_otherFoot:'delivery, expenses, credit, transfers, commissions', kf_otherAdd:'after adding {x} other collections', kf_net:'Net cash to hand over', kf_netFoot:'net after every deduction', kf_dep:'Deposited', kf_depFoot:'banked by the collectors', kf_rem:'Remaining', kf_remFoot:'not banked yet', kf_eq:'Sales {s} − card {p} − direct deposits {d} − other deductions {o}{a} = net cash to hand over {n} · deposited {dep} · remaining {r}', kf_eqAdd:' + other collections {x}', kf_status:'Handover status', kf_settled:'Settled at the branch', kf_settledFoot:'an approved area batch with nothing left to hand over', dv_search:'Search a city, area, branch, source, day or transaction', dv_count:'Count', dv_amount:'Amount', dv_share:'% of the card', dv_lv_city:'City', dv_lv_area:'Area', dv_lv_branch:'Branch', dv_lv_source:'Source', dv_lv_day:'Day', kf_ledgerHint:'Read top to bottom: every line comes from the entries of this period, and each total is the sum of the lines above it.', kf_add:'Other collections', kf_depFoot2:'the part of these entries that reached the bank', kf_remFoot2:'where it is now, below', kf_l_delivery:'Delivery fees, before VAT', kf_l_expenses:'Expenses', kf_l_credit:'Credit sales', kf_l_creditDelivery:'Credit delivery fees and commissions', kf_l_channelCom:'Sales channel commissions', kf_l_discounts:'Discounts', kf_l_transfers:'Bank transfers', kf_l_otherCash:'Other cash collected', kf_l_creditFees:'Credit customers\' delivery fees', kf_l_channelFees:'Sales channel delivery fees', kf_s_notHanded:'Not handed over yet', kf_s_carBranch:'At the branch / car to branch', kf_s_branchArea:'Branch to area', kf_s_deputy:'Area to collector, waiting for the deputy', kf_s_onway:'On the way (to or between collectors)', kf_s_held:'Held by a collector', kf_s_short:'Received short on the way', kf_stageSub:'Each entry\'s share at this stage', kf_remSplit:'Where the cash of these entries is now', sf_whereTotal:'Total held by people', sf_whereGap:'This differs from Remaining because a handover that carries several days counts on its latest day, or part of these days\' cash sits in a handover dated later.', sf_rule:'Dates are the business day of the sales: a handover counts on the day of its entries (the latest one when it carries several days), not the day it was made.', sf_dashDiff:'Net cash to hand over comes from the entries of the period. Handed over and deposited follow the handovers of the same days; a handover that carries several days counts on its latest day.', sf_colDiff:'How this differs from the Dashboard: net cash to hand over counts every sale of the period; this screen counts only what has reached a collector. The gap is cash not yet handed over, still with a car, received short, or a handover that carries several days (counted on its latest day).', sf_hoDiff:'How this differs: the same cash shows once at every hop (car → branch → area → collector), so add up one hop at a time. A handover counts on the day of its entries.', sf_entDiff:'This is the net cash to hand over for these entries. The Handoffs and Collections screens count only what has been handed over, on the day of its entries.', dash_salesAnalysis:'Sales analysis', dash_collectionsAnalysis:'Collections analysis',
       dash_statementSales:'Sales summary', dash_statementCollect:'Collection & deposit summary',
       dash_posHint:'Settles straight to the bank — not cash to collect', dash_creditHint:'Owed by customers — deducted: part of sales, but no cash came in',
       dash_deliveryDeductHint:'Paid straight to the bank — never in the driver\'s hand', dash_vatOnDeliveryFoot:'On delivery fees only',
@@ -6001,7 +6053,7 @@ function dirFor(lang){ return lang==='en' ? 'ltr' : 'rtl'; }
       doc_cylOut:'باہر جانے والے سلنڈر', doc_cylIn:'واپس آنے والے سلنڈر', doc_enteredBy:'درج کرنے والا', doc_createdAt:'اندراج کا وقت', doc_note:'نوٹ',
       doc_from:'از', doc_to:'بنام', doc_status:'حیثیت', doc_confirmedAt:'تصدیق کا وقت', doc_bankRef:'بینک حوالہ', doc_resolutionNote:'حل کا نوٹ',
       journey_entered:'درج کیا',
-      dash_overview:'مالی خلاصہ', dash_keyFigures:'اہم اعداد', pp_quick:'فوری مدتیں', pp_months:'مہینے', pp_today:'آج', pp_yesterday:'کل', pp_thisWeek:'اس ہفتے', pp_lastWeek:'پچھلے ہفتے', pp_thisMonth:'اس مہینے', pp_lastMonth:'پچھلے مہینے', pp_thisQuarter:'اس سہ ماہی', pp_lastQuarter:'پچھلی سہ ماہی', pp_thisYear:'اس سال', pp_lastYear:'پچھلے سال', pp_last7:'پچھلے 7 دن', pp_last30:'پچھلے 30 دن', pp_last90:'پچھلے 90 دن', pp_city:'شہر', pp_area:'علاقہ', pp_branch:'برانچ', pp_unit:'دکان یا گاڑی', pp_all:'سب', pl_emptyHidden:'بغیر فروخت اور لاگت کے {n} دن چھپائے گئے', pl_npPct:'خالص منافع %', is_title:'آمدنی کا گوشوارہ', is_amount:'رقم', is_pct:'خالص فروخت کا %', is_less:'منفی:', is_add:'جمع:', is_gross:'فروخت بشمول VAT', is_vat:'فروخت پر VAT', is_delivery:'ڈیلیوری آمدنی', is_revenue:'کل آمدنی', is_cogs:'فروخت شدہ مال کی لاگت', is_commission:'کمیشن', is_takings:'آمدنی سے ادا کردہ اخراجات', in_skip:'چھوڑنے کے لیے ٹیپ کریں', in_s1:'وصولی', in_s2:'حوالگی', in_s3:'بینک جمع', hs_title:'لین دین کی مدت', hs_first:'پہلا لین دین', hs_last:'آخری لین دین', hs_sub:'{d} دن · {n} لین دین', kf_sales:'کل فروخت', kf_salesFoot:'نقد اور کارڈ، ادھار شامل', kf_pos:'کارڈ (POS) فروخت', kf_posFoot:'براہ راست بینک میں', kf_direct:'بینک میں براہ راست جمع', kf_directFoot:'برانچوں نے خود جمع کیا', kf_other:'دیگر کٹوتیوں کا کل', kf_otherFoot:'ڈیلیوری، اخراجات، ادھار، ٹرانسفر، کمیشن', kf_otherAdd:'{x} دیگر وصولیاں شامل کرنے کے بعد', kf_net:'حوالے کرنے کے لیے خالص نقد', kf_netFoot:'تمام کٹوتیوں کے بعد خالص', kf_dep:'جمع شدہ', kf_depFoot:'وصول کنندگان نے بینک میں جمع کیا', kf_rem:'باقی', kf_remFoot:'ابھی جمع نہیں ہوا', kf_eq:'فروخت {s} − کارڈ {p} − براہ راست جمع {d} − دیگر کٹوتیاں {o}{a} = حوالے کرنے کے لیے خالص نقد {n} · جمع {dep} · باقی {r}', kf_eqAdd:' + دیگر وصولیاں {x}', kf_status:'حوالگی کی صورتحال', kf_settled:'برانچ پر طے شدہ', kf_settledFoot:'منظور شدہ ایریا بیچ جس میں حوالے کرنے کو کچھ نہیں بچا', dv_search:'شہر، ایریا، برانچ، ذریعہ، دن یا لین دین تلاش کریں', dv_count:'تعداد', dv_amount:'رقم', dv_share:'کارڈ کا %', dv_lv_city:'شہر', dv_lv_area:'ایریا', dv_lv_branch:'برانچ', dv_lv_source:'ذریعہ', dv_lv_day:'دن', kf_ledgerHint:'اوپر سے نیچے پڑھیں: ہر سطر اس مدت کی اندراجات سے ہے، اور ہر کل اپنے اوپر کی سطروں کا مجموعہ ہے۔', kf_add:'دیگر وصولیاں', kf_depFoot2:'ان اندراجات کا وہ حصہ جو بینک تک پہنچا', kf_remFoot2:'اب کہاں ہے، نیچے', kf_l_delivery:'ڈیلیوری فیس، VAT سے پہلے', kf_l_expenses:'اخراجات', kf_l_credit:'ادھار فروخت', kf_l_creditDelivery:'ادھار ڈیلیوری فیس اور کمیشن', kf_l_channelCom:'سیلز چینل کمیشن', kf_l_discounts:'رعایتیں', kf_l_transfers:'بینک ٹرانسفر', kf_l_otherCash:'دیگر وصول شدہ نقد', kf_l_creditFees:'ادھار گاہکوں کی ڈیلیوری فیس', kf_l_channelFees:'سیلز چینل ڈیلیوری فیس', kf_s_notHanded:'ابھی حوالے نہیں ہوا', kf_s_carBranch:'برانچ پر / گاڑی سے برانچ', kf_s_branchArea:'برانچ سے ایریا', kf_s_deputy:'ایریا سے کلکٹر، نائب کے انتظار میں', kf_s_onway:'راستے میں (کلکٹر تک یا کلکٹرز کے درمیان)', kf_s_held:'کلکٹر کے پاس', kf_s_short:'راستے میں کم وصول ہوا', kf_stageSub:'اس مرحلے پر ہر اندراج کا حصہ', kf_remSplit:'ان اندراجات کا نقد اب کہاں ہے', sf_whereTotal:'لوگوں کے پاس کل', sf_whereGap:'یہ باقی سے مختلف ہے کیونکہ کئی دن والی حوالگی آخری دن شمار ہوتی ہے، یا ان دنوں کی کچھ نقدی بعد کی تاریخ والی حوالگی میں ہے۔', sf_rule:'تاریخ فروخت کا کاروباری دن ہے: حوالگی اپنی اندراجات کے دن شمار ہوتی ہے (کئی دن ہوں تو آخری دن)، بنانے کے دن نہیں۔', sf_dashDiff:'حوالے کرنے کے لیے خالص نقد مدت کی اندراجات سے آتا ہے۔ حوالے اور جمع شدہ انہی دنوں کی حوالگیوں کے مطابق ہیں؛ کئی دن والی حوالگی آخری دن شمار ہوتی ہے۔', sf_colDiff:'ڈیش بورڈ سے فرق: حوالے کرنے کے لیے خالص نقد مدت کی ہر فروخت گنتا ہے؛ یہ اسکرین صرف وہ گنتی ہے جو کلکٹر تک پہنچا۔ فرق وہ نقد ہے جو ابھی حوالے نہیں ہوا، ابھی گاڑی کے پاس ہے، کم وصول ہوا، یا کئی دن والی حوالگی جو آخری دن شمار ہوتی ہے۔', sf_hoDiff:'فرق: وہی نقد ہر مرحلے پر ایک بار دکھتا ہے (گاڑی ← برانچ ← ایریا ← کلکٹر)، اس لیے ایک وقت میں ایک مرحلہ جمع کریں۔ حوالگی اپنی اندراجات کے دن شمار ہوتی ہے۔', sf_entDiff:'یہ ان اندراجات کے لیے حوالے کرنے کا خالص نقد ہے۔ حوالگی اور وصولی کی اسکرینیں صرف حوالے شدہ رقم گنتی ہیں، اندراجات کے دن کے مطابق۔', dash_salesAnalysis:'سیلز تجزیہ', dash_collectionsAnalysis:'وصولی تجزیہ',
+      dash_overview:'مالی خلاصہ', dash_keyFigures:'اہم اعداد', hc_title:'ڈیٹا کی صحت کی جانچ', hc_hint:'زندہ ڈیٹا پر جانچتا ہے کہ ہر حوالگی اپنی رقم کے برابر ہے، ہر جمع اپنی درخواستوں کے برابر ہے، اور کوئی ربط ٹوٹا نہیں۔', hc_run:'جانچ چلائیں', hc_clean:'ڈیٹا درست ہے: کوئی مسئلہ نہیں', hc_found:'{n} مسائل ملے', hc_checked:'{h} حوالگیاں، {d} جمع اور {e} اندراجات جانچے گئے', hc_kind:'قسم', hc_no:'نمبر', hc_status:'حالت', hc_what:'تفصیل', hc_expected:'متوقع', hc_actual:'درج شدہ', hc_gap:'فرق', hc_k_sum:'حوالگی کی رقم', hc_k_deposit:'جمع کی رقم', hc_k_link:'ربط', hc_k_orphan:'گمشدہ ریکارڈ', hc_k_short:'کمی', hc_k_voided:'منسوخ اندراج', hc_k_direct:'براہ راست جمع', hc_k_day:'دن دو بار', pp_quick:'فوری مدتیں', pp_months:'مہینے', pp_today:'آج', pp_yesterday:'کل', pp_thisWeek:'اس ہفتے', pp_lastWeek:'پچھلے ہفتے', pp_thisMonth:'اس مہینے', pp_lastMonth:'پچھلے مہینے', pp_thisQuarter:'اس سہ ماہی', pp_lastQuarter:'پچھلی سہ ماہی', pp_thisYear:'اس سال', pp_lastYear:'پچھلے سال', pp_last7:'پچھلے 7 دن', pp_last30:'پچھلے 30 دن', pp_last90:'پچھلے 90 دن', pp_city:'شہر', pp_area:'علاقہ', pp_branch:'برانچ', pp_unit:'دکان یا گاڑی', pp_all:'سب', pl_emptyHidden:'بغیر فروخت اور لاگت کے {n} دن چھپائے گئے', pl_npPct:'خالص منافع %', is_title:'آمدنی کا گوشوارہ', is_amount:'رقم', is_pct:'خالص فروخت کا %', is_less:'منفی:', is_add:'جمع:', is_gross:'فروخت بشمول VAT', is_vat:'فروخت پر VAT', is_delivery:'ڈیلیوری آمدنی', is_revenue:'کل آمدنی', is_cogs:'فروخت شدہ مال کی لاگت', is_commission:'کمیشن', is_takings:'آمدنی سے ادا کردہ اخراجات', in_skip:'چھوڑنے کے لیے ٹیپ کریں', in_s1:'وصولی', in_s2:'حوالگی', in_s3:'بینک جمع', hs_title:'لین دین کی مدت', hs_first:'پہلا لین دین', hs_last:'آخری لین دین', hs_sub:'{d} دن · {n} لین دین', kf_sales:'کل فروخت', kf_salesFoot:'نقد اور کارڈ، ادھار شامل', kf_pos:'کارڈ (POS) فروخت', kf_posFoot:'براہ راست بینک میں', kf_direct:'بینک میں براہ راست جمع', kf_directFoot:'برانچوں نے خود جمع کیا', kf_other:'دیگر کٹوتیوں کا کل', kf_otherFoot:'ڈیلیوری، اخراجات، ادھار، ٹرانسفر، کمیشن', kf_otherAdd:'{x} دیگر وصولیاں شامل کرنے کے بعد', kf_net:'حوالے کرنے کے لیے خالص نقد', kf_netFoot:'تمام کٹوتیوں کے بعد خالص', kf_dep:'جمع شدہ', kf_depFoot:'وصول کنندگان نے بینک میں جمع کیا', kf_rem:'باقی', kf_remFoot:'ابھی جمع نہیں ہوا', kf_eq:'فروخت {s} − کارڈ {p} − براہ راست جمع {d} − دیگر کٹوتیاں {o}{a} = حوالے کرنے کے لیے خالص نقد {n} · جمع {dep} · باقی {r}', kf_eqAdd:' + دیگر وصولیاں {x}', kf_status:'حوالگی کی صورتحال', kf_settled:'برانچ پر طے شدہ', kf_settledFoot:'منظور شدہ ایریا بیچ جس میں حوالے کرنے کو کچھ نہیں بچا', dv_search:'شہر، ایریا، برانچ، ذریعہ، دن یا لین دین تلاش کریں', dv_count:'تعداد', dv_amount:'رقم', dv_share:'کارڈ کا %', dv_lv_city:'شہر', dv_lv_area:'ایریا', dv_lv_branch:'برانچ', dv_lv_source:'ذریعہ', dv_lv_day:'دن', kf_ledgerHint:'اوپر سے نیچے پڑھیں: ہر سطر اس مدت کی اندراجات سے ہے، اور ہر کل اپنے اوپر کی سطروں کا مجموعہ ہے۔', kf_add:'دیگر وصولیاں', kf_depFoot2:'ان اندراجات کا وہ حصہ جو بینک تک پہنچا', kf_remFoot2:'اب کہاں ہے، نیچے', kf_l_delivery:'ڈیلیوری فیس، VAT سے پہلے', kf_l_expenses:'اخراجات', kf_l_credit:'ادھار فروخت', kf_l_creditDelivery:'ادھار ڈیلیوری فیس اور کمیشن', kf_l_channelCom:'سیلز چینل کمیشن', kf_l_discounts:'رعایتیں', kf_l_transfers:'بینک ٹرانسفر', kf_l_otherCash:'دیگر وصول شدہ نقد', kf_l_creditFees:'ادھار گاہکوں کی ڈیلیوری فیس', kf_l_channelFees:'سیلز چینل ڈیلیوری فیس', kf_s_notHanded:'ابھی حوالے نہیں ہوا', kf_s_carBranch:'برانچ پر / گاڑی سے برانچ', kf_s_branchArea:'برانچ سے ایریا', kf_s_deputy:'ایریا سے کلکٹر، نائب کے انتظار میں', kf_s_onway:'راستے میں (کلکٹر تک یا کلکٹرز کے درمیان)', kf_s_held:'کلکٹر کے پاس', kf_s_short:'راستے میں کم وصول ہوا', kf_stageSub:'اس مرحلے پر ہر اندراج کا حصہ', kf_remSplit:'ان اندراجات کا نقد اب کہاں ہے', sf_whereTotal:'لوگوں کے پاس کل', sf_whereGap:'یہ باقی سے مختلف ہے کیونکہ کئی دن والی حوالگی آخری دن شمار ہوتی ہے، یا ان دنوں کی کچھ نقدی بعد کی تاریخ والی حوالگی میں ہے۔', sf_rule:'تاریخ فروخت کا کاروباری دن ہے: حوالگی اپنی اندراجات کے دن شمار ہوتی ہے (کئی دن ہوں تو آخری دن)، بنانے کے دن نہیں۔', sf_dashDiff:'حوالے کرنے کے لیے خالص نقد مدت کی اندراجات سے آتا ہے۔ حوالے اور جمع شدہ انہی دنوں کی حوالگیوں کے مطابق ہیں؛ کئی دن والی حوالگی آخری دن شمار ہوتی ہے۔', sf_colDiff:'ڈیش بورڈ سے فرق: حوالے کرنے کے لیے خالص نقد مدت کی ہر فروخت گنتا ہے؛ یہ اسکرین صرف وہ گنتی ہے جو کلکٹر تک پہنچا۔ فرق وہ نقد ہے جو ابھی حوالے نہیں ہوا، ابھی گاڑی کے پاس ہے، کم وصول ہوا، یا کئی دن والی حوالگی جو آخری دن شمار ہوتی ہے۔', sf_hoDiff:'فرق: وہی نقد ہر مرحلے پر ایک بار دکھتا ہے (گاڑی ← برانچ ← ایریا ← کلکٹر)، اس لیے ایک وقت میں ایک مرحلہ جمع کریں۔ حوالگی اپنی اندراجات کے دن شمار ہوتی ہے۔', sf_entDiff:'یہ ان اندراجات کے لیے حوالے کرنے کا خالص نقد ہے۔ حوالگی اور وصولی کی اسکرینیں صرف حوالے شدہ رقم گنتی ہیں، اندراجات کے دن کے مطابق۔', dash_salesAnalysis:'سیلز تجزیہ', dash_collectionsAnalysis:'وصولی تجزیہ',
       dash_statementSales:'سیلز خلاصہ', dash_statementCollect:'وصولی اور ڈپازٹ خلاصہ',
       dash_posHint:'براہ راست بینک میں — وصولی کی نقدی نہیں', dash_creditHint:'گاہکوں پر واجب — منہا، کیونکہ فروخت میں شامل مگر نقدی نہیں آئی',
       dash_deliveryDeductHint:'براہ راست بینک کو ادا — ڈرائیور کے ہاتھ میں نہیں', dash_vatOnDeliveryFoot:'صرف ترسیل چارجز پر',
@@ -19261,7 +19313,7 @@ var CRP_REPS_ = {
     G.forEach(function(g, i){
       var b = el('<button type="button" class="crp-mixrow"><span class="crp-mn"><b>'+esc(nameFn(g.key))+'</b><small class="num">'+esc(money(g.total) + ' · ' + crpPctTxt_(g.pct[0]) + ' ' + t('crp_mix_cash'))+'</small></span>' +
         crpStack_(CRP_MIX_.map(function(k){ return { label: t('crp_mix_' + k), value: g.v[k], color: CRP_MIX_C_[k] }; }), { i: i }) + '</button>');
-      b.addEventListener('click', function(){ c.open(nameFn(g.key), g.rows); });
+      b.addEventListener('click', function(){ if (by === 'city' || by === 'area' || by === 'branch' || by === 'collector' || by === 'day') c.drill(by, g.key); else c.open(nameFn(g.key), g.rows); });
       list.appendChild(b);
     });
     gc.appendChild(list);
@@ -19297,7 +19349,7 @@ var CRP_REPS_ = {
       var mv = crpMovers_(c.D[p[0]], c.Dp[p[0]], 'total');
       var card = c.card(t('crp_mv_' + p[0]), t('crp_mvHint'));
       card.appendChild(crpHBars_(mv.slice(0, 10).map(function(r){ return { label: p[1](r.key), sub: colFill_(t('crp_mvSub'), { a: money(r.prev), b: money(r.cur) }), value: r.delta, color: r.delta >= 0 ? '#2E7D4F' : '#C14A30',
-        valTxt: (r.delta >= 0 ? '▲ ' : '▼ ') + money(Math.abs(r.delta)), onClick: function(){ c.open(p[1](r.key), c.D.rows.filter(function(x){ return (p[2] === 'branch' ? x.r.locationId || '_' : p[2] === 'area' ? x.area : x.r.holder || '_') === r.key; })); } }; })));
+        valTxt: (r.delta >= 0 ? '▲ ' : '▼ ') + money(Math.abs(r.delta)), onClick: r.key !== '_' ? function(){ c.drill(p[2], r.key); } : function(){ c.open(p[1](r.key), c.D.rows.filter(function(x){ return (p[2] === 'branch' ? x.r.locationId || '_' : p[2] === 'area' ? x.area : x.r.holder || '_') === r.key; })); } }; })));
       card.appendChild(crpTable_(c, { name: t('crp_mv_' + p[0]), rows: mv, cols: [
         { l: t('col_x_name'), v: function(r){ return p[1](r.key); } }, { l: t('crp_prev'), t: 'money', v: function(r){ return r.prev; } }, { l: t('crp_now'), t: 'money', v: function(r){ return r.cur; } },
         { l: t('crp_change'), t: 'money', v: function(r){ return r.delta; }, h: function(r){ return '<span class="'+(r.delta < 0 ? 'crp-neg' : 'crp-pos')+'">'+(r.delta < 0 ? '▼ ' : r.delta > 0 ? '▲ ' : '')+esc(money(Math.abs(r.delta)))+'</span>'; } },
@@ -19320,7 +19372,7 @@ var CRP_REPS_ = {
     rc.appendChild(crpHBars_(L2.slice().sort(function(a, b){ return (b.total ? b.deposited / b.total : 0) - (a.total ? a.deposited / a.total : 0); }).map(function(g){
       var p = g.total ? g.deposited / g.total * 100 : 0;
       return { label: c.nm.col(g.key), sub: colFill_(t('crp_rankSub'), { b: money(g.deposited), r: money(g.remaining) }), value: p, valTxt: crpPctTxt_(p), color: p >= 80 ? '#2E7D4F' : p >= 50 ? '#C27C1E' : '#C14A30',
-        onClick: function(){ c.open(c.nm.col(g.key), c.D.rows.filter(function(x){ return (x.r.holder || '_') === g.key; })); } }; })));
+        onClick: function(){ if (g.key !== '_') c.drill('collector', g.key); else c.open(c.nm.col(g.key), c.D.rows.filter(function(x){ return (x.r.holder || '_') === g.key; })); } }; })));
     m.appendChild(rc);
     var hc = c.card(t('crp_holdNow'), t('col_cTableHint'));
     hc.appendChild(crpHBars_(L2.filter(function(g){ return g.remaining > 0.004; }).sort(function(a, b){ return b.remaining - a.remaining; }).map(function(g){ return { label: c.nm.col(g.key), value: g.remaining, color: '#C27C1E', onClick: function(){ c.open(c.nm.col(g.key), c.D.rows.filter(function(x){ return (x.r.holder || '_') === g.key && x.st !== 'deposited'; })); } }; })));
@@ -19355,7 +19407,7 @@ var CRP_REPS_ = {
       var nm = c.nm.holder(g.key), since = g.since ? colDay_(g.since) : '';
       var b = el('<button type="button" class="crp-mixrow"><span class="crp-mn"><b>'+esc(nm)+'</b><small class="num">'+esc(money(g.amount) + ' · ' + colFill_(t('col_reqN'), { n: g.n }) + (since ? ' · ' + colFill_(t('col_since'), { d: since }) : ''))+'</small></span>' +
         '<span class="crp-abs" style="width:'+(g.amount / mx * 100).toFixed(2)+'%">'+crpStack_(stages.map(function(k){ return { label: t('col_st_' + k), value: g.st[k], color: COL_C_[k] }; }), { i: i })+'</span></button>');
-      b.addEventListener('click', function(){ c.open(nm, g.rows); });
+      b.addEventListener('click', function(){ if (g.key.indexOf('am:') === 0 || g.key === '_') c.open(nm, g.rows); else c.drill('collector', g.key); });
       list.appendChild(b);
     });
     if (!L2.length) list.appendChild(el(emptyOk_(t('crp_nothingOut'))));
@@ -19444,7 +19496,7 @@ var CRP_REPS_ = {
     L2.forEach(function(b, i){
       var row = el('<button type="button" class="crp-mixrow"><span class="crp-mn"><b>'+esc(c.nm.br(b.key))+'</b><small class="num">'+esc(colFill_(t('crp_bsSub'), { n: money(b.net), b: money(b.banked), o: money(b.open) }))+'</small></span>' +
         '<span class="crp-abs" style="width:'+(b.net / mx * 100).toFixed(2)+'%">'+crpStack_([{ label: t('col_card_dep'), value: b.banked, color: COL_C_.deposited }, { label: t('col_card_rem'), value: b.open, color: '#C27C1E' }], { i: i })+'</span></button>');
-      row.addEventListener('click', function(){ c.open(c.nm.br(b.key), c.D.rows.filter(function(x){ return (x.r.locationId || '_') === b.key; })); });
+      row.addEventListener('click', function(){ if (b.key !== '_') { c.drill('branch', b.key); return; } c.open(c.nm.br(b.key), c.D.rows.filter(function(x){ return (x.r.locationId || '_') === b.key; })); });
       list.appendChild(row);
     });
     bc.appendChild(el(crpLegend_([{ label: t('col_card_dep'), color: COL_C_.deposited }, { label: t('col_card_rem'), color: '#C27C1E' }])));
@@ -19480,7 +19532,7 @@ var CRP_REPS_ = {
       H.days.forEach(function(d){
         var cell = rw.cells[d], a = cell ? cell.amt : 0, tip = c.nm.br(rw.key) + ' · ' + d + ': ' + money(a);
         var b = el('<button type="button" class="crp-hc'+(cell ? '' : ' none')+'" style="--a:'+(cell && H.max ? (0.18 + 0.82 * a / H.max).toFixed(3) : 0)+';--i:'+Math.min(ri, 10)+'" title="'+esc(tip)+'" aria-label="'+esc(tip)+'"'+(cell ? '' : ' disabled')+'></button>');
-        if (cell) b.addEventListener('click', function(){ c.open(tip, cell.rows); });
+        if (cell) b.addEventListener('click', function(){ if (rw.key !== '_') { c.S.branch = rw.key; c.drill('day', d); } else c.open(tip, cell.rows); });
         host.appendChild(b);
       });
     });
@@ -19505,7 +19557,7 @@ var CRP_REPS_ = {
     chips.addEventListener('click', function(ev){ var b = ev.target.closest('.col-chip'); if (!b) return; c.S.gran = b.dataset.k; c.redraw(); });
     gc.appendChild(chips);
     gc.appendChild(el('<h3 class="col-sh">'+esc(t('col_dailyReq'))+'</h3>'));
-    gc.appendChild(crpCols_(B.map(function(b){ return { label: lab(b.key), short: gran === 'day' ? b.key.slice(8) : gran === 'month' ? b.key.slice(5) : b.key.slice(5), value: b.sent, onClick: function(){ c.open(lab(b.key), b.rows); } }; }), { color: '#4D6D51' }));
+    gc.appendChild(crpCols_(B.map(function(b){ return { label: lab(b.key), short: gran === 'day' ? b.key.slice(8) : gran === 'month' ? b.key.slice(5) : b.key.slice(5), value: b.sent, onClick: function(){ if (gran === 'day') c.drill('day', b.key); else c.open(lab(b.key), b.rows); } }; }), { color: '#4D6D51' }));
     gc.appendChild(el('<h3 class="col-sh">'+esc(t('col_dailyBank'))+'</h3>'));
     gc.appendChild(crpCols_(B.map(function(b){ return { label: lab(b.key), short: gran === 'day' ? b.key.slice(8) : b.key.slice(5), value: b.banked, onClick: b.brows.length ? function(){ c.open(lab(b.key), b.brows); } : null }; }), { color: COL_C_.deposited }));
     gc.appendChild(el('<h3 class="col-sh">'+esc(t('crp_openRun'))+'</h3>'));
@@ -19527,7 +19579,7 @@ var CRP_REPS_ = {
     A.rows.forEach(function(g, i){
       var b = el('<button type="button" class="crp-mixrow"><span class="crp-mn"><b>'+esc(c.nm.col(g.key))+'</b><small class="num">'+esc(money(g.total) + ' · ' + colFill_(t('col_reqN'), { n: g.n }))+'</small></span>' +
         '<span class="crp-abs" style="width:'+(g.total / mx * 100).toFixed(2)+'%">'+crpStack_([0, 1, 2, 3].map(function(k){ return { label: t('col_age_' + k), value: g.b[k], color: CRP_AGE_C_[k] }; }), { i: i })+'</span></button>');
-      b.addEventListener('click', function(){ c.open(c.nm.col(g.key), g.rows); });
+      b.addEventListener('click', function(){ if (g.key !== '_') c.drill('collector', g.key); else c.open(c.nm.col(g.key), g.rows); });
       list.appendChild(b);
     });
     if (!A.rows.length) list.appendChild(el(emptyOk_(t('crp_nothingOut'))));
@@ -19768,6 +19820,148 @@ function crpExList_(c, ex){
 function crpEmpty_(msg){ return el('<div class="card crp-card no-collapse"><div class="muted rp-empty">'+esc(msg)+'</div></div>'); }
 function crpShortDate_(iso){ try { return new Date(iso + 'T00:00:00').toLocaleDateString(state.lang === 'ar' ? 'ar-SA-u-ca-gregory-nu-latn' : state.lang === 'ur' ? 'ur-PK-u-nu-latn' : 'en-GB', { day: 'numeric', month: 'short' }); } catch (e) { return iso; } }
 function crpMonthName_(ym){ try { return new Date(ym + '-01T00:00:00').toLocaleDateString(state.lang === 'ar' ? 'ar-SA-u-ca-gregory-nu-latn' : state.lang === 'ur' ? 'ur-PK-u-nu-latn' : 'en-GB', { month: 'short', year: 'numeric' }); } catch (e) { return ym; } }
+// ---- data levels (2026-10-17): city › area › branch › collector › day › request, on every report ----
+// A level is a filter of the screen: drilling sets it, the breadcrumb clears what is below. The tree is
+// pure (crpTree_, tested): sums in cents, every node is the sum of its children, % of the parent adds up
+// to 100.0, and its count is the requests under it.
+var CRP_LV_ = ['city', 'area', 'branch', 'collector', 'day'];
+function crpLvKey_(lv, x){
+  if (lv === 'city') return x.city || '_';
+  if (lv === 'area') return x.area || '_';
+  if (lv === 'branch') return x.r.locationId || '_';
+  if (lv === 'collector') return x.r.holder || '_';
+  if (lv === 'day') return x.day || '_';
+  return '_';
+}
+// pure: the levels still open under the chosen group-by, given the filters already set
+function crpLevelsFrom_(start, S){
+  var i = Math.max(0, CRP_LV_.indexOf(start));
+  return CRP_LV_.slice(i).filter(function(lv){ return !S[lv]; });
+}
+// pure: rows → a tree over the levels; each node {key, lv, d, n, total, deposited, remaining, short, pct, rows, kids}
+function crpTree_(rows, levels, keyOf){
+  keyOf = keyOf || crpLvKey_;
+  function node(key, lv, d){ return { key: key, lv: lv, d: d, n: 0, c: { total: 0, deposited: 0, short: 0 }, rows: [], kids: [], m: {} }; }
+  function put(n, x, amt, dep, sh){ n.n++; n.c.total += amt; n.c.deposited += dep; n.c.short += sh; n.rows.push(x); }
+  var root = node('', null, 0);
+  rows.forEach(function(x){
+    var amt = crpC_(x.r.amount), dep = x.st === 'deposited' ? amt : 0, sh = crpC_(x.r.shortfall);
+    var cur = root; put(cur, x, amt, dep, sh);
+    levels.forEach(function(lv, i){
+      var k = keyOf(lv, x), nx = cur.m[k];
+      if (!nx) { nx = cur.m[k] = node(k, lv, i + 1); cur.kids.push(nx); }
+      cur = nx; put(cur, x, amt, dep, sh);
+    });
+  });
+  function fin(n){
+    n.total = n.c.total / 100; n.deposited = n.c.deposited / 100; n.remaining = (n.c.total - n.c.deposited) / 100; n.short = n.c.short / 100;
+    delete n.m;
+    n.kids.sort(function(a, b){ return a.lv === 'day' ? (a.key < b.key ? 1 : a.key > b.key ? -1 : 0) : (b.c.total - a.c.total); });
+    var p = crpPct_(n.kids.map(function(k){ return k.c.total; }));
+    n.kids.forEach(function(k, i){ k.pct = p[i]; fin(k); });
+  }
+  fin(root); root.pct = n0(root) ? 100 : 0;
+  function n0(r){ return r.c.total > 0; }
+  return root;
+}
+// pure: a tree as sheet rows with Excel grouping (outline = depth), requests as the last level, the total last
+function crpTreeSheet_(root, names, reqRow){
+  var rows = [], outline = [];
+  (function walk(n){
+    n.kids.forEach(function(k){
+      rows.push([names(k)].concat([k.n, k.total, k.pct, k.deposited, k.remaining, k.short])); outline.push(k.d - 1);
+      if (k.kids.length) walk(k);
+      else if (reqRow) k.rows.forEach(function(x){ rows.push(reqRow(x)); outline.push(k.d); });
+    });
+  })(root);
+  return { rows: rows, outline: outline };
+}
+function crpLvName_(c, lv, k){
+  if (lv === 'city') return c.nm.city(k);
+  if (lv === 'area') return c.nm.area(k);
+  if (lv === 'branch') return c.nm.br(k);
+  if (lv === 'collector') return c.nm.col(k);
+  if (lv === 'day') return k === '_' ? t('report_unspecified') : crpShortDate_(k) + ' ' + k.slice(0, 4);
+  return k;
+}
+// the breadcrumb: All › City › Area › Branch › Collector › Day; a crumb clears what is under it
+function crpCrumbs_(c){
+  var S = c.S, set = CRP_LV_.filter(function(lv){ return S[lv]; });
+  var w = el('<nav class="crp-crumbs" aria-label="'+esc(t('crp_levels'))+'"></nav>');
+  var all = el('<button type="button" class="crp-crumb'+(set.length ? '' : ' on')+'">'+esc(t('crp_all'))+'</button>');
+  all.addEventListener('click', function(){ CRP_LV_.forEach(function(lv){ S[lv] = ''; }); c.redraw(true); });
+  w.appendChild(all);
+  set.forEach(function(lv, i){
+    w.appendChild(el('<span class="crp-sep" aria-hidden="true">'+esc(crumbSep_().trim())+'</span>'));
+    var b = el('<button type="button" class="crp-crumb'+(i === set.length - 1 ? ' on' : '')+'"'+(i === set.length - 1 ? ' aria-current="true"' : '')+'><small>'+esc(t('crp_lv_' + lv))+'</small>'+esc(crpLvName_(c, lv, S[lv]))+'</button>');
+    b.addEventListener('click', function(){ set.slice(i + 1).forEach(function(l2){ S[l2] = ''; }); c.redraw(true); });
+    w.appendChild(b);
+  });
+  return w;
+}
+// the levels card on every report: group-by chips, breadcrumb, a chart of the level that drills, the pivot tree
+function crpLevelsCard_(c, rows){
+  var S = c.S, start = CRP_LV_.indexOf(S.lv) >= 0 ? S.lv : 'city';
+  var levels = crpLevelsFrom_(start, S);
+  var card = el('<section class="card crp-card crp-lvcard no-collapse"><h2>'+esc(t('crp_levels'))+'</h2><p class="muted crp-hint">'+esc(t('crp_levelsHint'))+'</p></section>');
+  var chips = el('<div class="col-chips" role="group" aria-label="'+esc(t('crp_groupBy'))+'"><span class="crp-chl">'+esc(t('crp_groupBy'))+'</span>' + CRP_LV_.map(function(lv){
+    return '<button type="button" class="col-chip'+(lv === start ? ' on' : '')+'" data-lv="'+lv+'" aria-pressed="'+(lv === start)+'">'+esc(t('crp_lv_' + lv))+'</button>'; }).join('') + '</div>');
+  chips.addEventListener('click', function(ev){ var b = ev.target.closest('.col-chip'); if (!b) return; S.lv = b.dataset.lv; S.tOpen = {}; c.redraw(); });
+  card.appendChild(chips);
+  card.appendChild(crpCrumbs_(c));
+  var root = crpTree_(rows, levels);
+  var lv0 = levels[0];
+  if (lv0) {
+    card.appendChild(el('<h3 class="col-sh">'+esc(colFill_(t('crp_byLevel'), { lv: t('crp_lv_' + lv0) }))+'</h3>'));
+    card.appendChild(crpHBars_(root.kids.slice(0, 25).map(function(k){
+      return { label: crpLvName_(c, lv0, k.key), sub: colFill_(t('crp_lvSub'), { n: k.n, p: crpPctTxt_(k.pct), b: money(k.deposited), r: money(k.remaining) }), value: k.total, valTxt: money(k.total) + ' · ' + crpPctTxt_(k.pct),
+        onClick: function(){ c.drill(lv0, k.key); } }; })));
+    if (root.kids.length > 25) card.appendChild(el('<p class="muted crp-hint">'+esc(colFill_(t('crp_lvMore'), { n: root.kids.length - 25 }))+'</p>'));
+  }
+  // the tree table: subtotals at every level, % of the parent, the count; requests at the bottom
+  S.tOpen = S.tOpen || {};
+  var host = el('<div class="crp-tw pv-table-w" data-noexport></div>');
+  function draw(){
+    var html = '', reqCap = 60;
+    (function walk(n, path, show){
+      n.kids.forEach(function(k){
+        var p = path + '|' + k.lv + ':' + k.key, open = !!S.tOpen[p], hasKids = k.kids.length > 0 || k.rows.length > 0;
+        if (show) html += '<tr class="pv-row pv-d'+Math.min(k.d, 4)+' crp-lvr" data-p="'+esc(p)+'" data-lv="'+k.lv+'" data-k="'+esc(k.key)+'" tabindex="0" aria-expanded="'+open+'" aria-level="'+k.d+'">' +
+          '<td class="pv-name" style="--d:'+(k.d - 1)+'"><span class="pv-in"><span class="pv-tog" aria-hidden="true"></span><span class="pv-txt"><b>'+esc(crpLvName_(c, k.lv, k.key))+'</b><small>'+esc(t('crp_lv_' + k.lv))+'</small></span>' +
+            '<button type="button" class="crp-dd" data-dd="1" aria-label="'+esc(colFill_(t('crp_drillTo'), { x: crpLvName_(c, k.lv, k.key) }))+'">'+icon_('chevron')+'</button>'  + '</span></td>' +
+          '<td class="num">'+k.n+'</td><td class="num"><b>'+esc(money(k.total))+'</b></td><td class="num">'+esc(crpPctTxt_(k.pct))+'</td><td class="num">'+esc(money(k.deposited))+'</td><td class="num">'+esc(money(k.remaining))+'</td><td class="num">'+(k.short ? esc(money(k.short)) : '—')+'</td></tr>';
+        if (!show || !open || !hasKids) return;
+        if (k.kids.length) walk(k, p, true);
+        else k.rows.slice(0, reqCap).forEach(function(x){
+          html += '<tr class="pv-row pv-d4 crp-rq" data-id="'+esc(x.r.id)+'" tabindex="0"><td class="pv-name" style="--d:'+k.d+'"><span class="pv-in"><span class="col-dot" style="--c:'+(COL_C_[x.st] || '#767b71')+'" aria-hidden="true"></span><span class="pv-txt"><b>'+esc(x.r.txNo || t('crp_lv_req'))+'</b><small>'+esc([x.day, t('col_st_' + x.st), userName(x.r.holder)].filter(Boolean).join(' · '))+'</small></span></span></td>' +
+            '<td class="num">1</td><td class="num">'+esc(money(x.r.amount))+'</td><td class="num"></td><td class="num">'+(x.st === 'deposited' ? esc(money(x.r.amount)) : '—')+'</td><td class="num">'+(x.st !== 'deposited' ? esc(money(x.r.amount)) : '—')+'</td><td class="num">'+(Number(x.r.shortfall || 0) ? esc(money(x.r.shortfall)) : '—')+'</td></tr>';
+        });
+      });
+    })(root, '', true);
+    host.innerHTML = '<table class="crp-tbl pv-table crp-lvt" data-nosort><thead><tr><th scope="col">'+esc(levels.map(function(lv){ return t('crp_lv_' + lv); }).concat([t('crp_lv_req')]).join(' › '))+'</th><th scope="col" class="num">'+esc(t('crp_count'))+'</th><th scope="col" class="num">'+esc(t('col_card_total'))+'</th><th scope="col" class="num">'+esc(t('crp_pctParent'))+'</th><th scope="col" class="num">'+esc(t('col_card_dep'))+'</th><th scope="col" class="num">'+esc(t('col_card_rem'))+'</th><th scope="col" class="num">'+esc(t('col_k_short'))+'</th></tr></thead><tbody>' + html + '</tbody>' +
+      '<tfoot><tr class="crp-tot"><th scope="row">'+esc(t('rp_total'))+'</th><td class="num">'+root.n+'</td><td class="num">'+esc(money(root.total))+'</td><td class="num">'+esc(crpPctTxt_(root.pct))+'</td><td class="num">'+esc(money(root.deposited))+'</td><td class="num">'+esc(money(root.remaining))+'</td><td class="num">'+(root.short ? esc(money(root.short)) : '—')+'</td></tr></tfoot></table>';
+  }
+  draw();
+  function act(tr, ev){
+    if (tr.classList.contains('crp-rq')) { colOpenDoc_(tr.dataset.id); return; }
+    if (ev && ev.target.closest('[data-dd]')) { c.drill(tr.dataset.lv, tr.dataset.k); return; }
+    var p = tr.dataset.p; S.tOpen[p] = !S.tOpen[p]; crpSave_(); draw();
+    var again = host.querySelector('tr[data-p="'+(window.CSS && CSS.escape ? CSS.escape(p) : p)+'"]'); if (again) again.focus();
+  }
+  host.addEventListener('click', function(ev){ var tr = ev.target.closest('tr.pv-row'); if (tr) act(tr, ev); });
+  host.addEventListener('keydown', function(ev){ if (ev.key !== 'Enter' && ev.key !== ' ') return; var tr = ev.target.closest('tr.pv-row'); if (tr) { ev.preventDefault(); act(tr, ev); } });
+  var tools = el('<div class="crp-lvtools"><button type="button" class="btn ghost crp-xa">'+esc(t('crp_openAll'))+'</button><button type="button" class="btn ghost crp-xc">'+esc(t('crp_closeAll'))+'</button></div>');
+  qs('.crp-xa', tools).addEventListener('click', function(){ (function walk(n, path){ n.kids.forEach(function(k){ var p = path + '|' + k.lv + ':' + k.key; if (k.kids.length) { S.tOpen[p] = true; walk(k, p); } }); })(root, ''); crpSave_(); draw(); });
+  qs('.crp-xc', tools).addEventListener('click', function(){ S.tOpen = {}; crpSave_(); draw(); });
+  card.appendChild(tools);
+  card.appendChild(host);
+  // the workbook: the whole tree, grouped, with its requests
+  var hdr = [levels.map(function(lv){ return t('crp_lv_' + lv); }).concat([t('crp_lv_req')]).join(' > '), t('crp_count'), t('col_card_total'), t('crp_pctParent'), t('col_card_dep'), t('col_card_rem'), t('col_k_short')];
+  var sh = crpTreeSheet_(root, function(k){ return crpLvName_(c, k.lv, k.key); }, function(x){ return [(x.r.txNo || '') + ' ' + x.day, 1, crpR2_(x.r.amount), '', x.st === 'deposited' ? crpR2_(x.r.amount) : 0, x.st !== 'deposited' ? crpR2_(x.r.amount) : 0, crpR2_(x.r.shortfall || 0)]; });
+  var srows = [hdr].concat(sh.rows.map(function(r){ return r.map(function(v, i){ return i === 3 && typeof v === 'number' ? crpPctTxt_(v) : i >= 2 && typeof v === 'number' ? crpR2_(v) : v; }); }), [[t('rp_total'), root.n, root.total, crpPctTxt_(root.pct), root.deposited, root.remaining, root.short]]);
+  c.sheets.push({ name: t('crp_levels').slice(0, 31), rows: srows, outline: sh.outline, note: c.sentence, noBars: true });
+  return card;
+}
 // ---- one period picker for the reports and the comparison (Zoho-style list) ----
 var PRD_LIST_ = ['today', 'yesterday', 'thisWeek', 'lastWeek', 'month', 'lastMonth', 'thisQuarter', 'lastQuarter', 'thisYear', 'lastYear', 'ytd', '7d', '30d', '90d', 'all', 'custom'];
 function prdIso_(d){ var p = function(n){ return (n < 10 ? '0' : '') + n; }; return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()); }
@@ -19819,7 +20013,7 @@ var CRP_IC_ = { summary: 'dashboard', mix: 'layers', exceptions: 'alert', movers
 COL_C_.returned = COL_C_.returned || '#B5642A'; COL_C_.disputed = COL_C_.disputed || '#C14A30'; COL_C_.rejected = COL_C_.rejected || '#767b71';
 function crpState_(){
   if (CRP_) return CRP_;
-  CRP_ = { rep: 'summary', preset: 'month', from: '', to: '', city: '', area: '', branch: '', collector: '', stage: '', q: '', gran: 'day', mixBy: 'branch', who: '', more: false };
+  CRP_ = { rep: 'summary', preset: 'month', from: '', to: '', city: '', area: '', branch: '', collector: '', day: '', stage: '', q: '', gran: 'day', mixBy: 'branch', who: '', more: false, lv: 'city', tOpen: {} };
   try { var s = JSON.parse(sessionStorage.getItem('bgc_crp') || 'null'); if (s) Object.keys(s).forEach(function(k){ CRP_[k] = s[k]; }); } catch (e) {}
   if (!CRP_REPS_[CRP_.rep]) CRP_.rep = 'summary';
   return CRP_;
@@ -19882,7 +20076,7 @@ function crpBuild_(body, reqs){
     var areas = uniq(function(r){ var a = r.clusterId || locOf(r.locationId).clusterId; return a && (!S.city || locOf(r.locationId).city === S.city) ? [a, clusterName(a)] : null; });
     var branches = uniq(function(r){ var l = locOf(r.locationId); return r.locationId && (!S.city || l.city === S.city) && (!S.area || (r.clusterId || l.clusterId) === S.area) ? [r.locationId, l.name || locationName(r.locationId)] : null; });
     var cols = uniq(function(r){ return r.holder ? [r.holder, userName(r.holder)] : null; });
-    var nF = ['city', 'area', 'branch', 'collector', 'stage'].filter(function(k){ return S[k]; }).length;
+    var nF = ['city', 'area', 'branch', 'collector', 'day', 'stage'].filter(function(k){ return S[k]; }).length;
     bar.innerHTML = '<div class="crp-b1"><div class="field crp-pf"><label>'+esc(t('col_period'))+'</label>'+prdSelect_(S.preset)+'</div>' +
       '<div class="crp-dates"'+(S.preset === 'custom' ? '' : ' hidden')+'><div class="field"><label>'+esc(t('inv_from'))+'</label><input type="date" class="cFrom" value="'+esc(S.from)+'"></div><div class="field"><label>'+esc(t('inv_to'))+'</label><input type="date" class="cTo" value="'+esc(S.to)+'"></div></div>' +
       '<button type="button" class="btn ghost crp-more" aria-expanded="'+(!!S.more)+'">'+icon_('menu')+'<span>'+esc(t('crp_filters'))+(nF ? ' (' + nF + ')' : '')+'</span></button></div>' +
@@ -19894,19 +20088,21 @@ function crpBuild_(body, reqs){
     ['.cFrom', '.cTo'].forEach(function(s){ qs(s, bar).addEventListener('change', function(){ S.from = qs('.cFrom', bar).value; S.to = qs('.cTo', bar).value; redraw(true); }); });
     qsa('select[data-k]', bar).forEach(function(s){ s.addEventListener('change', function(){ var k = s.dataset.k; S[k] = s.value; if (k === 'city') { S.area = ''; S.branch = ''; } if (k === 'area') S.branch = ''; redraw(true); }); });
     qs('.crp-more', bar).addEventListener('click', function(){ S.more = !S.more; crpSave_(); var f = qs('.crp-b2', bar); if (S.more) f.removeAttribute('data-fold'); else f.setAttribute('data-fold', '1'); this.setAttribute('aria-expanded', String(!!S.more)); });
-    var clr = qs('.crp-clear', bar); if (clr) clr.addEventListener('click', function(){ S.city = S.area = S.branch = S.collector = S.stage = ''; redraw(true); });
+    var clr = qs('.crp-clear', bar); if (clr) clr.addEventListener('click', function(){ S.city = S.area = S.branch = S.collector = S.day = S.stage = ''; redraw(true); });
   }
   function redraw(withBar){ crpSave_(); if (withBar) paintBar(); paint(); }
   // ---- the chosen report ----
   function paint(){
     var R = prdRange_(S.preset, localToday_(), S.from, S.to);
+    // a day drilled to narrows the period to that day
+    if (S.day) R = { from: S.day, to: S.day };
     var base = { from: R.from, to: R.to, city: S.city, area: S.area, branch: S.branch, collector: S.collector, locOf: locOf };
     var rq = reqs.filter(function(r){ return crpStageOk_(r, S.stage); });
-    var D = colCompute_(rq, base), P = prdShift_(R, S.preset, 'period', 1);
+    var D = colCompute_(rq, base), P = prdShift_(R, S.day ? '1d' : S.preset, 'period', 1);
     var Dp = P ? colCompute_(rq, { from: P.from, to: P.to, city: S.city, area: S.area, branch: S.branch, collector: S.collector, locOf: locOf }) : null;
     var side = (!S.stage || S.stage === 'problem') ? crpSide_(reqs, base) : [];
     var periodTxt = R.from ? t('inv_period').replace('{from}', R.from).replace('{to}', R.to) : t('col_p_all');
-    var parts = [periodTxt].concat([['city', S.city], ['area', S.area && clusterName(S.area)], ['branch', S.branch && locationName(S.branch)], ['collector', S.collector && userName(S.collector)], ['stage', S.stage && t(S.stage === 'problem' ? 'crp_st_problem' : 'col_st_' + S.stage)]].filter(function(x){ return x[1]; }).map(function(x){ return x[1]; }));
+    var parts = [periodTxt].concat([['city', S.city], ['area', S.area && clusterName(S.area)], ['branch', S.branch && locationName(S.branch)], ['collector', S.collector && userName(S.collector)], ['day', S.day], ['stage', S.stage && t(S.stage === 'problem' ? 'crp_st_problem' : 'col_st_' + S.stage)]].filter(function(x){ return x[1]; }).map(function(x){ return x[1]; }));
     var sentence = parts.join(' · ');
     var sent = qs('.crp-sent', bar);
     if (sent) sent.innerHTML = '<b>'+esc(t('col_counted'))+':</b> '+esc(sentence)+(P ? ' <span class="muted">'+esc(colFill_(t('crp_cmpTo'), { from: P.from, to: P.to }))+'</span>' : '');
@@ -19915,6 +20111,8 @@ function crpBuild_(body, reqs){
       D: D, Dp: Dp, P: P, side: side, S: S, R: R, today: localToday_(), sheets: [], sentence: sentence,
       enter: !(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches),
       redraw: redraw,
+      // a click on a level's bar, slice, tile or row: that level becomes a filter, the next one shows
+      drill: function(lv, key){ if (CRP_LV_.indexOf(lv) < 0 || !key || key === '_') return; S[lv] = key; if (lv === 'city') { S.area = ''; S.branch = ''; } if (lv === 'area') S.branch = ''; S.tOpen = {}; redraw(true); window.scrollTo({ top: 0, behavior: 'smooth' }); },
       open: function(title, rows){ drawerOpen_(colListView_(title, rows || [])); },
       card: function(title, hint){ return el('<section class="card crp-card no-collapse"><h2>'+esc(title)+'</h2>'+(hint ? '<p class="muted crp-hint">'+esc(hint)+'</p>' : '')+'</section>'); },
       // every request ever made in the place filters (the statement's dates are the moves, not the requests)
@@ -19934,11 +20132,23 @@ function crpBuild_(body, reqs){
     main.appendChild(hero);
     if (!D.T.n && !side.length && !D.T.returned && id !== 'statement') {
       var em = el('<div class="card crp-card no-collapse crp-empty"><div class="muted rp-empty">'+esc(t(reqs.length ? 'col_noneHere' : 'col_none'))+'</div>'+(reqs.length ? '<button type="button" class="btn ghost">'+esc(t('crp_showAll'))+'</button>' : '')+'</div>');
-      var eb = qs('button', em); if (eb) eb.addEventListener('click', function(){ S.preset = 'all'; S.city = S.area = S.branch = S.collector = S.stage = ''; redraw(true); });
+      var eb = qs('button', em); if (eb) eb.addEventListener('click', function(){ S.preset = 'all'; S.city = S.area = S.branch = S.collector = S.day = S.stage = ''; redraw(true); });
       main.appendChild(em);
       return;
     }
-    try { CRP_REPS_[id](ctx, main); }
+    try {
+      CRP_REPS_[id](ctx, main);
+      // the levels card: after the KPI strip, on every report but the ledger
+      if (id !== 'statement') {
+        // the rows the report is about: the problems, the corrected receipts, the date warnings, or every request
+        var lvRows = id === 'returns' ? side
+          : id === 'corrections' ? D.rows.concat(side).filter(function(x){ var rp = x.r.rp || {}; return (rp.corrections || []).length || (rp.hopCorrections || []).length; })
+          : id === 'dates' ? D.rows.concat(side).filter(function(x){ return x.r.dateChanged || x.r.dateMismatch; })
+          : D.rows;
+        var lc = crpLevelsCard_(ctx, lvRows), k1 = qs('.crp-kpis', main);
+        if (k1 && k1.nextSibling) main.insertBefore(lc, k1.nextSibling); else main.appendChild(lc);
+      }
+    }
     catch (e) { main.appendChild(el('<div class="msg err">'+esc(String(e && e.message || e))+'</div>')); if (window.console) console.error(e); }
   }
   paintBar();
@@ -19954,6 +20164,13 @@ var CMP_M_ = ['sales', 'card', 'direct', 'other', 'additions', 'net', 'deposited
 // which way is good: 1 up, -1 down, 0 neither
 var CMP_GOOD_ = { sales: 1, card: 0, direct: 0, other: -1, additions: 0, net: 1, deposited: 1, remaining: -1, short: -1, requests: 0, days: -1 };
 var CMP_ = null;
+// the breakdown's levels, top to bottom; a drilled level becomes a filter of the screen
+var CMP_LV_ = ['city', 'area', 'branch', 'owner', 'collector', 'day'];
+// pure: the level under the one drilled (a branch's collector is known, so it is skipped)
+function cmpNextLevel_(lv, S){
+  for (var i = CMP_LV_.indexOf(lv) + 1; i < CMP_LV_.length; i++) { var n = CMP_LV_[i]; if (S[n]) continue; if (n === 'collector' && S.branch) continue; return n; }
+  return null;
+}
 function cmpState_(){
   if (CMP_) return CMP_;
   CMP_ = { preset: 'month', from: '', to: '', mode: 'period', n: 2, city: '', area: '', branch: '', collector: '', by: 'area', metric: 'net' };
@@ -20078,15 +20295,17 @@ function cmpDraw_(body, S, periods, entries, handoffs){
     var l = locOf(e.locationId);
     if (S.city && l.city !== S.city) return false; if (S.area && l.clusterId !== S.area) return false;
     if (S.branch && e.locationId !== S.branch) return false; if (S.collector && colOfLoc(e.locationId) !== S.collector) return false;
+    if (S.owner && (e.sourceType + ':' + e.sourceId) !== S.owner) return false;
     return true;
   }
-  var by = ['area', 'branch', 'collector', 'city'].indexOf(S.by) >= 0 ? S.by : 'area';
-  var keyOf = { area: function(e){ return locOf(e.locationId).clusterId || '_'; }, branch: function(e){ return e.locationId || '_'; }, collector: function(e){ return colOfLoc(e.locationId) || '_'; }, city: function(e){ return locOf(e.locationId).city || '_'; } }[by];
-  var nameOf = { area: function(k){ return k === '_' ? t('report_unspecified') : clusterName(k); }, branch: function(k){ return k === '_' ? t('report_unspecified') : locationName(k); }, collector: function(k){ return k === '_' ? t('report_unspecified') : userName(k); }, city: function(k){ return k === '_' ? t('report_unspecified') : k; } }[by];
+  var by = CMP_LV_.indexOf(S.by) >= 0 ? S.by : 'area';
+  var ownerName = {}; entries.forEach(function(e){ var k = e.sourceType + ':' + e.sourceId; if (!ownerName[k]) ownerName[k] = (sourceName_(e) || t('report_unspecified')) + ' \u00B7 ' + t('entry_source_' + e.sourceType); });
+  var keyOf = { area: function(e){ return locOf(e.locationId).clusterId || '_'; }, branch: function(e){ return e.locationId || '_'; }, collector: function(e){ return colOfLoc(e.locationId) || '_'; }, city: function(e){ return locOf(e.locationId).city || '_'; }, owner: function(e){ return e.sourceType + ':' + e.sourceId; }, day: function(e){ return String(e.date || '').slice(0, 10) || '_'; } }[by];
+  var nameOf = { area: function(k){ return k === '_' ? t('report_unspecified') : clusterName(k); }, branch: function(k){ return k === '_' ? t('report_unspecified') : locationName(k); }, collector: function(k){ return k === '_' ? t('report_unspecified') : userName(k); }, city: function(k){ return k === '_' ? t('report_unspecified') : k; }, owner: function(k){ return ownerName[k] || t('report_unspecified'); }, day: function(k){ return k === '_' ? t('report_unspecified') : crpShortDate_(k) + ' ' + k.slice(0, 4); } }[by];
   var P = cmpCompute_(entries, handoffs, periods, { include: include, keyOf: keyOf });
   var cols2 = P.slice().reverse(); // oldest to newest: time runs with the reading direction
   var labels = cols2.map(function(p){ return cmpLabel_(p, S.preset); });
-  var place = [S.city, S.area && clusterName(S.area), S.branch && locationName(S.branch), S.collector && userName(S.collector)].filter(Boolean);
+  var place = [S.city, S.area && clusterName(S.area), S.branch && locationName(S.branch), S.owner && (entries.filter(function(e){ return e.sourceType + ':' + e.sourceId === S.owner; }).map(function(e){ return sourceName_(e); })[0] || ''), S.collector && userName(S.collector)].filter(Boolean);
   var sentence = labels.slice().reverse().join(' · ') + (place.length ? ' — ' + place.join(' · ') : '');
   qs('.crp-sent', bar).innerHTML = '<b>'+esc(t('cmp_comparing'))+':</b> '+esc(sentence);
   var sheets = [];
@@ -20125,18 +20344,38 @@ function cmpDraw_(body, S, periods, entries, handoffs){
   var keys = {}; cols2.forEach(function(p){ Object.keys(p.G).forEach(function(k){ keys[k] = 1; }); });
   var klist = Object.keys(keys).sort(function(a, b){ var x = (P[0].G[b] || {})[metric] || 0, y = (P[0].G[a] || {})[metric] || 0; return x - y; });
   var bc = el('<section class="card crp-card no-collapse"><h2>'+esc(t('cmp_breakdown'))+'</h2><p class="muted crp-hint">'+esc(t('cmp_breakdownHint'))+'</p><div class="cmp-bb"><div class="col-chips" role="group" aria-label="'+esc(t('cmp_by'))+'">' +
-    ['area', 'branch', 'collector', 'city'].map(function(k){ return '<button type="button" class="col-chip'+(k === by ? ' on' : '')+'" data-by="'+k+'" aria-pressed="'+(k === by)+'">'+esc(t('crp_by_' + k))+'</button>'; }).join('') + '</div><div class="field cmp-mf"><label>'+esc(t('cmp_metric'))+'</label><select class="cmp-ms">' +
+    CMP_LV_.map(function(k){ return '<button type="button" class="col-chip'+(k === by ? ' on' : '')+'" data-by="'+k+'" aria-pressed="'+(k === by)+'">'+esc(t('crp_lv_' + k))+'</button>'; }).join('') + '</div><div class="field cmp-mf"><label>'+esc(t('cmp_metric'))+'</label><select class="cmp-ms">' +
     rows.map(function(r){ return '<option value="'+r[0]+'"'+(r[0] === metric ? ' selected' : '')+'>'+esc(t('cmp_m_' + r[0]))+'</option>'; }).join('') + '</select></div></div></section>');
   qs('.col-chips', bc).addEventListener('click', function(ev){ var b = ev.target.closest('.col-chip'); if (!b) return; S.by = b.dataset.by; cmpSave_(); cmpDraw_(body, S, periods, entries, handoffs); });
   qs('.cmp-ms', bc).addEventListener('change', function(ev){ S.metric = ev.target.value; cmpSave_(); cmpDraw_(body, S, periods, entries, handoffs); });
-  var bHead = '<thead><tr><th scope="col">'+esc(t('crp_by_' + by))+'</th>' + labels.map(function(l, i){ return '<th scope="col" class="num'+(i === labels.length - 1 ? ' cmp-cur' : '')+'">'+esc(l)+'</th>'; }).join('') + '</tr></thead>';
+  var bHead = '<thead><tr><th scope="col">'+esc(t('crp_lv_' + by))+'</th>' + labels.map(function(l, i){ return '<th scope="col" class="num'+(i === labels.length - 1 ? ' cmp-cur' : '')+'">'+esc(l)+'</th>'; }).join('') + '</tr></thead>';
   function cell(v, prev, i){ var dl = i ? cmpDelta_(v, prev, metric) : null; return '<b>'+esc(cmpFmt_(metric, v))+'</b>' + (dl && dl.d ? '<span class="cmp-dl '+dl.tone+'">'+(dl.d > 0 ? '▲ ' : '▼ ')+esc(dl.pct != null ? crpPctTxt_(Math.abs(dl.pct)) : t('crp_new'))+'</span>' : ''); }
-  var bBody = klist.map(function(k){ return '<tr><th scope="row">'+esc(nameOf(k))+'</th>' + cols2.map(function(p, i){ var g = p.G[k], v = g ? g[metric] : (metric === 'days' ? null : 0), pg = i ? cols2[i - 1].G[k] : null, pv = i ? (pg ? pg[metric] : (metric === 'days' ? null : 0)) : null;
+  var nextLv = cmpNextLevel_(by, S);
+  var bBody = klist.map(function(k){ return '<tr'+(nextLv && k !== '_' ? ' class="crp-tr cmp-drill" tabindex="0" data-k="'+esc(k)+'"' : '')+'><th scope="row">'+esc(nameOf(k))+(nextLv && k !== '_' ? '<small class="cmp-next">'+esc(t('crp_lv_' + nextLv))+' \u203A</small>' : '')+'</th>' + cols2.map(function(p, i){ var g = p.G[k], v = g ? g[metric] : (metric === 'days' ? null : 0), pg = i ? cols2[i - 1].G[k] : null, pv = i ? (pg ? pg[metric] : (metric === 'days' ? null : 0)) : null;
     return '<td class="num'+(i === cols2.length - 1 ? ' cmp-cur' : '')+'">'+cell(v, pv, i)+'</td>'; }).join('') + '</tr>'; }).join('');
   var bFoot = '<tfoot><tr class="crp-tot"><th scope="row">'+esc(t('rp_total'))+'</th>' + cols2.map(function(p, i){ return '<td class="num'+(i === cols2.length - 1 ? ' cmp-cur' : '')+'">'+cell(p.T[metric], i ? cols2[i - 1].T[metric] : null, i)+'</td>'; }).join('') + '</tr></tfoot>';
-  bc.appendChild(el('<div class="crp-tw cmp-tw" data-noexport><table class="crp-tbl cmp-tbl" data-nosort>'+bHead+'<tbody>'+bBody+'</tbody>'+bFoot+'</table></div>'));
+  // the trail back up, then the table: a row drills into the next level
+  var set = CMP_LV_.filter(function(lv){ return S[lv]; });
+  var crumbs = el('<nav class="crp-crumbs cmp-crumbs" aria-label="'+esc(t('crp_levels'))+'"></nav>');
+  var allB = el('<button type="button" class="crp-crumb'+(set.length ? '' : ' on')+'">'+esc(t('crp_all'))+'</button>');
+  allB.addEventListener('click', function(){ CMP_LV_.forEach(function(lv){ S[lv] = ''; }); S.by = 'area'; cmpSave_(); renderComparison(body); });
+  crumbs.appendChild(allB);
+  var cmpName = { city: function(k){ return k; }, area: clusterName, branch: locationName, owner: function(k){ return ownerName[k] || k; }, collector: userName, day: function(k){ return k; } };
+  set.forEach(function(lv, i){
+    crumbs.appendChild(el('<span class="crp-sep" aria-hidden="true">'+esc(crumbSep_().trim())+'</span>'));
+    var cb = el('<button type="button" class="crp-crumb'+(i === set.length - 1 ? ' on' : '')+'"><small>'+esc(t('crp_lv_' + lv))+'</small>'+esc(cmpName[lv](S[lv]))+'</button>');
+    cb.addEventListener('click', function(){ set.slice(i + 1).forEach(function(l2){ S[l2] = ''; }); S.by = cmpNextLevel_(lv, S) || S.by; cmpSave_(); renderComparison(body); });
+    crumbs.appendChild(cb);
+  });
+  bc.appendChild(crumbs);
+  if (nextLv) bc.appendChild(el('<p class="muted crp-hint">'+esc(t('cmp_drillHint'))+'</p>'));
+  var btw = el('<div class="crp-tw cmp-tw" data-noexport><table class="crp-tbl cmp-tbl" data-nosort>'+bHead+'<tbody>'+bBody+'</tbody>'+bFoot+'</table></div>');
+  function drillRow(tr){ if (!tr || !nextLv) return; S[by] = tr.dataset.k; if (by === 'city') { S.area = ''; S.branch = ''; } if (by === 'area') S.branch = ''; S.by = cmpNextLevel_(by, S) || by; cmpSave_(); renderComparison(body); }
+  btw.addEventListener('click', function(ev){ drillRow(ev.target.closest('tr.cmp-drill')); });
+  btw.addEventListener('keydown', function(ev){ if (ev.key === 'Enter' || ev.key === ' ') { var tr = ev.target.closest('tr.cmp-drill'); if (tr) { ev.preventDefault(); drillRow(tr); } } });
+  bc.appendChild(btw);
   root.appendChild(bc);
-  var bs = [[t('crp_by_' + by)].concat(labels)];
+  var bs = [[t('crp_lv_' + by)].concat(labels)];
   klist.forEach(function(k){ bs.push([nameOf(k)].concat(cols2.map(function(p){ var g = p.G[k]; return crpXv_(g ? g[metric] : 0, metric === 'requests' || metric === 'days' ? 'int' : 'money'); }))); });
   bs.push([t('rp_total')].concat(cols2.map(function(p){ return crpXv_(p.T[metric], metric === 'requests' || metric === 'days' ? 'int' : 'money'); })));
   sheets.push({ name: (t('cmp_breakdown') + ' - ' + t('cmp_m_' + metric)).slice(0, 31), rows: bs, note: sentence });
@@ -26435,6 +26674,34 @@ function renderAdminTranslations(content){
 }
 
 // Cut-over (2026-10-13): what collectors still have up to a date, then the admin closes it
+// Data health (2026-10-18): proves on the live data that every hop carries exactly what it was
+// made of. Read-only; the server does the walk (dataHealthCheck).
+var HC_KINDS_ = ['sum', 'deposit', 'link', 'orphan', 'short', 'voided', 'direct', 'day'];
+function healthCard_(){
+  var card = el('<section class="card hc-card no-collapse"><div class="hc-head"><div><h2>'+icon_('check')+'<span>'+esc(t('hc_title'))+'</span></h2>' +
+    '<p class="muted">'+esc(t('hc_hint'))+'</p></div><button type="button" class="btn primary hc-run">'+esc(t('hc_run'))+'</button></div><div class="hc-out"></div></section>');
+  var out = qs('.hc-out', card), btn = qs('.hc-run', card);
+  btn.addEventListener('click', function(){
+    btn.disabled = true; out.innerHTML = '<div class="skeleton" style="height:90px"></div>';
+    api('dataHealthCheck', {}).then(function(r){
+      btn.disabled = false;
+      if (!r || !r.ok) { out.innerHTML = '<div class="msg err">'+esc(errMsg_(r))+'</div>'; return; }
+      var c = r.checked || {}, n = (r.issues || []).length;
+      var head = '<div class="hc-sum'+(n ? ' bad' : ' ok')+'">'+icon_(n ? 'alert' : 'check')+'<div><b>'+esc(n ? t('hc_found').replace('{n}', n) : t('hc_clean'))+'</b>' +
+        '<small>'+esc(colFill_(t('hc_checked'), { h: (c.handovers || 0).toLocaleString('en-US'), d: (c.deposits || 0).toLocaleString('en-US'), e: (c.entries || 0).toLocaleString('en-US') }))+' · '+esc(new Date(r.at).toLocaleString(state.lang === 'en' ? 'en-GB' : 'ar-SA-u-nu-latn'))+'</small></div></div>';
+      if (!n) { out.innerHTML = head; return; }
+      var rows = r.issues.map(function(i){
+        return '<tr><td>'+esc(t('hc_k_' + i.kind))+'</td><td>'+esc(i.txNo || '—')+'</td><td>'+esc(i.status || '')+'</td><td>'+esc(i.msg)+'</td>' +
+          '<td class="num">'+(i.expected == null ? '—' : money(i.expected))+'</td><td class="num">'+(i.actual == null ? '—' : money(i.actual))+'</td><td class="num">'+(i.gap == null ? '—' : money(i.gap))+'</td></tr>';
+      }).join('');
+      out.innerHTML = head + '<div class="tbl-scroll"><table class="rp-table"><thead><tr><th>'+esc(t('hc_kind'))+'</th><th>'+esc(t('hc_no'))+'</th><th>'+esc(t('hc_status'))+'</th><th>'+esc(t('hc_what'))+'</th>' +
+        '<th class="num">'+esc(t('hc_expected'))+'</th><th class="num">'+esc(t('hc_actual'))+'</th><th class="num">'+esc(t('hc_gap'))+'</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+      var sheet = [[t('hc_kind'), t('hc_no'), t('hc_status'), t('hc_what'), t('hc_expected'), t('hc_actual'), t('hc_gap')]].concat(r.issues.map(function(i){ return [t('hc_k_' + i.kind), i.txNo || '', i.status || '', i.msg, i.expected, i.actual, i.gap]; }));
+      out.appendChild(exButtons_(function(){ return [{ name: t('hc_title'), rows: sheet }]; }, function(){ return t('hc_title'); }));
+    });
+  });
+  return card;
+}
 function cutoverCard_(){
   var isAdmin = state.user.role === 'admin';
   var c = el('<div class="card co-card"><h2>'+esc(t('co_title'))+'</h2><p class="muted" style="font-size:12.5px;line-height:1.8;">'+esc(t('co_hint'))+'</p>' +
@@ -26534,6 +26801,7 @@ function renderAdminConfig(content){
   content.appendChild(form);
   if (state.user && state.user.role === 'admin') content.appendChild(waSettingsCard_());
   // cut-over card waits for its server side (branch cutover)
+  if (state.user && (state.user.role === 'admin' || state.user.role === 'finance')) content.appendChild(healthCard_());
   if (window.CUTOVER_READY_ && state.user && (state.user.role === 'admin' || state.user.role === 'finance')) content.appendChild(cutoverCard_());
 
   // Starting a fresh round of testing: the movement tabs are renamed with a
