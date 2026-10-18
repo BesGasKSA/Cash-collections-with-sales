@@ -535,6 +535,15 @@
   .col-sortb.on{color:var(--green);}
   .col-sortb i{font-style:normal;font-size:9px;}
   .col-tbl td{padding:9px 4px;border-bottom:1px solid #EEF0EC;vertical-align:middle;}
+  .card.hc-card .hc-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+  .card.hc-card h2{display:flex;align-items:center;gap:8px;margin:0;}
+  .card.hc-card .hc-out{margin-top:12px;}
+  .hc-sum{display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:14px;margin-bottom:10px;}
+  .hc-sum .ic2{width:26px;height:26px;flex:none;}
+  .hc-sum b{display:block;font-size:16px;}
+  .hc-sum small{color:var(--muted);}
+  .hc-sum.ok{background:#EEF3EE;color:#2E7D4F;}
+  .hc-sum.bad{background:#FBEDEA;color:#9a3b2f;}
   .kf-eq{margin:10px 2px 0;padding:10px 14px;border-radius:12px;background:#F2EEE4;color:#4D6D51;font-weight:700;font-size:13px;line-height:1.6;}
   .col-tbl tfoot .col-tot th,.col-tbl tfoot .col-tot td{padding:12px 4px;font-weight:800;background:#F2EEE4;border-top:2px solid #4D6D51;border-bottom:none;vertical-align:middle;}
   .col-tbl tfoot .col-tot th{text-align:start;padding-inline-start:12px;color:#4D6D51;font-size:13px;}
@@ -3244,7 +3253,8 @@
   .idle-msg{display:flex;align-items:flex-start;gap:8px;text-align:start;line-height:1.6;}
   .idle-msg svg.ic2{width:16px;height:16px;flex:none;margin-top:3px;}
   /* the welcome line under the greeting (2026-10-03) */
-  .hero:has(.hero-span){grid-template-columns:minmax(0,1fr) auto auto;}
+  @media (min-width:1100px){ .hero:has(.hero-span){grid-template-columns:minmax(0,1fr) auto auto;} }
+  @media (max-width:1099px){ .hero .hero-span{grid-column:1 / -1;justify-self:start;max-width:420px;width:100%;} }
   .hero-span{position:relative;z-index:1;align-self:center;min-width:230px;padding:14px 16px;border-radius:14px;background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.18);backdrop-filter:blur(6px);display:flex;flex-direction:column;gap:6px;animation:hsIn .45s cubic-bezier(.2,.8,.2,1) both;}
   .hero-span .hs-t{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;opacity:.85;}
   .hero-span .hs-t svg{width:15px;height:15px;}
@@ -4545,6 +4555,320 @@
     .act-done-sp{display:none;}
     .ms-toast,.ms-toast.out,.act-go,.act-panel{transition:none !important;}
   }
+  /* ---- shell: the sidebar and the old switcher give way to the social tab bar ---- */
+  @media (max-width:768px){
+    :root body #app.shell{grid-template-columns:minmax(0,1fr);}
+    :root body .sb,:root body .bt,:root body .ms-on .tb-menu{display:none !important;}
+    :root body .tb-brand{display:block;flex-shrink:0;line-height:0;}
+    :root body #app.shell main,:root body .shell main{padding-bottom:calc(104px + env(safe-area-inset-bottom));}
+    :root body .tb{background:rgba(255,255,255,.9);-webkit-backdrop-filter:saturate(1.6) blur(18px);backdrop-filter:saturate(1.6) blur(18px);
+      box-shadow:0 1px 0 rgba(20,28,22,.06),0 8px 24px rgba(20,28,22,.06);min-height:58px;}
+    :root body .tb::after{content:"";position:absolute;inset-inline:0;bottom:-1px;height:2px;background:linear-gradient(90deg,var(--ms-green),var(--ms-gold) 55%,var(--ms-green));opacity:.55;}
+    :root body .tb-title h1{font-size:21px;font-weight:800;letter-spacing:-.015em;}
+    :root body .tb .tb-ic{display:none;}
+    :root body .tb .icon-btn.notif-bell{width:44px;height:44px;background:linear-gradient(145deg,#F7F4EC,var(--ms-cream));color:var(--ms-green-dd);box-shadow:inset 0 0 0 1px rgba(77,109,81,.16);}
+    :root body .tb .icon-btn.notif-bell svg{stroke:var(--ms-green-dd);}
+    /* the home hero: its waiting list moves into the stories row and the activity sheet */
+    :root body .ms-on .hero .hero-pend{display:none;}
+  }
+  @media (max-width:768px) and (min-width:701px){
+    :root body .tb-title .sub{display:none;}
+    :root body .shell main{padding-inline:20px;}
+    :root body .ms-stories-host{margin-inline:-20px;}
+  }
+  /* ---- the tab bar ---- */
+  .ms-tab{display:none;}
+  @media (max-width:768px){
+    .ms-tab{display:block;position:fixed;inset-inline:10px;bottom:calc(10px + env(safe-area-inset-bottom));z-index:45;border-radius:26px;
+      background:rgba(255,255,255,.92);-webkit-backdrop-filter:saturate(1.8) blur(20px);backdrop-filter:saturate(1.8) blur(20px);
+      box-shadow:0 14px 34px rgba(20,28,22,.18),0 0 0 1px rgba(20,28,22,.06);transition:transform var(--ms-mod) var(--ms-ease),opacity var(--ms-norm) var(--ms-ease);}
+    .ms-tab.hide{transform:translate3d(0,calc(100% + 24px),0);opacity:0;}
+    .ms-tab-in{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));align-items:center;padding:6px 4px;}
+    .ms-tb{all:unset;box-sizing:border-box;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-height:52px;padding:4px 2px;
+      border-radius:18px;color:#6A7068;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:transform var(--ms-fast) var(--ms-ease);}
+    .ms-tb:active{transform:scale(.94);}
+    .ms-tb:focus-visible,.ms-plus:focus-visible,.ms-story:focus-visible,.msn-it:focus-visible,.msp-scr:focus-visible,.msp-tile:focus-visible,.ms-post button:focus-visible{outline:3px solid var(--ms-green);outline-offset:2px;}
+    .ms-tb-ic{position:relative;width:28px;height:28px;display:grid;place-items:center;}
+    .ms-tb-ic > .ic2{width:25px;height:25px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;}
+    .ms-tb-ic > .ic2 .d{fill:currentColor;fill-opacity:0;transition:fill-opacity var(--ms-norm) var(--ms-ease);}
+    .ms-tb-l{font-size:11px;font-weight:700;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .ms-tb.on{color:var(--ms-green-dd);}
+    .ms-tb.on .ms-tb-ic > .ic2{stroke-width:2.3;}
+    .ms-tb.on .ms-tb-ic > .ic2 .d{fill-opacity:.32;}
+    .ms-tb.on::after{content:"";position:absolute;bottom:1px;left:50%;width:5px;height:5px;margin-left:-2.5px;border-radius:50%;background:var(--ms-green);}
+    .ms-tab.nav .ms-tb.on .ms-tb-ic{animation:msTabPop .42s var(--ms-spring) both;}
+    .ms-me-av{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-size:11px;font-weight:800;color:var(--ms-green-dd);
+      background:linear-gradient(145deg,var(--ms-cream),#E2DAC6);box-shadow:0 0 0 2px #fff,0 0 0 3.5px #C9CDC6;}
+    .ms-me.on .ms-me-av{box-shadow:0 0 0 2px #fff,0 0 0 4px var(--ms-green);}
+    .ms-plus{all:unset;box-sizing:border-box;justify-self:center;width:56px;height:56px;margin-top:-26px;border-radius:20px;display:grid;place-items:center;cursor:pointer;
+      background:linear-gradient(140deg,#6B8C6F 0%,var(--ms-green) 45%,var(--ms-green-dd) 100%);box-shadow:0 10px 22px rgba(42,62,46,.42),0 0 0 4px #fff;
+      transition:transform var(--ms-fast) var(--ms-ease);-webkit-tap-highlight-color:transparent;}
+    .ms-plus:active{transform:scale(.92) rotate(-6deg);}
+    .ms-plus-in{width:30px;height:30px;border-radius:10px;display:grid;place-items:center;background:rgba(242,238,228,.18);}
+    .ms-plus .ic2{width:22px;height:22px;stroke:var(--ms-cream);fill:none;stroke-width:2.8;stroke-linecap:round;}
+    /* sheets */
+    .ms-sheet{position:fixed;inset:0;z-index:97;display:flex;align-items:flex-end;}
+    .ms-sheet-bg{position:absolute;inset:0;background:rgba(20,28,22,.5);animation:paFade .22s ease both;}
+    .ms-sheet-p{position:relative;width:100%;max-height:92vh;display:flex;flex-direction:column;background:#fff;border-radius:26px 26px 0 0;box-shadow:0 -24px 60px rgba(20,28,22,.28);
+      padding-bottom:env(safe-area-inset-bottom);animation:msSheetUp var(--ms-mod) var(--ms-in) both;transition:transform var(--ms-norm) var(--ms-ease);}
+    .ms-sheet-p.ms-dragging{transition:none;}
+    .ms-sheet.out .ms-sheet-p{animation:msSheetDown var(--ms-norm) var(--ms-out) both;}
+    .ms-sheet.out .ms-sheet-bg{animation:paFadeOut var(--ms-norm) ease both;}
+    .ms-grab{display:flex;justify-content:center;padding:10px 0 4px;touch-action:none;cursor:grab;}
+    .ms-grab i{width:40px;height:5px;border-radius:999px;background:#D5D8D2;}
+    .ms-sheet-h{display:flex;align-items:center;gap:12px;padding:4px 16px 8px;touch-action:none;}
+    .ms-sheet-h > div{flex:1;min-width:0;}
+    .ms-sheet-h h2{margin:0;font-size:22px;font-weight:800;color:var(--ms-ink);border:0;padding:0;}
+    .ms-sheet-h h2::before{display:none !important;}
+    .ms-sheet-h small{display:block;margin-top:2px;font-size:13px;color:var(--ms-mute);}
+    .ms-sheet-b{overflow-y:auto;padding:4px 16px 20px;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;}
+    /* the create sheet */
+    .msn-list{display:flex;flex-direction:column;gap:8px;}
+    .msn-it{all:unset;box-sizing:border-box;display:flex;align-items:center;gap:14px;min-height:68px;padding:10px 12px;border-radius:18px;cursor:pointer;background:#F6F7F4;
+      animation:msRowIn var(--ms-mod) var(--ms-in) both;animation-delay:calc(var(--i,0) * 45ms);transition:transform var(--ms-fast) var(--ms-ease);}
+    .msn-it:active{transform:scale(.98);}
+    .msn-ic{flex:none;width:48px;height:48px;border-radius:16px;display:grid;place-items:center;background:linear-gradient(145deg,var(--r2),var(--r1));box-shadow:0 6px 14px rgba(20,28,22,.16);}
+    .msn-ic .ic2{width:24px;height:24px;stroke:#fff;fill:none;stroke-width:2.1;}
+    .msn-ic .ic2 .d{fill:#fff;fill-opacity:.25;}
+    .msn-it[data-tone="rcv"]{--r1:#3b5540;--r2:#7FA083;} .msn-it[data-tone="send"]{--r1:#3b5540;--r2:#9CC59F;} .msn-it[data-tone="bank"]{--r1:#2F5D8A;--r2:#5E8FBF;}
+    .msn-it[data-tone="val"]{--r1:#2F6E68;--r2:#7FB685;} .msn-it[data-tone="fix"]{--r1:#A56A06;--r2:#E3B04B;} .msn-it[data-tone="bad"]{--r1:#A8323E;--r2:#E07A3F;}
+    .msn-t{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;}
+    .msn-t b{font-size:15.5px;font-weight:800;color:var(--ms-ink);}
+    .msn-t small{font-size:12.5px;color:var(--ms-mute);line-height:1.4;}
+    .msn-ch .ic2{width:18px;height:18px;stroke:#9AA096;fill:none;stroke-width:2.2;transform:scaleX(var(--fx));}
+    /* stories */
+    .ms-stories-host{margin:-8px 0 8px;}
+    .ms-stories{display:flex;gap:14px;overflow-x:auto;padding:10px 16px 12px;scrollbar-width:none;scroll-snap-type:x proximity;background:#fff;box-shadow:0 1px 0 rgba(20,28,22,.06);}
+    .ms-stories::-webkit-scrollbar{display:none;}
+    .ms-stories > div{flex:none;scroll-snap-align:start;}
+    .ms-story{all:unset;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;gap:6px;width:74px;cursor:pointer;-webkit-tap-highlight-color:transparent;
+      animation:msRowIn var(--ms-mod) var(--ms-in) both;animation-delay:calc(var(--i,0) * 50ms);}
+    .ms-sr{position:relative;width:68px;height:68px;display:grid;place-items:center;transition:transform var(--ms-fast) var(--ms-ease);}
+    .ms-story:active .ms-sr{transform:scale(.94);}
+    .ms-sr-ring{position:absolute;inset:0;border-radius:50%;background:conic-gradient(from 0deg,var(--r1),var(--r2),var(--ms-gold),var(--r1));}
+    .ms-story.spin.new .ms-sr-ring{animation:msRingSpin 1.1s var(--ms-ease) both;animation-delay:calc(var(--i,0) * 60ms);}
+    .ms-story.seen .ms-sr-ring{background:#D3D7D0;}
+    .ms-sr-ring::after{content:"";position:absolute;inset:3px;border-radius:50%;background:#fff;}
+    .ms-sr-face{position:relative;width:58px;height:58px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(145deg,var(--ms-cream),#E2DAC6);color:var(--ms-green-dd);font-weight:800;font-size:17px;}
+    .ms-sr-face .ic2{width:26px;height:26px;stroke:var(--r1);fill:none;stroke-width:2;}
+    .ms-sr-face .ic2 .d{fill:var(--r1);fill-opacity:.18;}
+    .ms-sr-n{position:absolute;top:-2px;inset-inline-end:-2px;min-width:22px;height:22px;padding:0 6px;border-radius:999px;display:grid;place-items:center;background:var(--ms-green);color:var(--ms-cream);
+      font-size:11.5px;font-weight:800;border:2px solid #fff;}
+    .ms-sr-plus{position:absolute;bottom:0;inset-inline-end:0;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;background:var(--ms-green);border:2px solid #fff;}
+    .ms-sr-plus .ic2{width:12px;height:12px;stroke:#fff;fill:none;stroke-width:3;}
+    .ms-story-me .ms-sr-ring{background:#E4E7E1;}
+    .ms-sl{max-width:74px;font-size:12px;font-weight:600;color:var(--ms-ink);text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .ms-story.seen .ms-sl{color:var(--ms-mute);}
+    .ms-story-clear{display:flex;align-items:center;gap:8px;align-self:center;padding:8px 14px;border-radius:999px;background:#EEF3EE;color:var(--ms-green-dd);font-size:13px;font-weight:700;}
+    .ms-sc-ic .ic2{width:16px;height:16px;stroke:var(--ms-green);fill:none;stroke-width:2.6;}
+    /* pull to refresh */
+    .ms-ptr{position:fixed;top:calc(66px + env(safe-area-inset-top));left:50%;z-index:30;width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:#fff;
+      box-shadow:0 6px 18px rgba(20,28,22,.2);opacity:0;transform:translate3d(-50%,-56px,0);pointer-events:none;}
+    .ms-ptr .emblem{--s:30px;}
+    .ms-ptr.spin{opacity:1;transform:translate3d(-50%,14px,0);animation:msPtrSpin .9s linear infinite;}
+  }
+  /* ---- story viewer ---- */
+  @media (max-width:768px){
+    .ms-sv{position:fixed;inset:0;z-index:98;display:flex;flex-direction:column;background:radial-gradient(120% 80% at 50% 0%,#33503A 0%,#16221A 70%);color:#fff;
+      padding:calc(10px + env(safe-area-inset-top)) 12px calc(14px + env(safe-area-inset-bottom));animation:msFadeIn var(--ms-norm) var(--ms-ease) both;touch-action:none;}
+    .ms-sv.out{animation:msFadeOut var(--ms-norm) var(--ms-out) both;}
+    .ms-sv-bars{display:flex;gap:4px;}
+    .ms-sv-bars i{flex:1;height:3px;border-radius:3px;background:rgba(255,255,255,.28);overflow:hidden;}
+    .ms-sv-bars i b{display:block;height:100%;background:#fff;transform:scaleX(0);transform-origin:0 50%;transition:transform var(--ms-mod) var(--ms-ease);}
+    html[dir="rtl"] .ms-sv-bars i b{transform-origin:100% 50%;}
+    .ms-sv-bars i.done b,.ms-sv-bars i.now b{transform:scaleX(1);}
+    .ms-sv-top{display:flex;align-items:center;gap:10px;padding:10px 2px;}
+    .ms-sv-who{flex:1;display:flex;align-items:center;gap:10px;min-width:0;}
+    .ms-sv-who b{display:block;font-size:15px;}
+    .ms-sv-who small{display:block;font-size:12.5px;opacity:.8;}
+    .ms-sv-av{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;background:var(--ms-cream);color:var(--ms-green-dd);font-weight:800;font-size:13px;}
+    .ms-sv-x{all:unset;box-sizing:border-box;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.14);cursor:pointer;}
+    .ms-sv-x .ic2{width:20px;height:20px;stroke:#fff;fill:none;stroke-width:2.2;}
+    .ms-sv-x:focus-visible,.ms-sv-go:focus-visible,.ms-sv-tap:focus-visible{outline:3px solid var(--ms-cream);outline-offset:2px;}
+    .ms-sv-stage{position:relative;flex:1;display:flex;align-items:center;justify-content:center;transition:transform var(--ms-norm) var(--ms-ease);}
+    .ms-sv-tap{all:unset;position:absolute;top:0;bottom:0;width:34%;z-index:1;cursor:pointer;}
+    .ms-sv-tap.prev{inset-inline-start:0;} .ms-sv-tap.next{inset-inline-end:0;}
+    .ms-sv-card{position:relative;z-index:2;width:100%;max-width:420px;border-radius:28px;padding:26px 22px 22px;text-align:center;
+      background:linear-gradient(160deg,var(--r2) -20%,var(--r1) 55%,#1b2a1f 140%);box-shadow:0 30px 60px rgba(0,0,0,.4),inset 0 0 0 1px rgba(255,255,255,.12);}
+    .ms-sv-card[data-tone="rcv"]{--r1:#4D6D51;--r2:#C9A227;} .ms-sv-card[data-tone="val"]{--r1:#2F6E68;--r2:#7FB685;} .ms-sv-card[data-tone="send"]{--r1:#3b5540;--r2:#9CC59F;}
+    .ms-sv-card[data-tone="bank"]{--r1:#2F5D8A;--r2:#6FA3C9;} .ms-sv-card[data-tone="fix"]{--r1:#8A5A06;--r2:#E3B04B;} .ms-sv-card[data-tone="bad"]{--r1:#8F2A35;--r2:#E07A3F;}
+    .ms-sv-card.in-n{animation:msSvInN var(--ms-mod) var(--ms-in) both;} .ms-sv-card.in-p{animation:msSvInP var(--ms-mod) var(--ms-in) both;}
+    html[dir="rtl"] .ms-sv-card.in-n{animation-name:msSvInP;} html[dir="rtl"] .ms-sv-card.in-p{animation-name:msSvInN;}
+    .ms-sv-k{display:inline-flex;align-items:center;gap:8px;padding:6px 12px 6px 6px;border-radius:999px;background:rgba(255,255,255,.16);font-size:13px;font-weight:700;}
+    html[dir="rtl"] .ms-sv-k{padding:6px 6px 6px 12px;}
+    .ms-sv-ic{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.22);}
+    .ms-sv-ic .ic2{width:16px;height:16px;stroke:#fff;fill:none;stroke-width:2.2;}
+    .ms-sv-ic .ic2 .d{fill:none;}
+    .ms-sv-amt{margin:22px 0 6px;font-size:44px;font-weight:800;letter-spacing:-.02em;line-height:1;}
+    .ms-sv-amt small{font-size:15px;font-weight:700;margin-inline-start:6px;opacity:.85;}
+    .ms-sv-s{margin:14px 0 6px;font-size:17px;font-weight:700;line-height:1.45;}
+    .ms-sv-m{margin:0 0 22px;font-size:14px;opacity:.85;}
+    .ms-sv-go{all:unset;box-sizing:border-box;display:flex;align-items:center;justify-content:center;width:100%;min-height:52px;border-radius:16px;background:#fff;color:var(--r1);font-size:16px;font-weight:800;cursor:pointer;
+      box-shadow:0 10px 24px rgba(0,0,0,.25);transition:transform var(--ms-fast) var(--ms-ease);}
+    .ms-sv-go:active{transform:scale(.97);}
+    .ms-sv-hint{margin:12px 0 0;text-align:center;font-size:12.5px;opacity:.7;}
+    :root body .ms-sv small,:root body .ms-sv .ms-sv-amt small{color:#fff;}
+    :root body .ms-sv-who small{color:rgba(255,255,255,.82);opacity:1;}
+  }
+  /* ---- the feed ---- */
+  @media (max-width:768px){
+    .ms-feed{margin:14px 12px 8px;}
+    .ms-feed-h{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:0 2px 10px;font-size:20px;font-weight:800;color:var(--ms-ink);border:0;padding:0;}
+    .ms-feed-h::before{display:none !important;}
+    .ms-feed-h small{font-size:12px;font-weight:600;color:var(--ms-mute);}
+    .ms-feed-l{display:flex;flex-direction:column;gap:10px;}
+    .ms-post{position:relative;border-radius:22px;overflow:hidden;background:#E9EEE8;touch-action:pan-y;animation:msRowIn var(--ms-mod) var(--ms-in) both;animation-delay:calc(var(--i,0) * 45ms);}
+    .ms-post-acts{position:absolute;inset:0;display:flex;align-items:center;justify-content:space-between;padding:0 18px;color:var(--ms-green-dd);}
+    .ms-pa{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px;font-weight:700;opacity:0;transition:opacity var(--ms-fast) linear;}
+    .ms-post.reveal .ms-pa{opacity:1;}
+    .ms-pa .ic2{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2.2;}
+    .ms-post-in{position:relative;background:#fff;border-radius:22px;padding:14px 14px 12px;box-shadow:0 1px 2px rgba(20,28,22,.06),0 8px 22px rgba(20,28,22,.06);transition:transform var(--ms-norm) var(--ms-ease);}
+    .ms-post-h{display:flex;align-items:center;gap:10px;}
+    .ms-post-av{flex:none;width:42px;height:42px;border-radius:50%;padding:2px;background:conic-gradient(from 200deg,var(--r1),var(--r2),var(--r1));}
+    .ms-post-av span{width:100%;height:100%;border-radius:50%;display:grid;place-items:center;background:linear-gradient(145deg,var(--ms-cream),#E2DAC6);color:var(--ms-green-dd);font-weight:800;font-size:13px;box-shadow:0 0 0 2px #fff;}
+    .ms-post[data-tone="rcv"]{--r1:#4D6D51;--r2:#C9A227;} .ms-post[data-tone="send"]{--r1:#3b5540;--r2:#9CC59F;} .ms-post[data-tone="bank"]{--r1:#2F5D8A;--r2:#4D6D51;}
+    .ms-post[data-tone="fix"]{--r1:#A56A06;--r2:#E3B04B;} .ms-post[data-tone="bad"]{--r1:#A8323E;--r2:#E07A3F;}
+    .ms-post-who{flex:1;min-width:0;display:flex;flex-direction:column;}
+    .ms-post-who b{font-size:14.5px;font-weight:700;color:var(--ms-ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .ms-post-who small{font-size:12.5px;color:var(--ms-mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .ms-post-st{flex:none;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:700;color:var(--r1);background:color-mix(in srgb,var(--r1) 12%,#fff);}
+    .ms-post[data-tone="send"] .ms-post-st{color:#2E4A33;}
+    .ms-post-b{margin:12px 0 10px;padding:16px;border-radius:16px;background:linear-gradient(135deg,color-mix(in srgb,var(--r1) 9%,#fff),color-mix(in srgb,var(--r2) 14%,#fff));}
+    .ms-post-amt{font-size:30px;font-weight:800;letter-spacing:-.02em;color:var(--ms-ink);line-height:1.1;}
+    .ms-post-amt small{font-size:13px;font-weight:700;margin-inline-start:5px;color:var(--ms-mute);}
+    .ms-post-k{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:8px;font-size:13px;color:#454B44;font-weight:600;}
+    .ms-post-k .ic2{width:16px;height:16px;stroke:var(--r1);fill:none;stroke-width:2;}
+    .ms-post-k .ic2 .d{fill:var(--r1);fill-opacity:.18;}
+    .ms-post-k i{font-style:normal;opacity:.6;}
+    .ms-post-slip{display:inline-flex;align-items:center;gap:5px;margin-top:10px;padding:4px 10px;border-radius:999px;background:#fff;font-size:12px;font-weight:700;color:var(--ms-green-dd);}
+    .ms-post-slip .ic2{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;}
+    .ms-post-f{display:flex;gap:8px;}
+    .ms-post-f button{all:unset;box-sizing:border-box;flex:1;min-height:44px;border-radius:14px;display:inline-flex;align-items:center;justify-content:center;gap:6px;font-size:14px;font-weight:700;cursor:pointer;
+      background:#F0F2EE;color:var(--ms-ink);transition:transform var(--ms-fast) var(--ms-ease);}
+    .ms-post-f button:active{transform:scale(.97);}
+    .ms-post-f .ms-post-recv{background:var(--ms-green);color:#fff;}
+    .ms-post-f .ic2{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:2.4;}
+    .ms-post.sk .ms-post-in{height:180px;}
+    .ms-post.sk .ms-post-in i{display:block;height:14px;border-radius:7px;margin:8px 0 14px;background:linear-gradient(90deg,#EEF0EC,#F7F8F5,#EEF0EC);background-size:200% 100%;animation:msShimmer 1.2s linear infinite;}
+    .ms-post.sk .ms-post-in i:nth-child(2){height:52px;}
+    .ms-feed-empty{margin:0;padding:22px;border-radius:18px;background:#fff;text-align:center;color:var(--ms-mute);font-size:14px;line-height:1.5;}
+    .ms-feed-more{all:unset;box-sizing:border-box;display:flex;align-items:center;justify-content:center;width:100%;min-height:48px;margin-top:10px;border-radius:16px;background:#fff;
+      color:var(--ms-green-dd);font-size:14.5px;font-weight:800;cursor:pointer;box-shadow:inset 0 0 0 1.5px rgba(77,109,81,.25);}
+  }
+  /* ---- profile ---- */
+  @media (max-width:768px){
+    .msp-head{display:flex;align-items:center;gap:14px;padding:4px 0 14px;}
+    .msp-av{position:relative;flex:none;width:76px;height:76px;display:grid;place-items:center;}
+    .msp-ring{position:absolute;inset:0;border-radius:50%;background:conic-gradient(from 0deg,var(--ms-green),var(--ms-gold),#9CC59F,var(--ms-green));}
+    .msp-ring::after{content:"";position:absolute;inset:3px;border-radius:50%;background:#fff;}
+    .msp-face{position:relative;width:64px;height:64px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(145deg,var(--ms-cream),#E2DAC6);color:var(--ms-green-dd);font-size:22px;font-weight:800;}
+    .msp-id{flex:1;min-width:0;}
+    .msp-id h2{margin:0;font-size:21px;font-weight:800;color:var(--ms-ink);border:0;padding:0;line-height:1.25;}
+    .msp-id h2::before{display:none !important;}
+    .msp-id small{display:block;margin-top:3px;font-size:13px;color:var(--ms-mute);}
+    .msp-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;}
+    .msp-st{display:flex;flex-direction:column;gap:3px;padding:12px 10px;border-radius:16px;background:#F4F6F2;min-height:96px;}
+    .msp-st.sk{background:linear-gradient(90deg,#EEF0EC,#F7F8F5,#EEF0EC);background-size:200% 100%;animation:msShimmer 1.2s linear infinite;}
+    .msp-st-ic .ic2{width:18px;height:18px;stroke:var(--ms-green);fill:none;stroke-width:2;}
+    .msp-st-ic .ic2 .d{fill:var(--ms-green);fill-opacity:.18;}
+    .msp-st b{font-size:15px;font-weight:800;color:var(--ms-ink);overflow-wrap:anywhere;}
+    .msp-st > span:not(.msp-st-ic){font-size:12px;color:var(--ms-mute);font-weight:600;}
+    .msp-bar{display:block;height:4px;border-radius:4px;background:#E2E6DF;margin-top:auto;overflow:hidden;}
+    .msp-bar i{display:block;height:100%;background:var(--ms-green);transform-origin:0 50%;}
+    html[dir="rtl"] .msp-bar i{transform-origin:100% 50%;}
+    .msp-cap{margin:6px 2px 0;font-size:12px;color:var(--ms-mute);}
+    .msp-sec{margin-top:18px;}
+    .msp-sec h3{margin:0 2px 8px;font-size:15px;font-weight:800;color:var(--ms-ink);}
+    .msp-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;border-radius:16px;overflow:hidden;}
+    .msp-tile{all:unset;box-sizing:border-box;aspect-ratio:1;display:flex;flex-direction:column;justify-content:flex-end;gap:2px;padding:10px;cursor:pointer;color:#fff;
+      background:linear-gradient(160deg,var(--r2),var(--r1));animation:msPop .4s var(--ms-in) both;animation-delay:calc(var(--i,0) * 35ms);}
+    .msp-tile[data-tone="rcv"]{--r1:#3b5540;--r2:#8DA88F;} .msp-tile[data-tone="send"]{--r1:#2f4734;--r2:#7FA083;} .msp-tile[data-tone="bank"]{--r1:#244a6e;--r2:#5E8FBF;}
+    .msp-tile[data-tone="fix"]{--r1:#7A4F05;--r2:#C98F2A;} .msp-tile[data-tone="bad"]{--r1:#7F2430;--r2:#C8564A;}
+    .msp-tile .ic2{width:20px;height:20px;stroke:#fff;fill:none;stroke-width:2;margin-bottom:auto;opacity:.9;}
+    .msp-tile .ic2 .d{fill:none;}
+    .msp-tile b{font-size:13.5px;font-weight:800;}
+    .msp-tile small{font-size:11px;font-weight:600;opacity:.92;}
+    :root body .msp-tile small,:root body .msp-tile b{color:#fff;}
+    :root body .act-chip small{color:var(--ms-green-d);}
+    :root body .ms-post-amt small,:root body .ms-feed-h small,:root body .ms-sheet-h small,:root body .msp-id small,:root body .act-head small{color:var(--ms-mute);}
+    .msp-none{margin:0;padding:14px;border-radius:14px;background:#F4F6F2;color:var(--ms-mute);font-size:13.5px;}
+    .msp-screens{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;}
+    .msp-scr{all:unset;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-height:84px;padding:10px 6px;border-radius:16px;
+      background:#F4F6F2;cursor:pointer;text-align:center;font-size:12px;font-weight:700;color:var(--ms-ink);line-height:1.3;transition:transform var(--ms-fast) var(--ms-ease);}
+    .msp-scr:active{transform:scale(.96);}
+    .msp-scr.on{background:#E3ECE3;box-shadow:inset 0 0 0 1.5px var(--ms-green);}
+    .msp-scr-ic{width:40px;height:40px;border-radius:13px;display:grid;place-items:center;background:#fff;box-shadow:0 2px 6px rgba(20,28,22,.08);}
+    .msp-scr.on .msp-scr-ic{background:var(--ms-green);}
+    .msp-scr-ic .ic2{width:21px;height:21px;stroke:var(--ms-green-dd);fill:none;stroke-width:1.9;}
+    .msp-scr-ic .ic2 .d{fill:var(--ms-green);fill-opacity:.18;}
+    .msp-scr.on .msp-scr-ic .ic2{stroke:#fff;} .msp-scr.on .msp-scr-ic .ic2 .d{fill:#fff;}
+    .msp-lang{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;padding:4px;border-radius:16px;background:#F0F2EE;}
+    .msp-lang button{all:unset;box-sizing:border-box;min-height:44px;border-radius:12px;display:grid;place-items:center;font-size:14px;font-weight:700;color:var(--ms-mute);cursor:pointer;}
+    .msp-lang button.on{background:#fff;color:var(--ms-green-dd);box-shadow:0 2px 8px rgba(20,28,22,.1);}
+    .msp-lang button:focus-visible,.msp-out:focus-visible{outline:3px solid var(--ms-green);outline-offset:2px;}
+    .msp-out{all:unset;box-sizing:border-box;display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:50px;margin-top:18px;border-radius:16px;
+      background:#FBEDEA;color:#9B2C1F;font-size:15px;font-weight:800;cursor:pointer;}
+    .msp-out .ic2{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2.2;}
+    .msp-build{margin:10px 0 0;text-align:center;font-size:11px;color:#8A8F87;}
+  }
+  /* ---- camera-first slip sheet ---- */
+  @media (max-width:768px){
+    .ms-cam{position:fixed;inset:0;z-index:99;display:flex;flex-direction:column;background:#0D120E;color:#fff;animation:msFadeIn var(--ms-norm) var(--ms-ease) both;}
+    .ms-cam.out{animation:msFadeOut var(--ms-norm) var(--ms-out) both;}
+    .ms-cam-top{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:calc(10px + env(safe-area-inset-top)) 12px 8px;}
+    .ms-cam-top b{font-size:16px;}
+    .ms-cam-b{all:unset;box-sizing:border-box;width:48px;height:48px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.14);cursor:pointer;}
+    .ms-cam-b .ic2,.ms-cam-b svg{width:22px;height:22px;stroke:#fff;fill:none;stroke-width:2.1;stroke-linejoin:round;}
+    .ms-cam-b .ic2 .d{fill:none;}
+    .ms-cam-fl.on{background:var(--ms-gold);} .ms-cam-fl.on svg{fill:#fff;}
+    .ms-cam-b:focus-visible,.ms-cam-shut:focus-visible,.ms-cam-use:focus-visible,.ms-cam-retake:focus-visible{outline:3px solid var(--ms-cream);outline-offset:3px;}
+    .ms-cam-view{position:relative;flex:1;margin:0 10px;border-radius:24px;overflow:hidden;background:radial-gradient(100% 70% at 50% 40%,#25352A,#0D120E);display:grid;place-items:center;}
+    .ms-cam-view video,.ms-cam-view img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
+    .ms-cam.shot .ms-cam-view img{object-fit:contain;background:#000;}
+    .ms-cam-frame{position:absolute;inset:14% 9%;pointer-events:none;}
+    .ms-cam-frame i{position:absolute;width:34px;height:34px;border:3px solid var(--ms-cream);}
+    .ms-cam-frame i:nth-child(1){top:0;left:0;border-right:0;border-bottom:0;border-radius:12px 0 0 0;}
+    .ms-cam-frame i:nth-child(2){top:0;right:0;border-left:0;border-bottom:0;border-radius:0 12px 0 0;}
+    .ms-cam-frame i:nth-child(3){bottom:0;left:0;border-right:0;border-top:0;border-radius:0 0 0 12px;}
+    .ms-cam-frame i:nth-child(4){bottom:0;right:0;border-left:0;border-top:0;border-radius:0 0 12px 0;}
+    .ms-cam.shot .ms-cam-frame{display:none;}
+    .ms-cam-hint{position:absolute;bottom:16px;left:50%;transform:translateX(-50%);margin:0;padding:8px 14px;border-radius:999px;background:rgba(0,0,0,.5);font-size:13px;font-weight:600;
+      text-align:center;width:max-content;max-width:86%;line-height:1.4;}
+    .ms-cam.shot .ms-cam-hint{display:none;}
+    .ms-cam-view::after{content:"";position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;}
+    .ms-cam.flash .ms-cam-view::after{animation:msFlash .35s ease-out both;}
+    .ms-cam-bar{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;justify-items:center;padding:18px 24px calc(18px + env(safe-area-inset-bottom));}
+    .ms-cam-bar[hidden]{display:none;}
+    .ms-cam-sp{width:48px;}
+    .ms-cam-shut{all:unset;box-sizing:border-box;width:78px;height:78px;border-radius:50%;border:5px solid #fff;display:grid;place-items:center;cursor:pointer;transition:transform var(--ms-fast) var(--ms-ease);}
+    .ms-cam-shut i{width:60px;height:60px;border-radius:50%;background:#fff;transition:transform var(--ms-fast) var(--ms-ease);}
+    .ms-cam-shut:active i{transform:scale(.86);}
+    .ms-cam-done{display:flex;gap:10px;}
+    .ms-cam-retake,.ms-cam-use{all:unset;box-sizing:border-box;flex:1;min-height:54px;border-radius:18px;display:inline-flex;align-items:center;justify-content:center;gap:8px;font-size:16px;font-weight:800;cursor:pointer;}
+    .ms-cam-retake{background:rgba(255,255,255,.14);color:#fff;}
+    .ms-cam-use{background:var(--ms-cream);color:var(--ms-green-dd);}
+    .ms-cam-use .ic2{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2.6;}
+  }
+  @keyframes msTabPop{0%{transform:scale(.8)}60%{transform:scale(1.14)}100%{transform:scale(1)}}
+  @keyframes msRingSpin{from{transform:rotate(-180deg)}to{transform:rotate(0)}}
+  @keyframes msPtrSpin{from{transform:translate3d(-50%,14px,0) rotate(0)}to{transform:translate3d(-50%,14px,0) rotate(360deg)}}
+  @keyframes msFadeIn{from{opacity:0}to{opacity:1}}
+  @keyframes msFadeOut{from{opacity:1}to{opacity:0}}
+  @keyframes msSvInN{from{opacity:0;transform:translate3d(28px,0,0) scale(.97)}to{opacity:1;transform:none}}
+  @keyframes msSvInP{from{opacity:0;transform:translate3d(-28px,0,0) scale(.97)}to{opacity:1;transform:none}}
+  @keyframes msShimmer{from{background-position:200% 0}to{background-position:-200% 0}}
+  @keyframes msFlash{0%{opacity:.85}100%{opacity:0}}
+  /* tab switches: the new screen fades in and rises 8px */
+  @media (max-width:768px){
+    :root body .ms-on #screenBody.nav-fwd,:root body .ms-on #screenBody.nav-back{animation:msScreenIn var(--ms-mod) var(--ms-in) both;}
+  }
+  @keyframes msScreenIn{from{opacity:0;transform:translate3d(0,8px,0)}to{opacity:1;transform:none}}
+  @media (prefers-reduced-motion:reduce){
+    .ms-tab,.ms-tb,.ms-plus,.ms-story,.ms-story .ms-sr-ring,.ms-sheet-p,.ms-sheet.out .ms-sheet-p,.ms-sheet-bg,.msn-it,.ms-sv,.ms-sv.out,.ms-sv-card,.ms-sv-stage,.ms-sv-bars i b,
+    .ms-post,.ms-post-in,.ms-post.sk .ms-post-in i,.msp-st.sk,.msp-tile,.ms-cam,.ms-cam.out,.ms-cam.flash .ms-cam-view::after,.ms-ptr.spin,.ms-tab.nav .ms-tb.on .ms-tb-ic,
+    :root body .ms-on #screenBody.nav-fwd,:root body .ms-on #screenBody.nav-back{animation:none !important;transition:none !important;}
+    .ms-tab.hide{transform:none;opacity:1;}
+  }
   /* ===== end phone social layer ===== */
   /* ---------- data levels (2026-10-17): group-by chips, breadcrumb, the pivot tree ---------- */
   .crp-lvcard .col-chips{align-items:center;}
@@ -4596,7 +4920,7 @@ var ICON_B64 = 'iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAYAAAA9zQYyAAAcG0lEQVR42u2dd1cU
 // Stamped by tools/stamp-build.js at publish time so the running app can
 // say which build it is — a cached page is the usual reason a shipped change
 // seems missing.
-var BUILD_ID = '2026-10-18 02:39 · ea7968d';
+var BUILD_ID = '2026-10-18 08:10 · b7ab1d7';
 var LOGO_SRC = 'data:image/png;base64,' + LOGO_B64;
 var ICON_SRC = LOGO_SRC; // same asset — see the comment above LOGO_B64
 // The sign-in mark (2026-09-30): the logo's round emblem as a coin with a
@@ -5697,7 +6021,7 @@ function dirFor(lang){ return lang==='en' ? 'ltr' : 'rtl'; }
       doc_cylOut:'أسطوانات خارجة', doc_cylIn:'أسطوانات راجعة', doc_enteredBy:'أدخلها', doc_createdAt:'وقت الإدخال', doc_note:'ملاحظة',
       doc_from:'من', doc_to:'إلى', doc_status:'الحالة', doc_confirmedAt:'وقت التأكيد', doc_bankRef:'المرجع البنكي', doc_resolutionNote:'ملاحظة الحل',
       journey_entered:'أُدخلت بواسطة',
-      dash_overview:'الملخص المالي', dash_keyFigures:'مؤشرات رئيسية', pp_quick:'فترات سريعة', pp_months:'الأشهر', pp_today:'اليوم', pp_yesterday:'أمس', pp_thisWeek:'هذا الأسبوع', pp_lastWeek:'الأسبوع الماضي', pp_thisMonth:'هذا الشهر', pp_lastMonth:'الشهر الماضي', pp_thisQuarter:'هذا الربع', pp_lastQuarter:'الربع الماضي', pp_thisYear:'هذه السنة', pp_lastYear:'السنة الماضية', pp_last7:'آخر 7 أيام', pp_last30:'آخر 30 يوماً', pp_last90:'آخر 90 يوماً', pp_city:'المدينة', pp_area:'المنطقة', pp_branch:'الفرع', pp_unit:'المحل أو السيارة', pp_all:'الكل', pl_emptyHidden:'أُخفيت {n} أيام بلا مبيعات ولا تكاليف', pl_npPct:'هامش صافي الربح %', is_title:'قائمة الدخل', is_amount:'المبلغ', is_pct:'% من صافي المبيعات', is_less:'ناقص:', is_add:'زائد:', is_gross:'المبيعات شاملة الضريبة', is_vat:'ضريبة القيمة المضافة على المبيعات', is_delivery:'إيراد التوصيل', is_revenue:'إجمالي الإيرادات', is_cogs:'تكلفة البضاعة المباعة', is_commission:'العمولات', is_takings:'مصروفات دُفعت من الإيراد', in_skip:'اضغط للتخطي', in_s1:'تحصيل', in_s2:'تسليم', in_s3:'إيداع', hs_title:'فترة المعاملات', hs_first:'أول معاملة', hs_last:'آخر معاملة', hs_sub:'{d} يوم · {n} معاملة', kf_sales:'إجمالي المبيعات', kf_salesFoot:'نقدي وشبكة، الآجل ضمنها', kf_pos:'مبيعات الشبكة (POS)', kf_posFoot:'تُسدَّد إلى البنك مباشرة', kf_direct:'الموازنات المودعة في البنك', kf_directFoot:'أودعت من الفروع مباشرة', kf_other:'إجمالي الخصومات الأخرى', kf_otherFoot:'توصيل، مصروفات، آجل، تحويلات، عمولات', kf_otherAdd:'بعد إضافة {x} تحصيلات أخرى', kf_net:'صافي النقد المطلوب تسليمه', kf_netFoot:'الصافي بعد كل الخصومات', kf_dep:'المودَع', kf_depFoot:'ما أودعه المحصّلون في البنك', kf_rem:'المتبقي', kf_remFoot:'لم يُودع بعد', kf_eq:'المبيعات {s} − الشبكة {p} − الموازنات {d} − خصومات أخرى {o}{a} = صافي النقد المطلوب تسليمه {n} · المودع {dep} · المتبقي {r}', kf_eqAdd:' + تحصيلات أخرى {x}', kf_status:'حالة التسليمات', kf_settled:'مسوّى في الفرع', kf_settledFoot:'دفعة منطقة معتمدة لم يبقَ منها ما يُسلَّم', dv_search:'ابحث عن مدينة أو منطقة أو فرع أو مصدر أو يوم أو معاملة', dv_count:'العدد', dv_amount:'المبلغ', dv_share:'% من البطاقة', dv_lv_city:'المدينة', dv_lv_area:'المنطقة', dv_lv_branch:'الفرع', dv_lv_source:'المصدر', dv_lv_day:'اليوم', kf_ledgerHint:'اقرأ من الأعلى إلى الأسفل: كل سطر من قيود هذه الفترة، وكل إجمالي هو مجموع الأسطر التي فوقه.', kf_add:'تحصيلات أخرى', kf_depFoot2:'الجزء من هذه القيود الذي وصل إلى البنك', kf_remFoot2:'أين هو الآن، أدناه', kf_l_delivery:'رسوم التوصيل قبل الضريبة', kf_l_expenses:'المصروفات', kf_l_credit:'المبيعات الآجلة', kf_l_creditDelivery:'توصيل الآجل وعمولاته', kf_l_channelCom:'عمولات قنوات البيع', kf_l_discounts:'الخصومات', kf_l_transfers:'التحويلات البنكية', kf_l_otherCash:'نقد آخر محصَّل', kf_l_creditFees:'رسوم توصيل عملاء الآجل', kf_l_channelFees:'رسوم توصيل قنوات البيع', kf_s_notHanded:'لم يُسلَّم بعد', kf_s_carBranch:'في الفرع / من السيارة إلى الفرع', kf_s_branchArea:'من الفرع إلى المنطقة', kf_s_deputy:'من المنطقة إلى المحصل، بانتظار النائب', kf_s_onway:'في الطريق (إلى المحصل أو بين المحصلين)', kf_s_held:'لدى المحصل', kf_s_short:'نقص عند الاستلام في الطريق', kf_stageSub:'حصة كل قيد في هذه المرحلة', kf_remSplit:'أين نقد هذه القيود الآن', sf_whereTotal:'المجموع لدى الأشخاص', sf_whereGap:'يختلف عن المتبقي لأن تسليمًا يجمع أكثر من يوم يُحتسب في آخر أيامه، أو لأن جزءًا من نقد هذه الأيام في تسليم مؤرَّخ بيوم لاحق.', sf_rule:'التاريخ هو يوم المبيعات: يُحتسب التسليم في يوم قيوده (آخرها إذا جمع أكثر من يوم)، لا في يوم إنشائه.', sf_dashDiff:'صافي النقد المطلوب تسليمه يأتي من قيود الفترة. المسلَّم والمودَع يتبعان تسليمات الأيام نفسها؛ التسليم الذي يجمع أكثر من يوم يُحتسب في آخرها.', sf_colDiff:'الفرق عن لوحة المعلومات: صافي النقد المطلوب تسليمه يشمل كل مبيعات الفترة، وهذه الشاشة تحسب ما وصل إلى المحصلين فقط. الفرق نقد لم يُسلَّم بعد، أو ما زال مع السيارة، أو استُلم ناقصًا، أو تسليم يجمع أكثر من يوم فيُحتسب في آخرها.', sf_hoDiff:'الفرق: النقد نفسه يظهر مرة عند كل مرحلة (السيارة ← الفرع ← المنطقة ← المحصل)، فاجمع مرحلة واحدة. يُحتسب التسليم في يوم قيوده.', sf_entDiff:'هذا صافي النقد المطلوب تسليمه لهذه القيود. شاشتا التسليمات والتحصيل تحسبان ما سُلِّم فقط، في يوم قيوده.', dash_salesAnalysis:'تحليل المبيعات', dash_collectionsAnalysis:'تحليل التحصيل',
+      dash_overview:'الملخص المالي', dash_keyFigures:'مؤشرات رئيسية', hc_title:'فحص سلامة البيانات', hc_hint:'يتحقق على البيانات الحية أن كل تسليم يساوي ما حمله، وكل إيداع يساوي طلباته، ولا يوجد ربط مكسور أو استلام بصفر.', hc_run:'تشغيل الفحص', hc_clean:'البيانات سليمة: لا توجد أي مشكلة', hc_found:'وُجدت {n} مشكلة', hc_checked:'فُحص {h} تسليماً و{d} إيداعاً و{e} إدخالاً', hc_kind:'النوع', hc_no:'الرقم', hc_status:'الحالة', hc_what:'الوصف', hc_expected:'المتوقع', hc_actual:'المسجل', hc_gap:'الفرق', hc_k_sum:'مبلغ التسليم', hc_k_deposit:'مبلغ الإيداع', hc_k_link:'الربط', hc_k_orphan:'سجل مفقود', hc_k_short:'العجز', hc_k_voided:'إدخال ملغى', hc_k_direct:'موازنة', hc_k_day:'يوم مكرر', pp_quick:'فترات سريعة', pp_months:'الأشهر', pp_today:'اليوم', pp_yesterday:'أمس', pp_thisWeek:'هذا الأسبوع', pp_lastWeek:'الأسبوع الماضي', pp_thisMonth:'هذا الشهر', pp_lastMonth:'الشهر الماضي', pp_thisQuarter:'هذا الربع', pp_lastQuarter:'الربع الماضي', pp_thisYear:'هذه السنة', pp_lastYear:'السنة الماضية', pp_last7:'آخر 7 أيام', pp_last30:'آخر 30 يوماً', pp_last90:'آخر 90 يوماً', pp_city:'المدينة', pp_area:'المنطقة', pp_branch:'الفرع', pp_unit:'المحل أو السيارة', pp_all:'الكل', pl_emptyHidden:'أُخفيت {n} أيام بلا مبيعات ولا تكاليف', pl_npPct:'هامش صافي الربح %', is_title:'قائمة الدخل', is_amount:'المبلغ', is_pct:'% من صافي المبيعات', is_less:'ناقص:', is_add:'زائد:', is_gross:'المبيعات شاملة الضريبة', is_vat:'ضريبة القيمة المضافة على المبيعات', is_delivery:'إيراد التوصيل', is_revenue:'إجمالي الإيرادات', is_cogs:'تكلفة البضاعة المباعة', is_commission:'العمولات', is_takings:'مصروفات دُفعت من الإيراد', in_skip:'اضغط للتخطي', in_s1:'تحصيل', in_s2:'تسليم', in_s3:'إيداع', hs_title:'فترة المعاملات', hs_first:'أول معاملة', hs_last:'آخر معاملة', hs_sub:'{d} يوم · {n} معاملة', kf_sales:'إجمالي المبيعات', kf_salesFoot:'نقدي وشبكة، الآجل ضمنها', kf_pos:'مبيعات الشبكة (POS)', kf_posFoot:'تُسدَّد إلى البنك مباشرة', kf_direct:'الموازنات المودعة في البنك', kf_directFoot:'أودعت من الفروع مباشرة', kf_other:'إجمالي الخصومات الأخرى', kf_otherFoot:'توصيل، مصروفات، آجل، تحويلات، عمولات', kf_otherAdd:'بعد إضافة {x} تحصيلات أخرى', kf_net:'صافي النقد المطلوب تسليمه', kf_netFoot:'الصافي بعد كل الخصومات', kf_dep:'المودَع', kf_depFoot:'ما أودعه المحصّلون في البنك', kf_rem:'المتبقي', kf_remFoot:'لم يُودع بعد', kf_eq:'المبيعات {s} − الشبكة {p} − الموازنات {d} − خصومات أخرى {o}{a} = صافي النقد المطلوب تسليمه {n} · المودع {dep} · المتبقي {r}', kf_eqAdd:' + تحصيلات أخرى {x}', kf_status:'حالة التسليمات', kf_settled:'مسوّى في الفرع', kf_settledFoot:'دفعة منطقة معتمدة لم يبقَ منها ما يُسلَّم', dv_search:'ابحث عن مدينة أو منطقة أو فرع أو مصدر أو يوم أو معاملة', dv_count:'العدد', dv_amount:'المبلغ', dv_share:'% من البطاقة', dv_lv_city:'المدينة', dv_lv_area:'المنطقة', dv_lv_branch:'الفرع', dv_lv_source:'المصدر', dv_lv_day:'اليوم', kf_ledgerHint:'اقرأ من الأعلى إلى الأسفل: كل سطر من قيود هذه الفترة، وكل إجمالي هو مجموع الأسطر التي فوقه.', kf_add:'تحصيلات أخرى', kf_depFoot2:'الجزء من هذه القيود الذي وصل إلى البنك', kf_remFoot2:'أين هو الآن، أدناه', kf_l_delivery:'رسوم التوصيل قبل الضريبة', kf_l_expenses:'المصروفات', kf_l_credit:'المبيعات الآجلة', kf_l_creditDelivery:'توصيل الآجل وعمولاته', kf_l_channelCom:'عمولات قنوات البيع', kf_l_discounts:'الخصومات', kf_l_transfers:'التحويلات البنكية', kf_l_otherCash:'نقد آخر محصَّل', kf_l_creditFees:'رسوم توصيل عملاء الآجل', kf_l_channelFees:'رسوم توصيل قنوات البيع', kf_s_notHanded:'لم يُسلَّم بعد', kf_s_carBranch:'في الفرع / من السيارة إلى الفرع', kf_s_branchArea:'من الفرع إلى المنطقة', kf_s_deputy:'من المنطقة إلى المحصل، بانتظار النائب', kf_s_onway:'في الطريق (إلى المحصل أو بين المحصلين)', kf_s_held:'لدى المحصل', kf_s_short:'نقص عند الاستلام في الطريق', kf_stageSub:'حصة كل قيد في هذه المرحلة', kf_remSplit:'أين نقد هذه القيود الآن', sf_whereTotal:'المجموع لدى الأشخاص', sf_whereGap:'يختلف عن المتبقي لأن تسليمًا يجمع أكثر من يوم يُحتسب في آخر أيامه، أو لأن جزءًا من نقد هذه الأيام في تسليم مؤرَّخ بيوم لاحق.', sf_rule:'التاريخ هو يوم المبيعات: يُحتسب التسليم في يوم قيوده (آخرها إذا جمع أكثر من يوم)، لا في يوم إنشائه.', sf_dashDiff:'صافي النقد المطلوب تسليمه يأتي من قيود الفترة. المسلَّم والمودَع يتبعان تسليمات الأيام نفسها؛ التسليم الذي يجمع أكثر من يوم يُحتسب في آخرها.', sf_colDiff:'الفرق عن لوحة المعلومات: صافي النقد المطلوب تسليمه يشمل كل مبيعات الفترة، وهذه الشاشة تحسب ما وصل إلى المحصلين فقط. الفرق نقد لم يُسلَّم بعد، أو ما زال مع السيارة، أو استُلم ناقصًا، أو تسليم يجمع أكثر من يوم فيُحتسب في آخرها.', sf_hoDiff:'الفرق: النقد نفسه يظهر مرة عند كل مرحلة (السيارة ← الفرع ← المنطقة ← المحصل)، فاجمع مرحلة واحدة. يُحتسب التسليم في يوم قيوده.', sf_entDiff:'هذا صافي النقد المطلوب تسليمه لهذه القيود. شاشتا التسليمات والتحصيل تحسبان ما سُلِّم فقط، في يوم قيوده.', dash_salesAnalysis:'تحليل المبيعات', dash_collectionsAnalysis:'تحليل التحصيل',
       dash_statementSales:'ملخص المبيعات', dash_statementCollect:'ملخص التحصيل والإيداع',
       dash_posHint:'تُسوّى مباشرة في البنك — ليست نقدية للتحصيل', dash_creditHint:'مطالبات على العملاء — تُخصم لأنها ضمن المبيعات ولم تُحصَّل نقداً',
       dash_deliveryDeductHint:'تُدفع مباشرة للبنك — لا تستلمها يد السائق', dash_vatOnDeliveryFoot:'على رسوم التوصيل فقط',
@@ -5719,7 +6043,7 @@ function dirFor(lang){ return lang==='en' ? 'ltr' : 'rtl'; }
       doc_cylOut:'Cylinders out', doc_cylIn:'Cylinders in', doc_enteredBy:'Entered by', doc_createdAt:'Entered at', doc_note:'Note',
       doc_from:'From', doc_to:'To', doc_status:'Status', doc_confirmedAt:'Confirmed at', doc_bankRef:'Bank reference', doc_resolutionNote:'Resolution note',
       journey_entered:'Entered by',
-      dash_overview:'Financial summary', dash_keyFigures:'Key figures', pp_quick:'Quick periods', pp_months:'Months', pp_today:'Today', pp_yesterday:'Yesterday', pp_thisWeek:'This week', pp_lastWeek:'Last week', pp_thisMonth:'This month', pp_lastMonth:'Last month', pp_thisQuarter:'This quarter', pp_lastQuarter:'Last quarter', pp_thisYear:'This year', pp_lastYear:'Last year', pp_last7:'Last 7 days', pp_last30:'Last 30 days', pp_last90:'Last 90 days', pp_city:'City', pp_area:'Area', pp_branch:'Branch', pp_unit:'Store or car', pp_all:'All', pl_emptyHidden:'{n} days with no sales and no costs are hidden', pl_npPct:'Net margin %', is_title:'Income statement', is_amount:'Amount', is_pct:'% of net sales', is_less:'Less:', is_add:'Add:', is_gross:'Sales including VAT', is_vat:'VAT on sales', is_delivery:'Delivery income', is_revenue:'Total revenue', is_cogs:'Cost of goods sold (COGS)', is_commission:'Commissions', is_takings:'Expenses paid from takings', in_skip:'Tap to skip', in_s1:'Collect', in_s2:'Hand over', in_s3:'Bank', hs_title:'Transactions on file', hs_first:'First transaction', hs_last:'Last transaction', hs_sub:'{d} days · {n} transactions', kf_sales:'Total sales', kf_salesFoot:'cash and card, credit inside', kf_pos:'Card (POS) sales', kf_posFoot:'settled to the bank directly', kf_direct:'Direct deposits in the bank', kf_directFoot:'banked by the branches themselves', kf_other:'Total other deductions', kf_otherFoot:'delivery, expenses, credit, transfers, commissions', kf_otherAdd:'after adding {x} other collections', kf_net:'Net cash to hand over', kf_netFoot:'net after every deduction', kf_dep:'Deposited', kf_depFoot:'banked by the collectors', kf_rem:'Remaining', kf_remFoot:'not banked yet', kf_eq:'Sales {s} − card {p} − direct deposits {d} − other deductions {o}{a} = net cash to hand over {n} · deposited {dep} · remaining {r}', kf_eqAdd:' + other collections {x}', kf_status:'Handover status', kf_settled:'Settled at the branch', kf_settledFoot:'an approved area batch with nothing left to hand over', dv_search:'Search a city, area, branch, source, day or transaction', dv_count:'Count', dv_amount:'Amount', dv_share:'% of the card', dv_lv_city:'City', dv_lv_area:'Area', dv_lv_branch:'Branch', dv_lv_source:'Source', dv_lv_day:'Day', kf_ledgerHint:'Read top to bottom: every line comes from the entries of this period, and each total is the sum of the lines above it.', kf_add:'Other collections', kf_depFoot2:'the part of these entries that reached the bank', kf_remFoot2:'where it is now, below', kf_l_delivery:'Delivery fees, before VAT', kf_l_expenses:'Expenses', kf_l_credit:'Credit sales', kf_l_creditDelivery:'Credit delivery fees and commissions', kf_l_channelCom:'Sales channel commissions', kf_l_discounts:'Discounts', kf_l_transfers:'Bank transfers', kf_l_otherCash:'Other cash collected', kf_l_creditFees:'Credit customers\' delivery fees', kf_l_channelFees:'Sales channel delivery fees', kf_s_notHanded:'Not handed over yet', kf_s_carBranch:'At the branch / car to branch', kf_s_branchArea:'Branch to area', kf_s_deputy:'Area to collector, waiting for the deputy', kf_s_onway:'On the way (to or between collectors)', kf_s_held:'Held by a collector', kf_s_short:'Received short on the way', kf_stageSub:'Each entry\'s share at this stage', kf_remSplit:'Where the cash of these entries is now', sf_whereTotal:'Total held by people', sf_whereGap:'This differs from Remaining because a handover that carries several days counts on its latest day, or part of these days\' cash sits in a handover dated later.', sf_rule:'Dates are the business day of the sales: a handover counts on the day of its entries (the latest one when it carries several days), not the day it was made.', sf_dashDiff:'Net cash to hand over comes from the entries of the period. Handed over and deposited follow the handovers of the same days; a handover that carries several days counts on its latest day.', sf_colDiff:'How this differs from the Dashboard: net cash to hand over counts every sale of the period; this screen counts only what has reached a collector. The gap is cash not yet handed over, still with a car, received short, or a handover that carries several days (counted on its latest day).', sf_hoDiff:'How this differs: the same cash shows once at every hop (car → branch → area → collector), so add up one hop at a time. A handover counts on the day of its entries.', sf_entDiff:'This is the net cash to hand over for these entries. The Handoffs and Collections screens count only what has been handed over, on the day of its entries.', dash_salesAnalysis:'Sales analysis', dash_collectionsAnalysis:'Collections analysis',
+      dash_overview:'Financial summary', dash_keyFigures:'Key figures', hc_title:'Data health check', hc_hint:'Checks the live data: every handover equals what it carried, every deposit equals its requests, and no link is broken or receipt recorded as 0.', hc_run:'Run the check', hc_clean:'The data is sound: no issue found', hc_found:'{n} issues found', hc_checked:'Checked {h} handovers, {d} deposits and {e} entries', hc_kind:'Kind', hc_no:'No.', hc_status:'Status', hc_what:'What', hc_expected:'Expected', hc_actual:'Recorded', hc_gap:'Gap', hc_k_sum:'Handover amount', hc_k_deposit:'Deposit amount', hc_k_link:'Link', hc_k_orphan:'Missing record', hc_k_short:'Shortfall', hc_k_voided:'Cancelled entry', hc_k_direct:'Direct deposit', hc_k_day:'Day entered twice', pp_quick:'Quick periods', pp_months:'Months', pp_today:'Today', pp_yesterday:'Yesterday', pp_thisWeek:'This week', pp_lastWeek:'Last week', pp_thisMonth:'This month', pp_lastMonth:'Last month', pp_thisQuarter:'This quarter', pp_lastQuarter:'Last quarter', pp_thisYear:'This year', pp_lastYear:'Last year', pp_last7:'Last 7 days', pp_last30:'Last 30 days', pp_last90:'Last 90 days', pp_city:'City', pp_area:'Area', pp_branch:'Branch', pp_unit:'Store or car', pp_all:'All', pl_emptyHidden:'{n} days with no sales and no costs are hidden', pl_npPct:'Net margin %', is_title:'Income statement', is_amount:'Amount', is_pct:'% of net sales', is_less:'Less:', is_add:'Add:', is_gross:'Sales including VAT', is_vat:'VAT on sales', is_delivery:'Delivery income', is_revenue:'Total revenue', is_cogs:'Cost of goods sold (COGS)', is_commission:'Commissions', is_takings:'Expenses paid from takings', in_skip:'Tap to skip', in_s1:'Collect', in_s2:'Hand over', in_s3:'Bank', hs_title:'Transactions on file', hs_first:'First transaction', hs_last:'Last transaction', hs_sub:'{d} days · {n} transactions', kf_sales:'Total sales', kf_salesFoot:'cash and card, credit inside', kf_pos:'Card (POS) sales', kf_posFoot:'settled to the bank directly', kf_direct:'Direct deposits in the bank', kf_directFoot:'banked by the branches themselves', kf_other:'Total other deductions', kf_otherFoot:'delivery, expenses, credit, transfers, commissions', kf_otherAdd:'after adding {x} other collections', kf_net:'Net cash to hand over', kf_netFoot:'net after every deduction', kf_dep:'Deposited', kf_depFoot:'banked by the collectors', kf_rem:'Remaining', kf_remFoot:'not banked yet', kf_eq:'Sales {s} − card {p} − direct deposits {d} − other deductions {o}{a} = net cash to hand over {n} · deposited {dep} · remaining {r}', kf_eqAdd:' + other collections {x}', kf_status:'Handover status', kf_settled:'Settled at the branch', kf_settledFoot:'an approved area batch with nothing left to hand over', dv_search:'Search a city, area, branch, source, day or transaction', dv_count:'Count', dv_amount:'Amount', dv_share:'% of the card', dv_lv_city:'City', dv_lv_area:'Area', dv_lv_branch:'Branch', dv_lv_source:'Source', dv_lv_day:'Day', kf_ledgerHint:'Read top to bottom: every line comes from the entries of this period, and each total is the sum of the lines above it.', kf_add:'Other collections', kf_depFoot2:'the part of these entries that reached the bank', kf_remFoot2:'where it is now, below', kf_l_delivery:'Delivery fees, before VAT', kf_l_expenses:'Expenses', kf_l_credit:'Credit sales', kf_l_creditDelivery:'Credit delivery fees and commissions', kf_l_channelCom:'Sales channel commissions', kf_l_discounts:'Discounts', kf_l_transfers:'Bank transfers', kf_l_otherCash:'Other cash collected', kf_l_creditFees:'Credit customers\' delivery fees', kf_l_channelFees:'Sales channel delivery fees', kf_s_notHanded:'Not handed over yet', kf_s_carBranch:'At the branch / car to branch', kf_s_branchArea:'Branch to area', kf_s_deputy:'Area to collector, waiting for the deputy', kf_s_onway:'On the way (to or between collectors)', kf_s_held:'Held by a collector', kf_s_short:'Received short on the way', kf_stageSub:'Each entry\'s share at this stage', kf_remSplit:'Where the cash of these entries is now', sf_whereTotal:'Total held by people', sf_whereGap:'This differs from Remaining because a handover that carries several days counts on its latest day, or part of these days\' cash sits in a handover dated later.', sf_rule:'Dates are the business day of the sales: a handover counts on the day of its entries (the latest one when it carries several days), not the day it was made.', sf_dashDiff:'Net cash to hand over comes from the entries of the period. Handed over and deposited follow the handovers of the same days; a handover that carries several days counts on its latest day.', sf_colDiff:'How this differs from the Dashboard: net cash to hand over counts every sale of the period; this screen counts only what has reached a collector. The gap is cash not yet handed over, still with a car, received short, or a handover that carries several days (counted on its latest day).', sf_hoDiff:'How this differs: the same cash shows once at every hop (car → branch → area → collector), so add up one hop at a time. A handover counts on the day of its entries.', sf_entDiff:'This is the net cash to hand over for these entries. The Handoffs and Collections screens count only what has been handed over, on the day of its entries.', dash_salesAnalysis:'Sales analysis', dash_collectionsAnalysis:'Collections analysis',
       dash_statementSales:'Sales summary', dash_statementCollect:'Collection & deposit summary',
       dash_posHint:'Settles straight to the bank — not cash to collect', dash_creditHint:'Owed by customers — deducted: part of sales, but no cash came in',
       dash_deliveryDeductHint:'Paid straight to the bank — never in the driver\'s hand', dash_vatOnDeliveryFoot:'On delivery fees only',
@@ -5741,7 +6065,7 @@ function dirFor(lang){ return lang==='en' ? 'ltr' : 'rtl'; }
       doc_cylOut:'باہر جانے والے سلنڈر', doc_cylIn:'واپس آنے والے سلنڈر', doc_enteredBy:'درج کرنے والا', doc_createdAt:'اندراج کا وقت', doc_note:'نوٹ',
       doc_from:'از', doc_to:'بنام', doc_status:'حیثیت', doc_confirmedAt:'تصدیق کا وقت', doc_bankRef:'بینک حوالہ', doc_resolutionNote:'حل کا نوٹ',
       journey_entered:'درج کیا',
-      dash_overview:'مالی خلاصہ', dash_keyFigures:'اہم اعداد', pp_quick:'فوری مدتیں', pp_months:'مہینے', pp_today:'آج', pp_yesterday:'کل', pp_thisWeek:'اس ہفتے', pp_lastWeek:'پچھلے ہفتے', pp_thisMonth:'اس مہینے', pp_lastMonth:'پچھلے مہینے', pp_thisQuarter:'اس سہ ماہی', pp_lastQuarter:'پچھلی سہ ماہی', pp_thisYear:'اس سال', pp_lastYear:'پچھلے سال', pp_last7:'پچھلے 7 دن', pp_last30:'پچھلے 30 دن', pp_last90:'پچھلے 90 دن', pp_city:'شہر', pp_area:'علاقہ', pp_branch:'برانچ', pp_unit:'دکان یا گاڑی', pp_all:'سب', pl_emptyHidden:'بغیر فروخت اور لاگت کے {n} دن چھپائے گئے', pl_npPct:'خالص منافع %', is_title:'آمدنی کا گوشوارہ', is_amount:'رقم', is_pct:'خالص فروخت کا %', is_less:'منفی:', is_add:'جمع:', is_gross:'فروخت بشمول VAT', is_vat:'فروخت پر VAT', is_delivery:'ڈیلیوری آمدنی', is_revenue:'کل آمدنی', is_cogs:'فروخت شدہ مال کی لاگت', is_commission:'کمیشن', is_takings:'آمدنی سے ادا کردہ اخراجات', in_skip:'چھوڑنے کے لیے ٹیپ کریں', in_s1:'وصولی', in_s2:'حوالگی', in_s3:'بینک جمع', hs_title:'لین دین کی مدت', hs_first:'پہلا لین دین', hs_last:'آخری لین دین', hs_sub:'{d} دن · {n} لین دین', kf_sales:'کل فروخت', kf_salesFoot:'نقد اور کارڈ، ادھار شامل', kf_pos:'کارڈ (POS) فروخت', kf_posFoot:'براہ راست بینک میں', kf_direct:'بینک میں براہ راست جمع', kf_directFoot:'برانچوں نے خود جمع کیا', kf_other:'دیگر کٹوتیوں کا کل', kf_otherFoot:'ڈیلیوری، اخراجات، ادھار، ٹرانسفر، کمیشن', kf_otherAdd:'{x} دیگر وصولیاں شامل کرنے کے بعد', kf_net:'حوالے کرنے کے لیے خالص نقد', kf_netFoot:'تمام کٹوتیوں کے بعد خالص', kf_dep:'جمع شدہ', kf_depFoot:'وصول کنندگان نے بینک میں جمع کیا', kf_rem:'باقی', kf_remFoot:'ابھی جمع نہیں ہوا', kf_eq:'فروخت {s} − کارڈ {p} − براہ راست جمع {d} − دیگر کٹوتیاں {o}{a} = حوالے کرنے کے لیے خالص نقد {n} · جمع {dep} · باقی {r}', kf_eqAdd:' + دیگر وصولیاں {x}', kf_status:'حوالگی کی صورتحال', kf_settled:'برانچ پر طے شدہ', kf_settledFoot:'منظور شدہ ایریا بیچ جس میں حوالے کرنے کو کچھ نہیں بچا', dv_search:'شہر، ایریا، برانچ، ذریعہ، دن یا لین دین تلاش کریں', dv_count:'تعداد', dv_amount:'رقم', dv_share:'کارڈ کا %', dv_lv_city:'شہر', dv_lv_area:'ایریا', dv_lv_branch:'برانچ', dv_lv_source:'ذریعہ', dv_lv_day:'دن', kf_ledgerHint:'اوپر سے نیچے پڑھیں: ہر سطر اس مدت کی اندراجات سے ہے، اور ہر کل اپنے اوپر کی سطروں کا مجموعہ ہے۔', kf_add:'دیگر وصولیاں', kf_depFoot2:'ان اندراجات کا وہ حصہ جو بینک تک پہنچا', kf_remFoot2:'اب کہاں ہے، نیچے', kf_l_delivery:'ڈیلیوری فیس، VAT سے پہلے', kf_l_expenses:'اخراجات', kf_l_credit:'ادھار فروخت', kf_l_creditDelivery:'ادھار ڈیلیوری فیس اور کمیشن', kf_l_channelCom:'سیلز چینل کمیشن', kf_l_discounts:'رعایتیں', kf_l_transfers:'بینک ٹرانسفر', kf_l_otherCash:'دیگر وصول شدہ نقد', kf_l_creditFees:'ادھار گاہکوں کی ڈیلیوری فیس', kf_l_channelFees:'سیلز چینل ڈیلیوری فیس', kf_s_notHanded:'ابھی حوالے نہیں ہوا', kf_s_carBranch:'برانچ پر / گاڑی سے برانچ', kf_s_branchArea:'برانچ سے ایریا', kf_s_deputy:'ایریا سے کلکٹر، نائب کے انتظار میں', kf_s_onway:'راستے میں (کلکٹر تک یا کلکٹرز کے درمیان)', kf_s_held:'کلکٹر کے پاس', kf_s_short:'راستے میں کم وصول ہوا', kf_stageSub:'اس مرحلے پر ہر اندراج کا حصہ', kf_remSplit:'ان اندراجات کا نقد اب کہاں ہے', sf_whereTotal:'لوگوں کے پاس کل', sf_whereGap:'یہ باقی سے مختلف ہے کیونکہ کئی دن والی حوالگی آخری دن شمار ہوتی ہے، یا ان دنوں کی کچھ نقدی بعد کی تاریخ والی حوالگی میں ہے۔', sf_rule:'تاریخ فروخت کا کاروباری دن ہے: حوالگی اپنی اندراجات کے دن شمار ہوتی ہے (کئی دن ہوں تو آخری دن)، بنانے کے دن نہیں۔', sf_dashDiff:'حوالے کرنے کے لیے خالص نقد مدت کی اندراجات سے آتا ہے۔ حوالے اور جمع شدہ انہی دنوں کی حوالگیوں کے مطابق ہیں؛ کئی دن والی حوالگی آخری دن شمار ہوتی ہے۔', sf_colDiff:'ڈیش بورڈ سے فرق: حوالے کرنے کے لیے خالص نقد مدت کی ہر فروخت گنتا ہے؛ یہ اسکرین صرف وہ گنتی ہے جو کلکٹر تک پہنچا۔ فرق وہ نقد ہے جو ابھی حوالے نہیں ہوا، ابھی گاڑی کے پاس ہے، کم وصول ہوا، یا کئی دن والی حوالگی جو آخری دن شمار ہوتی ہے۔', sf_hoDiff:'فرق: وہی نقد ہر مرحلے پر ایک بار دکھتا ہے (گاڑی ← برانچ ← ایریا ← کلکٹر)، اس لیے ایک وقت میں ایک مرحلہ جمع کریں۔ حوالگی اپنی اندراجات کے دن شمار ہوتی ہے۔', sf_entDiff:'یہ ان اندراجات کے لیے حوالے کرنے کا خالص نقد ہے۔ حوالگی اور وصولی کی اسکرینیں صرف حوالے شدہ رقم گنتی ہیں، اندراجات کے دن کے مطابق۔', dash_salesAnalysis:'سیلز تجزیہ', dash_collectionsAnalysis:'وصولی تجزیہ',
+      dash_overview:'مالی خلاصہ', dash_keyFigures:'اہم اعداد', hc_title:'ڈیٹا کی صحت کی جانچ', hc_hint:'زندہ ڈیٹا پر جانچتا ہے کہ ہر حوالگی اپنی رقم کے برابر ہے، ہر جمع اپنی درخواستوں کے برابر ہے، اور کوئی ربط ٹوٹا نہیں۔', hc_run:'جانچ چلائیں', hc_clean:'ڈیٹا درست ہے: کوئی مسئلہ نہیں', hc_found:'{n} مسائل ملے', hc_checked:'{h} حوالگیاں، {d} جمع اور {e} اندراجات جانچے گئے', hc_kind:'قسم', hc_no:'نمبر', hc_status:'حالت', hc_what:'تفصیل', hc_expected:'متوقع', hc_actual:'درج شدہ', hc_gap:'فرق', hc_k_sum:'حوالگی کی رقم', hc_k_deposit:'جمع کی رقم', hc_k_link:'ربط', hc_k_orphan:'گمشدہ ریکارڈ', hc_k_short:'کمی', hc_k_voided:'منسوخ اندراج', hc_k_direct:'براہ راست جمع', hc_k_day:'دن دو بار', pp_quick:'فوری مدتیں', pp_months:'مہینے', pp_today:'آج', pp_yesterday:'کل', pp_thisWeek:'اس ہفتے', pp_lastWeek:'پچھلے ہفتے', pp_thisMonth:'اس مہینے', pp_lastMonth:'پچھلے مہینے', pp_thisQuarter:'اس سہ ماہی', pp_lastQuarter:'پچھلی سہ ماہی', pp_thisYear:'اس سال', pp_lastYear:'پچھلے سال', pp_last7:'پچھلے 7 دن', pp_last30:'پچھلے 30 دن', pp_last90:'پچھلے 90 دن', pp_city:'شہر', pp_area:'علاقہ', pp_branch:'برانچ', pp_unit:'دکان یا گاڑی', pp_all:'سب', pl_emptyHidden:'بغیر فروخت اور لاگت کے {n} دن چھپائے گئے', pl_npPct:'خالص منافع %', is_title:'آمدنی کا گوشوارہ', is_amount:'رقم', is_pct:'خالص فروخت کا %', is_less:'منفی:', is_add:'جمع:', is_gross:'فروخت بشمول VAT', is_vat:'فروخت پر VAT', is_delivery:'ڈیلیوری آمدنی', is_revenue:'کل آمدنی', is_cogs:'فروخت شدہ مال کی لاگت', is_commission:'کمیشن', is_takings:'آمدنی سے ادا کردہ اخراجات', in_skip:'چھوڑنے کے لیے ٹیپ کریں', in_s1:'وصولی', in_s2:'حوالگی', in_s3:'بینک جمع', hs_title:'لین دین کی مدت', hs_first:'پہلا لین دین', hs_last:'آخری لین دین', hs_sub:'{d} دن · {n} لین دین', kf_sales:'کل فروخت', kf_salesFoot:'نقد اور کارڈ، ادھار شامل', kf_pos:'کارڈ (POS) فروخت', kf_posFoot:'براہ راست بینک میں', kf_direct:'بینک میں براہ راست جمع', kf_directFoot:'برانچوں نے خود جمع کیا', kf_other:'دیگر کٹوتیوں کا کل', kf_otherFoot:'ڈیلیوری، اخراجات، ادھار، ٹرانسفر، کمیشن', kf_otherAdd:'{x} دیگر وصولیاں شامل کرنے کے بعد', kf_net:'حوالے کرنے کے لیے خالص نقد', kf_netFoot:'تمام کٹوتیوں کے بعد خالص', kf_dep:'جمع شدہ', kf_depFoot:'وصول کنندگان نے بینک میں جمع کیا', kf_rem:'باقی', kf_remFoot:'ابھی جمع نہیں ہوا', kf_eq:'فروخت {s} − کارڈ {p} − براہ راست جمع {d} − دیگر کٹوتیاں {o}{a} = حوالے کرنے کے لیے خالص نقد {n} · جمع {dep} · باقی {r}', kf_eqAdd:' + دیگر وصولیاں {x}', kf_status:'حوالگی کی صورتحال', kf_settled:'برانچ پر طے شدہ', kf_settledFoot:'منظور شدہ ایریا بیچ جس میں حوالے کرنے کو کچھ نہیں بچا', dv_search:'شہر، ایریا، برانچ، ذریعہ، دن یا لین دین تلاش کریں', dv_count:'تعداد', dv_amount:'رقم', dv_share:'کارڈ کا %', dv_lv_city:'شہر', dv_lv_area:'ایریا', dv_lv_branch:'برانچ', dv_lv_source:'ذریعہ', dv_lv_day:'دن', kf_ledgerHint:'اوپر سے نیچے پڑھیں: ہر سطر اس مدت کی اندراجات سے ہے، اور ہر کل اپنے اوپر کی سطروں کا مجموعہ ہے۔', kf_add:'دیگر وصولیاں', kf_depFoot2:'ان اندراجات کا وہ حصہ جو بینک تک پہنچا', kf_remFoot2:'اب کہاں ہے، نیچے', kf_l_delivery:'ڈیلیوری فیس، VAT سے پہلے', kf_l_expenses:'اخراجات', kf_l_credit:'ادھار فروخت', kf_l_creditDelivery:'ادھار ڈیلیوری فیس اور کمیشن', kf_l_channelCom:'سیلز چینل کمیشن', kf_l_discounts:'رعایتیں', kf_l_transfers:'بینک ٹرانسفر', kf_l_otherCash:'دیگر وصول شدہ نقد', kf_l_creditFees:'ادھار گاہکوں کی ڈیلیوری فیس', kf_l_channelFees:'سیلز چینل ڈیلیوری فیس', kf_s_notHanded:'ابھی حوالے نہیں ہوا', kf_s_carBranch:'برانچ پر / گاڑی سے برانچ', kf_s_branchArea:'برانچ سے ایریا', kf_s_deputy:'ایریا سے کلکٹر، نائب کے انتظار میں', kf_s_onway:'راستے میں (کلکٹر تک یا کلکٹرز کے درمیان)', kf_s_held:'کلکٹر کے پاس', kf_s_short:'راستے میں کم وصول ہوا', kf_stageSub:'اس مرحلے پر ہر اندراج کا حصہ', kf_remSplit:'ان اندراجات کا نقد اب کہاں ہے', sf_whereTotal:'لوگوں کے پاس کل', sf_whereGap:'یہ باقی سے مختلف ہے کیونکہ کئی دن والی حوالگی آخری دن شمار ہوتی ہے، یا ان دنوں کی کچھ نقدی بعد کی تاریخ والی حوالگی میں ہے۔', sf_rule:'تاریخ فروخت کا کاروباری دن ہے: حوالگی اپنی اندراجات کے دن شمار ہوتی ہے (کئی دن ہوں تو آخری دن)، بنانے کے دن نہیں۔', sf_dashDiff:'حوالے کرنے کے لیے خالص نقد مدت کی اندراجات سے آتا ہے۔ حوالے اور جمع شدہ انہی دنوں کی حوالگیوں کے مطابق ہیں؛ کئی دن والی حوالگی آخری دن شمار ہوتی ہے۔', sf_colDiff:'ڈیش بورڈ سے فرق: حوالے کرنے کے لیے خالص نقد مدت کی ہر فروخت گنتا ہے؛ یہ اسکرین صرف وہ گنتی ہے جو کلکٹر تک پہنچا۔ فرق وہ نقد ہے جو ابھی حوالے نہیں ہوا، ابھی گاڑی کے پاس ہے، کم وصول ہوا، یا کئی دن والی حوالگی جو آخری دن شمار ہوتی ہے۔', sf_hoDiff:'فرق: وہی نقد ہر مرحلے پر ایک بار دکھتا ہے (گاڑی ← برانچ ← ایریا ← کلکٹر)، اس لیے ایک وقت میں ایک مرحلہ جمع کریں۔ حوالگی اپنی اندراجات کے دن شمار ہوتی ہے۔', sf_entDiff:'یہ ان اندراجات کے لیے حوالے کرنے کا خالص نقد ہے۔ حوالگی اور وصولی کی اسکرینیں صرف حوالے شدہ رقم گنتی ہیں، اندراجات کے دن کے مطابق۔', dash_salesAnalysis:'سیلز تجزیہ', dash_collectionsAnalysis:'وصولی تجزیہ',
       dash_statementSales:'سیلز خلاصہ', dash_statementCollect:'وصولی اور ڈپازٹ خلاصہ',
       dash_posHint:'براہ راست بینک میں — وصولی کی نقدی نہیں', dash_creditHint:'گاہکوں پر واجب — منہا، کیونکہ فروخت میں شامل مگر نقدی نہیں آئی',
       dash_deliveryDeductHint:'براہ راست بینک کو ادا — ڈرائیور کے ہاتھ میں نہیں', dash_vatOnDeliveryFoot:'صرف ترسیل چارجز پر',
@@ -7277,6 +7601,12 @@ function renderShell(){
   var body = el('<div id="screenBody" class="'+(state.navDir ? (state.navDir > 0 ? 'nav-fwd' : 'nav-back') : 'fade-up')+'"></div>');
   var justNavigated = !!state.navDir;
   state.navDir = 0;
+  // phone: the stories row and the pull-to-refresh emblem sit above Home (2026-10-17)
+  if (msPhone_() && state.screen === 'home') {
+    main.appendChild(el('<span id="msPtr" class="ms-ptr" role="status" aria-label="'+esc(t('msr_pull'))+'"><span class="emblem"><img src="'+ICON_SRC+'" alt=""></span></span>'));
+    main.appendChild(el('<div id="msStories" class="ms-stories-host"></div>'));
+    msPtr_();
+  }
   main.appendChild(body);
   col.appendChild(main);
   root.appendChild(col);
@@ -7285,7 +7615,8 @@ function renderShell(){
   qs('#langBtn', sb).addEventListener('click', function(e){ openLangPicker_(e.currentTarget); });
 
   // ---- phone bottom switcher: every screen for this role ----
-  root.appendChild(buildBottomSwitcher_(navItems, badge, justNavigated));
+  root.appendChild(msPhone_() ? msTabBar_(navItems, badge, justNavigated) : buildBottomSwitcher_(navItems, badge, justNavigated));
+  if (msPhone_()) { root.classList.add('ms-on'); msStoriesPaint_(); }
 
   watchCollapsibles_(body);
   if (state.lastAnimatedScreen !== state.screen) { state.lastAnimatedScreen = state.screen; watchEntrance_(body); }
@@ -8052,6 +8383,7 @@ function refreshPending_(opts){
 // The home hero: how many things wait, the first four as rows, and "and N
 // more". Redrawn whenever the list is refreshed.
 function pendHeroPaint_(){
+  try { msStoriesPaint_(); } catch (e) {}
   var hero = qs('.hero');
   if (!hero || !state.pend) return;
   var p = state.pend, items = p.items || [], total = p.total || 0;
@@ -8231,6 +8563,500 @@ function msToast_(text, type){
   requestAnimationFrame(function(){ node.classList.add('in'); });
   if (ok) msBuzz_(12); else msBuzz_([18, 40, 18]);
   setTimeout(gone, ok ? 3600 : 5200);
+}
+
+// ---------- the phone's shell, stories, feed, profile and camera (2026-10-17) ----------
+// Reverse-engineered from Instagram, Snapchat and Facebook's public UI (the table is in
+// docs/superpowers/plans/2026-10-17-mobile-social-report.md). Phones only (<= 768px).
+// Every role keeps exactly its screens: the tab bar, the create sheet and the profile
+// sheet only ever open screens navItemsForRole_ lists; nothing here moves money.
+(function(){
+  var add = {
+    en: { msn_create:'Create', msn_title:'Create', msn_lead:'What would you like to do?', msn_newEntry:'New day entry', msn_newEntryS:'Sales, deductions and الموازنات for a day',
+      msn_send:'Send cash', msn_sendS:'Hand your cash to the next level', msn_deposit:'Bank deposit', msn_depositS:'Bank what you hold, with the slip photo',
+      msn_validate:'Validate requests', msn_validateS:'Check area requests before the collector', msn_upload:'Area upload', msn_uploadS:'Send a whole area day from Excel',
+      msn_risk:'Report a problem', msn_riskS:'Put a risk or complaint on record', msn_me:'Profile', msn_menu:'Main menu',
+      mss_you:'You', mss_title:'Waiting on you', mss_clear:'All clear',
+      mss_confirm_receipt:'To receive', mss_deputy_validate:'To validate', mss_deputy_batch:'Batches', mss_returned_fix:'Returned', mss_batch_rejected:'Rejected',
+      mss_send_ready:'Ready to send', mss_car_handover:'Car day', mss_dispute_open:'Disputes', mss_second_approval:'2nd approval', mss_deposit_due:'To bank', mss_risk_high:'Risks',
+      msv_next:'Next', msv_prev:'Previous', msv_of:'{i} of {n}', msv_close:'Close', msv_hint:'Tap the sides to move, swipe down to close',
+      msf_title:'Recent activity', msf_more:'Load more', msf_open:'Open', msf_receive:'Receive', msf_slip:'Slip attached', msf_empty:'No handovers yet. They will show here as they happen.',
+      msf_to:'to', msf_swipe:'Swipe for quick actions',
+      msr_pull:'Pull to refresh', msr_release:'Release to refresh', msr_loading:'Refreshing',
+      msp_sent:'Sent', msp_received:'Received', msp_banked:'Banked', msp_month:'This month', msp_recent:'Recent handovers', msp_screens:'Your screens', msp_none:'Nothing yet this month',
+      msc_title:'Slip photo', msc_hint:'Fit the whole slip inside the frame', msc_shutter:'Take photo', msc_gallery:'Choose from gallery', msc_flash:'Flash',
+      msc_retake:'Retake', msc_use:'Use photo', msc_noCam:'The live camera is not available here. The shutter opens your camera.' },
+    ar: { msn_create:'إنشاء', msn_title:'إنشاء', msn_lead:'ماذا تريد أن تفعل؟', msn_newEntry:'إدخال يوم جديد', msn_newEntryS:'المبيعات والخصومات والموازنات ليوم',
+      msn_send:'إرسال النقدية', msn_sendS:'سلّم نقديتك للمستوى التالي', msn_deposit:'إيداع بنكي', msn_depositS:'أودِع ما لديك مع صورة الإيصال',
+      msn_validate:'اعتماد الطلبات', msn_validateS:'راجع طلبات المناطق قبل المُحصّل', msn_upload:'رفع المنطقة', msn_uploadS:'أرسل يوم منطقة كاملة من ملف Excel',
+      msn_risk:'الإبلاغ عن مشكلة', msn_riskS:'سجّل خطرًا أو شكوى', msn_me:'حسابي', msn_menu:'القائمة الرئيسية',
+      mss_you:'أنت', mss_title:'بانتظارك', mss_clear:'لا شيء معلّق',
+      mss_confirm_receipt:'للاستلام', mss_deputy_validate:'للاعتماد', mss_deputy_batch:'دفعات', mss_returned_fix:'مُعاد', mss_batch_rejected:'مرفوض',
+      mss_send_ready:'جاهز للإرسال', mss_car_handover:'يوم السيارة', mss_dispute_open:'نزاعات', mss_second_approval:'موافقة ثانية', mss_deposit_due:'للإيداع', mss_risk_high:'مخاطر',
+      msv_next:'التالي', msv_prev:'السابق', msv_of:'{i} من {n}', msv_close:'إغلاق', msv_hint:'المس الجانبين للتنقل، واسحب للأسفل للإغلاق',
+      msf_title:'آخر النشاط', msf_more:'عرض المزيد', msf_open:'فتح', msf_receive:'استلم', msf_slip:'إيصال مرفق', msf_empty:'لا توجد تسليمات بعد. ستظهر هنا عند حدوثها.',
+      msf_to:'إلى', msf_swipe:'اسحب للإجراءات السريعة',
+      msr_pull:'اسحب للتحديث', msr_release:'أفلِت للتحديث', msr_loading:'جارٍ التحديث',
+      msp_sent:'أُرسل', msp_received:'استُلم', msp_banked:'أُودع', msp_month:'هذا الشهر', msp_recent:'آخر التسليمات', msp_screens:'شاشاتك', msp_none:'لا شيء هذا الشهر بعد',
+      msc_title:'صورة الإيصال', msc_hint:'اجعل الإيصال كاملًا داخل الإطار', msc_shutter:'التقط صورة', msc_gallery:'اختر من المعرض', msc_flash:'الفلاش',
+      msc_retake:'إعادة', msc_use:'استخدم الصورة', msc_noCam:'الكاميرا المباشرة غير متاحة هنا. زر الالتقاط يفتح الكاميرا.' },
+    ur: { msn_create:'بنائیں', msn_title:'بنائیں', msn_lead:'آپ کیا کرنا چاہتے ہیں؟', msn_newEntry:'نئے دن کا اندراج', msn_newEntryS:'ایک دن کی فروخت، کٹوتیاں اور الموازنات',
+      msn_send:'نقدی بھیجیں', msn_sendS:'اپنی نقدی اگلی سطح کو دیں', msn_deposit:'بینک جمع', msn_depositS:'رسید کی تصویر کے ساتھ جمع کرائیں',
+      msn_validate:'درخواستوں کی منظوری', msn_validateS:'کلکٹر سے پہلے ایریا کی درخواستیں دیکھیں', msn_upload:'ایریا اپ لوڈ', msn_uploadS:'Excel سے پورے ایریا کا دن بھیجیں',
+      msn_risk:'مسئلہ رپورٹ کریں', msn_riskS:'خطرہ یا شکایت درج کریں', msn_me:'پروفائل', msn_menu:'مرکزی مینو',
+      mss_you:'آپ', mss_title:'آپ کے منتظر', mss_clear:'سب صاف',
+      mss_confirm_receipt:'وصولی', mss_deputy_validate:'منظوری', mss_deputy_batch:'بیچ', mss_returned_fix:'واپس', mss_batch_rejected:'مسترد',
+      mss_send_ready:'بھیجنے کو تیار', mss_car_handover:'گاڑی کا دن', mss_dispute_open:'تنازعات', mss_second_approval:'دوسری منظوری', mss_deposit_due:'جمع کرانا', mss_risk_high:'خطرات',
+      msv_next:'اگلا', msv_prev:'پچھلا', msv_of:'{n} میں سے {i}', msv_close:'بند کریں', msv_hint:'آگے پیچھے کے لیے کناروں کو چھوئیں، بند کرنے کے لیے نیچے کھینچیں',
+      msf_title:'حالیہ سرگرمی', msf_more:'مزید دیکھیں', msf_open:'کھولیں', msf_receive:'وصول کریں', msf_slip:'رسید منسلک', msf_empty:'ابھی کوئی حوالگی نہیں۔ ہوتے ہی یہاں نظر آئیں گی۔',
+      msf_to:'کو', msf_swipe:'فوری کاموں کے لیے سوائپ کریں',
+      msr_pull:'تازہ کرنے کے لیے کھینچیں', msr_release:'تازہ کرنے کے لیے چھوڑیں', msr_loading:'تازہ ہو رہا ہے',
+      msp_sent:'بھیجا', msp_received:'وصول کیا', msp_banked:'جمع کرایا', msp_month:'اس مہینے', msp_recent:'حالیہ حوالگیاں', msp_screens:'آپ کی اسکرینیں', msp_none:'اس مہینے ابھی کچھ نہیں',
+      msc_title:'رسید کی تصویر', msc_hint:'پوری رسید فریم کے اندر رکھیں', msc_shutter:'تصویر لیں', msc_gallery:'گیلری سے چنیں', msc_flash:'فلیش',
+      msc_retake:'دوبارہ', msc_use:'تصویر استعمال کریں', msc_noCam:'یہاں براہِ راست کیمرہ دستیاب نہیں۔ بٹن آپ کا کیمرہ کھولتا ہے۔' }
+  };
+  Object.keys(add).forEach(function(lang){ Object.keys(add[lang]).forEach(function(k){ L[lang][k] = add[lang][k]; }); });
+})();
+var MS_COMPANY_ = ['admin','finance','accountant','operations_manager','deputy_operations_manager'];
+function msNavKeys_(){ return navItemsForRole_().map(function(it){ return it[0]; }); }
+// tab label: the short phone name when there is one
+function msTabLabel_(k){ var it = navItemsForRole_().filter(function(x){ return x[0] === k; })[0]; return t(L.en['navs_' + k] ? 'navs_' + k : (it ? it[1] : 'nav_' + k)); }
+// the four screens on the bar: Home, the role's main list, then a second one; the fifth slot is the profile
+function msTabs_(){
+  var keys = msNavKeys_(), role = state.user.role, branch = ['store_manager','driver','branch_worker'].indexOf(role) >= 0;
+  var a = branch && keys.indexOf('entries') >= 0 ? 'entries' : 'handoffs';
+  var b = a === 'entries' ? 'handoffs' : (MS_COMPANY_.indexOf(role) >= 0 && keys.indexOf('dashboard') >= 0 ? 'dashboard' : 'collections');
+  return ['home', a, b].filter(function(k){ return keys.indexOf(k) >= 0; });
+}
+// what the centre button offers this role: only screens and forms it already has
+function msCreateActions_(){
+  var keys = msNavKeys_(), role = state.user.role, out = [];
+  function has(k){ return keys.indexOf(k) >= 0; }
+  if (has('entries') && ['admin','store_manager','cluster_manager','branch_worker','driver'].indexOf(role) >= 0)
+    out.push({ k:'newEntry', icon:'pencilEdit', tone:'rcv', go:function(){ state.entryView = 'new'; if (state.screen === 'entries') render(); else goScreen_('entries'); } });
+  if (has('handoffs') && ['driver','store_manager','cluster_manager'].indexOf(role) >= 0)
+    out.push({ k:'send', icon:'paperPlane', tone:'send', go:function(){ goScreen_('handoffs'); pendScroll_('.ho-send, #hCreateClu, #screenBody .card h2', 0); } });
+  if (role === 'collector') out.push({ k:'deposit', icon:'bank', tone:'bank', go:function(){ chDepositSheet_(0); } });
+  else if (role === 'admin' && has('handoffs')) out.push({ k:'deposit', icon:'bank', tone:'bank', go:function(){ goScreen_('handoffs'); pendScroll_('#hDeposit', 0); } });
+  if (has('deputyReview')) out.push({ k:'validate', icon:'check', tone:'val', go:function(){ goScreen_('deputyReview'); } });
+  if (has('areaBulk')) out.push({ k:'upload', icon:'doc', tone:'fix', go:function(){ goScreen_('areaBulk'); } });
+  if (has('risk')) out.push({ k:'risk', icon:'alert', tone:'bad', go:function(){ goScreen_('risk'); } });
+  return out;
+}
+// One bottom sheet for the phone layer: backdrop, grab handle, drag down / Escape / backdrop to close.
+function msSheet_(o){
+  var old = qs('.ms-sheet'); if (old && old._close) old._close(true);
+  var sh = el('<div class="ms-sheet'+(o.cls ? ' ' + o.cls : '')+'" role="dialog" aria-modal="true" aria-label="'+esc(o.label || '')+'">' +
+    '<div class="ms-sheet-bg"></div><section class="ms-sheet-p"><div class="ms-grab" aria-hidden="true"><i></i></div>' +
+    (o.title ? '<div class="ms-sheet-h"><div><h2>'+esc(o.title)+'</h2>'+(o.lead ? '<small>'+esc(o.lead)+'</small>' : '')+'</div>' +
+      '<button type="button" class="act-x ms-sheet-x" aria-label="'+esc(t('act_close'))+'">'+icon_('close')+'</button></div>' : '') +
+    '<div class="ms-sheet-b"></div></section></div>');
+  var opener = document.activeElement;
+  function onKey(e){ if (e.key === 'Escape') close(); }
+  function close(now){
+    if (sh._gone) return; sh._gone = true;
+    document.removeEventListener('keydown', onKey);
+    if (o.onClose) try { o.onClose(); } catch (e) {}
+    sh.classList.add('out');
+    setTimeout(function(){ sh.remove(); }, now || msStill_() ? 0 : 220);
+    if (opener && opener.focus && !now) try { opener.focus({ preventScroll: true }); } catch (e) {}
+  }
+  sh._close = close;
+  document.addEventListener('keydown', onKey);
+  qs('.ms-sheet-bg', sh).addEventListener('click', function(){ close(); });
+  var x = qs('.ms-sheet-x', sh); if (x) x.addEventListener('click', function(){ close(); });
+  msSheetDrag_(qs('.ms-sheet-p', sh), [qs('.ms-grab', sh), qs('.ms-sheet-h', sh)], function(){ close(); });
+  o.build(qs('.ms-sheet-b', sh), close);
+  document.body.appendChild(sh);
+  setTimeout(function(){ var f = qs('.ms-sheet-b button, .ms-sheet-x', sh); if (f) try { f.focus({ preventScroll: true }); } catch (e) {} }, 80);
+  return close;
+}
+function msCreateOpen_(){
+  var acts = msCreateActions_();
+  msSheet_({ cls: 'ms-create', title: t('msn_title'), lead: t('msn_lead'), label: t('msn_title'), build: function(b, close){
+    var g = el('<div class="msn-list"></div>');
+    acts.forEach(function(a, i){
+      var btn = el('<button type="button" class="msn-it" data-tone="'+a.tone+'" style="--i:'+i+'"><span class="msn-ic">'+icon_(a.icon)+'</span>' +
+        '<span class="msn-t"><b>'+esc(t('msn_' + a.k))+'</b><small>'+esc(t('msn_' + a.k + 'S'))+'</small></span><span class="msn-ch">'+icon_('chevron')+'</span></button>');
+      btn.addEventListener('click', function(){ msBuzz_(8); close(true); a.go(); });
+      g.appendChild(btn);
+    });
+    b.appendChild(g);
+  } });
+}
+// The tab bar: Home, the role's list, a centre create button, a second screen, and the profile.
+var MS_SCROLL_ = { y: 0, on: false, raf: 0 };
+function msTabBar_(navItems, badge, justNavigated){
+  var tabs = msTabs_(), keys = msNavKeys_(), here = state.screen;
+  var meOn = tabs.indexOf(here) < 0;
+  function tab(k){
+    return '<button type="button" class="ms-tb'+(here === k ? ' on' : '')+'" data-k="'+esc(k)+'"'+(here === k ? ' aria-current="page"' : '')+'>' +
+      '<span class="ms-tb-ic">'+icon_(k)+(k === 'handoffs' ? badge : '')+'</span><span class="ms-tb-l">'+esc(msTabLabel_(k))+'</span></button>';
+  }
+  var bar = el('<nav class="ms-tab'+(justNavigated ? ' nav' : '')+'" aria-label="'+esc(t('msn_menu'))+'"><div class="ms-tab-in">' +
+    (tabs[0] ? tab(tabs[0]) : '') + (tabs[1] ? tab(tabs[1]) : '') +
+    '<button type="button" class="ms-plus" aria-haspopup="dialog" aria-label="'+esc(t('msn_create'))+'"><span class="ms-plus-in">'+icon_('plus')+'</span></button>' +
+    (tabs[2] ? tab(tabs[2]) : '') +
+    '<button type="button" class="ms-tb ms-me'+(meOn ? ' on' : '')+'" aria-haspopup="dialog"'+(meOn ? ' aria-current="page"' : '')+'><span class="ms-tb-ic"><span class="ms-me-av">'+esc(initials_(state.user.name))+'</span></span>' +
+      '<span class="ms-tb-l">'+esc(meOn && keys.indexOf(here) >= 0 ? msTabLabel_(here) : t('msn_me'))+'</span></button>' +
+  '</div></nav>');
+  qsa('.ms-tb[data-k]', bar).forEach(function(b){ b.addEventListener('click', function(){ goScreen_(b.getAttribute('data-k')); }); });
+  qs('.ms-plus', bar).addEventListener('click', function(){ msBuzz_(10); msCreateOpen_(); });
+  qs('.ms-me', bar).addEventListener('click', function(){ msProfileOpen_(); });
+  // hides while reading down the page, comes back on the way up
+  if (!MS_SCROLL_.on) {
+    MS_SCROLL_.on = true; MS_SCROLL_.y = window.scrollY;
+    window.addEventListener('scroll', function(){
+      if (MS_SCROLL_.raf) return;
+      MS_SCROLL_.raf = requestAnimationFrame(function(){
+        MS_SCROLL_.raf = 0;
+        var y = window.scrollY, d = y - MS_SCROLL_.y, nb = qs('.ms-tab');
+        if (Math.abs(d) < 8) return;
+        if (nb) nb.classList.toggle('hide', d > 0 && y > 120 && !qs('.ms-sheet, .pa-ov, .dr.open'));
+        MS_SCROLL_.y = y;
+      });
+    }, { passive: true });
+  }
+  return bar;
+}
+
+// ---- stories: one circle per kind of thing waiting, plus "You" ----
+var MS_SEEN_KEY_ = 'bgc_msSeen';
+function msSeen_(){ try { return JSON.parse(sessionStorage.getItem(MS_SEEN_KEY_) || '{}') || {}; } catch (e) { return {}; } }
+function msSeeIt_(ids){ var s = msSeen_(); ids.forEach(function(id){ s[id] = 1; }); try { sessionStorage.setItem(MS_SEEN_KEY_, JSON.stringify(s)); } catch (e) {} }
+function msStoryGroups_(){
+  var items = (state.pend && state.pend.items) || [], by = {}, order = [];
+  items.forEach(function(it){ if (!by[it.kind]) { by[it.kind] = []; order.push(it.kind); } by[it.kind].push(it); });
+  return order.map(function(k){ return { kind: k, items: by[k] }; });
+}
+function msStoriesPaint_(){
+  var host = qs('#msStories');
+  if (!host || !state.user) return;
+  var groups = msStoryGroups_(), seen = msSeen_(), still = msStill_();
+  host.innerHTML = '';
+  var row = el('<div class="ms-stories" role="list" aria-label="'+esc(t('mss_title'))+'"></div>');
+  var me = el('<div role="listitem"><button type="button" class="ms-story ms-story-me" data-tone="send"><span class="ms-sr"><span class="ms-sr-ring"></span><span class="ms-sr-face">'+esc(initials_(state.user.name))+'</span>' +
+    '<span class="ms-sr-plus" aria-hidden="true">'+icon_('plus')+'</span></span><span class="ms-sl">'+esc(t('mss_you'))+'</span></button></div>');
+  qs('button', me).setAttribute('aria-label', t('msn_create'));
+  qs('button', me).addEventListener('click', msCreateOpen_);
+  row.appendChild(me);
+  groups.forEach(function(g, i){
+    var unseen = g.items.some(function(it){ return !seen[it.refId || it.kind]; });
+    var total = g.items.reduce(function(s, it){ return s + (Number(it.amount) > 0 && it.kind !== 'risk_high' ? Number(it.amount) : 0); }, 0);
+    var b = el('<div role="listitem"><button type="button" class="ms-story'+(unseen ? ' new' : ' seen')+(still ? '' : ' spin')+'" data-tone="'+(MS_TONE_[g.kind] || 'val')+'" style="--i:'+(i + 1)+'">' +
+      '<span class="ms-sr"><span class="ms-sr-ring"></span><span class="ms-sr-face">'+icon_(PEND_ICON_[g.kind] || 'alert')+'</span>' +
+      (g.items.length > 1 ? '<span class="ms-sr-n num">'+g.items.length+'</span>' : '') + '</span>' +
+      '<span class="ms-sl">'+esc(t('mss_' + g.kind))+'</span></button></div>');
+    qs('button', b).setAttribute('aria-label', t('mss_' + g.kind) + ': ' + g.items.length + (total ? ', ' + money(total) + ' ' + t('ui_sar') : ''));
+    qs('button', b).addEventListener('click', function(){ msStoryOpen_(g.kind); });
+    row.appendChild(b);
+  });
+  if (!groups.length) row.appendChild(el('<div role="listitem" class="ms-story-clear"><span class="ms-sc-ic" aria-hidden="true">'+icon_('check')+'</span><span>'+esc(t('mss_clear'))+'</span></div>'));
+  host.appendChild(row);
+}
+// The story viewer: one card per waiting item, progress bars on top, tap a side to move
+// (mirrored in Arabic and Urdu), swipe down to close. It never moves on by itself.
+function msStoryOpen_(kind){
+  var items = (state.pend && state.pend.items) || [];
+  if (!items.length) return;
+  var start = 0; for (var s = 0; s < items.length; s++) if (items[s].kind === kind) { start = s; break; }
+  var idx = start, rtl = document.documentElement.dir === 'rtl';
+  var ov = el('<div class="ms-sv" role="dialog" aria-modal="true" aria-label="'+esc(t('mss_title'))+'"><div class="ms-sv-bars" aria-hidden="true">' +
+    items.map(function(){ return '<i><b></b></i>'; }).join('') + '</div>' +
+    '<div class="ms-sv-top"><span class="ms-sv-who"><span class="ms-sv-av">'+esc(initials_(state.user.name))+'</span><span><b>'+esc(t('mss_title'))+'</b><small class="ms-sv-of" aria-live="polite"></small></span></span>' +
+      '<button type="button" class="ms-sv-x" aria-label="'+esc(t('msv_close'))+'">'+icon_('close')+'</button></div>' +
+    '<div class="ms-sv-stage"><button type="button" class="ms-sv-tap prev" aria-label="'+esc(t('msv_prev'))+'"></button><button type="button" class="ms-sv-tap next" aria-label="'+esc(t('msv_next'))+'"></button><div class="ms-sv-card"></div></div>' +
+    '<p class="ms-sv-hint">'+esc(t('msv_hint'))+'</p></div>');
+  var card = qs('.ms-sv-card', ov), bars = qsa('.ms-sv-bars i', ov), opener = document.activeElement;
+  function paint(dir){
+    var it = items[idx], place = pendPlace_(it), tone = MS_TONE_[it.kind] || 'val';
+    var amt = it.amount != null && Number(it.amount) > 0 && it.kind !== 'risk_high' ? money(it.amount) : '';
+    var verb = L.en['act_v_' + it.kind] ? t('act_v_' + it.kind) : t('pa_go');
+    bars.forEach(function(b, i){ b.className = i < idx ? 'done' : i === idx ? 'now' : ''; });
+    qs('.ms-sv-of', ov).textContent = pendFill_(t('msv_of'), { i: idx + 1, n: items.length });
+    card.setAttribute('data-tone', tone);
+    card.innerHTML = '<div class="ms-sv-k"><span class="ms-sv-ic">'+icon_(PEND_ICON_[it.kind] || 'alert')+'</span><span>'+esc(t('mss_' + it.kind))+'</span></div>' +
+      (amt ? '<div class="ms-sv-amt num"><bdi dir="ltr">'+amt+'</bdi><small>'+esc(t('ui_sar'))+'</small></div>' : '') +
+      '<p class="ms-sv-s">'+esc(pendFill_(t('pa_' + it.kind), { n: it.count || 1 }))+'</p>' +
+      '<p class="ms-sv-m">'+(place ? '<bdi>'+esc(place)+'</bdi>' : '')+(place && it.since ? ' · ' : '')+(it.since ? esc(relTime_(it.since)) : '')+'</p>' +
+      '<button type="button" class="ms-sv-go">'+esc(verb)+'</button>';
+    qs('.ms-sv-go', card).addEventListener('click', function(){ msBuzz_(8); close(true); pendGo_(it); });
+    card.classList.remove('in-n', 'in-p'); void card.offsetWidth; if (dir) card.classList.add(dir > 0 ? 'in-n' : 'in-p');
+    msSeeIt_([it.refId || it.kind]);
+  }
+  function go(d){ var n = idx + d; if (n < 0 || n >= items.length) { if (n >= items.length) close(); return; } idx = n; paint(d); }
+  function onKey(e){
+    if (e.key === 'Escape') close();
+    else if (e.key === 'ArrowRight') go(rtl ? -1 : 1);
+    else if (e.key === 'ArrowLeft') go(rtl ? 1 : -1);
+  }
+  function close(keepFocus){
+    if (ov._gone) return; ov._gone = true;
+    document.removeEventListener('keydown', onKey);
+    ov.classList.add('out'); setTimeout(function(){ ov.remove(); }, msStill_() ? 0 : 220);
+    msStoriesPaint_();
+    if (!keepFocus && opener && opener.focus) try { opener.focus({ preventScroll: true }); } catch (e) {}
+  }
+  qs('.ms-sv-x', ov).addEventListener('click', function(){ close(); });
+  qs('.ms-sv-tap.next', ov).addEventListener('click', function(){ go(1); });
+  qs('.ms-sv-tap.prev', ov).addEventListener('click', function(){ go(-1); });
+  // swipe down closes; the stage follows the finger
+  var y0 = null, dy = 0, stage = qs('.ms-sv-stage', ov);
+  ov.addEventListener('pointerdown', function(e){ if (e.target.closest('.ms-sv-go, .ms-sv-x')) return; y0 = e.clientY; dy = 0; });
+  ov.addEventListener('pointermove', function(e){ if (y0 === null) return; dy = Math.max(0, e.clientY - y0); if (dy > 6) stage.style.transform = 'translate3d(0,' + dy + 'px,0) scale(' + Math.max(.9, 1 - dy / 1600) + ')'; }, { passive: true });
+  ov.addEventListener('pointerup', function(e){ if (y0 === null) return; var d = dy; y0 = null; if (d > 100) { e.preventDefault(); close(); } else stage.style.transform = ''; if (d > 10) ov._swallow = true; });
+  ov.addEventListener('click', function(e){ if (ov._swallow) { ov._swallow = false; e.stopPropagation(); e.preventDefault(); } }, true);
+  document.addEventListener('keydown', onKey);
+  document.body.appendChild(ov);
+  paint(0);
+  setTimeout(function(){ try { qs('.ms-sv-go', ov).focus({ preventScroll: true }); } catch (e) {} }, 80);
+}
+
+// ---- the home feed: recent handovers as posts ----
+function msPostTone_(h){ return h.status === 'disputed' || h.status === 'rejected' ? 'bad' : h.status === 'returned' ? 'fix' : h.kind === 'deposit' ? 'bank' : h.status === 'confirmed' ? 'send' : 'rcv'; }
+function msPost_(h, i){
+  var me = state.user.id, from = userName(h.fromUserId), to = h.kind === 'deposit' ? t('kind_deposit') : userName(h.toUserId);
+  var place = h.locationId ? locationName(h.locationId) : (h.clusterId && typeof clusterName === 'function' ? clusterName(h.clusterId) : '');
+  var canRecv = h.status === 'pending' && h.toUserId === me && h.kind !== 'deposit';
+  var st = h.kind === 'deposit' && h.status !== 'voided' ? t('st_deposited') : t('handoff_' + h.status);
+  var slip = h.attachmentId || h.slipFileId || h.fileId;
+  var post = el('<article class="ms-post" data-tone="'+msPostTone_(h)+'" style="--i:'+Math.min(i, 6)+'">' +
+    '<div class="ms-post-acts" aria-hidden="true"><span class="ms-pa open">'+icon_('eye')+'<small>'+esc(t('msf_open'))+'</small></span>' +
+      (canRecv ? '<span class="ms-pa recv">'+icon_('check')+'<small>'+esc(t('msf_receive'))+'</small></span>' : '') + '</div>' +
+    '<div class="ms-post-in">' +
+      '<div class="ms-post-h"><span class="ms-post-av"><span>'+esc(initials_(from))+'</span></span>' +
+        '<span class="ms-post-who"><b><bdi>'+esc(from)+'</bdi></b><small><span>'+esc(t('msf_to'))+'</span> <bdi>'+esc(to)+'</bdi> · <time>'+esc(relTime_(h.createdAt))+'</time></small></span>' +
+        '<span class="ms-post-st">'+esc(st)+'</span></div>' +
+      '<div class="ms-post-b"><div class="ms-post-amt num"><bdi dir="ltr">'+money(h.amount)+'</bdi><small>'+esc(t('ui_sar'))+'</small></div>' +
+        '<div class="ms-post-k">'+icon_(h.kind === 'deposit' ? 'bank' : 'handoffs')+'<span>'+esc(t('kind_' + h.kind))+'</span>'+(place ? '<i aria-hidden="true">·</i><bdi>'+esc(place)+'</bdi>' : '')+'</div>' +
+        (slip ? '<span class="ms-post-slip">'+icon_('doc')+esc(t('msf_slip'))+'</span>' : '') + '</div>' +
+      '<div class="ms-post-f"><button type="button" class="ms-post-open">'+esc(t('msf_open'))+'</button>' +
+        (canRecv ? '<button type="button" class="ms-post-recv">'+icon_('check')+esc(t('msf_receive'))+'</button>' : '') + '</div>' +
+    '</div></article>');
+  function open(){ try { drawerOpen_(handoffDocView_(h)); } catch (e) { HO_OPEN_ = h.id; goScreen_('handoffs', true); } }
+  function recv(){ pendGo_({ kind: 'confirm_receipt', refId: h.id }); }
+  qs('.ms-post-open', post).addEventListener('click', open);
+  var rb = qs('.ms-post-recv', post); if (rb) rb.addEventListener('click', recv);
+  // swipe sideways reveals the same two actions; past the line it runs the first one
+  var inner = qs('.ms-post-in', post), x0 = null, y0 = 0, dx = 0, lock = null;
+  post.addEventListener('pointerdown', function(e){ if (e.pointerType === 'mouse' || e.target.closest('button')) return; x0 = e.clientX; y0 = e.clientY; dx = 0; lock = null; });
+  post.addEventListener('pointermove', function(e){
+    if (x0 === null) return;
+    var mx = e.clientX - x0, my = e.clientY - y0;
+    if (lock === null && (Math.abs(mx) > 10 || Math.abs(my) > 10)) lock = Math.abs(mx) > Math.abs(my) ? 'x' : 'y';
+    if (lock !== 'x') return;
+    dx = Math.max(-110, Math.min(110, mx));
+    inner.style.transform = 'translate3d(' + dx + 'px,0,0)';
+    post.classList.toggle('reveal', Math.abs(dx) > 30);
+  }, { passive: true });
+  function end(){
+    if (x0 === null) return; x0 = null;
+    inner.style.transform = ''; post.classList.remove('reveal');
+    if (lock === 'x' && Math.abs(dx) > 90) { msBuzz_(10); if (canRecv) recv(); else open(); }
+  }
+  post.addEventListener('pointerup', end); post.addEventListener('pointercancel', end);
+  return post;
+}
+function msFeed_(body, handoffs){
+  if (!msPhone_() || !body.isConnected) return;
+  var host = el('<section class="ms-feed" aria-label="'+esc(t('msf_title'))+'"><div class="ms-feed-h" role="heading" aria-level="2">'+esc(t('msf_title'))+'<small>'+esc(t('msf_swipe'))+'</small></div><div class="ms-feed-l"></div></section>');
+  var list = qs('.ms-feed-l', host);
+  for (var k = 0; k < 2; k++) list.appendChild(el('<div class="ms-post sk" aria-hidden="true"><div class="ms-post-in"><i></i><i></i><i></i></div></div>'));
+  body.appendChild(host);
+  function draw(all){
+    all = (all || []).filter(function(h){ return h.status !== 'voided'; }).sort(function(a, b){ return String(b.createdAt || '').localeCompare(String(a.createdAt || '')); });
+    list.innerHTML = '';
+    if (!all.length) { list.appendChild(el('<p class="ms-feed-empty">'+esc(t('msf_empty'))+'</p>')); return; }
+    var shown = 0;
+    function more(){
+      all.slice(shown, shown + 8).forEach(function(h, i){ list.appendChild(msPost_(h, i)); });
+      shown += 8;
+      var mb = qs('.ms-feed-more', host); if (mb) mb.remove();
+      if (shown < all.length) {
+        var b = el('<button type="button" class="ms-feed-more">'+esc(t('msf_more'))+'</button>');
+        b.addEventListener('click', more); host.appendChild(b);
+      }
+    }
+    more();
+  }
+  if (handoffs) draw(handoffs);
+  else api('listHandoffs', {}, { silent: true }).then(function(r){ if (host.isConnected) draw(r && r.ok ? r.handoffs : []); });
+}
+// Pull to refresh on Home: the brand emblem turns while the screen reloads.
+var MS_PTR_ON_ = false;
+function msPtr_(){
+  if (MS_PTR_ON_) return; MS_PTR_ON_ = true;
+  var y0 = null, d = 0, ind = null;
+  function el_(){ ind = qs('#msPtr'); return ind; }
+  document.addEventListener('touchstart', function(e){
+    if (!msPhone_() || state.screen !== 'home' || window.scrollY > 0 || qs('.ms-sheet, .pa-ov, .ms-sv, .dr.open') || !el_()) { y0 = null; return; }
+    y0 = e.touches[0].clientY; d = 0;
+  }, { passive: true });
+  document.addEventListener('touchmove', function(e){
+    if (y0 === null || !ind) return;
+    d = Math.max(0, Math.min(110, (e.touches[0].clientY - y0) * .55));
+    ind.style.transform = 'translate3d(-50%,' + (d - 56) + 'px,0) rotate(' + (d * 3) + 'deg)';
+    ind.style.opacity = Math.min(1, d / 60);
+    ind.setAttribute('aria-label', t(d > 70 ? 'msr_release' : 'msr_pull'));
+  }, { passive: true });
+  document.addEventListener('touchend', function(){
+    if (y0 === null || !ind) return; y0 = null;
+    if (d > 70) {
+      ind.classList.add('spin'); ind.setAttribute('aria-label', t('msr_loading')); msBuzz_(10);
+      state.pendDirty = true;
+      setTimeout(function(){ render(); refreshPending_({ force: true }); }, 350);
+    } else { ind.style.transform = ''; ind.style.opacity = ''; }
+  }, { passive: true });
+}
+
+// ---- profile (Instagram): who, three counters for this month, recent handovers, every screen ----
+function msProfileOpen_(){
+  var u = state.user, keys = navItemsForRole_();
+  msSheet_({ cls: 'ms-prof', label: t('msn_me'), build: function(b, close){
+    var city = (typeof myCityLabel_ === 'function' && myCityLabel_()) || '';
+    var head = el('<div class="msp-head"><span class="msp-av"><span class="msp-ring"></span><span class="msp-face">'+esc(initials_(u.name))+'</span></span>' +
+      '<div class="msp-id"><h2>'+esc(u.name)+'</h2><small>'+esc(roleLabel(u.role))+(city ? ' · ' + esc(city) : '')+'</small></div>' +
+      '<button type="button" class="act-x msp-x" aria-label="'+esc(t('act_close'))+'">'+icon_('close')+'</button></div>');
+    qs('.msp-x', head).addEventListener('click', function(){ close(); });
+    b.appendChild(head);
+    var stats = el('<div class="msp-stats" role="group" aria-label="'+esc(t('msp_month'))+'"><div class="msp-st sk"></div><div class="msp-st sk"></div><div class="msp-st sk"></div></div>');
+    b.appendChild(stats);
+    b.appendChild(el('<p class="msp-cap">'+esc(t('msp_month'))+'</p>'));
+    var recent = el('<section class="msp-sec"><h3>'+esc(t('msp_recent'))+'</h3><div class="msp-grid"></div></section>');
+    b.appendChild(recent);
+    var scr = el('<section class="msp-sec"><h3>'+esc(t('msp_screens'))+'</h3><div class="msp-screens"></div></section>');
+    keys.forEach(function(it, i){
+      var tb = el('<button type="button" class="msp-scr'+(state.screen === it[0] ? ' on' : '')+'" style="--i:'+Math.min(i, 10)+'"'+(state.screen === it[0] ? ' aria-current="page"' : '')+'><span class="msp-scr-ic">'+icon_(it[0])+'</span><span>'+esc(t(it[1]))+'</span></button>');
+      tb.addEventListener('click', function(){ close(true); goScreen_(it[0]); });
+      qs('.msp-screens', scr).appendChild(tb);
+    });
+    b.appendChild(scr);
+    var lang = el('<section class="msp-sec"><h3>'+esc(t('ui_language'))+'</h3><div class="msp-lang" role="group">' + LANGS_.map(function(l){
+      return '<button type="button" data-l="'+l[0]+'" class="'+(state.lang === l[0] ? 'on' : '')+'" aria-pressed="'+(state.lang === l[0])+'" dir="'+l[4]+'">'+esc(l[2])+'</button>'; }).join('') + '</div></section>');
+    qsa('button[data-l]', lang).forEach(function(btn){ btn.addEventListener('click', function(){ var l = btn.getAttribute('data-l'); close(true); setLang(l); api('setLanguage', { language: l }, { silent: true }); render(); }); });
+    b.appendChild(lang);
+    var out = el('<button type="button" class="msp-out">'+icon_('logout')+'<span>'+esc(t('logout'))+'</span></button>');
+    out.addEventListener('click', function(){ close(true); logout(); });
+    b.appendChild(out);
+    b.appendChild(el('<p class="msp-build"><bdi dir="ltr">'+esc(BUILD_ID)+'</bdi></p>'));
+    api('listHandoffs', {}, { silent: true }).then(function(r){
+      if (!stats.isConnected) return;
+      var all = (r && r.ok ? r.handoffs : []) || [], m = new Date().toISOString().slice(0, 7), me = u.id;
+      function inM(h, f){ return String(h[f] || h.createdAt || '').slice(0, 7) === m; }
+      var sent = all.filter(function(h){ return h.kind !== 'deposit' && h.fromUserId === me && inM(h, 'createdAt') && ['voided','rejected'].indexOf(h.status) < 0; });
+      var recv = all.filter(function(h){ return h.kind !== 'deposit' && h.toUserId === me && h.status === 'confirmed' && inM(h, 'confirmedAt'); });
+      var bank = all.filter(function(h){ return h.kind === 'deposit' && h.fromUserId === me && h.status !== 'voided' && inM(h, 'createdAt'); });
+      function sum(l){ return l.reduce(function(s, h){ return s + Number(h.amount || 0); }, 0); }
+      var rows = [['msp_sent', sent, 'paperPlane'], ['msp_received', recv, 'wallet'], ['msp_banked', bank, 'bank']];
+      var mx = Math.max.apply(null, rows.map(function(x){ return sum(x[1]); }).concat([1]));
+      stats.innerHTML = '';
+      rows.forEach(function(x){
+        var v = sum(x[1]);
+        stats.appendChild(el('<div class="msp-st"><span class="msp-st-ic" aria-hidden="true">'+icon_(x[2])+'</span><b class="num"><bdi dir="ltr">'+money(v)+'</bdi></b>' +
+          '<span>'+esc(t(x[0]))+' · <span class="num">'+x[1].length+'</span></span><i class="msp-bar" aria-hidden="true"><i style="transform:scaleX('+(v / mx).toFixed(3)+')"></i></i></div>'));
+      });
+      var mine = all.filter(function(h){ return (h.fromUserId === me || h.toUserId === me) && h.status !== 'voided'; })
+        .sort(function(a, b){ return String(b.createdAt || '').localeCompare(String(a.createdAt || '')); }).slice(0, 9);
+      var grid = qs('.msp-grid', recent);
+      if (!mine.length) { grid.outerHTML = '<p class="msp-none">'+esc(t('msp_none'))+'</p>'; return; }
+      mine.forEach(function(h, i){
+        var tile = el('<button type="button" class="msp-tile" data-tone="'+msPostTone_(h)+'" style="--i:'+i+'">'+icon_(h.kind === 'deposit' ? 'bank' : 'handoffs') +
+          '<b class="num"><bdi dir="ltr">'+money(h.amount)+'</bdi></b><small>'+esc(h.kind === 'deposit' && h.status !== 'voided' ? t('st_deposited') : t('handoff_' + h.status))+'</small></button>');
+        tile.setAttribute('aria-label', t('kind_' + h.kind) + ', ' + money(h.amount) + ', ' + tile.querySelector('small').textContent);
+        tile.addEventListener('click', function(){ close(true); try { drawerOpen_(handoffDocView_(h)); } catch (e) { HO_OPEN_ = h.id; goScreen_('handoffs', true); } });
+        grid.appendChild(tile);
+      });
+    });
+  } });
+}
+
+// ---- the camera-first slip sheet (Snapchat) ----
+// The deposit and الموازنة photo buttons open a full-screen camera: a live view where the
+// browser allows it (with the flash where the phone has one), a big shutter, the gallery.
+// The chosen photo goes into the screen's own file field and its change event fires, so the
+// existing upload flow (and the deposit-slip work on its own branch) is used unchanged.
+// every slip field is slipField_ (deposit-slip branch, 2026-10-17): its camera button, and
+// retake, open the sheet; the photo lands in its own camera input
+var MS_CAM_BTN_ = '.slipf-cam, .slipf-re';
+function msCamTarget_(btn){
+  var f = btn.closest('.slipf');
+  if (!f) return null;
+  if (btn.classList.contains('slipf-re') && f._msLast === 'gal') return null;
+  return qs('.slipf-in-cam', f);
+}
+// remember whether the last slip came from the gallery, so retake opens the same place
+document.addEventListener('click', function(e){
+  var g = e.target.closest && e.target.closest('.slipf-gal'); if (g) { var f = g.closest('.slipf'); if (f) f._msLast = 'gal'; }
+  var c = e.target.closest && e.target.closest('.slipf-cam'); if (c) { var f2 = c.closest('.slipf'); if (f2) f2._msLast = 'cam'; }
+}, true);
+document.addEventListener('click', function(e){
+  var btn = e.target.closest && e.target.closest(MS_CAM_BTN_);
+  if (!btn || !msPhone_() || btn._msPass) return;
+  var target = msCamTarget_(btn);
+  if (!target || typeof DataTransfer !== 'function') return;
+  e.preventDefault(); e.stopImmediatePropagation();
+  msCamOpen_(target, btn);
+}, true);
+function msCamOpen_(target, btn){
+  var stream = null, track = null, file = null, url = null;
+  var sh = el('<div class="ms-cam" role="dialog" aria-modal="true" aria-label="'+esc(t('msc_title'))+'">' +
+    '<div class="ms-cam-top"><button type="button" class="ms-cam-b ms-cam-x" aria-label="'+esc(t('act_close'))+'">'+icon_('close')+'</button><b>'+esc(t('msc_title'))+'</b>' +
+      '<button type="button" class="ms-cam-b ms-cam-fl" aria-pressed="false" aria-label="'+esc(t('msc_flash'))+'" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg></button></div>' +
+    '<div class="ms-cam-view"><video playsinline muted autoplay></video><img alt="" hidden><span class="ms-cam-frame" aria-hidden="true"><i></i><i></i><i></i><i></i></span>' +
+      '<p class="ms-cam-hint">'+esc(t('msc_hint'))+'</p></div>' +
+    '<div class="ms-cam-bar"><button type="button" class="ms-cam-b ms-cam-gal" aria-label="'+esc(t('msc_gallery'))+'">'+icon_('doc')+'</button>' +
+      '<button type="button" class="ms-cam-shut" aria-label="'+esc(t('msc_shutter'))+'"><i></i></button><span class="ms-cam-sp"></span></div>' +
+    '<div class="ms-cam-bar ms-cam-done" hidden><button type="button" class="ms-cam-retake">'+esc(t('msc_retake'))+'</button><button type="button" class="ms-cam-use">'+icon_('check')+'<span>'+esc(t('msc_use'))+'</span></button></div>' +
+    '<input type="file" accept="image/*" capture="environment" hidden class="ms-cam-in"><input type="file" accept="image/*" hidden class="ms-cam-gin"></div>');
+  var video = qs('video', sh), img = qs('img', sh), hint = qs('.ms-cam-hint', sh), fl = qs('.ms-cam-fl', sh);
+  function stop(){ if (stream) stream.getTracks().forEach(function(tr){ tr.stop(); }); stream = null; track = null; }
+  function close(){ stop(); if (url) URL.revokeObjectURL(url); document.removeEventListener('keydown', onKey); sh.classList.add('out'); setTimeout(function(){ sh.remove(); }, msStill_() ? 0 : 200); try { btn.focus({ preventScroll: true }); } catch (e) {} }
+  function onKey(e){ if (e.key === 'Escape') close(); }
+  function show(f){
+    file = f; if (url) URL.revokeObjectURL(url); url = URL.createObjectURL(f);
+    img.src = url; img.hidden = false; video.hidden = true; sh.classList.add('shot');
+    qs('.ms-cam-bar:not(.ms-cam-done)', sh).hidden = true; qs('.ms-cam-done', sh).hidden = false;
+    try { qs('.ms-cam-use', sh).focus({ preventScroll: true }); } catch (e) {}
+  }
+  function retake(){ file = null; img.hidden = true; video.hidden = !stream; sh.classList.remove('shot'); qs('.ms-cam-bar:not(.ms-cam-done)', sh).hidden = false; qs('.ms-cam-done', sh).hidden = true; }
+  function picked(inp){ var f = inp.files && inp.files[0]; inp.value = ''; if (f) show(f); }
+  qs('.ms-cam-in', sh).addEventListener('change', function(){ picked(this); });
+  qs('.ms-cam-gin', sh).addEventListener('change', function(){ picked(this); });
+  qs('.ms-cam-x', sh).addEventListener('click', close);
+  // the field's own gallery input takes PDFs too, so the gallery goes there
+  qs('.ms-cam-gal', sh).addEventListener('click', function(){
+    var gal = target.closest('.slipf') && qs('.slipf-in-gal', target.closest('.slipf'));
+    if (gal) { var f = target.closest('.slipf'); f._msLast = 'gal'; close(); gal.click(); } else qs('.ms-cam-gin', sh).click();
+  });
+  qs('.ms-cam-retake', sh).addEventListener('click', retake);
+  qs('.ms-cam-shut', sh).addEventListener('click', function(){
+    msBuzz_(14);
+    if (!stream || !video.videoWidth) { qs('.ms-cam-in', sh).click(); return; }
+    var c = document.createElement('canvas'); c.width = video.videoWidth; c.height = video.videoHeight;
+    c.getContext('2d').drawImage(video, 0, 0);
+    sh.classList.remove('flash'); void sh.offsetWidth; sh.classList.add('flash');
+    c.toBlob(function(b){ if (b) show(new File([b], 'slip-' + Date.now() + '.jpg', { type: 'image/jpeg' })); }, 'image/jpeg', .9);
+  });
+  fl.addEventListener('click', function(){
+    if (!track) return; var on = fl.getAttribute('aria-pressed') !== 'true';
+    track.applyConstraints({ advanced: [{ torch: on }] }).then(function(){ fl.setAttribute('aria-pressed', String(on)); fl.classList.toggle('on', on); }).catch(function(){});
+  });
+  qs('.ms-cam-use', sh).addEventListener('click', function(){
+    if (!file) return;
+    try { var dt = new DataTransfer(); dt.items.add(file); target.files = dt.files; target.dispatchEvent(new Event('change', { bubbles: true })); msBuzz_(12); }
+    catch (err) { close(); btn._msPass = true; btn.click(); btn._msPass = false; return; }
+    close();
+  });
+  document.addEventListener('keydown', onKey);
+  document.body.appendChild(sh);
+  setTimeout(function(){ try { qs('.ms-cam-shut', sh).focus({ preventScroll: true }); } catch (e) {} }, 60);
+  if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 } }, audio: false }).then(function(s){
+      if (!sh.isConnected) { s.getTracks().forEach(function(tr){ tr.stop(); }); return; }
+      stream = s; track = s.getVideoTracks()[0]; video.srcObject = s; sh.classList.add('live');
+      try { var cap = track.getCapabilities ? track.getCapabilities() : {}; if (cap.torch) fl.hidden = false; } catch (e) {}
+    }).catch(function(){ hint.textContent = t('msc_noCam'); video.hidden = true; });
+  } else { hint.textContent = t('msc_noCam'); video.hidden = true; }
 }
 
 // An older script without myPendingActions: count the way the bell used to.
@@ -12210,6 +13036,8 @@ function renderHome(body){
       }
     }
     if (splash) setTimeout(function(){ hero.classList.remove('splash'); }, 1000);
+    // phone: the feed of recent handovers closes Home (2026-10-17)
+    msFeed_(body, handoffs);
   }
 }
 
@@ -25955,6 +26783,34 @@ function renderAdminTranslations(content){
 }
 
 // Cut-over (2026-10-13): what collectors still have up to a date, then the admin closes it
+// Data health (2026-10-18): proves on the live data that every hop carries exactly what it was
+// made of. Read-only; the server does the walk (dataHealthCheck).
+var HC_KINDS_ = ['sum', 'deposit', 'link', 'orphan', 'short', 'voided', 'direct', 'day'];
+function healthCard_(){
+  var card = el('<section class="card hc-card no-collapse"><div class="hc-head"><div><h2>'+icon_('check')+'<span>'+esc(t('hc_title'))+'</span></h2>' +
+    '<p class="muted">'+esc(t('hc_hint'))+'</p></div><button type="button" class="btn primary hc-run">'+esc(t('hc_run'))+'</button></div><div class="hc-out"></div></section>');
+  var out = qs('.hc-out', card), btn = qs('.hc-run', card);
+  btn.addEventListener('click', function(){
+    btn.disabled = true; out.innerHTML = '<div class="skeleton" style="height:90px"></div>';
+    api('dataHealthCheck', {}).then(function(r){
+      btn.disabled = false;
+      if (!r || !r.ok) { out.innerHTML = '<div class="msg err">'+esc(errMsg_(r))+'</div>'; return; }
+      var c = r.checked || {}, n = (r.issues || []).length;
+      var head = '<div class="hc-sum'+(n ? ' bad' : ' ok')+'">'+icon_(n ? 'alert' : 'check')+'<div><b>'+esc(n ? t('hc_found').replace('{n}', n) : t('hc_clean'))+'</b>' +
+        '<small>'+esc(colFill_(t('hc_checked'), { h: (c.handovers || 0).toLocaleString('en-US'), d: (c.deposits || 0).toLocaleString('en-US'), e: (c.entries || 0).toLocaleString('en-US') }))+' · '+esc(new Date(r.at).toLocaleString(state.lang === 'en' ? 'en-GB' : 'ar-SA-u-nu-latn'))+'</small></div></div>';
+      if (!n) { out.innerHTML = head; return; }
+      var rows = r.issues.map(function(i){
+        return '<tr><td>'+esc(t('hc_k_' + i.kind))+'</td><td>'+esc(i.txNo || '—')+'</td><td>'+esc(i.status || '')+'</td><td>'+esc(i.msg)+'</td>' +
+          '<td class="num">'+(i.expected == null ? '—' : money(i.expected))+'</td><td class="num">'+(i.actual == null ? '—' : money(i.actual))+'</td><td class="num">'+(i.gap == null ? '—' : money(i.gap))+'</td></tr>';
+      }).join('');
+      out.innerHTML = head + '<div class="tbl-scroll"><table class="rp-table"><thead><tr><th>'+esc(t('hc_kind'))+'</th><th>'+esc(t('hc_no'))+'</th><th>'+esc(t('hc_status'))+'</th><th>'+esc(t('hc_what'))+'</th>' +
+        '<th class="num">'+esc(t('hc_expected'))+'</th><th class="num">'+esc(t('hc_actual'))+'</th><th class="num">'+esc(t('hc_gap'))+'</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+      var sheet = [[t('hc_kind'), t('hc_no'), t('hc_status'), t('hc_what'), t('hc_expected'), t('hc_actual'), t('hc_gap')]].concat(r.issues.map(function(i){ return [t('hc_k_' + i.kind), i.txNo || '', i.status || '', i.msg, i.expected, i.actual, i.gap]; }));
+      out.appendChild(exButtons_(function(){ return [{ name: t('hc_title'), rows: sheet }]; }, function(){ return t('hc_title'); }));
+    });
+  });
+  return card;
+}
 function cutoverCard_(){
   var isAdmin = state.user.role === 'admin';
   var c = el('<div class="card co-card"><h2>'+esc(t('co_title'))+'</h2><p class="muted" style="font-size:12.5px;line-height:1.8;">'+esc(t('co_hint'))+'</p>' +
@@ -26054,6 +26910,7 @@ function renderAdminConfig(content){
   content.appendChild(form);
   if (state.user && state.user.role === 'admin') content.appendChild(waSettingsCard_());
   // cut-over card waits for its server side (branch cutover)
+  if (state.user && (state.user.role === 'admin' || state.user.role === 'finance')) content.appendChild(healthCard_());
   if (window.CUTOVER_READY_ && state.user && (state.user.role === 'admin' || state.user.role === 'finance')) content.appendChild(cutoverCard_());
 
   // Starting a fresh round of testing: the movement tabs are renamed with a
