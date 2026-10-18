@@ -761,12 +761,13 @@ function actionCreateEntry_(req, user) {
   var extra = nonSalesFields_(req);
   safeOwnKeys_(extra).forEach(function (k) { entry[k] = extra[k]; });
   // a sale beyond the stock on hand is saved and flagged, never refused (2026-10-18)
-  var shorts = stampStockShorts_([entry]);
+  var shorts = [];
+  try { shorts = stampStockShorts_([entry]); } catch (x) { console.error('stock check: ' + x); shorts = []; }
   writeRow(SHEETS.ENTRIES, entry);
   claimPhoto_(entry.directDepositPhotoId, entry.id);
   var directDeposit = entry.directDepositAmount > 0 ? recordDirectDeposit_(entry, user) : null;
   logAudit_('create_entry', user.id, entry.id);
-  stockShortAfterSave_([entry], user);
+  try { stockShortAfterSave_([entry], user); } catch (x) { console.error('stock short: ' + x); }
   return { ok: true, entry: entry, deposit: directDeposit, stockShorts: shorts };
 }
 
@@ -828,7 +829,7 @@ function actionImportEntries_(req, user) {
     }
     var rowErr = checkNonSalesFields_(r, siblingCash_(rows, i)) || checkDepositSlip_(r, user, scope.locationId);
     // the rows are written together after the loop: one slip photo still goes on one row only
-    if (!rowErr && r.directDepositPhotoId && Number(r.directDepositAmount || 0) > 0) { if (photoTaken[r.directDepositPhotoId]) rowErr = 'invalid_photo'; else photoTaken[r.directDepositPhotoId] = true; }
+    if (!rowErr && r.directDepositPhotoId && Number(r.directDepositAmount || 0) > 0 && photoTaken[r.directDepositPhotoId]) rowErr = 'invalid_photo';
     if (rowErr) {
       results.push({ row: i, ok: false, error: rowErr });
       continue;
@@ -863,14 +864,15 @@ function actionImportEntries_(req, user) {
     };
     var rowExtra = nonSalesFields_(r);
     safeOwnKeys_(rowExtra).forEach(function (k) { entry[k] = rowExtra[k]; });
+    if (entry.directDepositPhotoId && Number(entry.directDepositAmount || 0) > 0) photoTaken[entry.directDepositPhotoId] = true;
     built.push(entry);
     builtRow.push(i);
     results.push(dry ? { row: i, ok: true } : { row: i, ok: true, id: entry.id });
   }
   // a sale beyond the stock on hand is saved and flagged, never refused (2026-10-18);
   // the dry run returns the same flags, so the person sees them before saving
-  var shorts = stampStockShorts_(built);
-  shorts.forEach(function (s) { s.row = builtRow[s.index]; delete s.index; });
+  var shorts = [];
+  try { shorts = stampStockShorts_(built, builtRow); } catch (x) { console.error('stock check: ' + x); shorts = []; }
   if (dry) return { ok: true, dryRun: true, total: rows.length, results: results, breakdown: computeNet_(built), stockShorts: shorts };
   built.forEach(function (entry) {
     writeRow(SHEETS.ENTRIES, entry);
@@ -879,7 +881,7 @@ function actionImportEntries_(req, user) {
     created++;
   });
   logAudit_('import_entries', user.id, created + '/' + rows.length);
-  stockShortAfterSave_(built, user);
+  try { stockShortAfterSave_(built, user); } catch (x) { console.error('stock short: ' + x); }
   return { ok: true, created: created, total: rows.length, results: results, stockShorts: shorts };
 }
 
@@ -1659,8 +1661,8 @@ function actionBulkSubmitAreaBatch_(req, user) {
 
   // a sale beyond the stock on hand is uploaded and flagged, never refused (2026-10-18);
   // the dry run shows the same flags. A rejected version's lines are voided already.
-  var shorts = stampStockShorts_(entries);
-  shorts.forEach(function (s) { s.row = s.index; delete s.index; });
+  var shorts = [];
+  try { shorts = stampStockShorts_(entries); } catch (x) { console.error('stock check: ' + x); shorts = []; }
 
   if (isDryRun) {
     return { ok: true, dryRun: true, batch: batch, stockShorts: shorts };
@@ -1678,7 +1680,7 @@ function actionBulkSubmitAreaBatch_(req, user) {
       writeRow(SHEETS.AREA_BULK_BATCHES, batch);
     } finally { if (!heldAlready) { try { lock.releaseLock(); } catch (e) {} } }
     logAudit_('resubmit_area_batch', user.id, batch.id + ' v' + batch.revision);
-    stockShortAfterSave_(entries, user);
+    try { stockShortAfterSave_(entries, user); } catch (x) { console.error('stock short: ' + x); }
     notifyDeputyPendingBatch_(batch);
     return { ok: true, batch: batch, stockShorts: shorts };
   }
@@ -1686,7 +1688,7 @@ function actionBulkSubmitAreaBatch_(req, user) {
   entries.forEach(function (e) { writeRow(SHEETS.ENTRIES, e); });
   writeRow(SHEETS.AREA_BULK_BATCHES, batch);
   logAudit_('bulk_submit_area_batch', user.id, batch.id);
-  stockShortAfterSave_(entries, user);
+  try { stockShortAfterSave_(entries, user); } catch (x) { console.error('stock short: ' + x); }
   notifyDeputyPendingBatch_(batch);
   return { ok: true, batch: batch, stockShorts: shorts };
 }

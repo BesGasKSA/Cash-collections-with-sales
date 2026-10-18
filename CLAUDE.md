@@ -2230,3 +2230,13 @@ product lines for the same source/date.
   `act_v_stock_short`. Tests: "a sale without stock is saved and flagged" in `tests/run.js`.
 - `importDailyEntries` now writes its rows after the loop (so the flags see the whole day); one
   slip photo still goes on one row only (`photoTaken`).
+- **Review fixes (2026-10-18).** `stampStockShorts_(rows, rowOf)` never stops a save: any error
+  logs `stock_check_failed` and the rows go out unflagged (each call site is also wrapped). The
+  audit and the emails after the save are wrapped too; the emails wait for the cash lock to be
+  released (`afterCashLock_`, queued by `withCashLock_`, run only when the locked work finished).
+  One `stockShortsFor_` reads entries, cost history and devices once and passes them to every
+  report (`actionInventoryReport_(req, user, sc, extraEntries, pre)`), and checks a file's 7
+  latest days only (`INV_SHORT_MAX_DAYS_`; earlier days are not flagged). `stockShortPending_`
+  respects the area manager's active area, looks at flags of the last 60 days and is cached in
+  CacheService under the entries/moves/items/products versions (`ssp|...`, 10 min). The home
+  stories strip has `mss_stock_short`, and every pending sentence goes through `pendText_`.

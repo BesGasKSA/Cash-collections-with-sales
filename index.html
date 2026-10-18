@@ -4928,7 +4928,7 @@ var ICON_B64 = 'iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAYAAAA9zQYyAAAcG0lEQVR42u2dd1cU
 // Stamped by tools/stamp-build.js at publish time so the running app can
 // say which build it is — a cached page is the usual reason a shipped change
 // seems missing.
-var BUILD_ID = '2026-10-18 08:20 · 70fdb30';
+var BUILD_ID = '2026-10-18 13:35 · b1a8921';
 var LOGO_SRC = 'data:image/png;base64,' + LOGO_B64;
 var ICON_SRC = LOGO_SRC; // same asset — see the comment above LOGO_B64
 // The sign-in mark (2026-09-30): the logo's round emblem as a coin with a
@@ -8589,7 +8589,7 @@ function msToast_(text, type){
       msn_risk:'Report a problem', msn_riskS:'Put a risk or complaint on record', msn_me:'Profile', msn_menu:'Main menu',
       mss_you:'You', mss_title:'Waiting on you', mss_clear:'All clear',
       mss_confirm_receipt:'To receive', mss_deputy_validate:'To validate', mss_deputy_batch:'Batches', mss_returned_fix:'Returned', mss_batch_rejected:'Rejected',
-      mss_send_ready:'Ready to send', mss_car_handover:'Car day', mss_dispute_open:'Disputes', mss_second_approval:'2nd approval', mss_deposit_due:'To bank', mss_risk_high:'Risks',
+      mss_send_ready:'Ready to send', mss_car_handover:'Car day', mss_dispute_open:'Disputes', mss_second_approval:'2nd approval', mss_deposit_due:'To bank', mss_risk_high:'Risks', mss_stock_short:'No stock',
       msv_next:'Next', msv_prev:'Previous', msv_of:'{i} of {n}', msv_close:'Close', msv_hint:'Tap the sides to move, swipe down to close',
       msf_title:'Recent activity', msf_more:'Load more', msf_open:'Open', msf_receive:'Receive', msf_slip:'Slip attached', msf_empty:'No handovers yet. They will show here as they happen.',
       msf_to:'to', msf_swipe:'Swipe for quick actions',
@@ -8603,7 +8603,7 @@ function msToast_(text, type){
       msn_risk:'الإبلاغ عن مشكلة', msn_riskS:'سجّل خطرًا أو شكوى', msn_me:'حسابي', msn_menu:'القائمة الرئيسية',
       mss_you:'أنت', mss_title:'بانتظارك', mss_clear:'لا شيء معلّق',
       mss_confirm_receipt:'للاستلام', mss_deputy_validate:'للاعتماد', mss_deputy_batch:'دفعات', mss_returned_fix:'مُعاد', mss_batch_rejected:'مرفوض',
-      mss_send_ready:'جاهز للإرسال', mss_car_handover:'يوم السيارة', mss_dispute_open:'نزاعات', mss_second_approval:'موافقة ثانية', mss_deposit_due:'للإيداع', mss_risk_high:'مخاطر',
+      mss_send_ready:'جاهز للإرسال', mss_car_handover:'يوم السيارة', mss_dispute_open:'نزاعات', mss_second_approval:'موافقة ثانية', mss_deposit_due:'للإيداع', mss_risk_high:'مخاطر', mss_stock_short:'بلا مخزون',
       msv_next:'التالي', msv_prev:'السابق', msv_of:'{i} من {n}', msv_close:'إغلاق', msv_hint:'المس الجانبين للتنقل، واسحب للأسفل للإغلاق',
       msf_title:'آخر النشاط', msf_more:'عرض المزيد', msf_open:'فتح', msf_receive:'استلم', msf_slip:'إيصال مرفق', msf_empty:'لا توجد تسليمات بعد. ستظهر هنا عند حدوثها.',
       msf_to:'إلى', msf_swipe:'اسحب للإجراءات السريعة',
@@ -8617,7 +8617,7 @@ function msToast_(text, type){
       msn_risk:'مسئلہ رپورٹ کریں', msn_riskS:'خطرہ یا شکایت درج کریں', msn_me:'پروفائل', msn_menu:'مرکزی مینو',
       mss_you:'آپ', mss_title:'آپ کے منتظر', mss_clear:'سب صاف',
       mss_confirm_receipt:'وصولی', mss_deputy_validate:'منظوری', mss_deputy_batch:'بیچ', mss_returned_fix:'واپس', mss_batch_rejected:'مسترد',
-      mss_send_ready:'بھیجنے کو تیار', mss_car_handover:'گاڑی کا دن', mss_dispute_open:'تنازعات', mss_second_approval:'دوسری منظوری', mss_deposit_due:'جمع کرانا', mss_risk_high:'خطرات',
+      mss_send_ready:'بھیجنے کو تیار', mss_car_handover:'گاڑی کا دن', mss_dispute_open:'تنازعات', mss_second_approval:'دوسری منظوری', mss_deposit_due:'جمع کرانا', mss_risk_high:'خطرات', mss_stock_short:'اسٹاک نہیں',
       msv_next:'اگلا', msv_prev:'پچھلا', msv_of:'{n} میں سے {i}', msv_close:'بند کریں', msv_hint:'آگے پیچھے کے لیے کناروں کو چھوئیں، بند کرنے کے لیے نیچے کھینچیں',
       msf_title:'حالیہ سرگرمی', msf_more:'مزید دیکھیں', msf_open:'کھولیں', msf_receive:'وصول کریں', msf_slip:'رسید منسلک', msf_empty:'ابھی کوئی حوالگی نہیں۔ ہوتے ہی یہاں نظر آئیں گی۔',
       msf_to:'کو', msf_swipe:'فوری کاموں کے لیے سوائپ کریں',
@@ -8788,7 +8788,7 @@ function msStoryOpen_(kind){
     card.setAttribute('data-tone', tone);
     card.innerHTML = '<div class="ms-sv-k"><span class="ms-sv-ic">'+icon_(PEND_ICON_[it.kind] || 'alert')+'</span><span>'+esc(t('mss_' + it.kind))+'</span></div>' +
       (amt ? '<div class="ms-sv-amt num"><bdi dir="ltr">'+amt+'</bdi><small>'+esc(t('ui_sar'))+'</small></div>' : '') +
-      '<p class="ms-sv-s">'+esc(pendFill_(t('pa_' + it.kind), { n: it.count || 1 }))+'</p>' +
+      '<p class="ms-sv-s">'+esc(pendText_(it))+'</p>' +
       '<p class="ms-sv-m">'+(place ? '<bdi>'+esc(place)+'</bdi>' : '')+(place && it.since ? ' · ' : '')+(it.since ? esc(relTime_(it.since)) : '')+'</p>' +
       '<button type="button" class="ms-sv-go">'+esc(verb)+'</button>';
     qs('.ms-sv-go', card).addEventListener('click', function(){ msBuzz_(8); close(true); pendGo_(it); });
@@ -16065,7 +16065,7 @@ function renderEntries(body){
         validRows.forEach(function(r){ var k = r.sourceType + '|' + r.sourceId + '|' + r.date; if (!impIds[k]) impIds[k] = newSubmissionId_(); if (!r.submissionId) r.submissionId = impIds[k]; });
         api('importDailyEntries', { rows: validRows }).then(function(res){
           if (!res.ok){ qs('#impMsg',importCard).innerHTML='<div class="msg err">'+esc(errMsg_(res))+'</div>'; return; }
-          qs('#impMsg',importCard).innerHTML='<div class="msg ok">'+esc(t('entry_importResult').replace('{created}',res.created).replace('{total}',res.total))+'</div>';
+          qs('#impMsg',importCard).innerHTML='<div class="msg ok">'+esc(t('entry_importResult').replace('{created}',res.created).replace('{total}',res.total))+'</div>' + nsWarnHtml_(res.stockShorts);
           pendingImportRows = [];
           renderImportPreview();
           loadEntryList();

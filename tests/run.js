@@ -4461,7 +4461,13 @@ var paBmItems = paItems(paBm.tok).filter(function (i) { return i.kind === 'confi
 check(paBmItems.length === 2 && paBmItems[0].refId === paDB.id && paBmItems[1].refId === paDA.id, 'inside a kind the oldest comes first');
 PENDING_KINDS_CHECK: {
   var paIcon = clientHtml.slice(clientHtml.indexOf('var PEND_ICON_'), clientHtml.indexOf('var PEND_FIX_BATCH_'));
+  check(clientHtml.indexOf("pendFill_(t('pa_' + it.kind), { n: it.count || 1 })") < 0, 'every pending sentence goes through pendText_ (the story viewer too)');
   ctx.PENDING_KINDS_.forEach(function (k) {
+    // the home stories strip names every kind, and every sentence fills all its placeholders (2026-10-18 review)
+    check(clientHtml.split('mss_' + k + ':').length - 1 === 3, 'the stories strip names "' + k + '" in all three languages');
+    var paRe = new RegExp('pa_' + k + ":'([^']*)'", 'g'), pm, odd = [];
+    while ((pm = paRe.exec(clientHtml))) (pm[1].match(/\{[a-z]+\}/g) || []).forEach(function (ph) { if (['{n}', '{item}', '{q}'].indexOf(ph) < 0) odd.push(ph); });
+    check(!odd.length, 'the sentence for "' + k + '" has no placeholder pendText_ leaves unfilled (' + odd.join(',') + ')');
     var strings = clientHtml.split('pa_' + k + ':').length - 1;
     check(strings === 3, 'the client words "' + k + '" in all three languages');
     check(new RegExp('\\b' + k + ':\'').test(paIcon) && paIcon.split(k + ':\'').length - 1 >= 2, 'and gives "' + k + '" an icon and a screen');
@@ -6412,6 +6418,66 @@ console.log('--- a sale without stock is saved and flagged, never refused (2026-
   check(!fr2.short && fr2.ending === 0 && fr2.shortSalesCount === 3, 'no stock: the line is back to 0; the flagged sales stay on record');
   // the empties line still short from the unit item? the regulator was never sold beyond stock
   check(pend(nsMgrTok).every(function (i) { return i.stockItemId !== reg.id; }), 'no stock: dry runs left no flag behind');
+
+  // ---- review fixes (2026-10-18) ----
+  // 1. the stock check never stops a save
+  var realReport = ctx.actionInventoryReport_;
+  ctx.actionInventoryReport_ = function () { throw new Error('report down'); };
+  var rb1 = call({ action: 'createDailyEntry', token: adminTok, date: '2026-10-07', sourceType: 'store', sourceId: nsStore.id, productId: pFull.id, qty: 9, unitPrice: 220, cashSales: 1980 });
+  check(rb1.ok && rb1.entry && !rb1.entry.stockShort && ctx.readSheet(SHEETS.ENTRIES).some(function (e) { return e.id === rb1.entry.id; }), 'no stock review: the report throws, createDailyEntry still saves, unflagged (' + (rb1.error || '') + ')');
+  var rb2 = day('2026-10-06', [[pFull, 9]]);
+  check(rb2.ok && rb2.created === 1 && !(rb2.stockShorts || []).length, 'no stock review: and so does importDailyEntries (' + (rb2.error || '') + ')');
+  var rb2d = day('2026-10-06', [[pFull, 9]], { dryRun: true });
+  check(rb2d.ok && rb2d.dryRun, 'no stock review: and its dry run');
+  ctx.actionInventoryReport_ = realReport;
+  // void the two unflagged test days so the figures below stay as they were
+  [rb1.entry && rb1.entry.id].concat(ctx.readSheet(SHEETS.ENTRIES).filter(function (e) { return e.submissionId === 'ns-' + (n - 1); }).map(function (e) { return e.id; })).forEach(function (id) {
+    var e = ctx.getById_(SHEETS.ENTRIES, id); if (e) { e.voided = true; ctx.writeRow(SHEETS.ENTRIES, e); }
+  });
+  // 2. the audit and the email after the save never stop it either
+  var realAudit = ctx.logAudit_;
+  ctx.logAudit_ = function (a) { if (a === 'sale_without_stock') throw new Error('audit down'); return realAudit.apply(null, arguments); };
+  var ra = day('2026-10-08', [[pFull, 2]]);
+  check(ra.ok && ra.created === 1 && ctx.readSheet(SHEETS.ENTRIES).filter(function (e) { return e.submissionId === 'ns-' + n && !e.voided; }).length === 1, 'no stock review: the audit throws, the import still answers ok with its 1 row (' + (ra.error || '') + ')');
+  call({ action: 'adminSetConfig', token: adminTok, data: { areaManagerBulkUploadEnabled: true } });
+  var realNotify = ctx.notifyDeputyPendingBatch_, notified = 0;
+  ctx.notifyDeputyPendingBatch_ = function () { notified++; return realNotify.apply(null, arguments); };
+  var rbat = call({ action: 'bulkSubmitAreaBatch', token: adminTok, clusterId: cluster.entity.id, rows: [{ date: '2026-10-09', sourceType: 'store', sourceId: nsStore.id, productId: pFull.id, qty: 2, unitPrice: 220, cashSales: 440 }] });
+  check(rbat.ok && (rbat.stockShorts || []).length === 1 && notified === 1, 'no stock review: the area batch still saves, flags and tells the deputy (' + (rbat.error || JSON.stringify(rbat.results || '')) + ')');
+  ctx.notifyDeputyPendingBatch_ = realNotify;
+  ctx.logAudit_ = realAudit;
+  // 3. a month-long, two-branch file costs a bounded number of reads and reports
+  var ns2Mgr = scUser('Ns Manager Two', 'store_manager');
+  var ns2Loc = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: 'Riyadh', name: 'No Stock Branch Two', clusterId: cluster.entity.id, collectorUserId: musa.id } }).entity;
+  var ns2Store = call({ action: 'adminSaveEntity', token: adminTok, kind: 'store', data: { locationId: ns2Loc.id, name: 'No Stock Store Two', storeManagerUserId: ns2Mgr.id } }).entity;
+  var month = [];
+  for (var dd = 0; dd < 30; dd++) {
+    var dt = new Date(Date.UTC(2026, 8, 17 + dd)).toISOString().slice(0, 10);
+    [nsStore, ns2Store].forEach(function (st) { month.push({ date: dt, sourceType: 'store', sourceId: st.id, submissionId: 'ns-month', productId: pEx.id, qty: 1, unitPrice: 37, cashSales: 37 }); });
+  }
+  var realRead = ctx.readSheet, reports = 0, realStamp = ctx.stampStockShorts_, readNames = {};
+  ctx.readSheet = function (nm) { readNames[nm] = (readNames[nm] || 0) + 1; return realRead.apply(null, arguments); };
+  ctx.stampStockShorts_ = function () { return []; };
+  call({ action: 'importDailyEntries', token: adminTok, rows: month, dryRun: true });
+  var baseNames = readNames; readNames = {};
+  ctx.stampStockShorts_ = realStamp;
+  ctx.actionInventoryReport_ = function () { reports++; return realReport.apply(null, arguments); };
+  var mres = call({ action: 'importDailyEntries', token: adminTok, rows: month, dryRun: true });
+  ctx.readSheet = realRead; ctx.actionInventoryReport_ = realReport;
+  // what the stock check adds, sheet by sheet (config is one memoised row, read per costed line)
+  var added = {}, addedData = 0;
+  Object.keys(readNames).forEach(function (k) { var d = readNames[k] - (baseNames[k] || 0); if (d) { added[k] = d; if (k !== SHEETS.CONFIG) addedData += d; } });
+  check(mres.ok && mres.results.length === 60, 'no stock review: the 30-day, 2-branch file checks (' + (mres.error || '') + ')');
+  check(reports <= 14, 'no stock review: at most 7 days a branch are reported on (got ' + reports + ' reports)');
+  check(addedData <= 10, 'no stock review: entries, moves, items, costs and devices are read once for all its reports (added ' + JSON.stringify(added) + ')');
+  // 4. what waits is cached until the entries or the stock change
+  var pc0 = pend(nsMgrTok).length, pcReports = 0;
+  ctx.actionInventoryReport_ = function () { pcReports++; return realReport.apply(null, arguments); };
+  var pc1 = pend(nsMgrTok);
+  ctx.actionInventoryReport_ = realReport;
+  check(pcReports === 0 && pc1.length === pc0, 'no stock review: a second look at what waits is served from the cache (' + pcReports + ' reports)');
+  mv({ stockItemId: it.id, state: 'full', kind: 'purchase', qty: 50, date: '2026-10-09' });
+  check(pend(nsMgrTok).length === 0, 'no stock review: a stock move clears the cache, and the covered line closes');
 })();
 
 console.log('--- the client parses: every inline script of index.html compiles (2026-10-17) ---');

@@ -826,10 +826,26 @@ function responseCacheKey_(action, req, user) {
 // Reads what is still unconsumed and marks it consumed as one step, under the
 // script lock and against a fresh read, so a double tap or two phones cannot
 // hand the same cash over twice. writeRow keeps a lock its caller holds.
+// Work queued with afterCashLock_ (alerts, emails) runs once the lock is released,
+// and only when the locked work finished without throwing (2026-10-18).
 function withCashLock_(fn) {
   var lock = LockService.getScriptLock();
   lock.waitLock(30000);
-  try { freshenExec_(); return fn(); } finally { try { lock.releaseLock(); } catch (e) {} }
+  var ex = exec_(), ok = false, res;
+  ex.afterLock = []; ex.inCashLock = true;
+  try { freshenExec_(); res = fn(); ok = true; }
+  finally {
+    ex.inCashLock = false;
+    try { lock.releaseLock(); } catch (e) {}
+    var queued = ex.afterLock || []; ex.afterLock = [];
+    if (ok) queued.forEach(function (job) { try { job(); } catch (e) { console.error('after lock: ' + e); } });
+  }
+  return res;
+}
+function afterCashLock_(job) {
+  var ex = exec_();
+  if (ex.inCashLock) { (ex.afterLock = ex.afterLock || []).push(job); return; }
+  try { job(); } catch (e) { console.error('after lock: ' + e); }
 }
 
 function withMeta_(result, req, user) {
