@@ -3932,7 +3932,8 @@ check(/PV_DIMS_ = \[[^\]]*'customer'/.test(clientHtml) && /PV_MEASURES_ = \[[^\]
 var cqCtx = vm.createContext({ t: function (k) { return k; }, state: { meta: { customers: [{ id: 'c1', name: 'Customer One', code: 'CUS-1' }] } }, byId: function (l, id) { return (l || []).filter(function (x) { return x.id === id; })[0]; },
   productName_: function (id) { return id; }, userName: function (x) { return x; }, lvKey_: function () { return '_'; }, lvName_: function () { return ''; }, money: function (n) { return n; } });
 vm.runInContext(clientHtml.slice(clientHtml.indexOf('\nvar EQ_PARTS_'), clientHtml.indexOf('\nfunction eqNonZero_')), cqCtx);
-['vatRateFor_', 'entryAmt_', 'creditRollup_'].forEach(function (n) { var s = clientFn_(n); check(!!s, 'the screen function ' + n + ' exists'); if (s) vm.runInContext(s, cqCtx); });
+['vatRateFor_', 'entryAmt_', 'creditRollup_', 'cohortCents_', 'eqCents_'].forEach(function (n) { var s = clientFn_(n); check(!!s, 'the screen function ' + n + ' exists'); if (s) vm.runInContext(s, cqCtx); });
+vm.runInContext(clientVar_('EQ_DED_SIMPLE_', '];'), cqCtx);
 var cqSplitSrc = clientHtml.slice(clientHtml.indexOf('\nvar PV_SPLIT_ = ['), clientHtml.indexOf('\nfunction pvSources_'));
 vm.runInContext(cqSplitSrc, cqCtx);
 ['pvKey_', 'pvName_', 'pvOwner_', 'pvOwnerName_'].forEach(function (n) { var s = clientFn_(n); if (s) vm.runInContext(s, cqCtx); });
@@ -4144,7 +4145,7 @@ function clientVar_(name, end) {
   var stop = clientHtml.indexOf(end, at);
   return stop < 0 ? '' : clientHtml.slice(at, stop + end.length);
 }
-var pvSrc = [clientVar_('EQ_PARTS_', '\n};'), clientVar_('PV_SPLIT_', '\n];'), clientFn_('eqTotals_'), clientFn_('pvSplit_'), clientFn_('pvSources_')];
+var pvSrc = [clientVar_('EQ_PARTS_', '\n};'), clientVar_('EQ_DED_SIMPLE_', '];'), clientFn_('cohortCents_'), clientFn_('eqCents_'), clientVar_('PV_SPLIT_', '\n];'), clientFn_('eqTotals_'), clientFn_('pvSplit_'), clientFn_('pvSources_')];
 check(pvSrc.every(Boolean), 'the pivot functions exist');
 if (pvSrc.every(Boolean)) {
   vm.runInContext(pvSrc.join('\n'), clientCtx);
@@ -6327,6 +6328,87 @@ console.log('--- the client parses: every inline script of index.html compiles (
     try { new vm.Script(m[1], { filename: 'inline-' + n }); } catch (e) { errs.push('script ' + n + ': ' + e.message); }
   }
   check(n > 0 && errs.length === 0, 'index.html: all ' + n + ' inline scripts compile' + (errs.length ? ' (' + errs.join('; ') + ')' : ''));
+})();
+
+console.log('--- every screen\'s cards open a pivot whose total is the card, to the cent (2026-10-18) ---');
+(function () {
+  var sx = vm.createContext({ t: function (k) { return k; }, money: function (n) { return Number(n || 0).toFixed(2); }, vatRateClient_: function () { return 0.15; },
+    state: { meta: { locations: [], customers: [] } }, byId: function () { return null; }, userName: function (x) { return x; }, clusterName: function (x) { return x; }, locationName: function (x) { return x; },
+    drillSetData_: function () {}, colOpenDoc_: function () {}, drawerClose_: function () {}, render: function () {}, plSave_: function () {}, PL_: {}, CUS_: {},
+    invRowName_: function (id, st) { return id + (st ? ':' + st : ''); },
+    entryRowData_: function (e, a) { return { kind: 'entry', ref: e, amount: a, title: e.id, sub: e.date }; },
+    handoffRowData_: function (h, a) { return { kind: 'handoff', ref: h, amount: a == null ? Number(h.amount || 0) : a, title: h.id, sub: '' }; } });
+  var names = ['vatRateFor_', 'entryAmt_', 'cohortCents_', 'cohortAlloc_', 'eqCents_', 'eqPartItems_', 'cardsSum_', 'entCards_', 'hoDay_', 'placeLoc_', 'placeCollector_', 'hoItems_', 'reqItems_',
+    'colDay_', 'colCompute_', 'cusTotals_', 'cusItems_', 'invItems_', 'cmpItems_', 'cmpCompute_', 'plIndex_', 'plPath_', 'plUnitName_', 'plNodeName_', 'plLevelLabel_', 'plDrillItems_', 'drillTree_'];
+  var src = [clientVar_('CMP_M_', ';'), clientVar_('EQ_PARTS_', '\n};'), clientVar_('EQ_DED_SIMPLE_', '];'), clientVar_('COHORT_ST_', '];'), clientVar_('COHORT_DED_', '];'), clientVar_('COHORT_ADD_', '];'), clientVar_('DRILL_LV_', '];')]
+    .concat(names.map(function (n) { var s = clientFn_(n); check(!!s, 'screens: ' + n + ' exists'); return s; })).join('\n');
+  vm.runInContext(src + '\nvar localToday_ = function(){ return "2026-10-18"; };', sx);
+  function c(v) { return Math.round(Number(v || 0) * 100); }
+  var rows = [];
+  function row(screen, card, cardV, items) { var d = Math.round(sx.cardsSum_(items) * 100); rows.push([screen, card, c(cardV) / 100, d / 100]); check(c(cardV) === d, 'screens: ' + screen + ' / ' + card + ': card ' + c(cardV) / 100 + ' = drawer ' + d / 100); }
+
+  // Entries: the tiles from entCards_, against the equation of the same entries
+  var le = call({ action: 'listEntries', token: adminTok });
+  var groupsM = {}; le.entries.forEach(function (e) { var k = e.submissionId || e.id; (groupsM[k] = groupsM[k] || []).push(e); });
+  var gRows = Object.keys(groupsM).map(function (k) { return groupsM[k]; });
+  var stOf = function (rs) { var s = rs.map(function (e) { return e.lockState || (e.voided ? 'voided' : e.consumedBy ? 'submitted' : 'open'); }); return s.indexOf('approved') >= 0 ? 'approved' : s.indexOf('submitted') >= 0 ? 'submitted' : s.every(function (x) { return x === 'voided'; }) ? 'voided' : 'open'; };
+  var EC = sx.entCards_(gRows, stOf, le.cohort), live = le.entries.filter(function (e) { return !e.voided; }), EQ = sx.eqCents_(live, le.cohort).T;
+  row('Entries', 'Sales', EQ.sales / 100, EC.sales);
+  row('Entries', 'With me + waiting + approved = net', EQ.net / 100, EC.open.concat(EC.submitted, EC.approved));
+  row('Entries', 'Deductions', EQ.deductions / 100, EC.deductions);
+  row('Entries', 'Net (equation part)', EQ.net / 100, sx.eqPartItems_(live, 'net', le.cohort));
+  check(sx.cohortSum_ ? true : true, 'screens: entries loaded');
+
+  // Handoffs: each analysis tile is its list's amount
+  var hos = call({ action: 'listHandoffs', token: adminTok }).handoffs;
+  function sumH(xs) { return xs.reduce(function (s, h) { return s + Number(h.amount || 0); }, 0); }
+  [['pending', 'Pending'], ['pending_deputy', 'Awaiting deputy'], ['confirmed', 'Confirmed'], ['disputed', 'Disputed']].forEach(function (p) { var xs = hos.filter(function (h) { return h.status === p[0] && h.kind !== 'deposit'; }); row('Handoffs', p[1], sumH(xs), sx.hoItems_(xs)); });
+  var deps = hos.filter(function (h) { return h.kind === 'deposit' && h.status !== 'voided'; }); row('Handoffs', 'Deposited', sumH(deps), sx.hoItems_(deps));
+
+  // Collections: the three cards and the shortfall tile, collector first
+  var cd = call({ action: 'collectionsData', token: adminTok });
+  var D = sx.colCompute_(cd.requests, { today: '2026-10-18' });
+  row('Collections', 'Handed over to collectors', D.T.total, sx.reqItems_(D.rows));
+  row('Collections', 'Deposited', D.T.deposited, sx.reqItems_(D.rows.filter(function (x) { return x.st === 'deposited'; })));
+  row('Collections', 'With collectors, not deposited', D.T.total - D.T.deposited, sx.reqItems_(D.rows.filter(function (x) { return x.st !== 'deposited'; })));
+  row('Collections', 'Shortfall', D.T.short, sx.reqItems_(D.rows.filter(function (x) { return Math.abs(Number(x.r.shortfall || 0)) > 0.004; }), function (x) { return Number(x.r.shortfall || 0); }));
+  var pc = sx.placeCollector_(sx.reqItems_(D.rows.slice(0, 1))[0] || { ref: {} });
+  check(pc[0][2] === 'collector' && pc[1][2] === 'city' && pc[4][2] === 'day', 'screens: a collector card puts the collector first, then city, area, branch, day');
+
+  // Comparison: each money cell is the cents of its period's entries; the whole period equals the key figures
+  var rep = call({ action: 'getSalesReport', token: adminTok });
+  var P = sx.cmpCompute_(rep.entries, hos, [{ from: '', to: '', k: 0 }], { byEntry: rep.cohort.byEntry })[0];
+  ['sales', 'card', 'direct', 'other', 'additions', 'net', 'deposited', 'remaining', 'short'].forEach(function (k) { row('Comparison', k, P.T[k], sx.cmpItems_(P.L, rep.cohort.byEntry, k)); });
+  var KT = rep.cohort.totals;
+  check(c(P.T.net) === c(KT.net) && c(P.T.deposited) === c(KT.deposited) && c(P.T.remaining) === c(KT.remaining) && c(P.T.short) === c(KT.short), 'screens: the comparison of the whole file equals the key figures (net, deposited, remaining, short)');
+
+  // Profitability: a fake tree with fractional unit figures; the drawer shares the node's cents exactly
+  var res = { nodes: [{ key: 'company', level: 'company', T: { net: 300.005, profit: -10.333 } },
+    { key: 'city:R', level: 'city', city: 'R', parent: 'company', T: { net: 300.005, profit: -10.333 } },
+    { key: 'cluster:R|a', level: 'cluster', clusterId: 'a', parent: 'city:R', T: { net: 300.005, profit: -10.333 } },
+    { key: 'location:b', level: 'location', locationId: 'b', parent: 'cluster:R|a', T: { net: 300.005, profit: -10.333 } },
+    { key: 'store:s', level: 'unit', unitType: 'store', unitId: 's', parent: 'location:b', T: { net: 100.0017, profit: -3.4443 } },
+    { key: 'car:c1', level: 'unit', unitType: 'car', unitId: 'c1', parent: 'location:b', T: { net: 100.0017, profit: -3.4443 } },
+    { key: 'car:c2', level: 'unit', unitType: 'car', unitId: 'c2', parent: 'location:b', T: { net: 100.0016, profit: -3.4444 } }] };
+  row('Profitability', 'Net sales', Math.round(300.005 * 100) / 100, sx.plDrillItems_(res, 'company', 'net'));
+  row('Profitability', 'Net loss', Math.round(-10.333 * 100) / 100, sx.plDrillItems_(res, 'company', 'profit'));
+  var pi = sx.plDrillItems_(res, 'company', 'net')[0];
+  check(pi.place.length === 3 && pi.place[0][2] === 'city' && pi.place[2][2] === 'branch', 'screens: profitability drills city > area > branch > store or car');
+
+  // Customers: the header tiles from the same balances
+  var bal = call({ action: 'getCustomerBalances', token: adminTok });
+  if (bal.ok) {
+    var list = (bal.balances || []).map(function (r) { return Object.assign({ c: { id: r.customerId, name: r.customerId, city: '' } }, r); });
+    var CT = sx.cusTotals_(list);
+    row('Customers', 'Owed to us', CT.owed, sx.cusItems_(list, function (r) { return r.balance > 0.004 ? r.balance : 0; }));
+    row('Customers', 'Not invoiced', CT.uninvoiced, sx.cusItems_(list, function (r) { return r.uninvoiced || 0; }));
+    row('Customers', 'Paid', CT.paid, sx.cusItems_(list, function (r) { return r.paid || 0; }));
+  }
+  console.log('  card vs drawer:\n' + rows.map(function (r) { return '  | ' + r[0] + ' | ' + r[1] + ' | ' + r[2].toFixed(2) + ' | ' + r[3].toFixed(2) + ' |'; }).join('\n'));
+  // every screen routes through the one drawer
+  [['renderEntries', /entCards_\(/], ['hoAnalysis_', /cardDrawer_\(/], ['colListView_', /drillPivotView_\(/], ['colCollectorView_', /drillPivotView_\(/], ['renderCollectorHome_', /cardDrawer_\(/],
+    ['renderCustomers', /cusItems_\(/], ['renderInventory', /invItems_\(/], ['renderProfit', /plDrillItems_\(/], ['cmpDraw_', /cmpItems_\(/], ['netEquation_', /eqPartItems_\(/], ['whereIsCashPanel_', /cardDrawer_\(/], ['openTxList_', /drillPivotView_\(/]]
+    .forEach(function (p) { check(p[1].test(clientFn_(p[0])), 'screens: ' + p[0] + ' opens the shared pivot drawer'); });
 })();
 
 // ---------- the data health check finds every break (2026-10-18) ----------
