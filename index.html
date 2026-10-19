@@ -34,7 +34,7 @@
 <meta name="application-name" content="Cash Collection">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   /* Fold and navigate arrows (2026-10-05), one rule set: a closed row's arrow points the way
      the content reads from (en right, ar/ur left) = scaleX(var(--fx)); an open row's points down. */
@@ -50,7 +50,7 @@
     --shadow-md:0 4px 14px rgba(32,36,31,.07), 0 1px 3px rgba(32,36,31,.05);
     --shadow-lg:0 12px 32px rgba(32,36,31,.12), 0 2px 6px rgba(32,36,31,.06);
     --font-en:'Inter',-apple-system,'Segoe UI',Tahoma,Arial,sans-serif;
-    --font-ar:'Cairo','Inter',-apple-system,'Segoe UI','Geeza Pro',Arial,sans-serif;
+    --font-ar:'IBM Plex Sans Arabic','Cairo','Inter',-apple-system,'Segoe UI','Geeza Pro',Arial,sans-serif;
   }
   /* Without this, mobile browsers keep their default double-tap-to-zoom
      gesture on every element — so a tap that lands a few pixels off a
@@ -3727,6 +3727,18 @@
   .pa-row:last-child{border-bottom:0;}
   .pa-ic{flex:none;width:36px;height:36px;border-radius:10px;background:var(--green-pale);display:flex;align-items:center;justify-content:center;}
   .pa-ic .ic2{width:19px;height:19px;stroke:var(--green-dark);}
+  .pa-row[data-kind="stock_short"] .pa-ic{background:#FCF3DE;}
+  .pa-row[data-kind="stock_short"] .pa-ic .ic2{stroke:#9A5B00;}
+  .ns-warn{display:flex;gap:10px;align-items:flex-start;margin:12px 0 4px;padding:12px 14px;border-radius:12px;background:#FCF3DE;border-inline-start:4px solid #E3B04B;color:#5C3D00;font-size:13.5px;line-height:1.6;text-align:start;}
+  .ns-warn .ic2{flex:0 0 20px;width:20px;height:20px;stroke:#9A5B00;margin-top:2px;}
+  .ns-warn ul{margin:4px 0;padding-inline-start:18px;} .ns-warn small{display:block;color:#7A5300;}
+  .ns-chip{align-self:flex-start;width:max-content;max-width:100%;display:inline-flex;align-items:center;gap:4px;margin-inline-start:6px;padding:2px 8px;border-radius:999px;background:#FCF3DE;color:#8A5A00;font-size:11.5px;font-weight:700;white-space:nowrap;}
+  .ns-chip .ic2{width:13px;height:13px;stroke:#9A5B00;}
+  .ns-lines{list-style:none;margin:0 0 8px;padding:0;} .ns-lines li{display:flex;gap:8px;align-items:flex-start;padding:8px 10px;border-radius:10px;background:#FCF3DE;color:#5C3D00;font-size:13px;margin-bottom:6px;} .ns-lines .ic2{flex:0 0 16px;width:16px;height:16px;stroke:#9A5B00;}
+  .card.ns-card{border:1.5px solid #E3B04B;background:#FFFBF2;} .card.ns-card h2{display:flex;align-items:center;gap:8px;color:#8A5A00;} .card.ns-card h2 .ic2{width:20px;height:20px;stroke:#9A5B00;}
+  .ns-list{display:flex;flex-direction:column;gap:8px;} .ns-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 12px;border-radius:12px;background:#FCF3DE;color:#5C3D00;font-size:13.5px;} .ns-row > span{flex:1 1 180px;min-width:0;overflow-wrap:anywhere;} .ns-row .ic2{flex:0 0 18px;width:18px;height:18px;stroke:#9A5B00;} .ns-row.focus{box-shadow:0 0 0 2px #C98A1B;}
+  .ns-live{margin-bottom:12px;} .ns-live > b{display:flex;align-items:center;gap:6px;color:#8A5A00;margin-bottom:6px;font-size:13.5px;} .ns-live > b .ic2{width:16px;height:16px;stroke:#9A5B00;}
+  .ns-sale{cursor:pointer;} .ns-sale:hover td{background:#FFF7E6;} .ns-q{color:#8A5A00;}
   .pa-row[data-kind="dispute_open"] .pa-ic,.pa-row[data-kind="risk_high"] .pa-ic,.pa-row[data-kind="batch_rejected"] .pa-ic,.pa-row[data-kind="returned_fix"] .pa-ic{background:var(--danger-bg);}
   .pa-row[data-kind="dispute_open"] .pa-ic .ic2,.pa-row[data-kind="risk_high"] .pa-ic .ic2,.pa-row[data-kind="batch_rejected"] .pa-ic .ic2,.pa-row[data-kind="returned_fix"] .pa-ic .ic2{stroke:var(--danger);}
   .pa-tx{min-width:0;flex:1;display:flex;flex-direction:column;gap:2px;}
@@ -4078,7 +4090,7 @@
     :root{--bg:#F0F2F5;--card:#FFFFFF;--text:#050505;--ink:#050505;--muted:#65676B;--muted-2:#8A8D91;--border:#E4E6EB;--border-soft:#E4E6EB;
       --radius:8px;--radius-sm:6px;--radius-lg:8px;--shadow-sm:none;--shadow-md:0 1px 2px rgba(0,0,0,.1);--shadow-lg:0 2px 12px rgba(0,0,0,.15);
       --fb-font:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI","Segoe UI Historic",Roboto,"Helvetica Neue",Arial,"Noto Sans Arabic","Noto Naskh Arabic","Geeza Pro",Tahoma,sans-serif;
-      --font-en:var(--fb-font);--font-ar:var(--fb-font);}
+      --font-en:var(--fb-font);--font-ar:'IBM Plex Sans Arabic','Cairo',var(--fb-font);}
     html body{font-family:var(--fb-font);font-size:15px;line-height:1.3333;letter-spacing:normal;background:#F0F2F5;background-image:none;color:#050505;-webkit-text-size-adjust:100%;}
     html body *{letter-spacing:normal;}
     html body .bgfx,html body #app.shell::before,html body #app.shell::after{display:none;}
@@ -4865,6 +4877,63 @@
     :root body .ms-on #screenBody.nav-fwd,:root body .ms-on #screenBody.nav-back{animation:none !important;transition:none !important;}
     .ms-tab.hide{transform:none;opacity:1;}
   }
+  /* ---- v2 (2026-10-18): the top bar never cuts its title; large collapsing title with the
+     Gregorian date; the tab bar gets real edges. Phones only. ---- */
+  @media (max-width:768px){
+    :root{--ms-s1:4px;--ms-s2:8px;--ms-s3:12px;--ms-s4:16px;--ms-s5:20px;--ms-s6:24px;
+      --ms-t-xs:12px;--ms-t-sm:13.5px;--ms-t-md:15px;--ms-t-lg:17px;--ms-t-xl:22px;--ms-t-2xl:30px;}
+    /* the bar: notch-safe on both sides, glass, never wider than the screen */
+    :root body .tb{display:flex;flex-wrap:nowrap;align-items:center;gap:8px;min-height:56px;max-width:100vw;
+      padding-top:max(8px,env(safe-area-inset-top));padding-bottom:8px;
+      padding-left:max(12px,env(safe-area-inset-left));padding-right:max(12px,env(safe-area-inset-right));}
+    :root body .tb-left{flex:1 1 auto;min-width:0;gap:10px !important;}
+    :root body .tb-actions{flex:0 0 auto;gap:8px;}
+    /* the small title appears only once the large one has scrolled under the bar */
+    :root body .ms-on .tb .tb-title{min-width:0;opacity:0;transform:translate3d(0,6px,0);transition:opacity var(--ms-norm) var(--ms-ease),transform var(--ms-norm) var(--ms-ease);}
+    :root body .ms-on .tb.ms-c .tb-title{opacity:1;transform:none;}
+    :root body .ms-on .tb .tb-title h1{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;white-space:normal;overflow:hidden;
+      font-size:16px;line-height:1.25;font-weight:800;overflow-wrap:anywhere;}
+    :root body .ms-on .tb .tb-title .sub{display:none;}
+    /* the area pill shrinks to its badge; the area's name moves under the large title */
+    :root body .tb .asw-pill{max-width:none;min-width:44px;min-height:44px;padding:3px;margin:0;gap:4px;}
+    :root body .tb .asw-pill .asw-t,:root body .tb .asw-pill > .ic2{display:none;}
+    :root body .tb .asw-pill .asw-av{width:36px;height:36px;}
+    :root body .tb .asw-pill .asw-n{margin-inline-end:4px;}
+    /* the large title */
+    .ms-lt{padding:14px max(16px,env(safe-area-inset-right)) 6px max(16px,env(safe-area-inset-left));}
+    .ms-lt-h{margin:0;font-size:var(--ms-t-2xl);line-height:1.15;font-weight:800;color:var(--ms-ink);letter-spacing:-.02em;overflow-wrap:anywhere;border:0;padding:0;}
+    html[dir="rtl"] .ms-lt-h{letter-spacing:0;line-height:1.3;}
+    .ms-lt-h::before{display:none !important;}
+    .ms-lt-d{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:6px 0 0;font-size:var(--ms-t-sm);font-weight:600;color:var(--ms-mute);line-height:1.4;}
+    .ms-lt-cal .ic2{width:15px;height:15px;stroke:var(--ms-green);fill:none;stroke-width:2;display:block;}
+    .ms-lt-cal .ic2 .d{fill:var(--ms-green);fill-opacity:.18;}
+    .ms-lt-sep{opacity:.6;}
+    :root body .ms-on .ms-stories-host{margin-top:4px;}
+    /* sheets measure the visible screen, not the one behind the browser's bars */
+    .act-panel{max-height:min(90vh,760px);max-height:min(90dvh,760px);}
+    .ms-sheet-p{max-height:92vh;max-height:92dvh;}
+    /* the tab bar: hairline edge, light catching the top, layered shadow, deeper glass */
+    .ms-tab{background:linear-gradient(180deg,rgba(255,255,255,.95),rgba(249,248,243,.9));border:1px solid rgba(20,28,22,.10);
+      -webkit-backdrop-filter:saturate(1.9) blur(24px);backdrop-filter:saturate(1.9) blur(24px);
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.95),inset 0 -1px 0 rgba(20,28,22,.03),0 1px 2px rgba(20,28,22,.08),0 8px 20px rgba(20,28,22,.10),0 24px 48px rgba(20,28,22,.12);
+      inset-inline:max(10px,env(safe-area-inset-left));}
+    .ms-tab::before{content:"";position:absolute;top:0;inset-inline:18%;height:1px;border-radius:1px;pointer-events:none;
+      background:linear-gradient(90deg,transparent,rgba(201,162,39,.55),transparent);}
+    /* the active tab: a capsule behind the icon, bold label, no dot */
+    .ms-tb.on::after{display:none;}
+    .ms-tb-ic{isolation:isolate;}
+    .ms-tb.on .ms-tb-ic::before{content:"";position:absolute;top:-4px;bottom:-4px;left:-14px;right:-14px;border-radius:999px;z-index:-1;
+      background:linear-gradient(180deg,#E7EFE7,#D7E5D8);box-shadow:inset 0 0 0 1px rgba(77,109,81,.22),0 2px 6px rgba(59,85,64,.14);
+      animation:msCapIn var(--ms-mod) var(--ms-spring) both;}
+    .ms-tb.on .ms-tb-l{font-weight:800;}
+    .ms-me.on .ms-tb-ic::before{display:none;}
+    /* reads show the thin top bar (below the notch), not the blocking veil */
+    #topProgress{top:env(safe-area-inset-top);height:3px;}
+  }
+  @keyframes msCapIn{from{opacity:0;transform:scaleX(.5)}to{opacity:1;transform:none}}
+  @media (prefers-reduced-motion:reduce){
+    :root body .ms-on .tb .tb-title,.ms-tb.on .ms-tb-ic::before{transition:none !important;animation:none !important;}
+  }
   /* ===== end phone social layer ===== */
   /* ---------- data levels (2026-10-17): group-by chips, breadcrumb, the pivot tree ---------- */
   .crp-lvcard .col-chips{align-items:center;}
@@ -4916,7 +4985,7 @@ var ICON_B64 = 'iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAYAAAA9zQYyAAAcG0lEQVR42u2dd1cU
 // Stamped by tools/stamp-build.js at publish time so the running app can
 // say which build it is — a cached page is the usual reason a shipped change
 // seems missing.
-var BUILD_ID = '2026-10-18 08:20 · 70fdb30';
+var BUILD_ID = '2026-10-19 23:17 · 539c360';
 var LOGO_SRC = 'data:image/png;base64,' + LOGO_B64;
 var ICON_SRC = LOGO_SRC; // same asset — see the comment above LOGO_B64
 // The sign-in mark (2026-09-30): the logo's round emblem as a coin with a
@@ -6346,13 +6415,16 @@ function api(action, payload, opts){
   payload.token = state.token;
   // the area an area manager is working in rides on every request (area switching)
   var workArea = activeArea_(); if (workArea && payload.activeAreaId === undefined) payload.activeAreaId = workArea;
-  if (!opts.silent) startLoading(); else silentProgress_(1);
+  // a phone reads behind skeletons and a thin top bar, never the blocking veil (2026-10-18);
+  // a save still takes the veil, so a second tap cannot send it twice
+  var quiet = !!opts.silent || !!(state.user && READ_ACTIONS[action] && action !== 'login' && typeof msPhone_ === 'function' && msPhone_());
+  if (!quiet) startLoading(); else silentProgress_(1);
   return fetch(state.apiUrl, {
     method:'POST',
     headers:{'Content-Type':'text/plain;charset=utf-8'},
     body: JSON.stringify(payload)
   }).then(function(r){ return r.json(); }).then(function(res){
-    if (!opts.silent) stopLoading(); else silentProgress_(-1);
+    if (!quiet) stopLoading(); else silentProgress_(-1);
     if (res.token) { state.token = res.token; localStorage.setItem('bgc_token', res.token); }
     // a save no longer wipes the screens' last copies (2026-10-08: every screen after a save
     // then waited the whole round trip behind the loading circle); they are marked stale,
@@ -6364,7 +6436,7 @@ function api(action, payload, opts){
     if (res && res.error === 'first_login_change' && state.user && !state.user.mustChangePw) { state.user.mustChangePw = true; setTimeout(function(){ render(); }, 0); }
     return res;
   }).catch(function(err){
-    if (!opts.silent) stopLoading(); else silentProgress_(-1);
+    if (!quiet) stopLoading(); else silentProgress_(-1);
     return { ok:false, error:'network' };
   });
 }
@@ -7600,6 +7672,18 @@ function renderShell(){
   var body = el('<div id="screenBody" class="'+(state.navDir ? (state.navDir > 0 ? 'nav-fwd' : 'nav-back') : 'fade-up')+'"></div>');
   var justNavigated = !!state.navDir;
   state.navDir = 0;
+  // phone: a large title with today's Gregorian date opens every screen, and the bar
+  // shows the small title only once it has scrolled away (iOS large title, 2026-10-18).
+  // The bar's own title was cut to ~90px beside the area pill and the bell.
+  if (msPhone_()) {
+    qs('.tb-title', tb).setAttribute('aria-hidden', 'true');
+    var ltArea = state.user.role === 'cluster_manager' && state.meta ? (areaById_(state.meta.activeAreaId) || areaById_(activeArea_()) || (myAreas_().length === 1 ? myAreas_()[0] : null)) : null;
+    var lt = el('<div class="ms-lt"><h1 class="ms-lt-h">'+esc(t(current[1]))+'</h1>' +
+      '<p class="ms-lt-d"><span class="ms-lt-cal" aria-hidden="true">'+icon_('clock')+'</span><time datetime="'+esc(new Date().toISOString().slice(0, 10))+'">'+esc(dates.gregorian || '')+'</time>' +
+      (ltArea ? '<span class="ms-lt-sep" aria-hidden="true">·</span><bdi>'+esc(ltArea.name)+'</bdi>' : '') + '</p></div>');
+    main.appendChild(lt);
+    msLtWatch_(lt, tb);
+  }
   // phone: the stories row and the pull-to-refresh emblem sit above Home (2026-10-17)
   if (msPhone_() && state.screen === 'home') {
     main.appendChild(el('<span id="msPtr" class="ms-ptr" role="status" aria-label="'+esc(t('msr_pull'))+'"><span class="emblem"><img src="'+ICON_SRC+'" alt=""></span></span>'));
@@ -8033,7 +8117,8 @@ function setNotifCount(n){
       pa_dispute_open:'A dispute is waiting to be settled',
       pa_second_approval:'A large handover needs a second approval',
       pa_deposit_due:'Cash in your hands, ready to deposit in the bank ({n})',
-      pa_risk_high:'{n} high-severity risks are open'
+      pa_risk_high:'{n} high-severity risks are open',
+      pa_stock_short:'Sold without stock: {item}, short {q}'
     },
     ar: {
       pa_one:'لديك إجراء واحد بانتظارك', pa_many:'لديك {n} من الإجراءات بانتظارك',
@@ -8049,7 +8134,8 @@ function setNotifCount(n){
       pa_dispute_open:'نزاع بانتظار الفصل فيه',
       pa_second_approval:'تسليم كبير يحتاج موافقة ثانية',
       pa_deposit_due:'مبلغ بحوزتك جاهز للإيداع في البنك ({n})',
-      pa_risk_high:'{n} من المخاطر العالية الخطورة مفتوحة'
+      pa_risk_high:'{n} من المخاطر العالية الخطورة مفتوحة',
+      pa_stock_short:'بيع بلا مخزون: {item}، نقص {q}'
     },
     ur: {
       pa_one:'آپ کا 1 کام منتظر ہے', pa_many:'آپ کے {n} کام منتظر ہیں',
@@ -8065,7 +8151,8 @@ function setNotifCount(n){
       pa_dispute_open:'ایک تنازع فیصلے کا منتظر ہے',
       pa_second_approval:'ایک بڑی حوالگی کو دوسری منظوری چاہیے',
       pa_deposit_due:'آپ کے پاس رقم بینک میں جمع کرانے کے لیے تیار ({n})',
-      pa_risk_high:'{n} زیادہ شدت کے خطرات کھلے ہیں'
+      pa_risk_high:'{n} زیادہ شدت کے خطرات کھلے ہیں',
+      pa_stock_short:'اسٹاک کے بغیر فروخت: {item}، کمی {q}'
     }
   };
   Object.keys(add).forEach(function(lang){
@@ -8075,10 +8162,10 @@ function setNotifCount(n){
 
 // kind -> icon, screen, and what to open there
 var PEND_ICON_ = { confirm_receipt:'wallet', deputy_validate:'check', deputy_batch:'doc', returned_fix:'back', batch_rejected:'back',
-  send_ready:'paperPlane', car_handover:'paperPlane', dispute_open:'alert', second_approval:'check', deposit_due:'bank', risk_high:'alert' };
+  send_ready:'paperPlane', car_handover:'paperPlane', dispute_open:'alert', second_approval:'check', deposit_due:'bank', stock_short:'inventory', risk_high:'alert' };
 var PEND_SCREEN_ = { confirm_receipt:'handoffs', deputy_validate:'deputyReview', deputy_batch:'deputyReview', returned_fix:'handoffs',
   batch_rejected:'areaBulk', send_ready:'handoffs', car_handover:'handoffs', dispute_open:'handoffs', second_approval:'handoffs',
-  deposit_due:'handoffs', risk_high:'risk' };
+  deposit_due:'handoffs', stock_short:'inventory', risk_high:'risk' };
 // a rejected batch the area upload screen should open for correction, once
 var PEND_FIX_BATCH_ = null;
 
@@ -8090,6 +8177,10 @@ function pendPlace_(it){
   var l = it.locationId ? byId(state.meta && state.meta.locations, it.locationId) : null;
   return l ? l.name : '';
 }
+// a row's sentence: the count, and for a sale without stock the stock line and how short it is
+function pendText_(it){
+  return pendFill_(t('pa_' + it.kind), { n: it.count || 1, item: it.stockItemId ? invRowName_(it.stockItemId, it.state || '') : '', q: invQty_(it.shortBy || 0) });
+}
 function pendKey_(){ return 'bgc_pendShown_' + (state.user ? state.user.id : ''); }
 
 // One row: icon, what is waiting (and where), the amount, and a Go button.
@@ -8100,7 +8191,7 @@ function pendRow_(it, compact){
   var place = pendPlace_(it);
   var row = el('<div class="pa-row" data-kind="' + esc(it.kind) + '">' +
     '<span class="pa-ic">' + icon_(PEND_ICON_[it.kind] || 'alert') + '</span>' +
-    '<span class="pa-tx"><span class="pa-s">' + esc(pendFill_(t('pa_' + it.kind), { n: it.count || 1 })) + '</span>' +
+    '<span class="pa-tx"><span class="pa-s">' + esc(pendText_(it)) + '</span>' +
       (place ? '<small>' + esc(place) + '</small>' : '') + '</span>' +
     amt +
     '<button type="button" class="pa-go">' + esc(t('pa_go')) + '</button>' +
@@ -8119,6 +8210,7 @@ function pendGo_(it){
   else if (it.kind === 'returned_fix') { FIX_OPEN_ = it.refId; scroll = '#hoFix'; }
   else if (it.kind === 'batch_rejected') { PEND_FIX_BATCH_ = it.refId; scroll = '#abFix'; }
   else if (it.kind === 'deposit_due') scroll = '#hDeposit';
+  else if (it.kind === 'stock_short') { var nsp = String(it.refId || '').split('|'); if (nsp[0]) INV_.loc = nsp[0]; INV_FOCUS_ = it.refId || null; scroll = '#invShort'; }
   if (state.screen === scr) render(); else goScreen_(scr, true);
   if (scroll) pendScroll_(scroll, 0);
 }
@@ -8138,6 +8230,87 @@ function pendClose_(){
 }
 
 // The welcome popup: centred on a desktop, a bottom sheet on a phone.
+// ---------- Sales without stock (2026-10-18) ----------
+// The server flags a sale that takes a stock line below zero on its day (stockShort
+// on the entry, stockShorts from every save and dry run). It is never refused: the
+// screens say it, amber, before saving, on the entry card, and on the stock screens.
+(function(){
+  var add = {
+    en: { ns_warnTitle:'Not enough stock', ns_warnLine:'No stock for {item}: on hand {have}, selling {sell}',
+      ns_warnHint:'The day can still be saved. The sale is flagged until a purchase, a transfer or a count covers it.',
+      ns_chip:'No stock', ns_detail:'Sold without stock: {item}, on hand {have}, selling {sell}, short {q}',
+      ns_cardTitle:'Sold without stock', ns_cardHint:'These stock lines went below zero with sales saved without stock. Record the purchase, transfer or count that covers them.',
+      ns_line:'{item} at {branch}: short {q}', ns_sales:'The sales behind it ({n})', ns_salesTitle:'Sales saved without stock',
+      ns_colSale:'Sale', ns_colHave:'On hand', ns_colSell:'Selling', ns_colShort:'Short' },
+    ar: { ns_warnTitle:'المخزون غير كافٍ', ns_warnLine:'لا يوجد مخزون من {item}: المتوفر {have}، والمباع {sell}',
+      ns_warnHint:'يمكن حفظ اليوم، ويُعلَّم البيع حتى يغطيه شراء أو تحويل أو جرد.',
+      ns_chip:'بلا مخزون', ns_detail:'بيع بلا مخزون: {item}، المتوفر {have}، المباع {sell}، النقص {q}',
+      ns_cardTitle:'مبيعات بلا مخزون', ns_cardHint:'نزل رصيد هذه الأصناف تحت الصفر بمبيعات سُجّلت دون مخزون. سجّل الشراء أو التحويل أو الجرد الذي يغطيها.',
+      ns_line:'{item} في {branch}: نقص {q}', ns_sales:'المبيعات وراءه ({n})', ns_salesTitle:'مبيعات سُجّلت بلا مخزون',
+      ns_colSale:'البيع', ns_colHave:'المتوفر', ns_colSell:'المباع', ns_colShort:'النقص' },
+    ur: { ns_warnTitle:'اسٹاک کافی نہیں', ns_warnLine:'{item} کا اسٹاک نہیں: موجود {have}، فروخت {sell}',
+      ns_warnHint:'دن پھر بھی محفوظ ہو سکتا ہے۔ خریداری، منتقلی یا گنتی سے پورا ہونے تک فروخت نشان زد رہے گی۔',
+      ns_chip:'اسٹاک نہیں', ns_detail:'اسٹاک کے بغیر فروخت: {item}، موجود {have}، فروخت {sell}، کمی {q}',
+      ns_cardTitle:'اسٹاک کے بغیر فروخت', ns_cardHint:'یہ اسٹاک لائنیں اسٹاک کے بغیر محفوظ فروخت سے صفر سے نیچے گئیں۔ انہیں پورا کرنے والی خریداری، منتقلی یا گنتی درج کریں۔',
+      ns_line:'{branch} میں {item}: کمی {q}', ns_sales:'اس کے پیچھے فروخت ({n})', ns_salesTitle:'اسٹاک کے بغیر محفوظ فروخت',
+      ns_colSale:'فروخت', ns_colHave:'موجود', ns_colSell:'فروخت شدہ', ns_colShort:'کمی' }
+  };
+  Object.keys(add).forEach(function(lang){ Object.keys(add[lang]).forEach(function(k){ L[lang][k] = add[lang][k]; }); });
+})();
+// the stock line a pending item points at, kept until the stock screen shows it
+var INV_FOCUS_ = null;
+function nsFill_(key, f){
+  return pendFill_(t(key), { item: invRowName_(f.itemId, f.state || ''), have: invQty_(f.onHand), sell: invQty_(f.sold), q: invQty_(f.shortBy) });
+}
+// The amber warning before saving: one line per stock line (rows of one line share its figures).
+function nsWarnHtml_(list){
+  var seen = {}, lines = [];
+  (list || []).forEach(function(f){ var k = (f.locationId || '') + '|' + (f.date || '') + '|' + f.itemId + '|' + (f.state || ''); if (seen[k]) return; seen[k] = 1; lines.push('<li>' + esc(nsFill_('ns_warnLine', f)) + '</li>'); });
+  if (!lines.length) return '';
+  return '<div class="ns-warn" role="alert">' + icon_('alert') + '<div><b>' + esc(t('ns_warnTitle')) + '</b><ul>' + lines.join('') + '</ul><small>' + esc(t('ns_warnHint')) + '</small></div></div>';
+}
+// The sales behind a short stock line, each opening its transaction.
+function nsSalesView_(r){
+  return {
+    title: t('ns_salesTitle'), sub: invRowName_(r.stockItemId, r.state || '') + ' · ' + locationName(r.locationId), crumb: t('ns_salesTitle'),
+    render: function(body){
+      var list = r.shortSales || [];
+      body.innerHTML = '<div class="tbl-scroll"><table class="rp-table ns-table"><thead><tr><th>' + esc(t('ns_colSale')) + '</th><th>' + esc(t('inv_item')) + '</th><th class="n">' + esc(t('ns_colHave')) + '</th><th class="n">' + esc(t('ns_colSell')) + '</th><th class="n">' + esc(t('ns_colShort')) + '</th></tr></thead><tbody>' +
+        list.map(function(x, i){
+          var no = x.txNo ? x.txNo + (Number(x.txLine) > 1 ? '/' + x.txLine : '') : '';
+          return '<tr class="ns-sale" data-i="' + i + '" tabindex="0" role="button"><td><bdi dir="ltr">' + esc(x.date) + '</bdi>' + (no ? ' <span class="tx-no" dir="ltr">' + esc(no) + '</span>' : '') + '<small class="muted" style="display:block">' + esc(userName(x.enteredBy)) + '</small></td>' +
+            '<td>' + esc(productName_(x.productId)) + '</td><td class="n num">' + invQty_(x.onHand) + '</td><td class="n num">' + invQty_(x.sold != null ? x.sold : x.qty) + '</td><td class="n num"><b class="ns-q">' + invQty_(x.shortBy) + '</b></td></tr>';
+        }).join('') + '</tbody></table></div>';
+      qsa('.ns-sale', body).forEach(function(tr){
+        function open(){ var x = list[Number(tr.dataset.i)]; drawerPush_(entryDocView_({ id: x.id, txNo: x.txNo, submissionId: x.submissionId, date: x.date, locationId: r.locationId, enteredBy: x.enteredBy, sourceType: x.sourceType, sourceId: x.sourceId, productId: x.productId, qty: x.qty })); }
+        tr.addEventListener('click', open);
+        tr.addEventListener('keydown', function(e){ if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } });
+      });
+    }
+  };
+}
+// The stock lines short with sales saved without stock: on the live card and the stock screen.
+function nsShortList_(rows){
+  var short = (rows || []).filter(function(r){ return r.short && r.shortSales && r.shortSales.length; });
+  if (!short.length) return null;
+  var box = el('<div class="ns-list"></div>');
+  short.forEach(function(r){
+    var k = r.locationId + '|' + r.stockItemId + '|' + (r.state || ''), focus = INV_FOCUS_ === k;
+    var row = el('<div class="ns-row' + (focus ? ' focus' : '') + '">' + icon_('alert') + '<span>' + esc(pendFill_(t('ns_line'), { item: invRowName_(r.stockItemId, r.state || ''), branch: locationName(r.locationId), q: invQty_(r.ending) })) + '</span>' +
+      '<button type="button" class="btn secondary ns-open">' + esc(pendFill_(t('ns_sales'), { n: r.shortSalesCount || r.shortSales.length })) + '</button></div>');
+    qs('.ns-open', row).addEventListener('click', function(){ drawerOpen_(nsSalesView_(r)); });
+    box.appendChild(row);
+  });
+  return box;
+}
+function invShortCard_(rows){
+  var list = nsShortList_(rows);
+  if (!list) return null;
+  var card = el('<section class="card ns-card no-collapse" id="invShort"><h2>' + icon_('alert') + '<span>' + esc(t('ns_cardTitle')) + '</span></h2><p class="muted inv-eq-hint">' + esc(t('ns_cardHint')) + '</p></section>');
+  card.appendChild(list);
+  if (INV_FOCUS_) INV_FOCUS_ = null;
+  return card;
+}
 // Before a day is saved (2026-10-12): the server works out the rows exactly as the
 // save will (dry run, nothing written) and the person confirms that figure. What
 // is confirmed is what is saved, whatever the screen's own preview says.
@@ -8152,6 +8325,7 @@ function entryServerCheck_(rows, previewNet, go, stop){
       '<div class="pa-top"><span class="pa-bell">'+icon_('check')+'</span><div><div class="pa-hi">'+esc(t('sc_hi'))+'</div><h2 id="scTitle">'+esc(t('sc_title'))+'</h2></div></div>' +
       '<div class="hp-body"><div class="hp-k">'+esc(t('entry_netOwed'))+'</div><div class="hp-big num">'+money(net)+'<small>'+esc(t('ui_sar'))+'</small></div>' +
         (differs ? '<div class="hp-row sc-diff"><span>'+esc(t('sc_diff').replace('{p}', money(previewNet)))+'</span></div>' : '') +
+        nsWarnHtml_(res.stockShorts) +
         '<div class="sc-lines"></div></div>' +
       '<div class="pa-foot sc-foot"><button type="button" class="btn secondary sc-back">'+esc(t('sc_back'))+'</button><button type="button" class="btn sc-go">'+esc(t('sc_save'))+'</button></div></div></div>');
     try { qs('.sc-lines', ov).innerHTML = breakdownGrid(b); } catch (e) {}
@@ -8328,19 +8502,19 @@ function pendHeroPaint_(){
       act_close:'Close', act_bell:'Activity, {n} waiting', act_bell0:'Activity', act_dismiss:'Dismiss',
       act_v_confirm_receipt:'Receive', act_v_deputy_validate:'Review', act_v_deputy_batch:'Review', act_v_returned_fix:'Fix',
       act_v_batch_rejected:'Fix', act_v_send_ready:'Send', act_v_car_handover:'Hand over', act_v_dispute_open:'Settle',
-      act_v_second_approval:'Approve', act_v_deposit_due:'Deposit', act_v_risk_high:'Open' },
+      act_v_second_approval:'Approve', act_v_deposit_due:'Deposit', act_v_risk_high:'Open', act_v_stock_short:'Check stock' },
     ar: { act_title:'النشاط', act_now:'الآن', act_today:'اليوم', act_earlier:'سابقًا', act_waiting:'{n} بانتظارك',
       act_caught:'أنجزت كل شيء', act_caughtSub:'لا شيء بانتظارك الآن. يظهر هنا كل جديد لحظة وصوله.',
       act_close:'إغلاق', act_bell:'النشاط، {n} بانتظارك', act_bell0:'النشاط', act_dismiss:'إخفاء',
       act_v_confirm_receipt:'استلم', act_v_deputy_validate:'راجِع', act_v_deputy_batch:'راجِع', act_v_returned_fix:'صحّح',
       act_v_batch_rejected:'صحّح', act_v_send_ready:'أرسل', act_v_car_handover:'سلّم', act_v_dispute_open:'افصل',
-      act_v_second_approval:'اعتمد', act_v_deposit_due:'أودِع', act_v_risk_high:'افتح' },
+      act_v_second_approval:'اعتمد', act_v_deposit_due:'أودِع', act_v_risk_high:'افتح', act_v_stock_short:'راجِع المخزون' },
     ur: { act_title:'سرگرمی', act_now:'ابھی', act_today:'آج', act_earlier:'پہلے', act_waiting:'{n} آپ کے منتظر',
       act_caught:'سب کام مکمل', act_caughtSub:'ابھی آپ کا کوئی کام منتظر نہیں۔ نیا کام آتے ہی یہاں نظر آئے گا۔',
       act_close:'بند کریں', act_bell:'سرگرمی، {n} منتظر', act_bell0:'سرگرمی', act_dismiss:'ہٹائیں',
       act_v_confirm_receipt:'وصول کریں', act_v_deputy_validate:'جائزہ لیں', act_v_deputy_batch:'جائزہ لیں', act_v_returned_fix:'درست کریں',
       act_v_batch_rejected:'درست کریں', act_v_send_ready:'بھیجیں', act_v_car_handover:'حوالے کریں', act_v_dispute_open:'فیصلہ کریں',
-      act_v_second_approval:'منظور کریں', act_v_deposit_due:'جمع کریں', act_v_risk_high:'کھولیں' }
+      act_v_second_approval:'منظور کریں', act_v_deposit_due:'جمع کریں', act_v_risk_high:'کھولیں', act_v_stock_short:'اسٹاک دیکھیں' }
   };
   Object.keys(add).forEach(function(lang){ Object.keys(add[lang]).forEach(function(k){ L[lang][k] = add[lang][k]; }); });
 })();
@@ -8350,7 +8524,7 @@ function msStill_(){ return !!(window.matchMedia && window.matchMedia('(prefers-
 function msBuzz_(ms){ try { if (navigator.vibrate && msPhone_() && (!navigator.userActivation || navigator.userActivation.hasBeenActive)) navigator.vibrate(ms || 10); } catch (e) {} }
 // kind -> ring tone (decorative: the sentence always says what it is)
 var MS_TONE_ = { confirm_receipt:'rcv', deputy_validate:'val', deputy_batch:'val', second_approval:'val', returned_fix:'fix', batch_rejected:'fix',
-  send_ready:'send', car_handover:'send', dispute_open:'bad', risk_high:'bad', deposit_due:'bank' };
+  send_ready:'send', car_handover:'send', dispute_open:'bad', risk_high:'bad', deposit_due:'bank', stock_short:'fix' };
 // Now (the last hour) / Today / Earlier, by when the item started waiting
 function actGroup_(it){
   if (!it.since) return 'now';
@@ -8369,13 +8543,13 @@ function actRow_(it, i){
   var row = el('<article class="act-row" data-kind="'+esc(it.kind)+'" data-tone="'+tone+'" style="--i:'+Math.min(i || 0, 8)+'">' +
     '<span class="act-av" aria-hidden="true"><span class="act-ring"></span><span class="act-face">'+(place ? esc(initials_(place)) : icon_(PEND_ICON_[it.kind] || 'alert'))+'</span>' +
       '<span class="act-kind">'+icon_(PEND_ICON_[it.kind] || 'alert')+'</span></span>' +
-    '<div class="act-tx"><p class="act-s">'+esc(pendFill_(t('pa_' + it.kind), { n: it.count || 1 }))+'</p>' +
+    '<div class="act-tx"><p class="act-s">'+esc(pendText_(it))+'</p>' +
       '<span class="act-meta">'+(place ? '<bdi>'+esc(place)+'</bdi>' : '')+(place && age ? '<i aria-hidden="true">·</i>' : '')+(age ? '<time'+(it.since ? ' datetime="'+esc(it.since)+'"' : '')+'>'+esc(age)+'</time>' : '')+'</span>' +
       (amt ? '<b class="act-chip num"><bdi dir="ltr">'+amt+'</bdi><small>'+esc(t('ui_sar'))+'</small></b>' : '') + '</div>' +
     '<button type="button" class="act-go">'+esc(verb)+'</button>' +
   '</article>');
   var go = qs('.act-go', row);
-  go.setAttribute('aria-label', verb + ': ' + pendFill_(t('pa_' + it.kind), { n: it.count || 1 }) + (place ? ', ' + place : '') + (amt ? ', ' + amt : ''));
+  go.setAttribute('aria-label', verb + ': ' + pendText_(it) + (place ? ', ' + place : '') + (amt ? ', ' + amt : ''));
   go.addEventListener('click', function(){ msBuzz_(8); pendGo_(it); });
   return row;
 }
@@ -8487,7 +8661,7 @@ function msToast_(text, type){
       msn_risk:'Report a problem', msn_riskS:'Put a risk or complaint on record', msn_me:'Profile', msn_menu:'Main menu',
       mss_you:'You', mss_title:'Waiting on you', mss_clear:'All clear',
       mss_confirm_receipt:'To receive', mss_deputy_validate:'To validate', mss_deputy_batch:'Batches', mss_returned_fix:'Returned', mss_batch_rejected:'Rejected',
-      mss_send_ready:'Ready to send', mss_car_handover:'Car day', mss_dispute_open:'Disputes', mss_second_approval:'2nd approval', mss_deposit_due:'To bank', mss_risk_high:'Risks',
+      mss_send_ready:'Ready to send', mss_car_handover:'Car day', mss_dispute_open:'Disputes', mss_second_approval:'2nd approval', mss_deposit_due:'To bank', mss_risk_high:'Risks', mss_stock_short:'No stock',
       msv_next:'Next', msv_prev:'Previous', msv_of:'{i} of {n}', msv_close:'Close', msv_hint:'Tap the sides to move, swipe down to close',
       msf_title:'Recent activity', msf_more:'Load more', msf_open:'Open', msf_receive:'Receive', msf_slip:'Slip attached', msf_empty:'No handovers yet. They will show here as they happen.',
       msf_to:'to', msf_swipe:'Swipe for quick actions',
@@ -8501,7 +8675,7 @@ function msToast_(text, type){
       msn_risk:'الإبلاغ عن مشكلة', msn_riskS:'سجّل خطرًا أو شكوى', msn_me:'حسابي', msn_menu:'القائمة الرئيسية',
       mss_you:'أنت', mss_title:'بانتظارك', mss_clear:'لا شيء معلّق',
       mss_confirm_receipt:'للاستلام', mss_deputy_validate:'للاعتماد', mss_deputy_batch:'دفعات', mss_returned_fix:'مُعاد', mss_batch_rejected:'مرفوض',
-      mss_send_ready:'جاهز للإرسال', mss_car_handover:'يوم السيارة', mss_dispute_open:'نزاعات', mss_second_approval:'موافقة ثانية', mss_deposit_due:'للإيداع', mss_risk_high:'مخاطر',
+      mss_send_ready:'جاهز للإرسال', mss_car_handover:'يوم السيارة', mss_dispute_open:'نزاعات', mss_second_approval:'موافقة ثانية', mss_deposit_due:'للإيداع', mss_risk_high:'مخاطر', mss_stock_short:'بلا مخزون',
       msv_next:'التالي', msv_prev:'السابق', msv_of:'{i} من {n}', msv_close:'إغلاق', msv_hint:'المس الجانبين للتنقل، واسحب للأسفل للإغلاق',
       msf_title:'آخر النشاط', msf_more:'عرض المزيد', msf_open:'فتح', msf_receive:'استلم', msf_slip:'إيصال مرفق', msf_empty:'لا توجد تسليمات بعد. ستظهر هنا عند حدوثها.',
       msf_to:'إلى', msf_swipe:'اسحب للإجراءات السريعة',
@@ -8515,7 +8689,7 @@ function msToast_(text, type){
       msn_risk:'مسئلہ رپورٹ کریں', msn_riskS:'خطرہ یا شکایت درج کریں', msn_me:'پروفائل', msn_menu:'مرکزی مینو',
       mss_you:'آپ', mss_title:'آپ کے منتظر', mss_clear:'سب صاف',
       mss_confirm_receipt:'وصولی', mss_deputy_validate:'منظوری', mss_deputy_batch:'بیچ', mss_returned_fix:'واپس', mss_batch_rejected:'مسترد',
-      mss_send_ready:'بھیجنے کو تیار', mss_car_handover:'گاڑی کا دن', mss_dispute_open:'تنازعات', mss_second_approval:'دوسری منظوری', mss_deposit_due:'جمع کرانا', mss_risk_high:'خطرات',
+      mss_send_ready:'بھیجنے کو تیار', mss_car_handover:'گاڑی کا دن', mss_dispute_open:'تنازعات', mss_second_approval:'دوسری منظوری', mss_deposit_due:'جمع کرانا', mss_risk_high:'خطرات', mss_stock_short:'اسٹاک نہیں',
       msv_next:'اگلا', msv_prev:'پچھلا', msv_of:'{n} میں سے {i}', msv_close:'بند کریں', msv_hint:'آگے پیچھے کے لیے کناروں کو چھوئیں، بند کرنے کے لیے نیچے کھینچیں',
       msf_title:'حالیہ سرگرمی', msf_more:'مزید دیکھیں', msf_open:'کھولیں', msf_receive:'وصول کریں', msf_slip:'رسید منسلک', msf_empty:'ابھی کوئی حوالگی نہیں۔ ہوتے ہی یہاں نظر آئیں گی۔',
       msf_to:'کو', msf_swipe:'فوری کاموں کے لیے سوائپ کریں',
@@ -8629,6 +8803,33 @@ function msTabBar_(navItems, badge, justNavigated){
   return bar;
 }
 
+// The large title collapses into the bar: once it scrolls under the bar, the bar's small
+// title fades in. One observer at a time; transform/opacity only.
+// A scroll listener (passive, one per frame) rather than an IntersectionObserver: the
+// observer did not report in a backgrounded tab, which left the bar without a title.
+var MS_LT_ON_ = false, MS_LT_RAF_ = 0;
+function msLtCheck_(){
+  var tb = qs('.tb'), h = qs('.ms-lt-h');
+  if (!tb) return;
+  if (!h) { tb.classList.add('ms-c'); return; }
+  tb.classList.toggle('ms-c', h.getBoundingClientRect().bottom < tb.getBoundingClientRect().bottom + 2);
+}
+function msLtWatch_(lt, tb){
+  requestAnimationFrame(msLtCheck_);
+  if (MS_LT_ON_) return;
+  MS_LT_ON_ = true;
+  var on = function(){ if (MS_LT_RAF_) return; MS_LT_RAF_ = requestAnimationFrame(function(){ MS_LT_RAF_ = 0; msLtCheck_(); }); };
+  window.addEventListener('scroll', on, { passive: true });
+  window.addEventListener('resize', on, { passive: true });
+}
+// crossing the phone width (a rotation, a split screen) redraws the shell in the other layout
+(function(){
+  if (!window.matchMedia) return;
+  var mq = window.matchMedia('(max-width:768px)');
+  var onChange = function(){ if (state.user && qs('#app.shell')) { try { render(); } catch (e) {} } };
+  if (mq.addEventListener) mq.addEventListener('change', onChange); else if (mq.addListener) mq.addListener(onChange);
+})();
+
 // ---- stories: one circle per kind of thing waiting, plus "You" ----
 var MS_SEEN_KEY_ = 'bgc_msSeen';
 function msSeen_(){ try { return JSON.parse(sessionStorage.getItem(MS_SEEN_KEY_) || '{}') || {}; } catch (e) { return {}; } }
@@ -8686,7 +8887,7 @@ function msStoryOpen_(kind){
     card.setAttribute('data-tone', tone);
     card.innerHTML = '<div class="ms-sv-k"><span class="ms-sv-ic">'+icon_(PEND_ICON_[it.kind] || 'alert')+'</span><span>'+esc(t('mss_' + it.kind))+'</span></div>' +
       (amt ? '<div class="ms-sv-amt num"><bdi dir="ltr">'+amt+'</bdi><small>'+esc(t('ui_sar'))+'</small></div>' : '') +
-      '<p class="ms-sv-s">'+esc(pendFill_(t('pa_' + it.kind), { n: it.count || 1 }))+'</p>' +
+      '<p class="ms-sv-s">'+esc(pendText_(it))+'</p>' +
       '<p class="ms-sv-m">'+(place ? '<bdi>'+esc(place)+'</bdi>' : '')+(place && it.since ? ' · ' : '')+(it.since ? esc(relTime_(it.since)) : '')+'</p>' +
       '<button type="button" class="ms-sv-go">'+esc(verb)+'</button>';
     qs('.ms-sv-go', card).addEventListener('click', function(){ msBuzz_(8); close(true); pendGo_(it); });
@@ -9836,7 +10037,7 @@ function exportPdf_(title, sheets, opts){
     '.charts{display:grid;grid-template-columns:repeat(' + (orient === 'landscape' ? 2 : 1) + ',1fr);gap:10px 14px;margin:0 0 16px}.charts figure{margin:0;border:1px solid #' + EX_LINE_ + ';border-radius:10px;padding:8px 10px 6px;break-inside:avoid;page-break-inside:avoid;background:#fff}' +
     '.charts figcaption{font-size:10.5px;font-weight:800;color:#' + EX_DARK_ + ';margin:0 0 4px}.charts svg{display:block;height:auto}' +
     '.neg{color:#b3261e}.neg small{font-size:8px;font-weight:700}' +
-    '*{box-sizing:border-box}body{margin:0;font-family:Cairo,"Segoe UI",Tahoma,Arial,sans-serif;color:#1f2a20;font-size:10.5px;-webkit-print-color-adjust:exact;print-color-adjust:exact}' +
+    '*{box-sizing:border-box}body{margin:0;font-family:"IBM Plex Sans Arabic",Cairo,"Segoe UI",Tahoma,Arial,sans-serif;color:#1f2a20;font-size:10.5px;-webkit-print-color-adjust:exact;print-color-adjust:exact}' +
     '.top{display:flex;align-items:center;gap:14px;background:#' + EX_GREEN_ + ';color:#fff;padding:12px 16px;border-radius:10px}' +
     '.top img{width:44px;height:44px;border-radius:50%;background:#' + EX_CREAM_ + '}.top h1{margin:0;font-size:19px;font-weight:800}.top p{margin:2px 0 0;font-size:11px;opacity:.85}' +
     '.meta{margin:8px 2px 14px;color:#5b665c;font-size:10px}' +
@@ -9856,9 +10057,10 @@ function exportPdf_(title, sheets, opts){
     '.kpi span{display:block;font-size:9.5px;color:#5b665c;font-weight:700}.kpi b{display:block;font-size:15px;margin-top:3px;font-variant-numeric:tabular-nums;direction:ltr;text-align:' + (rtl ? 'right' : 'left') + '}' +
     '.kpi.strong{background:#' + EX_GREEN_ + ';border-color:#' + EX_GREEN_ + '}.kpi.strong span,.kpi.strong b{color:#fff}' +
     'section{page-break-inside:auto}h2{page-break-after:avoid}' +
-    'td.bar{background-image:linear-gradient(to ' + (rtl ? 'right' : 'left') + ',rgba(157,186,142,.55) var(--w),transparent var(--w))!important;background-size:100% 62%;background-position:center;background-repeat:no-repeat}';
+    // one flat colour sized to the share (2026-10-18: a hard colour stop at 100% printed as a pink band)
+    'td.bar{background-image:linear-gradient(#CFDDC6,#CFDDC6)!important;background-size:var(--w) 62%;background-position:' + (rtl ? 'left' : 'right') + ' center;background-repeat:no-repeat}';
   var html = '<!doctype html><html lang="'+state.lang+'" dir="'+(rtl ? 'rtl' : 'ltr')+'"><head><meta charset="utf-8"><title>'+esc(trText_(title))+'</title>' +
-    '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap"><style>'+css+'</style></head><body>' +
+    '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;600;700&family=Cairo:wght@400;600;700;800&display=swap"><style>'+css+'</style></head><body>' +
     '<div class="top"><img src="data:image/png;base64,'+LOGO_B64+'" alt=""><div>'+(opts && opts.kicker ? '<span class="kick">'+esc(opts.kicker)+'</span>' : '')+'<h1>'+esc(trText_(title))+'</h1><p>Best Gas Carrier Co. \u00B7 Best Gas Collections</p></div></div>' +
     '<div class="meta">'+esc(exSubtitle_(opts))+'</div>' +
     (function(){ var fl = exFilterList_(null, opts); return fl.length ? '<div class="filters"><b>'+esc(t('ex_filtersUsed'))+'</b>' +
@@ -15992,7 +16194,7 @@ function renderEntries(body){
         validRows.forEach(function(r){ var k = r.sourceType + '|' + r.sourceId + '|' + r.date; if (!impIds[k]) impIds[k] = newSubmissionId_(); if (!r.submissionId) r.submissionId = impIds[k]; });
         api('importDailyEntries', { rows: validRows }).then(function(res){
           if (!res.ok){ qs('#impMsg',importCard).innerHTML='<div class="msg err">'+esc(errMsg_(res))+'</div>'; return; }
-          qs('#impMsg',importCard).innerHTML='<div class="msg ok">'+esc(t('entry_importResult').replace('{created}',res.created).replace('{total}',res.total))+'</div>';
+          qs('#impMsg',importCard).innerHTML='<div class="msg ok">'+esc(t('entry_importResult').replace('{created}',res.created).replace('{total}',res.total))+'</div>' + nsWarnHtml_(res.stockShorts);
           pendingImportRows = [];
           renderImportPreview();
           loadEntryList();
@@ -16342,6 +16544,8 @@ function renderEntries(body){
     if (vatBack && live.length) detail += '<div class="el-vat">'+esc(t('report_vat'))+': <bdi dir="ltr">'+money(vatBack)+'</bdi></div>';
     var notes = rows.map(function(e){ return e.note; }).filter(Boolean);
     if (notes.length) detail += '<div class="el-note">'+esc(t('entry_note'))+': '+esc(notes.filter(function(n, i){ return notes.indexOf(n) === i; }).join(' · '))+'</div>';
+    var nsRows = rows.filter(function(e){ return !e.voided && e.stockShort; });
+    if (nsRows.length) detail = '<ul class="ns-lines">' + nsRows.map(function(e){ return '<li>' + icon_('alert') + '<span>' + esc(nsFill_('ns_detail', e.stockShort)) + '</span></li>'; }).join('') + '</ul>' + detail;
     var vr = rows.filter(function(e){ return e.voided && e.voidReason; })[0];
     if (vr) detail += '<div class="el-voidinfo">'+icon_('close')+'<span><b>'+esc(t('el_voidReason'))+':</b> '+esc(vr.voidReason)+' — '+esc(userName(vr.voidedBy))+' · <bdi dir="ltr">'+esc(fmtStamp_(vr.voidedAt))+'</bdi></span></div>';
     if (st === 'submitted' || st === 'approved') detail += '<div class="el-lock">'+icon_('key')+'<span>'+esc(t(st === 'approved' ? 'el_lockedApproved' : 'el_lockedSubmitted'))+'</span></div>';
@@ -16354,7 +16558,7 @@ function renderEntries(body){
     var stRow = live[0] || rows[0], sg = st === 'voided' ? null : stRow.stage;
     var node = el('<article class="el-row st-'+st+'">' +
       '<div class="el-main"><span class="el-ic">'+icon_(icon)+'</span><div class="el-who">'+txBadge_(e0, true)+'<b>'+esc(sourceName_(e0))+'</b>' +
-        '<span>'+esc(t('entry_source_'+e0.sourceType))+' · '+esc(locationName(e0.locationId))+'</span></div></div>' +
+        '<span>'+esc(t('entry_source_'+e0.sourceType))+' · '+esc(locationName(e0.locationId))+'</span>' + (nsRows.length ? '<span class="ns-chip" title="'+esc(nsFill_('ns_detail', nsRows[0].stockShort))+'">'+icon_('alert')+esc(t('ns_chip'))+'</span>' : '') + '</div></div>' +
       '<div class="el-date"><b><bdi dir="ltr">'+esc(e0.date)+'</bdi></b><span>'+esc(userName(e0.enteredBy))+'</span></div>' +
       '<div class="el-fig"><span>'+esc(t('el_sales'))+'</span><b><bdi dir="ltr">'+money(sales)+'</bdi></b></div>' +
       '<div class="el-fig ded"><span>'+esc(t('el_deduct'))+'</span><b><bdi dir="ltr">'+(deduct ? money(deduct) : '—')+'</bdi></b></div>' +
@@ -17322,6 +17526,7 @@ function renderAreaBulk(body){
         handoffDetailRows(res.batch) +
         productBreakdownBlock_(pendingRows.filter(function(r){ return r.productId && r.qty > 0; })) +
         (b.deliveryFee > 0 ? vatExplainBlock_(b) : '') +
+        nsWarnHtml_(res.stockShorts) +
         '<button class="btn" id="abSubmit" style="margin-top:14px;">'+esc(t('areaBulk_submit'))+'</button>';
       qs('#abSubmit', calcWrap).addEventListener('click', function(){
         // a correction goes whole, as the next version of its own batch
@@ -20222,7 +20427,7 @@ function crpLevelsCard_(c, rows){
   var hdr = [levels.map(function(lv){ return t('crp_lv_' + lv); }).concat([t('crp_lv_req')]).join(' > '), t('crp_count'), t('col_card_total'), t('crp_pctParent'), t('col_card_dep'), t('col_card_rem'), t('col_k_short')];
   var sh = crpTreeSheet_(root, function(k){ return crpLvName_(c, k.lv, k.key); }, function(x){ return [(x.r.txNo || '') + ' ' + x.day, 1, crpR2_(x.r.amount), '', x.st === 'deposited' ? crpR2_(x.r.amount) : 0, x.st !== 'deposited' ? crpR2_(x.r.amount) : 0, crpR2_(x.r.shortfall || 0)]; });
   var srows = [hdr].concat(sh.rows.map(function(r){ return r.map(function(v, i){ return i === 3 && typeof v === 'number' ? crpPctTxt_(v) : i >= 2 && typeof v === 'number' ? crpR2_(v) : v; }); }), [[t('rp_total'), root.n, root.total, crpPctTxt_(root.pct), root.deposited, root.remaining, root.short]]);
-  c.sheets.push({ name: t('crp_levels').slice(0, 31), rows: srows, outline: sh.outline, note: c.sentence, noBars: true });
+  c.sheets.push({ name: t('crp_levels').slice(0, 31), rows: srows, outline: sh.outline, note: c.sentence, noBars: true, intCols: [1] });
   return card;
 }
 // ---- one period picker for the reports and the comparison (Zoho-style list) ----
@@ -22159,6 +22364,8 @@ function invLiveCard_(opts){
         (unitHtml ? '<div class="inv-live-grid">'+unitHtml+'</div>' : '') : '<div class="muted">'+esc(t('inv_liveEmpty'))+'</div>') +
       '<div class="inv-live-foot"><span class="muted">'+esc(t('inv_liveAsOf').replace('{t}', at))+(Object.keys(branches).length > 1 ? ' · '+esc(t('inv_liveBranches').replace('{n}', Object.keys(branches).length)) : '')+(nUn ? ' · '+esc(t('inv_liveUncounted').replace('{n}', nUn)) : '')+'</span>' +
       (total ? '<span>'+esc(t('inv_liveTotal'))+' <b>'+money(Math.abs(total))+' '+esc(t('ui_sar'))+'</b></span>' : '')+'</div>';
+    var nsl = nsShortList_(rows);
+    if (nsl) { var nsh = el('<div class="ns-live"><b>'+icon_('alert')+esc(t('ns_cardTitle'))+'</b></div>'); nsh.appendChild(nsl); box.insertBefore(nsh, box.firstChild); }
   }
   // quiet: the minute's refresh shows no loading cover. A newer request wins;
   // one asked for while another runs goes out as soon as it lands.
@@ -22638,6 +22845,8 @@ function renderInventory(body){
     // every figure opens the stock lines behind it, City > Area > Branch > item (2026-10-18)
     qsa('.inv-fig', eq).forEach(function(f){ f.addEventListener('click', function(){ var c = f.dataset.c; cardDrawer_({ title: t('inv_' + c), qty: !showVal, items: invItems_(rows, showVal ? c + 'Value' : c) }); }); });
     // the movement by item, at the level chosen (2026-10-07): quantities never add up across items, amounts do
+    var nsCard = invShortCard_(rows);
+    if (nsCard) out.appendChild(nsCard);
     if (live) out.appendChild(invItemMoveCard_(res, rows, sumOf)); else out.appendChild(eq);
     if (live && canEdit && editLocs.length) out.appendChild(invCountCard_(res, editLocs, today, load));
     // gas and cylinders, the refill cycle with the plant, the stock card (2026-10-06)
@@ -23377,7 +23586,7 @@ function cusPreOpen_(){ var w = window.open('', '_blank'); if (w) { try { w.docu
 // ---------- the documents: tax invoice, credit note, statement of account ----------
 // Bilingual (Arabic first, as ZATCA requires, with English), A4, the brand green
 // and cream, the logo large in the band and faint behind the page, the ZATCA QR.
-var DOC_CSS_ = '@page{size:A4;margin:0}*{box-sizing:border-box}body{margin:0;background:#E9E5DA;font-family:"Segoe UI",Tahoma,Arial,sans-serif;color:#1F2A22;-webkit-print-color-adjust:exact;print-color-adjust:exact}' +
+var DOC_CSS_ = '@page{size:A4;margin:0}*{box-sizing:border-box}body{margin:0;background:#E9E5DA;font-family:"IBM Plex Sans Arabic","Segoe UI",Tahoma,Arial,sans-serif;color:#1F2A22;-webkit-print-color-adjust:exact;print-color-adjust:exact}' +
   '.pg{width:210mm;min-height:297mm;margin:12mm auto;background:#FFFDF8;position:relative;overflow:hidden;box-shadow:0 10px 40px rgba(31,42,34,.18);display:flex;flex-direction:column}' +
   '.wm{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:0}.wm span{width:120mm;height:120mm;border-radius:50%;position:relative;overflow:hidden;opacity:.06}.wm img{position:absolute;max-width:none;width:272.95mm;height:224.75mm;left:-72.79mm;top:-21.15mm}' +
   '.stamp{position:absolute;top:118mm;left:50%;transform:translateX(-50%) rotate(-24deg);font-size:64px;font-weight:900;letter-spacing:6px;color:rgba(178,34,34,.16);border:8px solid rgba(178,34,34,.16);padding:4px 34px;border-radius:18px;z-index:1;white-space:nowrap;text-align:center;line-height:1.05}' +
@@ -23448,7 +23657,7 @@ function docBand_(co, titleAr, d, l2){
     (docAddr_(co) ? '<span>'+docEsc_(docAddr_(co))+'</span>' : '') + '</div></div><div class="ttl"><div class="a">'+titleAr+'</div><div class="e l2">'+docEsc_(d.title)+'</div></div></div>';
 }
 function docShell_(title, inner, qr, l2){
-  return '<!doctype html><html lang="ar" dir="rtl" class="l2-'+(l2 || 'en')+'"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+docEsc_(title)+'</title>'+(l2 === 'ur' ? '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;600&display=swap">' : '')+'<style>'+DOC_CSS_+'</style></head><body>' +
+  return '<!doctype html><html lang="ar" dir="rtl" class="l2-'+(l2 || 'en')+'"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+docEsc_(title)+'</title>'+'<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;600;700&display=swap">'+(l2 === 'ur' ? '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;600&display=swap">' : '')+'<style>'+DOC_CSS_+'</style></head><body>' +
     '<div class="tools"><button onclick="window.print()">طباعة / حفظ PDF · '+docEsc_(DOC_L2_[l2 || 'en'].print)+'</button></div>' + inner +
     (qr ? '<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"><\/script><script>(function(){try{var q=qrcode(0,"M");q.addData('+JSON.stringify(qr)+');q.make();document.getElementById("qr").innerHTML=q.createSvgTag({cellSize:4,margin:0,scalable:true});}catch(e){document.getElementById("qr").textContent="QR";}})();<\/script>' : '') +
     '</body></html>';

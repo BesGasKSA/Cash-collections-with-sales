@@ -621,7 +621,12 @@ function actionRecordStockCount_(req, user) {
   } finally { try { lock.releaseLock(); } catch (e) {} }
 }
 
-function actionInventoryReport_(req, user, scOverride) {
+// `extraEntries`: day rows not on file yet, counted in as if they were (the check
+// of a sale before it is saved, stockShortsFor_). Nothing else changes.
+// `pre`: {entries} already read by the caller (stockShortsFor_ asks for several days at once).
+function actionInventoryReport_(req, user, scOverride, extraEntries, pre) {
+  var entriesOnFile = pre && pre.entries ? pre.entries : null;
+  function entriesRead() { if (!entriesOnFile) entriesOnFile = readSheet(SHEETS.ENTRIES); return entriesOnFile; }
   var scope = invReadBranches_(user);
   if (scope === false) return { ok: false, error: 'forbidden' };
   var today = todayRiyadh_();
@@ -632,7 +637,7 @@ function actionInventoryReport_(req, user, scOverride) {
     if (req.locationId && locId !== req.locationId) return false;
     return !scope || scope.indexOf(locId) >= 0;
   }
-  var sc = scOverride || invStockCtx_(), hist = sc.live ? costHistory_() : null;
+  var sc = scOverride || invStockCtx_(), hist = sc.live ? (pre && pre.hist ? pre.hist : costHistory_()) : null;
   var allMoves = sc.moves;
 
   // each branch-and-item starts on its opening count's day
@@ -696,12 +701,21 @@ function actionInventoryReport_(req, user, scOverride) {
       else post(row(m.locationId, t.item, 'empty'), m.date, 'refillOut', q);
     }
   });
-  readSheet(SHEETS.ENTRIES).forEach(function (e) {
+  // the sales flagged as made without stock, per stock line (2026-10-18)
+  var flagged = Object.create(null);
+  entriesRead().concat(extraEntries || []).forEach(function (e) {
     if (e.voided || !e.productId || !inScope(e.locationId) || !e.date || e.date > to) return;
     // the stock the product draws from, and how
     var link = sc.saleLink(e.productId);
     if (!link) return;
     var effect = link.effect;
+    // a flagged sale sits on the line it draws on now (the stamp may name the
+    // item as it was before the inventory items were set up)
+    if (e.stockShort && Number(e.qty || 0) > 0) {
+      var fk = invOpeningKey_(e.locationId, link.item.id, effect === 'unit' ? null : effect === 'sell_empty' ? 'empty' : 'full');
+      (flagged[fk] = flagged[fk] || []).push({ id: e.id, date: e.date, createdAt: e.createdAt || null, txNo: e.txNo || '', txLine: Number(e.txLine || 0) || null, submissionId: e.submissionId || null,
+        productId: e.productId, qty: Number(e.qty || 0), onHand: e.stockShort.onHand, sold: e.stockShort.sold, shortBy: e.stockShort.shortBy, sourceType: e.sourceType, sourceId: e.sourceId, enteredBy: e.enteredBy });
+    }
     var r = row(e.locationId, link.item, effect === 'unit' ? null : effect === 'sell_empty' ? 'empty' : 'full'), q = Number(e.qty || 0);
     if (q && effect === 'exchange') post(row(e.locationId, link.back, 'empty'), e.date, 'exchangeIn', q);
     if (!q) {
@@ -726,6 +740,8 @@ function actionInventoryReport_(req, user, scOverride) {
     r.available = Math.round((r.opening + r.purchases + r.returns + r.exchangeIn + r.transfersIn + r.fromPlant + r.depositBack + r.leakedIn + r.countGain) * 1000) / 1000;
     r.ending = Math.round((r.available - r.sales - r.damaged - r.refillOut - r.toPlant - r.transfersOut - r.depositOut - r.wasted - r.countLoss) * 1000) / 1000;
     r.short = !r.noOpening && r.ending < 0;
+    // the sales saved without stock on this line, newest first (at most 50)
+    if (flagged[k]) { r.shortSalesCount = flagged[k].length; r.shortSales = flagged[k].sort(function (a, b) { return String(b.date).localeCompare(String(a.date)) || String(b.createdAt || '').localeCompare(String(a.createdAt || '')); }).slice(0, 50); }
     ['opening', 'purchases', 'returns', 'exchangeIn', 'transfersIn', 'fromPlant', 'depositBack', 'available', 'sales', 'damaged', 'refillOut', 'toPlant', 'transfersOut', 'depositOut', 'ending', 'wasted', 'leakedIn', 'countGain', 'countLoss'].forEach(function (f) {
       r[f + 'Value'] = Math.round(r[f] * r.unitCost * 100) / 100;
     });
@@ -784,8 +800,8 @@ function actionInventoryReport_(req, user, scOverride) {
     if (m.kind === 'car_load') cr.loaded += Number(m.qty || 0); else cr.returned += Number(m.qty || 0);
   });
   if (Object.keys(carSince).length) {
-    var posMap = posById_();
-    readSheet(SHEETS.ENTRIES).forEach(function (e) {
+    var posMap = pre && pre.pos ? pre.pos : posById_();
+    entriesRead().forEach(function (e) {
       if (e.voided || !e.productId || !e.date || e.date > to || !Number(e.qty || 0)) return;
       var carId = entryCarId_(e, posMap);
       if (!carId || !carSince[carId] || e.date < carSince[carId]) return;
@@ -817,6 +833,171 @@ function actionInventoryReport_(req, user, scOverride) {
   moves.sort(function (a, b) { return String(b.date).localeCompare(String(a.date)) || String(b.createdAt).localeCompare(String(a.createdAt)); });
   return { ok: true, dateFrom: from, dateTo: to, rows: out, cylSummary: cylSummary, plant: plant, customerHoldings: customerHoldings, cars: cars,
     moves: moves.slice(0, 2000), movesTotal: moves.length, stockItemsLive: sc.live };
+}
+
+// ---------- Sales without stock (2026-10-18) ----------
+// The user: "when we record sales without inventory available it must be flagged
+// directly". A sale is never refused for it: the stock on file may be wrong, the
+// day still happened. Every sale path (createDailyEntry, importDailyEntries and its
+// dry run, the area batch and its dry run) asks stockShortsFor_ before it writes:
+// the stock line each sale draws on (full for an exchange or a full cylinder sold,
+// empty for a body sold, the unit item otherwise), on the entry's own date, after
+// these sales. The arithmetic is the report's own (actionInventoryReport_ with the
+// rows not yet on file counted in), never a second formula. A line without an
+// opening count is never short, as on the stock screen.
+var INV_SYSTEM_READER_ = { id: 'system', role: 'admin' };
+var INV_SHORT_MAILED_ = 'STOCK_SHORT_MAILED';
+// a file of many days checks its 7 latest days; earlier days are best-effort (not flagged)
+var INV_SHORT_MAX_DAYS_ = 7;
+// what waits looks only at sales flagged in the last 60 days
+var INV_SHORT_PENDING_DAYS_ = 60;
+// Returns one entry per row: null, or {productId, itemId, state, onHand, sold, shortBy}.
+// onHand = what the line held before these sales (never below 0), sold = these
+// rows' units on that line and day, shortBy = what of it there was no stock for.
+// The entries and the stock context are read once and shared by every report it runs.
+function stockShortsFor_(rows) {
+  var out = (rows || []).map(function () { return null; });
+  if (!out.length) return out;
+  var sc = invStockCtx_(), groups = Object.create(null), order = [], days = Object.create(null), dates = Object.create(null);
+  rows.forEach(function (e, i) {
+    var q = Number(e && e.qty || 0);
+    if (!e || e.voided || !e.productId || !(q > 0) || !e.locationId || !invDateOk_(e.date)) return;
+    var link = sc.saleLink(e.productId); if (!link) return;
+    var st = link.effect === 'unit' ? null : link.effect === 'sell_empty' ? 'empty' : 'full';
+    var k = e.locationId + '|' + e.date + '|' + invOpeningKey_('', link.item.id, st);
+    if (!groups[k]) { groups[k] = { loc: e.locationId, date: e.date, itemId: link.item.id, state: st, sold: 0, idx: [] }; order.push(k); }
+    groups[k].sold += q; groups[k].idx.push(i);
+    days[e.locationId + '|' + e.date] = true;
+    dates[e.date] = true;
+  });
+  if (!order.length) return out;
+  // the latest days only: a month-long file must not run a report per branch per day under the lock
+  var keep = Object.create(null);
+  Object.keys(dates).sort().reverse().slice(0, INV_SHORT_MAX_DAYS_).forEach(function (d) { keep[d] = true; });
+  var pending = rows.filter(function (e) { return e && !e.voided; }), ending = Object.create(null);
+  var pre = { entries: readSheet(SHEETS.ENTRIES), hist: sc.live ? costHistory_() : null, pos: posById_() };
+  Object.keys(days).forEach(function (d) {
+    var p = d.split('|');
+    if (!keep[p[1]]) return;
+    var rep = actionInventoryReport_({ dateFrom: p[1], dateTo: p[1], locationId: p[0] }, INV_SYSTEM_READER_, sc, pending, pre);
+    (rep.rows || []).forEach(function (r) { if (!r.noOpening) ending[d + '|' + invOpeningKey_('', r.stockItemId, r.state)] = r.ending; });
+  });
+  var r3 = function (x) { return Math.round(x * 1000) / 1000; };
+  order.forEach(function (k) {
+    var g = groups[k];
+    if (!hasOwn_(ending, k) || !(ending[k] < -0.0005)) return;
+    var end = ending[k], sold = r3(g.sold);
+    var flag = { itemId: g.itemId, state: g.state, onHand: r3(Math.max(0, end + g.sold)), sold: sold, shortBy: r3(Math.min(g.sold, -end)) };
+    g.idx.forEach(function (i) {
+      var f = { productId: rows[i].productId };
+      safeOwnKeys_(flag).forEach(function (x) { f[x] = flag[x]; });
+      out[i] = f;
+    });
+  });
+  return out;
+}
+// Stamps each row from stockShortsFor_ (on the row itself, before it is written)
+// and returns the flags found, for a dry run to show. `rowOf` maps a row's index
+// to the request's row number. It never stops a save: on any error the rows go
+// out unflagged and the error is logged.
+function stampStockShorts_(rows, rowOf) {
+  try {
+    var flags = stockShortsFor_(rows), found = [];
+    flags.forEach(function (f, i) {
+      if (!f) { if (rows[i]) delete rows[i].stockShort; return; }
+      rows[i].stockShort = f;
+      found.push({ row: rowOf ? rowOf[i] : i, locationId: rows[i].locationId, date: rows[i].date, productId: f.productId, itemId: f.itemId, state: f.state, onHand: f.onHand, sold: f.sold, shortBy: f.shortBy });
+    });
+    return found;
+  } catch (x) {
+    console.error('stock check: ' + x);
+    (rows || []).forEach(function (r) { if (r) delete r.stockShort; });
+    try { logAudit_('stock_check_failed', 'system', String(x && x.message || x).slice(0, 200)); } catch (y) { /* best-effort */ }
+    return [];
+  }
+}
+// After the rows are saved: each flagged sale goes in the audit trail, and the
+// branch manager, the area manager, admin and finance get one email per branch
+// and stock item a day (the first shortage of the day; later ones are on the
+// screens). The emails go once the cash lock is released (afterCashLock_).
+// Best-effort, like every alert: nothing here ever fails the save.
+function stockShortAfterSave_(rows, user) {
+  try {
+    var groups = Object.create(null), order = [];
+    (rows || []).forEach(function (e) {
+      if (!e || !e.stockShort) return;
+      try { logAudit_('sale_without_stock', user.id, e.id + ' ' + e.stockShort.itemId + (e.stockShort.state ? ' ' + e.stockShort.state : '') + ' short ' + e.stockShort.shortBy); } catch (x) { console.error('stock short audit: ' + x); }
+      var k = e.locationId + '|' + e.stockShort.itemId;
+      if (!groups[k]) { groups[k] = { locationId: e.locationId, itemId: e.stockShort.itemId, lines: [] }; order.push(k); }
+      groups[k].lines.push(e);
+    });
+    if (!order.length) return 0;
+    var today = todayRiyadh_(), sent = 0, log = {};
+    try { log = JSON.parse(scriptProps_()[INV_SHORT_MAILED_] || '{}') || {}; } catch (x) { log = {}; }
+    if (log.day !== today) log = { day: today, keys: {} };
+    if (!log.keys || typeof log.keys !== 'object') log.keys = {};
+    order.forEach(function (k) {
+      if (hasOwn_(log.keys, k)) return;
+      log.keys[k] = new Date().toISOString();
+      var g = groups[k];
+      afterCashLock_(function () { escalateStockShort_(g, user); });
+      sent++;
+    });
+    if (sent) { try { setScriptProp_(INV_SHORT_MAILED_, JSON.stringify(log)); } catch (x) { /* the alert is best-effort */ } }
+    return sent;
+  } catch (x) { console.error('stock short after save: ' + x); return 0; }
+}
+// Who hears of a sale without stock: the branch manager, the area manager, admin, finance.
+function stockShortRecipients_(locationId) {
+  var rec = Object.create(null);
+  function add(u) { if (u && u.id && u.active !== false) rec[u.id] = u; }
+  var loc = getById_(SHEETS.LOCATIONS, locationId);
+  var store = storeOfLocation_(locationId);
+  if (store) add(getById_(SHEETS.USERS, store.storeManagerUserId));
+  var cl = loc ? getById_(SHEETS.CLUSTERS, loc.clusterId) : null;
+  if (cl) add(getById_(SHEETS.USERS, cl.clusterManagerUserId));
+  readSheet(SHEETS.USERS).forEach(function (u) { if (u.role === 'admin' || u.role === 'finance') add(u); });
+  return Object.keys(rec).map(function (id) { return rec[id]; });
+}
+// What waits on a person (myPendingActions' `stock_short`): every stock line in his
+// branches (an area manager: his active area) with sales saved without stock in the
+// last 60 days that is still below zero now. A purchase, a transfer in, an opening or
+// a count that brings the line back to zero or above closes it: nothing is stored,
+// the stock on hand decides. The answer is cached until the entries, the stock moves,
+// the items or the products change (their versions are in the key).
+function stockShortPending_(user) {
+  var scope = invBranches_(user);
+  var area = user.role === 'cluster_manager' ? activeAreaOf_(user.id) : null;
+  if (area && scope) {
+    var inArea = Object.create(null);
+    readSheet(SHEETS.LOCATIONS).forEach(function (l) { if (l.clusterId === area) inArea[l.id] = true; });
+    scope = scope.filter(function (id) { return inArea[id]; });
+  }
+  if (scope && !scope.length) return [];
+  var today = todayRiyadh_();
+  var key = 'ssp|' + user.id + '|' + (area || '') + '|' + today + '|' + [SHEETS.ENTRIES, SHEETS.INV_MOVES, SHEETS.STOCK_ITEMS, SHEETS.PRODUCTS].map(version_).join('.');
+  var cache = null;
+  try { cache = CacheService.getScriptCache(); var hit = cache.get(key); if (hit) return JSON.parse(hit); } catch (x) { cache = null; }
+  var since = Utilities.formatDate(new Date(Date.parse(today + 'T12:00:00Z') - INV_SHORT_PENDING_DAYS_ * 86400000), 'UTC', 'yyyy-MM-dd');
+  var res = [];
+  var entries = readSheet(SHEETS.ENTRIES);
+  // cheap first look: no recent flagged sale in reach, nothing to work out
+  if (entries.some(function (e) { return !e.voided && e.stockShort && e.date >= since && (!scope || scope.indexOf(e.locationId) >= 0); })) {
+    var rep = actionInventoryReport_({ dateFrom: today, dateTo: today, locationId: scope && scope.length === 1 ? scope[0] : null }, INV_SYSTEM_READER_, null, null, { entries: entries });
+    res = (rep.rows || []).filter(function (r) {
+      return r.short && r.shortSales && r.shortSales.some(function (x) { return x.date >= since; }) && (!scope || scope.indexOf(r.locationId) >= 0);
+    }).map(function (r) {
+      var first = r.shortSales.map(function (x) { return x.createdAt; }).filter(Boolean).sort()[0] || null;
+      return { count: r.shortSalesCount || r.shortSales.length, refId: invOpeningKey_(r.locationId, r.stockItemId, r.state), locationId: r.locationId, stockItemId: r.stockItemId,
+        state: r.state || null, shortBy: Math.round(-r.ending * 1000) / 1000, itemName: r.itemName || '', since: first };
+    });
+  }
+  if (cache) { try { cache.put(key, JSON.stringify(res), 600); } catch (x) { /* the cache is a convenience */ } }
+  return res;
+}
+function escalateStockShort_(g, user) {
+  var sc = invStockCtx_(), it = sc.item(g.itemId);
+  stockShortRecipients_(g.locationId).forEach(function (u) { if (u.email) nmStockShortMail_(u, g, it, user); });
 }
 
 // ---------- The stock card (2026-10-06) ----------

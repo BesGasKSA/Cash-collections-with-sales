@@ -760,11 +760,15 @@ function actionCreateEntry_(req, user) {
   };
   var extra = nonSalesFields_(req);
   safeOwnKeys_(extra).forEach(function (k) { entry[k] = extra[k]; });
+  // a sale beyond the stock on hand is saved and flagged, never refused (2026-10-18)
+  var shorts = [];
+  try { shorts = stampStockShorts_([entry]); } catch (x) { console.error('stock check: ' + x); shorts = []; }
   writeRow(SHEETS.ENTRIES, entry);
   claimPhoto_(entry.directDepositPhotoId, entry.id);
   var directDeposit = entry.directDepositAmount > 0 ? recordDirectDeposit_(entry, user) : null;
   logAudit_('create_entry', user.id, entry.id);
-  return { ok: true, entry: entry, deposit: directDeposit };
+  try { stockShortAfterSave_([entry], user); } catch (x) { console.error('stock short: ' + x); }
+  return { ok: true, entry: entry, deposit: directDeposit, stockShorts: shorts };
 }
 
 // Bulk version of actionCreateEntry_ for CSV/Excel import — same per-row
@@ -779,7 +783,7 @@ function actionImportEntries_(req, user) {
   var sids = {}; rows.forEach(function (r) { if (r && r.submissionId) sids[String(r.submissionId).slice(0, 64)] = 1; });
   var sidList = Object.keys(sids);
   // a dry run (2026-10-12) checks and works out the day exactly as a save would, and writes nothing
-  var dry = req.dryRun === true, built = [];
+  var dry = req.dryRun === true, built = [], builtRow = [], photoTaken = {};
   if (!dry && sidList.length === 1 && rows.every(function (r) { return r && r.submissionId; }) && savedSubmission_(sidList[0]).filter(function (e) { return e.enteredBy === user.id; }).length) {
     return { ok: true, already: true, created: 0, total: rows.length, results: [] };
   }
@@ -824,6 +828,8 @@ function actionImportEntries_(req, user) {
       continue;
     }
     var rowErr = checkNonSalesFields_(r, siblingCash_(rows, i)) || checkDepositSlip_(r, user, scope.locationId);
+    // the rows are written together after the loop: one slip photo still goes on one row only
+    if (!rowErr && r.directDepositPhotoId && Number(r.directDepositAmount || 0) > 0 && photoTaken[r.directDepositPhotoId]) rowErr = 'invalid_photo';
     if (rowErr) {
       results.push({ row: i, ok: false, error: rowErr });
       continue;
@@ -858,16 +864,25 @@ function actionImportEntries_(req, user) {
     };
     var rowExtra = nonSalesFields_(r);
     safeOwnKeys_(rowExtra).forEach(function (k) { entry[k] = rowExtra[k]; });
-    if (dry) { built.push(entry); results.push({ row: i, ok: true }); continue; }
+    if (entry.directDepositPhotoId && Number(entry.directDepositAmount || 0) > 0) photoTaken[entry.directDepositPhotoId] = true;
+    built.push(entry);
+    builtRow.push(i);
+    results.push(dry ? { row: i, ok: true } : { row: i, ok: true, id: entry.id });
+  }
+  // a sale beyond the stock on hand is saved and flagged, never refused (2026-10-18);
+  // the dry run returns the same flags, so the person sees them before saving
+  var shorts = [];
+  try { shorts = stampStockShorts_(built, builtRow); } catch (x) { console.error('stock check: ' + x); shorts = []; }
+  if (dry) return { ok: true, dryRun: true, total: rows.length, results: results, breakdown: computeNet_(built), stockShorts: shorts };
+  built.forEach(function (entry) {
     writeRow(SHEETS.ENTRIES, entry);
     claimPhoto_(entry.directDepositPhotoId, entry.id);
     if (entry.directDepositAmount > 0) recordDirectDeposit_(entry, user);
     created++;
-    results.push({ row: i, ok: true, id: entry.id });
-  }
-  if (dry) return { ok: true, dryRun: true, total: rows.length, results: results, breakdown: computeNet_(built) };
+  });
   logAudit_('import_entries', user.id, created + '/' + rows.length);
-  return { ok: true, created: created, total: rows.length, results: results };
+  try { stockShortAfterSave_(built, user); } catch (x) { console.error('stock short: ' + x); }
+  return { ok: true, created: created, total: rows.length, results: results, stockShorts: shorts };
 }
 
 function actionListEntries_(req, user) {
@@ -1644,8 +1659,13 @@ function actionBulkSubmitAreaBatch_(req, user) {
     }]);
   }
 
+  // a sale beyond the stock on hand is uploaded and flagged, never refused (2026-10-18);
+  // the dry run shows the same flags. A rejected version's lines are voided already.
+  var shorts = [];
+  try { shorts = stampStockShorts_(entries); } catch (x) { console.error('stock check: ' + x); shorts = []; }
+
   if (isDryRun) {
-    return { ok: true, dryRun: true, batch: batch };
+    return { ok: true, dryRun: true, batch: batch, stockShorts: shorts };
   }
 
   if (prior) {
@@ -1660,15 +1680,17 @@ function actionBulkSubmitAreaBatch_(req, user) {
       writeRow(SHEETS.AREA_BULK_BATCHES, batch);
     } finally { if (!heldAlready) { try { lock.releaseLock(); } catch (e) {} } }
     logAudit_('resubmit_area_batch', user.id, batch.id + ' v' + batch.revision);
+    try { stockShortAfterSave_(entries, user); } catch (x) { console.error('stock short: ' + x); }
     notifyDeputyPendingBatch_(batch);
-    return { ok: true, batch: batch };
+    return { ok: true, batch: batch, stockShorts: shorts };
   }
 
   entries.forEach(function (e) { writeRow(SHEETS.ENTRIES, e); });
   writeRow(SHEETS.AREA_BULK_BATCHES, batch);
   logAudit_('bulk_submit_area_batch', user.id, batch.id);
+  try { stockShortAfterSave_(entries, user); } catch (x) { console.error('stock short: ' + x); }
   notifyDeputyPendingBatch_(batch);
-  return { ok: true, batch: batch };
+  return { ok: true, batch: batch, stockShorts: shorts };
 }
 
 // Why a batch cannot be corrected and sent again by this person, or null.
@@ -2969,7 +2991,7 @@ function actionDashboard_(req, user) {
 // a person is told only about what they may act on. Nothing is written.
 // kind order below is the order the client lists them in.
 var PENDING_KINDS_ = ['confirm_receipt', 'deputy_validate', 'deputy_batch', 'returned_fix', 'batch_rejected',
-  'send_ready', 'car_handover', 'dispute_open', 'second_approval', 'deposit_due', 'risk_high'];
+  'send_ready', 'car_handover', 'dispute_open', 'second_approval', 'deposit_due', 'stock_short', 'risk_high'];
 function actionMyPendingActions_(req, user) {
   var items = [];
   function add(kind, o) { o.kind = kind; items.push(o); }
@@ -3058,6 +3080,11 @@ function actionMyPendingActions_(req, user) {
   if (isMoney) {
     var risks = readSheet(SHEETS.RISK_ITEMS).filter(function (r) { return r.severity === 'high' && r.status === 'open'; });
     if (risks.length) add('risk_high', { count: risks.length, since: risks.map(function (r) { return r.createdAt; }).filter(Boolean).sort()[0] });
+  }
+  // sales saved without stock: the branch manager, the area manager, admin and
+  // finance, until a stock move covers the line (2026-10-18). Never breaks the list.
+  if (isMoney || user.role === 'cluster_manager' || user.role === 'store_manager') {
+    try { stockShortPending_(user).forEach(function (o) { add('stock_short', o); }); } catch (x) { console.error('stock_short pending: ' + x); }
   }
 
   items.sort(function (a, b) {
