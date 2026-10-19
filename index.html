@@ -4965,6 +4965,7 @@
     :root body .ms-on #screenBody button:not(.btn):not(.tile){min-width:44px;}
     :root body .ms-on #screenBody .col-chip,:root body .ms-on #screenBody .details-toggle,:root body .ms-on #screenBody .eqx-allTog{display:inline-flex;align-items:center;justify-content:center;}
     :root body .ms-on #screenBody .adm-tabs{margin-inline:0;}
+    :root body .ms-on #screenBody th[role="button"]{min-width:44px;}
     /* labels in sentence case: no all-caps anywhere on a phone screen */
     :root body .field label{text-transform:none;letter-spacing:0;}
     :root body .ms-on #screenBody *,:root body .ms-on .dr *{text-transform:none !important;}
@@ -14184,7 +14185,7 @@ function dpEnhance_(inp){
   inp.addEventListener('focus', function(){ btn.focus(); });
   new MutationObserver(function(){ dpSync_(inp); }).observe(inp, { attributes: true, attributeFilter: ['disabled', 'style', 'value', 'min', 'max'] });
   // a field drawn before it was on screen, or resized, fits its date again
-  if (typeof ResizeObserver === 'function') { var lastW = -1; new ResizeObserver(function(){ var w = btn.clientWidth; if (w !== lastW) { lastW = w; dpSync_(inp); } }).observe(btn); }
+  if (typeof ResizeObserver === 'function') { var lastW = -1; new ResizeObserver(function(){ var w = btn.clientWidth; if (w !== lastW) { lastW = w; requestAnimationFrame(function(){ dpSync_(inp); }); } }).observe(btn); }
 }
 function dpSync_(inp){
   var btn = inp._dp; if (!btn) return;
@@ -21574,7 +21575,7 @@ function trendChart(rows, opts){
     hit.style.cursor = opts.onPick ? 'pointer' : 'crosshair';
   }
   draw(640);
-  if (typeof ResizeObserver === 'function') new ResizeObserver(function(){ var w = wrap.clientWidth; if (w && Math.abs(w - lastW) > 2) draw(w); }).observe(wrap);
+  if (typeof ResizeObserver === 'function') new ResizeObserver(function(){ var w = wrap.clientWidth; if (w && Math.abs(w - lastW) > 2) requestAnimationFrame(function(){ draw(w); }); }).observe(wrap);
   return wrap;
 }
 // Inline SVG donut with a legend — segments: [{label, value, color}].
@@ -23208,7 +23209,7 @@ function plChart_(host, labels, vals, opts){
   box.addEventListener('pointerover', function(e){ var r = e.target.closest && e.target.closest('[data-i]'); if (!r) return; qsa('.pl-b.on', box).forEach(function(b){ b.classList.remove('on'); }); var b = qs('.pl-b[data-i="'+r.getAttribute('data-i')+'"]', box); if (b) b.classList.add('on'); say(+r.getAttribute('data-i')); });
   box.addEventListener('pointerleave', function(){ qsa('.pl-b.on', box).forEach(function(b){ b.classList.remove('on'); }); say(null); });
   box.addEventListener('click', function(e){ var r = e.target.closest && e.target.closest('[data-i]'); if (r && opts.onPick) opts.onPick(+r.getAttribute('data-i')); });
-  if (window.ResizeObserver) { var w0 = box.clientWidth; new ResizeObserver(function(){ if (Math.abs(box.clientWidth - w0) > 4) { w0 = box.clientWidth; draw(); } }).observe(box); }
+  if (window.ResizeObserver) { var w0 = box.clientWidth; new ResizeObserver(function(){ if (Math.abs(box.clientWidth - w0) > 4) { w0 = box.clientWidth; requestAnimationFrame(draw); } }).observe(box); }
 }
 function plChips_(items, current, onPick){
   var wrap = el('<div class="pl-chips" role="group"></div>');
