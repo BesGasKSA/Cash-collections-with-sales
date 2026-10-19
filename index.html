@@ -4930,6 +4930,55 @@
     /* reads show the thin top bar (below the notch), not the blocking veil */
     #topProgress{top:env(safe-area-inset-top);height:3px;}
   }
+  /* ---- v2 on every phone screen (2026-10-18): benchmarked against Revolut, Monzo, Cash App,
+     STC Pay, Al Rajhi, Instagram, Apple HIG and Material 3 (table in the report). One set of
+     tokens: 4-pt spacing, 12/13.5/15/17/22/30 type, 12/16/20 radius, two elevations. ---- */
+  @media (max-width:768px){
+    :root{--ms-r-sm:12px;--ms-r-md:16px;--ms-r-lg:20px;--ms-bg:#F3F4EF;--ms-tbh:calc(57px + env(safe-area-inset-top));
+      --ms-e1:0 1px 2px rgba(20,28,22,.05),0 6px 18px rgba(20,28,22,.05);--ms-e2:0 2px 4px rgba(20,28,22,.06),0 12px 28px rgba(20,28,22,.09);}
+    html:root body{background:var(--ms-bg);}
+    /* cards sit inset with one radius, one elevation and a 16px inner rhythm */
+    :root body .ms-on #screenBody .card,:root body .ms-on #screenBody .card.no-collapse{margin:0 12px 12px;padding:16px;border-radius:var(--ms-r-lg);
+      border:1px solid rgba(20,28,22,.06);box-shadow:var(--ms-e1);background:#fff;}
+    :root body .ms-on #screenBody .card > h2{margin:-16px -16px 14px;padding:15px 16px 12px;font-size:var(--ms-t-lg);font-weight:800;line-height:1.3;border-bottom:1px solid #EEF0EC;}
+    :root body .ms-on #screenBody .card > h2::before,:root body .ms-on #screenBody .card h2::before{display:none;}
+    :root body .ms-on #screenBody .hero{margin:0 12px 12px;border-radius:24px;}
+    /* figures: white tiles with their own colour on the icon, not grey slabs */
+    :root body .ms-on #screenBody > .tiles{margin:0 12px 12px;padding:0;background:transparent;gap:10px;}
+    :root body .ms-on #screenBody .tile{border-radius:var(--ms-r-md);border:1px solid rgba(20,28,22,.06);box-shadow:var(--ms-e1);padding:14px;}
+    :root body .ms-on #screenBody > .tiles .tile:not(.is-zero){background:linear-gradient(160deg,#fff 55%,color-mix(in srgb,var(--c) 9%,#fff));}
+    :root body .ms-on #screenBody .tile .vl{font-size:22px;font-weight:800;letter-spacing:-.01em;}
+    /* section headers stay under the bar while their section scrolls (grouped lists) */
+    :root body .ms-on .sec-title{position:sticky;top:var(--ms-tbh);z-index:6;margin:18px 0 8px;padding:10px 16px;font-size:var(--ms-t-xl);
+      background:rgba(243,244,239,.9);-webkit-backdrop-filter:saturate(1.6) blur(14px);backdrop-filter:saturate(1.6) blur(14px);}
+    :root body .ms-on .sec-title .dot{display:none;}
+    /* rows are cards of their own */
+    :root body .ms-on #screenBody .list-item{border-radius:var(--ms-r-md);border:1px solid rgba(20,28,22,.07);box-shadow:0 1px 2px rgba(20,28,22,.04);margin-bottom:10px;}
+    :root body .ms-on #screenBody .list-item.ho-item.open{box-shadow:var(--ms-e2);}
+    /* every control at least 44px tall */
+    :root body .ms-on #screenBody .btn,:root body .ms-on .rp-tab,:root body .ms-on .tabs > button,:root body .ms-on .cus-chip,:root body .ms-on .dl-o,
+    :root body .ms-on .rp-periods button,:root body .ms-on .dd-btn,:root body .ms-on .ho-send-b{min-height:44px;}
+    :root body .ms-on #screenBody .btn{border-radius:12px;font-weight:700;}
+    /* the sweep found 30 kinds of tap target under 44px (chips 33, toggles 28, sort arrows 20,
+       row buttons 29, a details link 16): every button on a phone screen is 44px tall now */
+    :root body .ms-on #screenBody button,:root body .ms-on #screenBody [role="button"],:root body .ms-on .dr button{min-height:44px;}
+    :root body .ms-on #screenBody button:not(.btn):not(.tile){min-width:44px;}
+    :root body .ms-on #screenBody .col-chip,:root body .ms-on #screenBody .details-toggle,:root body .ms-on #screenBody .eqx-allTog{display:inline-flex;align-items:center;justify-content:center;}
+    :root body .ms-on #screenBody .adm-tabs{margin-inline:0;}
+    /* labels in sentence case: no all-caps anywhere on a phone screen */
+    :root body .field label{text-transform:none;letter-spacing:0;}
+    :root body .ms-on #screenBody *,:root body .ms-on .dr *{text-transform:none !important;}
+    /* skeletons shimmer, empties invite the next step */
+    :root body .ms-on .sk{background:linear-gradient(90deg,#ECEEE9,#F6F7F3,#ECEEE9);background-size:200% 100%;animation:msShimmer 1.2s linear infinite;border-radius:var(--ms-r-md);}
+    :root body .ms-on .rp-empty,:root body .ms-on .lf-empty,:root body .ms-on .lv-empty{padding:28px 16px;font-size:var(--ms-t-md);line-height:1.5;color:var(--ms-mute);}
+    :root body .ms-on .es-ok{padding:26px 12px 14px;}
+    /* a field never hides under the bars when it takes focus */
+    :root body .ms-on input,:root body .ms-on select,:root body .ms-on textarea{scroll-margin-top:calc(var(--ms-tbh) + 12px);scroll-margin-bottom:130px;}
+    /* while the keyboard is up the tab bar steps aside and docked bars sit low */
+    html.ms-kb .ms-tab{transform:translate3d(0,140%,0);opacity:0;pointer-events:none;}
+    html.ms-kb :root body .ms-on .e-dock,html.ms-kb body .ms-on .e-dock{bottom:8px;}
+  }
+  @media (max-width:768px) and (prefers-reduced-motion:reduce){ :root body .ms-on .sk{animation:none;} }
   @keyframes msCapIn{from{opacity:0;transform:scaleX(.5)}to{opacity:1;transform:none}}
   @media (prefers-reduced-motion:reduce){
     :root body .ms-on .tb .tb-title,.ms-tb.on .ms-tb-ic::before{transition:none !important;animation:none !important;}
@@ -7533,6 +7582,7 @@ function sbSpot_(sb){
   sb.addEventListener('pointerleave', function(){ sb.classList.remove('lit'); });
 }
 
+var MS_POP_ = false, MS_HIST_INIT_ = false;
 function goScreen_(screen, keepOpen){
   if (state.screen === screen) { var sb = qs('#screenBody'); if (sb) window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
   drawerClose_();
@@ -7540,9 +7590,12 @@ function goScreen_(screen, keepOpen){
   // from the side the user is heading towards.
   var order = navItemsForRole_().map(function(it){ return it[0]; });
   state.navDir = order.indexOf(screen) >= order.indexOf(state.screen) ? 1 : -1;
-  try { if (navigator.vibrate && window.matchMedia('(max-width:700px)').matches) navigator.vibrate(8); } catch (e) {}
+  // the tick waits for a real tap (a call before one is refused and logged as an error)
+  if (typeof msBuzz_ === 'function') msBuzz_(8);
   state.screen = screen;
   if (!keepOpen) HO_OPEN_ = null;
+  // the phone's back button walks back through screens (v2, 2026-10-18)
+  if (!MS_POP_ && typeof msHistPush_ === 'function') msHistPush_(screen);
   render();
   window.scrollTo(0, 0);
 }
@@ -7683,12 +7736,13 @@ function renderShell(){
       (ltArea ? '<span class="ms-lt-sep" aria-hidden="true">·</span><bdi>'+esc(ltArea.name)+'</bdi>' : '') + '</p></div>');
     main.appendChild(lt);
     msLtWatch_(lt, tb);
+    // pull to refresh on every screen (v2, 2026-10-18)
+    main.appendChild(el('<span id="msPtr" class="ms-ptr" role="status" aria-label="'+esc(t('msr_pull'))+'"><span class="emblem"><img src="'+ICON_SRC+'" alt=""></span></span>'));
+    msPtr_();
   }
   // phone: the stories row and the pull-to-refresh emblem sit above Home (2026-10-17)
   if (msPhone_() && state.screen === 'home') {
-    main.appendChild(el('<span id="msPtr" class="ms-ptr" role="status" aria-label="'+esc(t('msr_pull'))+'"><span class="emblem"><img src="'+ICON_SRC+'" alt=""></span></span>'));
     main.appendChild(el('<div id="msStories" class="ms-stories-host"></div>'));
-    msPtr_();
   }
   main.appendChild(body);
   col.appendChild(main);
@@ -7699,7 +7753,10 @@ function renderShell(){
 
   // ---- phone bottom switcher: every screen for this role ----
   root.appendChild(msPhone_() ? msTabBar_(navItems, badge, justNavigated) : buildBottomSwitcher_(navItems, badge, justNavigated));
-  if (msPhone_()) { root.classList.add('ms-on'); msStoriesPaint_(); }
+  if (msPhone_()) { root.classList.add('ms-on'); msStoriesPaint_();
+    // one guard entry, so the first Back closes a sheet instead of leaving the app
+    if (!MS_HIST_INIT_) { MS_HIST_INIT_ = true; try { history.replaceState({ msScreen: state.screen, msRoot: 1 }, ''); history.pushState({ msScreen: state.screen }, ''); } catch (e) {} }
+  }
 
   watchCollapsibles_(body);
   if (state.lastAnimatedScreen !== state.screen) { state.lastAnimatedScreen = state.screen; watchEntrance_(body); }
@@ -8822,12 +8879,50 @@ function msLtWatch_(lt, tb){
   window.addEventListener('scroll', on, { passive: true });
   window.addEventListener('resize', on, { passive: true });
 }
+// The on-screen keyboard (v2): the tab bar steps aside while it is up, and a focused
+// field that would sit under it is brought to the middle of what is left.
+(function(){
+  var vv = window.visualViewport;
+  if (vv) vv.addEventListener('resize', function(){ document.documentElement.classList.toggle('ms-kb', msPhone_() && vv.height < window.innerHeight * 0.78); });
+  document.addEventListener('focusin', function(e){
+    var el = e.target;
+    if (!msPhone_() || !el || !/^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName) || el.type === 'file' || el.hidden) return;
+    setTimeout(function(){
+      var h = vv ? vv.height : window.innerHeight, r = el.getBoundingClientRect();
+      if (r.bottom > h - 24 || r.top < 70) { try { el.scrollIntoView({ block: 'center' }); } catch (x) {} }
+    }, 320);
+  });
+})();
+// The phone's back button (v2). Before this the app kept no history, so Back on Android
+// left the app from any screen with a sheet still open. Now Back closes the open sheet,
+// viewer or drawer first, then walks back through the screens visited.
+function msHistPush_(screen){ if (!msPhone_()) return; try { history.pushState({ msScreen: screen }, ''); } catch (e) {} }
+function msCloseTop_(){
+  var c = qs('.ms-cam'); if (c) { var cx = qs('.ms-cam-x', c); if (cx) cx.click(); return true; }
+  var sv = qs('.ms-sv'); if (sv) { var sx = qs('.ms-sv-x', sv); if (sx) sx.click(); return true; }
+  var sh = qs('.ms-sheet'); if (sh && sh._close) { sh._close(); return true; }
+  var xs = qs('.xsw'); if (xs && xs._close) { xs._close(); return true; }
+  var bs = qs('.bt-sheet'); if (bs) { var bh = qs('.bt-sheet-handle', bs); if (bh) bh.click(); return true; }
+  var pa = qs('.pa-ov'); if (pa) { var pb = qs('.pa-bg', pa); if (pb) pb.click(); else pa.remove(); return true; }
+  if (qs('.dr.open')) { if (DRAWER.stack.length > 1) drawerBack_(); else drawerClose_(); return true; }
+  return false;
+}
+window.addEventListener('popstate', function(e){
+  if (!state.user || !msPhone_()) return;
+  if (msCloseTop_()) { msHistPush_(state.screen); return; }
+  var to = e.state && e.state.msScreen;
+  if (!to || to === state.screen || !navItemsForRole_().some(function(it){ return it[0] === to; })) return;
+  MS_POP_ = true;
+  try { goScreen_(to, false); } finally { MS_POP_ = false; }
+});
 // crossing the phone width (a rotation, a split screen) redraws the shell in the other layout
 (function(){
   if (!window.matchMedia) return;
   var mq = window.matchMedia('(max-width:768px)');
-  var onChange = function(){ if (state.user && qs('#app.shell')) { try { render(); } catch (e) {} } };
+  // redraw only when the drawn layout and the width disagree (a change event can be missed)
+  var onChange = function(){ var app = qs('#app.shell'); if (state.user && app && app.classList.contains('ms-on') !== mq.matches) { try { render(); } catch (e) {} } };
   if (mq.addEventListener) mq.addEventListener('change', onChange); else if (mq.addListener) mq.addListener(onChange);
+  var rt = 0; window.addEventListener('resize', function(){ clearTimeout(rt); rt = setTimeout(onChange, 180); }, { passive: true });
 })();
 
 // ---- stories: one circle per kind of thing waiting, plus "You" ----
@@ -8994,12 +9089,19 @@ function msFeed_(body, handoffs){
 }
 // Pull to refresh on Home: the brand emblem turns while the screen reloads.
 var MS_PTR_ON_ = false;
+// a refresh would throw away what is being typed: never on a form in progress
+function msPtrUnsafe_(){
+  var b = qs('#screenBody'), a = document.activeElement;
+  if (b && b.dataset.dirty === '1') return true;
+  if (a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)) return true;
+  return !!qs('#screenBody .e-dock, #screenBody .slipf[data-state="busy"]');
+}
 function msPtr_(){
   if (MS_PTR_ON_) return; MS_PTR_ON_ = true;
   var y0 = null, d = 0, ind = null;
   function el_(){ ind = qs('#msPtr'); return ind; }
   document.addEventListener('touchstart', function(e){
-    if (!msPhone_() || state.screen !== 'home' || window.scrollY > 0 || qs('.ms-sheet, .pa-ov, .ms-sv, .dr.open') || !el_()) { y0 = null; return; }
+    if (!msPhone_() || window.scrollY > 0 || qs('.ms-sheet, .pa-ov, .ms-sv, .ms-cam, .dr.open') || !el_() || msPtrUnsafe_()) { y0 = null; return; }
     y0 = e.touches[0].clientY; d = 0;
   }, { passive: true });
   document.addEventListener('touchmove', function(e){
@@ -9036,7 +9138,7 @@ function msProfileOpen_(){
     b.appendChild(recent);
     var scr = el('<section class="msp-sec"><h3>'+esc(t('msp_screens'))+'</h3><div class="msp-screens"></div></section>');
     keys.forEach(function(it, i){
-      var tb = el('<button type="button" class="msp-scr'+(state.screen === it[0] ? ' on' : '')+'" style="--i:'+Math.min(i, 10)+'"'+(state.screen === it[0] ? ' aria-current="page"' : '')+'><span class="msp-scr-ic">'+icon_(it[0])+'</span><span>'+esc(t(it[1]))+'</span></button>');
+      var tb = el('<button type="button" data-k="'+esc(it[0])+'" class="msp-scr'+(state.screen === it[0] ? ' on' : '')+'" style="--i:'+Math.min(i, 10)+'"'+(state.screen === it[0] ? ' aria-current="page"' : '')+'><span class="msp-scr-ic">'+icon_(it[0])+'</span><span>'+esc(t(it[1]))+'</span></button>');
       tb.addEventListener('click', function(){ close(true); goScreen_(it[0]); });
       qs('.msp-screens', scr).appendChild(tb);
     });
