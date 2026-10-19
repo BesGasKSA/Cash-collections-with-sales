@@ -5700,15 +5700,15 @@ var L = {
     en: { crp_levels: 'Levels', crp_levelsHint: 'City, area, branch, collector, day, request. Tap a bar or a row’s arrow to go one level down; the trail above takes you back up.',
       crp_groupBy: 'Group by', crp_all: 'All', crp_lv_city: 'City', crp_lv_area: 'Area', crp_lv_branch: 'Branch', crp_lv_collector: 'Collector', crp_lv_day: 'Day', crp_lv_req: 'Request', crp_lv_owner: 'Store, car or POS',
       crp_byLevel: 'By {lv}', crp_lvSub: '{n} requests · {p} of the level above · banked {b} · out {r}', crp_lvMore: '{n} more in the table below', crp_count: 'Requests', crp_pctParent: '% of the level above',
-      crp_drillTo: 'Go into {x}', crp_openAll: 'Open all', crp_closeAll: 'Close all', cmp_drillHint: 'Tap a row to go one level down' },
+      crp_drillTo: 'Go into {x}', crp_openAll: 'Open all', crp_kpiSheet: 'Key figures', crp_closeAll: 'Close all', cmp_drillHint: 'Tap a row to go one level down' },
     ar: { crp_levels: 'المستويات', crp_levelsHint: 'المدينة، المنطقة، الفرع، المحصل، اليوم، الطلب. اضغط شريطا أو سهم الصف للنزول مستوى؛ والمسار أعلاه يعيدك.',
       crp_groupBy: 'التجميع حسب', crp_all: 'الكل', crp_lv_city: 'المدينة', crp_lv_area: 'المنطقة', crp_lv_branch: 'الفرع', crp_lv_collector: 'المحصل', crp_lv_day: 'اليوم', crp_lv_req: 'الطلب', crp_lv_owner: 'المتجر أو السيارة أو نقطة البيع',
       crp_byLevel: 'حسب {lv}', crp_lvSub: '{n} طلب · {p} من المستوى الأعلى · أودع {b} · متبقي {r}', crp_lvMore: '{n} أخرى في الجدول أدناه', crp_count: 'الطلبات', crp_pctParent: '% من المستوى الأعلى',
-      crp_drillTo: 'الدخول إلى {x}', crp_openAll: 'فتح الكل', crp_closeAll: 'طي الكل', cmp_drillHint: 'اضغط صفا للنزول مستوى' },
+      crp_drillTo: 'الدخول إلى {x}', crp_openAll: 'فتح الكل', crp_kpiSheet: 'الأرقام الرئيسية', crp_closeAll: 'طي الكل', cmp_drillHint: 'اضغط صفا للنزول مستوى' },
     ur: { crp_levels: 'سطحیں', crp_levelsHint: 'شہر، علاقہ، برانچ، کلکٹر، دن، درخواست۔ ایک سطح نیچے جانے کے لیے پٹی یا قطار کا تیر دبائیں؛ اوپر کا راستہ واپس لے جاتا ہے۔',
       crp_groupBy: 'گروپ بلحاظ', crp_all: 'سب', crp_lv_city: 'شہر', crp_lv_area: 'علاقہ', crp_lv_branch: 'برانچ', crp_lv_collector: 'کلکٹر', crp_lv_day: 'دن', crp_lv_req: 'درخواست', crp_lv_owner: 'اسٹور، گاڑی یا POS',
       crp_byLevel: '{lv} کے لحاظ سے', crp_lvSub: '{n} درخواستیں · اوپر کی سطح کا {p} · جمع {b} · باقی {r}', crp_lvMore: 'نیچے جدول میں {n} مزید', crp_count: 'درخواستیں', crp_pctParent: 'اوپر کی سطح کا %',
-      crp_drillTo: '{x} میں جائیں', crp_openAll: 'سب کھولیں', crp_closeAll: 'سب بند کریں', cmp_drillHint: 'ایک سطح نیچے جانے کے لیے قطار دبائیں' }
+      crp_drillTo: '{x} میں جائیں', crp_openAll: 'سب کھولیں', crp_kpiSheet: 'اہم اعداد', crp_closeAll: 'سب بند کریں', cmp_drillHint: 'ایک سطح نیچے جانے کے لیے قطار دبائیں' }
   };
   ['ar', 'en', 'ur'].forEach(function(lg){ Object.keys(X[lg]).forEach(function(k){ L[lg][k] = X[lg][k]; }); });
 })();
@@ -9524,6 +9524,9 @@ function exBarCol_(sh, kinds, grouped){
   return kinds.indexOf('money');
 }
 function exColLetter_(n){ var s2 = ''; while (n > 0) { var m = (n - 1) % 26; s2 = String.fromCharCode(65 + m) + s2; n = Math.floor((n - 1) / 26); } return s2; }
+// a header that starts with a phrase; an empty phrase (Urdu puts {ch} first) matches nothing (2026-10-18:
+// every whole-number amount column of an Urdu export printed as a count, without its halalas)
+function exStartsWith_(h, p){ p = String(p || '').trim(); return !!p && h.indexOf(p) === 0; }
 function exColKinds_(rows){
   var n = rows[0] ? rows[0].length : 0, kinds = [];
   for (var c = 0; c < n; c++) {
@@ -9536,7 +9539,7 @@ function exColKinds_(rows){
     }
     // whole numbers only for counts and quantities; every amount keeps its halalas
     var h = String(rows[0][c] == null ? '' : rows[0][c]);
-    var countish = [t('rp_count'), t('rp_qty'), t('pv_creditQty'), t('cq_noQty'), t('ch_qtyTotal'), t('ch_qtyNormal'), t('lv_count').replace('{n}', '').trim()].indexOf(h) >= 0 || h.indexOf(t('ch_qtyOf').split('{ch}')[0]) === 0 || h.indexOf(t('cq_qtyOf').split('{item}')[0]) === 0;
+    var countish = [t('rp_count'), t('rp_qty'), t('pv_creditQty'), t('cq_noQty'), t('ch_qtyTotal'), t('ch_qtyNormal'), t('lv_count').replace('{n}', '').trim()].indexOf(h) >= 0 || exStartsWith_(h, t('ch_qtyOf').split('{ch}')[0]) || exStartsWith_(h, t('cq_qtyOf').split('{item}')[0]);
     kinds.push(any && allNum ? (allInt && countish ? 'int' : 'money') : 'text');
   }
   return kinds;
@@ -9569,10 +9572,17 @@ function exDropEmptyCols_(rows){
     if (used) keep.push(i);
   }
   if (keep.length === n) return rows;
-  return rows.map(function(r){ return Array.isArray(r) ? exKeepMark_(r, keep.map(function(i){ return r[i]; })) : r; });
+  var out = rows.map(function(r){ return Array.isArray(r) ? exKeepMark_(r, keep.map(function(i){ return r[i]; })) : r; });
+  out.keepIdx = keep;
+  return out;
 }
 function exTrimSheets_(sheets){
-  return (sheets || []).map(function(sh){ var o = {}; Object.keys(sh).forEach(function(k){ o[k] = sh[k]; }); o.rows = sh.keepCols ? sh.rows : exDropEmptyCols_(sh.rows); return o; });
+  return (sheets || []).map(function(sh){ var o = {}; Object.keys(sh).forEach(function(k){ o[k] = sh[k]; }); o.rows = sh.keepCols ? sh.rows : exDropEmptyCols_(sh.rows);
+    // a sheet's whole-number columns and its bar column, renumbered when empty columns were dropped (2026-10-18)
+    var kept = o.rows && o.rows.keepIdx;
+    if (kept && sh.intCols) o.intCols = sh.intCols.map(function(i){ return kept.indexOf(i); }).filter(function(i){ return i >= 0; });
+    if (kept && sh.barCol != null) o.barCol = kept.indexOf(sh.barCol);
+    return o; });
 }
 // ---------- every workbook: a summary first, a pivot for each table (2026-10-09) ----------
 // The user: the Excel reports organised, professional and detailed in pivot. Done once,
@@ -9662,6 +9672,7 @@ function exportXlsx_(fileName, sheets, opts){
       var rows = (sh.rows || []).map(function(r){ return Array.isArray(r) ? exKeepMark_(r, r.map(trText_)) : r; });
       var name = names[shIdx];
       var cols = Math.max(2, rows[0] ? rows[0].length : 2), kinds = exColKinds_(rows);
+      (sh.intCols || []).forEach(function(i){ if (kinds[i] === 'money') kinds[i] = 'int'; });
       // Trap (2026-09-30): ExcelJS 4.4 writes <pageSetUpPr> before <outlinePr>
       // when a sheet has both "fit to page" and outline settings, the reverse of
       // the file format's order, and Excel then refuses to open the file at all
@@ -9718,6 +9729,8 @@ function exportXlsx_(fileName, sheets, opts){
           if (sh.pctCol != null && ci - 1 === sh.pctCol) { c.numFmt = '0.0%;[Red]-0.0%;"-"'; kind = 'pct'; }
           else if (kind === 'money') c.numFmt = '#,##0.00;[Red]#,##0.00;"-"';
           else if (kind === 'int') c.numFmt = '#,##0;[Red]#,##0;"-"';
+          // a row of its own kind (the KPI sheet: a count, a percentage, days)
+          if (sh.rowFmt && sh.rowFmt[k] && typeof c.value === 'number') c.numFmt = sh.rowFmt[k] === 'int' ? '#,##0;[Red]#,##0;"-"' : '#,##0.0;[Red]#,##0.0;"-"';
           // the totals line of a flat table is a formula: it follows Excel's own filter (SUBTOTAL skips hidden rows)
           if (onlyTotal && !grouped && (kind === 'money' || kind === 'int') && typeof c.value === 'number' && rowNo > 4) { var CL = exColLetter_(ci); c.value = { formula: 'SUBTOTAL(9,' + CL + '4:' + CL + (rowNo - 1) + ')', result: c.value }; }
           // the summary's sheet names go to their sheets
@@ -9738,6 +9751,11 @@ function exportXlsx_(fileName, sheets, opts){
         var w = rows.reduce(function(m, r){ var v = r[i]; return Math.max(m, String(v == null ? '' : typeof v === 'number' ? money(v) : v).length); }, 8);
         ws.getColumn(i + 1).width = Math.min(kinds[i] === 'text' ? 46 : 18, w + 3);
       }
+      // the line under the title is as tall as its wrapped text across the sheet's width (2026-10-18:
+      // a narrow sheet's filters ran over the header)
+      var bandW = 0; for (var bw = 1; bw <= cols; bw++) bandW += ws.getColumn(bw).width || 10;
+      var bandTxt = String(ws.getCell(2, 1).value || ''), bandLines = bandTxt.split('\n').reduce(function(n, ln){ return n + Math.max(1, Math.ceil(ln.length * 1.15 / Math.max(20, bandW))); }, 0);
+      ws.getRow(2).height = Math.max(ws.getRow(2).height || 22, bandLines * 15 + 8);
       // a grouped tree prints at the scale that fits its real width on one page
       // across (A4: about 150 width units landscape, 100 portrait at 100%)
       if (grouped) {
@@ -9790,11 +9808,12 @@ function exportPdf_(title, sheets, opts){
   // a figure below zero: red, and with the sheet's word for it (a loss) when the sheet gives one
   function cell(v, kind, sh){
     if (typeof v !== 'number') return esc(trText_(String(v == null ? '' : v)));
-    var txt = kind === 'int' ? Math.abs(v).toLocaleString('en-US') : money(Math.abs(v));
+    var txt = kind === 'int' ? Math.abs(v).toLocaleString('en-US') : kind === 'd1' ? (Math.round(Math.abs(v) * 10) / 10).toFixed(1) : money(Math.abs(v));
     return v < 0 ? '<span class="neg">'+txt+(sh && sh.negWord ? ' <small>'+esc(sh.negWord)+'</small>' : '')+'</span>' : txt;
   }
   var body = sheets.map(function(sh){
     var rows = sh.rows || [], kinds = exColKinds_(rows), outline = sh.outline || null;
+    (sh.intCols || []).forEach(function(i){ if (kinds[i] === 'money') kinds[i] = 'int'; });
     var grouped = !!(outline && outline.some(function(d){ return d > 0; })), barCol = exBarCol_(sh, kinds, grouped);
     var barMax = barCol < 0 ? 0 : rows.slice(1).reduce(function(m, r){ return exIsTotal_(r) ? m : Math.max(m, Math.abs(Number(r[barCol]) || 0)); }, 0);
     return '<section><h2>'+esc(trText_(sh.title || sh.name || ''))+'</h2>' + (sh.note ? '<p class="note">'+esc(trText_(sh.note))+'</p>' : '') +
@@ -9803,11 +9822,20 @@ function exportPdf_(title, sheets, opts){
         var lvl = outline ? outline[k] : null, cls = exIsTotal_(r) ? 'total' : lvl === 0 ? 'l0' : lvl ? 'l' + Math.min(lvl, 5) : '';
         return '<tr class="'+cls+'">' + r.map(function(v, i){
           var bar = i === barCol && barMax > 0 && !exIsTotal_(r) && typeof v === 'number' ? ' style="--w:'+(Math.abs(v) / barMax * 100).toFixed(1)+'%"' : '';
-          return '<td class="'+(kinds[i] === 'text' ? 't' : 'n')+(bar ? ' bar' : '')+'"'+bar+'>'+cell(v, kinds[i], sh)+'</td>';
+          var rf = sh.rowFmt && sh.rowFmt[k], kd = rf && typeof v === 'number' ? (rf === 'int' ? 'int' : 'd1') : kinds[i];
+          return '<td class="'+(kinds[i] === 'text' ? 't' : 'n')+(bar ? ' bar' : '')+'"'+bar+'>'+cell(v, kd, sh)+'</td>';
         }).join('') + '</tr>';
       }).join('') + '</tbody></table></section>';
   }).join('');
-  var css = '@page{size:A4 landscape;margin:12mm 10mm 14mm}.neg{color:#b3261e}.neg small{font-size:8px;font-weight:700}' +
+  var orient = opts && opts.orientation === 'portrait' ? 'portrait' : 'landscape';
+  var css = '@page{size:A4 ' + orient + ';margin:12mm 10mm 16mm;@bottom-center{content:counter(page) " / " counter(pages);font:600 8.5px Arial,sans-serif;color:#8a938b;direction:ltr;unicode-bidi:isolate}@bottom-' + (rtl ? 'left' : 'right') + '{content:"Best Gas Carrier Co.";font:600 8px Arial,sans-serif;color:#a3aaa0}}' +
+    '.top{background:linear-gradient(135deg,#3b5540 0%,#' + EX_GREEN_ + ' 58%,#5f8264 100%)!important;padding:18px 22px!important;border-radius:14px!important;position:relative;overflow:hidden}' +
+    '.top::after{content:"";position:absolute;inset:0;opacity:.14;background:repeating-radial-gradient(circle at 96% 130%,transparent 0 16px,rgba(242,238,228,.9) 17px 18px)}.top>*{position:relative;z-index:1}.note{break-after:avoid;page-break-after:avoid}' +
+    '.top img{width:58px!important;height:58px!important;box-shadow:0 0 0 3px rgba(242,238,228,.35)}.top .kick{display:block;font-size:10px;font-weight:700;letter-spacing:.06em;color:#' + EX_CREAM_ + ';opacity:.85}.top h1{font-size:22px!important}' +
+    '.kpi small{display:block;margin-top:3px;font-size:8.5px;font-weight:700;color:#5b665c}.kpi small.good{color:#23633e}.kpi small.bad{color:#a43c25}.kpi.strong small{color:#' + EX_CREAM_ + '}' +
+    '.charts{display:grid;grid-template-columns:repeat(' + (orient === 'landscape' ? 2 : 1) + ',1fr);gap:10px 14px;margin:0 0 16px}.charts figure{margin:0;border:1px solid #' + EX_LINE_ + ';border-radius:10px;padding:8px 10px 6px;break-inside:avoid;page-break-inside:avoid;background:#fff}' +
+    '.charts figcaption{font-size:10.5px;font-weight:800;color:#' + EX_DARK_ + ';margin:0 0 4px}.charts svg{display:block;height:auto}' +
+    '.neg{color:#b3261e}.neg small{font-size:8px;font-weight:700}' +
     '*{box-sizing:border-box}body{margin:0;font-family:Cairo,"Segoe UI",Tahoma,Arial,sans-serif;color:#1f2a20;font-size:10.5px;-webkit-print-color-adjust:exact;print-color-adjust:exact}' +
     '.top{display:flex;align-items:center;gap:14px;background:#' + EX_GREEN_ + ';color:#fff;padding:12px 16px;border-radius:10px}' +
     '.top img{width:44px;height:44px;border-radius:50%;background:#' + EX_CREAM_ + '}.top h1{margin:0;font-size:19px;font-weight:800}.top p{margin:2px 0 0;font-size:11px;opacity:.85}' +
@@ -9831,11 +9859,12 @@ function exportPdf_(title, sheets, opts){
     'td.bar{background-image:linear-gradient(to ' + (rtl ? 'right' : 'left') + ',rgba(157,186,142,.55) var(--w),transparent var(--w))!important;background-size:100% 62%;background-position:center;background-repeat:no-repeat}';
   var html = '<!doctype html><html lang="'+state.lang+'" dir="'+(rtl ? 'rtl' : 'ltr')+'"><head><meta charset="utf-8"><title>'+esc(trText_(title))+'</title>' +
     '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap"><style>'+css+'</style></head><body>' +
-    '<div class="top"><img src="data:image/png;base64,'+LOGO_B64+'" alt=""><div><h1>'+esc(trText_(title))+'</h1><p>Best Gas Collections</p></div></div>' +
+    '<div class="top"><img src="data:image/png;base64,'+LOGO_B64+'" alt=""><div>'+(opts && opts.kicker ? '<span class="kick">'+esc(opts.kicker)+'</span>' : '')+'<h1>'+esc(trText_(title))+'</h1><p>Best Gas Carrier Co. \u00B7 Best Gas Collections</p></div></div>' +
     '<div class="meta">'+esc(exSubtitle_(opts))+'</div>' +
     (function(){ var fl = exFilterList_(null, opts); return fl.length ? '<div class="filters"><b>'+esc(t('ex_filtersUsed'))+'</b>' +
       fl.map(function(f){ return '<span><i>'+esc(trText_(f.label))+'</i>'+esc(trText_(String(f.value)))+'</span>'; }).join('') + '</div>' : ''; })() +
-    (opts && opts.kpis ? '<div class="kpis">' + opts.kpis.map(function(k){ return '<div class="kpi'+(k.strong ? ' strong' : '')+'"><span>'+esc(k.label)+'</span><b>'+esc(k.value)+'</b></div>'; }).join('') + '</div>' : '') + body +
+    (opts && opts.kpis && opts.kpis.length ? '<div class="kpis" style="grid-template-columns:repeat(' + Math.min(6, opts.kpis.length) + ',1fr)">' + opts.kpis.map(function(k){ return '<div class="kpi'+(k.strong ? ' strong' : '')+'"><span>'+esc(k.label)+'</span><b>'+esc(k.value)+'</b>'+(k.sub ? '<small class="'+(k.tone || '')+'">'+esc(k.sub)+'</small>' : '')+'</div>'; }).join('') + '</div>' : '') +
+    (opts && opts.charts && opts.charts.length ? '<div class="charts">' + opts.charts.map(function(c){ var svg = exChartSvg_(c.chart, rtl); return svg ? '<figure><figcaption>'+esc(trText_(c.title || ''))+'</figcaption>'+svg+'</figure>' : ''; }).join('') + '</div>' : '') + body +
     '<div class="foot">Best Gas Carrier Co.</div>' +
     '<script>document.fonts&&document.fonts.ready?document.fonts.ready.then(function(){setTimeout(function(){print()},250)}):setTimeout(function(){print()},800);<\/script></body></html>';
   w.document.open(); w.document.write(html); w.document.close();
@@ -19219,6 +19248,88 @@ function crpHeat_(D){
   var max = 0; rows.forEach(function(g){ keys.forEach(function(d){ if (g.cells[d] && g.cells[d].amt > max) max = g.cells[d].amt; }); });
   return { days: keys, rows: rows, max: max };
 }
+// ---- report exports (2026-10-18): one template for every Collection report and the Comparison ----
+// The same parts in Excel and in the PDF: a title band with the logo, the report, the period and every
+// filter and level drilled; the report's own KPI strip with its change against the period before; its
+// charts (PDF, drawn as SVG); then its tables in statement order with their total rows. The KPI sheet
+// leads the workbook (after the contents). Nothing here computes a figure: every value is the one the
+// screen shows (the KPI list the strip drew, the sheets its tables drew).
+var EX_PALETTE_ = { 'var(--green)': '#4D6D51', 'var(--c-danger)': '#C14A30', 'var(--danger)': '#c14a30' };
+function exColor_(c){ c = String(c || ''); return EX_PALETTE_[c] || (/^#[0-9a-f]{3,8}$/i.test(c) ? c : '#4D6D51'); }
+// a chart the screen drew, as SVG for print: bars (a ranked list) or columns (over time)
+function exChartSvg_(ch, rtl){
+  function e(s){ return esc(trText_(String(s == null ? '' : s))); }
+  var items = (ch.items || []).filter(function(it){ return isFinite(Number(it.value)); });
+  if (!items.length) return '';
+  if (ch.kind === 'cols') {
+    items = items.slice(-31);
+    var W = 640, H = 190, pad = 26, bw = (W - 2 * pad) / items.length, max = Math.max.apply(null, items.map(function(it){ return Math.abs(Number(it.value)); }).concat([0])) || 1;
+    var every = Math.max(1, Math.ceil(items.length / 10)), col = exColor_(ch.color);
+    var s = '<svg viewBox="0 0 '+W+' '+H+'" width="100%" role="img" direction="ltr" xmlns="http://www.w3.org/2000/svg"><line x1="'+pad+'" y1="'+(H - 22)+'" x2="'+(W - pad)+'" y2="'+(H - 22)+'" stroke="#D8D1BF"/>';
+    items.forEach(function(it, i){
+      var v = Math.abs(Number(it.value)), h = v / max * (H - 52), x = rtl ? W - pad - (i + 1) * bw : pad + i * bw;
+      s += '<rect x="'+(x + bw * 0.14).toFixed(1)+'" y="'+(H - 22 - h).toFixed(1)+'" width="'+(bw * 0.72).toFixed(1)+'" height="'+h.toFixed(1)+'" rx="2" fill="'+col+'"><title>'+e(it.label + ': ' + (ch.fmt ? ch.fmt(it.value) : money(it.value)))+'</title></rect>';
+      if (i % every === 0 || i === items.length - 1) s += '<text x="'+(x + bw / 2).toFixed(1)+'" y="'+(H - 8)+'" font-size="9" text-anchor="middle" fill="#6F7A6C">'+e(it.short || it.label)+'</text>';
+    });
+    var top = items.reduce(function(m, it){ return Math.abs(Number(it.value)) > Math.abs(Number(m.value)) ? it : m; }, items[0]);
+    s += '<text x="'+(rtl ? W - pad : pad)+'" y="14" font-size="10" font-weight="700" text-anchor="'+(rtl ? 'end' : 'start')+'" fill="#3A5540" direction="ltr">'+e((ch.fmt ? ch.fmt(top.value) : money(top.value)))+'</text>';
+    return s + '</svg>';
+  }
+  items = items.slice(0, 12);
+  var W2 = 640, rh = 24, lw = 210, vw = 150, H2 = items.length * rh + 6, mx = Math.max.apply(null, items.map(function(it){ return Math.abs(Number(it.value)); }).concat([0])) || 1;
+  var bwMax = W2 - lw - vw - 16, s2 = '<svg viewBox="0 0 '+W2+' '+H2+'" width="100%" role="img" direction="ltr" xmlns="http://www.w3.org/2000/svg">';
+  items.forEach(function(it, i){
+    var y = i * rh + 3, w = Math.max(2, Math.abs(Number(it.value)) / mx * bwMax), col = exColor_(it.color);
+    var lx = rtl ? W2 - 4 : 4, bx = rtl ? W2 - lw - 8 - w : lw + 8, vx = rtl ? W2 - lw - 16 - bwMax : lw + 16 + bwMax;
+    s2 += '<text x="'+lx+'" y="'+(y + 15)+'" font-size="10" text-anchor="'+(rtl ? 'end' : 'start')+'" fill="#1F2A20">'+e(String(it.label).slice(0, 34))+'</text>' +
+      '<rect x="'+(rtl ? W2 - lw - 8 - bwMax : lw + 8)+'" y="'+(y + 6)+'" width="'+bwMax+'" height="10" rx="3" fill="#EEF0EC"/>' +
+      '<rect x="'+bx.toFixed(1)+'" y="'+(y + 6)+'" width="'+w.toFixed(1)+'" height="10" rx="3" fill="'+col+'"/>' +
+      '<text x="'+vx+'" y="'+(y + 15)+'" font-size="10" font-weight="700" text-anchor="'+(rtl ? 'end' : 'start')+'" fill="#1F2A20" direction="ltr" unicode-bidi="embed">'+e(it.valTxt != null ? it.valTxt : money(it.value))+'</text>';
+  });
+  return s2 + '</svg>';
+}
+// every chart a report drew, with the heading of its card
+function crpChartsOf_(root){
+  var out = [];
+  qsa('.crp-hbl, .crp-cols-w, .crp-tm', root).forEach(function(n){
+    if (!n._chart || out.length >= 6) return;
+    var card = n.closest('section, .card'), h = card ? qs('h2', card) : null, sub = n.previousElementSibling && /^H3$/.test(n.previousElementSibling.tagName) ? n.previousElementSibling.textContent : '';
+    out.push({ title: [(h ? h.textContent : ''), sub].filter(Boolean).join(' · ').replace(/\s+/g, ' ').trim(), chart: n._chart });
+  });
+  return out;
+}
+// the KPI strip as a sheet: figure, value, period before, change, change %
+function crpKpiSheet_(list, name){
+  var rows = [[t('cmp_metric'), t('crp_now'), t('crp_prev'), t('crp_change'), t('crp_changePct')]], fmt = [];
+  (list || []).forEach(function(k){
+    var r = k.raw || {}, money2 = r.t === 'money', whole = r.t === 'int';
+    var v = money2 ? crpR2_(r.v) : whole ? Math.round(Number(r.v)) : Math.round(Number(r.v) * 10) / 10;
+    var has = r.prev !== undefined && r.prev !== null;
+    var p = has ? (money2 ? crpR2_(r.prev) : whole ? Math.round(Number(r.prev)) : Math.round(Number(r.prev) * 10) / 10) : '';
+    var d = has ? (money2 ? crpR2_(Number(r.v) - Number(r.prev)) : Math.round((Number(r.v) - Number(r.prev)) * 10) / 10) : '';
+    // the unit goes in the name once (a name that already says it keeps its own)
+    var unit = r.t === 'pct' ? ' (%)' : r.t === 'days' ? ' (' + t('crp_dUnit') + ')' : r.t === 'hrs' ? ' (' + t('crp_hUnit') + ')' : '';
+    rows.push([k.label + (unit && k.label.indexOf('(') < 0 ? unit : ''), v, p, d, has && Number(r.prev) ? crpPctTxt_((Number(r.v) - Number(r.prev)) / Math.abs(Number(r.prev)) * 100) : '']);
+    fmt.push(money2 ? null : whole ? 'int' : '1d');
+  });
+  return { name: name || t('crp_kpiSheet'), rows: rows, noBars: true, keepCols: true, rowFmt: fmt };
+}
+// the title band's lines: period, every filter, the level drilled, the comparison
+function crpExportFilters_(S, R, P){
+  var f = [{ label: t('col_period'), value: t('prd_' + S.preset) + (R.from ? ' (' + R.from + ' → ' + R.to + ')' : '') }];
+  if (P) f.push({ label: t('crp_vsPrev'), value: P.from + ' → ' + P.to });
+  [['city', S.city], ['area', S.area && clusterName(S.area)], ['branch', S.branch && locationName(S.branch)], ['collector', S.collector && userName(S.collector)]].forEach(function(x){ if (x[1]) f.push({ label: t('col_f_' + x[0]), value: x[1] }); });
+  if (S.day) f.push({ label: t('crp_lv_day'), value: S.day });
+  if (S.stage) f.push({ label: t('crp_stage'), value: t(S.stage === 'problem' ? 'crp_st_problem' : 'col_st_' + S.stage) });
+  var drilled = CRP_LV_.filter(function(lv){ return S[lv]; });
+  f.push({ label: t('crp_groupBy'), value: t('crp_lv_' + (CRP_LV_.indexOf(S.lv) >= 0 ? S.lv : 'city')) + (drilled.length ? ' · ' + t('crp_levels') + ': ' + drilled.map(function(lv){ return t('crp_lv_' + lv); }).join(' › ') : '') });
+  return f;
+}
+// the options every Collection report export carries
+function crpExportOpts_(ctx, root){
+  var widest = ctx.sheets.reduce(function(m, sh){ return Math.max(m, (sh.rows && sh.rows[0] || []).length); }, 0);
+  return { note: ctx.sentence, filters: crpExportFilters_(ctx.S, ctx.R, ctx.P), kpis: ctx.kpiList || [], charts: crpChartsOf_(root), orientation: widest > 7 ? 'landscape' : 'portrait', kicker: t('nav_colReports') };
+}
 // ---- small chart pieces (HTML/SVG, drawn at the card's width, grow on every redraw) ----
 function crpPctTxt_(v){ return (Math.round(Number(v || 0) * 10) / 10).toFixed(1) + '%'; }
 function crpHrsTxt_(h){ return colFill_(t('crp_hrs'), { n: (Math.round(Number(h || 0) * 10) / 10).toLocaleString('en-US') }); }
@@ -19237,6 +19348,7 @@ function crpHBars_(items, o){
     if (it.onClick) b.addEventListener('click', it.onClick);
     wrap.appendChild(b);
   });
+  wrap._chart = { kind: 'bars', items: items.map(function(it){ return { label: it.label, value: it.value, valTxt: it.valTxt, color: it.color }; }) };
   return wrap;
 }
 // columns over time: one measure per chart (two measures are two charts, never two axes)
@@ -19254,6 +19366,7 @@ function crpCols_(items, o){
     if (it.onClick) c.addEventListener('click', it.onClick); else c.disabled = true;
     host.appendChild(c);
   });
+  wrap._chart = { kind: 'cols', items: items.map(function(it){ return { label: it.label, short: it.short, value: it.value }; }), color: o.color, fmt: o.fmt };
   return wrap;
 }
 // one stacked bar: segments [{label, value, color}], 2px gaps; pct=true draws it as 100%
@@ -19304,6 +19417,7 @@ function crpTreemap_(items, onPick){
     if (onPick) b.addEventListener('click', function(){ onPick(r.it); });
     wrap.appendChild(b);
   });
+  wrap._chart = { kind: 'bars', items: list.map(function(it){ return { label: it.label, value: it.value, valTxt: money(it.value) + ' \u00B7 ' + crpPctTxt_(it.value / tot * 100) }; }) };
   return wrap;
 }
 // a share bar under a name: one series, its share of the whole
@@ -19345,7 +19459,9 @@ function crpTable_(ctx, def){
   var sh = [cols.map(function(c){ return c.l; })];
   rows.forEach(function(r){ sh.push(cols.map(function(c){ return crpXv_(c.v(r), c.t); })); });
   if (def.total) sh.push(cols.map(function(c, k){ return k === 0 ? t('rp_total') : crpXv_(def.total[k], c.t); }));
-  ctx.sheets.push({ name: String(def.name || t('crp_sheet')).slice(0, 31), rows: sh, note: ctx.sentence });
+  var intCols = [], barCol = null;
+  cols.forEach(function(c, i){ if (c.t === 'int') intCols.push(i); if (barCol == null && c.t === 'money') barCol = i; });
+  ctx.sheets.push({ name: String(def.name || t('crp_sheet')).slice(0, 31), rows: sh, note: ctx.sentence, intCols: intCols, barCol: barCol == null ? undefined : barCol });
   return w;
 }
 // the KPI strip: each figure counts up, carries its change against the period before, opens its requests
@@ -19366,6 +19482,11 @@ function crpKpis_(ctx, list){
       (k.sub ? '<span class="crp-ks">'+esc(k.sub)+'</span>' : '') + dl + '</button>');
     if (k.rows) b.addEventListener('click', function(){ ctx.open(k.l, k.rows, k.of); });
     g.appendChild(b);
+    // the export prints the same figure and the same change
+    var dtx = '', tone = '';
+    if (k.prev !== undefined && k.prev !== null && ctx.P) { var dv2 = Number(k.v) - Number(k.prev), up2 = dv2 > 0.004, dn2 = dv2 < -0.004, pc2 = Number(k.prev) ? Math.abs(dv2 / Number(k.prev) * 100) : null;
+      dtx = (up2 ? '\u25B2 ' : dn2 ? '\u25BC ' : '') + (!up2 && !dn2 ? t('crp_same') : pc2 == null ? t('crp_new') : crpPctTxt_(pc2)) + ' ' + t('crp_vsPrev'); tone = (k.good === 'down' ? dn2 : up2) ? 'good' : (k.good === 'down' ? up2 : dn2) ? 'bad' : ''; }
+    (ctx.kpiList = ctx.kpiList || []).push({ label: k.l, value: val + (unit ? ' ' + unit : ''), sub: [k.sub, dtx].filter(Boolean).join(' \u00B7 '), tone: tone, strong: i === 0, raw: k });
   });
   if (ctx.enter) countUp_(g);
   return g;
@@ -20270,7 +20391,8 @@ function crpBuild_(body, reqs){
     main.innerHTML = '';
     var id = S.rep, grp = CRP_GROUPS_.filter(function(g){ return g[1].indexOf(id) >= 0; })[0];
     var hero = el('<header class="card crp-hero no-collapse" data-noicon><div class="crp-hi">'+icon_(CRP_IC_[id])+'</div><div class="crp-ht"><span class="crp-hk">'+esc(t('crp_g_' + grp[0]))+'</span><h2>'+esc(t('crp_r_' + id))+'</h2><p>'+esc(t('crp_d_' + id))+'</p></div></header>');
-    hero.appendChild(exButtons_(function(){ return ctx.sheets.length ? ctx.sheets : [{ name: t('crp_r_' + id), rows: [[t('crp_nothing')]] }]; }, function(){ return t('nav_colReports') + ' - ' + t('crp_r_' + id); }, function(){ return { note: sentence }; }));
+    // one template for every report: the KPI sheet first, then its tables; the band, KPIs and charts in the PDF
+    hero.appendChild(exButtons_(function(){ return (ctx.kpiList && ctx.kpiList.length ? [crpKpiSheet_(ctx.kpiList)] : []).concat(ctx.sheets.length ? ctx.sheets : [{ name: t('crp_r_' + id), rows: [[t('crp_nothing')]] }]); }, function(){ return t('crp_r_' + id); }, function(){ return crpExportOpts_(ctx, main); }));
     main.appendChild(hero);
     if (!D.T.n && !side.length && !D.T.returned && id !== 'statement') {
       var em = el('<div class="card crp-card no-collapse crp-empty"><div class="muted rp-empty">'+esc(t(reqs.length ? 'col_noneHere' : 'col_none'))+'</div>'+(reqs.length ? '<button type="button" class="btn ghost">'+esc(t('crp_showAll'))+'</button>' : '')+'</div>');
@@ -20454,7 +20576,24 @@ function cmpDraw_(body, S, periods, entries, handoffs){
   qs('.crp-sent', bar).innerHTML = '<b>'+esc(t('cmp_comparing'))+':</b> '+esc(sentence);
   var sheets = [];
   var hero = el('<header class="card crp-hero no-collapse" data-noicon><div class="crp-hi">'+icon_('trend')+'</div><div class="crp-ht"><span class="crp-hk">'+esc(t('cmp_kicker'))+'</span><h2>'+esc(t('nav_comparison'))+'</h2><p>'+esc(t('cmp_sub'))+'</p></div></header>');
-  hero.appendChild(exButtons_(function(){ return sheets; }, function(){ return t('nav_comparison'); }, function(){ return { note: sentence }; }));
+  // the shared report template (2026-10-18): the band, every filter, the KPIs with their change, the charts, the KPI sheet first
+  hero.appendChild(exButtons_(function(){ return [crpKpiSheet_(cmpKpis_())].concat(sheets); }, function(){ return t('nav_comparison'); }, function(){ return cmpExportOpts_(); }));
+  function cmpKpis_(){
+    var cur = cols2[cols2.length - 1].T, prev = cols2.length > 1 ? cols2[cols2.length - 2].T : null;
+    return ['sales', 'net', 'deposited', 'remaining', 'short', 'requests'].map(function(k, i){
+      var dl = prev ? cmpDelta_(cur[k], prev[k], k) : null;
+      return { label: t('cmp_m_' + k), value: cmpFmt_(k, cur[k]) + (k === 'requests' ? '' : ' ' + t('ui_sar')),
+        sub: dl ? (dl.d ? (dl.d > 0 ? '\u25B2 ' : '\u25BC ') + (dl.pct != null ? crpPctTxt_(Math.abs(dl.pct)) : t('crp_new')) + ' ' + t('crp_vsPrev') : t('crp_same')) : '',
+        tone: dl && dl.tone !== 'flat' ? dl.tone : '', strong: i === 0, raw: { t: k === 'requests' ? 'int' : 'money', v: cur[k], prev: prev ? prev[k] : null } };
+    });
+  }
+  function cmpExportOpts_(){
+    var f = [{ label: t('col_period'), value: t('prd_' + S.preset) + ' (' + periods[0].from + ' \u2192 ' + periods[0].to + ')' }, { label: t('cmp_with'), value: t(S.mode === 'year' ? 'cmp_prevYears' : 'cmp_prevPeriods') + ' \u00D7 ' + S.n }];
+    [['city', S.city], ['area', S.area && clusterName(S.area)], ['branch', S.branch && locationName(S.branch)], ['owner', S.owner && ownerName[S.owner]], ['collector', S.collector && userName(S.collector)]].forEach(function(x){ if (x[1]) f.push({ label: t('crp_lv_' + x[0]), value: x[1] }); });
+    f.push({ label: t('cmp_by'), value: t('crp_lv_' + by) + ' \u00B7 ' + t('cmp_m_' + metric) });
+    return { note: sentence, filters: f, kpis: cmpKpis_(), orientation: 'landscape', kicker: t('cmp_kicker'),
+      charts: ['net', 'sales', 'deposited', 'remaining'].map(function(k){ return { title: t('cmp_m_' + k), chart: { kind: 'cols', color: '#4D6D51', items: cols2.map(function(p, i){ return { label: labels[i], short: labels[i], value: p.T[k] }; }) } }; }) };
+  }
   root.appendChild(hero);
   if (!entries.length) { root.appendChild(crpEmpty_(t('crp_nothing'))); return; }
   // the money table: sales, less deductions, net, less deposited, remaining
@@ -20474,7 +20613,7 @@ function cmpDraw_(body, S, periods, entries, handoffs){
   var sh = [[t('cmp_metric')].concat(labels.reduce(function(a, l, i){ return a.concat(i ? [l, t('crp_change'), t('crp_changePct')] : [l]); }, []))];
   rows.forEach(function(r){ var k = r[0]; sh.push([t('cmp_m_' + k)].concat(cols2.reduce(function(a, p, i){ var v = p.T[k]; var dl = i ? cmpDelta_(v, cols2[i - 1].T[k], k) : null;
     return a.concat(i ? [crpXv_(v, k === 'requests' || k === 'days' ? 'int' : 'money'), dl ? crpXv_(dl.d, 'money') : '', dl && dl.pct != null ? crpPctTxt_(dl.pct) : ''] : [crpXv_(v, k === 'requests' || k === 'days' ? 'int' : 'money')]); }, []))); });
-  sheets.push({ name: t('cmp_table'), rows: sh, note: sentence, noBars: true });
+  sheets.push({ name: t('cmp_table'), rows: sh, note: sentence, noBars: true, rowFmt: rows.map(function(r){ return r[0] === 'requests' ? 'int' : r[0] === 'days' ? '1d' : null; }) });
   // small multiples: one chart per figure, one bar per period, each on its own scale
   var sm = el('<section class="card crp-card no-collapse"><h2>'+esc(t('cmp_small'))+'</h2><p class="muted crp-hint">'+esc(t('cmp_smallHint'))+'</p><div class="cmp-sm"></div></section>');
   var smHost = qs('.cmp-sm', sm);

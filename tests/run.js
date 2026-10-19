@@ -6444,5 +6444,124 @@ console.log('--- data health check ---');
   check(call({ action: 'dataHealthCheck' }).ok === false, 'it needs a sign-in');
 })();
 
+console.log('--- report exports: every report\'s workbook totals are the screen\'s, to the cent (2026-10-18) ---');
+(function () {
+  var html = clientHtml.replace(/\r\n/g, '\n');
+  var a = html.indexOf('// ---------- Collection reports (2026-10-15)'), b = html.indexOf('// ---------- Comparison (2026-10-15)');
+  check(a > 0 && b > a, 'exports: the reports block is found');
+  var block = html.slice(a, b);
+  var shown = [];
+  function FNode(h) { this.html = h || ''; this.kids = []; this.dataset = {}; this.style = { setProperty: function () {} }; this.classList = { add: function () {}, remove: function () {}, toggle: function () {}, contains: function () { return false; } }; }
+  FNode.prototype.appendChild = function (c) { this.kids.push(c); return c; };
+  FNode.prototype.insertBefore = function (c) { this.kids.push(c); return c; };
+  FNode.prototype.addEventListener = function () {};
+  FNode.prototype.setAttribute = function () {};
+  FNode.prototype.removeAttribute = function () {};
+  FNode.prototype.querySelector = function () { return new FNode(); };
+  FNode.prototype.querySelectorAll = function () { return []; };
+  FNode.prototype.closest = function () { return null; };
+  FNode.prototype.focus = function () {};
+  Object.defineProperty(FNode.prototype, 'innerHTML', { set: function (v) { shown.push(String(v)); this.html = String(v); }, get: function () { return this.html; } });
+  var cx = vm.createContext({
+    window: {}, document: {}, console: console,
+    state: { lang: 'en', user: { id: 'me', role: 'admin', name: 'Me' }, meta: { users: [], locations: [], clusters: [] } },
+    el: function (h) { shown.push(String(h)); return new FNode(h); }, qs: function () { return new FNode(); }, qsa: function () { return []; },
+    t: function (k) { return k === 'crp_hrs' ? '{n} h' : k; }, icon_: function () { return ''; }, trText_: function (x) { return x; }, crumbSep_: function () { return ' > '; },
+    emptyOk_: function (m) { return '<div>' + m + '</div>'; }, drawerOpen_: function () {}, colListView_: function () { return {}; }, colOpenDoc_: function () {}, countUp_: function () {},
+    userName: function (id) { return 'U:' + id; }, locationName: function (id) { return 'L:' + id; }, clusterName: function (id) { return 'A:' + id; },
+    localToday_: function () { return '2026-10-14'; }, crpSave_: function () {}
+  });
+  var deps = [clientVar_('COL_ST_', ';'), clientVar_('COL_C_', ';'), clientVar_('PL_PRESETS_', ';')].concat(['esc', 'money', 'byId', 'hoDay_', 'colDay_', 'colCompute_', 'colFill_', 'colPct_', 'cpDays_', 'plPresetRange_'].map(function (n) { return clientFn_(n); }));
+  vm.runInContext(deps.join('\n') + '\n' + block, cx);
+  check(typeof cx.CRP_REPS_ === 'object' && typeof cx.crpKpiSheet_ === 'function' && typeof cx.exChartSvg_ === 'function', 'exports: the template and the reports load');
+  var loc = { b1: { id: 'b1', city: 'Riyadh', clusterId: 'a1' }, b2: { id: 'b2', city: 'Jeddah', clusterId: 'a2' } };
+  cx.state.meta.locations = [loc.b1, loc.b2];
+  function q(id, l, day, amt, stage, o) {
+    o = o || {};
+    return { id: id, txNo: 'H' + id, fromUserId: 'am', toUserId: o.to || 'k1', holder: o.holder || o.to || 'k1', locationId: l, clusterId: loc[l].clusterId, createdAt: day + 'T09:00:00.000Z', handoffDate: day,
+      amount: amt, sentAmount: o.sent != null ? o.sent : amt, shortfall: o.short || 0, stage: stage, status: stage === 'deputy' ? 'pending_deputy' : stage === 'pending' ? 'pending' : stage === 'returned' ? 'returned' : 'confirmed',
+      confirmedAt: stage === 'held' || stage === 'deposited' ? day + 'T10:00:00.000Z' : null, stageAt: day + 'T11:00:00.000Z', hops: o.hops || [], depositId: stage === 'deposited' ? 'd1' : null, depositNo: stage === 'deposited' ? 'D1' : '',
+      depositedAt: stage === 'deposited' ? '2026-10-12T12:00:00.000Z' : null, depositBy: stage === 'deposited' ? (o.holder || 'k1') : null, reconciled: !!o.rec, depositHasSlip: true, dateChanged: !!o.dch, entryDates: [day],
+      rp: { deputyAt: stage === 'deputy' || stage === 'returned' ? null : day + 'T15:00:00.000Z', returnedAt: stage === 'returned' ? day + 'T18:00:00.000Z' : null, returnReason: o.reason || '', corrections: o.corr || [], hopCorrections: [],
+        mix: { cashSales: amt + 50, card: 30, credit: 20, transfer: 10, direct: 0, other: 5, dFee: 0, cFee: 0, chFee: 0 } } };
+  }
+  var reqs = [
+    q('1', 'b1', '2026-10-02', 1000.25, 'deposited', { rec: true }),
+    q('2', 'b1', '2026-10-05', 450.5, 'held', { short: 49.5, corr: [{ at: '2026-10-06T09:00:00Z', by: 'ad', fromAmount: 400.5, toAmount: 450.5, reason: 'recount' }] }),
+    q('3', 'b2', '2026-10-06', 299.99, 'deposited', { to: 'k2', holder: 'k2', short: 0.01, hops: [{ id: 'h1', txNo: 'HC1', fromUserId: 'k1', toUserId: 'k2', status: 'confirmed', at: '2026-10-07T09:00:00Z', confirmedAt: '2026-10-07T10:00:00Z', amount: 299.99, shortfall: 0, carried: 299.99 }] }),
+    q('4', 'b2', '2026-10-08', 0.33, 'pending', { to: 'k2', dch: true }),
+    q('5', 'b2', '2026-10-09', 777.77, 'deputy', { to: 'k2' }),
+    q('6', 'b1', '2026-10-09', 120, 'returned', { reason: 'wrong day' }),
+    q('7', 'b1', '2026-09-20', 88.8, 'deposited', {})
+  ];
+  var locOf = function (id) { return loc[id] || {}; };
+  var S = { rep: 'summary', preset: 'month', lv: 'city', city: '', area: '', branch: '', collector: '', day: '', stage: '', gran: 'day', mixBy: 'branch', who: 'k1', tOpen: {} };
+  var R = { from: '2026-10-01', to: '2026-10-14' }, P = { from: '2026-09-01', to: '2026-09-14' };
+  var base = { today: '2026-10-14', from: R.from, to: R.to, locOf: locOf };
+  var D = cx.colCompute_(reqs, base), Dp = cx.colCompute_(reqs, { today: '2026-10-14', from: P.from, to: P.to, locOf: locOf }), side = cx.crpSide_(reqs, base);
+  var ids = []; cx.CRP_GROUPS_.forEach(function (g) { ids = ids.concat(g[1]); });
+  check(ids.length === 23, 'exports: 23 reports to check');
+  function moneyTxt(v) { return cx.money(v); }
+  ids.forEach(function (id) {
+    shown = [];
+    var ctx = { D: D, Dp: Dp, P: P, side: side, S: S, R: R, today: '2026-10-14', sheets: [], sentence: 'period', enter: false, redraw: function () {}, drill: function () {}, open: function () {},
+      card: function (title) { return cx.el('<section class="card crp-card"><h2>' + title + '</h2></section>'); },
+      all: function () { return cx.colCompute_(reqs, { locOf: locOf }).rows.concat(cx.crpSide_(reqs, { locOf: locOf })); },
+      nm: { col: function (k) { return 'U:' + k; }, area: function (k) { return 'A:' + k; }, br: function (k) { return 'L:' + k; }, city: function (k) { return k; }, holder: function (k) { return k; } } };
+    var err = null;
+    try {
+      cx.CRP_REPS_[id](ctx, new FNode());
+      if (id !== 'statement') cx.crpLevelsCard_(ctx, id === 'returns' ? side : D.rows);
+    } catch (e) { err = e.message; }
+    check(!err, 'exports: ' + id + ' builds (' + (err || 'ok') + ')');
+    if (err) return;
+    var sheets = (ctx.kpiList && ctx.kpiList.length ? [cx.crpKpiSheet_(ctx.kpiList)] : []).concat(ctx.sheets);
+    check(sheets.length > 0 && sheets.every(function (sh) { return sh.rows && sh.rows.length >= 1; }), 'exports: ' + id + ' gives ' + sheets.length + ' sheet(s)');
+    var screenTot = shown.filter(function (h) { return h.indexOf('crp-tot') >= 0; }).join('\n');
+    var bad = [];
+    ctx.sheets.forEach(function (sh) {
+      var last = sh.rows[sh.rows.length - 1];
+      if (!last || String(last[0]) !== 'rp_total') return;
+      var head = sh.rows[0];
+      last.forEach(function (v, i) {
+        if (i === 0 || typeof v !== 'number') return;
+        if (screenTot.indexOf(moneyTxt(v)) < 0 && screenTot.indexOf('>' + v + '<') < 0 && screenTot.indexOf(v + ' h<') < 0) bad.push(sh.name + '/' + head[i] + '=' + v);
+      });
+    });
+    check(!bad.length, 'exports: ' + id + ': every total in the workbook is the one on screen (' + bad.slice(0, 4).join(', ') + ')');
+    // the KPI sheet carries the strip's own figures
+    if (ctx.kpiList && ctx.kpiList.length) {
+      var ks = cx.crpKpiSheet_(ctx.kpiList), k0 = ctx.kpiList[0];
+      var v0 = ks.rows[1][1], shownVal = k0.value.split(' ')[0];
+      check(typeof v0 === 'number' ? (k0.raw.t === 'money' ? moneyTxt(v0) === shownVal : String(v0) === shownVal || v0.toFixed(1) === shownVal) : String(v0) === shownVal, 'exports: ' + id + ': the KPI sheet\'s first figure is the strip\'s (' + v0 + ' / ' + shownVal + ')');
+    }
+  });
+  // the headline reports against the Collections figures themselves
+  function totalOf(id, sheetIdx) {
+    var ctx = { D: D, Dp: Dp, P: P, side: side, S: S, R: R, today: '2026-10-14', sheets: [], sentence: '', enter: false, redraw: function () {}, drill: function () {}, open: function () {},
+      card: function (title) { return cx.el('<section><h2>' + title + '</h2></section>'); }, all: function () { return []; }, nm: { col: String, area: String, br: String, city: String, holder: String } };
+    cx.CRP_REPS_[id](ctx, new FNode()); return ctx;
+  }
+  var c = function (v) { return Math.round(v * 100); };
+  var sum = totalOf('summary'), stageTot = sum.sheets[0].rows[sum.sheets[0].rows.length - 1];
+  check(c(stageTot[2]) === c(D.T.total) && c(sum.kpiList[0].raw.v) === c(D.T.total) && c(sum.kpiList[1].raw.v) === c(D.T.deposited), 'exports: summary: the stage table and the KPIs equal the Collections totals');
+  var col = totalOf('collectors'), ct = col.sheets[0].rows[col.sheets[0].rows.length - 1];
+  check(c(ct[3]) === c(D.T.total) && c(ct[4]) === c(D.T.deposited) && c(ct[5]) === c(D.T.total - D.T.deposited), 'exports: by collector: total, banked and still out equal the Collections totals');
+  var mix = totalOf('mix'), mt = mix.sheets[0].rows[mix.sheets[0].rows.length - 1];
+  check(c(mt[1]) === c(cx.crpMix_(D.rows).T.total), 'exports: composition: the kinds\' total');
+  // the PDF's chart drawing: bars and columns, both directions
+  var svg1 = cx.exChartSvg_({ kind: 'bars', items: [{ label: 'One', value: 10, color: 'var(--green)' }, { label: 'Two', value: -4 }] }, false), svg2 = cx.exChartSvg_({ kind: 'cols', items: [{ label: '1', value: 3 }, { label: '2', value: 9 }] }, true);
+  check(/^<svg[\s\S]*<\/svg>$/.test(svg1) && svg1.indexOf('#4D6D51') > 0 && /^<svg[\s\S]*<\/svg>$/.test(svg2) && cx.exChartSvg_({ kind: 'bars', items: [] }, false) === '', 'exports: charts print as SVG');
+})();
+
+console.log('--- exports: an Urdu workbook keeps its amounts as money (2026-10-18) ---');
+(function () {
+  var ur = { ch_qtyOf: '{ch} کے ذریعے', cq_qtyOf: '{item} کی مقدار', rp_count: 'تعداد', lv_count: '{n} سطریں' };
+  var cx = vm.createContext({ t: function (k) { return ur[k] || k; } });
+  vm.runInContext(clientFn_('exStartsWith_') + '\n' + clientFn_('exColKinds_'), cx);
+  var k = cx.exColKinds_([['نام', 'کل', 'تعداد'], ['a', 6150, 3], ['b', 5682, 2]]);
+  check(k[1] === 'money' && k[2] === 'int', 'exports: in Urdu a whole-number amount stays money, a count stays a count (' + k.join(',') + ')');
+})();
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);
