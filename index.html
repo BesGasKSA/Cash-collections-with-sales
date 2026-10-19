@@ -34,7 +34,7 @@
 <meta name="application-name" content="Cash Collection">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   /* Fold and navigate arrows (2026-10-05), one rule set: a closed row's arrow points the way
      the content reads from (en right, ar/ur left) = scaleX(var(--fx)); an open row's points down. */
@@ -50,7 +50,7 @@
     --shadow-md:0 4px 14px rgba(32,36,31,.07), 0 1px 3px rgba(32,36,31,.05);
     --shadow-lg:0 12px 32px rgba(32,36,31,.12), 0 2px 6px rgba(32,36,31,.06);
     --font-en:'Inter',-apple-system,'Segoe UI',Tahoma,Arial,sans-serif;
-    --font-ar:'Cairo','Inter',-apple-system,'Segoe UI','Geeza Pro',Arial,sans-serif;
+    --font-ar:'IBM Plex Sans Arabic','Cairo','Inter',-apple-system,'Segoe UI','Geeza Pro',Arial,sans-serif;
   }
   /* Without this, mobile browsers keep their default double-tap-to-zoom
      gesture on every element — so a tap that lands a few pixels off a
@@ -4090,7 +4090,7 @@
     :root{--bg:#F0F2F5;--card:#FFFFFF;--text:#050505;--ink:#050505;--muted:#65676B;--muted-2:#8A8D91;--border:#E4E6EB;--border-soft:#E4E6EB;
       --radius:8px;--radius-sm:6px;--radius-lg:8px;--shadow-sm:none;--shadow-md:0 1px 2px rgba(0,0,0,.1);--shadow-lg:0 2px 12px rgba(0,0,0,.15);
       --fb-font:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI","Segoe UI Historic",Roboto,"Helvetica Neue",Arial,"Noto Sans Arabic","Noto Naskh Arabic","Geeza Pro",Tahoma,sans-serif;
-      --font-en:var(--fb-font);--font-ar:var(--fb-font);}
+      --font-en:var(--fb-font);--font-ar:'IBM Plex Sans Arabic','Cairo',var(--fb-font);}
     html body{font-family:var(--fb-font);font-size:15px;line-height:1.3333;letter-spacing:normal;background:#F0F2F5;background-image:none;color:#050505;-webkit-text-size-adjust:100%;}
     html body *{letter-spacing:normal;}
     html body .bgfx,html body #app.shell::before,html body #app.shell::after{display:none;}
@@ -4985,7 +4985,7 @@ var ICON_B64 = 'iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAYAAAA9zQYyAAAcG0lEQVR42u2dd1cU
 // Stamped by tools/stamp-build.js at publish time so the running app can
 // say which build it is — a cached page is the usual reason a shipped change
 // seems missing.
-var BUILD_ID = '2026-10-18 13:45 · 45e330e';
+var BUILD_ID = '2026-10-19 23:17 · 539c360';
 var LOGO_SRC = 'data:image/png;base64,' + LOGO_B64;
 var ICON_SRC = LOGO_SRC; // same asset — see the comment above LOGO_B64
 // The sign-in mark (2026-09-30): the logo's round emblem as a coin with a
@@ -10009,7 +10009,7 @@ function exportPdf_(title, sheets, opts){
       }).join('') + '</tbody></table></section>';
   }).join('');
   var css = '@page{size:A4 landscape;margin:12mm 10mm 14mm}.neg{color:#b3261e}.neg small{font-size:8px;font-weight:700}' +
-    '*{box-sizing:border-box}body{margin:0;font-family:Cairo,"Segoe UI",Tahoma,Arial,sans-serif;color:#1f2a20;font-size:10.5px;-webkit-print-color-adjust:exact;print-color-adjust:exact}' +
+    '*{box-sizing:border-box}body{margin:0;font-family:"IBM Plex Sans Arabic",Cairo,"Segoe UI",Tahoma,Arial,sans-serif;color:#1f2a20;font-size:10.5px;-webkit-print-color-adjust:exact;print-color-adjust:exact}' +
     '.top{display:flex;align-items:center;gap:14px;background:#' + EX_GREEN_ + ';color:#fff;padding:12px 16px;border-radius:10px}' +
     '.top img{width:44px;height:44px;border-radius:50%;background:#' + EX_CREAM_ + '}.top h1{margin:0;font-size:19px;font-weight:800}.top p{margin:2px 0 0;font-size:11px;opacity:.85}' +
     '.meta{margin:8px 2px 14px;color:#5b665c;font-size:10px}' +
@@ -10031,7 +10031,7 @@ function exportPdf_(title, sheets, opts){
     'section{page-break-inside:auto}h2{page-break-after:avoid}' +
     'td.bar{background-image:linear-gradient(to ' + (rtl ? 'right' : 'left') + ',rgba(157,186,142,.55) var(--w),transparent var(--w))!important;background-size:100% 62%;background-position:center;background-repeat:no-repeat}';
   var html = '<!doctype html><html lang="'+state.lang+'" dir="'+(rtl ? 'rtl' : 'ltr')+'"><head><meta charset="utf-8"><title>'+esc(trText_(title))+'</title>' +
-    '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap"><style>'+css+'</style></head><body>' +
+    '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;600;700&family=Cairo:wght@400;600;700;800&display=swap"><style>'+css+'</style></head><body>' +
     '<div class="top"><img src="data:image/png;base64,'+LOGO_B64+'" alt=""><div><h1>'+esc(trText_(title))+'</h1><p>Best Gas Collections</p></div></div>' +
     '<div class="meta">'+esc(exSubtitle_(opts))+'</div>' +
     (function(){ var fl = exFilterList_(null, opts); return fl.length ? '<div class="filters"><b>'+esc(t('ex_filtersUsed'))+'</b>' +
@@ -23446,7 +23446,7 @@ function cusPreOpen_(){ var w = window.open('', '_blank'); if (w) { try { w.docu
 // ---------- the documents: tax invoice, credit note, statement of account ----------
 // Bilingual (Arabic first, as ZATCA requires, with English), A4, the brand green
 // and cream, the logo large in the band and faint behind the page, the ZATCA QR.
-var DOC_CSS_ = '@page{size:A4;margin:0}*{box-sizing:border-box}body{margin:0;background:#E9E5DA;font-family:"Segoe UI",Tahoma,Arial,sans-serif;color:#1F2A22;-webkit-print-color-adjust:exact;print-color-adjust:exact}' +
+var DOC_CSS_ = '@page{size:A4;margin:0}*{box-sizing:border-box}body{margin:0;background:#E9E5DA;font-family:"IBM Plex Sans Arabic","Segoe UI",Tahoma,Arial,sans-serif;color:#1F2A22;-webkit-print-color-adjust:exact;print-color-adjust:exact}' +
   '.pg{width:210mm;min-height:297mm;margin:12mm auto;background:#FFFDF8;position:relative;overflow:hidden;box-shadow:0 10px 40px rgba(31,42,34,.18);display:flex;flex-direction:column}' +
   '.wm{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:0}.wm span{width:120mm;height:120mm;border-radius:50%;position:relative;overflow:hidden;opacity:.06}.wm img{position:absolute;max-width:none;width:272.95mm;height:224.75mm;left:-72.79mm;top:-21.15mm}' +
   '.stamp{position:absolute;top:118mm;left:50%;transform:translateX(-50%) rotate(-24deg);font-size:64px;font-weight:900;letter-spacing:6px;color:rgba(178,34,34,.16);border:8px solid rgba(178,34,34,.16);padding:4px 34px;border-radius:18px;z-index:1;white-space:nowrap;text-align:center;line-height:1.05}' +
@@ -23517,7 +23517,7 @@ function docBand_(co, titleAr, d, l2){
     (docAddr_(co) ? '<span>'+docEsc_(docAddr_(co))+'</span>' : '') + '</div></div><div class="ttl"><div class="a">'+titleAr+'</div><div class="e l2">'+docEsc_(d.title)+'</div></div></div>';
 }
 function docShell_(title, inner, qr, l2){
-  return '<!doctype html><html lang="ar" dir="rtl" class="l2-'+(l2 || 'en')+'"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+docEsc_(title)+'</title>'+(l2 === 'ur' ? '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;600&display=swap">' : '')+'<style>'+DOC_CSS_+'</style></head><body>' +
+  return '<!doctype html><html lang="ar" dir="rtl" class="l2-'+(l2 || 'en')+'"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+docEsc_(title)+'</title>'+'<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;600;700&display=swap">'+(l2 === 'ur' ? '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;600&display=swap">' : '')+'<style>'+DOC_CSS_+'</style></head><body>' +
     '<div class="tools"><button onclick="window.print()">طباعة / حفظ PDF · '+docEsc_(DOC_L2_[l2 || 'en'].print)+'</button></div>' + inner +
     (qr ? '<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"><\/script><script>(function(){try{var q=qrcode(0,"M");q.addData('+JSON.stringify(qr)+');q.make();document.getElementById("qr").innerHTML=q.createSvgTag({cellSize:4,margin:0,scalable:true});}catch(e){document.getElementById("qr").textContent="QR";}})();<\/script>' : '') +
     '</body></html>';
