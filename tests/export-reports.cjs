@@ -21,6 +21,9 @@ const PORT = Number(process.argv[2] || 8921);
 const arg = (k, d) => { const i = process.argv.indexOf(k); return i > 0 ? process.argv[i + 1] : d; };
 const LANGS = String(arg('--langs', 'en,ar,ur')).split(',');
 const SHOTS = process.argv.includes('--shots');
+// --sample: the Sales Report workbook, one Collection report, and the Comparison with and without data
+const SAMPLE = process.argv.includes('--sample');
+const NAV_SALES = { en: 'Sales Report', ar: 'تقرير المبيعات', ur: 'سیلز رپورٹ' };
 const BASE = `http://127.0.0.1:${PORT}`;
 const OUT = path.join(__dirname, '..', '.superpowers', 'exports');
 const SHOT_DIR = path.join(__dirname, '..', '.superpowers', 'crp');
@@ -90,7 +93,7 @@ async function main() {
       await evaluate(send, HOOKS); count = 0;
       const ok = await evaluate(send, `(async function(){ var b = [].find.call(document.querySelectorAll('button'), function(x){ return x.textContent.trim() === ${JSON.stringify(NAV[lang][0])}; }); if (!b) return false; b.click(); await new Promise(function(r){ setTimeout(r, 3500); }); return !!document.querySelector('.crp-ci'); })()`);
       if (!ok) { problems.push(lang + ': the reports screen did not open'); continue; }
-      const list = lang === 'en' ? REPORTS : SUBSET;
+      const list = SAMPLE ? ['summary'] : lang === 'en' ? REPORTS : SUBSET;
       for (const id of list) {
         const name = `crp-${lang}-${id}`;
         await evaluate(send, `window.__name = ${JSON.stringify(name)}; (async function(){ document.querySelector('.crp-ci[data-id="${id}"]').click(); await new Promise(function(r){ setTimeout(r, 900); }); return true; })()`);
@@ -108,6 +111,28 @@ async function main() {
         await evaluate(send, `window.__name = ${JSON.stringify(name)}; document.querySelector('.cmp .crp-hero .ex-xl').click(); true`); count++; await waitSaved(send, count, name + '.xlsx');
         await evaluate(send, `document.querySelector('.cmp .crp-hero .ex-pdf').click(); true`); count++; await waitSaved(send, count, name + '.html');
         produced.push(name);
+      }
+      if (SAMPLE) {
+        // the Comparison of a period with nothing in it
+        await evaluate(send, `sessionStorage.setItem('bgc_cmp', JSON.stringify({ preset: 'lastYear', mode: 'period', n: 1, by: 'area', metric: 'net' })); true`);
+        const okE = await evaluate(send, `(async function(){ var nav = function(t){ var b = [].find.call(document.querySelectorAll('button'), function(x){ return x.textContent.trim() === t; }); b && b.click(); return !!b; };
+          nav(${JSON.stringify(NAV[lang][0])}); await new Promise(function(r){ setTimeout(r, 2500); }); if (!nav(${JSON.stringify(NAV[lang][1])})) return 'no nav'; await new Promise(function(r){ setTimeout(r, 5000); });
+          return document.querySelector('.cmp .crp-hero .ex-xl') ? 'ok' : 'no export on the empty screen'; })()`);
+        if (okE === 'ok') {
+          const name = `crp-${lang}-comparison-empty`;
+          await evaluate(send, `window.__name = ${JSON.stringify(name)}; document.querySelector('.cmp .crp-hero .ex-xl').click(); true`); count++; await waitSaved(send, count, name + '.xlsx');
+          await evaluate(send, `document.querySelector('.cmp .crp-hero .ex-pdf').click(); true`); count++; await waitSaved(send, count, name + '.html');
+          produced.push(name);
+        } else problems.push(lang + ': empty Comparison: ' + okE);
+        // the Sales Report's own workbook (the daily reports)
+        const okS = await evaluate(send, `(async function(){ var b = [].find.call(document.querySelectorAll('button'), function(x){ return x.textContent.trim() === ${JSON.stringify(NAV_SALES[lang])}; }); if (!b) return 'no nav'; b.click(); await new Promise(function(r){ setTimeout(r, 3000); });
+          var f = document.querySelector('#rFrom'); if (f) { f.value = '2026-09-01'; f.dispatchEvent(new Event('change', { bubbles: true })); }
+          var run = document.querySelector('#rRun'); if (!run) return 'no run button'; run.click(); await new Promise(function(r){ setTimeout(r, 7000); });
+          return document.querySelector('#rResult .ex-xl') ? 'ok' : 'no export button: ' + (document.querySelector('#rResult') ? document.querySelector('#rResult').innerText.slice(0, 300) : 'no #rResult; screen: ' + document.querySelector('#screenBody').innerText.slice(0, 200)); })()`);
+        if (okS === 'ok') {
+          const name = `crp-${lang}-salesreport`;
+          await evaluate(send, `window.__name = ${JSON.stringify(name)}; document.querySelector('#rResult .ex-xl').click(); true`); count++; await waitSaved(send, count, name + '.xlsx');
+        } else problems.push(lang + ': Sales Report: ' + okS);
       }
     }
     await sleep(1000);

@@ -9725,9 +9725,17 @@ function exBarCol_(sh, kinds, grouped){
   return kinds.indexOf('money');
 }
 function exColLetter_(n){ var s2 = ''; while (n > 0) { var m = (n - 1) % 26; s2 = String.fromCharCode(65 + m) + s2; n = Math.floor((n - 1) / 26); } return s2; }
-// a header that starts with a phrase; an empty phrase (Urdu puts {ch} first) matches nothing (2026-10-18:
-// every whole-number amount column of an Urdu export printed as a count, without its halalas)
-function exStartsWith_(h, p){ p = String(p || '').trim(); return !!p && h.indexOf(p) === 0; }
+// a header built from a template such as 'Through {ch}': it starts with the words before the placeholder,
+// or, when nothing comes before it (Urdu '{ch} کے ذریعے'), ends with the words after it. A template
+// with no words at all matches nothing (2026-10-18: an empty prefix matched every header, so every
+// whole-number amount of an Urdu export printed as a count)
+function exHeaderOf_(h, tpl, ph){
+  var parts = String(tpl || '').split(ph), pre = String(parts[0] || '').trim(), post = String(parts.slice(1).join(ph) || '').trim();
+  h = String(h || '').trim();
+  if (pre) return h.indexOf(pre) === 0;
+  if (post) return h.length > post.length && h.slice(-post.length) === post;
+  return false;
+}
 function exColKinds_(rows){
   var n = rows[0] ? rows[0].length : 0, kinds = [];
   for (var c = 0; c < n; c++) {
@@ -9740,7 +9748,7 @@ function exColKinds_(rows){
     }
     // whole numbers only for counts and quantities; every amount keeps its halalas
     var h = String(rows[0][c] == null ? '' : rows[0][c]);
-    var countish = [t('rp_count'), t('rp_qty'), t('pv_creditQty'), t('cq_noQty'), t('ch_qtyTotal'), t('ch_qtyNormal'), t('lv_count').replace('{n}', '').trim()].indexOf(h) >= 0 || exStartsWith_(h, t('ch_qtyOf').split('{ch}')[0]) || exStartsWith_(h, t('cq_qtyOf').split('{item}')[0]);
+    var countish = [t('rp_count'), t('rp_qty'), t('pv_creditQty'), t('cq_noQty'), t('ch_qtyTotal'), t('ch_qtyNormal'), t('lv_count').replace('{n}', '').trim()].indexOf(h) >= 0 || exHeaderOf_(h, t('ch_qtyOf'), '{ch}') || exHeaderOf_(h, t('cq_qtyOf'), '{item}');
     kinds.push(any && allNum ? (allInt && countish ? 'int' : 'money') : 'text');
   }
   return kinds;
@@ -9800,6 +9808,7 @@ function exPivotOf_(sh){
   var data = rows.slice(1).filter(function(r){ return Array.isArray(r) && !exIsTotal_(r); });
   if (data.length < 6) return null;
   var kinds = exColKinds_(rows), head = rows[0];
+  (sh.intCols || []).forEach(function(i){ if (kinds[i] === 'money') kinds[i] = 'int'; });
   // a price, a rate or a percentage per row is not added up
   var noSum = /price|rate|%|avg|average|سعر|معدل|نسبة|متوسط|قیمت|شرح|اوسط/i;
   var nums = []; kinds.forEach(function(k, i){ if (k !== 'text' && !noSum.test(String(head[i] || ''))) nums.push(i); });
@@ -9838,7 +9847,8 @@ function exPivotOf_(sh){
   var tot = [t('rp_total')].concat(dims[1] ? [''] : [], [data.length], grand, [gMain ? 1 : 0]); tot.isTotal = true;
   out.push(tot); outline.push(0);
   return { name: (trText_(sh.name || 'Sheet') + ' · ' + t('ex_pvTab')).slice(0, 31), title: trText_(sh.title || sh.name || '') + ' — ' + t('ex_pvTitle').replace('{a}', head[dims[0].i]).replace('{b}', dims[1] ? ' › ' + head[dims[1].i] : ''),
-    rows: out, outline: dims[1] ? outline : null, isPivot: true, keepCols: true, pctCol: out[0].length - 1, filters: sh.filters, note: sh.note, noBars: !!dims[1] };
+    rows: out, outline: dims[1] ? outline : null, isPivot: true, keepCols: true, pctCol: out[0].length - 1, filters: sh.filters, note: sh.note, noBars: !!dims[1],
+    intCols: [dims[1] ? 2 : 1].concat(nums.map(function(i, j){ return kinds[i] === 'int' ? (dims[1] ? 3 : 2) + j : -1; }).filter(function(i){ return i >= 0; })) };
 }
 function exSummaryOf_(fileName, sheets, opts){
   var fl = exFilterList_(null, opts);
@@ -9847,7 +9857,7 @@ function exSummaryOf_(fileName, sheets, opts){
     var rows = sh.rows || [], kinds = exColKinds_(rows), m = kinds.indexOf('money');
     var data = rows.slice(1).filter(function(r){ return Array.isArray(r) && !exIsTotal_(r); });
     var lead = (sh.outline || []).length ? data.filter(function(r, i){ return !sh.outline[i]; }) : data;
-    contents.push([trText_(sh.name || ''), data.length, m >= 0 ? lead.reduce(function(a, r){ return a + (typeof r[m] === 'number' ? r[m] : 0); }, 0) : '']);
+    contents.push([trText_(sh.name || ''), data.length, m >= 0 && !sh.noSum ? lead.reduce(function(a, r){ return a + (typeof r[m] === 'number' ? r[m] : 0); }, 0) : '']);
   });
   return { name: t('ex_sumTab'), title: trText_(fileName), rows: contents, isSummary: true, keepCols: true, noBars: true, filters: fl, note: opts && opts.note, links: true };
 }
@@ -19517,7 +19527,11 @@ function crpKpiSheet_(list, name){
     rows.push([k.label + (unit && k.label.indexOf('(') < 0 ? unit : ''), v, p, d, has && Number(r.prev) ? crpPctTxt_((Number(r.v) - Number(r.prev)) / Math.abs(Number(r.prev)) * 100) : '']);
     fmt.push(money2 ? null : whole ? 'int' : '1d');
   });
-  return { name: name || t('crp_kpiSheet'), rows: rows, noBars: true, keepCols: true, rowFmt: fmt };
+  // no period before at all: the sheet is figure and value only
+  var anyPrev = (list || []).some(function(k){ var r = k.raw || {}; return r.prev !== undefined && r.prev !== null; });
+  if (!anyPrev) rows = rows.map(function(r){ return r.slice(0, 2); });
+  // never summed on the contents page or pivoted: its rows are different kinds of figure
+  return { name: name || t('crp_kpiSheet'), rows: rows, noBars: true, keepCols: true, rowFmt: fmt, noPivot: true, noSum: true };
 }
 // the title band's lines: period, every filter, the level drilled, the comparison
 function crpExportFilters_(S, R, P){
@@ -20800,6 +20814,7 @@ function cmpDraw_(body, S, periods, entries, handoffs){
       charts: ['net', 'sales', 'deposited', 'remaining'].map(function(k){ return { title: t('cmp_m_' + k), chart: { kind: 'cols', color: '#4D6D51', items: cols2.map(function(p, i){ return { label: labels[i], short: labels[i], value: p.T[k] }; }) } }; }) };
   }
   root.appendChild(hero);
+  var metric = CMP_M_.indexOf(S.metric) >= 0 ? S.metric : 'net';
   if (!entries.length) { root.appendChild(crpEmpty_(t('crp_nothing'))); return; }
   // the money table: sales, less deductions, net, less deposited, remaining
   var showAdd = P.some(function(p){ return Math.abs(p.T.additions) > 0.004; });
@@ -20831,7 +20846,6 @@ function cmpDraw_(body, S, periods, entries, handoffs){
   });
   root.appendChild(sm);
   // the breakdown: per area, branch, collector or city, one figure across the periods
-  var metric = CMP_M_.indexOf(S.metric) >= 0 ? S.metric : 'net';
   var keys = {}; cols2.forEach(function(p){ Object.keys(p.G).forEach(function(k){ keys[k] = 1; }); });
   var klist = Object.keys(keys).sort(function(a, b){ var x = (P[0].G[b] || {})[metric] || 0, y = (P[0].G[a] || {})[metric] || 0; return x - y; });
   var bc = el('<section class="card crp-card no-collapse"><h2>'+esc(t('cmp_breakdown'))+'</h2><p class="muted crp-hint">'+esc(t('cmp_breakdownHint'))+'</p><div class="cmp-bb"><div class="col-chips" role="group" aria-label="'+esc(t('cmp_by'))+'">' +

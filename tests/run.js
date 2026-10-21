@@ -6716,13 +6716,34 @@ console.log('--- report exports: every report\'s workbook totals are the screen\
   check(/^<svg[\s\S]*<\/svg>$/.test(svg1) && svg1.indexOf('#4D6D51') > 0 && /^<svg[\s\S]*<\/svg>$/.test(svg2) && cx.exChartSvg_({ kind: 'bars', items: [] }, false) === '', 'exports: charts print as SVG');
 })();
 
-console.log('--- exports: an Urdu workbook keeps its amounts as money (2026-10-18) ---');
+console.log('--- exports: an Urdu workbook keeps its amounts as money and its quantities as counts (2026-10-18) ---');
 (function () {
-  var ur = { ch_qtyOf: '{ch} کے ذریعے', cq_qtyOf: '{item} کی مقدار', rp_count: 'تعداد', lv_count: '{n} سطریں' };
-  var cx = vm.createContext({ t: function (k) { return ur[k] || k; } });
-  vm.runInContext(clientFn_('exStartsWith_') + '\n' + clientFn_('exColKinds_'), cx);
-  var k = cx.exColKinds_([['نام', 'کل', 'تعداد'], ['a', 6150, 3], ['b', 5682, 2]]);
-  check(k[1] === 'money' && k[2] === 'int', 'exports: in Urdu a whole-number amount stays money, a count stays a count (' + k.join(',') + ')');
+  // the app's own strings, read from L, so a change there is tested here
+  function str(lang, key) { var m = new RegExp(key + ":'([^']*)'", 'g'), all = [], x; while ((x = m.exec(clientHtml))) all.push(x[1]); return lang === 'en' ? all[1] : lang === 'ur' ? all[2] : all[0]; }
+  ['en', 'ar', 'ur'].forEach(function (lang) {
+    var tr = { ch_qtyOf: str(lang, 'ch_qtyOf'), cq_qtyOf: str(lang, 'cq_qtyOf') };
+    var cx = vm.createContext({ t: function (k) { return tr[k] || k; } });
+    vm.runInContext(clientFn_('exHeaderOf_') + '\n' + clientFn_('exColKinds_'), cx);
+    var ch = tr.ch_qtyOf.replace('{ch}', 'Souq Gas'), cq = tr.cq_qtyOf.replace('{item}', 'LPG 12');
+    var k = cx.exColKinds_([['name', 'total', ch, cq], ['a', 6150, 12, 3], ['b', 5682, 4, 2]]);
+    check(k[1] === 'money' && k[2] === 'int' && k[3] === 'int', 'exports (' + lang + '): an amount stays money, a quantity through a channel and an item quantity are counts (' + k.join(',') + ' / ' + ch + ' / ' + cq + ')');
+  });
+  // the KPI sheet: not summed on the contents page, not pivoted, figure and value only with no period before
+  var kx = vm.createContext({ t: function (k) { return k; }, money: function (n) { return Number(n).toFixed(2); } });
+  vm.runInContext(['crpR2_', 'crpPctTxt_', 'crpKpiSheet_'].map(clientFn_).join('\n'), kx);
+  var one = kx.crpKpiSheet_([{ label: 'A', raw: { t: 'money', v: 10, prev: 4 } }, { label: 'B', raw: { t: 'int', v: 3, prev: 1 } }]);
+  var none = kx.crpKpiSheet_([{ label: 'A', raw: { t: 'money', v: 10 } }, { label: 'B', raw: { t: 'pct', v: 48 } }]);
+  check(one.noPivot && one.noSum && one.rows[0].length === 5 && none.rows.every(function (r) { return r.length === 2; }), 'exports: the KPI sheet is never pivoted or summed, and drops the comparison columns when nothing came before');
+  check(/!sh\.noSum/.test(clientFn_('exSummaryOf_')), 'exports: the contents page leaves a noSum sheet\'s amount blank');
+  // the pivot keeps counts as counts
+  var px = vm.createContext({ t: function (k) { return k; }, trText_: function (x) { return x; } });
+  vm.runInContext(['exHeaderOf_', 'exColKinds_', 'exIsTotal_', 'exPivotOf_'].map(clientFn_).join('\n'), px);
+  var rows = [['Branch', 'Requests', 'Total']]; for (var i = 0; i < 8; i++) rows.push(['B' + (i % 3), 1 + i % 2, 100.5 * (i + 1)]); rows.push(['rp_total', 12, 3618]);
+  var pv = px.exPivotOf_({ name: 'S', rows: rows, intCols: [1] });
+  check(pv && pv.intCols.indexOf(1) >= 0 && pv.intCols.indexOf(2) >= 0 && pv.rows[0][2] === 'Requests' && pv.intCols.indexOf(3) < 0, 'exports: the pivot sheet marks its count and the table\'s count column as whole numbers (' + (pv && pv.intCols) + ')');
+  // an empty comparison still names its breakdown figure
+  var cd = clientFn_('cmpDraw_');
+  check(cd.indexOf("var metric = CMP_M_") > 0 && cd.indexOf("var metric = CMP_M_") < cd.indexOf('if (!entries.length)'), 'comparison: the breakdown figure is set before an empty screen returns');
 })();
 
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
