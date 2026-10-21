@@ -4985,7 +4985,7 @@ var ICON_B64 = 'iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAYAAAA9zQYyAAAcG0lEQVR42u2dd1cU
 // Stamped by tools/stamp-build.js at publish time so the running app can
 // say which build it is — a cached page is the usual reason a shipped change
 // seems missing.
-var BUILD_ID = '2026-10-21 11:17 · 3fd5938';
+var BUILD_ID = '2026-10-21 11:22 · a823170';
 var LOGO_SRC = 'data:image/png;base64,' + LOGO_B64;
 var ICON_SRC = LOGO_SRC; // same asset — see the comment above LOGO_B64
 // The sign-in mark (2026-09-30): the logo's round emblem as a coin with a
@@ -10420,9 +10420,21 @@ function pivotCard_(entries, opts){
     else if (ev.key === 'ArrowUp' && tr.previousElementSibling) { ev.preventDefault(); tr.previousElementSibling.focus(); }
   });
 
+  // Exports spell the deductions and additions out (2026-10-21, the user: "the deductions are not
+  // clear, break them down in columns"): each part that is not zero in the total gets its own
+  // column just before its subtotal. The screen keeps the chosen figures.
+  function exMeasures(){
+    var ms = measures(), out = [];
+    ms.forEach(function(m){
+      var parts = m === 'deductions' ? EQ_DEDUCT_ : m === 'additions' ? EQ_ADD_ : null;
+      if (parts) parts.forEach(function(p){ if (ms.indexOf(p) < 0 && out.indexOf(p) < 0 && eqNonZero_(total[p])) out.push(p); });
+      if (out.indexOf(m) < 0) out.push(m);
+    });
+    return out;
+  }
   // Excel: every level, each row with its full path at the end, folding by level
   function fullRows(){
-    var ms = measures(), rows = [], outline = [];
+    var ms = exMeasures(), rows = [], outline = [];
     rows.push([t('pv_level'), t('pv_levelType')].concat(ms.map(pvLabel_), st.dims.map(function(d){ return t('lv_' + d); })));
     (function add(list, path){
       list.forEach(function(n){
@@ -10438,7 +10450,7 @@ function pivotCard_(entries, opts){
   }
   // PDF: what is open now
   function shownRows(){
-    var ms = measures(), rows = [[t('pv_level'), t('pv_levelType')].concat(ms.map(pvLabel_))], outline = [];
+    var ms = exMeasures(), rows = [[t('pv_level'), t('pv_levelType')].concat(ms.map(pvLabel_))], outline = [];
     (tb._list || []).forEach(function(n){
       rows.push([n.name, n.tag || t('lv_' + n.dim)].concat(ms.map(function(m){ return m === 'count' ? n.T.count : Math.round(n.T[m] * 100) / 100; })));
       outline.push(n.depth);
