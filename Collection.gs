@@ -628,7 +628,7 @@ function actionAdminVoidTransaction_(req, user) {
   });
   var rows = Object.keys(pick).map(function (k) { return pick[k]; }).filter(function (e) { return !e.voided; });
   if (!rows.length) return { ok: false, error: 'not_found' };
-  var inv = invoicedEntries_(), handoffs = {}, deposits = [];
+  var inv = invoicedEntries_(), handoffs = {}, deposits = [], strip = null;
   for (var i = 0; i < rows.length; i++) {
     var e = rows[i];
     if (e.creditCustomerId && inv[e.id]) return { ok: false, error: 'entry_invoiced' };
@@ -638,13 +638,17 @@ function actionAdminVoidTransaction_(req, user) {
     if (e.consumedBy) {
       var h = getById_(SHEETS.HANDOFFS, e.consumedBy);
       // inside an area batch, or a handover already received or passed on: not here
-      if (!h || h.consumedBy || ['pending', 'pending_deputy', 'disputed'].indexOf(h.status) < 0) return { ok: false, error: 'entry_handed_on', existingTxNo: h ? (h.txNo || '') : '' };
+      if (!h || h.consumedBy || ['pending', 'pending_deputy', 'disputed'].indexOf(h.status) < 0) {
+        if (req.duplicate && h && h.status !== 'voided' && h.status !== 'returned' && h.status !== 'rejected') { strip = strip && strip.h && strip.h.id === h.id ? strip : dupStripCheck_(rows, h, user); if (strip.error) return { ok: false, error: strip.error, existingTxNo: h.txNo || '' }; continue; }
+        return { ok: false, error: 'entry_handed_on', existingTxNo: h ? (h.txNo || '') : '' };
+      }
       // an admin who is a party to it, or who raised its dispute, does not cancel it
       if (h.fromUserId === user.id || h.toUserId === user.id || h.createdBy === user.id || h.disputedBy === user.id) return { ok: false, error: 'conflict_of_interest' };
       handoffs[h.id] = h;
     }
   }
   var at = new Date().toISOString(), hList = Object.keys(handoffs).map(function (k) { return handoffs[k]; });
+  if (strip) dupStrip_(strip, rows, user, at, reason);
   hList.forEach(function (h) {
     releaseConsumed_(h);
     h.status = 'voided'; h.voidedAt = at; h.voidedBy = user.id; h.voidReason = reason;
@@ -663,8 +667,51 @@ function actionAdminVoidTransaction_(req, user) {
     writeRow(SHEETS.HANDOFFS, d);
     logAudit_('void_direct_deposit', user.id, d.id);
   });
-  return { ok: true, voided: rows.length, handoffsVoided: hList.length, depositsVoided: deposits.length };
+  return { ok: true, voided: rows.length, handoffsVoided: hList.length, depositsVoided: deposits.length, duplicateRemovedFrom: strip ? strip.chain.map(function (x) { return x.txNo || x.id; }) : [] };
 }
+
+// A duplicate already inside a received handover (2026-10-21). Allowed only when taking it out moves
+// no cash: its own net is 0 (its الموازنة banked all of it), every line of it sits in that one
+// handover, and the same source and day stays on file under another live transaction. An admin who
+// is a party to any handover up the chain does not do it.
+function dupStripCheck_(rows, h, user) {
+  if (rows.some(function (e) { return e.consumedBy !== h.id; })) return { error: 'entry_handed_on' };
+  var net = Number(computeNet_(rows).netCashOwed || 0);
+  if (Math.abs(net) > 0.005) return { error: 'duplicate_moves_cash' };
+  var ids = {}; rows.forEach(function (e) { ids[e.id] = 1; });
+  var keep = readSheet(SHEETS.ENTRIES).filter(function (x) {
+    return !ids[x.id] && !x.voided && entryHasSales_(x) && rows.some(function (e) { return e.sourceType === x.sourceType && e.sourceId === x.sourceId && e.date === x.date && sameSale_(e, x); });
+  })[0];
+  if (!keep) return { error: 'not_a_duplicate' };
+  var chain = [], cur = h, guard = 0;
+  while (cur && guard++ < 10) {
+    if (cur.fromUserId === user.id || cur.toUserId === user.id || cur.createdBy === user.id) return { error: 'conflict_of_interest' };
+    chain.push(cur);
+    cur = cur.consumedBy ? getById_(SHEETS.HANDOFFS, cur.consumedBy) : null;
+  }
+  return { h: h, chain: chain, keepTxNo: keep.txNo || '' };
+}
+function dupStrip_(strip, rows, user, at, reason) {
+  var b = computeNet_(rows), ids = rows.map(function (e) { return e.id; });
+  function minus(x) {
+    if (!x) return;
+    Object.keys(b).forEach(function (k) { if (Number(b[k] || 0) && x[k] != null) x[k] = Math.round((Number(x[k] || 0) - Number(b[k] || 0)) * 100) / 100; });
+  }
+  var locId = rows[0].locationId, cl = locId ? getById_(SHEETS.LOCATIONS, locId) : null;
+  strip.chain.forEach(function (x, i) {
+    minus(x.breakdown);
+    (x.perLocation || []).forEach(function (pl) { if (pl.locationId === locId) minus(pl.breakdown || pl); });
+    (x.perCluster || []).forEach(function (pc) { if (cl && pc.clusterId === cl.clusterId) minus(pc.breakdown || pc); });
+    if (i === 0) {
+      x.sourceEntryIds = (x.sourceEntryIds || []).filter(function (id) { return ids.indexOf(id) < 0; });
+      x.removedEntryIds = (x.removedEntryIds || []).concat(ids);
+    }
+    x.duplicateRemoved = (x.duplicateRemoved || []).concat([{ entryIds: ids, txNo: rows[0].txNo || '', keepTxNo: strip.keepTxNo, by: user.id, at: at, reason: reason }]);
+    writeRow(SHEETS.HANDOFFS, x);
+    logAudit_('admin_remove_duplicate', user.id, x.id);
+  });
+}
+
 
 // The bank deposit a day's الموازنة wrote, if it is still standing.
 function directDepositOf_(entryId) {
@@ -676,10 +723,9 @@ function directDepositOf_(entryId) {
 // ---------- No day entered twice (2026-10-12, the user found a branch's day saved twice by one person) ----------
 // A form sent again (a second tap, a retry after a lost answer) carries the same
 // submissionId: it is saved once and the repeat answers 'already saved'. A new form
-// for a source and date that still has an open entry (not handed over yet) is
-// refused with that entry's number: correct or cancel the open one instead. Once
-// the day is handed over, a later entry the same day is a new handover and goes
-// through. Both actions run under the script lock, so two taps cannot both pass.
+// for a source and date that already has sales on file is refused with that entry's
+// number, open or handed over (since 2026-10-21: DAY-2026-000237 was a day saved twice):
+// correct or cancel the open one, or ask an admin to cancel a duplicate. Both actions run under the script lock, so two taps cannot both pass.
 function savedSubmission_(submissionId) {
   if (!submissionId) return [];
   var id = String(submissionId).slice(0, 64);
@@ -690,16 +736,23 @@ function savedSubmission_(submissionId) {
 function entryHasSales_(e) {
   return Number(e.cashSales || 0) > 0 || Number(e.posSales || 0) > 0 || Number(e.creditSales || 0) > 0 || Number(e.qty || 0) > 0;
 }
-function openDayEntry_(sourceType, sourceId, date, submissionId) {
+function openDayEntry_(sourceType, sourceId, date, submissionId, row) {
   var sid = submissionId ? String(submissionId).slice(0, 64) : null, rows = readSheet(SHEETS.ENTRIES);
   for (var i = 0; i < rows.length; i++) {
     var e = rows[i];
     // open, or uploaded by the area manager (a batch entry is consumed by its batch)
-    if (e.voided || (e.consumedBy && !e.batchId) || e.sourceType !== sourceType || e.sourceId !== sourceId || e.date !== date || !entryHasSales_(e)) continue;
+    if (e.voided || e.sourceType !== sourceType || e.sourceId !== sourceId || e.date !== date || !entryHasSales_(e)) continue;
+    // handed over: a second handover the same day goes through, but the same sales typed again do not
+    // (2026-10-21: DAY-2026-000237 was a day saved twice, same product, quantity and amount)
+    if (e.consumedBy && !e.batchId && !(row && sameSale_(e, row))) continue;
     if (sid && e.submissionId === sid) continue;
     return e;
   }
   return null;
+}
+function sameSale_(a, b) {
+  function n(v) { return Math.round(Number(v || 0) * 100); }
+  return n(a.cashSales) === n(b.cashSales) && n(a.posSales) === n(b.posSales) && (a.productId || null) === (b.productId || null) && n(a.qty) === n(b.qty);
 }
 function actionCreateEntry_(req, user) {
   if (!req.date || !req.sourceType || !req.sourceId) return { ok: false, error: 'source_required' };
@@ -718,7 +771,7 @@ function actionCreateEntry_(req, user) {
   var nonSalesErr = checkNonSalesFields_(req) || checkDepositSlip_(req, user, scope.locationId);
   if (nonSalesErr) return { ok: false, error: nonSalesErr };
   // every screen sends a form number; a bare API call (the test harness) keeps the old behaviour
-  var dup = req.submissionId && entryHasSales_(req) ? openDayEntry_(req.sourceType, req.sourceId, req.date, req.submissionId) : null;
+  var dup = req.submissionId && entryHasSales_(req) ? openDayEntry_(req.sourceType, req.sourceId, req.date, req.submissionId, req) : null;
   if (dup) return { ok: false, error: 'day_already_entered', existingTxNo: dup.txNo || '', existingId: dup.id, enteredBy: dup.enteredBy };
 
   var entry = {
@@ -836,7 +889,7 @@ function actionImportEntries_(req, user) {
     }
     var dk = r.sourceType + '|' + r.sourceId + '|' + r.date;
     if (r.submissionId && sidBefore[String(r.submissionId).slice(0, 64) + '|' + dk]) { results.push({ row: i, ok: true, already: true }); continue; }
-    if (!(dk in dayTaken)) dayTaken[dk] = r.submissionId && rows.some(function (x) { return x && x.sourceType === r.sourceType && x.sourceId === r.sourceId && x.date === r.date && entryHasSales_(x); }) ? openDayEntry_(r.sourceType, r.sourceId, r.date, r.submissionId) : null;
+    if (!(dk in dayTaken)) dayTaken[dk] = r.submissionId && rows.some(function (x) { return x && x.sourceType === r.sourceType && x.sourceId === r.sourceId && x.date === r.date && entryHasSales_(x); }) ? openDayEntry_(r.sourceType, r.sourceId, r.date, r.submissionId, r) : null;
     if (dayTaken[dk]) {
       results.push({ row: i, ok: false, error: 'day_already_entered', existingTxNo: dayTaken[dk].txNo || '', enteredBy: dayTaken[dk].enteredBy });
       continue;
