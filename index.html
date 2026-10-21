@@ -4962,7 +4962,7 @@
     /* the sweep found 30 kinds of tap target under 44px (chips 33, toggles 28, sort arrows 20,
        row buttons 29, a details link 16): every button on a phone screen is 44px tall now */
     :root body .ms-on #screenBody button,:root body .ms-on #screenBody [role="button"],:root body .ms-on .dr button{min-height:44px;}
-    :root body .ms-on #screenBody button:not(.btn):not(.tile){min-width:44px;}
+    :root body .ms-on #screenBody button:not(.btn):not(.tile):not(:is(td, th) button){min-width:44px;}
     :root body .ms-on #screenBody .col-chip,:root body .ms-on #screenBody .details-toggle,:root body .ms-on #screenBody .eqx-allTog{display:inline-flex;align-items:center;justify-content:center;}
     :root body .ms-on #screenBody .adm-tabs{margin-inline:0;}
     :root body .ms-on #screenBody th[role="button"]{min-width:44px;}
@@ -4977,9 +4977,10 @@
     :root body .ms-on input,:root body .ms-on select,:root body .ms-on textarea{scroll-margin-top:calc(var(--ms-tbh) + 12px);scroll-margin-bottom:130px;}
     /* while the keyboard is up the tab bar steps aside and docked bars sit low */
     html.ms-kb .ms-tab{transform:translate3d(0,140%,0);opacity:0;pointer-events:none;}
-    html.ms-kb :root body .ms-on .e-dock,html.ms-kb body .ms-on .e-dock{bottom:8px;}
+    html.ms-kb body .ms-on .e-dock{bottom:8px;}
   }
   @media (max-width:768px) and (prefers-reduced-motion:reduce){ :root body .ms-on .sk{animation:none;} }
+  @media (max-width:768px){ .msb-acts{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding-top:6px;} .msb-acts .btn{min-height:48px;} }
   @keyframes msCapIn{from{opacity:0;transform:scaleX(.5)}to{opacity:1;transform:none}}
   @media (prefers-reduced-motion:reduce){
     :root body .ms-on .tb .tb-title,.ms-tb.on .ms-tb-ic::before{transition:none !important;animation:none !important;}
@@ -8884,7 +8885,9 @@ function msLtWatch_(lt, tb){
 // field that would sit under it is brought to the middle of what is left.
 (function(){
   var vv = window.visualViewport;
-  if (vv) vv.addEventListener('resize', function(){ document.documentElement.classList.toggle('ms-kb', msPhone_() && vv.height < window.innerHeight * 0.78); });
+  if (vv) vv.addEventListener('resize', function(){ var a = document.activeElement; document.documentElement.classList.toggle('ms-kb', msPhone_() && vv.height < window.innerHeight * 0.78 && !!a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)); });
+  // a keyboard needs a focused field: a pinch-zoom alone never hides the tab bar
+  document.addEventListener('focusout', function(){ setTimeout(function(){ var a = document.activeElement; if (!a || !/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)) document.documentElement.classList.remove('ms-kb'); }, 120); });
   document.addEventListener('focusin', function(e){
     var el = e.target;
     if (!msPhone_() || !el || !/^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName) || el.type === 'file' || el.hidden) return;
@@ -8897,25 +8900,96 @@ function msLtWatch_(lt, tb){
 // The phone's back button (v2). Before this the app kept no history, so Back on Android
 // left the app from any screen with a sheet still open. Now Back closes the open sheet,
 // viewer or drawer first, then walks back through the screens visited.
-function msHistPush_(screen){ if (!msPhone_()) return; try { history.pushState({ msScreen: screen }, ''); } catch (e) {} }
-function msCloseTop_(){
-  var c = qs('.ms-cam'); if (c) { var cx = qs('.ms-cam-x', c); if (cx) cx.click(); return true; }
-  var sv = qs('.ms-sv'); if (sv) { var sx = qs('.ms-sv-x', sv); if (sx) sx.click(); return true; }
-  var sh = qs('.ms-sheet'); if (sh && sh._close) { sh._close(); return true; }
-  var xs = qs('.xsw'); if (xs && xs._close) { xs._close(); return true; }
-  var bs = qs('.bt-sheet'); if (bs) { var bh = qs('.bt-sheet-handle', bs); if (bh) bh.click(); return true; }
-  var pa = qs('.pa-ov'); if (pa) { var pb = qs('.pa-bg', pa); if (pb) pb.click(); else pa.remove(); return true; }
-  if (qs('.dr.open')) { if (DRAWER.stack.length > 1) drawerBack_(); else drawerClose_(); return true; }
-  return false;
+function msHistPush_(screen, force){ if (!force && !msPhone_()) return; try { history.pushState({ msScreen: screen }, ''); } catch (e) {} }
+// review fixes (2026-10-21): Back never interrupts a save, never drops typed work or an
+// uploading slip without asking, and never leaves the app silently
+(function(){
+  var add = {
+    en: { msb_title:'Leave without saving?', msb_body:'What you typed here, or the slip still uploading, will be lost.', msb_stay:'Stay', msb_leave:'Leave', msb_saving:'Saving, please wait' },
+    ar: { msb_title:'المغادرة دون حفظ؟', msb_body:'سيضيع ما كتبته هنا، أو الإيصال الذي ما زال يُرفع.', msb_stay:'البقاء', msb_leave:'المغادرة', msb_saving:'جارٍ الحفظ، يرجى الانتظار' },
+    ur: { msb_title:'محفوظ کیے بغیر جائیں؟', msb_body:'یہاں لکھا ہوا، یا ابھی اپ لوڈ ہوتی رسید، ضائع ہو جائے گی۔', msb_stay:'یہیں رہیں', msb_leave:'چلے جائیں', msb_saving:'محفوظ ہو رہا ہے، براہِ کرم انتظار کریں' }
+  };
+  Object.keys(add).forEach(function(lang){ Object.keys(add[lang]).forEach(function(k){ L[lang][k] = add[lang][k]; }); });
+})();
+// a save is running: the blocking veil is up (reads on a phone never raise it)
+function msSaving_(){ var o = qs('#loadOverlay'); return loadingCount > 0 || !!(o && o.classList.contains('active')); }
+// typed work or a slip on its way up inside root: a changed field, an uploading slip, a photo taken but not used
+// a field that holds work: typed text or figures, not a filter, a search box or a picker
+var MS_FILTER_SEL_ = '.lf-body, .filters, .col-stick, .col-filters, .rp-filters, .rp-periods, .cmp-filters, [data-filter]';
+function msWorkField_(f){
+  if (!f || f.disabled || f.readOnly || (f.classList && f.classList.contains('dd-q')) || (f.closest && f.closest(MS_FILTER_SEL_))) return false;
+  if (f.tagName === 'TEXTAREA') return true;
+  return f.tagName === 'INPUT' && /^(text|number|tel|email|password|url|)$/.test(f.getAttribute('type') || '');
 }
+function msTyped_(root){
+  if (!root) return false;
+  if (root.dataset && root.dataset.msDirty === '1') return true;
+  if (qs('.slipf[data-state="busy"]', root) || (root.classList && root.classList.contains('shot')) || qs('.ms-cam.shot', root)) return true;
+  return [].slice.call(root.querySelectorAll('input, textarea')).some(function(f){ return msWorkField_(f) && f.value !== f.defaultValue; });
+}
+// the topmost thing Back should close, with how to close it
+function msTopOverlay_(){
+  var x;
+  if ((x = qs('.dd-layer'))) return { el: x, close: function(){ try { ddClose_(true); } catch (e) {} try { dpClose_(true); } catch (e) {} if (x.isConnected) x.remove(); } };
+  if ((x = qs('.ms-cam'))) return { el: x, close: function(){ var b = qs('.ms-cam-x', x); if (b) b.click(); } };
+  if ((x = qs('.ms-sv'))) return { el: x, close: function(){ var b = qs('.ms-sv-x', x); if (b) b.click(); } };
+  if ((x = qs('.ms-sheet')) && x._close) return { el: x, close: function(){ x._close(); } };
+  if ((x = qs('.xsw')) && x._close) return { el: x, close: function(){ x._close(); } };
+  if ((x = qs('.bt-sheet'))) return { el: x, close: function(){ var b = qs('.bt-sheet-handle', x); if (b) b.click(); else x.remove(); } };
+  if ((x = qs('.pa-ov'))) return { el: x, close: function(){ var b = qs('.pa-bg', x); if (b) b.click(); else x.remove(); } };
+  // the drawer counts as open from drawerOpen_ on (its .open class waits for the next frame)
+  if ((x = qs('.dr')) && !x.hidden && DRAWER.stack.length) return { el: x, close: function(){ if (DRAWER.stack.length > 1) drawerBack_(); else drawerClose_(); } };
+  return null;
+}
+function msCloseTop_(){ var o = msTopOverlay_(); if (!o) return false; o.close(); return true; }
+// the app's own sheet asks before typed work is dropped; nothing happens unless Leave is chosen
+function msConfirmLeave_(onLeave){
+  if (qs('.ms-sheet.msb')) return;
+  msSheet_({ cls: 'msb', title: t('msb_title'), lead: t('msb_body'), label: t('msb_title'), build: function(b, close){
+    var row = el('<div class="msb-acts"><button type="button" class="btn secondary msb-stay">'+esc(t('msb_stay'))+'</button><button type="button" class="btn danger msb-leave">'+esc(t('msb_leave'))+'</button></div>');
+    qs('.msb-stay', row).addEventListener('click', function(){ close(); });
+    qs('.msb-leave', row).addEventListener('click', function(){ close(true); onLeave(); });
+    b.appendChild(row);
+  } });
+}
+function msGoBackTo_(to){ MS_POP_ = true; try { goScreen_(to, false); } finally { MS_POP_ = false; } }
 window.addEventListener('popstate', function(e){
-  if (!state.user || !msPhone_()) return;
-  if (msCloseTop_()) { msHistPush_(state.screen); return; }
-  var to = e.state && e.state.msScreen;
-  if (!to || to === state.screen || !navItemsForRole_().some(function(it){ return it[0] === to; })) return;
-  MS_POP_ = true;
-  try { goScreen_(to, false); } finally { MS_POP_ = false; }
+  var st = e.state || {};
+  // signed out: the sign-in page; Back keeps going back instead of doing nothing
+  if (!state.user) { if (st.msScreen) { try { history.back(); } catch (x) {} } return; }
+  var here = state.screen, valid = function(k){ return navItemsForRole_().some(function(it){ return it[0] === k; }); };
+  // 1. a save is running: stay exactly where we are
+  if (msSaving_()) { msHistPush_(here, true); toastRaw_(t('msb_saving'), 'ok'); return; }
+  // 2. close the topmost sheet, viewer, picker or drawer, asking first if it holds typed work
+  var top = msTopOverlay_();
+  if (top) {
+    msHistPush_(here, true);
+    if (msTyped_(top.el)) msConfirmLeave_(function(){ top.close(); });
+    else top.close();
+    return;
+  }
+  // 3. the guard entry (and any entry that names no other screen): re-arm it, go to its screen if we are elsewhere
+  var to = st.msRoot ? (st.msScreen || 'home') : st.msScreen;
+  if (!to || !valid(to)) to = valid('home') ? 'home' : here;
+  if (st.msRoot || to === here) {
+    var unsafe = to !== here && msScreenUnsafe_();
+    if (to !== here && !unsafe) msGoBackTo_(to);
+    try { history.pushState({ msScreen: state.screen }, ''); } catch (x) {}
+    if (unsafe) msConfirmLeave_(function(){ msGoBackTo_(to); try { history.replaceState({ msScreen: to }, ''); } catch (x) {} });
+    return;
+  }
+  // 4. back to the previous screen, asking first if this one holds typed work
+  if (msScreenUnsafe_()) { msHistPush_(here, true); msConfirmLeave_(function(){ msGoBackTo_(to); try { history.replaceState({ msScreen: to }, ''); } catch (x) {} }); return; }
+  msGoBackTo_(to);
 });
+function msScreenUnsafe_(){ var b = qs('#screenBody'); return !!b && msTyped_(b); }
+// every screen remembers it was typed into (search boxes and pickers excepted); kept on the
+// screen's own attribute so the cached-data redraw rule (data-dirty) is not changed
+document.addEventListener('input', function(e){
+  var f = e.target, b = f && f.closest && f.closest('#screenBody');
+  if (!b || !msWorkField_(f)) return;
+  b.dataset.msDirty = '1';
+}, true);
 // crossing the phone width (a rotation, a split screen) redraws the shell in the other layout
 (function(){
   if (!window.matchMedia) return;
@@ -9093,7 +9167,8 @@ var MS_PTR_ON_ = false;
 // a refresh would throw away what is being typed: never on a form in progress
 function msPtrUnsafe_(){
   var b = qs('#screenBody'), a = document.activeElement;
-  if (b && b.dataset.dirty === '1') return true;
+  if (b && (b.dataset.dirty === '1' || msTyped_(b))) return true;
+  if (msSaving_() || qs('.xsw, .bt-sheet, .dd-layer')) return true;
   if (a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)) return true;
   return !!qs('#screenBody .e-dock, #screenBody .slipf[data-state="busy"]');
 }
