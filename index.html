@@ -5012,6 +5012,75 @@
   .cmp-drill{cursor:pointer;}
   .cmp-drill:hover th,.cmp-drill:hover td{background:color-mix(in srgb,var(--green) 6%,#fff);}
   @media (max-width:820px){ .crp-lvtools{justify-content:flex-start;} .crp-chl{display:none;} }
+  /* ---------- Search everything (2026-10-19): command palette on a desktop, full-screen sheet on a phone.
+     Self-contained (.gs-*): it sits on top of either shell and touches none of its rules. ---------- */
+  html.gs-lock, html.gs-lock body{overflow:hidden;}
+  .tb-actions .gs-btn{display:inline-flex;align-items:center;gap:8px;}
+  .tb-actions .gs-btn .gs-kh{font-size:11px;color:var(--muted);border:1px solid var(--border);border-radius:6px;padding:1px 6px;font-family:var(--font-en);line-height:18px;}
+  .gs-ov{position:fixed;inset:0;z-index:4000;background:rgba(24,30,25,.42);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);display:flex;align-items:flex-start;justify-content:center;padding:10vh 16px 16px;opacity:0;transition:opacity .16s ease;}
+  .gs-ov.in{opacity:1;}
+  .gs-box{width:min(680px,100%);max-height:min(72vh,640px);display:flex;flex-direction:column;background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow-lg);overflow:hidden;transform:translateY(-6px) scale(.985);transition:transform .16s ease;}
+  .gs-ov.in .gs-box{transform:none;}
+  .gs-bar{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--border-soft);}
+  .gs-bar .gs-ic{display:inline-flex;color:var(--green);}
+  .gs-bar .gs-ic .ic2{width:22px;height:22px;}
+  .gs-in{flex:1;min-width:0;border:0;outline:0;background:transparent;font-size:17px;color:var(--text);padding:6px 0;}
+  .gs-in::-webkit-search-cancel-button{display:none;}
+  .gs-box input.gs-in.gs-in{border:0;box-shadow:none;outline:0;background:transparent;min-height:0;}
+  .gs-ov.gs-phone .gs-box input.gs-in.gs-in{background:var(--bg);border-radius:12px;padding:10px 12px;}
+  .gs-kbd{font-size:11px;color:var(--muted);border:1px solid var(--border);border-radius:6px;padding:2px 6px;font-family:var(--font-en);}
+  .gs-x{border:0;background:transparent;color:var(--muted);width:36px;height:36px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;}
+  .gs-x:hover,.gs-x:focus-visible{background:var(--border-soft);color:var(--text);}
+  .gs-spin{width:16px;height:16px;border:2px solid var(--green-pale);border-top-color:var(--green);border-radius:50%;animation:gsSpin .7s linear infinite;}
+  @keyframes gsSpin{to{transform:rotate(360deg);}}
+  .gs-chips{display:flex;gap:6px;padding:8px 12px;overflow-x:auto;scrollbar-width:none;border-bottom:1px solid var(--border-soft);}
+  .gs-chips::-webkit-scrollbar{display:none;}
+  .gs-chip{flex:none;display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border);background:var(--card);color:var(--text);border-radius:999px;padding:5px 11px;font-size:13px;cursor:pointer;white-space:nowrap;}
+  .gs-chip .ic2{width:15px;height:15px;}
+  .gs-chip small{font-size:11px;color:var(--muted);}
+  .gs-chip.on{background:var(--green);border-color:var(--green);color:#fff;}
+  .gs-chip.on small{color:rgba(255,255,255,.85);}
+  .gs-chip:focus-visible,.gs-more:focus-visible,.gs-clear:focus-visible{outline:2px solid var(--green);outline-offset:2px;}
+  .gs-list{overflow-y:auto;overscroll-behavior:contain;padding:6px 6px 10px;flex:1;}
+  .gs-grp{padding:4px 0;}
+  .gs-gh{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px 4px;font-size:12px;font-weight:700;color:var(--muted);text-transform:none;}
+  .gs-gh span{display:inline-flex;align-items:center;gap:6px;}
+  .gs-gh .ic2{width:14px;height:14px;}
+  .gs-row{display:flex;align-items:center;gap:12px;padding:9px 10px;border-radius:12px;cursor:pointer;min-height:48px;}
+  .gs-row.act{background:var(--green-pale);}
+  .gs-ri{flex:none;width:34px;height:34px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;background:var(--border-soft);color:var(--green-dark);}
+  .gs-ri .ic2{width:18px;height:18px;}
+  .gs-row.act .gs-ri{background:var(--card);}
+  .gs-rt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;}
+  .gs-rt b{font-weight:600;font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .gs-rt small{font-size:12.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .gs-rt mark,.gs-am mark{background:rgba(242,196,77,.45);color:inherit;border-radius:3px;padding:0 1px;}
+  .gs-no{font-variant-numeric:tabular-nums;}
+  .gs-chipS{display:inline-block;margin-inline-start:6px;font-size:11px;font-weight:600;color:var(--muted);background:var(--border-soft);border-radius:999px;padding:1px 8px;vertical-align:1px;}
+  .gs-am{flex:none;font-weight:600;font-size:14px;font-variant-numeric:tabular-nums;}
+  .gs-am.hit bdi{background:rgba(242,196,77,.45);border-radius:4px;padding:0 3px;}
+  .gs-go{flex:none;color:var(--muted-2);display:inline-flex;}
+  .gs-go .ic2{width:16px;height:16px;transform:scaleX(var(--fx));}
+  .gs-more{display:block;margin:2px 10px 4px;border:0;background:transparent;color:var(--green);font-size:12.5px;font-weight:600;cursor:pointer;padding:4px 0;}
+  .gs-clear{border:0;background:transparent;color:var(--green);font-size:12px;font-weight:600;cursor:pointer;}
+  .gs-empty{display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;padding:28px 20px;color:var(--muted);font-size:13.5px;line-height:1.6;}
+  .gs-empty .ic2{width:28px;height:28px;opacity:.6;}
+  .gs-empty p{margin:0;max-width:420px;}
+  .gs-empty.err{color:var(--danger);}
+  .gs-skel{padding:10px;display:flex;flex-direction:column;gap:10px;}
+  .gs-skel i{display:block;height:44px;border-radius:12px;background:linear-gradient(90deg,var(--border-soft),var(--bg),var(--border-soft));background-size:200% 100%;animation:gsSk 1.1s ease-in-out infinite;}
+  @keyframes gsSk{to{background-position:-200% 0;}}
+  .gs-st{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;}
+  .gs-foot{padding:8px 14px;border-top:1px solid var(--border-soft);font-size:11.5px;color:var(--muted);}
+  /* the phone: a full-screen sheet under the status bar, thumb-sized rows */
+  .gs-ov.gs-phone{padding:0;align-items:stretch;background:var(--card);backdrop-filter:none;-webkit-backdrop-filter:none;}
+  .gs-ov.gs-phone .gs-box{width:100%;max-height:none;height:100%;height:100dvh;border:0;border-radius:0;box-shadow:none;transform:translateY(12px);padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom);}
+  .gs-ov.gs-phone.in .gs-box{transform:none;}
+  .gs-ov.gs-phone .gs-bar{padding:10px 12px;}
+  .gs-ov.gs-phone .gs-in{font-size:16px;background:var(--bg);border-radius:12px;padding:10px 12px;}
+  .gs-ov.gs-phone .gs-row{min-height:56px;}
+  .gs-ov.gs-phone .gs-chip{padding:7px 12px;font-size:13.5px;}
+  @media (prefers-reduced-motion: reduce){ .gs-ov,.gs-box{transition:none;} .gs-spin,.gs-skel i{animation:none;} }
 </style>
 </head>
 <body>
@@ -6458,7 +6527,7 @@ function stopLoading(){
 var READ_ACTIONS = { collectionsData:1, collectionReports:1, getRateHistory:1, whoami:1, bootstrap:1, listMeta:1, listDashboard:1, getDashboardAll:1, listEntries:1, listHandoffs:1,
   getSalesReport:1, getShortfallByEntrant:1, getDashboardComparison:1, getHeldCashTrend:1, listAudit:1, getFile:1,
   getReconciliation:1, listRiskItems:1, listAreaBulkBatches:1, areaBulkBatchDetail:1, login:1, forgotPassword:1, setLanguage:1,
-  listCosts:1, getCostReport:1, getProfitReport:1, getInventoryLive:1, getInventoryReport:1, areaBatchRows:1, myPendingActions:1, getJourney:1 };
+  listCosts:1, getCostReport:1, getProfitReport:1, getInventoryLive:1, getInventoryReport:1, areaBatchRows:1, myPendingActions:1, getJourney:1, globalSearch:1 };
 
 function api(action, payload, opts){
   payload = payload || {};
@@ -6481,7 +6550,7 @@ function api(action, payload, opts){
     // a save no longer wipes the screens' last copies (2026-10-08: every screen after a save
     // then waited the whole round trip behind the loading circle); they are marked stale,
     // still drawn at once but dimmed under an "updating" bar until the fresh copy lands
-    if (res.ok && !READ_ACTIONS[action] && !payload.dryRun) { markScreenCacheStale_(); state.pendDirty = true; DRILL.entries = null; DRILL.handoffs = null; DRILL.eById = null; DRILL.hById = null; }
+    if (res.ok && !READ_ACTIONS[action] && !payload.dryRun) { try { GS_.cache = {}; } catch (e) {} markScreenCacheStale_(); state.pendDirty = true; DRILL.entries = null; DRILL.handoffs = null; DRILL.eById = null; DRILL.hById = null; }
     // a session ended elsewhere (a changed sign-in, a reset): sign out cleanly;
     // a temporary sign-in: its page, before anything else (2026-10-04)
     if (res && res.error === 'auth_required' && state.user && action !== 'login') setTimeout(function(){ logout(); }, 0);
@@ -7264,6 +7333,8 @@ function logout(){
   // and its content: a closed drawer kept the last person's breakdown in the page (found 2026-10-18)
   try { if (DRAWER.root) { DRAWER.root.dr.remove(); DRAWER.root.scrim.remove(); DRAWER.root = null; } } catch (e) {}
   var sheet = qs('.bt-sheet'); if (sheet) sheet.remove();
+  // the search palette: closed, and its query and cached answers forgotten (review 2026-10-25)
+  try { gsReset_(); } catch (e) {}
   var pendUser = state.user && state.user.id;
   state.token=''; state.user=null; state.meta=null;
   state.pend = null; state.pendKicked = false; setNotifCount(0);
@@ -7645,6 +7716,362 @@ function cityWatermark_(){
   if (changed) wm.classList.add('cw-reveal');
   return wm;
 }
+// ---------- Search everything (2026-10-19) ----------
+// A command palette on a desktop (Ctrl/Cmd+K or the top bar's search icon) and a
+// full-screen search sheet on a phone. Built on the pattern REA showed in a web
+// notes app (docs/superpowers/plans/2026-10-18-global-search-report.md): one
+// normalised query, debounced as-you-type, results grouped by type and ranked,
+// the matched part marked, type chips, recent searches per person, and the
+// arrow keys, Enter and Esc. The server's globalSearch answers with only what the
+// person may already open; selecting a result opens that record's own document,
+// row or profile.
+(function(){
+  var add = {
+    en: { gs_title:'Search everything', gs_ph:'Search numbers, branches, people, amounts…', gs_open:'Search (Ctrl+K)', gs_close:'Close search',
+      gs_all:'All', gs_t_entry:'Entries', gs_t_handoff:'Handovers and requests', gs_t_deposit:'Bank deposits', gs_t_customer:'Customers', gs_t_place:'Branches, areas and cities', gs_t_product:'Products', gs_t_user:'Users',
+      gs_recent:'Recent searches', gs_clearRecent:'Clear', gs_none:'Nothing found for “{q}”.', gs_noneHint:'Try a transaction number without its prefix, an amount, or part of a name.',
+      gs_hint:'Type a transaction number (with or without DAY-, HAC-, DEP-), an amount, a branch, a person or a customer.', gs_busy:'Searching…', gs_err:'Search failed. Try again.',
+      gs_keys:'↑↓ to move · Enter to open · Esc to close', gs_more:'{n} more, narrow the search or pick a type', gs_byAmount:'amount', gs_byNumber:'number',
+      gs_p_location:'Branch', gs_p_cluster:'Area', gs_p_city:'City', gs_voided:'Cancelled', gs_inactive:'Inactive', gs_gone:'This record is not available any more. Refresh the screen and try again.', gs_notYours:'This record is not on your screens.', gs_count:'{n} results' },
+    ar: { gs_title:'البحث في كل شيء', gs_ph:'ابحث برقم أو فرع أو شخص أو مبلغ…', gs_open:'بحث (Ctrl+K)', gs_close:'إغلاق البحث',
+      gs_all:'الكل', gs_t_entry:'الإدخالات', gs_t_handoff:'التسليمات والطلبات', gs_t_deposit:'الإيداعات البنكية', gs_t_customer:'العملاء', gs_t_place:'الفروع والمناطق والمدن', gs_t_product:'المنتجات', gs_t_user:'المستخدمون',
+      gs_recent:'عمليات البحث الأخيرة', gs_clearRecent:'مسح', gs_none:'لا نتائج لـ «{q}».', gs_noneHint:'جرّب رقم العملية دون بادئته، أو مبلغًا، أو جزءًا من اسم.',
+      gs_hint:'اكتب رقم عملية (مع DAY- أو HAC- أو DEP- أو بدونها)، أو مبلغًا، أو فرعًا، أو شخصًا، أو عميلًا.', gs_busy:'جارٍ البحث…', gs_err:'تعذّر البحث. حاول مرة أخرى.',
+      gs_keys:'↑↓ للتنقل · Enter للفتح · Esc للإغلاق', gs_more:'{n} نتائج أخرى، ضيّق البحث أو اختر نوعًا', gs_byAmount:'مبلغ', gs_byNumber:'رقم',
+      gs_p_location:'فرع', gs_p_cluster:'منطقة', gs_p_city:'مدينة', gs_voided:'ملغاة', gs_inactive:'غير نشط', gs_gone:'هذا السجل لم يعد متاحًا. حدّث الشاشة وحاول مرة أخرى.', gs_notYours:'هذا السجل ليس ضمن شاشاتك.', gs_count:'{n} نتيجة' },
+    ur: { gs_title:'ہر چیز میں تلاش', gs_ph:'نمبر، برانچ، شخص یا رقم تلاش کریں…', gs_open:'تلاش (Ctrl+K)', gs_close:'تلاش بند کریں',
+      gs_all:'سب', gs_t_entry:'اندراجات', gs_t_handoff:'حوالگیاں اور درخواستیں', gs_t_deposit:'بینک جمع', gs_t_customer:'گاہک', gs_t_place:'برانچیں، علاقے اور شہر', gs_t_product:'مصنوعات', gs_t_user:'صارفین',
+      gs_recent:'حالیہ تلاشیں', gs_clearRecent:'صاف کریں', gs_none:'«{q}» کے لیے کچھ نہیں ملا۔', gs_noneHint:'لین دین کا نمبر سابقے کے بغیر، کوئی رقم، یا نام کا حصہ آزمائیں۔',
+      gs_hint:'لین دین کا نمبر (DAY-، HAC-، DEP- کے ساتھ یا بغیر)، رقم، برانچ، شخص یا گاہک لکھیں۔', gs_busy:'تلاش جاری ہے…', gs_err:'تلاش ناکام۔ دوبارہ کوشش کریں۔',
+      gs_keys:'↑↓ منتقل · Enter کھولیں · Esc بند', gs_more:'مزید {n}، تلاش محدود کریں یا قسم چنیں', gs_byAmount:'رقم', gs_byNumber:'نمبر',
+      gs_p_location:'برانچ', gs_p_cluster:'علاقہ', gs_p_city:'شہر', gs_voided:'منسوخ', gs_inactive:'غیر فعال', gs_gone:'یہ ریکارڈ اب دستیاب نہیں۔ اسکرین تازہ کر کے دوبارہ کوشش کریں۔', gs_notYours:'یہ ریکارڈ آپ کی اسکرینوں پر نہیں ہے۔', gs_count:'{n} نتائج' }
+  };
+  Object.keys(add).forEach(function(lang){ Object.keys(add[lang]).forEach(function(k){ L[lang][k] = add[lang][k]; }); });
+})();
+var GS_ = { open: false, q: '', type: '', seq: 0, timer: null, items: [], active: -1, cache: {}, node: null, lastFocus: null, res: null };
+var GS_ICON_ = { entry: 'entries', handoff: 'handoffs', deposit: 'bank', customer: 'customers', place: 'pin', product: 'box', user: 'user' };
+// the types this person can open, in the server's order
+function gsTypes_(){
+  var r = state.user ? state.user.role : '', wide = ['admin','finance','accountant','operations_manager','deputy_operations_manager'].indexOf(r) >= 0;
+  var ty = [];
+  if (['admin','finance','accountant','operations_manager','deputy_operations_manager','cluster_manager','store_manager','driver','branch_worker'].indexOf(r) >= 0) ty.push('entry');
+  ty.push('handoff', 'deposit');
+  if (wide) ty.push('customer');
+  ty.push('place');
+  if (r === 'admin' || r === 'finance') ty.push('product');
+  if (r === 'admin') ty.push('user');
+  return ty;
+}
+function gsFill_(key, vars){ var s = t(key); Object.keys(vars || {}).forEach(function(k){ s = s.split('{' + k + '}').join(String(vars[k])); }); return s; }
+// recent searches, per person and device
+function gsRecentKey_(){ return 'bgc_gsRecent_' + (state.user ? state.user.id : ''); }
+function gsRecent_(){ try { var v = JSON.parse(localStorage.getItem(gsRecentKey_()) || '[]'); return Array.isArray(v) ? v.filter(function(x){ return typeof x === 'string'; }).slice(0, 8) : []; } catch (e) { return []; } }
+function gsRemember_(q){
+  q = String(q || '').trim(); if (q.length < 2) return;
+  var list = gsRecent_().filter(function(x){ return x.toLowerCase() !== q.toLowerCase(); });
+  list.unshift(q);
+  try { localStorage.setItem(gsRecentKey_(), JSON.stringify(list.slice(0, 8))); } catch (e) {}
+}
+// the matched part of a shown text, marked: the same normalisation as the server
+// (normName_ per letter, so a hamza or diacritic in the name still lines up), and
+// for numbers the same text with separators dropped
+function gsHighlight_(text, q, code){
+  text = String(text == null ? '' : text);
+  var words = code ? [gsCompactC_(q)] : normName_(gsDigitsC_(q)).split(' ');
+  words = words.filter(function(w){ return w; });
+  if (!words.length || !text) return esc(text);
+  var norm = '', map = [];
+  for (var i = 0; i < text.length; i++) {
+    var ch = text.charAt(i), n = code ? gsCompactC_(ch) : (/\s/.test(ch) ? ' ' : normName_(gsDigitsC_(ch)));
+    for (var j = 0; j < n.length; j++) { norm += n.charAt(j); map.push(i); }
+  }
+  var hit = new Array(text.length + 1).join('0').split('');
+  words.forEach(function(w){
+    var from = 0, at;
+    while ((at = norm.indexOf(w, from)) >= 0) { for (var k = at; k < at + w.length; k++) hit[map[k]] = '1'; from = at + w.length; }
+  });
+  // a number with a cut sequence: mark its last digits (HAC-2026-000045 for "45")
+  var out = '', open = false;
+  for (var p = 0; p < text.length; p++) {
+    if (hit[p] === '1' && !open) { out += '<mark>'; open = true; }
+    if (hit[p] !== '1' && open) { out += '</mark>'; open = false; }
+    out += esc(text.charAt(p));
+  }
+  return out + (open ? '</mark>' : '');
+}
+function gsDigitsC_(s){ return String(s == null ? '' : s).replace(/[٠-٩۰-۹]/g, function(c){ var n = c.charCodeAt(0); return String(n >= 0x06F0 ? n - 0x06F0 : n - 0x0660); }); }
+function gsCompactC_(s){ return gsDigitsC_(s).toUpperCase().replace(/[\s\-_\/.,:#٫٬]+/g, ''); }
+// one result as the screen shows it: icon, title, line under it, amount, and which text holds the number
+function gsView_(r){
+  var meta = state.meta || {}, v = { title: '', sub: '', amount: null, code: '', chip: '' };
+  if (r.type === 'entry') {
+    v.code = r.txNo || ''; v.title = r.txNo || r.date;
+    v.sub = [locationName(r.locationId), t('entry_source_' + r.sourceType), r.date, userName(r.enteredBy)].filter(function(x){ return x && x !== '—'; }).join(' · ');
+    v.amount = r.amount; if (r.voided) v.chip = t('gs_voided');
+  } else if (r.type === 'handoff' || r.type === 'deposit') {
+    v.code = r.txNo || ''; v.title = (r.txNo ? r.txNo + ' · ' : '') + t('kind_' + r.kind);
+    var who = [r.fromUserId ? userName(r.fromUserId) : '', r.toUserId ? userName(r.toUserId) : ''].filter(function(x){ return x && x !== '—'; }).join(' → ');
+    v.sub = [r.bankReference || '', who, r.locationId ? locationName(r.locationId) : ''].filter(Boolean).join(' · ');
+    v.amount = r.amount; v.chip = t('handoff_' + r.status) !== 'handoff_' + r.status ? t('handoff_' + r.status) : '';
+  } else if (r.type === 'customer') {
+    v.title = r.name; v.code = r.code; v.sub = [r.code, r.city].filter(Boolean).join(' · '); if (!r.active) v.chip = t('gs_inactive');
+  } else if (r.type === 'place') {
+    v.title = r.name; v.code = r.code || '';
+    var area = r.clusterId ? byId(meta.clusters, r.clusterId) : null;
+    v.sub = [t('gs_p_' + r.kind), r.code, r.city, area ? area.name : ''].filter(Boolean).join(' · ');
+  } else if (r.type === 'product') {
+    v.title = r.name; v.code = r.code; v.sub = [r.code, r.unitPrice ? money(r.unitPrice) + ' ' + t('ui_sar') : ''].filter(Boolean).join(' · '); if (!r.active) v.chip = t('gs_inactive');
+  } else if (r.type === 'user') {
+    v.title = r.name; v.code = r.code; v.sub = [roleLabel(r.role), r.code, r.email].filter(Boolean).join(' · '); if (!r.active) v.chip = t('gs_inactive');
+  }
+  return v;
+}
+function gsOpen_(){
+  if (!state.user) return;
+  if (GS_.open && GS_.node) { var inp0 = qs('.gs-in', GS_.node); if (inp0) { inp0.focus(); inp0.select(); } return; }
+  GS_.open = true; GS_.lastFocus = document.activeElement; GS_.items = []; GS_.active = -1; GS_.res = null;
+  var phone = msPhone_();
+  var ov = el('<div class="gs-ov'+(phone ? ' gs-phone' : '')+'" role="presentation">' +
+    '<div class="gs-box" role="dialog" aria-modal="true" aria-label="'+esc(t('gs_title'))+'">' +
+      '<div class="gs-bar">' +
+        '<span class="gs-ic" aria-hidden="true">'+icon_('search')+'</span>' +
+        '<input class="gs-in" type="search" enterkeyhint="search" autocomplete="off" spellcheck="false" role="combobox" aria-expanded="true" aria-controls="gsList" aria-autocomplete="list" placeholder="'+esc(t('gs_ph'))+'" aria-label="'+esc(t('gs_title'))+'">' +
+        '<span class="gs-spin" aria-hidden="true" hidden></span>' +
+        (phone ? '' : '<kbd class="gs-kbd" aria-hidden="true">Esc</kbd>') +
+        '<button type="button" class="gs-x" aria-label="'+esc(t('gs_close'))+'" title="'+esc(t('gs_close'))+'">'+icon_('close')+'</button>' +
+      '</div>' +
+      '<div class="gs-chips" role="toolbar" aria-label="'+esc(t('gs_title'))+'"></div>' +
+      '<div class="gs-list" id="gsList" role="listbox" aria-label="'+esc(t('gs_title'))+'"></div>' +
+      '<div class="gs-st" role="status" aria-live="polite"></div>' +
+      (phone ? '' : '<div class="gs-foot">'+esc(t('gs_keys'))+'</div>') +
+    '</div></div>');
+  GS_.node = ov;
+  document.body.appendChild(ov);
+  document.documentElement.classList.add('gs-lock');
+  var inp = qs('.gs-in', ov);
+  inp.value = GS_.q || '';
+  ov.addEventListener('mousedown', function(e){ if (e.target === ov) gsClose_(); });
+  qs('.gs-x', ov).addEventListener('click', gsClose_);
+  inp.addEventListener('input', function(){ GS_.q = inp.value; gsSchedule_(); });
+  inp.addEventListener('keydown', gsKey_);
+  // Esc closes from anywhere inside, and Tab stays inside the palette (review 2026-10-25)
+  ov.addEventListener('keydown', function(e){
+    if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); gsClose_(); return; }
+    if (e.key !== 'Tab') return;
+    var f = qsa('input, button:not([disabled])', ov).filter(function(x){ return x.offsetParent !== null; });
+    if (!f.length) return;
+    var first = f[0], last = f[f.length - 1];
+    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    else if (f.indexOf(document.activeElement) < 0) { e.preventDefault(); first.focus(); }
+  });
+  gsChips_();
+  setTimeout(function(){ inp.focus(); if (inp.value) inp.select(); }, 30);
+  if (GS_.q) gsRun_(); else gsRender_();
+  requestAnimationFrame(function(){ ov.classList.add('in'); });
+}
+// a cached answer belongs to one person, one area and one type filter
+function gsKeyOf_(q){ return (state.user ? state.user.id : '') + '|' + (activeArea_() || '') + '|' + GS_.type + '|' + String(q || '').toLowerCase(); }
+// sign-out: the palette goes at once (no fade over the sign-in page) and nothing of it is kept
+function gsReset_(){
+  clearTimeout(GS_.timer);
+  var ov = GS_.node;
+  GS_.open = false; GS_.node = null; GS_.seq++;
+  GS_.cache = {}; GS_.q = ''; GS_.type = ''; GS_.res = null; GS_.items = []; GS_.active = -1; GS_.lastFocus = null;
+  document.documentElement.classList.remove('gs-lock');
+  if (ov) ov.remove();
+  qsa('.gs-ov').forEach(function(x){ x.remove(); });
+}
+function gsClose_(){
+  if (!GS_.open) return;
+  GS_.open = false; clearTimeout(GS_.timer); GS_.seq++;
+  var ov = GS_.node; GS_.node = null;
+  document.documentElement.classList.remove('gs-lock');
+  if (ov) { ov.classList.remove('in'); setTimeout(function(){ ov.remove(); }, 160); }
+  try { if (GS_.lastFocus && GS_.lastFocus.focus) GS_.lastFocus.focus(); } catch (e) {}
+}
+function gsChips_(){
+  var host = GS_.node && qs('.gs-chips', GS_.node); if (!host) return;
+  var ty = gsTypes_(), counts = (GS_.res && GS_.res.counts) || {};
+  host.innerHTML = [''].concat(ty).map(function(k){
+    var n = k ? counts[k] : null;
+    return '<button type="button" class="gs-chip'+(GS_.type === k ? ' on' : '')+'" data-t="'+esc(k)+'" aria-pressed="'+(GS_.type === k)+'">' +
+      (k ? icon_(GS_ICON_[k]) : '') + '<span>'+esc(k ? t('gs_t_' + k) : t('gs_all'))+'</span>' + (n ? '<small class="num">'+n+'</small>' : '') + '</button>';
+  }).join('');
+  qsa('.gs-chip', host).forEach(function(b){ b.addEventListener('click', function(){
+    GS_.type = b.getAttribute('data-t') || ''; gsChips_();
+    if (GS_.q.trim()) gsRun_(); else gsRender_();
+    var inp = qs('.gs-in', GS_.node); if (inp) inp.focus();
+  }); });
+}
+// as you type: one request a quarter of a second after the last key; a later
+// answer always wins, and an answer already seen comes from the cache at once
+function gsSchedule_(){
+  clearTimeout(GS_.timer);
+  var q = GS_.q.trim();
+  if (!q) { GS_.seq++; GS_.res = null; gsBusy_(false); gsChips_(); gsRender_(); return; }
+  var key = gsKeyOf_(q);
+  if (GS_.cache[key]) { GS_.res = GS_.cache[key]; gsChips_(); gsRender_(); return; }
+  GS_.timer = setTimeout(gsRun_, 220);
+}
+function gsBusy_(on){ var s = GS_.node && qs('.gs-spin', GS_.node); if (s) s.hidden = !on; }
+function gsRun_(){
+  var q = GS_.q.trim(); if (!q || !GS_.open) return;
+  var key = gsKeyOf_(q), my = ++GS_.seq;
+  if (GS_.cache[key]) { GS_.res = GS_.cache[key]; gsChips_(); gsRender_(); return; }
+  gsBusy_(true);
+  if (!GS_.res) gsRender_();
+  api('globalSearch', { q: q, types: GS_.type ? [GS_.type] : [], limit: GS_.type ? 30 : 6 }, { silent: true }).then(function(res){
+    if (my !== GS_.seq || !GS_.open) return;
+    gsBusy_(false);
+    if (!res || !res.ok) { GS_.res = { error: true, results: [], counts: {} }; gsRender_(); return; }
+    GS_.cache[key] = res; GS_.res = res; gsChips_(); gsRender_();
+  }, function(){ if (my !== GS_.seq) return; gsBusy_(false); GS_.res = { error: true, results: [], counts: {} }; gsRender_(); });
+}
+function gsRender_(){
+  var host = GS_.node && qs('.gs-list', GS_.node), st = GS_.node && qs('.gs-st', GS_.node);
+  if (!host) return;
+  var q = GS_.q.trim(), html = '';
+  GS_.items = []; GS_.active = -1;
+  if (!q) {
+    var rec = gsRecent_();
+    if (rec.length) {
+      html += '<div class="gs-grp"><div class="gs-gh"><span>'+icon_('clock')+esc(t('gs_recent'))+'</span><button type="button" class="gs-clear">'+esc(t('gs_clearRecent'))+'</button></div>';
+      rec.forEach(function(r){
+        var i = GS_.items.length; GS_.items.push({ recent: r });
+        html += '<div class="gs-row gs-rec" role="option" id="gsOpt'+i+'" data-i="'+i+'" aria-selected="false"><span class="gs-ri">'+icon_('search')+'</span><span class="gs-rt"><b>'+esc(r)+'</b></span></div>';
+      });
+      html += '</div>';
+    }
+    html += '<div class="gs-empty">'+icon_('search')+'<p>'+esc(t('gs_hint'))+'</p></div>';
+    if (st) st.textContent = '';
+  } else if (!GS_.res) {
+    html = '<div class="gs-skel"><i></i><i></i><i></i></div>';
+    if (st) st.textContent = t('gs_busy');
+  } else if (GS_.res.error) {
+    html = '<div class="gs-empty err">'+icon_('alert')+'<p>'+esc(t('gs_err'))+'</p></div>';
+    if (st) st.textContent = t('gs_err');
+  } else {
+    var res = GS_.res.results || [], counts = GS_.res.counts || {}, order = gsTypes_();
+    var groups = {}; res.forEach(function(r){ (groups[r.type] = groups[r.type] || []).push(r); });
+    var total = 0;
+    order.forEach(function(ty){
+      var list = groups[ty]; if (!list || !list.length) return;
+      if (GS_.type && GS_.type !== ty) return;
+      html += '<div class="gs-grp" role="group" aria-label="'+esc(t('gs_t_' + ty))+'"><div class="gs-gh"><span>'+icon_(GS_ICON_[ty])+esc(t('gs_t_' + ty))+'</span><small class="num">'+(counts[ty] || list.length)+'</small></div>';
+      list.forEach(function(r){
+        var v = gsView_(r), i = GS_.items.length; GS_.items.push({ r: r }); total++;
+        var codeInTitle = v.code && v.title.indexOf(v.code) === 0;
+        var titleHtml = codeInTitle ? '<bdi dir="ltr" class="gs-no">'+gsHighlight_(v.code, q, true)+'</bdi>' + gsHighlight_(v.title.slice(v.code.length), q, false) : gsHighlight_(v.title, q, false);
+        var subHtml = gsHighlight_(v.sub, q, false);
+        if (!codeInTitle && v.code && v.sub.indexOf(v.code) >= 0 && r.how === 'number') subHtml = gsHighlight_(v.sub, q, true);
+        if ((r.type === 'deposit') && r.bankReference && r.how === 'number') subHtml = '<bdi dir="ltr">'+gsHighlight_(r.bankReference, q, true)+'</bdi>' + esc(v.sub.slice(r.bankReference.length));
+        html += '<div class="gs-row" role="option" id="gsOpt'+i+'" data-i="'+i+'" aria-selected="false">' +
+          '<span class="gs-ri t-'+esc(r.type)+'">'+icon_(GS_ICON_[r.type])+'</span>' +
+          '<span class="gs-rt"><b>'+titleHtml+'</b>' + (v.chip ? ' <span class="gs-chipS">'+esc(v.chip)+'</span>' : '') + '<small>'+subHtml+'</small></span>' +
+          (v.amount != null ? '<span class="gs-am num'+(r.how === 'amount' ? ' hit' : '')+'"><bdi dir="ltr">'+esc(money(v.amount))+'</bdi></span>' : '') +
+          '<span class="gs-go" aria-hidden="true">'+icon_('chevron')+'</span></div>';
+      });
+      var more = (counts[ty] || 0) - list.length;
+      if (more > 0) html += '<button type="button" class="gs-more" data-t="'+esc(ty)+'">'+esc(gsFill_('gs_more', { n: more }))+'</button>';
+      html += '</div>';
+    });
+    if (!total) html = '<div class="gs-empty">'+icon_('search')+'<p><b>'+esc(gsFill_('gs_none', { q: q }))+'</b><br>'+esc(t('gs_noneHint'))+'</p></div>';
+    if (st) st.textContent = gsFill_('gs_count', { n: total });
+  }
+  host.innerHTML = html;
+  qsa('.gs-row', host).forEach(function(row){
+    row.addEventListener('click', function(){ gsPick_(Number(row.getAttribute('data-i'))); });
+    row.addEventListener('mousemove', function(){ var i = Number(row.getAttribute('data-i')); if (i !== GS_.active) gsMove_(i); });
+  });
+  qsa('.gs-more', host).forEach(function(b){ b.addEventListener('click', function(){ GS_.type = b.getAttribute('data-t'); gsChips_(); gsRun_(); }); });
+  var clr = qs('.gs-clear', host);
+  if (clr) clr.addEventListener('click', function(){ try { localStorage.removeItem(gsRecentKey_()); } catch (e) {} gsRender_(); });
+  if (GS_.items.length && q) gsMove_(0);
+}
+function gsMove_(i){
+  var host = GS_.node && qs('.gs-list', GS_.node); if (!host || !GS_.items.length) return;
+  i = Math.max(0, Math.min(GS_.items.length - 1, i));
+  var prev = qs('.gs-row.act', host); if (prev) { prev.classList.remove('act'); prev.setAttribute('aria-selected', 'false'); }
+  var row = qs('#gsOpt' + i, host); GS_.active = i;
+  var inp = qs('.gs-in', GS_.node);
+  if (row) { row.classList.add('act'); row.setAttribute('aria-selected', 'true'); if (inp) inp.setAttribute('aria-activedescendant', row.id); row.scrollIntoView({ block: 'nearest' }); }
+}
+function gsKey_(e){
+  if (e.key === 'ArrowDown') { e.preventDefault(); gsMove_(GS_.active < 0 ? 0 : GS_.active + 1); }
+  else if (e.key === 'ArrowUp') { e.preventDefault(); gsMove_(GS_.active <= 0 ? 0 : GS_.active - 1); }
+  else if (e.key === 'Home' && e.ctrlKey) { e.preventDefault(); gsMove_(0); }
+  else if (e.key === 'End' && e.ctrlKey) { e.preventDefault(); gsMove_(GS_.items.length - 1); }
+  else if (e.key === 'Enter') { e.preventDefault(); clearTimeout(GS_.timer); if (GS_.active >= 0) gsPick_(GS_.active); else gsRun_(); }
+  else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); gsClose_(); }
+}
+function gsPick_(i){
+  var it = GS_.items[i]; if (!it) return;
+  if (it.recent) { GS_.q = it.recent; var inp = qs('.gs-in', GS_.node); if (inp) inp.value = it.recent; gsRun_(); return; }
+  gsRemember_(GS_.q);
+  var r = it.r;
+  gsClose_();
+  gsGo_(r);
+}
+// a result opens what the screens already open for it
+function gsGo_(r){
+  var role = state.user.role, mgr = role === 'admin' || role === 'finance';
+  if (r.type === 'entry') {
+    drillEnsure_(true, false, function(){
+      var e = (DRILL.entries || []).filter(function(x){ return x.id === r.id; })[0];
+      if (e) { drawerOpen_(entryDocView_(e)); return; }
+      if (r.txNo) { txOpenByNo_(r.txNo); return; }
+      toastRaw_(t('gs_gone'), 'err');
+    });
+    return;
+  }
+  if (r.type === 'handoff' || r.type === 'deposit') {
+    drillEnsure_(false, true, function(){
+      var h = (DRILL.handoffs || []).filter(function(x){ return x.id === r.id; })[0];
+      if (h) { drawerOpen_(handoffDocView_(h)); return; }
+      // an area request followed on the Collections screen, not a handover of this person's
+      if (r.kind === 'cluster_to_collector') { goScreen_('collections'); return; }
+      toastRaw_(t('gs_notYours'), 'err');
+    });
+    return;
+  }
+  if (r.type === 'customer') {
+    CUS_.id = r.id;
+    if (state.screen === 'customers') render(); else goScreen_('customers');
+    return;
+  }
+  if (r.type === 'product') { openProfile_('product', r.id); return; }
+  if (r.type === 'user') { openProfile_('user', r.id); return; }
+  if (r.type === 'place') {
+    if (mgr) {
+      if (r.kind === 'city') { var c = ((state.meta || {}).cities || []).filter(function(x){ return x.name === r.name; })[0]; if (c) { openProfile_('city', c.id); return; } }
+      else { openProfile_(r.kind, r.id); return; }
+    }
+    // everyone else: the place's days, as the dashboards' drawers list them
+    drillEnsure_(true, false, function(){
+      var meta = state.meta || {};
+      var inPlace = function(e){
+        if (r.kind === 'location') return e.locationId === r.id;
+        var l = byId(meta.locations, e.locationId); if (!l) return false;
+        return r.kind === 'cluster' ? l.clusterId === r.id : l.city === r.name;
+      };
+      var list = (DRILL.entries || []).filter(function(e){ return !e.voided && inPlace(e); });
+      openTxList_({ title: r.name, sub: t('gs_p_' + r.kind), items: list.map(function(e){ return entryRowData_(e, entryAmt_(e).gross); }) });
+    });
+  }
+}
+// Ctrl/Cmd+K anywhere once signed in; "/" when no field has the focus
+document.addEventListener('keydown', function(e){
+  if (!state.user || !qs('#app.shell')) return;
+  var k = String(e.key || '').toLowerCase();
+  if ((e.ctrlKey || e.metaKey) && !e.altKey && k === 'k') { e.preventDefault(); if (GS_.open) gsClose_(); else gsOpen_(); return; }
+  if (k === '/' && !GS_.open && !e.ctrlKey && !e.metaKey) {
+    var a = document.activeElement, tag = a && a.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || (a && a.isContentEditable)) return;
+    e.preventDefault(); gsOpen_();
+  }
+});
+
 function renderShell(){
   // an area manager on several areas: the screens draw only once the meta is the area he is in
   if (!areaEnsure_()) return;
@@ -7711,12 +8138,14 @@ function renderShell(){
       '<div class="tb-title"><h1><span class="tb-ic" aria-hidden="true">'+icon_(current[0])+'</span>'+esc(t(current[1]))+'</h1><div class="sub">'+esc(dates.gregorian||'')+'</div></div>' +
     '</div>' +
     '<div class="tb-actions">' + areaPillHtml_() +
+      '<button type="button" class="icon-btn gs-btn" id="gsBtn" title="'+esc(t('gs_open'))+'" aria-label="'+esc(t('gs_title'))+'" aria-keyshortcuts="Control+K Meta+K">'+icon_('search')+(msPhone_() ? '' : '<span class="gs-kh" aria-hidden="true">'+(/Mac|iPhone|iPad/.test(navigator.platform || '') ? '\u2318K' : 'Ctrl K')+'</span>')+'</button>' +
       '<button type="button" class="icon-btn notif-bell" id="notifBell" title="'+esc(t('nav_notifications'))+'">'+icon_('bell') +
         '<span class="notif-badge" id="notifBadge"'+(state.notifCount?'':' hidden')+'>'+esc(state.notifCount)+'</span></button>' +
       '<button type="button" class="icon-btn tb-menu" id="menuBtn" title="'+esc(t('ui_menu'))+'">'+icon_('menu')+'</button>' +
     '</div>' +
   '</div>');
   col.appendChild(tb);
+  qs('#gsBtn', tb).addEventListener('click', function(){ gsOpen_(); });
   qs('#notifBell', tb).addEventListener('click', function(){ pendOpen_(); });
   qs('#notifBell', tb).setAttribute('aria-label', state.notifCount ? t('act_bell').replace('{n}', state.notifCount) : t('act_bell0'));
   var areaPill = qs('#areaPill', tb);
