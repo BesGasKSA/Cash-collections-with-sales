@@ -6693,5 +6693,56 @@ console.log('--- global search ---');
   });
 })();
 
+// ---------- a day saved twice, already banked, is cancelled without moving cash (2026-10-21) ----------
+console.log('--- a duplicate inside a received handover ---');
+(function () {
+  var ctx = harness.buildContext(), SHEETS = ctx.SHEETS;
+  function seed(sh, o) { var t = o.txNo; delete o.txNo; ctx.writeRow(sh, o); if (t) { o.txNo = t; ctx.writeRow(sh, o); } }
+  function call(payload) { try { return ctx.route_(payload); } catch (e) { return { ok: false, error: String(e && e.message || e) }; } }
+  var salt = ctx.randomSalt_();
+  ctx.writeRow(SHEETS.USERS, { id: 'dpadmin', name: 'Dup Admin', email: 'dup.admin@bestgas.sa', role: 'admin', active: true, language: 'en', salt: salt, pass: ctx.hashPw_('Bootstrap#1', salt), mustChangePw: false });
+  ctx.writeRow(SHEETS.USERS, { id: 'dpbm', name: 'Dup Manager', email: 'dup.bm@bestgas.sa', role: 'store_manager', active: true, language: 'en', salt: salt, pass: ctx.hashPw_('Bootstrap#1', salt), mustChangePw: false });
+  ctx.writeRow(SHEETS.CLUSTERS, { id: 'dpcl', name: 'Dup Area', clusterManagerUserId: 'x' });
+  ctx.writeRow(SHEETS.LOCATIONS, { id: 'dploc', name: 'Dup Branch', city: 'Riyadh', clusterId: 'dpcl', collectorUserId: 'col' });
+  ctx.writeRow(SHEETS.STORES, { id: 'dpst', name: 'Dup Store', locationId: 'dploc', storeManagerUserId: 'dpbm' });
+  var tok = call({ action: 'login', email: 'dup.admin@bestgas.sa', password: 'Bootstrap#1' }).token;
+  var at = '2026-10-11T08:19:00.000Z', day = '2026-10-10';
+  function E(id, tx, sub, dd) { seed(SHEETS.ENTRIES, { id: id, txNo: tx, submissionId: sub, date: day, sourceType: 'store', sourceId: 'dpst', locationId: 'dploc', cashSales: 5069, qty: 137, posSales: 0,
+    directDepositAmount: dd, directDepositRef: '123', enteredBy: 'dpbm', consumedBy: 'H1', createdAt: at }); }
+  E('e237', 'DAY-237', 'sub-a', 5069); E('e238', 'DAY-238', 'sub-b', 2739);
+  var both = ctx.computeNet_(ctx.readSheet(SHEETS.ENTRIES).filter(function (e) { return e.sourceId === 'dpst'; }));
+  seed(SHEETS.HANDOFFS, { id: 'H1', txNo: 'HAC-1', kind: 'cluster_to_collector', status: 'confirmed', amount: 2330, locationId: 'dploc', fromUserId: 'x', toUserId: 'col', sourceEntryIds: ['e237', 'e238'], sourceHandoffIds: [], breakdown: both, consumedBy: 'D1', createdAt: at });
+  seed(SHEETS.HANDOFFS, { id: 'D1', txNo: 'DEP-624', kind: 'deposit', status: 'completed', amount: 2330, fromUserId: 'col', sourceHandoffIds: ['H1'], breakdown: JSON.parse(JSON.stringify(both)), perCluster: [{ clusterId: 'dpcl', amount: 2330, breakdown: JSON.parse(JSON.stringify(both)) }], createdAt: at });
+  seed(SHEETS.HANDOFFS, { id: 'DD1', txNo: 'DEP-277', kind: 'deposit', direct: true, status: 'completed', amount: 5069, sourceEntryIds: ['e237'], createdAt: at });
+  seed(SHEETS.HANDOFFS, { id: 'DD2', txNo: 'DEP-278', kind: 'deposit', direct: true, status: 'completed', amount: 2739, sourceEntryIds: ['e238'], createdAt: at });
+  check(both.storeCash === 10138 && both.netCashOwed === 2330, 'the duplicate doubles the sales but not the cash (' + both.storeCash + ' / ' + both.netCashOwed + ')');
+
+  var plain = call({ action: 'adminVoidTransaction', token: tok, ids: ['e237'], reason: 'saved twice' });
+  check(!plain.ok && plain.error === 'entry_handed_on', 'the ordinary cancel still refuses a handed-on entry');
+  var wrong = call({ action: 'adminVoidTransaction', token: tok, ids: ['e238'], reason: 'saved twice', duplicate: true });
+  check(!wrong.ok && wrong.error === 'duplicate_moves_cash', 'the copy that carries the cash cannot be cancelled as a duplicate (' + wrong.error + ')');
+  var ok = call({ action: 'adminVoidTransaction', token: tok, ids: ['e237'], reason: 'saved twice', duplicate: true });
+  check(ok.ok && ok.voided === 1 && ok.depositsVoided === 1, 'the duplicate and its own الموازنة are cancelled (' + JSON.stringify(ok) + ')');
+  var h = ctx.getById_(SHEETS.HANDOFFS, 'H1'), d = ctx.getById_(SHEETS.HANDOFFS, 'D1'), e237 = ctx.getById_(SHEETS.ENTRIES, 'e237');
+  check(h.amount === 2330 && d.amount === 2330, 'no amount moves up the chain');
+  check(h.sourceEntryIds.length === 1 && h.sourceEntryIds[0] === 'e238' && h.removedEntryIds[0] === 'e237', 'the handover now carries the one real day');
+  check(h.breakdown.storeCash === 5069 && h.breakdown.directDeposit === 2739 && h.breakdown.netCashOwed === 2330, 'the handover statement adds up again (' + h.breakdown.storeCash + ')');
+  check(d.breakdown.storeCash === 5069 && d.perCluster[0].breakdown.storeCash === 5069, 'and so does the deposit that banked it');
+  check(e237.voided && ctx.getById_(SHEETS.HANDOFFS, 'DD1').status === 'voided' && ctx.getById_(SHEETS.HANDOFFS, 'DD2').status === 'completed', 'the kept day and its deposit stay');
+  var health = call({ action: 'dataHealthCheck', token: tok });
+  check(health.ok && !health.issues.some(function (i) { return i.id === 'H1' || i.id === 'D1'; }), 'the data health check finds nothing on the chain afterwards (' + JSON.stringify(health.byKind) + ')');
+  var lone = call({ action: 'adminVoidTransaction', token: tok, ids: ['e238'], reason: 'x', duplicate: true });
+  check(!lone.ok, 'the last copy of a day is never cancelled as a duplicate');
+
+  // the rule from now on: a day handed over cannot be entered again
+  var bmTok = call({ action: 'login', email: 'dup.bm@bestgas.sa', password: 'Bootstrap#1' }).token;
+  var today = new Date(Date.now() + 3 * 3600e3).toISOString().slice(0, 10);
+  seed(SHEETS.ENTRIES, { id: 'etd', txNo: 'DAY-T', submissionId: 'sub-t', date: today, sourceType: 'store', sourceId: 'dpst', locationId: 'dploc', cashSales: 300, enteredBy: 'dpbm', consumedBy: 'H1', createdAt: new Date().toISOString() });
+  var again = call({ action: 'createDailyEntry', token: bmTok, date: today, sourceType: 'store', sourceId: 'dpst', cashSales: 300, submissionId: 'sub-c' });
+  check(again.error === 'day_already_entered' && again.existingTxNo === 'DAY-T', 'today, already handed over, cannot be entered a second time (' + (again.error || 'saved') + ')');
+  var second = call({ action: 'createDailyEntry', token: bmTok, date: today, sourceType: 'store', sourceId: 'dpst', cashSales: 120, submissionId: 'sub-d' });
+  check(second.ok, 'a genuinely different second handover the same day still goes through (' + (second.error || 'ok') + ')');
+})();
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);
