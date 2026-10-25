@@ -365,7 +365,7 @@ function mailOpen_(lang, dir, title, preheader, width) {
     '<style>body{margin:0;padding:0;-webkit-text-size-adjust:100%}a{text-decoration:none}' +
     '@media (max-width:520px){.m-px{padding-left:18px!important;padding-right:18px!important}.m-h1{font-size:21px!important}.m-amt{font-size:32px!important}.m-hide{display:none!important}.m-logo{width:62px!important;height:62px!important}}' +
     '@media (prefers-color-scheme:dark){.m-bg{background:#121815!important}.m-card{background:#1B231E!important}.m-ink{color:#EEF2EC!important}.m-body{color:#C8D1C7!important}.m-muted{color:#98A699!important}' +
-    '.m-paper{background:#212B24!important;border-color:#33402F!important}.m-line{border-color:#33402F!important}.m-chip{background:#26312A!important}}' +
+    '.m-paper{background:#212B24!important;border-color:#33402F!important}.m-line{border-color:#33402F!important}.m-chip{background:#26312A!important}.m-tl{color:#EEF2EC!important}.m-red{color:#F0958A!important}}' +
     '</style><title>' + e(title) + '</title></head>' +
     '<body class="m-bg" style="margin:0;padding:0;background:' + M.CREAM + ';">' +
     '<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;">' + e(preheader) + '&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;</div>' +
@@ -389,7 +389,7 @@ function mailStatus_(tone, label, rtl) {
     '<tr><td class="m-px"' + D + ' style="padding:22px 30px 0;text-align:' + (rtl ? 'right' : 'left') + ';">' +
     '<table role="presentation" cellpadding="0" cellspacing="0" border="0"' + D + ' style="display:inline-table;"><tr>' +
     '<td width="24" valign="middle"><div style="width:24px;height:24px;border-radius:12px;background:' + T[0] + ';color:#ffffff;font-family:Arial,sans-serif;font-size:14px;font-weight:bold;line-height:24px;text-align:center;">' + T[3] + '</div></td>' +
-    '<td valign="middle" style="padding-' + (rtl ? 'right' : 'left') + ':9px;font-family:' + F + ';font-size:13px;font-weight:bold;color:' + T[0] + ';">' + e(label) + '</td>' +
+    '<td class="m-tl" valign="middle" style="padding-' + (rtl ? 'right' : 'left') + ':9px;font-family:' + F + ';font-size:13px;font-weight:bold;color:' + T[0] + ';">' + e(label) + '</td>' +
     '</tr></table></td></tr>';
 }
 // The one action. Outlook gets a VML button of the same size.
@@ -494,7 +494,7 @@ function nmHtml_(c, lang, o) {
     var k = o.calc;
     function line(label, v, sign, strong, color) {
       return '<tr><td class="' + (strong ? 'm-ink' : 'm-body') + '"' + D + ' style="padding:8px 15px;font-family:' + FONT + ';font-size:' + (strong ? 14 : 13.5) + 'px;' + (strong ? 'font-weight:bold;' : '') + 'color:' + (strong ? INK : BODY) + ';text-align:' + A + ';">' + e(label) + '</td>' +
-        '<td style="padding:8px 15px;text-align:' + B + ';white-space:nowrap;">' + (sign ? '<span style="font-family:Arial,sans-serif;font-size:13px;color:' + MUTED + ';">' + sign + '</span>&nbsp;' : '') + money(v, strong ? 14.5 : 13.5, color || INK, color ? '' : 'm-ink') + '</td></tr>';
+        '<td style="padding:8px 15px;text-align:' + B + ';white-space:nowrap;">' + (sign ? '<span style="font-family:Arial,sans-serif;font-size:13px;color:' + MUTED + ';">' + sign + '</span>&nbsp;' : '') + money(v, strong ? 14.5 : 13.5, color || INK, color ? 'm-red' : 'm-ink') + '</td></tr>';
     }
     function rule() { return '<tr><td colspan="2" style="padding:2px 15px;"><div class="m-line" style="border-top:1px solid ' + LINE + ';height:0;font-size:0;line-height:0;">&nbsp;</div></td></tr>'; }
     var calc = k.ins.map(function (r) { return line(r[0], r[1], '+', false); }).join('') + rule() + line(c.calc.totalIn, k.totalIn, '', true);
