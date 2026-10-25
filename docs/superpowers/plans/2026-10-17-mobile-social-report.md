@@ -53,3 +53,62 @@ Observed vs inferred: the rows above come from the apps' public screens and desi
 - `ur` and `ar` names show the mock's `UR:`/`AR:` translation prefixes. That is mock data, not this change.
 - The hero's waiting list is hidden on phones because the stories row and the activity sheet replace it. The hero still shows the count and "View all".
 - The profile counters are computed client-side from `listHandoffs` (this month by created/confirmed date), so they cover only what that list returns for the role.
+
+---
+
+# v2 (2026-10-18 / 19): top bar, Gregorian date, tab bar edges, redesign across every screen, bug sweep
+
+## Skills used (v2)
+reverse-engineering (benchmark below), ui-ux-pro-max (priority table; there is no Python here for its search script), motion-system, color-system, aesthetic-usability, accessibility-audit, design-system (one token layer), frontend-design (no all-caps labels; the large title is each screen's one bold element), impeccable (spacing rhythm and states), verification-before-completion.
+
+## Benchmark: pattern, source, how it is applied here
+| Pattern | Source | Applied here |
+|---|---|---|
+| Large title that collapses into the bar on scroll | Apple HIG (navigation bars), iOS Settings and Wallet | `.ms-lt` opens every phone screen. The bar's small title fades in once the large one scrolls under it (`msLtCheck_`) |
+| Date under the title | Monzo and Revolut home, iOS Calendar | Today's Gregorian date in the app's language (`ar-SA-u-ca-gregory-nu-latn`, `en-US`, `ur-PK`), plus the area for an area manager. The Hijri date stays in the hero |
+| Floating tab bar with an active capsule | Material 3 navigation bar (active indicator), Revolut, Cash App | A hairline border, a light top edge, a layered shadow and deeper glass. A capsule sits behind the active icon and the label is bold |
+| Cards inset on a soft page | Monzo, Revolut, Al Rajhi, STC Pay | Cards have a 12px gutter, one 20px radius, one elevation and 16px padding. Tiles are white with their colour on the icon |
+| Sticky section headers | Apple HIG grouped lists, Material 3 lists | `.sec-title` sticks under the bar on frosted glass |
+| Rows as cards | Revolut transactions, Instagram activity | `.list-item` rows are 16px-radius cards |
+| Skeletons, not blocking spinners | Facebook, Instagram, Cash App | Shimmer on every `.sk`. On phones a data load shows a thin top bar instead of the full-screen loading overlay, which is now kept only for saves |
+| Pull to refresh | All of them | Every phone screen, but never while a form is in progress |
+| Back walks back | Android system back, Material 3 predictive back | Back closes the open sheet, viewer, drawer or camera first, then returns through the screens visited |
+| Keyboard-aware layout | iOS and Android form guidance | The tab bar steps aside while the keyboard is up, and the focused field is scrolled into view |
+| 44px targets | Apple HIG 44pt, Material 48dp | Every phone button and sortable header is at least 44px |
+| One type and spacing scale | Material 3 type scale, the Meta design system | 4-pt spacing; type 12/13.5/15/17/22/30; radius 12/16/20; two elevations (`--ms-*` tokens) |
+| Sentence-case labels | Material 3 writing guidance | No all-caps on a phone screen |
+
+## Bugs found by the sweep and how each was fixed
+| # | Bug | Fix |
+|---|---|---|
+| 1 | The bar title was cut to ~92px on most phone screens (admin, English: 10 of 17 titles) | Large title, collapsing two-line small title, area pill reduced to its badge |
+| 2 | The Gregorian date was hidden on phones (the Facebook layer hid `.tb-title .sub`) | Shown under the large title in the app's language |
+| 3 | About 30 places with tap targets under 44px (chips 33px, toggles 28, sort arrows 20, row buttons 29, a details link 16, segmented tabs 36, admin tabs 38, sortable headers 30) | Every phone button and sortable header is at least 44px |
+| 4 | Android Back left the app from any screen, even with a sheet open | History entries per screen. Back closes the top overlay first, and a guard entry keeps the first Back in the app |
+| 5 | The keyboard covered the focused field, and the tab bar sat over it | `html.ms-kb` hides the tab bar while the keyboard is up, and the field scrolls into view |
+| 6 | Console error "Blocked call to navigator.vibrate" on every screen change | `goScreen_` uses `msBuzz_`, which waits for a real tap |
+| 7 | "ResizeObserver loop completed" error on Entries, Handoffs, Collections and Sales Report | The date-picker label, trend chart and day board now redraw on the next frame |
+| 8 | The entry dock and the download bar sat under the floating tab bar | Moved above it |
+| 9 | The full-screen loading overlay covered the page on every read | Reads show the top bar; saves keep the overlay so a double tap cannot send twice |
+| 10 | Crossing 768px (a rotation or resize) kept the old layout | A check on the change event and on resize redraws whenever the layout and the width disagree |
+| 11 | The admin tabs extended 4px past the screen on each side | Their margins were reset |
+| 12 | Pull to refresh only on Home | Every screen, but never on a form in progress, a focused field or a slip upload |
+| 13 | All-caps labels ("LAST HANDOVER") | Sentence case on phones |
+
+## Sweep
+- **Coverage:** every phone screen of admin, collector, area manager, branch manager, driver and deputy, in en, ar and ur, at 390px, through the scripted audit `.superpowers/audit.js`.
+- **What it flags:** top-bar overflow, clipped large titles, sideways scroll, elements off the screen outside scroll containers, buttons under 44px, and console and runtime errors.
+- **Final result:** clean on every screen for all six roles. The sortable dashboard headers (30px wide) were fixed after the last run and not re-swept. The mock server's own `GET /api` 404 predates this work.
+- **Top bar widths:** 360, 375 and 414px also checked.
+- **Desktop:** 1280px is unchanged.
+
+## Tests and commits
+- `TZ=UTC node tests/run.js`: 3041 passed, 0 failed.
+- `12a0f85`: top bar, Gregorian date and tab bar edges, merged with main as `45e330e`.
+- `0644aa1`: v2 tokens, cards, sticky headers, 44px targets, Back button, keyboard, pull to refresh. Merged with main 3fd5938 as `84ab3d8`, which keeps IBM Plex Sans Arabic / Cairo for `--font-ar`.
+- The last commit on the branch holds the ResizeObserver and header fixes and this report.
+
+## Concerns (v2)
+- **iOS edge swipe:** iOS Safari's edge swipe belongs to the browser. Back handling covers the Android Back button and the browser's back.
+- **Keyboard detection:** it relies on `visualViewport`, which is present on current iOS and Android browsers.
+- **Shared browser pane:** other sessions moved it between tabs during testing. The audits ran in my own tab, with the viewport re-checked before each run.
