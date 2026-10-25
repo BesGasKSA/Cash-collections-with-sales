@@ -6153,6 +6153,15 @@ console.log('--- collection reports: the same rows as Collections, and every pur
   }
   var withMix = call({ action: 'collectionReports', token: adminTok }).requests.filter(function (r) { return r.rp && r.rp.mix; });
   check(withMix.length > 0, 'reports: requests carry the mix of their takings');
+  // 2026-10-21: every deduction as typed, and the net, so an export can spell them out
+  check(withMix.every(function (r) { var m = r.rp.mix; return ['expense', 'discount', 'cCom', 'chCom', 'cUnpaid', 'vat', 'net'].every(function (k) { return typeof m[k] === 'number'; }); }), 'reports: the mix carries expenses, discounts, commissions, unpaid credit delivery, VAT and the net');
+  (function () {
+    var ex = vm.createContext({});
+    vm.runInContext([clientVar_('EQ_ADD_', ';'), clientVar_('EQ_DEDUCT_', ';'), clientFn_('crpC_'), clientVar_('CRP_EQ_TYPED_', ';'), clientVar_('CRP_EQ_COLS_', ';'), clientFn_('crpEqOf_')].join('\n'), ex);
+    var off = withMix.filter(function (r) { var c = ex.crpEqOf_(r), ded = ex.EQ_DEDUCT_.reduce(function (a, k) { return a + c[k]; }, 0);
+      return ded !== c.deductions || c.sales - c.deductions + c.additions !== c.net || c.net !== Math.round(r.rp.mix.net * 100) || c.dDelivery < 0; });
+    check(!off.length, 'reports: each request\'s equation from the server\'s mix: sales - deductions + additions = its breakdown net, delivery never below zero (' + off.length + ' of ' + withMix.length + ' off)');
+  })();
 
   // client: load the pure helpers with colCompute_ itself
   var names = ['hoDay_', 'colDay_', 'colCompute_', 'crpC_', 'crpStageOk_', 'crpSide_', 'crpPct_', 'crpBucket_', 'crpTrend_', 'crpAgeB_', 'crpAgingBy_', 'crpTransit_', 'crpHopDrops_', 'crpShort_', 'crpHrs_', 'crpDeputy_',
@@ -6286,6 +6295,13 @@ console.log('--- comparison: periods by entry date, the dashboard\'s figures, ch
   check(sep.sales === 1200 && sep.card === 200 && sep.net === 1000 && sep.deposited === 1000 && sep.remaining === 0 && sep.requests === 1 && sep.days === 3, 'comparison: September: 1,200 sold, 1,000 to collect, banked in 3 days');
   check(oct.sales === 900 && oct.direct === 100 && oct.net === 780 && oct.deposited === 0 && oct.remaining === 780 && oct.short === 25 && oct.requests === 1 && oct.days === null, 'comparison: October: the voided day left out, 780 to collect, still out, 25 short');
   check(R[0].G.b1.net + R[0].G.b2.net === oct.net && R[0].G.b2.other === 20, 'comparison: the breakdown adds up to the total');
+  // the export's parts (2026-10-21): each deduction and addition, the delivery line taking the VAT's rounding
+  var DK = ['dPos', 'dCredit', 'dCreditDelivery', 'dCommission', 'dChannelCommission', 'dDiscount', 'dTransfer', 'dDelivery', 'dExpense', 'dBanked'], AK = ['aOther', 'aCreditDelivery', 'aChannelDelivery'];
+  function partsOk(T) { var p = T.parts, c2 = function (x) { return Math.round(x * 100); }; if (!p) return false;
+    var ded = DK.reduce(function (a, k) { return a + c2(p[k]); }, 0), add = AK.reduce(function (a, k) { return a + c2(p[k]); }, 0);
+    return ded === c2(p.deductions) && ded === c2(T.card + T.direct + T.other) && add === c2(T.additions) && c2(T.sales) - ded + add === c2(T.net); }
+  check(partsOk(all) && [oct, sep, R[0].G.b1, R[0].G.b2].every(partsOk), 'comparison: every deduction and addition of the export adds up to the totals and to the net, to the cent');
+  check(R[0].G.b2.parts.dExpense === 20 && oct.parts.dBanked === 100 && sep.parts.dPos === 200, 'comparison: an expense, a الموازنة and card sales land on their own lines');
   var dSales = cx.cmpDelta_(900, 1200, 'sales'), dRem = cx.cmpDelta_(780, 0, 'remaining'), dDays = cx.cmpDelta_(2, 3, 'days');
   check(dSales.d === -300 && dSales.tone === 'bad' && Math.round(dSales.pct) === -25 && dRem.tone === 'bad' && dRem.pct === null && dDays.tone === 'good' && cx.cmpDelta_(5, 5, 'net').tone === 'flat' && cx.cmpDelta_(6, 5, 'requests').tone === 'flat', 'comparison: a change is good or bad by the figure\'s own direction');
 })();
@@ -6541,6 +6557,10 @@ console.log('--- every screen\'s cards open a pivot whose total is the card, to 
   var rep = call({ action: 'getSalesReport', token: adminTok });
   var P = sx.cmpCompute_(rep.entries, hos, [{ from: '', to: '', k: 0 }], { byEntry: rep.cohort.byEntry })[0];
   ['sales', 'card', 'direct', 'other', 'additions', 'net', 'deposited', 'remaining', 'short'].forEach(function (k) { row('Comparison', k, P.T[k], sx.cmpItems_(P.L, rep.cohort.byEntry, k)); });
+  (function () { var p = P.T.parts, c2 = function (x) { return Math.round(x * 100); };
+    var ded = ['dPos', 'dCredit', 'dCreditDelivery', 'dCommission', 'dChannelCommission', 'dDiscount', 'dTransfer', 'dDelivery', 'dExpense', 'dBanked'].reduce(function (a, k) { return a + c2(p[k]); }, 0);
+    var add = ['aOther', 'aCreditDelivery', 'aChannelDelivery'].reduce(function (a, k) { return a + c2(p[k]); }, 0);
+    check(ded === c2(P.T.card + P.T.direct + P.T.other) && c2(P.T.sales) - ded + add === c2(P.T.net), 'screens: the comparison\'s deductions, part by part, add up to the cohort\'s net to the cent'); })();
   var KT = rep.cohort.totals;
   check(c(P.T.net) === c(KT.net) && c(P.T.deposited) === c(KT.deposited) && c(P.T.remaining) === c(KT.remaining) && c(P.T.short) === c(KT.short), 'screens: the comparison of the whole file equals the key figures (net, deposited, remaining, short)');
 
@@ -6633,7 +6653,7 @@ console.log('--- report exports: every report\'s workbook totals are the screen\
     userName: function (id) { return 'U:' + id; }, locationName: function (id) { return 'L:' + id; }, clusterName: function (id) { return 'A:' + id; },
     localToday_: function () { return '2026-10-14'; }, crpSave_: function () {}
   });
-  var deps = [clientVar_('COL_ST_', ';'), clientVar_('COL_C_', ';'), clientVar_('PL_PRESETS_', ';')].concat(['esc', 'money', 'byId', 'hoDay_', 'colDay_', 'colCompute_', 'colFill_', 'colPct_', 'cpDays_', 'plPresetRange_'].map(function (n) { return clientFn_(n); }));
+  var deps = [clientVar_('COL_ST_', ';'), clientVar_('COL_C_', ';'), clientVar_('PL_PRESETS_', ';'), clientVar_('EQ_PARTS_', '\n};'), clientVar_('EQ_ADD_', ';'), clientVar_('EQ_DEDUCT_', ';')].concat(['esc', 'money', 'byId', 'hoDay_', 'colDay_', 'colCompute_', 'colFill_', 'colPct_', 'cpDays_', 'plPresetRange_'].map(function (n) { return clientFn_(n); }));
   vm.runInContext(deps.join('\n') + '\n' + block, cx);
   check(typeof cx.CRP_REPS_ === 'object' && typeof cx.crpKpiSheet_ === 'function' && typeof cx.exChartSvg_ === 'function', 'exports: the template and the reports load');
   var loc = { b1: { id: 'b1', city: 'Riyadh', clusterId: 'a1' }, b2: { id: 'b2', city: 'Jeddah', clusterId: 'a2' } };
@@ -6664,6 +6684,7 @@ console.log('--- report exports: every report\'s workbook totals are the screen\
   var ids = []; cx.CRP_GROUPS_.forEach(function (g) { ids = ids.concat(g[1]); });
   check(ids.length === 23, 'exports: 23 reports to check');
   function moneyTxt(v) { return cx.money(v); }
+  var EQK = cx.CRP_EQ_COLS_, EQH = EQK.map(function (k) { return cx.crpEqLabel_(k); });
   ids.forEach(function (id) {
     shown = [];
     var ctx = { D: D, Dp: Dp, P: P, side: side, S: S, R: R, today: '2026-10-14', sheets: [], sentence: 'period', enter: false, redraw: function () {}, drill: function () {}, open: function () {},
@@ -6686,11 +6707,24 @@ console.log('--- report exports: every report\'s workbook totals are the screen\
       if (!last || String(last[0]) !== 'rp_total') return;
       var head = sh.rows[0];
       last.forEach(function (v, i) {
-        if (i === 0 || typeof v !== 'number') return;
+        if (i === 0 || typeof v !== 'number' || EQH.indexOf(head[i]) >= 0) return;
         if (screenTot.indexOf(moneyTxt(v)) < 0 && screenTot.indexOf('>' + v + '<') < 0 && screenTot.indexOf(v + ' h<') < 0) bad.push(sh.name + '/' + head[i] + '=' + v);
       });
     });
     check(!bad.length, 'exports: ' + id + ': every total in the workbook is the one on screen (' + bad.slice(0, 4).join(', ') + ')');
+    // the deductions spelled out (2026-10-21): on every row of every sheet that carries them, the parts add up to
+    // the total deductions and the total additions, and sales - deductions + additions = net, to the cent
+    var eqBad = [], eqSheets = 0;
+    ctx.sheets.forEach(function (sh) {
+      var head = sh.rows[0], ix = {}; EQK.forEach(function (k, j) { ix[k] = head.indexOf(EQH[j]); });
+      if (ix.net < 0) return; eqSheets++;
+      sh.rows.slice(1).forEach(function (r, n) {
+        function v(k) { return Math.round(Number(r[ix[k]] || 0) * 100); }
+        var ded = cx.EQ_DEDUCT_.reduce(function (a, k) { return a + v(k); }, 0), add = cx.EQ_ADD_.reduce(function (a, k) { return a + v(k); }, 0);
+        if (ded !== v('deductions') || add !== v('additions') || v('sales') - v('deductions') + v('additions') !== v('net')) eqBad.push(sh.name + ' row ' + (n + 1));
+      });
+    });
+    check(eqSheets > 0 && !eqBad.length, 'exports: ' + id + ': ' + eqSheets + ' sheet(s) spell out the deductions; each row: parts = total deductions and total additions, sales - deductions + additions = net (' + (eqBad.slice(0, 3).join(', ') || 'ok') + ')');
     // the KPI sheet carries the strip's own figures
     if (ctx.kpiList && ctx.kpiList.length) {
       var ks = cx.crpKpiSheet_(ctx.kpiList), k0 = ctx.kpiList[0];

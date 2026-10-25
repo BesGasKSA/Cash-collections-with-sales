@@ -2788,7 +2788,10 @@ function actionCollectionReports_(req, user) {
       hopCorrections: (r.hops || []).reduce(function (a, hp) { var x = byId[hp.id]; return a.concat(((x && x.receiptCorrections) || []).map(function (c) { return { hopId: hp.id, at: c.at, by: c.by, fromAmount: c.fromAmount, toAmount: c.toAmount, reason: party ? (c.reason || '') : '' }; })); }, []),
       // the parts as typed (the client splits them into kinds; no net figure is worked out here)
       mix: b ? { cashSales: Math.round((n(b, 'storeCash') + n(b, 'carCash') + n(b, 'posCash')) * 100) / 100, card: n(b, 'posSales'), credit: n(b, 'creditSales'), transfer: n(b, 'bankTransfers'),
-        direct: n(b, 'directDeposit'), other: n(b, 'otherCash'), dFee: n(b, 'deliveryFee'), cFee: n(b, 'creditDeliveryFees'), chFee: n(b, 'channelDeliveryFees') } : null
+        direct: n(b, 'directDeposit'), other: n(b, 'otherCash'), dFee: n(b, 'deliveryFee'), cFee: n(b, 'creditDeliveryFees'), chFee: n(b, 'channelDeliveryFees'),
+        // each deduction as typed, so an export can spell them out (2026-10-21); the VAT and the net as the breakdown holds them
+        expense: n(b, 'expenses'), discount: n(b, 'discounts'), cCom: n(b, 'creditCommissions'), chCom: n(b, 'channelCommissions'), cUnpaid: n(b, 'creditDeliveryUnpaid'),
+        vat: n(b, 'vatOnDelivery'), net: n(b, 'netCashOwed') } : null
     };
   });
   return base;

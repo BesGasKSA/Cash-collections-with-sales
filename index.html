@@ -19416,6 +19416,40 @@ function crpMixOf_(r){
   o.cash = crpC_(m.cashSales) - o.credit - o.transfer - o.direct - crpC_(m.dFee);
   return o;
 }
+// A request's net cash equation, in cents, from the breakdown it was sent with (2026-10-21, the user: "in the
+// exported reports the deductions are not clear and not broken down"). Each part as typed; the delivery fee
+// net of VAT is what is left, so sales + additions - deductions = net to the cent (the rule of eqCents_).
+var CRP_EQ_TYPED_ = { dPos: 'card', dCredit: 'credit', dCreditDelivery: 'cUnpaid', dCommission: 'cCom', dChannelCommission: 'chCom', dDiscount: 'discount', dTransfer: 'transfer', dExpense: 'expense', dBanked: 'direct',
+  aOther: 'other', aCreditDelivery: 'cFee', aChannelDelivery: 'chFee' };
+// the columns, in the statement's order: sales, each deduction, their total, each addition, their total, net
+var CRP_EQ_COLS_ = ['sales'].concat(EQ_DEDUCT_, ['deductions'], EQ_ADD_, ['additions', 'net']);
+function crpEqOf_(r){
+  var m = (r && r.rp && r.rp.mix) || null, c = {}, sent = crpC_(r && r.sentAmount != null ? r.sentAmount : r && r.amount);
+  CRP_EQ_COLS_.forEach(function(k){ c[k] = 0; });
+  if (!m) { c.sales = sent; c.net = sent; return c; }
+  Object.keys(CRP_EQ_TYPED_).forEach(function(k){ c[k] = crpC_(m[CRP_EQ_TYPED_[k]]); });
+  c.sales = crpC_(m.cashSales) + c.dPos;
+  c.additions = EQ_ADD_.reduce(function(a, k){ return a + c[k]; }, 0);
+  c.net = m.net != null ? crpC_(m.net) : sent;
+  var ded = EQ_DEDUCT_.reduce(function(a, k){ return k === 'dDelivery' ? a : a + c[k]; }, 0);
+  c.dDelivery = c.sales + c.additions - ded - c.net; c.deductions = ded + c.dDelivery;
+  return c;
+}
+// the equation of a set of requests (rows {r} or requests), each request counted once
+function crpEqSum_(xs){
+  var T = {}, seen = {};
+  CRP_EQ_COLS_.forEach(function(k){ T[k] = 0; });
+  (xs || []).forEach(function(x){ var r = x && (x.r || x); if (!r || (r.id && seen[r.id])) return; if (r.id) seen[r.id] = 1; var c = crpEqOf_(r); CRP_EQ_COLS_.forEach(function(k){ T[k] += c[k]; }); });
+  return T;
+}
+function crpEqLabel_(k){ return t(k === 'deductions' ? 'calc_totalOut' : EQ_PARTS_[k].label); }
+function crpEqVals_(xs){ var T = crpEqSum_(xs); return CRP_EQ_COLS_.map(function(k){ return T[k] / 100; }); }
+// the equation as a statement, top to bottom: a part that is zero is left out, the totals always stay
+function crpEqSheet_(xs, name){
+  var T = crpEqSum_(xs), rows = [[t('cmp_metric'), t('col_x_amount')]];
+  CRP_EQ_COLS_.forEach(function(k){ if (T[k] || ['sales', 'deductions', 'net'].indexOf(k) >= 0 || (k === 'additions' && EQ_ADD_.some(function(a){ return T[a]; }))) rows.push([crpEqLabel_(k), T[k] / 100]); });
+  return { name: String(name || t('eq_title')).slice(0, 31), rows: rows, noBars: true, keepCols: true, noPivot: true, noSum: true };
+}
 function crpMix_(rows, keyFn){
   function z(k){ var o = { key: k, n: 0, total: 0, rows: [] }; CRP_MIX_.forEach(function(t2){ o[t2] = 0; }); return o; }
   var T = z(null), g = {};
@@ -19678,6 +19712,17 @@ function crpTable_(ctx, def){
   var sh = [cols.map(function(c){ return c.l; })];
   rows.forEach(function(r){ sh.push(cols.map(function(c){ return crpXv_(c.v(r), c.t); })); });
   if (def.total) sh.push(cols.map(function(c, k){ return k === 0 ? t('rp_total') : crpXv_(def.total[k], c.t); }));
+  // the deductions spelled out (2026-10-21): a row that stands for requests (its drill, its rows, or itself) gets
+  // sales, each deduction, their total, each addition, their total and the net; a part that is zero on every
+  // row is dropped with the other empty columns
+  var eqOf = def.eq !== undefined ? def.eq : def.drill ? function(r){ var d = def.drill(r); return d && d.rows; }
+    : rows.length && rows[0] && Array.isArray(rows[0].rows) ? function(r){ return r.rows; } : rows.length && rows[0] && rows[0].r ? function(r){ return [r]; } : null;
+  if (eqOf && rows.length) {
+    var eqAll = [];
+    sh[0] = sh[0].concat(CRP_EQ_COLS_.map(crpEqLabel_));
+    rows.forEach(function(r, i){ var xs = eqOf(r) || []; eqAll = eqAll.concat(xs); sh[i + 1] = sh[i + 1].concat(crpEqVals_(xs)); });
+    if (def.total) sh[sh.length - 1] = sh[sh.length - 1].concat(crpEqVals_(eqAll));
+  }
   var intCols = [], barCol = null;
   cols.forEach(function(c, i){ if (c.t === 'int') intCols.push(i); if (barCol == null && c.t === 'money') barCol = i; });
   ctx.sheets.push({ name: String(def.name || t('crp_sheet')).slice(0, 31), rows: sh, note: ctx.sentence, intCols: intCols, barCol: barCol == null ? undefined : barCol });
@@ -20347,13 +20392,14 @@ function crpTree_(rows, levels, keyOf){
   return root;
 }
 // pure: a tree as sheet rows with Excel grouping (outline = depth), requests as the last level, the total last
-function crpTreeSheet_(root, names, reqRow){
+// extra(rows) adds columns to every line from the requests behind it (the equation, 2026-10-21)
+function crpTreeSheet_(root, names, reqRow, extra){
   var rows = [], outline = [];
   (function walk(n){
     n.kids.forEach(function(k){
-      rows.push([names(k)].concat([k.n, k.total, k.pct, k.deposited, k.remaining, k.short])); outline.push(k.d - 1);
+      rows.push([names(k)].concat([k.n, k.total, k.pct, k.deposited, k.remaining, k.short], extra ? extra(k.rows) : [])); outline.push(k.d - 1);
       if (k.kids.length) walk(k);
-      else if (reqRow) k.rows.forEach(function(x){ rows.push(reqRow(x)); outline.push(k.d); });
+      else if (reqRow) k.rows.forEach(function(x){ rows.push(reqRow(x).concat(extra ? extra([x]) : [])); outline.push(k.d); });
     });
   })(root);
   return { rows: rows, outline: outline };
@@ -20438,9 +20484,9 @@ function crpLevelsCard_(c, rows){
   card.appendChild(tools);
   card.appendChild(host);
   // the workbook: the whole tree, grouped, with its requests
-  var hdr = [levels.map(function(lv){ return t('crp_lv_' + lv); }).concat([t('crp_lv_req')]).join(' > '), t('crp_count'), t('col_card_total'), t('crp_pctParent'), t('col_card_dep'), t('col_card_rem'), t('col_k_short')];
-  var sh = crpTreeSheet_(root, function(k){ return crpLvName_(c, k.lv, k.key); }, function(x){ return [(x.r.txNo || '') + ' ' + x.day, 1, crpR2_(x.r.amount), '', x.st === 'deposited' ? crpR2_(x.r.amount) : 0, x.st !== 'deposited' ? crpR2_(x.r.amount) : 0, crpR2_(x.r.shortfall || 0)]; });
-  var srows = [hdr].concat(sh.rows.map(function(r){ return r.map(function(v, i){ return i === 3 && typeof v === 'number' ? crpPctTxt_(v) : i >= 2 && typeof v === 'number' ? crpR2_(v) : v; }); }), [[t('rp_total'), root.n, root.total, crpPctTxt_(root.pct), root.deposited, root.remaining, root.short]]);
+  var hdr = [levels.map(function(lv){ return t('crp_lv_' + lv); }).concat([t('crp_lv_req')]).join(' > '), t('crp_count'), t('col_card_total'), t('crp_pctParent'), t('col_card_dep'), t('col_card_rem'), t('col_k_short')].concat(CRP_EQ_COLS_.map(crpEqLabel_));
+  var sh = crpTreeSheet_(root, function(k){ return crpLvName_(c, k.lv, k.key); }, function(x){ return [(x.r.txNo || '') + ' ' + x.day, 1, crpR2_(x.r.amount), '', x.st === 'deposited' ? crpR2_(x.r.amount) : 0, x.st !== 'deposited' ? crpR2_(x.r.amount) : 0, crpR2_(x.r.shortfall || 0)]; }, crpEqVals_);
+  var srows = [hdr].concat(sh.rows.map(function(r){ return r.map(function(v, i){ return i === 3 && typeof v === 'number' ? crpPctTxt_(v) : i >= 2 && typeof v === 'number' ? crpR2_(v) : v; }); }), [[t('rp_total'), root.n, root.total, crpPctTxt_(root.pct), root.deposited, root.remaining, root.short].concat(crpEqVals_(root.rows))]);
   c.sheets.push({ name: t('crp_levels').slice(0, 31), rows: srows, outline: sh.outline, note: c.sentence, noBars: true, intCols: [1] });
   return card;
 }
@@ -20611,7 +20657,7 @@ function crpBuild_(body, reqs){
     var id = S.rep, grp = CRP_GROUPS_.filter(function(g){ return g[1].indexOf(id) >= 0; })[0];
     var hero = el('<header class="card crp-hero no-collapse" data-noicon><div class="crp-hi">'+icon_(CRP_IC_[id])+'</div><div class="crp-ht"><span class="crp-hk">'+esc(t('crp_g_' + grp[0]))+'</span><h2>'+esc(t('crp_r_' + id))+'</h2><p>'+esc(t('crp_d_' + id))+'</p></div></header>');
     // one template for every report: the KPI sheet first, then its tables; the band, KPIs and charts in the PDF
-    hero.appendChild(exButtons_(function(){ return (ctx.kpiList && ctx.kpiList.length ? [crpKpiSheet_(ctx.kpiList)] : []).concat(ctx.sheets.length ? ctx.sheets : [{ name: t('crp_r_' + id), rows: [[t('crp_nothing')]] }]); }, function(){ return t('crp_r_' + id); }, function(){ return crpExportOpts_(ctx, main); }));
+    hero.appendChild(exButtons_(function(){ return (ctx.kpiList && ctx.kpiList.length ? [crpKpiSheet_(ctx.kpiList)] : []).concat(ctx.D && ctx.D.rows && ctx.D.rows.length ? [crpEqSheet_(ctx.D.rows)] : [], ctx.sheets.length ? ctx.sheets : [{ name: t('crp_r_' + id), rows: [[t('crp_nothing')]] }]); }, function(){ return t('crp_r_' + id); }, function(){ return crpExportOpts_(ctx, main); }));
     main.appendChild(hero);
     if (!D.T.n && !side.length && !D.T.returned && id !== 'statement') {
       var em = el('<div class="card crp-card no-collapse crp-empty"><div class="muted rp-empty">'+esc(t(reqs.length ? 'col_noneHere' : 'col_none'))+'</div>'+(reqs.length ? '<button type="button" class="btn ghost">'+esc(t('crp_showAll'))+'</button>' : '')+'</div>');
@@ -20671,6 +20717,21 @@ function cmpPeriods_(preset, today, from, to, mode, n){
 // pure: entries (with locationId, date, consumedBy) and handovers → each period's figures, in total and per group
 function cmpCompute_(entries, handoffs, periods, o){
   o = o || {};
+  // the parts typed as they are; card and الموازنات are the screen's own figures; the delivery fee net of VAT is
+  // what is left of the other deductions, so the parts add up to them, and to the net, to the cent (eqCents_'s rule)
+  var partKeys = ['dCredit', 'dCreditDelivery', 'dCommission', 'dChannelCommission', 'dDiscount', 'dTransfer', 'dExpense', 'aOther', 'aCreditDelivery', 'aChannelDelivery'], dedKeys = partKeys.slice(0, 7);
+  function withParts(out){
+    var pc = out._pc || {}, p = {}; delete out._pc;
+    partKeys.forEach(function(k){ p[k] = (pc[k] || 0) / 100; });
+    p.dPos = out.card; p.dBanked = out.direct;
+    var typed = dedKeys.reduce(function(a, k){ return a + (pc[k] || 0); }, 0);
+    p.dDelivery = (Math.round(out.other * 100) - typed) / 100;
+    p.deductions = Math.round((out.card + out.direct + out.other) * 100) / 100;
+    // additions are typed cents; anything left (a cohort figure) stays on the last part
+    p.aChannelDelivery = (Math.round(out.additions * 100) - (pc.aOther || 0) - (pc.aCreditDelivery || 0)) / 100;
+    out.parts = p;
+    return out;
+  }
   var byId = Object.create(null);
   (handoffs || []).forEach(function(h){ byId[h.id] = h; });
   // an entry followed to the bank: the handovers it went through, its request, its deposit
@@ -20685,12 +20746,14 @@ function cmpCompute_(entries, handoffs, periods, o){
     return { path: path, req: req, dep: dep };
   }
   // the net is summed unrounded and rounded once, like the report's own net (2026-10-17: per-entry cents drifted a cent)
-  function zero(){ var m = { _req: {}, _hand: {}, _days: [], _netR: 0, _depR: 0 }; CMP_M_.forEach(function(k){ m[k] = 0; }); return m; }
+  function zero(){ var m = { _req: {}, _hand: {}, _days: [], _netR: 0, _depR: 0, _pc: {} }; CMP_M_.forEach(function(k){ m[k] = 0; }); partKeys.forEach(function(k){ m._pc[k] = 0; }); return m; }
   function add(m, e, a, f){
     var other = EQ_PARTS_.deductions.of(a) - a.pos - a.banked, adds = EQ_PARTS_.additions.of(a);
     m.sales += Math.round((a.cash + a.pos) * 100); m.card += Math.round(a.pos * 100); m.direct += Math.round(a.banked * 100);
     // the dashboard's own split: sales - card - direct - other + additions = net
     m.additions += Math.round(adds * 100);
+    // each typed part in cents, for the exports (2026-10-21)
+    partKeys.forEach(function(k){ m._pc[k] += Math.round(EQ_PARTS_[k].of(a) * 100); });
     m._netR += a.net; if (f.dep) m._depR += a.net;
     f.path.forEach(function(h){ if (!m._hand[h.id]) { m._hand[h.id] = 1; m.short += Math.round(Number(h.shortfall || 0) * 100); } });
     if (f.req && !m._req[f.req.id]) { m._req[f.req.id] = 1; m.requests++; if (f.dep) m._days.push(Math.max(0, Math.round((new Date(String(f.dep.createdAt).slice(0, 10) + 'T00:00:00') - new Date(String(f.req.createdAt).slice(0, 10) + 'T00:00:00')) / 86400000))); }
@@ -20700,7 +20763,7 @@ function cmpCompute_(entries, handoffs, periods, o){
     // other deductions take the VAT's rounding, so sales - card - direct - other + additions = net to the cent
     m.other = m.sales - m.card - m.direct + m.additions - m.net;
     var out = {}; ['sales', 'card', 'direct', 'other', 'additions', 'net', 'deposited', 'short'].forEach(function(k){ out[k] = m[k] / 100; });
-    out.remaining = (m.net - m.deposited) / 100; out.requests = m.requests;
+    out.remaining = (m.net - m.deposited) / 100; out.requests = m.requests; out._pc = m._pc;
     out.days = m._days.length ? Math.round(m._days.reduce(function(s, v){ return s + v; }, 0) / m._days.length * 10) / 10 : null;
     return out;
   }
@@ -20718,7 +20781,7 @@ function cmpCompute_(entries, handoffs, periods, o){
   });
   // with the cohort, every money figure is the sum of the cents its drawer lists (cmpItems_)
   function coh(out, list){ if (!o.byEntry) return out; ['sales', 'card', 'direct', 'other', 'additions', 'net', 'deposited', 'remaining', 'short'].forEach(function(k){ out[k] = cardsSum_(cmpItems_(list, o.byEntry, k)); }); return out; }
-  return res.map(function(p){ var g = {}; Object.keys(p.G).forEach(function(k){ g[k] = coh(fin(p.G[k]), p.GL[k] || []); }); return { from: p.from, to: p.to, k: p.k, T: coh(fin(p.T), p.L), G: g, L: p.L }; });
+  return res.map(function(p){ var g = {}; Object.keys(p.G).forEach(function(k){ g[k] = withParts(coh(fin(p.G[k]), p.GL[k] || [])); }); return { from: p.from, to: p.to, k: p.k, T: withParts(coh(fin(p.T), p.L)), G: g, L: p.L }; });
 }
 // pure: the change of a figure against the column before it, and whether that is good
 function cmpDelta_(cur, prev, metric){
@@ -20830,10 +20893,19 @@ function cmpDraw_(body, S, periods, entries, handoffs){
   // a money cell opens the entries of that period behind it, in the same cents
   mc.addEventListener('click', function(ev){ var td = ev.target.closest('td.cmp-tap'); if (!td) return; var p = cols2[Number(td.dataset.ci)], k = td.dataset.k;
     cardDrawer_({ title: t('cmp_m_' + k) + ' \u00B7 ' + labels[Number(td.dataset.ci)], items: cmpItems_(p.L || [], CMP_COH_, k) }); });
+  // the workbook spells the deductions and additions out (2026-10-21): sales, each deduction, their total, each
+  // addition, their total, net; a part that is zero in every period is left out. The screen keeps its compact table.
+  function partOf(p, k){ return p.T.parts && p.T.parts[k] != null ? p.T.parts[k] : 0; }
+  function used(k){ return cols2.some(function(p){ return Math.abs(partOf(p, k)) > 0.004; }); }
+  var xk = [['sales', 'sales']].concat(EQ_DEDUCT_.filter(used).map(function(k){ return [k, 'other', 1]; }), [['deductions', 'other', 1]],
+    showAdd ? EQ_ADD_.filter(used).map(function(k){ return [k, 'additions', 1]; }).concat([['additions', 'additions']]) : [],
+    [['net', 'net'], ['deposited', 'deposited'], ['remaining', 'remaining'], ['short', 'short'], ['requests', 'requests'], ['days', 'days']]);
+  function xv(p, r){ return r[2] ? partOf(p, r[0]) : p.T[r[0]]; }
   var sh = [[t('cmp_metric')].concat(labels.reduce(function(a, l, i){ return a.concat(i ? [l, t('crp_change'), t('crp_changePct')] : [l]); }, []))];
-  rows.forEach(function(r){ var k = r[0]; sh.push([t('cmp_m_' + k)].concat(cols2.reduce(function(a, p, i){ var v = p.T[k]; var dl = i ? cmpDelta_(v, cols2[i - 1].T[k], k) : null;
-    return a.concat(i ? [crpXv_(v, k === 'requests' || k === 'days' ? 'int' : 'money'), dl ? crpXv_(dl.d, 'money') : '', dl && dl.pct != null ? crpPctTxt_(dl.pct) : ''] : [crpXv_(v, k === 'requests' || k === 'days' ? 'int' : 'money')]); }, []))); });
-  sheets.push({ name: t('cmp_table'), rows: sh, note: sentence, noBars: true, rowFmt: rows.map(function(r){ return r[0] === 'requests' ? 'int' : r[0] === 'days' ? '1d' : null; }) });
+  xk.forEach(function(r){ var k = r[0], tp = k === 'requests' || k === 'days' ? 'int' : 'money';
+    sh.push([r[2] ? crpEqLabel_(k) : t('cmp_m_' + k)].concat(cols2.reduce(function(a, p, i){ var v = xv(p, r); var dl = i ? cmpDelta_(v, xv(cols2[i - 1], r), r[1]) : null;
+      return a.concat(i ? [crpXv_(v, tp), dl ? crpXv_(dl.d, 'money') : '', dl && dl.pct != null ? crpPctTxt_(dl.pct) : ''] : [crpXv_(v, tp)]); }, []))); });
+  sheets.push({ name: t('cmp_table'), rows: sh, note: sentence, noBars: true, rowFmt: xk.map(function(r){ return r[0] === 'requests' ? 'int' : r[0] === 'days' ? '1d' : null; }) });
   // small multiples: one chart per figure, one bar per period, each on its own scale
   var sm = el('<section class="card crp-card no-collapse"><h2>'+esc(t('cmp_small'))+'</h2><p class="muted crp-hint">'+esc(t('cmp_smallHint'))+'</p><div class="cmp-sm"></div></section>');
   var smHost = qs('.cmp-sm', sm);
@@ -20884,6 +20956,13 @@ function cmpDraw_(body, S, periods, entries, handoffs){
   klist.forEach(function(k){ bs.push([nameOf(k)].concat(cols2.map(function(p){ var g = p.G[k]; return crpXv_(g ? g[metric] : 0, metric === 'requests' || metric === 'days' ? 'int' : 'money'); }))); });
   bs.push([t('rp_total')].concat(cols2.map(function(p){ return crpXv_(p.T[metric], metric === 'requests' || metric === 'days' ? 'int' : 'money'); })));
   sheets.push({ name: (t('cmp_breakdown') + ' - ' + t('cmp_m_' + metric)).slice(0, 31), rows: bs, note: sentence });
+  // the current period by the same level, part by part: sales - deductions + additions = net on every row
+  var curP = cols2[cols2.length - 1], eqK = ['sales'].concat(EQ_DEDUCT_, ['deductions'], EQ_ADD_, ['additions', 'net']);
+  function eqRow(x){ return eqK.map(function(k){ return crpXv_(k === 'sales' || k === 'additions' || k === 'net' ? (x ? x[k] : 0) : (x && x.parts ? x.parts[k] : 0), 'money'); }); }
+  var es = [[t('crp_lv_' + by)].concat(eqK.map(crpEqLabel_))];
+  klist.forEach(function(k){ if (curP.G[k]) es.push([nameOf(k)].concat(eqRow(curP.G[k]))); });
+  es.push([t('rp_total')].concat(eqRow(curP.T)));
+  sheets.push({ name: (t('cmp_breakdown') + ' - ' + t('calc_totalOut')).slice(0, 31), rows: es, note: sentence + ' \u2014 ' + labels[labels.length - 1] });
 }
 // what is chosen in the Handoffs bar, kept across redraws of the screen (2026-10-14)
 var HF_STATE_ = {};
