@@ -341,96 +341,151 @@ function nmText_(c, o) {
   return L.join('\n');
 }
 
-function nmHtml_(c, lang, o) {
-  var e = htmlEsc_, rtl = c.dir === 'rtl', A = rtl ? 'right' : 'left', B = rtl ? 'left' : 'right', D = ' dir="' + c.dir + '"';
-  var FONT = rtl ? "Tahoma,'Segoe UI',Arial,sans-serif" : "'Segoe UI',Helvetica,Arial,sans-serif";
-  var NUM = "'Segoe UI',Tahoma,Arial,sans-serif";
-  var G = '#4D6D51', DEEP = '#23372A', CREAM = '#F2EEE4', PAPER = '#FBF9F4', INK = '#1B231D', BODY = '#3F4A42', MUTED = '#66716A', LINE = '#E6E1D4';
-  var TONE = { action: ['#9A5B00', '#FDF1DC', '#E9B45A'], bad: ['#A3322A', '#FBE7E4', '#E59A91'], good: ['#2F6B3F', '#E4F0E6', '#8DBE98'], warn: ['#8A5A00', '#FCF3DE', '#E3C27A'], info: [G, '#ECEFE7', '#B8C7B4'] };
-  var T = TONE[o.tone] || TONE.info, L = e(o.link), logo = e(DEFAULT_APP_URL + 'assets/mail-logo.png');
-  function sp(h) { return '<tr><td style="height:' + h + 'px;line-height:' + h + 'px;font-size:1px;">&nbsp;</td></tr>'; }
-  function money(v, size, color) { return '<span dir="ltr" style="font-family:' + NUM + ';font-size:' + size + 'px;font-weight:bold;color:' + color + ';white-space:nowrap;">' + e(nmMoney_(v)) + '</span>'; }
-  function secHead(t) { return '<div' + D + ' style="font-family:' + FONT + ';font-size:13px;font-weight:bold;color:' + G + ';text-align:' + A + ';padding:0 0 10px;">' + e(t) + '</div>'; }
-  function button(label) {
-    return '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td align="center">' +
-      '<!--[if mso]><v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="' + L + '" style="height:54px;v-text-anchor:middle;width:340px;" arcsize="26%" stroke="f" fillcolor="' + G + '"><w:anchorlock/><center style="color:#ffffff;font-family:Tahoma,Arial,sans-serif;font-size:17px;font-weight:bold;">' + e(label) + '</center></v:roundrect><![endif]-->' +
-      '<!--[if !mso]><!-- --><a href="' + L + '" target="_blank" style="display:block;max-width:380px;margin:0 auto;background:' + G + ';color:#ffffff;font-family:' + FONT + ';font-size:17px;font-weight:bold;line-height:56px;text-align:center;text-decoration:none;border-radius:14px;">' + e(label) + '</a><!--<![endif]-->' +
-      '</td></tr></table>';
-  }
-  var out = [];
-  out.push('<!DOCTYPE html><html lang="' + lang + '"' + D + ' xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office"><head>' +
-    '<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><meta name="supported-color-schemes" content="light">' +
+// ---------- The email frame (2026-10-25) ----------
+// The user: "use all designing skills and improve the mail sent to the users". Every email the
+// system sends (notifications, the invitation, the sign-in details) is drawn in this one frame:
+// the brand band in the logo's own green (#4D6D51, the PNG's background, so the logo sits in it
+// with no visible square), a status line with a mark in the event's tone, the content, and one
+// quiet footer. Tables and inline styles only (Outlook, Gmail); the IBM Plex Sans Arabic link and
+// the <style> block are extras for the clients that read them (Apple Mail, iOS, Outlook for Mac):
+// the app's own typeface, tighter margins on a phone, and a dark mode. Everything still reads in
+// a client that drops them.
+var MAIL_ = {
+  G: '#4D6D51', DEEP: '#1F3327', CREAM: '#F2EEE4', PAPER: '#FAF8F3', INK: '#18211B', BODY: '#3B463E', MUTED: '#66716A', LINE: '#E5E0D3', GOLD: '#E8C98A',
+  TONE: { action: ['#8F5300', '#FCF0DB', '#E0A43A', '!'], bad: ['#A3322A', '#FBE7E4', '#D9786C', '!'], good: ['#2F6B3F', '#E3F0E5', '#6FAF7F', '✓'], warn: ['#865600', '#FCF3DE', '#D9B25A', '!'], info: ['#4D6D51', '#EBEFE7', '#9FB59E', 'i'] }
+};
+function mailFont_(rtl) { return rtl ? "'IBM Plex Sans Arabic',Tahoma,'Segoe UI',Arial,sans-serif" : "'IBM Plex Sans Arabic','Segoe UI',Helvetica,Arial,sans-serif"; }
+// <head>, the hidden preview line and the canvas up to the card. width is the card's max width.
+function mailOpen_(lang, dir, title, preheader, width) {
+  var e = htmlEsc_, M = MAIL_;
+  return '<!DOCTYPE html><html lang="' + lang + '" dir="' + dir + '" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office"><head>' +
+    '<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light dark"><meta name="supported-color-schemes" content="light dark">' +
     '<!--[if mso]><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml><![endif]-->' +
-    '<title>' + e(o.subject) + '</title></head><body style="margin:0;padding:0;background:' + CREAM + ';">' +
-    '<div style="display:none;max-height:0;overflow:hidden;">' + e(o.lead) + '</div>' +
-    '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="' + CREAM + '" style="background:' + CREAM + ';"><tr><td align="center" style="padding:22px 10px 30px;">' +
-    '<!--[if mso]><table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0"><tr><td><![endif]-->' +
-    '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;">');
+    '<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;600;700&display=swap" rel="stylesheet">' +
+    '<style>body{margin:0;padding:0;-webkit-text-size-adjust:100%}a{text-decoration:none}' +
+    '@media (max-width:520px){.m-px{padding-left:18px!important;padding-right:18px!important}.m-h1{font-size:21px!important}.m-amt{font-size:32px!important}.m-hide{display:none!important}.m-logo{width:62px!important;height:62px!important}}' +
+    '@media (prefers-color-scheme:dark){.m-bg{background:#121815!important}.m-card{background:#1B231E!important}.m-ink{color:#EEF2EC!important}.m-body{color:#C8D1C7!important}.m-muted{color:#98A699!important}' +
+    '.m-paper{background:#212B24!important;border-color:#33402F!important}.m-line{border-color:#33402F!important}.m-chip{background:#26312A!important}}' +
+    '</style><title>' + e(title) + '</title></head>' +
+    '<body class="m-bg" style="margin:0;padding:0;background:' + M.CREAM + ';">' +
+    '<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;">' + e(preheader) + '&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;</div>' +
+    '<table role="presentation" class="m-bg" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="' + M.CREAM + '" style="background:' + M.CREAM + ';"><tr><td align="center" style="padding:24px 10px 32px;">' +
+    '<!--[if mso]><table role="presentation" width="' + width + '" cellpadding="0" cellspacing="0" border="0"><tr><td><![endif]-->' +
+    '<table role="presentation" class="m-card" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#ffffff" style="width:100%;max-width:' + width + 'px;background:#ffffff;border-radius:24px;overflow:hidden;">';
+}
+// The brand band: the logo on its own green, the company and the system.
+function mailBrand_(org, app, appUrl, rtl) {
+  var e = htmlEsc_, M = MAIL_, F = mailFont_(rtl);
+  return '<tr><td align="center" bgcolor="' + M.G + '" style="background:' + M.G + ';padding:30px 24px 26px;">' +
+    '<img class="m-logo" src="' + e(appUrl + 'assets/mail-logo.png') + '" width="76" height="76" alt="' + e(org) + '" style="display:block;margin:0 auto;border:0;width:76px;height:76px;">' +
+    '<div style="font-family:' + F + ';color:#ffffff;font-size:17px;font-weight:bold;line-height:1.4;margin-top:12px;">' + e(org) + '</div>' +
+    (app ? '<div style="font-family:' + F + ';color:#DCE6D8;font-size:13px;line-height:1.5;">' + e(app) + '</div>' : '') +
+    '</td></tr>';
+}
+// The status line: a round mark in the tone's colour and what kind of message this is.
+function mailStatus_(tone, label, rtl) {
+  var e = htmlEsc_, T = MAIL_.TONE[tone] || MAIL_.TONE.info, F = mailFont_(rtl), D = ' dir="' + (rtl ? 'rtl' : 'ltr') + '"';
+  return '<tr><td style="height:5px;line-height:5px;font-size:1px;background:' + T[2] + ';">&nbsp;</td></tr>' +
+    '<tr><td class="m-px"' + D + ' style="padding:22px 30px 0;text-align:' + (rtl ? 'right' : 'left') + ';">' +
+    '<table role="presentation" cellpadding="0" cellspacing="0" border="0"' + D + ' style="display:inline-table;"><tr>' +
+    '<td width="24" valign="middle"><div style="width:24px;height:24px;border-radius:12px;background:' + T[0] + ';color:#ffffff;font-family:Arial,sans-serif;font-size:14px;font-weight:bold;line-height:24px;text-align:center;">' + T[3] + '</div></td>' +
+    '<td valign="middle" style="padding-' + (rtl ? 'right' : 'left') + ':9px;font-family:' + F + ';font-size:13px;font-weight:bold;color:' + T[0] + ';">' + e(label) + '</td>' +
+    '</tr></table></td></tr>';
+}
+// The one action. Outlook gets a VML button of the same size.
+function mailButton_(label, href, rtl, color) {
+  var e = htmlEsc_, F = mailFont_(rtl), L = e(href), C = color || MAIL_.G;
+  return '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td align="center">' +
+    '<!--[if mso]><v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="' + L + '" style="height:56px;v-text-anchor:middle;width:360px;" arcsize="30%" stroke="f" fillcolor="' + C + '"><w:anchorlock/><center style="color:#ffffff;font-family:Tahoma,Arial,sans-serif;font-size:17px;font-weight:bold;">' + e(label) + '</center></v:roundrect><![endif]-->' +
+    '<!--[if !mso]><!-- --><a href="' + L + '" target="_blank" style="display:block;max-width:400px;margin:0 auto;background:' + C + ';color:#ffffff;font-family:' + F + ';font-size:17px;font-weight:bold;line-height:58px;text-align:center;text-decoration:none;border-radius:16px;">' + e(label) + '</a><!--<![endif]-->' +
+    '</td></tr></table>';
+}
+// The quiet end: the link written out, why this came, and the company line under the card.
+function mailClose_(o) {
+  var e = htmlEsc_, M = MAIL_, rtl = o.rtl, F = mailFont_(rtl), D = ' dir="' + (rtl ? 'rtl' : 'ltr') + '"', A = rtl ? 'right' : 'left';
+  var out = '';
+  if (o.link) out += '<tr><td class="m-px m-muted"' + D + ' style="padding:24px 30px 0;font-family:' + F + ';font-size:12px;line-height:1.7;color:' + M.MUTED + ';text-align:' + A + ';">' + e(o.fallback) +
+    '<div dir="ltr" style="margin-top:4px;font-family:Arial,sans-serif;font-size:11.5px;word-break:break-all;text-align:left;"><a href="' + e(o.link) + '" style="color:' + M.G + ';">' + e(o.link) + '</a></div></td></tr>';
+  out += '<tr><td class="m-px m-muted"' + D + ' style="padding:20px 30px 26px;font-family:' + F + ';font-size:12px;line-height:1.8;color:' + M.MUTED + ';text-align:' + A + ';"><div class="m-line" style="border-top:1px solid ' + M.LINE + ';padding-top:16px;">' + e(o.why) + '</div></td></tr>';
+  out += '</table><!--[if mso]></td></tr></table><![endif]-->';
+  out += '<div class="m-muted" dir="' + (o.footDir || (rtl ? 'rtl' : 'ltr')) + '" style="max-width:' + o.width + 'px;margin:16px auto 0;font-family:' + F + ';font-size:11.5px;line-height:1.7;color:' + M.MUTED + ';text-align:center;">' + e(o.foot) + '</div>';
+  out += '</td></tr></table></body></html>';
+  return out;
+}
+function mailInitials_(name) {
+  var p = String(name || '').trim().split(/\s+/).filter(Boolean);
+  if (!p.length) return '';
+  var a = p[0].charAt(0), b = p.length > 1 ? p[p.length - 1].charAt(0) : '';
+  return /[A-Za-z]/.test(a) ? (a + b).toUpperCase() : a + (b ? ' ' + b : '');
+}
 
-  // the company band: logo, name, the system
-  out.push('<tr><td bgcolor="' + DEEP + '" style="background:' + DEEP + ';border-radius:22px 22px 0 0;padding:20px 24px;">' +
-    '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"' + D + '><tr>' +
-    '<td width="62" valign="middle" style="width:62px;"><img src="' + logo + '" width="54" height="54" alt="Best Gas" style="display:block;border:0;border-radius:14px;"></td>' +
-    '<td valign="middle"' + D + ' style="padding-' + (rtl ? 'right' : 'left') + ':12px;text-align:' + A + ';font-family:' + FONT + ';">' +
-      '<div style="color:#ffffff;font-size:16px;font-weight:bold;line-height:1.3;">' + e(c.org) + '</div>' +
-      '<div style="color:#C9D6C6;font-size:12.5px;line-height:1.5;">' + e(c.app) + '</div></td>' +
-    '<td valign="middle" align="' + B + '" style="text-align:' + B + ';"><span style="display:inline-block;background:' + T[1] + ';color:' + T[0] + ';font-family:' + FONT + ';font-size:12px;font-weight:bold;line-height:1;padding:8px 12px;border-radius:999px;white-space:nowrap;">' + e(c.tag[o.tone] || c.tag.info) + '</span></td>' +
-    '</tr></table></td></tr>');
+function nmHtml_(c, lang, o) {
+  var e = htmlEsc_, M = MAIL_, rtl = c.dir === 'rtl', A = rtl ? 'right' : 'left', B = rtl ? 'left' : 'right', D = ' dir="' + c.dir + '"';
+  var FONT = mailFont_(rtl), NUM = "'IBM Plex Sans Arabic','Segoe UI',Tahoma,Arial,sans-serif";
+  var G = M.G, INK = M.INK, BODY = M.BODY, MUTED = M.MUTED, LINE = M.LINE, PAPER = M.PAPER, TONE = M.TONE;
+  function sp(h) { return '<tr><td style="height:' + h + 'px;line-height:' + h + 'px;font-size:1px;">&nbsp;</td></tr>'; }
+  function money(v, size, color, cls) { return '<span dir="ltr"' + (cls ? ' class="' + cls + '"' : '') + ' style="font-family:' + NUM + ';font-size:' + size + 'px;font-weight:bold;color:' + color + ';white-space:nowrap;">' + e(nmMoney_(v)) + '</span>'; }
+  function secHead(t) { return '<div class="m-ink"' + D + ' style="font-family:' + FONT + ';font-size:14px;font-weight:bold;color:' + INK + ';text-align:' + A + ';padding:0 0 10px;">' + e(t) + '</div>'; }
+  function who(name, role, align) {
+    var ini = mailInitials_(name);
+    return '<table role="presentation" cellpadding="0" cellspacing="0" border="0"' + D + ' align="' + align + '"><tr>' +
+      (ini ? '<td valign="middle" width="38"><div style="width:34px;height:34px;border-radius:17px;background:' + M.CREAM + ';color:' + G + ';font-family:' + FONT + ';font-size:13px;font-weight:bold;line-height:34px;text-align:center;">' + e(ini) + '</div></td>' : '') +
+      '<td valign="middle"' + D + ' style="padding-' + (rtl ? 'right' : 'left') + ':8px;text-align:' + A + ';font-family:' + FONT + ';"><div style="color:#ffffff;font-size:14.5px;font-weight:bold;line-height:1.35;">' + e(name) + '</div>' +
+      (role ? '<div style="color:#BFD0BC;font-size:12px;line-height:1.4;">' + e(role) + '</div>' : '') + '</td></tr></table>';
+  }
+  var out = [mailOpen_(lang, c.dir, o.subject, o.lead, 600), mailBrand_(c.org, c.app, DEFAULT_APP_URL, rtl), mailStatus_(o.tone, c.tag[o.tone] || c.tag.info, rtl)];
 
-  // the card
-  out.push('<tr><td bgcolor="#ffffff" style="background:#ffffff;border-radius:0 0 22px 22px;padding:0;">' +
-    '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">');
-  // a strip in the tone's colour, then what happened
-  out.push('<tr><td style="height:5px;line-height:5px;font-size:1px;background:' + T[2] + ';">&nbsp;</td></tr>');
-  out.push('<tr><td' + D + ' style="padding:26px 26px 0;text-align:' + A + ';font-family:' + FONT + ';">' +
-    '<div style="font-size:14px;color:' + MUTED + ';">' + e(fill_(c.hi, { name: o.name })) + '</div>' +
-    '<div style="font-size:24px;line-height:1.35;font-weight:bold;color:' + INK + ';margin-top:6px;">' + e(o.head) + '</div>' +
-    '<div style="font-size:15.5px;line-height:1.8;color:' + BODY + ';margin-top:8px;">' + e(o.lead) + '</div></td></tr>');
+  // what happened, in one heading and one sentence
+  out.push('<tr><td class="m-px"' + D + ' style="padding:16px 30px 0;text-align:' + A + ';font-family:' + FONT + ';">' +
+    '<div class="m-muted" style="font-size:14px;color:' + MUTED + ';">' + e(fill_(c.hi, { name: o.name })) + '</div>' +
+    '<div class="m-ink m-h1" style="font-size:25px;line-height:1.35;font-weight:bold;color:' + INK + ';margin-top:6px;">' + e(o.head) + '</div>' +
+    '<div class="m-body" style="font-size:15.5px;line-height:1.85;color:' + BODY + ';margin-top:8px;">' + e(o.lead) + '</div></td></tr>');
 
   // the slip: the amount, and who hands it to whom
   if (o.amount != null) {
-    var slip = '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="' + DEEP + '" style="background:' + DEEP + ';border-radius:18px;">' +
-      '<tr><td align="center" style="padding:22px 18px 16px;font-family:' + FONT + ';">' +
-        '<div style="color:#C9D6C6;font-size:12.5px;">' + e(c.f.amount) + ' · ' + e(o.amountNote || '') + '</div>' +
-        '<div style="margin-top:4px;line-height:1.1;">' + money(o.amount, 38, '#ffffff') + ' <span style="font-family:' + FONT + ';font-size:15px;color:#E8D9A8;font-weight:bold;">' + e(c.sar) + '</span></div>' +
+    var slip = '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="' + M.DEEP + '" style="background:' + M.DEEP + ';border-radius:20px;">' +
+      '<tr><td align="center" style="padding:24px 18px 18px;font-family:' + FONT + ';">' +
+        '<div style="color:#BFD0BC;font-size:13px;">' + e(c.f.amount) + (o.amountNote ? ' · ' + e(o.amountNote) : '') + '</div>' +
+        '<div style="margin-top:6px;line-height:1.1;">' + money(o.amount, 40, '#ffffff', 'm-amt') + '&nbsp;<span style="font-family:' + FONT + ';font-size:15px;color:' + M.GOLD + ';font-weight:bold;">' + e(c.sar) + '</span></div>' +
       '</td></tr>';
     if (o.route && (o.route.from || o.route.to)) {
-      slip += '<tr><td style="padding:0 18px;"><div style="border-top:2px dashed #4E6A55;height:0;line-height:0;font-size:0;">&nbsp;</div></td></tr>' +
-        '<tr><td style="padding:14px 18px 18px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"' + D + '><tr>' +
-        '<td width="44%" valign="top"' + D + ' style="text-align:' + A + ';font-family:' + FONT + ';"><div style="color:#9FB59E;font-size:11.5px;">' + e(c.f.from) + '</div><div style="color:#ffffff;font-size:15px;font-weight:bold;line-height:1.35;">' + e(o.route.from) + '</div>' + (o.route.fromRole ? '<div style="color:#C9D6C6;font-size:12px;">' + e(o.route.fromRole) + '</div>' : '') + '</td>' +
-        '<td width="12%" align="center" valign="middle" style="color:#E8D9A8;font-family:Arial,sans-serif;font-size:22px;font-weight:bold;">' + (rtl ? '&#8592;' : '&#8594;') + '</td>' +
-        '<td width="44%" valign="top"' + D + ' style="text-align:' + B + ';font-family:' + FONT + ';"><div style="color:#9FB59E;font-size:11.5px;">' + e(c.f.to) + '</div><div style="color:#ffffff;font-size:15px;font-weight:bold;line-height:1.35;">' + e(o.route.to) + '</div>' + (o.route.toRole ? '<div style="color:#C9D6C6;font-size:12px;">' + e(o.route.toRole) + '</div>' : '') + '</td>' +
+      slip += '<tr><td style="padding:0 18px;"><div style="border-top:2px dashed #3E5A46;height:0;line-height:0;font-size:0;">&nbsp;</div></td></tr>' +
+        '<tr><td style="padding:16px 18px 20px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"' + D + '><tr>' +
+        '<td width="44%" valign="middle"' + D + ' style="text-align:' + A + ';"><div style="font-family:' + FONT + ';color:#9FB59E;font-size:11.5px;padding-bottom:6px;">' + e(c.f.from) + '</div>' + who(o.route.from, o.route.fromRole, A) + '</td>' +
+        '<td width="12%" align="center" valign="middle" style="color:' + M.GOLD + ';font-family:Arial,sans-serif;font-size:22px;font-weight:bold;">' + (rtl ? '&#8592;' : '&#8594;') + '</td>' +
+        '<td width="44%" valign="middle"' + D + ' style="text-align:' + B + ';"><div style="font-family:' + FONT + ';color:#9FB59E;font-size:11.5px;padding-bottom:6px;text-align:' + B + ';">' + e(c.f.to) + '</div>' + who(o.route.to, o.route.toRole, B) + '</td>' +
         '</tr></table></td></tr>';
     }
     slip += '</table>';
-    out.push('<tr><td style="padding:20px 26px 0;">' + slip + '</td></tr>');
+    out.push('<tr><td class="m-px" style="padding:22px 30px 0;">' + slip + '</td></tr>');
   }
   // declared / received / short
   if (o.chips && o.chips.length) {
-    out.push('<tr><td style="padding:12px 26px 0;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"' + D + '><tr>' +
-      o.chips.map(function (ch, i) { var t = TONE[ch[2]] || TONE.info; return '<td width="33%" valign="top" style="padding:' + (i ? '0 0 0 0' : '0') + ';"><div style="margin:0 3px;background:' + t[1] + ';border-radius:12px;padding:10px 8px;text-align:center;font-family:' + FONT + ';"><div style="font-size:11.5px;color:' + t[0] + ';">' + e(ch[0]) + '</div><div style="margin-top:2px;">' + money(ch[1].replace(/,/g, ''), 16, t[0]) + '</div></div></td>'; }).join('') +
+    out.push('<tr><td class="m-px" style="padding:12px 27px 0;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"' + D + '><tr>' +
+      o.chips.map(function (ch) { var t = TONE[ch[2]] || TONE.info; return '<td width="33%" valign="top"><div class="m-chip" style="margin:0 3px;background:' + t[1] + ';border-radius:14px;padding:11px 8px;text-align:center;font-family:' + FONT + ';"><div style="font-size:11.5px;color:' + t[0] + ';">' + e(ch[0]) + '</div><div style="margin-top:3px;">' + money(ch[1].replace(/,/g, ''), 16, t[0]) + '</div></div></td>'; }).join('') +
       '</tr></table></td></tr>');
   }
   // reasons and notes, where the eye lands next
   (o.notes || []).forEach(function (n) {
     if (!n[1]) return;
     var t = TONE[n[2]] || TONE.info;
-    out.push('<tr><td style="padding:14px 26px 0;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>' +
-      '<td' + D + ' style="background:' + t[1] + ';border-' + (rtl ? 'right' : 'left') + ':4px solid ' + t[2] + ';border-radius:10px;padding:12px 14px;text-align:' + A + ';font-family:' + FONT + ';">' +
+    out.push('<tr><td class="m-px" style="padding:14px 30px 0;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>' +
+      '<td class="m-chip"' + D + ' style="background:' + t[1] + ';border-' + (rtl ? 'right' : 'left') + ':4px solid ' + t[2] + ';border-radius:12px;padding:13px 15px;text-align:' + A + ';font-family:' + FONT + ';">' +
       '<div style="font-size:12px;font-weight:bold;color:' + t[0] + ';">' + e(n[0]) + '</div>' +
-      '<div dir="auto" style="font-size:14.5px;line-height:1.7;color:' + INK + ';margin-top:2px;white-space:pre-wrap;">' + e(n[1]) + '</div></td></tr></table></td></tr>');
+      '<div class="m-ink" dir="auto" style="font-size:14.5px;line-height:1.7;color:' + INK + ';margin-top:3px;white-space:pre-wrap;">' + e(n[1]) + '</div></td></tr></table></td></tr>');
   });
   // the one action
-  out.push('<tr><td style="padding:22px 26px 0;">' + button(o.button) + '</td></tr>');
+  out.push('<tr><td class="m-px" style="padding:24px 30px 0;">' + mailButton_(o.button, o.link, rtl) + '</td></tr>');
 
   // the request's details
   var facts = (o.facts || []).filter(function (f) { return f[1] !== '' && f[1] != null; });
   if (facts.length) {
-    out.push('<tr><td style="padding:26px 26px 0;">' + secHead(c.sec.details) +
-      '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="' + PAPER + '" style="background:' + PAPER + ';border:1px solid ' + LINE + ';border-radius:14px;">' +
+    out.push('<tr><td class="m-px" style="padding:28px 30px 0;">' + secHead(c.sec.details) +
+      '<table role="presentation" class="m-paper" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="' + PAPER + '" style="background:' + PAPER + ';border:1px solid ' + LINE + ';border-radius:16px;">' +
       facts.map(function (f, i) {
-        return '<tr><td' + D + ' style="padding:10px 14px;' + (i ? 'border-top:1px solid ' + LINE + ';' : '') + 'font-family:' + FONT + ';font-size:13px;color:' + MUTED + ';text-align:' + A + ';">' + e(f[0]) + '</td>' +
-          '<td' + D + ' style="padding:10px 14px;' + (i ? 'border-top:1px solid ' + LINE + ';' : '') + 'font-family:' + FONT + ';font-size:14px;font-weight:bold;color:' + INK + ';text-align:' + B + ';">' + (f[2] ? '<span dir="ltr">' + e(f[1]) + '</span>' : e(f[1])) + '</td></tr>';
+        var top = i ? 'border-top:1px solid ' + LINE + ';' : '';
+        return '<tr><td class="m-muted m-line"' + D + ' style="padding:11px 15px;' + top + 'font-family:' + FONT + ';font-size:13px;color:' + MUTED + ';text-align:' + A + ';">' + e(f[0]) + '</td>' +
+          '<td class="m-ink m-line"' + D + ' style="padding:11px 15px;' + top + 'font-family:' + FONT + ';font-size:14px;font-weight:bold;color:' + INK + ';text-align:' + B + ';">' + (f[2] ? '<span dir="ltr">' + e(f[1]) + '</span>' : e(f[1])) + '</td></tr>';
       }).join('') + '</table></td></tr>');
   }
 
@@ -438,40 +493,38 @@ function nmHtml_(c, lang, o) {
   if (o.calc) {
     var k = o.calc;
     function line(label, v, sign, strong, color) {
-      return '<tr><td' + D + ' style="padding:7px 14px;font-family:' + FONT + ';font-size:' + (strong ? 14 : 13.5) + 'px;' + (strong ? 'font-weight:bold;' : '') + 'color:' + (strong ? INK : BODY) + ';text-align:' + A + ';">' + e(label) + '</td>' +
-        '<td style="padding:7px 14px;text-align:' + B + ';white-space:nowrap;">' + (sign ? '<span style="font-family:Arial,sans-serif;font-size:13px;color:' + MUTED + ';">' + sign + '</span>&nbsp;' : '') + money(v, strong ? 14.5 : 13.5, color || INK) + '</td></tr>';
+      return '<tr><td class="' + (strong ? 'm-ink' : 'm-body') + '"' + D + ' style="padding:8px 15px;font-family:' + FONT + ';font-size:' + (strong ? 14 : 13.5) + 'px;' + (strong ? 'font-weight:bold;' : '') + 'color:' + (strong ? INK : BODY) + ';text-align:' + A + ';">' + e(label) + '</td>' +
+        '<td style="padding:8px 15px;text-align:' + B + ';white-space:nowrap;">' + (sign ? '<span style="font-family:Arial,sans-serif;font-size:13px;color:' + MUTED + ';">' + sign + '</span>&nbsp;' : '') + money(v, strong ? 14.5 : 13.5, color || INK, color ? '' : 'm-ink') + '</td></tr>';
     }
-    var calc = k.ins.map(function (r) { return line(r[0], r[1], '+', false); }).join('') +
-      '<tr><td colspan="2" style="padding:0 14px;"><div style="border-top:1px solid ' + LINE + ';height:0;font-size:0;line-height:0;">&nbsp;</div></td></tr>' +
-      line(c.calc.totalIn, k.totalIn, '', true);
-    if (k.outs.length) calc += k.outs.map(function (r) { return line(r[0], r[1], '−', false, '#A3322A'); }).join('') +
-      '<tr><td colspan="2" style="padding:0 14px;"><div style="border-top:1px solid ' + LINE + ';height:0;font-size:0;line-height:0;">&nbsp;</div></td></tr>' +
-      line(c.calc.totalOut, k.totalOut, '−', true, '#A3322A');
-    calc += '<tr><td' + D + ' bgcolor="' + G + '" style="background:' + G + ';padding:12px 14px;border-radius:' + (rtl ? '0 0 13px 0' : '0 0 0 13px') + ';font-family:' + FONT + ';font-size:15px;font-weight:bold;color:#ffffff;text-align:' + A + ';">' + e(c.calc.net) + '</td>' +
-      '<td bgcolor="' + G + '" style="background:' + G + ';padding:12px 14px;border-radius:' + (rtl ? '0 0 0 13px' : '0 0 13px 0') + ';text-align:' + B + ';">' + money(k.net, 17, '#ffffff') + '</td></tr>';
-    out.push('<tr><td style="padding:24px 26px 0;">' + secHead(c.sec.calc) +
-      '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid ' + LINE + ';border-radius:14px;">' + sp(6) + calc + '</table></td></tr>');
+    function rule() { return '<tr><td colspan="2" style="padding:2px 15px;"><div class="m-line" style="border-top:1px solid ' + LINE + ';height:0;font-size:0;line-height:0;">&nbsp;</div></td></tr>'; }
+    var calc = k.ins.map(function (r) { return line(r[0], r[1], '+', false); }).join('') + rule() + line(c.calc.totalIn, k.totalIn, '', true);
+    if (k.outs.length) calc += k.outs.map(function (r) { return line(r[0], r[1], '−', false, '#A3322A'); }).join('') + rule() + line(c.calc.totalOut, k.totalOut, '−', true, '#A3322A');
+    calc += '<tr><td' + D + ' bgcolor="' + G + '" style="background:' + G + ';padding:13px 15px;border-radius:' + (rtl ? '0 0 15px 0' : '0 0 0 15px') + ';font-family:' + FONT + ';font-size:15px;font-weight:bold;color:#ffffff;text-align:' + A + ';">' + e(c.calc.net) + '</td>' +
+      '<td bgcolor="' + G + '" style="background:' + G + ';padding:13px 15px;border-radius:' + (rtl ? '0 0 0 15px' : '0 0 15px 0') + ';text-align:' + B + ';">' + money(k.net, 17, '#ffffff') + '</td></tr>';
+    out.push('<tr><td class="m-px" style="padding:26px 30px 0;">' + secHead(c.sec.calc) +
+      '<table role="presentation" class="m-line" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid ' + LINE + ';border-radius:16px;">' + sp(6) + calc + '</table></td></tr>');
   }
 
   // what it carries
   if (o.carries && o.carries.length) {
     var max = 8, shown = o.carries.slice(0, max);
-    out.push('<tr><td style="padding:24px 26px 0;">' + secHead(c.sec.carries + ' (' + o.carries.length + ')') +
-      '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid ' + LINE + ';border-radius:14px;">' +
+    out.push('<tr><td class="m-px" style="padding:26px 30px 0;">' + secHead(c.sec.carries + ' (' + o.carries.length + ')') +
+      '<table role="presentation" class="m-line" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid ' + LINE + ';border-radius:16px;">' +
       shown.map(function (r, i) {
-        return '<tr><td' + D + ' style="padding:10px 14px;' + (i ? 'border-top:1px solid ' + LINE + ';' : '') + 'text-align:' + A + ';font-family:' + FONT + ';">' +
-          '<div style="font-size:14px;font-weight:bold;color:' + INK + ';">' + e(r[2] || r[0]) + '</div>' +
-          '<div style="font-size:12px;color:' + MUTED + ';"><span dir="ltr">' + e([r[0], r[1]].filter(Boolean).join('  ·  ')) + '</span></div></td>' +
-          '<td style="padding:10px 14px;' + (i ? 'border-top:1px solid ' + LINE + ';' : '') + 'text-align:' + B + ';">' + money(r[3], 14, INK) + '</td></tr>';
+        var top = i ? 'border-top:1px solid ' + LINE + ';' : '';
+        return '<tr><td class="m-line"' + D + ' style="padding:11px 15px;' + top + 'text-align:' + A + ';font-family:' + FONT + ';">' +
+          '<div class="m-ink" style="font-size:14px;font-weight:bold;color:' + INK + ';">' + e(r[2] || r[0]) + '</div>' +
+          '<div class="m-muted" style="font-size:12px;color:' + MUTED + ';"><span dir="ltr">' + e([r[0], r[1]].filter(Boolean).join('  ·  ')) + '</span></div></td>' +
+          '<td class="m-line" style="padding:11px 15px;' + top + 'text-align:' + B + ';">' + money(r[3], 14, INK, 'm-ink') + '</td></tr>';
       }).join('') +
-      (o.carries.length > max ? '<tr><td colspan="2"' + D + ' style="padding:9px 14px;border-top:1px solid ' + LINE + ';font-family:' + FONT + ';font-size:12.5px;color:' + MUTED + ';text-align:' + A + ';">' + e(fill_(c.sec.more, { n: o.carries.length - max })) + '</td></tr>' : '') +
+      (o.carries.length > max ? '<tr><td colspan="2" class="m-muted m-line"' + D + ' style="padding:10px 15px;border-top:1px solid ' + LINE + ';font-family:' + FONT + ';font-size:12.5px;color:' + MUTED + ';text-align:' + A + ';">' + e(fill_(c.sec.more, { n: o.carries.length - max })) + '</td></tr>' : '') +
       '</table></td></tr>');
   }
 
   // where it stands: the chain, step by step
   if (o.stages) {
     var s = o.stages;
-    out.push('<tr><td style="padding:24px 26px 0;">' + secHead(c.sec.stages) +
+    out.push('<tr><td class="m-px" style="padding:26px 30px 0;">' + secHead(c.sec.stages) +
       '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"' + D + '><tr>' +
       c.stg.map(function (label, i) {
         var done = i < s.at || (i === s.at && s.done), now = i === s.at && !s.done;
@@ -482,16 +535,10 @@ function nmHtml_(c, lang, o) {
           '<td width="50%" style="font-size:0;line-height:0;"><div style="height:3px;background:' + (i ? (i <= s.at ? G : LINE) : 'transparent') + ';">&nbsp;</div></td>' +
           '<td style="font-size:0;line-height:0;"><div style="width:16px;height:16px;border-radius:8px;background:' + fill + ';border:3px solid ' + ring + ';margin:0 auto;">&nbsp;</div></td>' +
           '<td width="50%" style="font-size:0;line-height:0;"><div style="height:3px;background:' + bar + ';">&nbsp;</div></td></tr></table>' +
-          '<div style="font-family:' + FONT + ';font-size:11px;line-height:1.35;margin-top:6px;color:' + (now ? INK : done ? BODY : MUTED) + ';' + (now ? 'font-weight:bold;' : '') + '">' + e(label) + '</div></td>';
+          '<div class="' + (now ? 'm-ink' : 'm-muted') + '" style="font-family:' + FONT + ';font-size:11px;line-height:1.35;margin-top:7px;color:' + (now ? INK : done ? BODY : MUTED) + ';' + (now ? 'font-weight:bold;' : '') + '">' + e(label) + '</div></td>';
       }).join('') + '</tr></table></td></tr>');
   }
 
-  // the link written out, and why this came
-  out.push('<tr><td' + D + ' style="padding:24px 26px 0;font-family:' + FONT + ';font-size:12px;line-height:1.7;color:' + MUTED + ';text-align:' + A + ';">' + e(c.fallback) +
-    '<div dir="ltr" style="margin-top:3px;font-family:Arial,sans-serif;font-size:11.5px;word-break:break-all;text-align:left;"><a href="' + L + '" style="color:' + G + ';">' + L + '</a></div></td></tr>');
-  out.push('<tr><td' + D + ' style="padding:18px 26px 22px;font-family:' + FONT + ';font-size:12px;line-height:1.8;color:' + MUTED + ';text-align:' + A + ';"><div style="border-top:1px solid ' + LINE + ';padding-top:14px;">' + e(c.why) + '</div></td></tr>');
-  out.push('</table></td></tr>');
-  out.push('<tr><td align="center" style="padding:14px 10px 0;font-family:' + FONT + ';font-size:11.5px;color:' + MUTED + ';">' + e(c.org) + ' · ' + e(c.app) + '</td></tr>');
-  out.push('</table><!--[if mso]></td></tr></table><![endif]--></td></tr></table></body></html>');
+  out.push(mailClose_({ rtl: rtl, link: o.link, fallback: c.fallback, why: c.why, foot: c.org + ' · ' + c.app + ' · ' + new Date().getFullYear(), width: 600 }));
   return out.join('');
 }

@@ -372,69 +372,40 @@ function sendInvitation_(u, token, inviter, appUrl) {
 // the organisation's name under it still carries the brand when images are
 // blocked.
 function inviteEmailHtml_(u, link, c, vars, appUrl) {
-  var G = '#4D6D51', DEEP = '#23372A', CREAM = '#F2EEE4', INK = '#1B231D', BODY = '#3F4A42', MUTED = '#5E6A60', LINE = '#E3DED1';
-  var e = htmlEsc_, L = e(link);
-  var rtl = c.dir === 'rtl';
-  var FONT = rtl ? "Tahoma,'Segoe UI',Arial,sans-serif" : "'Segoe UI',Helvetica,Arial,sans-serif";
-  var dirAttr = ' dir="' + c.dir + '"';
-  function button(label) {
-    return '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td align="center">' +
-      '<!--[if mso]><v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="' + L + '" style="height:54px;v-text-anchor:middle;width:320px;" arcsize="26%" stroke="f" fillcolor="' + G + '">' +
-      '<w:anchorlock/><center style="color:#ffffff;font-family:Tahoma,Arial,sans-serif;font-size:17px;font-weight:bold;">' + e(label) + '</center></v:roundrect><![endif]-->' +
-      '<!--[if !mso]><!-- --><a href="' + L + '" target="_blank" style="display:block;max-width:360px;margin:0 auto;background:' + G + ';color:#ffffff;font-family:' + FONT + ';font-size:17px;font-weight:bold;line-height:54px;text-align:center;text-decoration:none;border-radius:14px;">' + e(label) + '</a><!--<![endif]-->' +
-    '</td></tr></table>';
-  }
-  function fact(label, value, ltrValue) {
-    return '<tr><td' + dirAttr + ' style="padding:9px 16px;font-family:' + FONT + ';font-size:13px;color:' + MUTED + ';text-align:' + c.align + ';">' + e(label) + '</td>' +
-      '<td' + dirAttr + ' style="padding:9px 16px;font-family:' + FONT + ';font-size:14px;font-weight:bold;color:' + INK + ';text-align:' + (rtl ? 'left' : 'right') + ';">' +
+  var e = htmlEsc_, M = MAIL_, rtl = c.dir === 'rtl', F = mailFont_(rtl), D = ' dir="' + c.dir + '"', A = c.align, B = rtl ? 'left' : 'right';
+  var lang = c === INVITE_COPY_.en ? 'en' : c === INVITE_COPY_.ur ? 'ur' : 'ar';
+  var badge = { en: 'You are invited', ar: 'دعوة للانضمام', ur: 'شمولیت کی دعوت' }[lang];
+  function fact(label, value, ltrValue, i) {
+    var top = i ? 'border-top:1px solid ' + M.LINE + ';' : '';
+    return '<tr><td class="m-muted m-line"' + D + ' style="padding:11px 16px;' + top + 'font-family:' + F + ';font-size:13px;color:' + M.MUTED + ';text-align:' + A + ';">' + e(label) + '</td>' +
+      '<td class="m-ink m-line"' + D + ' style="padding:11px 16px;' + top + 'font-family:' + F + ';font-size:14px;font-weight:bold;color:' + M.INK + ';text-align:' + B + ';">' +
       (ltrValue ? '<span dir="ltr">' + e(value) + '</span>' : e(value)) + '</td></tr>';
   }
   function step(n, textStr) {
-    return '<tr><td width="34" valign="top" style="padding:0 0 12px;"><div style="width:26px;height:26px;border-radius:13px;background:' + CREAM + ';color:' + G + ';font-family:Arial,sans-serif;font-size:13px;font-weight:bold;line-height:26px;text-align:center;">' + n + '</div></td>' +
-      '<td' + dirAttr + ' valign="top" style="padding:3px 0 12px;font-family:' + FONT + ';font-size:14.5px;line-height:1.6;color:' + BODY + ';text-align:' + c.align + ';">' + e(textStr) + '</td></tr>';
+    return '<tr><td width="40" valign="top" style="padding:0 0 14px;"><div style="width:28px;height:28px;border-radius:14px;background:' + M.G + ';color:#ffffff;font-family:Arial,sans-serif;font-size:13px;font-weight:bold;line-height:28px;text-align:center;">' + n + '</div></td>' +
+      '<td class="m-body"' + D + ' valign="top" style="padding:4px 0 14px;font-family:' + F + ';font-size:14.5px;line-height:1.65;color:' + M.BODY + ';text-align:' + A + ';">' + e(textStr) + '</td></tr>';
   }
-  return '<!DOCTYPE html><html lang="' + (c === INVITE_COPY_.en ? 'en' : c === INVITE_COPY_.ur ? 'ur' : 'ar') + '"' + dirAttr + ' xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office"><head>' +
-    '<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><meta name="supported-color-schemes" content="light">' +
-    '<!--[if mso]><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml><![endif]-->' +
-    '<title>' + e(c.subject) + '</title></head>' +
-    '<body style="margin:0;padding:0;background:' + CREAM + ';">' +
-    '<div style="display:none;max-height:0;overflow:hidden;">' + e(fill_(c.pre, vars)) + '</div>' +
-    '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:' + CREAM + ';"><tr><td align="center" style="padding:24px 12px 32px;">' +
-    '<!--[if mso]><table role="presentation" width="560" cellpadding="0" cellspacing="0" border="0"><tr><td><![endif]-->' +
-    '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:560px;background:#ffffff;border-radius:22px;overflow:hidden;">' +
-      // the brand, small and settled
-      '<tr><td align="center" bgcolor="' + DEEP + '" style="background:' + DEEP + ';padding:26px 20px 22px;">' +
-        '<img src="' + e(appUrl) + 'assets/mail-logo.png" width="64" height="64" alt="' + e(c.org) + '" style="display:block;margin:0 auto 12px;border:0;border-radius:16px;">' +
-        '<div style="font-family:Tahoma,Arial,sans-serif;color:#ffffff;font-size:17px;font-weight:bold;">' + e(c.org) + '</div>' +
-      '</td></tr>' +
-      // the greeting and the one sentence
-      '<tr><td' + dirAttr + ' style="padding:30px 26px 0;font-family:' + FONT + ';text-align:' + c.align + ';">' +
-        '<div style="font-size:24px;font-weight:bold;line-height:1.35;color:' + INK + ';">' + e(fill_(c.hi, vars)) + '</div>' +
-        '<div style="font-size:16px;line-height:1.85;color:' + BODY + ';margin-top:10px;">' + e(fill_(c.lead, vars)) + '</div>' +
-      '</td></tr>' +
-      // what they are joining
-      '<tr><td style="padding:20px 26px 0;">' +
-        '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:' + CREAM + ';border-radius:14px;">' +
-          '<tr><td colspan="2" style="height:6px;line-height:6px;font-size:6px;">&nbsp;</td></tr>' +
-          fact(c.role, vars.role) + fact(c.email, u.email, true) + fact(c.until, vars.date, true) +
-          '<tr><td colspan="2" style="height:6px;line-height:6px;font-size:6px;">&nbsp;</td></tr>' +
-        '</table>' +
-      '</td></tr>' +
-      // the one action
-      '<tr><td style="padding:24px 26px 0;">' + button(c.button) + '</td></tr>' +
-      // what happens next
-      '<tr><td style="padding:24px 26px 0;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"' + dirAttr + '>' +
-        c.steps.map(function (st, i) { return step(i + 1, st); }).join('') +
-      '</table></td></tr>' +
-      // the link, written out
-      '<tr><td' + dirAttr + ' style="padding:4px 26px 26px;font-family:' + FONT + ';font-size:12.5px;line-height:1.7;color:' + MUTED + ';text-align:' + c.align + ';">' + e(c.fallback) +
-        '<div dir="ltr" style="margin-top:4px;font-family:Arial,sans-serif;font-size:12px;word-break:break-all;text-align:left;"><a href="' + L + '" style="color:' + G + ';">' + L + '</a></div>' +
-      '</td></tr>' +
-      '<tr><td' + dirAttr + ' style="padding:16px 26px 20px;border-top:1px solid ' + LINE + ';font-family:' + FONT + ';font-size:12px;line-height:1.8;color:' + MUTED + ';text-align:' + c.align + ';">' + e(fill_(c.foot, vars)) + '</td></tr>' +
-    '</table>' +
-    '<!--[if mso]></td></tr></table><![endif]-->' +
-    '<div dir="' + c.otherDir + '" style="max-width:560px;margin:14px auto 0;font-family:Tahoma,Arial,sans-serif;font-size:12px;line-height:1.7;color:' + MUTED + ';text-align:center;">' + e(c.other) + '</div>' +
-    '</td></tr></table></body></html>';
+  return mailOpen_(lang, c.dir, c.subject, fill_(c.pre, vars), 560) +
+    mailBrand_(c.org, '', appUrl, rtl) +
+    mailStatus_('action', badge, rtl) +
+    // the greeting and the one sentence
+    '<tr><td class="m-px"' + D + ' style="padding:16px 30px 0;font-family:' + F + ';text-align:' + A + ';">' +
+      '<div class="m-ink m-h1" style="font-size:25px;font-weight:bold;line-height:1.35;color:' + M.INK + ';">' + e(fill_(c.hi, vars)) + '</div>' +
+      '<div class="m-body" style="font-size:16px;line-height:1.85;color:' + M.BODY + ';margin-top:10px;">' + e(fill_(c.lead, vars)) + '</div>' +
+    '</td></tr>' +
+    // what they are joining
+    '<tr><td class="m-px" style="padding:22px 30px 0;">' +
+      '<table role="presentation" class="m-paper" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="' + M.PAPER + '" style="background:' + M.PAPER + ';border:1px solid ' + M.LINE + ';border-radius:16px;">' +
+        fact(c.role, vars.role, false, 0) + fact(c.email, u.email, true, 1) + fact(c.until, vars.date, true, 2) +
+      '</table>' +
+    '</td></tr>' +
+    // the one action
+    '<tr><td class="m-px" style="padding:26px 30px 0;">' + mailButton_(c.button, link, rtl) + '</td></tr>' +
+    // what happens next
+    '<tr><td class="m-px" style="padding:28px 30px 0;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"' + D + '>' +
+      c.steps.map(function (st, i) { return step(i + 1, st); }).join('') +
+    '</table></td></tr>' +
+    mailClose_({ rtl: rtl, link: link, fallback: c.fallback, why: fill_(c.foot, vars), foot: c.other, footDir: c.otherDir, width: 560 });
 }
 
 // Every link in the chain a person is named on.
@@ -598,12 +569,43 @@ function sendInvite_(u, tempPassword) {
     'سيُطلب منك تغييرها عند أول دخول.',
     'You will be asked to change it on first login.'
   ].join('\n');
+  var html = null;
+  try { html = signInEmailHtml_(u, tempPassword); } catch (eH) { html = null; }
   try {
-    sendMail_(u.email, subject, body);
+    sendMail_(u.email, subject, body, html);
   } catch (e) {
     // email quota/misconfiguration must not block account creation
     logAudit_('invite_email_failed', u.id, String(e));
   }
+}
+
+// The sign-in details email (an admin reset, a forgotten password) in the shared frame (2026-10-25).
+var SIGNIN_COPY_ = {
+  en: { dir: 'ltr', subject: 'Your sign-in details', badge: 'Sign-in details', hi: 'Hello {name},', head: 'Here is your temporary password', lead: 'Sign in with it and the app will ask you to choose your own password straight away. It works for 3 days.', login: 'Sign in with', pw: 'Temporary password', button: 'Open the app and sign in', why: 'You receive this because a new password was asked for your account in Best Gas Cash Collection. If you did not ask for it, your old password still works; tell your administrator.', org: 'Best Gas Carrier Co.', app: 'Cash Collection', fallback: 'If the button does not open, copy this link into your browser:' },
+  ar: { dir: 'rtl', subject: 'بيانات الدخول الخاصة بك', badge: 'بيانات الدخول', hi: 'مرحباً {name}،', head: 'هذه كلمة المرور المؤقتة', lead: 'سجّل الدخول بها وسيطلب منك النظام مباشرة اختيار كلمة مرورك الخاصة. صالحة لمدة 3 أيام.', login: 'الدخول باستخدام', pw: 'كلمة المرور المؤقتة', button: 'افتح النظام وسجّل الدخول', why: 'وصلتك هذه الرسالة لأن كلمة مرور جديدة طُلبت لحسابك في نظام تحصيل النقدية. إن لم تطلبها فكلمة مرورك القديمة ما زالت تعمل؛ أبلغ مسؤول النظام.', org: 'شركة الناقل الأفضل للغاز', app: 'تحصيل النقدية', fallback: 'إن لم يفتح الزر، انسخ هذا الرابط في المتصفح:' },
+  ur: { dir: 'rtl', subject: 'آپ کی سائن ان تفصیلات', badge: 'سائن ان تفصیلات', hi: 'السلام علیکم {name}،', head: 'یہ آپ کا عارضی پاس ورڈ ہے', lead: 'اس سے سائن ان کریں، ایپ فوراً آپ سے اپنا پاس ورڈ منتخب کرنے کو کہے گی۔ یہ 3 دن تک کام کرتا ہے۔', login: 'سائن ان', pw: 'عارضی پاس ورڈ', button: 'ایپ کھولیں اور سائن ان کریں', why: 'آپ کو یہ پیغام اس لیے ملا کیونکہ بیسٹ گیس کیش کلیکشن میں آپ کے اکاؤنٹ کے لیے نیا پاس ورڈ مانگا گیا۔ اگر آپ نے نہیں مانگا تو پرانا پاس ورڈ اب بھی کام کرتا ہے؛ اپنے ایڈمن کو بتائیں۔', org: 'بیسٹ گیس کیریئر کمپنی', app: 'کیش کلیکشن', fallback: 'اگر بٹن نہ کھلے تو یہ لنک براؤزر میں کاپی کریں:' }
+};
+function signInEmailHtml_(u, tempPassword) {
+  var lang = userLang_(u), c = SIGNIN_COPY_[lang] || SIGNIN_COPY_.en, e = htmlEsc_, M = MAIL_, rtl = c.dir === 'rtl', F = mailFont_(rtl), D = ' dir="' + c.dir + '"', A = rtl ? 'right' : 'left';
+  var link = DEFAULT_APP_URL;
+  return mailOpen_(lang, c.dir, c.subject, c.head, 560) +
+    mailBrand_(c.org, c.app, DEFAULT_APP_URL, rtl) +
+    mailStatus_('info', c.badge, rtl) +
+    '<tr><td class="m-px"' + D + ' style="padding:16px 30px 0;font-family:' + F + ';text-align:' + A + ';">' +
+      '<div class="m-muted" style="font-size:14px;color:' + M.MUTED + ';">' + e(fill_(c.hi, { name: firstName_(u.name) })) + '</div>' +
+      '<div class="m-ink m-h1" style="font-size:25px;font-weight:bold;line-height:1.35;color:' + M.INK + ';margin-top:6px;">' + e(c.head) + '</div>' +
+      '<div class="m-body" style="font-size:15.5px;line-height:1.85;color:' + M.BODY + ';margin-top:8px;">' + e(c.lead) + '</div>' +
+    '</td></tr>' +
+    // the password on its own slip, large and easy to copy
+    '<tr><td class="m-px" style="padding:22px 30px 0;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="' + M.DEEP + '" style="background:' + M.DEEP + ';border-radius:20px;">' +
+      '<tr><td align="center" style="padding:22px 18px 6px;font-family:' + F + ';color:#BFD0BC;font-size:13px;">' + e(c.login) + '</td></tr>' +
+      '<tr><td align="center" dir="ltr" style="padding:0 18px;font-family:Arial,sans-serif;color:#ffffff;font-size:16px;font-weight:bold;word-break:break-all;">' + e(u.email || u.iqamaId || '') + '</td></tr>' +
+      '<tr><td style="padding:16px 18px 0;"><div style="border-top:2px dashed #3E5A46;height:0;line-height:0;font-size:0;">&nbsp;</div></td></tr>' +
+      '<tr><td align="center" style="padding:14px 18px 4px;font-family:' + F + ';color:#BFD0BC;font-size:13px;">' + e(c.pw) + '</td></tr>' +
+      '<tr><td align="center" dir="ltr" style="padding:0 18px 22px;"><span class="m-amt" style="font-family:Consolas,Menlo,Arial,monospace;font-size:30px;font-weight:bold;color:' + M.GOLD + ';letter-spacing:1px;">' + e(tempPassword) + '</span></td></tr>' +
+    '</table></td></tr>' +
+    '<tr><td class="m-px" style="padding:24px 30px 0;">' + mailButton_(c.button, link, rtl) + '</td></tr>' +
+    mailClose_({ rtl: rtl, link: link, fallback: c.fallback, why: c.why, foot: c.org + ' · ' + c.app + ' · ' + new Date().getFullYear(), width: 560 });
 }
 
 // ---------- Generic hierarchy CRUD (location / store / car / pos / cluster) ----------
