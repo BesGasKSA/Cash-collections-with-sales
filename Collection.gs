@@ -942,8 +942,10 @@ function actionImportEntries_(req, user) {
 function entriesScope_(user) {
   if (isCompanyWide_(user.role)) return function () { return true; };
   if (user.role === 'cluster_manager') {
-    var locIds = Object.create(null);
-    readSheet(SHEETS.LOCATIONS).forEach(function (l) { if (clusterManagerOwnsCluster_(user.id, l.clusterId)) locIds[l.id] = 1; });
+    // clusterManagerOwnsCluster_'s rule, worked out once per area rather than per branch
+    var locIds = Object.create(null), owned = Object.create(null), active = activeAreaOf_(user.id);
+    readSheet(SHEETS.CLUSTERS).forEach(function (c) { if (c.clusterManagerUserId === user.id && (!active || active === c.id)) owned[c.id] = 1; });
+    readSheet(SHEETS.LOCATIONS).forEach(function (l) { if (l.clusterId && owned[l.clusterId]) locIds[l.id] = 1; });
     return function (e) { return !!locIds[e.locationId]; };
   }
   if (user.role === 'store_manager') {
@@ -4135,13 +4137,12 @@ function actionGlobalSearch_(req, user) {
       if (!on(type)) return;
       var ok = hScope(h);
       // the Collections screen lets a person follow area requests beyond their own handovers
+      // only a request the Collections screen itself follows (followRequest_ gives null for a
+      // voided or cut-over one), with the screen's own scope (review 2026-10-25)
       if (!ok && !isDep && h.kind === 'cluster_to_collector') {
-        var holder = null;
-        if (role === 'collector') {
-          if (!hById) { hById = Object.create(null); hs.forEach(function (x) { hById[x.id] = x; }); }
-          var fr = followRequest_(h, hById); holder = fr ? fr.holder : null;
-        }
-        ok = cScope(h, null, holder);
+        if (!hById) { hById = Object.create(null); hs.forEach(function (x) { hById[x.id] = x; }); }
+        var fr = followRequest_(h, hById);
+        ok = !!fr && cScope(h, fr.hops, fr.holder);
       }
       if (!ok) return;
       var area = h.clusterId && cluById[h.clusterId] ? cluById[h.clusterId].name : '';
@@ -4164,13 +4165,26 @@ function actionGlobalSearch_(req, user) {
     var myLoc = Object.create(null), myArea = Object.create(null);
     if (wide) { locs.forEach(function (l) { myLoc[l.id] = 1; }); clusters.forEach(function (c) { myArea[c.id] = 1; }); }
     else if (role === 'cluster_manager') {
-      clusters.forEach(function (c) { if (clusterManagerOwnsCluster_(user.id, c.id)) myArea[c.id] = 1; });
+      // clusterManagerOwnsCluster_'s rule, from the clusters already read (one pass, review 2026-10-25)
+      var active = activeAreaOf_(user.id);
+      clusters.forEach(function (c) { if (c.clusterManagerUserId === user.id && (!active || active === c.id)) myArea[c.id] = 1; });
       locs.forEach(function (l) { if (myArea[l.clusterId]) myLoc[l.id] = 1; });
     } else if (role === 'collector') {
-      locs.forEach(function (l) { if (branchCollector_(l.id) === user.id) myLoc[l.id] = 1; });
+      // branchCollector_'s rule: the branch's collector, else its area's (older rows)
+      locs.forEach(function (l) {
+        var col = l.collectorUserId || (l.clusterId && cluById[l.clusterId] ? cluById[l.clusterId].collectorUserId : null);
+        if (col === user.id) myLoc[l.id] = 1;
+      });
     } else {
-      readSheet(SHEETS.STORES).forEach(function (s) { if (s.storeManagerUserId === user.id) myLoc[s.locationId] = 1; });
-      readSheet(SHEETS.CARS).forEach(function (c) { if (c.driverUserId === user.id && c.locationId) myLoc[c.locationId] = 1; });
+      // collectionsScope_'s branches: his store, his car, and the store or car of any POS he holds
+      var stRows = readSheet(SHEETS.STORES), carRows = readSheet(SHEETS.CARS), stById = byIdMap(stRows), carById = byIdMap(carRows);
+      stRows.forEach(function (s) { if (s.storeManagerUserId === user.id && s.locationId) myLoc[s.locationId] = 1; });
+      carRows.forEach(function (c) { if (c.driverUserId === user.id && c.locationId) myLoc[c.locationId] = 1; });
+      readSheet(SHEETS.POS).forEach(function (p) {
+        if (p.assignedUserId !== user.id) return;
+        var o = p.ownerType === 'car' ? carById[p.ownerId] : stById[p.ownerId];
+        if (o && o.locationId) myLoc[o.locationId] = 1;
+      });
     }
     var cities = Object.create(null);
     locs.forEach(function (l) {

@@ -6498,7 +6498,7 @@ function api(action, payload, opts){
     // a save no longer wipes the screens' last copies (2026-10-08: every screen after a save
     // then waited the whole round trip behind the loading circle); they are marked stale,
     // still drawn at once but dimmed under an "updating" bar until the fresh copy lands
-    if (res.ok && !READ_ACTIONS[action] && !payload.dryRun) { markScreenCacheStale_(); state.pendDirty = true; DRILL.entries = null; DRILL.handoffs = null; DRILL.eById = null; DRILL.hById = null; }
+    if (res.ok && !READ_ACTIONS[action] && !payload.dryRun) { try { GS_.cache = {}; } catch (e) {} markScreenCacheStale_(); state.pendDirty = true; DRILL.entries = null; DRILL.handoffs = null; DRILL.eById = null; DRILL.hById = null; }
     // a session ended elsewhere (a changed sign-in, a reset): sign out cleanly;
     // a temporary sign-in: its page, before anything else (2026-10-04)
     if (res && res.error === 'auth_required' && state.user && action !== 'login') setTimeout(function(){ logout(); }, 0);
@@ -7281,6 +7281,8 @@ function logout(){
   // and its content: a closed drawer kept the last person's breakdown in the page (found 2026-10-18)
   try { if (DRAWER.root) { DRAWER.root.dr.remove(); DRAWER.root.scrim.remove(); DRAWER.root = null; } } catch (e) {}
   var sheet = qs('.bt-sheet'); if (sheet) sheet.remove();
+  // the search palette: closed, and its query and cached answers forgotten (review 2026-10-25)
+  try { gsReset_(); } catch (e) {}
   var pendUser = state.user && state.user.id;
   state.token=''; state.user=null; state.meta=null;
   state.pend = null; state.pendKicked = false; setNotifCount(0);
@@ -7674,19 +7676,19 @@ function cityWatermark_(){
       gs_recent:'Recent searches', gs_clearRecent:'Clear', gs_none:'Nothing found for “{q}”.', gs_noneHint:'Try a transaction number without its prefix, an amount, or part of a name.',
       gs_hint:'Type a transaction number (with or without DAY-, HAC-, DEP-), an amount, a branch, a person or a customer.', gs_busy:'Searching…', gs_err:'Search failed. Try again.',
       gs_keys:'↑↓ to move · Enter to open · Esc to close', gs_more:'{n} more, narrow the search or pick a type', gs_byAmount:'amount', gs_byNumber:'number',
-      gs_p_location:'Branch', gs_p_cluster:'Area', gs_p_city:'City', gs_voided:'Cancelled', gs_inactive:'Inactive', gs_notYours:'This record is not on your screens.', gs_count:'{n} results' },
+      gs_p_location:'Branch', gs_p_cluster:'Area', gs_p_city:'City', gs_voided:'Cancelled', gs_inactive:'Inactive', gs_gone:'This record is not available any more. Refresh the screen and try again.', gs_notYours:'This record is not on your screens.', gs_count:'{n} results' },
     ar: { gs_title:'البحث في كل شيء', gs_ph:'ابحث برقم أو فرع أو شخص أو مبلغ…', gs_open:'بحث (Ctrl+K)', gs_close:'إغلاق البحث',
       gs_all:'الكل', gs_t_entry:'الإدخالات', gs_t_handoff:'التسليمات والطلبات', gs_t_deposit:'الإيداعات البنكية', gs_t_customer:'العملاء', gs_t_place:'الفروع والمناطق والمدن', gs_t_product:'المنتجات', gs_t_user:'المستخدمون',
       gs_recent:'عمليات البحث الأخيرة', gs_clearRecent:'مسح', gs_none:'لا نتائج لـ «{q}».', gs_noneHint:'جرّب رقم العملية دون بادئته، أو مبلغًا، أو جزءًا من اسم.',
       gs_hint:'اكتب رقم عملية (مع DAY- أو HAC- أو DEP- أو بدونها)، أو مبلغًا، أو فرعًا، أو شخصًا، أو عميلًا.', gs_busy:'جارٍ البحث…', gs_err:'تعذّر البحث. حاول مرة أخرى.',
       gs_keys:'↑↓ للتنقل · Enter للفتح · Esc للإغلاق', gs_more:'{n} نتائج أخرى، ضيّق البحث أو اختر نوعًا', gs_byAmount:'مبلغ', gs_byNumber:'رقم',
-      gs_p_location:'فرع', gs_p_cluster:'منطقة', gs_p_city:'مدينة', gs_voided:'ملغاة', gs_inactive:'غير نشط', gs_notYours:'هذا السجل ليس ضمن شاشاتك.', gs_count:'{n} نتيجة' },
+      gs_p_location:'فرع', gs_p_cluster:'منطقة', gs_p_city:'مدينة', gs_voided:'ملغاة', gs_inactive:'غير نشط', gs_gone:'هذا السجل لم يعد متاحًا. حدّث الشاشة وحاول مرة أخرى.', gs_notYours:'هذا السجل ليس ضمن شاشاتك.', gs_count:'{n} نتيجة' },
     ur: { gs_title:'ہر چیز میں تلاش', gs_ph:'نمبر، برانچ، شخص یا رقم تلاش کریں…', gs_open:'تلاش (Ctrl+K)', gs_close:'تلاش بند کریں',
       gs_all:'سب', gs_t_entry:'اندراجات', gs_t_handoff:'حوالگیاں اور درخواستیں', gs_t_deposit:'بینک جمع', gs_t_customer:'گاہک', gs_t_place:'برانچیں، علاقے اور شہر', gs_t_product:'مصنوعات', gs_t_user:'صارفین',
       gs_recent:'حالیہ تلاشیں', gs_clearRecent:'صاف کریں', gs_none:'«{q}» کے لیے کچھ نہیں ملا۔', gs_noneHint:'لین دین کا نمبر سابقے کے بغیر، کوئی رقم، یا نام کا حصہ آزمائیں۔',
       gs_hint:'لین دین کا نمبر (DAY-، HAC-، DEP- کے ساتھ یا بغیر)، رقم، برانچ، شخص یا گاہک لکھیں۔', gs_busy:'تلاش جاری ہے…', gs_err:'تلاش ناکام۔ دوبارہ کوشش کریں۔',
       gs_keys:'↑↓ منتقل · Enter کھولیں · Esc بند', gs_more:'مزید {n}، تلاش محدود کریں یا قسم چنیں', gs_byAmount:'رقم', gs_byNumber:'نمبر',
-      gs_p_location:'برانچ', gs_p_cluster:'علاقہ', gs_p_city:'شہر', gs_voided:'منسوخ', gs_inactive:'غیر فعال', gs_notYours:'یہ ریکارڈ آپ کی اسکرینوں پر نہیں ہے۔', gs_count:'{n} نتائج' }
+      gs_p_location:'برانچ', gs_p_cluster:'علاقہ', gs_p_city:'شہر', gs_voided:'منسوخ', gs_inactive:'غیر فعال', gs_gone:'یہ ریکارڈ اب دستیاب نہیں۔ اسکرین تازہ کر کے دوبارہ کوشش کریں۔', gs_notYours:'یہ ریکارڈ آپ کی اسکرینوں پر نہیں ہے۔', gs_count:'{n} نتائج' }
   };
   Object.keys(add).forEach(function(lang){ Object.keys(add[lang]).forEach(function(k){ L[lang][k] = add[lang][k]; }); });
 })();
@@ -7796,11 +7798,33 @@ function gsOpen_(){
   qs('.gs-x', ov).addEventListener('click', gsClose_);
   inp.addEventListener('input', function(){ GS_.q = inp.value; gsSchedule_(); });
   inp.addEventListener('keydown', gsKey_);
-  ov.addEventListener('keydown', function(e){ if (e.key === 'Escape') { e.preventDefault(); gsClose_(); } });
+  // Esc closes from anywhere inside, and Tab stays inside the palette (review 2026-10-25)
+  ov.addEventListener('keydown', function(e){
+    if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); gsClose_(); return; }
+    if (e.key !== 'Tab') return;
+    var f = qsa('input, button:not([disabled])', ov).filter(function(x){ return x.offsetParent !== null; });
+    if (!f.length) return;
+    var first = f[0], last = f[f.length - 1];
+    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    else if (f.indexOf(document.activeElement) < 0) { e.preventDefault(); first.focus(); }
+  });
   gsChips_();
   setTimeout(function(){ inp.focus(); if (inp.value) inp.select(); }, 30);
   if (GS_.q) gsRun_(); else gsRender_();
   requestAnimationFrame(function(){ ov.classList.add('in'); });
+}
+// a cached answer belongs to one person, one area and one type filter
+function gsKeyOf_(q){ return (state.user ? state.user.id : '') + '|' + (activeArea_() || '') + '|' + GS_.type + '|' + String(q || '').toLowerCase(); }
+// sign-out: the palette goes at once (no fade over the sign-in page) and nothing of it is kept
+function gsReset_(){
+  clearTimeout(GS_.timer);
+  var ov = GS_.node;
+  GS_.open = false; GS_.node = null; GS_.seq++;
+  GS_.cache = {}; GS_.q = ''; GS_.type = ''; GS_.res = null; GS_.items = []; GS_.active = -1; GS_.lastFocus = null;
+  document.documentElement.classList.remove('gs-lock');
+  if (ov) ov.remove();
+  qsa('.gs-ov').forEach(function(x){ x.remove(); });
 }
 function gsClose_(){
   if (!GS_.open) return;
@@ -7830,14 +7854,14 @@ function gsSchedule_(){
   clearTimeout(GS_.timer);
   var q = GS_.q.trim();
   if (!q) { GS_.seq++; GS_.res = null; gsBusy_(false); gsChips_(); gsRender_(); return; }
-  var key = GS_.type + '|' + q.toLowerCase();
+  var key = gsKeyOf_(q);
   if (GS_.cache[key]) { GS_.res = GS_.cache[key]; gsChips_(); gsRender_(); return; }
   GS_.timer = setTimeout(gsRun_, 220);
 }
 function gsBusy_(on){ var s = GS_.node && qs('.gs-spin', GS_.node); if (s) s.hidden = !on; }
 function gsRun_(){
   var q = GS_.q.trim(); if (!q || !GS_.open) return;
-  var key = GS_.type + '|' + q.toLowerCase(), my = ++GS_.seq;
+  var key = gsKeyOf_(q), my = ++GS_.seq;
   if (GS_.cache[key]) { GS_.res = GS_.cache[key]; gsChips_(); gsRender_(); return; }
   gsBusy_(true);
   if (!GS_.res) gsRender_();
@@ -7941,7 +7965,7 @@ function gsGo_(r){
       var e = (DRILL.entries || []).filter(function(x){ return x.id === r.id; })[0];
       if (e) { drawerOpen_(entryDocView_(e)); return; }
       if (r.txNo) { txOpenByNo_(r.txNo); return; }
-      drawerOpen_(entryDocView_(r));
+      toastRaw_(t('gs_gone'), 'err');
     });
     return;
   }

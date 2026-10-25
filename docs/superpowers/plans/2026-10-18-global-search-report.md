@@ -120,7 +120,17 @@ The facts below are **observed** in the shipped code. The quotes are short excer
   - **Errors:** no JavaScript exceptions or `console.error`. The only log errors are the existing warm-up `GET /api` (`warmUp_`), which the mock server does not serve.
 - Both servers I started (mock 8925, Chrome 9461) were stopped afterwards.
 
-## 4. Concerns
+## 4. Review fixes (2026-10-25)
+
+- Sign-out resets the palette (`gsReset_` in `logout()`): the overlay is removed at once, the query, answers and cache are forgotten. Cached answers are keyed by person, active area and type (`gsKeyOf_`), and any successful write empties the cache. Checked in headless Chrome: admin searches, signs out with the palette open, the sign-in page has no overlay, the next person opens an empty palette.
+- A Collections-only request is found only when `followRequest_` follows it (a voided or cut-over one is not), for every role.
+- A branch manager or driver also reaches the branch of a POS they hold.
+- Tab and Shift+Tab stay inside the palette; Esc closes it from any element in it.
+- An entry whose full row is not available says so instead of opening an empty document.
+- Area and collector lookups are worked out once per request (`entriesScope_` too).
+- Tests: 3093 passed, 0 failed.
+
+## 5. Concerns
 
 - **No server index.** Each search reads entries, handovers, users, places and translations. They come from the per-request sheet memo and CacheService, but a large `daily_entries` sheet scanned per keystroke (after the 220 ms debounce) costs Apps Script time. If it is slow live, cache a compact search index per data version.
 - **Entry amounts:** only the gross figure and its parts are matched. The net to hand over is not, because it would need `computeNet_` per entry.

@@ -6677,6 +6677,23 @@ console.log('--- global search ---');
   // a branch manager: his branch only
   var s1 = S(sm1, 'DAY');
   check(has(s1, 'gsE1') && !has(s1, 'gsE2'), 'scope: the branch manager finds his branch day only');
+  // review 2026-10-25: a request the Collections screen does not follow (voided) is not findable,
+  // while a live one at the area manager's branch, sent by someone else, still is
+  W(SHEETS.HANDOFFS, { id: 'gsR3', txNo: 'HAC-2026-000047', kind: 'cluster_to_collector', status: 'voided', amount: 47, fromUserId: 'gsOther', toUserId: 'gsCol2', locationId: 'gsL1', clusterId: 'gsA', sourceEntryIds: [], sourceHandoffIds: [], createdAt: at });
+  W(SHEETS.HANDOFFS, { id: 'gsR4', txNo: 'HAC-2026-000048', kind: 'cluster_to_collector', status: 'pending', amount: 48, fromUserId: 'gsOther', toUserId: 'gsCol2', locationId: 'gsL1', clusterId: 'gsA', sourceEntryIds: [], sourceHandoffIds: [], createdAt: at });
+  check(has(S(cm1, 'HAC 48'), 'gsR4'), 'scope: a live request at his branch, followed on Collections, is found');
+  check(!has(S(cm1, 'HAC 47'), 'gsR3'), 'scope: a voided request the Collections screen never shows is not found');
+  // a driver who holds a POS at a branch store reaches that branch, as collectionsScope_ does
+  mk('gsDr', 'سائق نقطة البيع', 'driver', 'gs.dr@bestgas.sa');
+  ctx.writeRow(SHEETS.POS, { id: 'gsP1', label: 'POS 1', ownerType: 'store', ownerId: 'gsS1', assignedUserId: 'gsDr' });
+  var dr = tok('gs.dr@bestgas.sa');
+  check(has(S(dr, 'الهفوف'), 'gsL1') && !has(S(dr, 'الملز'), 'gsL2'), 'scope: a POS holder finds the branch of his POS, and no other');
+  // the client forgets the palette on sign-out and after any write
+  var lo = clientFn_('logout'), gr = clientFn_('gsReset_');
+  check(/gsReset_\(\)/.test(lo), 'client: logout closes and resets the search palette');
+  check(/GS_\.cache = \{\}/.test(gr) && /GS_\.q = ''/.test(gr) && /GS_\.res = null/.test(gr) && /GS_\.seq\+\+/.test(gr) && /\.remove\(\)/.test(gr), 'client: gsReset_ drops the cache, query and answers and removes the overlay');
+  check(/GS_\.cache = \{\}/.test(clientFn_('api')), 'client: a successful write empties the search cache');
+  check(/activeArea_\(\)/.test(clientFn_('gsKeyOf_')) && /state\.user/.test(clientFn_('gsKeyOf_')), 'client: a cached answer is keyed by person and area');
   // short and empty queries
   check(S(adm, '').results.length === 0 && S(adm, ' ').ok, 'an empty query returns nothing, without error');
   // the client
