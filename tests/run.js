@@ -6606,5 +6606,92 @@ console.log('--- data health check ---');
   check(call({ action: 'dataHealthCheck' }).ok === false, 'it needs a sign-in');
 })();
 
+// ---------- Search everything: one read-only action, the screens' own scope (2026-10-19) ----------
+console.log('--- global search ---');
+(function () {
+  var ctx = harness.buildContext(), SHEETS = ctx.SHEETS;
+  function call(payload) { try { return ctx.route_(payload); } catch (e) { return { ok: false, error: String(e && e.message || e) }; } }
+  function mk(id, name, role, email) { var salt = ctx.randomSalt_(); ctx.writeRow(SHEETS.USERS, { id: id, name: name, email: email, role: role, active: true, language: 'ar', salt: salt, pass: ctx.hashPw_('Bootstrap#1', salt), mustChangePw: false }); }
+  mk('gsAdmin', 'Gs Admin', 'admin', 'gs.admin@bestgas.sa');
+  mk('gsCm1', 'مدير الشرقية', 'cluster_manager', 'gs.cm1@bestgas.sa');
+  mk('gsCm2', 'مدير الوسطى', 'cluster_manager', 'gs.cm2@bestgas.sa');
+  mk('gsCol1', 'محصل الشرقية', 'collector', 'gs.col1@bestgas.sa');
+  mk('gsCol2', 'محصل الوسطى', 'collector', 'gs.col2@bestgas.sa');
+  mk('gsSm1', 'مدير فرع الهفوف', 'store_manager', 'gs.sm1@bestgas.sa');
+  function tok(email) { return call({ action: 'login', email: email, password: 'Bootstrap#1' }).token; }
+  ctx.writeRow(SHEETS.CLUSTERS, { id: 'gsA', name: 'المنطقة الشرقية', clusterManagerUserId: 'gsCm1', collectorUserId: 'gsCol1' });
+  ctx.writeRow(SHEETS.CLUSTERS, { id: 'gsB', name: 'المنطقة الوسطى', clusterManagerUserId: 'gsCm2', collectorUserId: 'gsCol2' });
+  ctx.writeRow(SHEETS.LOCATIONS, { id: 'gsL1', name: 'فرع الهُفوف', city: 'الأحساء', clusterId: 'gsA', collectorUserId: 'gsCol1' });
+  ctx.writeRow(SHEETS.LOCATIONS, { id: 'gsL2', name: 'فرع الملز', city: 'الرياض', clusterId: 'gsB', collectorUserId: 'gsCol2' });
+  ctx.writeRow(SHEETS.STORES, { id: 'gsS1', name: 'مستودع الهفوف', locationId: 'gsL1', storeManagerUserId: 'gsSm1' });
+  ctx.writeRow(SHEETS.CUSTOMERS, { id: 'gsC1', code: 'CUS-0042', name: 'مؤسسة الإحسان للتجارة', city: 'الأحساء', active: true });
+  ctx.writeRow(SHEETS.TRANSLATIONS, { id: 'gsT1', src: 'فرع الملز', en: 'Malaz Branch', ur: 'ملز برانچ', srcLang: 'ar', auto: true });
+  var at = '2026-10-10T09:00:00.000Z';
+  // a numbered row is written first and numbered after, as the backfill does (a new row with a number reads as archived)
+  function W(sheet, row) { var no = row.txNo; delete row.txNo; ctx.writeRow(sheet, row); if (no) { row.txNo = no; ctx.writeRow(sheet, row); } }
+  W(SHEETS.ENTRIES, { id: 'gsE1', txNo: 'DAY-2026-000123', txLine: 1, submissionId: 'gsSub1', date: '2026-10-10', sourceType: 'store', sourceId: 'gsS1', locationId: 'gsL1', cashSales: 1234.5, posSales: 0, enteredBy: 'gsSm1', createdAt: at, updatedAt: at });
+  W(SHEETS.ENTRIES, { id: 'gsE2', txNo: 'DAY-2026-000777', txLine: 1, submissionId: 'gsSub2', date: '2026-10-10', sourceType: 'store', sourceId: 'gsS2', locationId: 'gsL2', cashSales: 980, posSales: 0, enteredBy: 'gsX', createdAt: at, updatedAt: at });
+  W(SHEETS.HANDOFFS, { id: 'gsR1', txNo: 'HAC-2026-000045', kind: 'cluster_to_collector', status: 'pending', amount: 1234.5, fromUserId: 'gsCm1', toUserId: 'gsCol1', locationId: 'gsL1', clusterId: 'gsA', sourceEntryIds: [], sourceHandoffIds: [], createdAt: at });
+  W(SHEETS.HANDOFFS, { id: 'gsR2', txNo: 'HAC-2026-000046', kind: 'cluster_to_collector', status: 'pending', amount: 980, fromUserId: 'gsCm2', toUserId: 'gsCol2', locationId: 'gsL2', clusterId: 'gsB', sourceEntryIds: [], sourceHandoffIds: [], createdAt: at });
+  W(SHEETS.HANDOFFS, { id: 'gsD1', txNo: 'DEP-2026-000009', kind: 'deposit', status: 'completed', amount: 980, fromUserId: 'gsCol2', bankReference: 'RJHI-55-9031', sourceEntryIds: [], sourceHandoffIds: ['gsR2'], createdAt: at });
+  var adm = tok('gs.admin@bestgas.sa'), cm1 = tok('gs.cm1@bestgas.sa'), col1 = tok('gs.col1@bestgas.sa'), sm1 = tok('gs.sm1@bestgas.sa');
+  function S(token, q, types) { var r = call({ action: 'globalSearch', token: token, q: q, types: types, limit: 50 }); if (!r.results) r.results = []; return r; }
+  function ids(r) { return (r.results || []).map(function (x) { return x.id; }); }
+  function has(r, id) { return ids(r).indexOf(id) >= 0; }
+
+  var r0 = S(adm, 'الإحسان');
+  check(r0.ok === true, 'globalSearch answers a signed-in admin (' + (r0.error || '') + ')');
+  check(call({ action: 'globalSearch', q: 'x' }).ok === false, 'globalSearch needs a sign-in');
+  // Arabic variants: hamza, ta marbuta, diacritics
+  check(has(S(adm, 'موسسه الاحسان'), 'gsC1'), 'Arabic: hamza seat and ta marbuta variants find the customer');
+  check(has(S(adm, 'الهفوف'), 'gsL1'), 'Arabic: a name typed without its diacritics finds the branch');
+  check(has(S(adm, 'malaz'), 'gsL2'), 'Latin: the English translation finds an Arabic-named branch');
+  // transaction number with and without the prefix
+  check(has(S(adm, 'DAY-2026-000123'), 'gsE1'), 'txNo: the full number finds the entry');
+  check(has(S(adm, '000123'), 'gsE1'), 'txNo: the number without its prefix finds the entry');
+  check(has(S(adm, 'day2026000123'), 'gsE1'), 'txNo: the number without separators finds the entry');
+  check((S(adm, '000123').results[0] || {}).id === 'gsE1', 'txNo: the exact number ranks first');
+  check(has(S(adm, '45'), 'gsR1') && has(S(adm, 'HAC 45'), 'gsR1'), 'txNo: a request by its short number, with and without the prefix');
+  // amount within a cent, with or without separators
+  check(has(S(adm, '1,234.50'), 'gsE1') && has(S(adm, '1234.51'), 'gsE1'), 'amount: 1,234.50 and 1234.51 find an entry of 1234.50');
+  check(!has(S(adm, '1234.53'), 'gsE1'), 'amount: three cents off is not a match');
+  check(has(S(adm, '١٢٣٤٫٥'), 'gsE1'), 'amount: Arabic digits are read as numbers');
+  // deposit by bank reference
+  check(has(S(adm, 'rjhi 559031'), 'gsD1'), 'deposit: the bank reference matches without its separators');
+  // type filter
+  var onlyCus = S(adm, 'الأحساء', ['customer']);
+  check(onlyCus.results.length > 0 && onlyCus.results.every(function (x) { return x.type === 'customer'; }), 'types: the filter keeps only the chosen type');
+  check(S(adm, 'gs admin', ['user']).results.some(function (x) { return x.id === 'gsAdmin'; }), 'users: the admin finds a user');
+  // scope: an area manager never gets another area's record
+  var c1 = S(cm1, 'DAY');
+  check(has(c1, 'gsE1') && !has(c1, 'gsE2'), 'scope: the area manager finds his area entry, never the other area');
+  check(!has(S(cm1, '000777'), 'gsE2') && !has(S(cm1, '980'), 'gsE2'), 'scope: the other area entry is not found by number or amount');
+  var c1h = S(cm1, 'HAC');
+  check(has(c1h, 'gsR1') && !has(c1h, 'gsR2') && !has(S(cm1, 'DEP'), 'gsD1'), 'scope: the area manager gets his request, not the other area request or deposit');
+  check(!has(S(cm1, 'الملز'), 'gsL2') && has(S(cm1, 'الهفوف'), 'gsL1'), 'scope: places outside his area are not found');
+  check(!S(cm1, 'الإحسان').results.some(function (x) { return x.type === 'customer'; }) && !S(cm1, 'admin').results.some(function (x) { return x.type === 'user'; }), 'scope: customers and users stay with the roles whose screens show them');
+  // scope: a collector sees only his own
+  var k1 = S(col1, 'HAC');
+  check(has(k1, 'gsR1') && !has(k1, 'gsR2'), 'scope: the collector finds the request sent to him, not another collector');
+  check(!has(S(col1, 'DAY'), 'gsE1') && !has(S(col1, 'DEP'), 'gsD1'), 'scope: the collector gets no entries and no other collector deposit');
+  // a branch manager: his branch only
+  var s1 = S(sm1, 'DAY');
+  check(has(s1, 'gsE1') && !has(s1, 'gsE2'), 'scope: the branch manager finds his branch day only');
+  // short and empty queries
+  check(S(adm, '').results.length === 0 && S(adm, ' ').ok, 'an empty query returns nothing, without error');
+  // the client
+  var ra = clientHtml.indexOf('var READ_ACTIONS');
+  check(/globalSearch:1/.test(clientHtml.slice(ra, ra + 1200)), 'client: globalSearch is in READ_ACTIONS');
+  var gsSrc = clientFn_('gsOpen_') + clientFn_('gsRender_');
+  check(gsSrc.length > 0 && /normName_\(/.test(clientFn_('gsHighlight_')), 'client: the palette highlights through normName_');
+  var gk = clientFn_('gsKey_');
+  check(/ArrowDown/.test(gk) && /ArrowUp/.test(gk) && /Escape/.test(gk) && /Enter/.test(gk), 'client: the palette has full keyboard navigation');
+  check(!/el\('<tr/.test(gsSrc), 'client: no bare <tr> through el() in the palette');
+  ['ar', 'en', 'ur'].forEach(function (lg) {
+    var re = new RegExp('gs_title', 'g'), n = 0; while (re.exec(clientHtml)) n++;
+    check(n >= 3, 'client: gs_title exists in every language (' + lg + ')');
+  });
+})();
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);

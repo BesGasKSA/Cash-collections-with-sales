@@ -909,6 +909,8 @@ function route_(req) {
     recordDeposit: function () { return withCashLock_(function () { return actionRecordDeposit_(req, user); }); },
     uploadEntryPhoto: function () { return actionUploadEntryPhoto_(req, user); },
     listHandoffs: function () { return actionListHandoffs_(req, user); },
+    // the command palette: read-only, the screens' own scope (2026-10-19)
+    globalSearch: function () { return actionGlobalSearch_(req, user); },
     collectionsData: function () { return actionCollectionsData_(req, user); },
     collectionReports: function () { return actionCollectionReports_(req, user); },
     dataHealthCheck: function () { return actionDataHealthCheck_(req, user); },

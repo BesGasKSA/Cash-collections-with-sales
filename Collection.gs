@@ -885,24 +885,29 @@ function actionImportEntries_(req, user) {
   return { ok: true, created: created, total: rows.length, results: results, stockShorts: shorts };
 }
 
-function actionListEntries_(req, user) {
-  var rows = readSheet(SHEETS.ENTRIES);
-
-  if (isCompanyWide_(user.role)) {
-    // full visibility
-  } else if (user.role === 'cluster_manager') {
-    var locIds = readSheet(SHEETS.LOCATIONS)
-      .filter(function (l) { return clusterManagerOwnsCluster_(user.id, l.clusterId); })
-      .map(function (l) { return l.id; });
-    rows = rows.filter(function (e) { return locIds.indexOf(e.locationId) >= 0; });
-  } else if (user.role === 'store_manager') {
-    var store = storeOfManager_(user.id);
-    rows = rows.filter(function (e) { return store && e.locationId === store.locationId; });
-  } else if (user.role === 'driver' || user.role === 'branch_worker') {
-    rows = rows.filter(function (e) { return e.enteredBy === user.id; });
-  } else {
-    rows = [];
+// Which day entries a person may read: the Entries screen and the global search share it.
+function entriesScope_(user) {
+  if (isCompanyWide_(user.role)) return function () { return true; };
+  if (user.role === 'cluster_manager') {
+    var locIds = Object.create(null);
+    readSheet(SHEETS.LOCATIONS).forEach(function (l) { if (clusterManagerOwnsCluster_(user.id, l.clusterId)) locIds[l.id] = 1; });
+    return function (e) { return !!locIds[e.locationId]; };
   }
+  if (user.role === 'store_manager') {
+    var store = storeOfManager_(user.id);
+    return function (e) { return !!(store && e.locationId === store.locationId); };
+  }
+  if (user.role === 'driver' || user.role === 'branch_worker') return function (e) { return e.enteredBy === user.id; };
+  return function () { return false; };
+}
+// Which handovers a person may read on the Handovers screen: the global search shares it.
+function handoffsScope_(user) {
+  if (isCompanyWide_(user.role)) return function () { return true; };
+  return function (h) { return (h.fromUserId === user.id || h.toUserId === user.id) && inActiveArea_(user, h); };
+}
+
+function actionListEntries_(req, user) {
+  var rows = readSheet(SHEETS.ENTRIES).filter(entriesScope_(user));
 
   if (req.locationId) rows = rows.filter(function (e) { return e.locationId === req.locationId; });
   if (req.date) rows = rows.filter(function (e) { return e.date === req.date; });
@@ -2518,9 +2523,7 @@ function hoDryRun_(c, candidate) { return { ok: true, dryRun: true, dates: hoDat
 
 function actionListHandoffs_(req, user) {
   var all = readSheet(SHEETS.HANDOFFS), rows = all;
-  if (!isCompanyWide_(user.role)) {
-    rows = rows.filter(function (h) { return (h.fromUserId === user.id || h.toUserId === user.id) && inActiveArea_(user, h); });
-  }
+  if (!isCompanyWide_(user.role)) rows = rows.filter(handoffsScope_(user));
   rows = filterHandoffs_(rows, req, all);
   if (req.status) rows = rows.filter(function (h) { return h.status === req.status; });
   if (req.kind) rows = rows.filter(function (h) { return h.kind === req.kind; });
@@ -3949,4 +3952,206 @@ function actionListAudit_(req, user) {
   var limit = Number(req.limit);
   if (limit > 0) rows = rows.slice(0, Math.min(Math.floor(limit), 2000));
   return { ok: true, audit: rows, matched: matched, total: total };
+}
+
+// ---------- Search everything (2026-10-19) ----------
+// One read-only action behind the command palette (Ctrl/Cmd+K, the header's
+// search icon, the phone's search sheet). It returns only what the person can
+// already open on a screen, through the screens' own scope functions:
+// entries by entriesScope_ (listEntries), handovers and deposits by
+// handoffsScope_ (listHandoffs) plus the area requests collectionsScope_ lets
+// them follow, customers for the roles whose Customers screen shows them,
+// places inside their own reach, products for admin and finance, users for the
+// admin alone. Matching follows the Notes-app pattern studied with REA (see
+// docs/superpowers/plans/2026-10-18-global-search-report.md): normalise the
+// query and each field once, every query word must be found (prefix ranks
+// above substring), numbers compared without separators, amounts within a cent.
+var GS_TYPES_ = ['entry', 'handoff', 'deposit', 'customer', 'place', 'product', 'user'];
+var GS_ARABIC_DIGITS_ = /[٠-٩۰-۹]/g;
+function gsDigits_(s) {
+  return String(s == null ? '' : s).replace(GS_ARABIC_DIGITS_, function (c) {
+    var n = c.charCodeAt(0); return String(n >= 0x06F0 ? n - 0x06F0 : n - 0x0660);
+  });
+}
+// a number or code with every separator taken out: DAY-2026-000123 -> DAY2026000123
+function gsCompact_(s) { return gsDigits_(s).toUpperCase().replace(/[\s\-_\/.,:#٫٬]+/g, ''); }
+// a typed amount: 1,234.50 / 1234.5 / Arabic digits with the Arabic decimal sign -> 1234.5, else null
+function gsAmount_(q) {
+  var s = gsDigits_(q).replace(/٫/g, '.').replace(/[\s,٬]/g, '');
+  if (!/^\d+(\.\d{1,2})?$/.test(s)) return null;
+  var n = Number(s); return isFinite(n) && n > 0 ? n : null;
+}
+// how well one normalised text answers the query words: 0 = not at all
+function gsTextScore_(hay, words) {
+  if (!hay || !words.length) return 0;
+  var total = 0;
+  for (var i = 0; i < words.length; i++) {
+    var w = words[i], at = hay.indexOf(w);
+    if (at < 0) return 0;
+    if (hay === w) total += 100;
+    else if (at === 0) total += 80;
+    else if (/[\s\-(\/|]/.test(hay.charAt(at - 1))) total += 60;
+    else total += 35;
+  }
+  return Math.round(total / words.length);
+}
+// a transaction number or code: exact, the same sequence with or without its prefix, or a part of it
+function gsCodeScore_(code, qc) {
+  if (!code || !qc) return 0;
+  var c = gsCompact_(code);
+  if (c === qc) return 100;
+  var m = /^([A-Z]+)(\d{4})(\d+)$/.exec(c), qm = /^([A-Z]*)(\d+)$/.exec(qc);
+  if (m && qm && (!qm[1] || qm[1] === m[1])) {
+    if (String(Number(qm[2])) === String(Number(m[3]))) return 95;
+    if (qm[2].length > 4 && (m[2] + m[3]).slice(-qm[2].length) === qm[2]) return 92;
+  }
+  var at = c.indexOf(qc);
+  if (at === 0) return 70;
+  if (at > 0 && qc.length >= 3) return 55;
+  return 0;
+}
+function actionGlobalSearch_(req, user) {
+  var raw = String(req.q == null ? '' : req.q).slice(0, 120);
+  var want = Object.create(null), wantList = Array.isArray(req.types) ? req.types : [];
+  wantList.forEach(function (t) { if (GS_TYPES_.indexOf(t) >= 0) want[t] = 1; });
+  var any = !Object.keys(want).length;
+  function on(t) { return any || !!want[t]; }
+  var perType = Math.max(1, Math.min(Number(req.limit) || 8, 50));
+  var qn = normalizeName_(gsDigits_(raw));
+  if (!qn) return { ok: true, q: raw, results: [], counts: {} };
+  var words = qn.split(' ').filter(function (w) { return w; });
+  var qc = gsCompact_(raw), amt = gsAmount_(raw);
+  var role = user.role, wide = isCompanyWide_(role);
+
+  // English and Urdu of every name, so a Latin query finds an Arabic name
+  var tr = Object.create(null);
+  readSheet(SHEETS.TRANSLATIONS).forEach(function (r) {
+    if (!r || !r.src) return;
+    tr[String(r.src).trim()] = [r.ar, r.en, r.ur].filter(function (x) { return x; }).join(' ');
+  });
+  function hayOf(list) {
+    return normalizeName_(gsDigits_(list.filter(function (x) { return x != null && x !== ''; }).map(function (x) {
+      var s = String(x).trim(); return tr[s] ? s + ' ' + tr[s] : s;
+    }).join(' | ')));
+  }
+  function byIdMap(rows) { var m = Object.create(null); rows.forEach(function (r) { if (r && r.id) m[r.id] = r; }); return m; }
+  var users = byIdMap(readSheet(SHEETS.USERS)), locs = readSheet(SHEETS.LOCATIONS), locById = byIdMap(locs);
+  var clusters = readSheet(SHEETS.CLUSTERS), cluById = byIdMap(clusters);
+  function uName(id) { return id && users[id] ? users[id].name : ''; }
+  function lName(id) { var l = id ? locById[id] : null; return l ? [l.name, l.city] : []; }
+
+  var out = Object.create(null), counts = {};
+  GS_TYPES_.forEach(function (t) { out[t] = []; });
+  function add(type, row, j) {
+    if (!j.score) return;
+    row.type = type; row.score = j.score; row.how = j.how;
+    out[type].push(row);
+  }
+  // one record: the best of its names, its numbers and its amounts
+  function judge(texts, codes, amounts) {
+    var best = gsTextScore_(hayOf(texts), words), how = best ? 'text' : '';
+    codes.forEach(function (c) { var cs = gsCodeScore_(c, qc); if (cs > best) { best = cs; how = 'number'; } });
+    if (amt != null) amounts.forEach(function (a) { if (a != null && a !== '' && Math.abs(Number(a) - amt) <= 0.0100001 && 85 > best) { best = 85; how = 'amount'; } });
+    return { score: best, how: how };
+  }
+
+  if (on('entry')) {
+    var inScope = entriesScope_(user), stores = byIdMap(readSheet(SHEETS.STORES)), cars = byIdMap(readSheet(SHEETS.CARS)), pos = byIdMap(readSheet(SHEETS.POS));
+    var cus = byIdMap(readSheet(SHEETS.CUSTOMERS)), seen = Object.create(null);
+    readSheet(SHEETS.ENTRIES).forEach(function (e) {
+      if (!inScope(e)) return;
+      var src = e.sourceType === 'store' ? stores[e.sourceId] : e.sourceType === 'car' ? cars[e.sourceId] : pos[e.sourceId];
+      var c = e.creditCustomerId ? cus[e.creditCustomerId] : null;
+      var gross = Number(e.cashSales || 0) + Number(e.posSales || 0);
+      var j = judge([src && (src.name || src.label || src.plate), c && c.name, uName(e.enteredBy)].concat(lName(e.locationId)),
+        [e.txNo, c && c.code], [gross, e.cashSales, e.posSales, e.creditSales, e.directDepositAmount]);
+      if (!j.score) return;
+      // one hit per numbered day: its lines share the number
+      var key = e.txNo || e.submissionId || e.id, prev = seen[key];
+      if (prev && prev.score >= j.score) return;
+      if (prev) out.entry.splice(out.entry.indexOf(prev), 1);
+      var row = { id: e.id, txNo: e.txNo || '', submissionId: e.submissionId || null, date: e.date, locationId: e.locationId || null, sourceType: e.sourceType, sourceId: e.sourceId,
+        amount: Math.round(gross * 100) / 100, enteredBy: e.enteredBy || null, voided: !!e.voided, customerId: e.creditCustomerId || null, at: e.updatedAt || e.createdAt || '' };
+      add('entry', row, j); seen[key] = row;
+    });
+  }
+  if (on('handoff') || on('deposit')) {
+    var hs = readSheet(SHEETS.HANDOFFS), hScope = handoffsScope_(user), cScope = collectionsScope_(user), hById = null;
+    hs.forEach(function (h) {
+      var isDep = h.kind === 'deposit', type = isDep ? 'deposit' : 'handoff';
+      if (!on(type)) return;
+      var ok = hScope(h);
+      // the Collections screen lets a person follow area requests beyond their own handovers
+      if (!ok && !isDep && h.kind === 'cluster_to_collector') {
+        var holder = null;
+        if (role === 'collector') {
+          if (!hById) { hById = Object.create(null); hs.forEach(function (x) { hById[x.id] = x; }); }
+          var fr = followRequest_(h, hById); holder = fr ? fr.holder : null;
+        }
+        ok = cScope(h, null, holder);
+      }
+      if (!ok) return;
+      var area = h.clusterId && cluById[h.clusterId] ? cluById[h.clusterId].name : '';
+      var mineDep = isDep && (wide || h.fromUserId === user.id);
+      var j = judge([uName(h.fromUserId), uName(h.toUserId), area].concat(lName(h.locationId)),
+        [h.txNo, mineDep ? h.bankReference : null], [h.amount, h.originalAmount]);
+      add(type, { id: h.id, txNo: h.txNo || '', kind: h.kind, status: h.status, amount: Number(h.amount || 0), fromUserId: h.fromUserId || null, toUserId: h.toUserId || null,
+        locationId: h.locationId || null, bankReference: mineDep ? (h.bankReference || '') : '', direct: !!h.direct, at: h.createdAt || '' }, j);
+    });
+  }
+  // the Customers screen is the company-wide roles'
+  if (on('customer') && wide) {
+    readSheet(SHEETS.CUSTOMERS).forEach(function (c) {
+      add('customer', { id: c.id, code: c.code || '', name: c.name, city: c.city || '', active: c.active !== false },
+        judge([c.name, c.city], [c.code, c.vatNumber], []));
+    });
+  }
+  if (on('place')) {
+    // the branches a person works with; company-wide roles every one
+    var myLoc = Object.create(null), myArea = Object.create(null);
+    if (wide) { locs.forEach(function (l) { myLoc[l.id] = 1; }); clusters.forEach(function (c) { myArea[c.id] = 1; }); }
+    else if (role === 'cluster_manager') {
+      clusters.forEach(function (c) { if (clusterManagerOwnsCluster_(user.id, c.id)) myArea[c.id] = 1; });
+      locs.forEach(function (l) { if (myArea[l.clusterId]) myLoc[l.id] = 1; });
+    } else if (role === 'collector') {
+      locs.forEach(function (l) { if (branchCollector_(l.id) === user.id) myLoc[l.id] = 1; });
+    } else {
+      readSheet(SHEETS.STORES).forEach(function (s) { if (s.storeManagerUserId === user.id) myLoc[s.locationId] = 1; });
+      readSheet(SHEETS.CARS).forEach(function (c) { if (c.driverUserId === user.id && c.locationId) myLoc[c.locationId] = 1; });
+    }
+    var cities = Object.create(null);
+    locs.forEach(function (l) {
+      if (!myLoc[l.id]) return;
+      if (l.city) cities[l.city] = 1;
+      add('place', { id: l.id, kind: 'location', code: l.code || '', name: l.name, city: l.city || '', clusterId: l.clusterId || null }, judge([l.name, l.city], [l.code], []));
+    });
+    clusters.forEach(function (c) {
+      if (myArea[c.id]) add('place', { id: c.id, kind: 'cluster', code: c.code || '', name: c.name }, judge([c.name], [c.code], []));
+    });
+    Object.keys(cities).forEach(function (name) { add('place', { id: name, kind: 'city', name: name }, judge([name], [], [])); });
+  }
+  // products and users open on the admin screens: admin and finance, users the admin alone
+  if (on('product') && (role === 'admin' || role === 'finance')) {
+    readSheet(SHEETS.PRODUCTS).forEach(function (p) {
+      add('product', { id: p.id, code: p.code || '', name: p.name || p.label || '', unitPrice: Number(p.unitPrice || 0), active: p.active !== false },
+        judge([p.name, p.label], [p.code], [p.unitPrice]));
+    });
+  }
+  if (on('user') && role === 'admin') {
+    Object.keys(users).forEach(function (id) {
+      var u = users[id];
+      add('user', { id: u.id, code: u.code || '', name: u.name, email: u.email || '', role: u.role, active: u.active !== false },
+        judge([u.name, u.email], [u.code, u.iqamaId, u.phone], []));
+    });
+  }
+  var results = [];
+  GS_TYPES_.forEach(function (t) {
+    var list = out[t];
+    counts[t] = list.length;
+    list.sort(function (a, b) { return b.score - a.score || String(b.at || b.date || '').localeCompare(String(a.at || a.date || '')) || String(a.name || a.txNo || '').localeCompare(String(b.name || b.txNo || '')); });
+    results = results.concat(list.slice(0, perType));
+  });
+  // the best hit first across types; the client groups them again
+  results.sort(function (a, b) { return b.score - a.score; });
+  return { ok: true, q: raw, results: results, counts: counts };
 }
