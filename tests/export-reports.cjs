@@ -115,6 +115,8 @@ async function main() {
       if (SAMPLE) {
         // the Comparison of a period with nothing in it
         await evaluate(send, `sessionStorage.setItem('bgc_cmp', JSON.stringify({ preset: 'lastYear', mode: 'period', n: 1, by: 'area', metric: 'net' })); true`);
+        // the screen keeps its state in memory: start the page again so it reads the new period
+        await send('Page.reload'); await sleep(4000); await evaluate(send, HOOKS); count = 0;
         const okE = await evaluate(send, `(async function(){ var nav = function(t){ var b = [].find.call(document.querySelectorAll('button'), function(x){ return x.textContent.trim() === t; }); b && b.click(); return !!b; };
           nav(${JSON.stringify(NAV[lang][0])}); await new Promise(function(r){ setTimeout(r, 2500); }); if (!nav(${JSON.stringify(NAV[lang][1])})) return 'no nav'; await new Promise(function(r){ setTimeout(r, 5000); });
           return document.querySelector('.cmp .crp-hero .ex-xl') ? 'ok' : 'no export on the empty screen'; })()`);
@@ -128,10 +130,12 @@ async function main() {
         const okS = await evaluate(send, `(async function(){ var b = [].find.call(document.querySelectorAll('button'), function(x){ return x.textContent.trim() === ${JSON.stringify(NAV_SALES[lang])}; }); if (!b) return 'no nav'; b.click(); await new Promise(function(r){ setTimeout(r, 3000); });
           var f = document.querySelector('#rFrom'); if (f) { f.value = '2026-09-01'; f.dispatchEvent(new Event('change', { bubbles: true })); }
           var run = document.querySelector('#rRun'); if (!run) return 'no run button'; run.click(); await new Promise(function(r){ setTimeout(r, 7000); });
-          return document.querySelector('#rResult .ex-xl') ? 'ok' : 'no export button: ' + (document.querySelector('#rResult') ? document.querySelector('#rResult').innerText.slice(0, 300) : 'no #rResult; screen: ' + document.querySelector('#screenBody').innerText.slice(0, 200)); })()`);
+          return document.querySelector('#rResult .rp-all') ? 'ok' : 'no export button: ' + (document.querySelector('#rResult') ? document.querySelector('#rResult').innerText.slice(0, 300) : 'no #rResult; screen: ' + document.querySelector('#screenBody').innerText.slice(0, 200)); })()`);
         if (okS === 'ok') {
           const name = `crp-${lang}-salesreport`;
-          await evaluate(send, `window.__name = ${JSON.stringify(name)}; document.querySelector('#rResult .ex-xl').click(); true`); count++; await waitSaved(send, count, name + '.xlsx');
+          await evaluate(send, `window.__name = ${JSON.stringify(name)}; document.querySelector('#rResult .rp-all').click(); true`); count++; await waitSaved(send, count, name + '.xlsx');
+          await evaluate(send, `document.querySelector('#rResult .rp-all-pdf').click(); true`); count++; await waitSaved(send, count, name + '.html');
+          produced.push(name);
         } else problems.push(lang + ': Sales Report: ' + okS);
       }
     }

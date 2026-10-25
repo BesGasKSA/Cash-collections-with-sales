@@ -20917,7 +20917,7 @@ function cmpDraw_(body, S, periods, entries, handoffs){
   xk.forEach(function(r){ var k = r[0], tp = k === 'requests' || k === 'days' ? 'int' : 'money';
     sh.push([r[2] ? crpEqLabel_(k) : t('cmp_m_' + k)].concat(cols2.reduce(function(a, p, i){ var v = xv(p, r); var dl = i ? cmpDelta_(v, xv(cols2[i - 1], r), r[1]) : null;
       return a.concat(i ? [crpXv_(v, tp), dl ? crpXv_(dl.d, 'money') : '', dl && dl.pct != null ? crpPctTxt_(dl.pct) : ''] : [crpXv_(v, tp)]); }, []))); });
-  sheets.push({ name: t('cmp_table'), rows: sh, note: sentence, noBars: true, rowFmt: xk.map(function(r){ return r[0] === 'requests' ? 'int' : r[0] === 'days' ? '1d' : null; }) });
+  sheets.push({ name: t('cmp_table'), rows: sh, note: sentence, noBars: true, noPivot: true, rowFmt: xk.map(function(r){ return r[0] === 'requests' ? 'int' : r[0] === 'days' ? '1d' : null; }) });
   // small multiples: one chart per figure, one bar per period, each on its own scale
   var sm = el('<section class="card crp-card no-collapse"><h2>'+esc(t('cmp_small'))+'</h2><p class="muted crp-hint">'+esc(t('cmp_smallHint'))+'</p><div class="cmp-sm"></div></section>');
   var smHost = qs('.cmp-sm', sm);
