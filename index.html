@@ -3814,6 +3814,70 @@
   @keyframes wlEmber{0%{opacity:0;transform:translate(0,0)}15%{opacity:.85}70%{opacity:.5}100%{opacity:0;transform:translate(var(--dx),-270px)}}
   @media (max-width:430px){ .wl-stage{padding:20px 16px 18px;gap:8px;} .wl-logo{width:108px;} .wl-tag{font-size:15.5px;} .wl-body{padding:16px 16px 4px;} .wl-foot{padding:12px 16px 16px;} .wl-hi{font-size:21px;} }
   @media (prefers-reduced-motion:reduce){ .wl-card,.wl-bloom,.wl-logo,.wl-in{animation:none!important;opacity:1!important;transform:none!important;} .wl-emb{display:none;} }
+  /* ---------- smart dashboards on every screen (2026-10-26) ----------
+     One header card: KPI cards (figure, change against the previous period, sparkline), two charts whose
+     bars open the screen's drawer, and the smart insights. Motion: cards rise, figures count up, bars grow,
+     insights fade in, staggered once per paint (transform/opacity only); nothing moves under reduced motion. */
+  .card.sd{background:linear-gradient(180deg,#FBFAF6,#fff 140px);border:1px solid #E6E2D6;padding:16px 16px 14px;overflow:hidden;}
+  .sd-head{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:4px 14px;margin:0 0 12px;}
+  .sd-ttl{display:flex;align-items:center;gap:8px;margin:0;font-size:17px;font-weight:800;color:#23372A;}
+  .sd-glyph{width:22px;height:22px;border-radius:7px;background:#4D6D51;position:relative;flex:none;}
+  .sd-glyph::after{content:"";position:absolute;inset:5px;background:#F2EEE4;clip-path:polygon(50% 0,61% 39%,100% 50%,61% 61%,50% 100%,39% 61%,0 50%,39% 39%);}
+  .sd-per{margin:0;font-size:12px;color:#6B7468;font-weight:600;}
+  .sd-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(136px,1fr));gap:8px;}
+  .sd-kpi{display:flex;flex-direction:column;align-items:flex-start;gap:3px;min-width:0;text-align:start;padding:11px 12px 9px;border-radius:14px;border:1px solid #E9E5DA;background:#fff;color:#20241F;font:inherit;cursor:pointer;transition:border-color .2s cubic-bezier(.2,0,0,1),transform .1s cubic-bezier(.2,0,0,1);}
+  .sd-kpi:hover{border-color:#B9C8B7;} .sd-kpi:active{transform:scale(.98);} .sd-kpi.ro{cursor:default;}
+  .sd-kpi:focus-visible,.sd-in:focus-visible,.sd-bar:focus-visible,.sd-col:focus-visible{outline:2px solid #C98A1B;outline-offset:2px;}
+  .sd-k{font-size:12px;font-weight:700;color:#5B665C;line-height:1.35;}
+  .sd-v{font-size:19px;font-weight:800;line-height:1.2;color:#23372A;font-variant-numeric:tabular-nums;direction:ltr;unicode-bidi:isolate;white-space:nowrap;}
+  .sd-v small{font-size:10.5px;font-weight:600;color:#7A8277;margin-inline-start:4px;}
+  .sd-foot{display:flex;align-items:center;justify-content:space-between;gap:6px;width:100%;min-height:22px;}
+  .sd-ch{display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:800;border-radius:999px;padding:1px 7px;white-space:nowrap;}
+  .sd-ch b{font-size:8px;} .sd-ch.good{background:#E5F0E6;color:#23633E;} .sd-ch.bad{background:#FBE9E4;color:#A43C25;} .sd-ch.flat,.sd-ch.new{background:#F1EFE8;color:#6B7468;}
+  .sd-sp{width:64px;height:20px;flex:none;margin-inline-start:auto;} .sd-sp polyline{fill:none;stroke:#8FAA8C;stroke-width:1.6;stroke-linejoin:round;stroke-linecap:round;vector-effect:non-scaling-stroke;}
+  .sd-kpi.strong{background:#4D6D51;border-color:#4D6D51;color:#F2EEE4;}
+  .sd-kpi.strong .sd-k,.sd-kpi.strong .sd-v,.sd-kpi.strong .sd-v small{color:#F2EEE4;} .sd-kpi.strong .sd-sp polyline{stroke:#E9C877;}
+  .sd-charts{display:grid;grid-template-columns:1fr;gap:10px;margin-top:12px;}
+  @media (min-width:900px){ .sd-charts{grid-template-columns:1fr 1fr;} }
+  .sd-chart{margin:0;padding:10px 12px;border:1px solid #E9E5DA;border-radius:14px;background:#fff;min-width:0;}
+  .sd-chart figcaption{font-size:12.5px;font-weight:800;color:#23372A;margin-bottom:8px;}
+  .sd-day .sd-plot{display:flex;align-items:flex-end;gap:2px;height:118px;position:relative;padding-bottom:18px;border-bottom:1px solid #E4DED0;}
+  .sd-col{flex:1 1 0;min-width:0;height:100%;display:flex;align-items:flex-end;border:0;padding:0;background:none;cursor:pointer;position:relative;}
+  .sd-col i{display:block;width:100%;height:calc(var(--h) * 100%);min-height:1px;border-radius:3px 3px 0 0;background:#4D6D51;transform-origin:bottom;}
+  .sd-col.neg i{background:#B3261E;} .sd-col:hover i{background:#3B5540;} .sd-col:disabled{cursor:default;} .sd-col:disabled i{opacity:.35;}
+  .sd-col:hover::after,.sd-col:focus-visible::after{content:attr(data-tip);position:absolute;bottom:calc(100% + 4px);left:50%;transform:translateX(-50%);white-space:nowrap;background:#23372A;color:#fff;font-size:11px;font-weight:700;padding:3px 7px;border-radius:6px;z-index:2;pointer-events:none;}
+  .sd-axis{position:absolute;left:0;right:0;bottom:-2px;display:flex;justify-content:space-between;font-size:10.5px;color:#7A8277;font-weight:600;pointer-events:none;}
+  .sd-rank .sd-plot{display:flex;flex-direction:column;gap:4px;}
+  .sd-bar{display:grid;grid-template-columns:minmax(0,38%) 1fr auto;align-items:center;gap:8px;border:0;background:none;padding:4px 2px;font:inherit;color:inherit;text-align:start;cursor:pointer;border-radius:8px;}
+  .sd-bar:hover{background:#F4F6F2;} .sd-bar:disabled{cursor:default;}
+  .sd-bl{font-size:12.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .sd-bt{height:10px;border-radius:5px;background:#EEF1EC;overflow:hidden;}
+  .sd-bt i{display:block;height:100%;width:calc(var(--w) * 100%);background:#4D6D51;border-radius:5px;transform-origin:left;}
+  html[dir="rtl"] .sd-bt i{transform-origin:right;}
+  .sd-bar b{font-size:12px;font-variant-numeric:tabular-nums;}
+  .sd-more{margin:2px 0 0;font-size:11.5px;color:#7A8277;}
+  .sd-ins{margin-top:12px;}
+  .sd-ih{margin:0 0 6px;font-size:13.5px;font-weight:800;color:#23372A;}
+  .sd-ins ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;}
+  .sd-in{display:flex;align-items:flex-start;gap:10px;width:100%;text-align:start;border:1px solid #ECE8DD;background:#FDFCF8;border-radius:12px;padding:9px 12px;font:inherit;font-size:13.5px;line-height:1.6;color:#20241F;cursor:pointer;}
+  .sd-in:hover{border-color:#C9D5C6;background:#fff;} .sd-in.ro{cursor:default;}
+  .sd-dot{flex:none;width:8px;height:8px;border-radius:50%;margin-top:8px;background:#4D6D51;}
+  .sd-in.tone-good .sd-dot{background:#2E7D4F;} .sd-in.tone-bad .sd-dot{background:#B3261E;} .sd-in.tone-warn .sd-dot{background:#C27C1E;}
+  .sd-enter .sd-kpi{animation:sdUp .42s cubic-bezier(0,0,.2,1) both;animation-delay:calc(var(--i,0) * 45ms);}
+  .sd-enter .sd-chart{animation:sdUp .42s cubic-bezier(0,0,.2,1) both;animation-delay:calc(.25s + var(--i,0) * 80ms);}
+  .sd-enter .sd-col i{animation:sdGrowY .55s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(.35s + var(--j,0) * 14ms);}
+  .sd-enter .sd-bt i{animation:sdGrowX .6s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(.35s + var(--j,0) * 50ms);}
+  .sd-enter .sd-ins li{animation:sdUp .4s cubic-bezier(0,0,.2,1) both;animation-delay:calc(.55s + var(--i,0) * 80ms);}
+  @keyframes sdUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  @keyframes sdGrowY{from{transform:scaleY(0)}to{transform:none}}
+  @keyframes sdGrowX{from{transform:scaleX(0)}to{transform:none}}
+  @media (max-width:520px){
+    .card.sd{padding:14px 12px 12px;}
+    .sd-kpis{grid-template-columns:repeat(2,minmax(0,1fr));}
+    .sd-v{font-size:16.5px;} .sd-sp{width:44px;}
+    .sd-bar{grid-template-columns:1fr auto;} .sd-bt{grid-column:1 / -1;order:3;}
+  }
+  @media (prefers-reduced-motion:reduce){ .sd-enter .sd-kpi,.sd-enter .sd-chart,.sd-enter .sd-col i,.sd-enter .sd-bt i,.sd-enter .sd-ins li{animation:none!important;} }
   /* ---------- customers & invoices (2026-10-06) ---------- */
   .card.cus-hero{background:linear-gradient(135deg,var(--green-dark),var(--green) 60%,#5f8463);color:var(--cream);border:0;position:relative;overflow:hidden;}
   .card.cus-hero::after{content:"";position:absolute;inset-inline-end:-60px;top:-60px;width:220px;height:220px;border-radius:50%;background:radial-gradient(circle,rgba(242,238,228,.18),transparent 70%);pointer-events:none;}
@@ -10710,6 +10774,8 @@ function exportXlsx_(fileName, sheets, opts){
     sheets = withPv;
     if (sheets.length > 1 || (sheets[0] && (sheets[0].rows || []).length > 12)) sheets = [exSummaryOf_(fileName, sheets, opts)].concat(sheets);
   }
+  // the Dashboard sheet goes first (2026-10-26): its figures are the main sheet's own totals line
+  var dash = exDashFor_(fileName, sheets, opts);
   var file = fileName.replace(/[\\\/:*?"<>|]/g, '-') + '.xlsx';
   loadLib_(EXCELJS_URL_, EXCELJS_SRI_).then(function(){
     var wb = new window.ExcelJS.Workbook();
@@ -10717,7 +10783,8 @@ function exportXlsx_(fileName, sheets, opts){
     var rtl = state.lang !== 'en', used = {};
     var logoId = null;
     try { logoId = wb.addImage({ base64: LOGO_B64, extension: 'png' }); } catch (e) {}
-    var names = sheets.map(function(sh){ var nm = String(trText_(sh.name || 'Sheet')).replace(/[:\\\/?*\[\]]/g, ' ').slice(0, 31) || 'Sheet'; while (used[nm]) nm = nm.slice(0, 28) + '_' + Object.keys(used).length; used[nm] = 1; return nm; });
+    if (dash) { var dashName = String(t('sd_sheet')).replace(/[:\\\/?*\[\]]/g, ' ').slice(0, 31); exDashSheet_(wb, dash, logoId, rtl, dashName); used[dashName] = 1; }
+    var names =sheets.map(function(sh){ var nm = String(trText_(sh.name || 'Sheet')).replace(/[:\\\/?*\[\]]/g, ' ').slice(0, 31) || 'Sheet'; while (used[nm]) nm = nm.slice(0, 28) + '_' + Object.keys(used).length; used[nm] = 1; return nm; });
     sheets.forEach(function(sh, shIdx){
       var rows = (sh.rows || []).map(function(r){ return Array.isArray(r) ? exKeepMark_(r, r.map(trText_)) : r; });
       var name = names[shIdx];
@@ -10873,6 +10940,7 @@ function exportPdf_(title, sheets, opts){
   var w = window.open('', '_blank');
   if (!w) { toast('ex_popup', 'err'); return; }
   var rtl = state.lang !== 'en';
+  var dash = exDashFor_(title, sheets, opts);
   // a figure below zero: red, and with the sheet's word for it (a loss) when the sheet gives one
   function cell(v, kind, sh){
     if (typeof v !== 'number') return esc(trText_(String(v == null ? '' : v)));
@@ -10905,6 +10973,8 @@ function exportPdf_(title, sheets, opts){
     '.charts{display:grid;grid-template-columns:repeat(' + (orient === 'landscape' ? 2 : 1) + ',1fr);gap:10px 14px;margin:0 0 16px}.charts figure{margin:0;border:1px solid #' + EX_LINE_ + ';border-radius:10px;padding:8px 10px 6px;break-inside:avoid;page-break-inside:avoid;background:#fff}' +
     '.charts figcaption{font-size:10.5px;font-weight:800;color:#' + EX_DARK_ + ';margin:0 0 4px}.charts svg{display:block;height:auto}' +
     '.neg{color:#b3261e}.neg small{font-size:8px;font-weight:700}' +
+    '.dash{break-after:page;page-break-after:always}.dash .kpis{margin-bottom:12px}.dash h3{font-size:12.5px;margin:6px 0 4px;color:#' + EX_DARK_ + '}.ins{margin:0 0 12px;padding-inline-start:18px}.ins li{margin:3px 0;font-size:11px;line-height:1.55}' +
+    '.dimgs{display:grid;grid-template-columns:1fr 1fr;gap:10px}.dimgs img{width:100%;border:1px solid #' + EX_LINE_ + ';border-radius:10px}' +
     '*{box-sizing:border-box}body{margin:0;font-family:"IBM Plex Sans Arabic",Cairo,"Segoe UI",Tahoma,Arial,sans-serif;color:#1f2a20;font-size:10.5px;-webkit-print-color-adjust:exact;print-color-adjust:exact}' +
     '.top{display:flex;align-items:center;gap:14px;background:#' + EX_GREEN_ + ';color:#fff;padding:12px 16px;border-radius:10px}' +
     '.top img{width:44px;height:44px;border-radius:50%;background:#' + EX_CREAM_ + '}.top h1{margin:0;font-size:19px;font-weight:800}.top p{margin:2px 0 0;font-size:11px;opacity:.85}' +
@@ -10935,7 +11005,7 @@ function exportPdf_(title, sheets, opts){
     '<div class="top"><img src="data:image/png;base64,'+LOGO_B64+'" alt=""><div>'+(opts && opts.kicker ? '<span class="kick">'+esc(opts.kicker)+'</span>' : '')+'<h1>'+esc(trText_(title))+'</h1><p>Best Gas Carrier Co. \u00B7 Best Gas Collections</p></div></div>' +
     '<div class="meta">'+esc(exSubtitle_(opts))+'</div>' +
     (function(){ var fl = exFilterList_(null, opts); return fl.length ? '<div class="filters"><b>'+esc(t('ex_filtersUsed'))+'</b>' +
-      fl.map(function(f){ return '<span><i>'+esc(trText_(f.label))+'</i>'+esc(trText_(String(f.value)))+'</span>'; }).join('') + '</div>' : ''; })() +
+      fl.map(function(f){ return '<span><i>'+esc(trText_(f.label))+'</i>'+esc(trText_(String(f.value)))+'</span>'; }).join('') + '</div>' : ''; })() + exDashHtml_(dash, rtl) +
     (opts && opts.kpis && opts.kpis.length ? '<div class="kpis" style="grid-template-columns:repeat(' + Math.min(6, opts.kpis.length) + ',1fr)">' + opts.kpis.map(function(k){ return '<div class="kpi'+(k.strong ? ' strong' : '')+'"><span>'+esc(k.label)+'</span><b>'+esc(k.value)+'</b>'+(k.sub ? '<small class="'+(k.tone || '')+'">'+esc(k.sub)+'</small>' : '')+'</div>'; }).join('') + '</div>' : '') +
     (opts && opts.charts && opts.charts.length ? '<div class="charts">' + opts.charts.map(function(c){ var svg = exChartSvg_(c.chart, rtl); return svg ? '<figure><figcaption>'+esc(trText_(c.title || ''))+'</figcaption>'+svg+'</figure>' : ''; }).join('') + '</div>' : '') + body +
     '<div class="foot">Best Gas Carrier Co.</div>' +
@@ -12754,7 +12824,7 @@ function watchEntrance_(body){
   mo.observe(body, { childList: true, subtree: true });
 }
 function countUp_(root){
-  qsa('.tile .vl, .st-head .v, .hero .cta .big, .eqx-big .n, .col-big, .crp-kv', root).forEach(function(node){
+  qsa('.tile .vl, .st-head .v, .hero .cta .big, .eqx-big .n, .col-big, .crp-kv, .sd-v', root).forEach(function(node){
     var tn = null;
     for (var i = 0; i < node.childNodes.length; i++) { if (node.childNodes[i].nodeType === 3 && /\d/.test(node.childNodes[i].nodeValue)) { tn = node.childNodes[i]; break; } }
     if (!tn) return;
@@ -12920,6 +12990,615 @@ function drillPlace_(it){
 // cardDrawer_({title, sub, items, placeOf}) draws the same pivot everywhere. items are row data
 // ({kind, ref, amount, title, sub, open?}); placeOf(item) gives the levels as [key, name, level].
 function cardDrawer_(o){ drawerOpen_(drillPivotView_(o)); }
+// ---------- smart dashboards in every module (2026-10-26) ----------
+// The user: "smart dashboards enabled with magic in all modules", in the app and in every export.
+// One header per screen (sdMount_), drawn from the screen's own filtered data: KPI cards (the money block
+// where money is shown: MB_COLL_/MB_DED_/MB_POS_ through mbOfEq_ / crpEqSum_, never a new copy of the
+// net), each with its change against the previous equal period and a sparkline; one or two charts whose
+// bars open the screen's own drawer; and "smart insights", sentences written from the data by the pure
+// sdInsights_ (none when the data is too thin). The last painted model (SD_CUR_) also opens every
+// export: a Dashboard sheet first in the workbook (exDashOf_ / exDashSheet_), a dashboard page in the PDF.
+var SD_CUR_ = null, SD_SIG_ = {};
+var SD_MONEY_ = ['totColl', 'totDed', 'netDeposit', 'totPos', 'net', 'deposited', 'remaining'];
+// a figure that is better when it goes down
+var SD_DOWN_ = { totDed: 1, remaining: 1, unmatched: 1, unmatchedAmt: 1, openRisk: 1, highRisk: 1, disputed: 1, short: 1, owed: 1, overdue: 1, oldest: 1, pendingAmt: 1 };
+(function(){
+  var add = {
+    en: { sd_title:'At a glance', sd_vs:'Compared with {from} to {to}', sd_noPrev:'No earlier period to compare with', sd_insights:'Smart insights', sd_sheet:'Dashboard',
+      sd_byDay:'{m} by day', sd_byGroup:'{m} by {g}', sd_g_branch:'branch', sd_g_collector:'collector', sd_g_customer:'customer', sd_g_area:'area', sd_g_kind:'kind', sd_g_severity:'severity', sd_g_status:'status',
+      sd_flat:'No change', sd_new:'New this period', sd_prevWas:'Previous period: {v}', sd_open:'Open details', sd_more:'and {n} more',
+      sd_i_mover:'{k} {dir} {p}% on the previous period, from {a} to {b}.', sd_i_rose:'rose', sd_i_fell:'fell',
+      sd_i_top:'{top} leads with {a}, {s}% of the total; {bot} is lowest at {b}.',
+      sd_i_oldest:'The oldest cash not yet banked is {d} days old: {a} SAR from {w}.',
+      sd_i_day:'{day} stands out at {a}, {p}% {dir} the 14-day median of {m}.', sd_i_above:'above', sd_i_below:'below',
+      sd_i_unmatched:'{n} deposits are not yet matched to the bank statement, {a} SAR in all.',
+      sd_i_lines:'{n} bank lines arrived with no declared deposit behind them.',
+      sd_i_openRisk:'{n} risks are still open, {h} of them high severity.',
+      sd_i_disputed:'{n} handovers are disputed and wait for a decision.',
+      sd_i_short:'Received short across the period: {a} SAR.',
+      sd_i_owed:'{n} customers owe {a} SAR; {top} owes the most, {b} SAR.',
+      sd_i_loss:'{n} places made a loss in the period; {w} lost the most, {a} SAR.',
+      sd_i_pending:'{n} handovers wait to be received, {a} SAR.',
+      sd_k_count:'Handovers', sd_k_amount:'Amount handed over', sd_k_pending:'Waiting to be received', sd_k_disputed:'Disputed', sd_k_short:'Received short', sd_k_deposits:'Banked by collectors',
+      sd_k_customers:'Customers with a balance', sd_k_owed:'Owed by customers', sd_k_credit:'Credit sold', sd_k_paid:'Paid by customers', sd_k_overdue:'Owed over 30 days',
+      sd_k_lines:'Bank statement lines', sd_k_matched:'Deposits matched', sd_k_unmatched:'Deposits not matched', sd_k_unmatchedAmt:'Not matched (SAR)', sd_k_rate:'Matched share',
+      sd_k_openRisk:'Open risks', sd_k_highRisk:'High severity open', sd_k_newRisk:'Raised in 30 days', sd_k_resolved:'Resolved in 30 days', sd_k_age:'Average age of open (days)',
+      sd_k_waiting:'Waiting on me', sd_k_held:'Cash I hold', sd_k_myDisputes:'My disputes',
+      sd_k_netSales:'Net sales', sd_k_gross:'Gross margin', sd_k_contrib:'Contribution margin', sd_k_profit:'Net profit', sd_k_margin:'Net margin %' },
+    ar: { sd_title:'نظرة سريعة', sd_vs:'مقارنةً بالفترة من {from} إلى {to}', sd_noPrev:'لا توجد فترة سابقة للمقارنة', sd_insights:'رؤى ذكية', sd_sheet:'لوحة المؤشرات',
+      sd_byDay:'{m} حسب اليوم', sd_byGroup:'{m} حسب {g}', sd_g_branch:'الفرع', sd_g_collector:'المحصّل', sd_g_customer:'العميل', sd_g_area:'المنطقة', sd_g_kind:'النوع', sd_g_severity:'الخطورة', sd_g_status:'الحالة',
+      sd_flat:'بلا تغيير', sd_new:'جديد في هذه الفترة', sd_prevWas:'الفترة السابقة: {v}', sd_open:'عرض التفاصيل', sd_more:'و{n} غيرها',
+      sd_i_mover:'{k} {dir} {p}% عن الفترة السابقة، من {a} إلى {b}.', sd_i_rose:'ارتفع', sd_i_fell:'انخفض',
+      sd_i_top:'{top} في المقدمة بمبلغ {a}، أي {s}% من الإجمالي؛ و{bot} هو الأقل بمبلغ {b}.',
+      sd_i_oldest:'أقدم نقد لم يُودع بعد عمره {d} يومًا: {a} ريال من {w}.',
+      sd_i_day:'يوم {day} لافت بمبلغ {a}، أي {p}% {dir} وسيط آخر 14 يومًا البالغ {m}.', sd_i_above:'فوق', sd_i_below:'تحت',
+      sd_i_unmatched:'{n} إيداعات لم تُطابق بعد مع كشف البنك، بإجمالي {a} ريال.',
+      sd_i_lines:'{n} سطرًا في كشف البنك بلا إيداع مُعلن خلفها.',
+      sd_i_openRisk:'{n} مخاطر ما زالت مفتوحة، منها {h} عالية الخطورة.',
+      sd_i_disputed:'{n} تسليمات عليها اعتراض بانتظار القرار.',
+      sd_i_short:'النقص عند الاستلام خلال الفترة: {a} ريال.',
+      sd_i_owed:'{n} عملاء عليهم {a} ريال؛ وأعلاهم {top} بمبلغ {b} ريال.',
+      sd_i_loss:'{n} مواقع حققت خسارة في الفترة؛ أكبرها {w} بمبلغ {a} ريال.',
+      sd_i_pending:'{n} تسليمات بانتظار الاستلام، بمبلغ {a} ريال.',
+      sd_k_count:'التسليمات', sd_k_amount:'المبلغ المُسلَّم', sd_k_pending:'بانتظار الاستلام', sd_k_disputed:'عليها اعتراض', sd_k_short:'نقص عند الاستلام', sd_k_deposits:'أودعه المحصّلون',
+      sd_k_customers:'عملاء عليهم رصيد', sd_k_owed:'المستحق على العملاء', sd_k_credit:'المبيعات الآجلة', sd_k_paid:'المدفوع من العملاء', sd_k_overdue:'مستحق أكثر من 30 يومًا',
+      sd_k_lines:'أسطر كشف البنك', sd_k_matched:'إيداعات مطابقة', sd_k_unmatched:'إيداعات غير مطابقة', sd_k_unmatchedAmt:'غير مطابق (ريال)', sd_k_rate:'نسبة المطابقة',
+      sd_k_openRisk:'مخاطر مفتوحة', sd_k_highRisk:'عالية الخطورة مفتوحة', sd_k_newRisk:'سُجّلت خلال 30 يومًا', sd_k_resolved:'حُلّت خلال 30 يومًا', sd_k_age:'متوسط عمر المفتوح (أيام)',
+      sd_k_waiting:'بانتظاري', sd_k_held:'النقد الذي معي', sd_k_myDisputes:'اعتراضاتي',
+      sd_k_netSales:'صافي المبيعات', sd_k_gross:'مجمل الربح', sd_k_contrib:'هامش المساهمة', sd_k_profit:'صافي الربح', sd_k_margin:'هامش صافي الربح %' },
+    ur: { sd_title:'ایک نظر میں', sd_vs:'{from} سے {to} کے مقابلے میں', sd_noPrev:'موازنے کے لیے پچھلی مدت نہیں', sd_insights:'سمارٹ نکات', sd_sheet:'ڈیش بورڈ',
+      sd_byDay:'{m} دن بہ دن', sd_byGroup:'{m} بلحاظ {g}', sd_g_branch:'برانچ', sd_g_collector:'کلیکٹر', sd_g_customer:'گاہک', sd_g_area:'علاقہ', sd_g_kind:'قسم', sd_g_severity:'شدت', sd_g_status:'حالت',
+      sd_flat:'کوئی تبدیلی نہیں', sd_new:'اس مدت میں نیا', sd_prevWas:'پچھلی مدت: {v}', sd_open:'تفصیل دیکھیں', sd_more:'اور {n} مزید',
+      sd_i_mover:'{k} پچھلی مدت کے مقابلے میں {p}% {dir}، {a} سے {b}۔', sd_i_rose:'بڑھا', sd_i_fell:'کم ہوا',
+      sd_i_top:'{top} {a} کے ساتھ سب سے آگے ہے، کل کا {s}%؛ {bot} سب سے کم {b} پر ہے۔',
+      sd_i_oldest:'بینک میں جمع نہ ہونے والی سب سے پرانی رقم {d} دن پرانی ہے: {w} سے {a} ریال۔',
+      sd_i_day:'{day} نمایاں ہے، {a}، جو 14 دن کے وسطی {m} سے {p}% {dir} ہے۔', sd_i_above:'زیادہ', sd_i_below:'کم',
+      sd_i_unmatched:'{n} جمع شدہ رقوم ابھی بینک اسٹیٹمنٹ سے نہیں ملائی گئیں، کل {a} ریال۔',
+      sd_i_lines:'بینک اسٹیٹمنٹ کی {n} لائنیں کسی اعلان شدہ جمع کے بغیر آئیں۔',
+      sd_i_openRisk:'{n} خطرات ابھی کھلے ہیں، ان میں {h} زیادہ شدت کے۔',
+      sd_i_disputed:'{n} حوالگیوں پر اعتراض ہے اور فیصلے کا انتظار ہے۔',
+      sd_i_short:'مدت میں وصولی پر کمی: {a} ریال۔',
+      sd_i_owed:'{n} گاہکوں پر {a} ریال واجب ہیں؛ سب سے زیادہ {top} پر، {b} ریال۔',
+      sd_i_loss:'مدت میں {n} جگہوں کو نقصان ہوا؛ سب سے زیادہ {w} کو، {a} ریال۔',
+      sd_i_pending:'{n} حوالگیاں وصولی کی منتظر ہیں، {a} ریال۔',
+      sd_k_count:'حوالگیاں', sd_k_amount:'حوالے کی گئی رقم', sd_k_pending:'وصولی کی منتظر', sd_k_disputed:'اعتراض شدہ', sd_k_short:'وصولی پر کمی', sd_k_deposits:'کلیکٹرز نے جمع کیا',
+      sd_k_customers:'بیلنس والے گاہک', sd_k_owed:'گاہکوں پر واجب', sd_k_credit:'ادھار فروخت', sd_k_paid:'گاہکوں کی ادائیگی', sd_k_overdue:'30 دن سے زیادہ واجب',
+      sd_k_lines:'بینک اسٹیٹمنٹ لائنیں', sd_k_matched:'ملائی گئی جمع', sd_k_unmatched:'غیر ملائی گئی جمع', sd_k_unmatchedAmt:'غیر ملائی گئی (ریال)', sd_k_rate:'ملانے کا تناسب',
+      sd_k_openRisk:'کھلے خطرات', sd_k_highRisk:'زیادہ شدت کھلے', sd_k_newRisk:'30 دن میں درج', sd_k_resolved:'30 دن میں حل', sd_k_age:'کھلے خطرات کی اوسط عمر (دن)',
+      sd_k_waiting:'میرے منتظر', sd_k_held:'میرے پاس نقد', sd_k_myDisputes:'میرے اعتراضات',
+      sd_k_netSales:'خالص فروخت', sd_k_gross:'مجموعی منافع', sd_k_contrib:'شراکتی مارجن', sd_k_profit:'خالص منافع', sd_k_margin:'خالص منافع کا تناسب %' }
+  };
+  Object.keys(add).forEach(function(lang){ Object.keys(add[lang]).forEach(function(k){ L[lang][k] = add[lang][k]; }); });
+})();
+// ---- pure helpers ----
+function sdFill_(s, v){ Object.keys(v).forEach(function(k){ s = String(s).split('{' + k + '}').join(v[k]); }); return s; }
+function sdIsoAdd_(iso, n){ var d = new Date(iso + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); }
+// pure: the period of the same length just before [from, to] (inclusive days)
+function sdPrev_(from, to){
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(from || '')) || !/^\d{4}-\d{2}-\d{2}$/.test(String(to || '')) || to < from) return null;
+  var n = Math.round((Date.parse(to + 'T00:00:00Z') - Date.parse(from + 'T00:00:00Z')) / 864e5) + 1;
+  return { from: sdIsoAdd_(from, -n), to: sdIsoAdd_(from, -1), days: n };
+}
+// pure: every day of [from, to], at most the last `max`
+function sdDays_(from, to, max){
+  var out = []; if (!from || !to || to < from) return out;
+  for (var d = from; d <= to && out.length < 800; d = sdIsoAdd_(d, 1)) out.push(d);
+  return max ? out.slice(-max) : out;
+}
+function sdMedian_(a){ var s = a.slice().sort(function(x, y){ return x - y; }), n = s.length; return n ? (n % 2 ? s[(n - 1) / 2] : (s[n / 2 - 1] + s[n / 2]) / 2) : 0; }
+// pure: the change in percent, or null when the earlier figure is nothing to compare with
+function sdPct_(v, p){ if (p == null || !isFinite(p) || Math.abs(p) < 0.005) return null; return (v - p) / Math.abs(p) * 100; }
+function sdRound_(v, d){ var m = Math.pow(10, d || 0); return Math.round(v * m) / m; }
+// pure: the seven money cards from two money blocks (cents, mbTotals_ shape); deposited/remaining only when known
+function sdMoneyKpis_(cur, prev, spark){
+  return SD_MONEY_.filter(function(k){ return (k !== 'deposited' && k !== 'remaining') || cur[k] != null; }).map(function(k){
+    return { k: k, label: mbLabel_(k), v: Number(cur[k] || 0) / 100, prev: prev && prev[k] != null ? Number(prev[k]) / 100 : null, kind: 'money', down: !!SD_DOWN_[k], spark: spark ? spark[k] : null, strong: k === 'net' };
+  });
+}
+function sdFmt_(v, kind){ return kind === 'int' ? Math.round(v).toLocaleString('en-US') : kind === 'pct' ? (Math.round(v * 10) / 10).toFixed(1) + '%' : kind === 'd1' ? (Math.round(v * 10) / 10).toFixed(1) : money(v); }
+// pure: the smart sentences. d = { kpis, days:[{d, v}], groups:[{name, v, open}], oldest:{days, amount, name, open},
+// counts:[{key, n, vars, open}], mainLabel }. Each rule has its own floor; thin data gives none.
+function sdInsights_(d){
+  d = d || {}; var out = [];
+  var m = function(v){ return money(v); };
+  // 1. the biggest mover among figures worth comparing
+  var best = null;
+  (d.kpis || []).forEach(function(k){
+    if (k.prev == null || k.noMove) return;
+    var p = sdPct_(k.v, k.prev); if (p == null) return;
+    var big = Math.max(Math.abs(k.v), Math.abs(k.prev));
+    if (Math.abs(p) < 5 || (k.kind === 'money' ? big < 100 : big < 3)) return;
+    if (!best || Math.abs(p) > Math.abs(best.p)) best = { k: k, p: p };
+  });
+  if (best) out.push({ id: 'mover', tone: (best.p > 0) !== !!best.k.down ? 'good' : 'bad', open: best.k.open || null,
+    text: sdFill_(t('sd_i_mover'), { k: best.k.label, dir: t(best.p > 0 ? 'sd_i_rose' : 'sd_i_fell'), p: Math.abs(sdRound_(best.p, 1)).toFixed(1), a: sdFmt_(best.k.prev, best.k.kind), b: sdFmt_(best.k.v, best.k.kind) }) });
+  // 2. top and bottom of the groups (two at least, a total above zero)
+  var gs = (d.groups || []).filter(function(g){ return g && isFinite(g.v); }).slice().sort(function(a, b){ return b.v - a.v; });
+  var gTot = gs.reduce(function(s, g){ return s + Math.max(0, g.v); }, 0);
+  if (gs.length >= 2 && gTot > 0 && gs[0].v > 0) out.push({ id: 'top', tone: 'info', open: gs[0].open || null,
+    text: sdFill_(t('sd_i_top'), { top: gs[0].name, a: m(gs[0].v), s: sdRound_(gs[0].v / gTot * 100, 1).toFixed(1), bot: gs[gs.length - 1].name, b: m(gs[gs.length - 1].v) }) });
+  // 3. the oldest cash not banked (two days or more)
+  if (d.oldest && d.oldest.days >= 2 && d.oldest.amount > 0.004) out.push({ id: 'oldest', tone: 'warn', open: d.oldest.open || null,
+    text: sdFill_(t('sd_i_oldest'), { d: d.oldest.days, a: m(d.oldest.amount), w: d.oldest.name || '' }) });
+  // 4. counts the screen cares about (stock lines, unmatched deposits, open risks...)
+  (d.counts || []).forEach(function(c){ if (c && c.n > 0) out.push({ id: c.key, tone: c.tone || 'warn', open: c.open || null, text: sdFill_(t('sd_i_' + c.key), Object.assign({ n: c.n }, c.vars || {})) }); });
+  // 5. an unusual day against the median of the last 14 (seven days with figures at least)
+  var days = (d.days || []).slice(-14), withV = days.filter(function(x){ return Math.abs(x.v) > 0.004; });
+  if (days.length >= 7 && withV.length >= 7) {
+    var med = sdMedian_(days.map(function(x){ return x.v; }));
+    if (med > 0) {
+      var odd = null;
+      days.forEach(function(x){ var r = (x.v - med) / med; if (Math.abs(r) >= 0.5 && (!odd || Math.abs(r) > Math.abs(odd.r))) odd = { x: x, r: r }; });
+      if (odd) out.push({ id: 'day', tone: odd.r > 0 ? 'info' : 'warn', open: odd.x.open || null,
+        text: sdFill_(t('sd_i_day'), { day: odd.x.label || odd.x.d, a: m(odd.x.v), p: Math.abs(sdRound_(odd.r * 100, 0)), dir: t(odd.r > 0 ? 'sd_i_above' : 'sd_i_below'), m: m(med) }) });
+    }
+  }
+  return out.slice(0, 5);
+}
+// pure: per-day values of a figure over the given days (missing days are zero)
+function sdSeries_(days, byDay, key){ return days.map(function(d){ var x = byDay[d]; return x ? Number(x[key] || 0) : 0; }); }
+// ---- the money model from entries (Home, Dashboard, Entries, Sales report, Comparison) ----
+// o: { entries (live, the screen's filtered set), byEntry, prevEntries, prevByEntry, from, to, prev:{from,to}, onPart }
+function sdEntryMoney_(entries, byEntry){
+  var c = mbOfEq_(eqTotals_(entries, byEntry));
+  if (byEntry) { var CS = cohortSum_(entries, byEntry); c.deposited = Math.round(CS.deposited * 100); c.remaining = Math.round(CS.remaining * 100); }
+  return c;
+}
+function sdEntriesModel_(o){
+  var live = (o.entries || []).filter(function(e){ return e && !e.voided; });
+  var cur = sdEntryMoney_(live, o.byEntry);
+  var prev = o.prevEntries ? sdEntryMoney_(o.prevEntries.filter(function(e){ return e && !e.voided; }), o.prevByEntry || o.byEntry) : null;
+  // the days drawn: the period's own days, else the days the entries cover; at most 31
+  var dates = live.map(function(e){ return String(e.date || '').slice(0, 10); }).filter(Boolean).sort();
+  var from = o.from || dates[0], to = o.to || dates[dates.length - 1];
+  var days = sdDays_(from, to, 31), byDay = {}, groupsMap = {};
+  var dayEntries = {};
+  live.forEach(function(e){ var d = String(e.date || '').slice(0, 10); (dayEntries[d] = dayEntries[d] || []).push(e); });
+  days.forEach(function(d){ if (dayEntries[d]) byDay[d] = sdEntryMoney_(dayEntries[d], o.byEntry); });
+  var spark = {}; SD_MONEY_.forEach(function(k){ spark[k] = sdSeries_(days, byDay, k).map(function(v){ return v / 100; }); });
+  var kpis = sdMoneyKpis_(cur, prev, spark);
+  kpis.forEach(function(k){ k.open = o.onPart ? function(){ o.onPart(k.k); } : function(){ sdOpenEntries_(k.label, live, o.byEntry, k.k); }; });
+  // net by branch
+  live.forEach(function(e){ var k = e.locationId || '_'; (groupsMap[k] = groupsMap[k] || []).push(e); });
+  var groups = Object.keys(groupsMap).map(function(k){
+    var list = groupsMap[k];
+    return { key: k, name: k === '_' ? t('report_unspecified') : locationName(k), v: sdEntryMoney_(list, o.byEntry).net / 100, open: function(){ sdOpenEntries_(locationName(k), list, o.byEntry, 'net'); } };
+  }).sort(function(a, b){ return b.v - a.v; });
+  var dayRows = days.map(function(d){ var list = dayEntries[d] || []; return { d: d, label: sdDayLabel_(d), v: byDay[d] ? byDay[d].net / 100 : 0, open: list.length ? function(){ sdOpenEntries_(d, list, o.byEntry, 'net'); } : null }; });
+  // the oldest day whose cash has not reached the bank
+  var oldest = null;
+  if (o.byEntry) {
+    var A = cohortAlloc_(live, o.byEntry), waitBy = {};
+    live.forEach(function(e){ var x = A.byId[e.id]; if (!x || x.s === 'deposited' || x.s === 'settled' || x.c <= 0) return; var d = String(e.date || '').slice(0, 10); (waitBy[d] = waitBy[d] || []).push({ e: e, c: x.c }); });
+    var od = Object.keys(waitBy).sort()[0];
+    if (od) {
+      var list2 = waitBy[od], amt = list2.reduce(function(s, x){ return s + x.c; }, 0) / 100, byLoc = {};
+      list2.forEach(function(x){ byLoc[x.e.locationId] = (byLoc[x.e.locationId] || 0) + x.c; });
+      var topLoc = Object.keys(byLoc).sort(function(a, b){ return byLoc[b] - byLoc[a]; })[0];
+      oldest = { days: Math.max(0, Math.round((Date.parse(localToday_() + 'T00:00:00Z') - Date.parse(od + 'T00:00:00Z')) / 864e5)), amount: amt, name: locationName(topLoc),
+        open: function(){ cardDrawer_({ title: t('kf_rem'), sub: od, items: list2.map(function(x){ return entryRowData_(x.e, x.c / 100); }) }); } };
+    }
+  }
+  var netL = mbLabel_('net');
+  var model = { kpis: kpis, from: from, to: to, prev: o.prev || null,
+    charts: [{ id: 'day', kind: 'day', title: sdFill_(t('sd_byDay'), { m: netL }), rows: dayRows },
+      { id: 'grp', kind: 'rank', title: sdFill_(t('sd_byGroup'), { m: netL, g: t('sd_g_branch') }), rows: groups.map(function(g){ return { label: g.name, v: g.v, open: g.open }; }) }] };
+  model.insights = sdInsights_({ kpis: kpis, days: dayRows, groups: groups, oldest: oldest, counts: o.counts || [] });
+  return model;
+}
+function sdDayLabel_(iso){ try { return new Date(iso + 'T00:00:00').toLocaleDateString(state.lang === 'ar' ? 'ar-SA-u-ca-gregory-nu-latn' : state.lang === 'ur' ? 'ur-PK-u-nu-latn' : 'en-GB', { day: 'numeric', month: 'short' }); } catch (e) { return iso; } }
+// a money card's entries, each carrying its own part of that figure (the cohort's cents when known)
+function sdOpenEntries_(title, list, byEntry, k){
+  var EQK = { totColl: null, net: 'net' };
+  if (k === 'deposited' || k === 'remaining') {
+    var A = cohortAlloc_(list, byEntry || {});
+    cardDrawer_({ title: title, items: list.map(function(e){ var x = A.byId[e.id]; if (!x) return null; var v = k === 'deposited' ? (x.s === 'deposited' ? x.c : 0) : (x.s === 'deposited' || x.s === 'settled' ? 0 : x.c) + x.k; return v ? entryRowData_(e, v / 100) : null; }).filter(Boolean) });
+    return;
+  }
+  cardDrawer_({ title: title, items: list.map(function(e){ var c = sdEntryMoney_([e], byEntry); var v = (c[k] || 0) / 100; return v ? entryRowData_(e, v) : null; }).filter(Boolean) });
+}
+// ---- the money model from collection requests (Collections, Collection reports) ----
+// o: { D: colCompute_ result, Dp: the previous period's, from, to, prev, openRows(title, rows) }
+function sdReqModel_(o){
+  var D = o.D, cur = crpEqSum_(D.rows), prev = o.Dp ? crpEqSum_(o.Dp.rows) : null;
+  var days = sdDays_(o.from || (D.days[0] && D.days[0].date), o.to || (D.days.length && D.days[D.days.length - 1].date), 31), byDay = {}, rowsBy = {};
+  D.rows.forEach(function(x){ (rowsBy[x.day] = rowsBy[x.day] || []).push(x); });
+  days.forEach(function(d){ if (rowsBy[d]) byDay[d] = crpEqSum_(rowsBy[d]); });
+  var spark = {}; SD_MONEY_.forEach(function(k){ spark[k] = sdSeries_(days, byDay, k).map(function(v){ return v / 100; }); });
+  var kpis = sdMoneyKpis_(cur, prev, spark);
+  var openRows = o.openRows || function(title, rows){ cardDrawer_({ title: title, items: reqItems_(rows), placeOf: placeCollector_ }); };
+  kpis.forEach(function(k){ k.open = function(){ openRows(k.label, k.k === 'deposited' ? D.rows.filter(function(x){ return x.st === 'deposited'; }) : k.k === 'remaining' ? D.rows.filter(function(x){ return x.st !== 'deposited'; }) : D.rows); }; });
+  var cols = D.collectors.map(function(g){ return { name: g.key === '_' ? t('report_unspecified') : userName(g.key), v: g.remaining, open: function(){ openRows(userName(g.key), D.rows.filter(function(x){ return (x.r.holder || '_') === g.key && x.st !== 'deposited'; })); } }; });
+  var dayRows = days.map(function(d){ var rs = rowsBy[d] || []; return { d: d, label: sdDayLabel_(d), v: byDay[d] ? byDay[d].net / 100 : 0, open: rs.length ? function(){ openRows(d, rs); } : null }; });
+  var oldRows = D.rows.filter(function(x){ return x.st !== 'deposited' && x.day === D.T.oldest; });
+  var oldest = D.T.oldest ? { days: Math.max(0, Math.round((Date.parse(localToday_() + 'T00:00:00Z') - Date.parse(D.T.oldest + 'T00:00:00Z')) / 864e5)), amount: oldRows.reduce(function(s, x){ return s + Number(x.r.amount || 0); }, 0),
+    name: oldRows[0] ? locationName(oldRows[0].r.locationId) : '', open: function(){ openRows(D.T.oldest, oldRows); } } : null;
+  var counts = [];
+  if (D.T.disputed) counts.push({ key: 'disputed', n: D.T.disputed });
+  if (D.T.short > 0.004) counts.push({ key: 'short', n: 1, vars: { a: money(D.T.short) }, open: function(){ openRows(t('col_k_short'), D.rows.filter(function(x){ return Math.abs(Number(x.r.shortfall || 0)) > 0.004; })); } });
+  var model = { kpis: kpis, from: o.from, to: o.to, prev: o.prev || null,
+    charts: [{ id: 'day', kind: 'day', title: sdFill_(t('sd_byDay'), { m: mbLabel_('net') }), rows: dayRows },
+      { id: 'grp', kind: 'rank', title: sdFill_(t('sd_byGroup'), { m: mbLabel_('remaining'), g: t('sd_g_collector') }), rows: cols.map(function(g){ return { label: g.name, v: g.v, open: g.open }; }) }] };
+  model.insights = sdInsights_({ kpis: kpis, days: dayRows, groups: cols.filter(function(g){ return g.v > 0; }), oldest: oldest, counts: counts });
+  return model;
+}
+// ---- drawing ----
+function sdSpark_(vals){
+  vals = (vals || []).map(Number);
+  if (vals.length < 2 || !vals.some(function(v){ return Math.abs(v) > 0.004; })) return '';
+  var W = 72, H = 22, mn = Math.min.apply(null, vals), mx = Math.max.apply(null, vals), rg = mx - mn || 1;
+  var pts = vals.map(function(v, i){ return (i / (vals.length - 1) * W).toFixed(1) + ',' + (H - 2 - (v - mn) / rg * (H - 4)).toFixed(1); });
+  return '<svg class="sd-sp" viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" aria-hidden="true"><polyline points="' + pts.join(' ') + '"/></svg>';
+}
+function sdChg_(k){
+  if (k.prev == null) return '';
+  var p = sdPct_(k.v, k.prev);
+  if (p == null) return Math.abs(k.v) > 0.004 ? '<span class="sd-ch new">' + esc(t('sd_new')) + '</span>' : '';
+  if (Math.abs(p) < 0.05) return '<span class="sd-ch flat">' + esc(t('sd_flat')) + '</span>';
+  var good = (p > 0) !== !!k.down;
+  return '<span class="sd-ch ' + (good ? 'good' : 'bad') + '" title="' + esc(sdFill_(t('sd_prevWas'), { v: sdFmt_(k.prev, k.kind) })) + '"><b aria-hidden="true">' + (p > 0 ? '▲' : '▼') + '</b><bdi dir="ltr">' + Math.abs(sdRound_(p, 1)).toFixed(1) + '%</bdi></span>';
+}
+function sdChart_(ch, i){
+  var rows = (ch.rows || []).filter(function(r){ return r && isFinite(r.v); });
+  if (!rows.length || !rows.some(function(r){ return Math.abs(r.v) > 0.004; })) return null;
+  var box = el('<figure class="sd-chart sd-' + ch.kind + '" style="--i:' + i + '"><figcaption>' + esc(ch.title) + '</figcaption><div class="sd-plot"></div></figure>');
+  var plot = qs('.sd-plot', box);
+  if (ch.kind === 'day') {
+    var mx = Math.max.apply(null, rows.map(function(r){ return Math.abs(r.v); })) || 1;
+    rows.forEach(function(r, j){
+      var b = el('<button type="button" class="sd-col' + (r.v < 0 ? ' neg' : '') + '" style="--h:' + (Math.abs(r.v) / mx).toFixed(4) + ';--j:' + j + '" aria-label="' + esc(r.label + ': ' + sdFmt_(r.v, ch.unit || 'money')) + '" data-tip="' + esc(r.label + ' · ' + sdFmt_(r.v, ch.unit || 'money')) + '"><i></i></button>');
+      if (r.open) b.addEventListener('click', r.open); else b.disabled = true;
+      plot.appendChild(b);
+    });
+    plot.appendChild(el('<div class="sd-axis"><span>' + esc(rows[0].label) + '</span><span>' + esc(rows[rows.length - 1].label) + '</span></div>'));
+  } else {
+    var top = rows.slice().sort(function(a, b){ return b.v - a.v; }), shown = top.slice(0, 6), mx2 = Math.max.apply(null, shown.map(function(r){ return Math.abs(r.v); })) || 1;
+    shown.forEach(function(r, j){
+      var b = el('<button type="button" class="sd-bar" style="--w:' + (Math.abs(r.v) / mx2).toFixed(4) + ';--j:' + j + '"><span class="sd-bl">' + esc(r.label) + '</span><span class="sd-bt"><i></i></span><b class="num"><bdi dir="ltr">' + esc(sdFmt_(r.v, ch.unit || 'money')) + '</bdi></b></button>');
+      if (r.open) b.addEventListener('click', r.open); else b.disabled = true;
+      plot.appendChild(b);
+    });
+    if (top.length > shown.length) plot.appendChild(el('<p class="sd-more">' + esc(sdFill_(t('sd_more'), { n: top.length - shown.length })) + '</p>'));
+  }
+  return box;
+}
+function sdPeriodText_(m){
+  var p = m.from && m.to ? t('inv_period').replace('{from}', m.from).replace('{to}', m.to) : '';
+  return p;
+}
+// draw a model at the top of a screen (replacing the one already there); keeps it for the exports
+function sdMount_(host, model, before, quiet){
+  if (!host || !model) return null;
+  model.screen = state.screen;
+  SD_CUR_ = model;
+  var old = qs(':scope > .card.sd', host);
+  var sig = state.screen + '|' + (model.kpis || []).map(function(k){ return sdRound_(k.v, 2); }).join(',');
+  var enter = !quiet && SD_SIG_[state.screen] !== sig && !(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+  SD_SIG_[state.screen] = sig;
+  var per = sdPeriodText_(model), cmp = model.prev && model.prev.from ? sdFill_(t('sd_vs'), { from: model.prev.from, to: model.prev.to }) : (model.kpis || []).some(function(k){ return k.prev != null; }) ? '' : t('sd_noPrev');
+  var node = el('<section class="card sd no-collapse' + (enter ? ' sd-enter' : '') + '" aria-label="' + esc(model.title || t('sd_title')) + '">' +
+    '<div class="sd-head"><div class="sd-ttl" role="heading" aria-level="2"><span class="sd-glyph" aria-hidden="true"></span>' + esc(model.title || t('sd_title')) + '</div>' +
+      '<p class="sd-per">' + esc([per, cmp].filter(Boolean).join(' · ')) + '</p></div>' +
+    '<div class="sd-kpis" role="list"></div><div class="sd-charts"></div><div class="sd-ins" hidden><div class="sd-ih" role="heading" aria-level="3">' + esc(t('sd_insights')) + '</div><ul></ul></div></section>');
+  var kbox = qs('.sd-kpis', node);
+  (model.kpis || []).forEach(function(k, i){
+    var b = el('<button type="button" role="listitem" class="sd-kpi' + (k.strong ? ' strong' : '') + '" style="--i:' + i + '">' +
+      '<span class="sd-k">' + esc(k.label) + '</span><span class="sd-v num">' + esc(sdFmt_(k.v, k.kind)) + (k.kind === 'money' ? '<small>' + esc(t('ui_sar')) + '</small>' : '') + '</span>' +
+      '<span class="sd-foot">' + sdChg_(k) + sdSpark_(k.spark) + '</span></button>');
+    b.setAttribute('aria-label', k.label + ': ' + sdFmt_(k.v, k.kind) + (k.prev != null ? '. ' + sdFill_(t('sd_prevWas'), { v: sdFmt_(k.prev, k.kind) }) : ''));
+    if (k.open) b.addEventListener('click', k.open); else b.classList.add('ro');
+    kbox.appendChild(b);
+  });
+  var cbox = qs('.sd-charts', node), nC = 0;
+  (model.charts || []).forEach(function(ch, i){ var c = sdChart_(ch, i); if (c) { cbox.appendChild(c); nC++; } });
+  if (!nC) cbox.remove();
+  var ins = model.insights || [];
+  if (ins.length) {
+    var ib = qs('.sd-ins', node), ul = qs('ul', ib); ib.hidden = false;
+    ins.forEach(function(x, i){
+      var li = el('<li style="--i:' + i + '"><button type="button" class="sd-in tone-' + esc(x.tone || 'info') + '"><span class="sd-dot" aria-hidden="true"></span><span>' + esc(x.text) + '</span></button></li>');
+      var b = qs('button', li); if (x.open) b.addEventListener('click', x.open); else { b.disabled = true; b.classList.add('ro'); }
+      ul.appendChild(li);
+    });
+  }
+  if (old) old.replaceWith(node); else if (before && before.parentNode === host) host.insertBefore(node, before); else host.insertBefore(node, host.firstChild);
+  if (enter) countUp_(node);
+  return node;
+}
+
+// ---- screens without the money block: their own figures ----
+function sdDaysAgo_(iso){ return iso ? Math.max(0, Math.round((Date.parse(localToday_() + 'T00:00:00Z') - Date.parse(String(iso).slice(0, 10) + 'T00:00:00Z')) / 864e5)) : 0; }
+function sdGroup_(list, keyOf, nameOf, valOf){
+  var m = {}; list.forEach(function(x){ var k = keyOf(x) || '_'; (m[k] = m[k] || []).push(x); });
+  return Object.keys(m).map(function(k){ return { key: k, name: nameOf(k), list: m[k], v: m[k].reduce(function(s, x){ return s + valOf(x); }, 0) }; }).sort(function(a, b){ return b.v - a.v; });
+}
+// Handovers: what the bar lets through (amounts over every hop), against the period before the bar's dates
+function sdHoModel_(visible, prevVisible, from, to, prev){
+  function figs(list){
+    var hops = list.filter(function(h){ return h.kind !== 'deposit' && h.status !== 'voided' && h.status !== 'rejected'; });
+    var pend = hops.filter(function(h){ return h.status === 'pending' || h.status === 'pending_deputy'; });
+    var deps = list.filter(function(h){ return h.kind === 'deposit' && h.status !== 'voided'; });
+    var sum = function(l, f){ return l.reduce(function(s, h){ return s + Number(f ? f(h) : h.amount || 0); }, 0); };
+    return { hops: hops, pend: pend, deps: deps, disp: hops.filter(function(h){ return h.status === 'disputed'; }), shortL: hops.filter(function(h){ return Number(h.shortfall || 0) > 0.004; }),
+      count: hops.length, amount: sum(hops), pending: sum(pend), deposits: sum(deps), short: sum(hops, function(h){ return Math.max(0, Number(h.shortfall || 0)); }) };
+  }
+  var C = figs(visible), P = prevVisible ? figs(prevVisible) : null;
+  var open = function(title, list){ return function(){ cardDrawer_({ title: title, items: hoItems_(list) }); }; };
+  var days = sdDays_(from || null, to || null, 31);
+  if (!days.length) { var ds = C.hops.map(hoDay_).filter(Boolean).sort(); days = sdDays_(ds[0], ds[ds.length - 1], 31); }
+  var byDay = {}; C.hops.forEach(function(h){ var d = hoDay_(h); (byDay[d] = byDay[d] || []).push(h); });
+  var sp = function(f){ return days.map(function(d){ return (byDay[d] || []).reduce(function(s, h){ return s + f(h); }, 0); }); };
+  var kpis = [
+    { k: 'count', label: t('sd_k_count'), v: C.count, prev: P ? P.count : null, kind: 'int', spark: sp(function(){ return 1; }), open: open(t('sd_k_count'), C.hops), noMove: true },
+    { k: 'amount', label: t('sd_k_amount'), v: C.amount, prev: P ? P.amount : null, kind: 'money', spark: sp(function(h){ return Number(h.amount || 0); }), open: open(t('sd_k_amount'), C.hops), strong: true },
+    { k: 'pendingAmt', label: t('sd_k_pending'), v: C.pending, prev: P ? P.pending : null, kind: 'money', down: true, open: open(t('sd_k_pending'), C.pend) },
+    { k: 'deposits', label: t('sd_k_deposits'), v: C.deposits, prev: P ? P.deposits : null, kind: 'money', open: open(t('sd_k_deposits'), C.deps) },
+    { k: 'short', label: t('sd_k_short'), v: C.short, prev: P ? P.short : null, kind: 'money', down: true, open: open(t('sd_k_short'), C.shortL) },
+    { k: 'disputed', label: t('sd_k_disputed'), v: C.disp.length, prev: P ? P.disp.length : null, kind: 'int', down: true, open: open(t('sd_k_disputed'), C.disp), noMove: true }
+  ];
+  var grp = sdGroup_(C.hops, function(h){ return h.locationId; }, function(k){ return k === '_' ? t('report_unspecified') : locationName(k); }, function(h){ return Number(h.amount || 0); });
+  grp.forEach(function(g){ g.open = open(g.name, g.list); });
+  var dayRows = days.map(function(d){ var l = byDay[d] || []; return { d: d, label: sdDayLabel_(d), v: l.reduce(function(s, h){ return s + Number(h.amount || 0); }, 0), open: l.length ? open(d, l) : null }; });
+  var counts = [];
+  if (C.pend.length) counts.push({ key: 'pending', n: C.pend.length, vars: { a: money(C.pending) }, open: open(t('sd_k_pending'), C.pend) });
+  if (C.disp.length) counts.push({ key: 'disputed', n: C.disp.length, tone: 'bad', open: open(t('sd_k_disputed'), C.disp) });
+  return { kpis: kpis, from: from, to: to, prev: prev, insights: sdInsights_({ kpis: kpis, days: dayRows, groups: grp, counts: counts }),
+    charts: [{ kind: 'day', title: sdFill_(t('sd_byDay'), { m: t('sd_k_amount') }), rows: dayRows }, { kind: 'rank', title: sdFill_(t('sd_byGroup'), { m: t('sd_k_amount'), g: t('sd_g_branch') }), rows: grp.map(function(g){ return { label: g.name, v: g.v, open: g.open }; }) }] };
+}
+// Customers: balances now (no earlier period: a balance is a position, not a flow)
+function sdCusModel_(list){
+  var T = cusTotals_(list), owing = list.filter(function(r){ return r.balance > 0.004; });
+  var op = function(title, f){ return function(){ cardDrawer_({ title: title, items: cusItems_(list, f) }); }; };
+  var bal = function(r){ return r.balance > 0.004 ? r.balance : 0; };
+  var kpis = [
+    { k: 'owed', label: t('cus_tOwed'), v: T.owed, kind: 'money', down: true, strong: true, open: op(t('cus_tOwed'), bal) },
+    { k: 'owing', label: t('cus_tOwing'), v: T.owing, kind: 'int', down: true, open: op(t('cus_tOwing'), bal) },
+    { k: 'uninvoiced', label: t('cus_tUninvoiced'), v: T.uninvoiced, kind: 'money', open: op(t('cus_tUninvoiced'), function(r){ return r.uninvoiced || 0; }) },
+    { k: 'paid', label: t('cus_tPaid'), v: T.paid, kind: 'money', open: op(t('cus_tPaid'), function(r){ return r.paid || 0; }) }
+  ];
+  var top = owing.slice().sort(function(a, b){ return b.balance - a.balance; });
+  var rows = top.map(function(r){ return { label: r.c.name, v: r.balance, open: function(){ CUS_.id = r.c.id; CUS_.tab = 'statement'; render(); } }; });
+  return { kpis: kpis, insights: sdInsights_({ kpis: kpis, counts: top.length ? [{ key: 'owed', n: top.length, vars: { a: money(T.owed), top: top[0].c.name, b: money(top[0].balance) }, open: rows[0].open }] : [] }),
+    charts: [{ kind: 'rank', title: sdFill_(t('sd_byGroup'), { m: t('cus_tOwed'), g: t('sd_g_customer') }), rows: rows }] };
+}
+// Bank reconciliation: what is matched and what still waits, now
+function sdRecModel_(res){
+  var und = res.unmatchedDeposits || [], lines = res.unmatchedLines || [], tot = Number(res.totalDeposits || 0), rec = Number(res.reconciledCount || 0);
+  var amt = und.reduce(function(s, h){ return s + Number(h.amount || 0); }, 0);
+  var op = function(title, list){ return function(){ cardDrawer_({ title: title, items: hoItems_(list), placeOf: placeCollector_ }); }; };
+  var kpis = [
+    { k: 'deposits', label: t('sd_k_deposits'), v: tot, kind: 'int' },
+    { k: 'matched', label: t('sd_k_matched'), v: rec, kind: 'int' },
+    { k: 'unmatched', label: t('sd_k_unmatched'), v: und.length, kind: 'int', down: true, open: op(t('sd_k_unmatched'), und) },
+    { k: 'unmatchedAmt', label: t('sd_k_unmatchedAmt'), v: amt, kind: 'money', down: true, strong: true, open: op(t('sd_k_unmatched'), und) },
+    { k: 'rate', label: t('sd_k_rate'), v: tot ? rec / tot * 100 : 0, kind: 'pct' },
+    { k: 'lines', label: t('sd_k_lines'), v: lines.length, kind: 'int', down: true }
+  ];
+  var byDay = {}; und.forEach(function(h){ var d = hoDay_(h); (byDay[d] = byDay[d] || []).push(h); });
+  var ds = Object.keys(byDay).sort(), days = sdDays_(ds[0], ds[ds.length - 1], 31);
+  var grp = sdGroup_(und, function(h){ return h.fromUserId; }, function(k){ return k === '_' ? t('report_unspecified') : userName(k); }, function(h){ return Number(h.amount || 0); });
+  grp.forEach(function(g){ g.open = op(g.name, g.list); });
+  var oldD = ds[0], oldL = oldD ? byDay[oldD] : [];
+  var counts = [];
+  if (und.length) counts.push({ key: 'unmatched', n: und.length, vars: { a: money(amt) }, open: op(t('sd_k_unmatched'), und) });
+  if (lines.length) counts.push({ key: 'lines', n: lines.length });
+  return { kpis: kpis, charts: [{ kind: 'day', title: sdFill_(t('sd_byDay'), { m: t('sd_k_unmatchedAmt') }), rows: days.map(function(d){ var l = byDay[d] || []; return { d: d, label: sdDayLabel_(d), v: l.reduce(function(s, h){ return s + Number(h.amount || 0); }, 0), open: l.length ? op(d, l) : null }; }) },
+      { kind: 'rank', title: sdFill_(t('sd_byGroup'), { m: t('sd_k_unmatchedAmt'), g: t('sd_g_collector') }), rows: grp.map(function(g){ return { label: g.name, v: g.v, open: g.open }; }) }],
+    insights: sdInsights_({ kpis: kpis, groups: grp, counts: counts,
+      oldest: oldD ? { days: sdDaysAgo_(oldD), amount: oldL.reduce(function(s, h){ return s + Number(h.amount || 0); }, 0), name: userName(oldL[0].fromUserId), open: op(oldD, oldL) } : null }) };
+}
+// Risk register: the filtered items; flows over the last 30 days against the 30 before
+function sdRiskModel_(items, onOpen){
+  var today = localToday_(), a30 = sdIsoAdd_(today, -29), b30 = sdIsoAdd_(today, -59), b30e = sdIsoAdd_(today, -30);
+  var day = function(s){ return String(s || '').slice(0, 10); };
+  var openL = items.filter(function(it){ return it.status !== 'resolved'; }), high = openL.filter(function(it){ return it.severity === 'high'; });
+  var inR = function(f, a, b){ return items.filter(function(it){ var d = day(it[f]); return d && d >= a && d <= b; }).length; };
+  var age = openL.length ? openL.reduce(function(s, it){ return s + sdDaysAgo_(it.createdAt); }, 0) / openL.length : 0;
+  var kpis = [
+    { k: 'openRisk', label: t('sd_k_openRisk'), v: openL.length, kind: 'int', down: true, strong: true, open: onOpen },
+    { k: 'highRisk', label: t('sd_k_highRisk'), v: high.length, kind: 'int', down: true, open: onOpen },
+    { k: 'newRisk', label: t('sd_k_newRisk'), v: inR('createdAt', a30, today), prev: inR('createdAt', b30, b30e), kind: 'int', down: true, open: onOpen },
+    { k: 'resolved', label: t('sd_k_resolved'), v: inR('resolvedAt', a30, today), prev: inR('resolvedAt', b30, b30e), kind: 'int', open: onOpen },
+    { k: 'age', label: t('sd_k_age'), v: age, kind: 'd1', down: true, open: onOpen }
+  ];
+  var sev = ['high', 'medium', 'low'].map(function(s){ return { label: t('risk_severity_' + s), v: openL.filter(function(it){ return it.severity === s; }).length, open: onOpen }; });
+  return { kpis: kpis, charts: [{ kind: 'rank', unit: 'int', title: sdFill_(t('sd_byGroup'), { m: t('sd_k_openRisk'), g: t('sd_g_severity') }), rows: sev }],
+    insights: sdInsights_({ kpis: kpis, counts: openL.length ? [{ key: 'openRisk', n: openL.length, vars: { h: high.length }, tone: high.length ? 'bad' : 'warn', open: onOpen }] : [] }) };
+}
+// Profitability: the focused place (its own previous period from the report's compare)
+function sdPlModel_(res, F, prev, kids, onKid){
+  var T = F.T, S = plSeries_(res, F.key), pv = function(k){ return prev && prev[k] != null ? Number(prev[k]) : null; };
+  var kpis = [
+    { k: 'netSales', label: t('sd_k_netSales'), v: T.net, prev: pv('net'), kind: 'money', spark: S.net },
+    { k: 'gross', label: t('sd_k_gross'), v: T.gm, prev: pv('gm'), kind: 'money', spark: S.gm },
+    { k: 'contrib', label: t('sd_k_contrib'), v: T.cm, prev: pv('cm'), kind: 'money', spark: S.cm },
+    { k: 'profit', label: t('sd_k_profit'), v: T.profit, prev: pv('profit'), kind: 'money', spark: S.profit, strong: true },
+    { k: 'margin', label: t('sd_k_margin'), v: T.net ? T.profit / T.net * 100 : 0, prev: prev && prev.net ? Number(prev.profit || 0) / Number(prev.net) * 100 : null, kind: 'pct', noMove: true }
+  ];
+  var dayRows = (res.buckets || []).map(function(b, i){ return { d: b, label: res.bucket === 'day' ? sdDayLabel_(b) : String(b), v: S.profit[i] || 0, open: null }; }).slice(-31);
+  var grp = (kids || []).map(function(k){ return { name: plNodeName_(k), v: k.T.profit, open: function(){ onKid(k); } }; }).sort(function(a, b){ return b.v - a.v; });
+  var loss = grp.filter(function(g){ return g.v < -0.004; }).sort(function(a, b){ return a.v - b.v; });
+  return { kpis: kpis, from: res.dateFrom, to: res.dateTo, prev: res.prevFrom ? { from: res.prevFrom, to: res.prevTo } : null,
+    charts: [{ kind: 'day', title: sdFill_(t('sd_byDay'), { m: t('sd_k_profit') }), rows: dayRows }, { kind: 'rank', title: sdFill_(t('sd_byGroup'), { m: t('sd_k_profit'), g: kids && kids[0] ? plLevelLabel_(kids[0]) : t('sd_g_branch') }), rows: grp.map(function(g){ return { label: g.name, v: g.v, open: g.open }; }) }],
+    insights: sdInsights_({ kpis: kpis, days: res.bucket === 'day' ? dayRows : [], groups: grp, counts: loss.length ? [{ key: 'loss', n: loss.length, tone: 'bad', vars: { w: loss[0].name, a: money(Math.abs(loss[0].v)) }, open: loss[0].open }] : [] }) };
+}
+// ---- the dashboard of an export (2026-10-26): a first sheet / a first page ----
+// pure: the export's main sheet (the first table that is not a summary or a pivot and has numbers)
+function exDashMain_(sheets){
+  var list = (sheets || []).filter(function(sh){ return sh && !sh.isSummary && !sh.isPivot && !sh.isDash && Array.isArray(sh.rows) && sh.rows.length > 1; });
+  var num = function(sh){ return sh.rows.slice(1).some(function(r){ return Array.isArray(r) && r.some(function(v){ return typeof v === 'number' && v !== 0; }); }); };
+  return list.filter(num)[0] || null;
+}
+// pure: the dashboard of a workbook. Its figures come from the main sheet's own totals line (so they
+// equal it to the cent): a statement (label, amount, its totals marked) gives one card per total; a table
+// gives one card per amount column of its totals line, money-block columns first. The screen's model
+// (when the export comes from the screen it was drawn on) adds the change against the previous period,
+// the insights and the charts.
+function exDashOf_(fileName, sheets, model){
+  var sh = exDashMain_(sheets); if (!sh) return null;
+  var rows = sh.rows, kinds = exColKinds_(rows), head = rows[0] || [], kp = [];
+  (sh.intCols || []).forEach(function(i){ if (kinds[i] === 'money') kinds[i] = 'int'; });
+  var data = rows.slice(1).filter(Array.isArray), totals = data.filter(exIsTotal_);
+  var isStmt = head.length === 2 && kinds[0] === 'text' && kinds[1] !== 'text' && totals.length >= 2;
+  if (isStmt) totals.forEach(function(r){ kp.push({ label: String(r[0]), v: Number(r[1] || 0), kind: kinds[1], src: { sheet: sh.name, row: rows.indexOf(r), col: 1 } }); });
+  else {
+    var tot = totals[totals.length - 1];
+    if (tot) {
+      var strong = {}; (sh.strongCols || []).forEach(function(i){ strong[i] = 1; });
+      var cols = []; head.forEach(function(h, i){ if (kinds[i] !== 'text' && typeof tot[i] === 'number') cols.push(i); });
+      cols.sort(function(a, b){ return (strong[b] ? 1 : 0) - (strong[a] ? 1 : 0) || a - b; });
+      cols.slice(0, 8).sort(function(a, b){ return a - b; }).forEach(function(i){ kp.push({ label: String(head[i]), v: Number(tot[i]), kind: kinds[i], src: { sheet: sh.name, row: rows.indexOf(tot), col: i } }); });
+    }
+    if (!kp.length) kp.push({ label: t('ex_sumRows'), v: data.filter(function(r){ return !exIsTotal_(r); }).length, kind: 'int' });
+  }
+  // the change against the previous period: the screen's own card of the same name
+  var byLabel = {}; ((model && model.kpis) || []).forEach(function(k){ byLabel[String(trText_(k.label))] = k; });
+  kp.forEach(function(k){ var m = byLabel[String(trText_(k.label))]; if (m && m.prev != null && Math.abs(m.v - k.v) < 0.006) { k.prev = m.prev; k.down = m.down; } });
+  // charts and insights: the screen's, else worked out from the sheet (a day column and a grouping column)
+  var charts = model && model.charts ? model.charts.filter(function(c){ return (c.rows || []).some(function(r){ return Math.abs(r.v) > 0.004; }); }).map(function(c){ return { title: c.title, kind: c.kind, unit: c.unit, rows: c.rows.map(function(r){ return { label: r.label, v: r.v }; }) }; }) : null;
+  var insights = model && model.insights ? model.insights.map(function(x){ return x.text; }) : null;
+  if (!charts || !insights) {
+    var mc = kinds.indexOf('money'), body = data.filter(function(r){ return !exIsTotal_(r); });
+    var dateCol = -1, grpCol = -1;
+    head.forEach(function(h, i){
+      if (kinds[i] !== 'text') return;
+      var vals = body.map(function(r){ return String(r[i] == null ? '' : r[i]); }).filter(Boolean);
+      if (dateCol < 0 && vals.length && vals.every(function(v){ return /^\d{4}-\d{2}-\d{2}/.test(v); })) { dateCol = i; return; }
+      var u = {}; vals.forEach(function(v){ u[v] = 1; }); var n = Object.keys(u).length;
+      if (grpCol < 0 && n >= 2 && n <= Math.max(2, Math.ceil(body.length / 2))) grpCol = i;
+    });
+    var sumBy = function(col){ var o = {}; body.forEach(function(r){ var k = String(r[col] == null ? '' : r[col]).slice(0, col === dateCol ? 10 : 80) || '—'; o[k] = (o[k] || 0) + (typeof r[mc] === 'number' ? r[mc] : 0); }); return o; };
+    var dRows = [], gRows = [];
+    if (mc >= 0 && !isStmt) {
+      if (dateCol >= 0) { var sd = sumBy(dateCol); dRows = Object.keys(sd).sort().slice(-31).map(function(k){ return { d: k, label: k, v: sd[k] }; }); }
+      if (grpCol >= 0) { var sg = sumBy(grpCol); gRows = Object.keys(sg).map(function(k){ return { label: k, name: k, v: sg[k] }; }).sort(function(a, b){ return b.v - a.v; }); }
+    } else if (isStmt) {
+      gRows = data.filter(function(r){ return !exIsTotal_(r) && typeof r[1] === 'number'; }).map(function(r){ return { label: String(r[0]), name: String(r[0]), v: r[1] }; });
+    }
+    if (!charts) {
+      charts = [];
+      if (dRows.length >= 2) charts.push({ kind: 'day', title: sdFill_(t('sd_byDay'), { m: head[mc] }), rows: dRows });
+      if (gRows.length >= 2) charts.push({ kind: 'rank', title: isStmt ? String(sh.title || sh.name || '') : sdFill_(t('sd_byGroup'), { m: head[mc], g: head[grpCol] }), rows: gRows });
+    }
+    if (!insights) insights = sdInsights_({ kpis: kp, days: dRows, groups: isStmt ? [] : gRows }).map(function(x){ return x.text; });
+  }
+  return { title: trText_(fileName), sheet: sh.name, kpis: kp, charts: charts.slice(0, 2), insights: insights.slice(0, 5) };
+}
+// a chart as a PNG (ExcelJS has no charts): drawn on a canvas in the browser, the dashboard's colours
+function exDashPng_(ch, w, h, rtl){
+  try {
+    var S = 2, c = document.createElement('canvas'); c.width = w * S; c.height = h * S;
+    var g = c.getContext('2d'); g.scale(S, S);
+    var font = "'IBM Plex Sans Arabic', 'Segoe UI', Arial, sans-serif";
+    g.fillStyle = '#FFFFFF'; g.fillRect(0, 0, w, h);
+    g.fillStyle = '#23372A'; g.font = '700 14px ' + font; g.textBaseline = 'top';
+    g.direction = rtl ? 'rtl' : 'ltr'; g.textAlign = rtl ? 'right' : 'left';
+    g.fillText(String(trText_(ch.title || '')).slice(0, 70), rtl ? w - 14 : 14, 12);
+    var rows = (ch.rows || []).slice(), padT = 40, padB = 26, padX = 14;
+    if (ch.kind === 'day') {
+      var mx = Math.max.apply(null, rows.map(function(r){ return Math.abs(r.v); })) || 1, n = rows.length, bw = (w - padX * 2) / Math.max(1, n), ph = h - padT - padB;
+      g.strokeStyle = '#E4DED0'; g.lineWidth = 1; g.beginPath(); g.moveTo(padX, h - padB + .5); g.lineTo(w - padX, h - padB + .5); g.stroke();
+      rows.forEach(function(r, i){
+        var bh = Math.max(Math.abs(r.v) > 0 ? 1.5 : 0, Math.abs(r.v) / mx * ph), x = rtl ? w - padX - (i + 1) * bw : padX + i * bw;
+        g.fillStyle = r.v < 0 ? '#B3261E' : '#4D6D51';
+        g.fillRect(x + bw * .18, h - padB - bh, bw * .64, bh);
+      });
+      g.fillStyle = '#6B7468'; g.font = '600 10.5px ' + font; g.textBaseline = 'alphabetic';
+      g.textAlign = rtl ? 'right' : 'left'; g.fillText(String(rows[0] ? rows[0].label : ''), rtl ? w - padX : padX, h - 8);
+      g.textAlign = rtl ? 'left' : 'right'; g.fillText(String(rows.length ? rows[rows.length - 1].label : ''), rtl ? padX : w - padX, h - 8);
+      var pk = rows.reduce(function(b, r){ return !b || r.v > b.v ? r : b; }, null);
+      if (pk) { g.textAlign = rtl ? 'left' : 'right'; g.fillStyle = '#23372A'; g.font = '700 11px ' + font; g.textBaseline = 'top'; g.fillText('▲ ' + sdFmt_(pk.v, ch.unit || 'money') + '  ' + pk.label, rtl ? padX : w - padX, 14); }
+    } else {
+      rows.sort(function(a, b){ return b.v - a.v; }); rows = rows.slice(0, 7);
+      var mx2 = Math.max.apply(null, rows.map(function(r){ return Math.abs(r.v); })) || 1, rh = Math.min(28, (h - padT - 8) / Math.max(1, rows.length)), lw = Math.min(170, w * .34), vw = 96;
+      rows.forEach(function(r, i){
+        var y = padT + i * rh, bwid = (w - padX * 2 - lw - vw) * Math.abs(r.v) / mx2;
+        g.font = '600 11.5px ' + font; g.fillStyle = '#20241F'; g.textBaseline = 'middle';
+        var lab = String(trText_(r.label)); while (lab.length > 4 && g.measureText(lab).width > lw - 8) lab = lab.slice(0, -2);
+        g.textAlign = rtl ? 'right' : 'left'; g.fillText(lab, rtl ? w - padX : padX, y + rh / 2);
+        g.fillStyle = r.v < 0 ? '#B3261E' : '#4D6D51';
+        var bx = rtl ? w - padX - lw - bwid : padX + lw; g.fillRect(bx, y + rh * .22, Math.max(1.5, bwid), rh * .56);
+        g.fillStyle = '#23372A'; g.font = '700 11px ' + font; g.textAlign = rtl ? 'left' : 'right';
+        g.fillText(sdFmt_(r.v, ch.unit || 'money'), rtl ? padX : w - padX, y + rh / 2);
+      });
+    }
+    return c.toDataURL('image/png');
+  } catch (e) { return null; }
+}
+// the Dashboard sheet: title band, the cards (label, big figure, change), the insights, two charts
+function exDashSheet_(wb, dash, logoId, rtl, name){
+  var COLS = 8, ws = wb.addWorksheet(name, { views: [{ rightToLeft: rtl, showGridLines: false }], properties: { tabColor: { argb: 'FF' + EX_GREEN_ } },
+    pageSetup: { paperSize: 9, orientation: 'landscape', fitToPage: true, fitToWidth: 1, fitToHeight: 0, margins: { left: 0.4, right: 0.4, top: 0.5, bottom: 0.5, header: 0.2, footer: 0.2 } } });
+  for (var c = 1; c <= COLS; c++) ws.getColumn(c).width = 17;
+  var H = rtl ? 'right' : 'left';
+  ws.mergeCells(1, 1, 1, COLS);
+  var t1 = ws.getCell(1, 1); t1.value = t('sd_sheet') + ' · ' + dash.title;
+  t1.font = { name: 'Arial', size: 16, bold: true, color: { argb: 'FFFFFFFF' } }; t1.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF' + EX_GREEN_ } };
+  t1.alignment = { vertical: 'middle', horizontal: H, indent: logoId != null ? 6 : 1 }; ws.getRow(1).height = 40;
+  if (logoId != null) ws.addImage(logoId, { tl: { col: rtl ? COLS - 1 : 0, row: 0 }, ext: { width: 38, height: 38 }, editAs: 'oneCell' });
+  ws.mergeCells(2, 1, 2, COLS);
+  var t2 = ws.getCell(2, 1); t2.value = dash.sub || ''; t2.font = { name: 'Arial', size: 9.5, italic: true, color: { argb: 'FF4A554B' } };
+  t2.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF' + EX_CREAM_ } }; t2.alignment = { vertical: 'middle', horizontal: H, indent: 1, wrapText: true }; ws.getRow(2).height = 30;
+  var r0 = 4;
+  dash.kpis.forEach(function(k, i){
+    var row = r0 + Math.floor(i / 4) * 4, col = (i % 4) * 2 + 1;
+    [0, 1, 2].forEach(function(d){ ws.mergeCells(row + d, col, row + d, col + 1); });
+    var lab = ws.getCell(row, col), val = ws.getCell(row + 1, col), chg = ws.getCell(row + 2, col);
+    lab.value = k.label; lab.font = { name: 'Arial', size: 9.5, bold: true, color: { argb: 'FF5B665C' } };
+    val.value = k.v; val.numFmt = k.kind === 'int' ? '#,##0' : '#,##0.00;[Red]-#,##0.00';
+    val.font = { name: 'Arial', size: 18, bold: true, color: { argb: 'FF' + EX_DARK_ } };
+    var p = k.prev != null ? sdPct_(k.v, k.prev) : null;
+    chg.value = p == null ? (k.prev != null ? t('sd_new') : '') : (Math.abs(p) < 0.05 ? t('sd_flat') : (p > 0 ? '▲ ' : '▼ ') + Math.abs(sdRound_(p, 1)).toFixed(1) + '%  ·  ' + sdFill_(t('sd_prevWas'), { v: sdFmt_(k.prev, k.kind) }));
+    chg.font = { name: 'Arial', size: 9, bold: true, color: { argb: p == null || Math.abs(p) < 0.05 ? 'FF6B7468' : ((p > 0) !== !!k.down ? 'FF23633E' : 'FFA43C25') } };
+    [lab, val, chg].forEach(function(cell, d){
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF' + (d === 1 ? 'FFFFFF' : 'FAF8F3') } };
+      cell.alignment = { vertical: 'middle', horizontal: H, indent: 1, wrapText: d !== 1 };
+      cell.border = { top: d === 0 ? { style: 'thick', color: { argb: 'FF' + EX_GREEN_ } } : undefined, left: { style: 'thin', color: { argb: 'FF' + EX_LINE_ } }, right: { style: 'thin', color: { argb: 'FF' + EX_LINE_ } }, bottom: d === 2 ? { style: 'thin', color: { argb: 'FF' + EX_LINE_ } } : undefined };
+    });
+    ws.getRow(row).height = 22; ws.getRow(row + 1).height = 30; ws.getRow(row + 2).height = 18; ws.getRow(row + 3).height = 8;
+  });
+  var r = r0 + Math.ceil(dash.kpis.length / 4) * 4;
+  if (dash.insights.length) {
+    ws.mergeCells(r, 1, r, COLS); var ih = ws.getCell(r, 1); ih.value = t('sd_insights');
+    ih.font = { name: 'Arial', size: 12, bold: true, color: { argb: 'FF' + EX_DARK_ } }; ih.border = { bottom: { style: 'medium', color: { argb: 'FF' + EX_GREEN_ } } }; ws.getRow(r).height = 22; r++;
+    dash.insights.forEach(function(s){
+      ws.mergeCells(r, 1, r, COLS); var ic = ws.getCell(r, 1); ic.value = '•  ' + s;
+      ic.font = { name: 'Arial', size: 10.5, color: { argb: 'FF20241F' } }; ic.alignment = { vertical: 'middle', horizontal: H, indent: 1, wrapText: true };
+      ws.getRow(r).height = Math.max(20, Math.ceil(String(s).length / 120) * 16 + 6); r++;
+    });
+    r++;
+  }
+  (dash.pngs || []).forEach(function(png, i){
+    if (!png) return;
+    var id = wb.addImage({ base64: png.split(',')[1], extension: 'png' });
+    ws.addImage(id, { tl: { col: i % 2 ? 4 : 0, row: r - 1 }, ext: { width: 500, height: 260 }, editAs: 'oneCell' });
+  });
+  return ws;
+}
+// the same dashboard as the PDF's first page
+function exDashHtml_(dash, rtl){
+  if (!dash) return '';
+  var kp = dash.kpis.map(function(k){
+    var p = k.prev != null ? sdPct_(k.v, k.prev) : null, tone = p == null || Math.abs(p) < 0.05 ? '' : ((p > 0) !== !!k.down ? 'good' : 'bad');
+    var sub = p == null ? '' : (Math.abs(p) < 0.05 ? t('sd_flat') : (p > 0 ? '▲ ' : '▼ ') + Math.abs(sdRound_(p, 1)).toFixed(1) + '% · ' + sdFill_(t('sd_prevWas'), { v: sdFmt_(k.prev, k.kind) }));
+    return '<div class="kpi"><span>' + esc(trText_(k.label)) + '</span><b>' + esc(sdFmt_(k.v, k.kind === 'int' ? 'int' : 'money')) + '</b>' + (sub ? '<small class="' + tone + '">' + esc(sub) + '</small>' : '') + '</div>';
+  }).join('');
+  return '<section class="dash"><h2>' + esc(t('sd_sheet')) + '</h2><div class="kpis" style="grid-template-columns:repeat(4,1fr)">' + kp + '</div>' +
+    (dash.insights.length ? '<h3>' + esc(t('sd_insights')) + '</h3><ul class="ins">' + dash.insights.map(function(s){ return '<li>' + esc(s) + '</li>'; }).join('') + '</ul>' : '') +
+    ((dash.pngs || []).filter(Boolean).length ? '<div class="dimgs">' + dash.pngs.filter(Boolean).map(function(p){ return '<img src="' + p + '" alt="">'; }).join('') + '</div>' : '') + '</section>';
+}
+// the screen's model, when the export is made on the screen it was drawn on
+function exDashModel_(){ return SD_CUR_ && SD_CUR_.screen === state.screen ? SD_CUR_ : null; }
+function exDashFor_(fileName, sheets, opts){
+  if (opts && (opts.plain || opts.noDash)) return null;
+  var dash = null;
+  try { dash = exDashOf_(fileName, sheets, exDashModel_()); } catch (e) { try { console.warn('dashboard sheet', e); } catch (e2) {} return null; }
+  if (!dash) return null;
+  dash.sub = [exFilterList_(null, opts).length ? exFiltersText_(exFilterList_(null, opts)) : '', exSubtitle_({ note: opts && opts.note })].filter(Boolean).join('\n');
+  var rtl = state.lang !== 'en';
+  dash.pngs = dash.charts.map(function(ch){ return exDashPng_(ch, 500, 260, rtl); });
+  return dash;
+}
 // city, area and branch of a place
 function placeLoc_(locationId, clusterId){
   var meta = state.meta || {}, l = byId(meta.locations, locationId) || {};
@@ -13395,6 +14074,15 @@ function renderDashboard(body, animate){
     body.innerHTML = '';
     var T = report.totals;
     body.appendChild(dashFilterBar_(function(){ renderDashboard(body, true); }));
+    // the smart dashboard (2026-10-26): the filter's entries; the period before arrives a moment later
+    try {
+      var F0 = DASH_F_ || {}, prD = sdPrev_(F0.from, F0.to);
+      var mkD = function(pr){ return sdEntriesModel_({ entries: entries, byEntry: ctx.cohort, prevEntries: pr ? pr.entries || [] : null, prevByEntry: pr && pr.cohort ? pr.cohort.byEntry : null, from: F0.from || null, to: F0.to || null, prev: pr ? prD : null }); };
+      var dsd = sdMount_(body, mkD(null)); if (dsd) body.appendChild(dsd);
+      if (prD) api('getSalesReport', Object.assign(dashPayload_(), { dateFrom: prD.from, dateTo: prD.to }), { silent: true }).then(function(pr){
+        if (pr && pr.ok && body.isConnected && state.screen === 'dashboard') sdMount_(body, mkD(pr), null, true);
+      });
+    } catch (e) { try { console.warn('smart dashboard', e); } catch (e2) {} }
     var onF = dashFilterOn_(), forF = onF ? ' · ' + t('dash_forFilter') : '';
     var dChan = channelsCard_(entries);
 
@@ -14152,6 +14840,23 @@ function renderHome(body){
     // what is waiting on this person: the list refreshed by renderShell, drawn at once if known
     pendHeroPaint_();
     heroWisdom_(qs('.hero-wis', hero));
+    // the smart dashboard (2026-10-26): company-wide, this month so far against the same number of days
+    // before it; for everyone else, what waits on them and what they hold
+    try {
+      var sdNode = null;
+      if (entries) {
+        var td = localToday_(), mf = td.slice(0, 8) + '01', pm = sdPrev_(mf, td);
+        var inR = function(a, b){ return function(e){ var d = String(e.date || '').slice(0, 10); return d >= a && d <= b; }; };
+        sdNode = sdMount_(body, sdEntriesModel_({ entries: entries.filter(inR(mf, td)), byEntry: ctx.cohort, prevEntries: entries.filter(inR(pm.from, pm.to)), from: mf, to: td, prev: pm }));
+      } else {
+        var pend = res.pendingForMe || [], pendAmt = pend.reduce(function(s, h){ return s + Number(h.amount || 0); }, 0), disp = res.disputedInvolvingMe || [];
+        var hk = [{ k: 'pendingAmt', label: t('sd_k_waiting'), v: pendAmt, kind: 'money', down: true, open: openList(t('home_pendingForMe'), pend) },
+          { k: 'held', label: t('sd_k_held'), v: Number(res.heldAmount || 0), kind: 'money', open: openList(t('home_heldByMe'), res.heldByMe || []) },
+          { k: 'disputed', label: t('sd_k_myDisputes'), v: disp.length, kind: 'int', down: true, open: openList(t('home_disputes'), disp) }];
+        sdNode = sdMount_(body, { kpis: hk, charts: [], insights: sdInsights_({ kpis: hk, counts: pend.length ? [{ key: 'pending', n: pend.length, vars: { a: money(pendAmt) }, open: openList(t('home_pendingForMe'), pend) }] : [] }) });
+      }
+      if (sdNode && hero.parentNode === body) body.insertBefore(sdNode, hero.nextSibling);
+    } catch (e) { try { console.warn('smart dashboard', e); } catch (e2) {} }
 
     // a day typed but not saved (an idle sign-out keeps it): one tap back to it
     var dft = null;
@@ -15417,8 +16122,10 @@ function listFilters_(opts){
     changed();
   });
 
-  function match(row){
+  // over: {from, to} in place of the bar's own dates (the smart dashboard's previous period, 2026-10-26)
+  function match(row, over){
     var v = values();
+    if (over) { v.from = over.from || ''; v.to = over.to || ''; }
     if (v.text) {
       var hay = String(row.text || '').toLowerCase();
       if (hay.indexOf(v.text) < 0) return false;
@@ -17278,6 +17985,12 @@ function renderEntries(body){
     var by = { open: { n: 0, net: 0 }, submitted: { n: 0, net: 0 }, approved: { n: 0, net: 0 }, voided: { n: 0, net: 0 } };
     groups.forEach(function(g){ var s = groupState_(g.rows), l = g.rows.filter(function(e){ return !e.voided; }); by[s].n++; by[s].net += eqTotals_(l).net; });
     var T = eqTotals_(live);
+    // the smart dashboard (2026-10-26): the same filtered entries, against the period before the chosen dates
+    try {
+      var fv = entryFilter.values(), pr = sdPrev_(fv.from, fv.to), prevLive = null;
+      if (pr) prevLive = [].concat.apply([], entryRows.filter(function(r){ return entryFilter.match(r.norm, pr) && (!elBk || r.norm.bucket === elBk); }).map(function(g){ return g.rows || []; })).filter(function(e){ return !e.voided; });
+      sdMount_(dash, sdEntriesModel_({ entries: live, byEntry: entCohort, prevEntries: prevLive, from: fv.from || null, to: fv.to || null, prev: pr }));
+    } catch (e) { try { console.warn('smart dashboard', e); } catch (e2) {} }
     dash.appendChild(secTitle_(t('eh_analysis'), t('eh_followsFilter')));
     // days are calendar dates; a saved entry is one source's day (2026-10-06: the
     // tile said "days" and counted entries, 76 for the 4 days of 2 to 5 October)
@@ -19846,6 +20559,12 @@ function renderCollections(body){
       esc(colFill_(t('col_remLine'), { a: money(T.deputy), b: money(T.onway), c: money(T.held) })),
       colStack_(T, enter, 1, remStages), tileList(t('col_card_rem'), openRows, function(a, b){ return (b.age || 0) - (a.age || 0); })));
     body.appendChild(cards);
+    // the smart dashboard (2026-10-26): the requests of this filter in the money block, against the period before
+    try {
+      var Pc = sdPrev_(R.from, R.to);
+      sdMount_(body, sdReqModel_({ D: D, Dp: Pc ? colCompute_(reqs, { from: Pc.from, to: Pc.to, city: S.city, area: S.area, branch: S.branch, collector: S.collector, locOf: locOf }) : null,
+        from: R.from, to: R.to, prev: Pc, openRows: function(title, rows){ drawerOpen_(colListView_(title, rows)); } }), cards);
+    } catch (e) { try { console.warn('smart dashboard', e); } catch (e2) {} }
     body.appendChild(el('<p class="col-formula num" role="status">'+esc(colFill_(t('col_formula'), { tc: t('col_card_total'), td: t('col_card_dep'), tr: t('col_card_rem'), total: money(vTot), dep: money(vDep), rem: money(vRem) }))+'</p>'));
     body.appendChild(sfNote_('sf_colDiff'));
     if (enter) countUp_(cards);
@@ -21562,6 +22281,9 @@ function crpBuild_(body, reqs){
     var rq = reqs.filter(function(r){ return crpStageOk_(r, S.stage); });
     var D = colCompute_(rq, base), P = prdShift_(R, S.day ? '1d' : S.preset, 'period', 1);
     var Dp = P ? colCompute_(rq, { from: P.from, to: P.to, city: S.city, area: S.area, branch: S.branch, collector: S.collector, locOf: locOf }) : null;
+    // the smart dashboard (2026-10-26): the same requests, the report's own previous period
+    try { sdMount_(root, sdReqModel_({ D: D, Dp: Dp, from: R.from, to: R.to, prev: P, openRows: function(title, rows){ drawerOpen_(colListView_(title, rows)); } }), grid); }
+    catch (e) { try { console.warn('smart dashboard', e); } catch (e2) {} }
     var side = (!S.stage || S.stage === 'problem') ? crpSide_(reqs, base) : [];
     var periodTxt = R.from ? t('inv_period').replace('{from}', R.from).replace('{to}', R.to) : t('col_p_all');
     var parts = [periodTxt].concat([['city', S.city], ['area', S.area && clusterName(S.area)], ['branch', S.branch && locationName(S.branch)], ['collector', S.collector && userName(S.collector)], ['day', S.day], ['stage', S.stage && t(S.stage === 'problem' ? 'crp_st_problem' : 'col_st_' + S.stage)]].filter(function(x){ return x[1]; }).map(function(x){ return x[1]; }));
@@ -21785,6 +22507,13 @@ function cmpDraw_(body, S, periods, entries, handoffs){
   var keyOf = { area: function(e){ return locOf(e.locationId).clusterId || '_'; }, branch: function(e){ return e.locationId || '_'; }, collector: function(e){ return colOfLoc(e.locationId) || '_'; }, city: function(e){ return locOf(e.locationId).city || '_'; }, owner: function(e){ return e.sourceType + ':' + e.sourceId; }, day: function(e){ return String(e.date || '').slice(0, 10) || '_'; } }[by];
   var nameOf = { area: function(k){ return k === '_' ? t('report_unspecified') : clusterName(k); }, branch: function(k){ return k === '_' ? t('report_unspecified') : locationName(k); }, collector: function(k){ return k === '_' ? t('report_unspecified') : userName(k); }, city: function(k){ return k === '_' ? t('report_unspecified') : k; }, owner: function(k){ return ownerName[k] || t('report_unspecified'); }, day: function(k){ return k === '_' ? t('report_unspecified') : crpShortDate_(k) + ' ' + k.slice(0, 4); } }[by];
   var P = cmpCompute_(entries, handoffs, periods, { include: include, keyOf: keyOf, byEntry: CMP_COH_ });
+  // the smart dashboard (2026-10-26): the newest period of the comparison against the one before it
+  try {
+    var p0 = periods[0], p1 = periods[1] || null;
+    var inP = function(p){ return function(e){ var d = String(e.date || '').slice(0, 10); return !e.voided && include(e) && d >= p.from && d <= p.to; }; };
+    var cn = sdMount_(root, sdEntriesModel_({ entries: entries.filter(inP(p0)), byEntry: CMP_COH_, prevEntries: p1 ? entries.filter(inP(p1)) : null, from: p0.from, to: p0.to, prev: p1 }));
+    if (cn) root.insertBefore(cn, bar.nextSibling);
+  } catch (e) { try { console.warn('smart dashboard', e); } catch (e2) {} }
   var cols2 = P.slice().reverse(); // oldest to newest: time runs with the reading direction
   var labels = cols2.map(function(p){ return cmpLabel_(p, S.preset); });
   var place = [S.city, S.area && clusterName(S.area), S.branch && locationName(S.branch), S.owner && (entries.filter(function(e){ return e.sourceType + ':' + e.sourceId === S.owner; }).map(function(e){ return sourceName_(e); })[0] || ''), S.collector && userName(S.collector)].filter(Boolean);
@@ -22359,6 +23088,11 @@ function renderHandoffs(body){
       // a disputed one has its own card for admin and finance: not listed twice
       var history = visible.filter(function(h){ return pending.indexOf(h)<0 && !((role==='admin'||role==='finance') && h.status==='disputed'); });
       waitBox.innerHTML = ''; cpNode = null;
+      // the smart dashboard (2026-10-26): what the bar lets through, against the period before its dates
+      try {
+        var hv = hFilter.values(), hp = sdPrev_(hv.from, hv.to);
+        sdMount_(waitBox, sdHoModel_(visible, hp ? res.handoffs.filter(function(h){ return hFilter.match(hNorm(h), hp); }) : null, hv.from || null, hv.to || null, hp));
+      } catch (e) { try { console.warn('smart dashboard', e); } catch (e2) {} }
 
       if (pending.length){
         var pc = el('<div class="card ho-wait no-collapse"><h2 class="ho-h">'+esc(t('handoff_pending'))+' <span class="rp-n">'+pending.length+'</span> <span class="ho-wsum num"><bdi dir="ltr">'+money(pending.reduce(function(a, h){ return a + Number(h.amount || 0); }, 0))+'</bdi></span></h2><div id="pList"></div></div>');
@@ -22969,6 +23703,13 @@ function renderReport(body){
       drillSetData_(rEntries, null);
       var rCtx = { entries: rEntries, handoffs: DRILL.handoffs || [], cohort: res.cohort ? res.cohort.byEntry : null };
       function rOpen(key){ return function(){ openMetric_(key, rCtx); }; }
+      // the smart dashboard (2026-10-26): this report's entries; the period before arrives a moment later
+      try {
+        var prS = sdPrev_(payload.dateFrom, payload.dateTo);
+        var mkS = function(pr){ return sdEntriesModel_({ entries: rEntries, byEntry: rCtx.cohort, prevEntries: pr ? pr.entries || [] : null, prevByEntry: pr && pr.cohort ? pr.cohort.byEntry : null, from: payload.dateFrom || null, to: payload.dateTo || null, prev: pr ? prS : null }); };
+        sdMount_(out, mkS(null));
+        if (prS) api('getSalesReport', Object.assign({}, payload, { dateFrom: prS.from, dateTo: prS.to }), { silent: true }).then(function(pr){ if (pr && pr.ok && out.isConnected && state.screen === 'report') sdMount_(out, mkS(pr), null, true); });
+      } catch (e) { try { console.warn('smart dashboard', e); } catch (e2) {} }
       // the report reads as the equation, then the detail behind it, level
       // by level, with every table ready for Excel
       out.appendChild(netEquation_({ entries: rEntries, byEntry: res.cohort ? res.cohort.byEntry : null, title: t('rp_eqTitle') }).node);
@@ -23104,6 +23845,7 @@ function renderReconciliation(body){
     api('getReconciliation', {}).then(function(res){
       if (!res.ok){ body.innerHTML = '<div class="msg err">'+esc(errMsg_(res))+'</div>'; return; }
       body.innerHTML = '';
+      try { sdMount_(body, sdRecModel_(res)); } catch (e) { try { console.warn('smart dashboard', e); } catch (e2) {} }
       var canAct = ['admin','finance'].indexOf(state.user.role) >= 0;
 
       var importCard = el('<div class="card">' +
@@ -24362,6 +25104,7 @@ function renderCustomers(body){
         return !q || normName_(r.c.name + ' ' + (r.c.code || '') + ' ' + (r.c.city || '') + ' ' + (r.c.vatNumber || '')).indexOf(q) >= 0;
       }).sort(function(a, b){ return b.balance - a.balance || String(a.c.code || '').localeCompare(String(b.c.code || '')); });
       paintTiles(list);
+      try { sdMount_(wrap, sdCusModel_(list), card); } catch (e) { try { console.warn('smart dashboard', e); } catch (e2) {} }
       qs('.cus-count', card).textContent = t('cus_countOf').replace('{n}', list.length).replace('{m}', rows.length);
       tb.innerHTML = list.length ? list.map(function(r){
         var bal = r.balance;
@@ -24906,6 +25649,8 @@ function renderProfit(body){
     var days = Math.round((new Date(res.dateTo + 'T00:00:00Z') - new Date(res.dateFrom + 'T00:00:00Z')) / 86400000) + 1;
     var revenue = T.net + T.deliveryIncome, direct = T.commission + T.expenses + T.fixed;
     out.innerHTML = '';
+    // the smart dashboard (2026-10-26): the focused place against the report's own previous period
+    try { sdMount_(body, sdPlModel_(res, F, prev, ix.kids[F.key] || [], function(k){ focusOn(k.key); }), out); } catch (e) { try { console.warn('smart dashboard', e); } catch (e2) {} }
     // the staircase: four figures, and what comes off between them
     var steps = [['pl_net', T.net, 'pl_topLine'], ['pl_gm', T.gm, ''], ['pl_cm', T.cm, ''], [T.profit < 0 ? 'pl_netLoss' : 'pl_profit', T.profit, 'pl_bottomLine']];
     var less = [
@@ -25368,7 +26113,7 @@ function plProfiles_(out, lc, canEdit, reload){
         var mine = linesOf(PL_.kind, c.id).filter(function(l){ return plActive_(l, month) && !l.oneOff; });
         rows.push([c.code || c.name, c.name, c.sub].concat(cols.map(function(ty){ var ls = mine.filter(function(x){ return x.typeId === ty.id; }); return ls.length === 1 && !ls[0].asset ? Number(ls[0].amount) : ''; })));
       });
-      exportXlsx_(t('pl_tplFile').replace('{k}', t('pl_kind_' + PL_.kind)) + ' ' + month, [{ name: t('pl_kind_' + PL_.kind), rows: rows, noBars: true, keepCols: true, note: t('pl_tplNote') }], { note: t('pl_tplNote') });
+      exportXlsx_(t('pl_tplFile').replace('{k}', t('pl_kind_' + PL_.kind)) + ' ' + month, [{ name: t('pl_kind_' + PL_.kind), rows: rows, noBars: true, keepCols: true, note: t('pl_tplNote') }], { note: t('pl_tplNote'), noDash: true });
     });
     var imp = qs('.pl-imp', card), fileIn = qs('.pl-file', card);
     qs('.pl-up', card).addEventListener('click', function(){ fileIn.click(); });
@@ -25750,6 +26495,12 @@ function renderRisk(body){
     api('listRiskItems', {}).then(function(res){
       var wrap = qs('#riskListBody', listCard);
       if (!res.ok){ wrap.innerHTML = '<div class="msg err">'+esc(errMsg_(res))+'</div>'; return; }
+      // the smart dashboard (2026-10-26): the items the bar lets through
+      try {
+        var sdItems = res.items.filter(function(it){ return riskFilter.match({ date: (it.createdAt||'').slice(0,10), status: it.status, people: [it.reportedBy],
+          text: [it.title, it.description, userName(it.reportedBy), t('risk_status_'+it.status), t('risk_severity_'+it.severity), it.resolutionNote].join(' ') }); });
+        sdMount_(body, sdRiskModel_(sdItems, function(){ try { listCard.scrollIntoView({ block: 'start', behavior: 'smooth' }); } catch (e3) {} }), body.firstChild);
+      } catch (e) { try { console.warn('smart dashboard', e); } catch (e2) {} }
       if (!res.items.length){ wrap.innerHTML = emptyOk_(t('risk_noItems')); return; }
       wrap.innerHTML = '';
       var statusClass = { open:'pending', in_progress:'rejected', resolved:'confirmed' };
@@ -26550,7 +27301,7 @@ function entityImportCard_(kind){
       (meta.cars || []).forEach(function(x){ lists.push(['', x.label || x.name, x.code || '']); });
     }
     var title = t('admin_' + KIND_TAB_[kind]);
-    exportXlsx_(t('imp_tplName') + ' ' + title, [{ name: title, rows: [head] }, { name: t('imp_lists'), rows: [[t('imp_field'), t('imp_value'), t('rec_code')]].concat(lists) }]);
+    exportXlsx_(t('imp_tplName') + ' ' + title, [{ name: title, rows: [head] }, { name: t('imp_lists'), rows: [[t('imp_field'), t('imp_value'), t('rec_code')]].concat(lists) }], { noDash: true });
   });
   qs('.xlFile', card).addEventListener('change', function(){
     var f = this.files && this.files[0];

@@ -7074,5 +7074,93 @@ console.log('--- a customer bank transfer says whose customers it came from: Sou
   check(!noneRow || noneRow.bankTransferKind === null, 'a row without a transfer keeps no customer type');
 })();
 
+console.log('--- smart dashboards: insights, the screen\'s own totals, the export\'s Dashboard sheet (2026-10-26) ---');
+(function () {
+  var L = { en: {}, ar: {}, ur: {} };
+  var sx = vm.createContext({ L: L, state: { lang: 'en', meta: { locations: [], customers: [] } }, money: function (n) { return Number(n || 0).toFixed(2); },
+    vatRateClient_: function () { return 0.15; }, byId: function () { return null; }, userName: function (x) { return 'U:' + x; }, locationName: function (x) { return 'B:' + x; },
+    clusterName: function (x) { return x; }, trText_: function (x) { return x; }, localToday_: function () { return '2026-10-26'; }, cardDrawer_: function () {}, reqItems_: function () { return []; } });
+  sx.t = function (k) { return sx.L.en[k] !== undefined ? sx.L.en[k] : k; };
+  // the dashboard's strings, run as the page runs them
+  var sAt = clientHtml.indexOf('var SD_CUR_ = null'), sEnd = clientHtml.indexOf('})();', sAt) + 5;
+  vm.runInContext(clientHtml.slice(sAt, sEnd), sx);
+  check(sx.L.ar.sd_i_top && sx.L.ur.sd_i_top && sx.L.en.sd_sheet === 'Dashboard', 'dashboard strings exist in en, ar and ur');
+  ['en', 'ar', 'ur'].forEach(function (lang) { var miss = Object.keys(sx.L.en).filter(function (k) { return /^sd_/.test(k) && !sx.L[lang][k]; }); check(!miss.length, 'every dashboard string has its ' + lang + ' text (' + miss.join(',') + ')'); });
+  var names = ['sdFill_', 'sdIsoAdd_', 'sdPrev_', 'sdDays_', 'sdMedian_', 'sdPct_', 'sdRound_', 'sdFmt_', 'sdInsights_', 'sdSeries_', 'sdMoneyKpis_', 'sdEntryMoney_', 'sdDayLabel_', 'sdEntriesModel_', 'sdReqModel_',
+    'exIsTotal_', 'exHeaderOf_', 'exColKinds_', 'exDashMain_', 'exDashOf_',
+    'mbLabel_', 'mbTotals_', 'mbOfEq_', 'eqTotals_', 'eqCents_', 'cohortCents_', 'cohortAlloc_', 'cohortSum_', 'entryAmt_', 'vatRateFor_', 'hoDay_', 'colDay_', 'colCompute_', 'crpC_', 'crpEqOf_', 'crpEqSum_'];
+  var vars = [clientVar_('EQ_PARTS_', '\n};'), clientVar_('EQ_SALES_', ';'), clientVar_('EQ_ADD_', ';'), clientVar_('EQ_DEDUCT_', ';'), clientVar_('MB_COLL_', ';'), clientVar_('MB_DED_', ';'), clientVar_('MB_POS_', ';'),
+    clientVar_('MB_KEYS_', ';'), clientVar_('MB_DEP_', ';'), clientVar_('MB_STRONG_', ';'), clientVar_('MB_KEEP_', ';'), clientVar_('MB_LBL_', '};'), clientVar_('EQ_DED_SIMPLE_', '];'),
+    clientVar_('COHORT_ST_', '];'), clientVar_('COHORT_DED_', '];'), clientVar_('COHORT_ADD_', '];'), clientVar_('CRP_EQ_TYPED_', '};'), clientVar_('CRP_EQ_COLS_', ';'), clientVar_('SD_MONEY_', ';'), clientVar_('SD_DOWN_', '};')];
+  vars.forEach(function (v, i) { check(!!v, 'dashboard: client variable ' + i + ' found'); });
+  vm.runInContext(vars.join('\n') + '\n' + names.map(function (n) { var s = clientFn_(n); check(!!s, 'dashboard: ' + n + ' exists'); return s; }).join('\n'), sx);
+  function J(x) { return JSON.stringify(x); }
+  // the previous equal period
+  check(J(vm.runInContext("sdPrev_('2026-10-01', '2026-10-26')", sx)) === J({ from: '2026-09-05', to: '2026-09-30', days: 26 }), 'the period before 1 to 26 Oct is 5 to 30 Sep');
+  check(vm.runInContext("sdPrev_('', '2026-10-01') === null && sdPrev_('2026-10-05', '2026-10-01') === null", sx), 'no dates, no earlier period');
+  // thin data: nothing to say
+  sx.thin = { kpis: [{ label: 'Net', v: 50, prev: 45, kind: 'money' }], groups: [{ name: 'Olaya', v: 50 }], days: [{ d: '2026-10-01', v: 50 }, { d: '2026-10-02', v: 0 }], oldest: { days: 1, amount: 10, name: 'x' } };
+  check(vm.runInContext('sdInsights_(thin).length', sx) === 0, 'thin data writes no insight (small move, one group, few days, a fresh day)');
+  check(vm.runInContext('sdInsights_({}).length + sdInsights_(null).length', sx) === 0, 'no data, no insight');
+  // a known fixture: the five sentences, word for word
+  var days = []; for (var i = 1; i <= 14; i++) days.push({ d: '2026-10-' + (i < 10 ? '0' : '') + i, label: 'D' + i, v: i === 7 ? 300 : 100 });
+  sx.fx = { kpis: [{ label: 'Net', v: 1200, prev: 1000, kind: 'money' }, { label: 'Deductions', v: 100, prev: 98, kind: 'money', down: true }],
+    groups: [{ name: 'Olaya', v: 600 }, { name: 'Naseem', v: 400 }, { name: 'Sul', v: 200 }], oldest: { days: 5, amount: 300, name: 'Olaya' },
+    counts: [{ key: 'unmatched', n: 2, vars: { a: '500.00' } }], days: days };
+  var got = vm.runInContext('sdInsights_(fx)', sx);
+  check(J(got.map(function (x) { return x.id; })) === J(['mover', 'top', 'oldest', 'unmatched', 'day']), 'the fixture gives the five insights in order (' + got.map(function (x) { return x.id; }) + ')');
+  var want = ['Net rose 20.0% on the previous period, from 1000.00 to 1200.00.', 'Olaya leads with 600.00, 50.0% of the total; Sul is lowest at 200.00.',
+    'The oldest cash not yet banked is 5 days old: 300.00 SAR from Olaya.', '2 deposits are not yet matched to the bank statement, 500.00 SAR in all.',
+    'D7 stands out at 300.00, 200% above the 14-day median of 100.00.'];
+  want.forEach(function (w, j) { check(got[j] && got[j].text === w, 'insight ' + (j + 1) + ' reads: ' + w + ' (got: ' + (got[j] && got[j].text) + ')'); });
+  check(got[0].tone === 'good', 'a rise in a figure that should rise is good news');
+  sx.L.en = sx.L.ar; check(/ارتفع/.test(vm.runInContext('sdInsights_(fx)[0].text', sx)), 'the same insight in Arabic'); sx.L.en = sx.L.ur; check(/بڑھا/.test(vm.runInContext('sdInsights_(fx)[0].text', sx)), 'and in Urdu');
+  sx.L.en = {}; var sAt2 = clientHtml.indexOf('var SD_CUR_ = null'); vm.runInContext(clientHtml.slice(sAt2, clientHtml.indexOf('})();', sAt2) + 5), sx);
+
+  // the money cards equal the screen's own totals, to the cent
+  sx.ents = [
+    { id: 'e1', date: '2026-10-02', locationId: 'L1', sourceType: 'store', cashSales: 1000.01, expenseAmount: 33.33, creditSales: 100, creditFeeRule: 2 },
+    { id: 'e2', date: '2026-10-02', locationId: 'L2', sourceType: 'car', cashSales: 523.45, deliveryFeeBankAmount: 23, posSales: 40 },
+    { id: 'e3', date: '2026-10-03', locationId: 'L1', sourceType: 'pos', cashSales: 777.77, directDepositAmount: 300, bankTransferAmount: 12.5 } ];
+  sx.byE = { e1: { s: 'deposited', r: 866.68, f: 1 }, e2: { s: 'held', r: 503.45, f: 1 }, e3: { s: 'notHanded', r: 465.27, f: 1 } };
+  var M = vm.runInContext("(function(){ var m = sdEntriesModel_({ entries: ents, byEntry: byE, from: '2026-10-01', to: '2026-10-03' }), k = {}; m.kpis.forEach(function(x){ k[x.k] = x.v; }); " +
+    "var CS = cohortSum_(ents, byE), T = eqTotals_(ents, byE), B = mbOfEq_(T); return { k: k, csNet: CS.net, csDep: CS.deposited, csRem: CS.remaining, eqNet: T.net, totColl: B.totColl / 100, totDed: B.totDed / 100, totPos: B.totPos / 100, n: m.charts[1].rows.length }; })()", sx);
+  close(M.k.net, M.csNet, 'Cash to deposit is the Entries screen\'s net (cohort)'); close(M.k.net, M.eqNet, 'and the equation card\'s net');
+  close(M.k.deposited, M.csDep, 'Deposited by collectors is the screen\'s deposited'); close(M.k.remaining, M.csRem, 'Cash remaining is the screen\'s remaining');
+  close(M.k.totColl, M.totColl, 'Total collections is the money block\'s'); close(M.k.totDed, M.totDed, 'Total deductions is the money block\'s'); close(M.k.totPos, M.totPos, 'POS deposits is the money block\'s');
+  close(M.k.totColl - M.k.totDed - M.k.totPos, M.k.net, 'collections - deductions - POS deposits = cash to deposit');
+  check(M.n === 2, 'the branch chart has a bar per branch');
+  // Collections: the cards follow the requests of the filter
+  sx.reqs = [{ id: 'r1', stage: 'deposited', amount: 1200.5, locationId: 'L1', holder: 'c1', handoffDate: '2026-10-05', depositedAt: '2026-10-06T08:00:00Z', depositId: 'd1' },
+    { id: 'r2', stage: 'held', amount: 350.25, locationId: 'L2', holder: 'c1', handoffDate: '2026-10-07' }, { id: 'r3', stage: 'pending', amount: 99.99, locationId: 'L1', holder: 'c2', handoffDate: '2026-10-08' },
+    { id: 'r4', stage: 'held', amount: 70, locationId: 'L1', holder: 'c2', handoffDate: '2026-09-20' }];
+  var C = vm.runInContext("(function(){ var D = colCompute_(reqs, { from: '2026-10-01', to: '2026-10-26', today: '2026-10-26' }), m = sdReqModel_({ D: D, from: '2026-10-01', to: '2026-10-26' }), k = {}; m.kpis.forEach(function(x){ k[x.k] = x.v; }); return { k: k, T: D.T }; })()", sx);
+  close(C.k.net, C.T.total, 'Collections: cash to deposit is the screen\'s "handed over to collectors"'); close(C.k.deposited, C.T.deposited, 'deposited is the screen\'s deposits'); close(C.k.remaining, C.T.remaining, 'remaining is the screen\'s remaining');
+
+  // the export's Dashboard sheet: its figures are the main sheet's totals line
+  sx.rpTot = 'Total'; sx.L.en.rp_total = 'Total';
+  sx.sheets = [{ name: 'Summary', isSummary: true, rows: [['a', 'b'], ['x', 1]] },
+    { name: 'Entries', rows: [['Date', 'Branch', 'Collections', 'Deductions', 'Cash to deposit'], ['2026-10-01', 'Olaya', 1000.5, 100.25, 900.25], ['2026-10-02', 'Naseem', 500, 0, 500], ['2026-10-02', 'Olaya', 250.75, 50, 200.75],
+      (function () { var r = ['Total', '', 1751.25, 150.25, 1601]; r.isTotal = true; return r; })()], strongCols: [4] }];
+  var DS = vm.runInContext("exDashOf_('Entries 2026', sheets, null)", sx);
+  check(DS && DS.sheet === 'Entries', 'the dashboard reads the main sheet, never the summary');
+  check(J(DS.kpis.map(function (k) { return k.v; })) === J([1751.25, 150.25, 1601]), 'each Dashboard figure is the export\'s totals line (' + J(DS.kpis.map(function (k) { return k.v; })) + ')');
+  check(DS.charts.length === 2 && DS.charts[0].kind === 'day' && DS.charts[1].rows[0].label === 'Olaya', 'two charts: by day and by the grouping column');
+  sx.model = { kpis: [{ label: 'Cash to deposit', v: 1601, prev: 1400, kind: 'money' }], insights: [{ text: 'From the screen.' }], charts: [{ title: 'c', kind: 'rank', rows: [{ label: 'Olaya', v: 1100.99 }] }] };
+  var DS2 = vm.runInContext("exDashOf_('Entries 2026', sheets, model)", sx);
+  check(DS2.kpis[2].prev === 1400 && DS2.kpis[0].prev == null, 'the screen\'s previous period joins the card of the same name and figure');
+  check(DS2.insights[0] === 'From the screen.' && DS2.charts[0].rows[0].v === 1100.99, 'the screen\'s insights and charts are the export\'s');
+  sx.stmt = [{ name: 'Statement', rows: [['Metric', 'Amount'], ['Cash sales', 900], (function () { var r = ['Total collections', 900]; r.isTotal = true; return r; })(), ['Expenses', 100], (function () { var r = ['Total deductions', 100]; r.isTotal = true; return r; })(), (function () { var r = ['Cash to deposit', 800]; r.isTotal = true; return r; })()] }];
+  check(J(vm.runInContext("exDashOf_('S', stmt, null).kpis.map(function(k){ return k.label + '=' + k.v; })", sx)) === J(['Total collections=900', 'Total deductions=100', 'Cash to deposit=800']), 'a statement gives one card per total line');
+  check(vm.runInContext("exDashOf_('T', [{ name: 'Template', rows: [['Date', 'Amount']] }], null)", sx) === null, 'a template with no figures gets no Dashboard sheet');
+  // every export path goes through it, and templates opt out
+  check(/exDashFor_\(fileName, sheets, opts\)/.test(clientFn_('exportXlsx_')) && /exDashSheet_\(wb, dash/.test(clientFn_('exportXlsx_')), 'every workbook gets the Dashboard sheet first');
+  check(/exDashFor_\(title, sheets, opts\)/.test(clientFn_('exportPdf_')) && /exDashHtml_\(dash, rtl\)/.test(clientFn_('exportPdf_')), 'every PDF gets the dashboard page first');
+  check((clientHtml.match(/noDash: true/g) || []).length === 2, 'the two import templates have no Dashboard sheet');
+  // the dashboard sheet sets fit-to-page only, never an outline (Excel refuses a sheet with both)
+  var dsh = clientFn_('exDashSheet_');
+  check(/fitToPage: true/.test(dsh) && !/outline/i.test(dsh), 'the Dashboard sheet is fitted to the page and has no outline');
+})();
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);

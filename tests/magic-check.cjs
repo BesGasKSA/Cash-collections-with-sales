@@ -18,7 +18,7 @@ const PORT = Number(process.argv[2] || 8928);
 const arg = (k, d) => { const i = process.argv.indexOf(k); return i > 0 ? process.argv[i + 1] : d; };
 const LANGS = String(arg('--langs', 'en,ar,ur')).split(',');
 const ONLY = arg('--only', '');
-const SCREENS = String(arg('--screens', 'home,dashboard,entries,handoffs,collections,colReports,comparison,profit,inventory,customers,reconciliation,risk,report')).split(',');
+const SCREENS = String(arg('--screens', 'home,dashboard,entries,handoffs,collections,colReports,comparison,profit,customers,reconciliation,risk,report')).split(',');
 const SIZES = String(arg('--sizes', 'phone,desk')).split(',');
 const BASE = `http://127.0.0.1:${PORT}`;
 const OUT = path.join(__dirname, '..', '.superpowers', 'magic');
@@ -48,6 +48,28 @@ function errorsOf(events, from) {
     if (m.method === 'Log.entryAdded' && m.params.entry.level === 'error' && !known404 && !/favicon|fonts\.g|net::ERR_/.test(m.params.entry.text + (m.params.entry.url || ''))) out.push('log: ' + m.params.entry.text.slice(0, 200) + ' ' + (m.params.entry.url || ''));
   });
   return out;
+}
+// downloads and the print window, caught and sent to the mock's POST /__save (as tests/export-reports.cjs)
+const HOOKS = `(function(){
+  if (window.__hooked) return; window.__hooked = true; window.__saved = [];
+  window.__name = 'export';
+  HTMLAnchorElement.prototype.click = function(){
+    var href = this.href || '', file = window.__name + (/\\.xlsx$/i.test(this.download || '') ? '.xlsx' : '');
+    if (href.indexOf('blob:') === 0) fetch(href).then(function(r){ return r.blob(); }).then(function(b){ return fetch('/__save?name=' + encodeURIComponent(file), { method: 'POST', body: b }); }).then(function(){ window.__saved.push(file); });
+  };
+  window.open = function(){
+    var buf = '';
+    return { document: { open: function(){}, write: function(h){ buf += h; }, close: function(){
+      var page = buf.replace(/<script>document\\.fonts[\\s\\S]*?<\\/script>/, '');
+      var file = window.__name + '.html';
+      fetch('/__save?name=' + encodeURIComponent(file), { method: 'POST', body: new Blob([page], { type: 'text/html' }) }).then(function(){ window.__saved.push(file); });
+    } } };
+  };
+  window.confirm = function(){ return true; };
+})();`;
+async function waitSaved(send, n, label) {
+  for (let i = 0; i < 80; i++) { const c = await evaluate(send, 'window.__saved.length'); if (c >= n) return; await sleep(250); }
+  throw new Error('nothing saved for ' + label);
 }
 // the page may reload itself once (checkBuild_ when the session flag was cleared): wait until the app runs
 async function waitApp(send) {
@@ -121,7 +143,7 @@ async function main() {
           if (again) problems.push(`welcome ${lang} ${sz}: shown again after a reload`);
         }
         if (!ONLY || ONLY === 'screens') {
-          await evaluate(send, `localStorage.setItem('bgc_apiUrl', '${BASE}/api'); localStorage.setItem('bgc_token', ${JSON.stringify(login.token)}); localStorage.setItem('bgc_lang', '${lang}'); sessionStorage.setItem('bgc_pendShown_' + ${JSON.stringify(login.user.id)}, '1'); true`);
+          await evaluate(send, `localStorage.setItem('bgc_apiUrl', '${BASE}/api'); localStorage.setItem('bgc_token', ${JSON.stringify(login.token)}); localStorage.setItem('bgc_lang', '${lang}'); sessionStorage.setItem('bgc_pendShown_' + ${JSON.stringify(login.user.id)}, '1'); sessionStorage.setItem('bgc_updTried', '1'); sessionStorage.setItem('bgc_col', JSON.stringify({ preset: 'lastMonth' })); sessionStorage.setItem('bgc_crp', JSON.stringify({ rep: 'summary', preset: 'lastMonth' })); true`);
           await send('Page.reload'); await sleep(1500); await waitApp(send); await sleep(1500);
           for (const scr of SCREENS) {
             const from = events.length;
@@ -137,6 +159,44 @@ async function main() {
             await evaluate(send, `window.scrollTo(0, 0); true`); await sleep(1300);
             await shot(send, `${scr}-${lang}-${sz}.png`);
             errorsOf(events, from).forEach(e => problems.push(`${scr} ${lang} ${sz}: ${e}`));
+          }
+        }
+        // exports: each screen's first Excel and PDF button; the workbook is read back with ExcelJS: its first sheet
+        // is the Dashboard and every figure on it is a figure of a totals line of the export, to the cent
+        if (ONLY === 'exports' && sz === 'desk') {
+          await evaluate(send, `localStorage.setItem('bgc_apiUrl', '${BASE}/api'); localStorage.setItem('bgc_token', ${JSON.stringify(login.token)}); localStorage.setItem('bgc_lang', '${lang}'); sessionStorage.setItem('bgc_pendShown_' + ${JSON.stringify(login.user.id)}, '1'); sessionStorage.setItem('bgc_updTried', '1'); sessionStorage.setItem('bgc_col', JSON.stringify({ preset: 'lastMonth' })); sessionStorage.setItem('bgc_crp', JSON.stringify({ rep: 'summary', preset: 'lastMonth' })); true`);
+          await send('Page.reload'); await sleep(1500); await waitApp(send); await sleep(1500);
+          await evaluate(send, HOOKS);
+          let count = 0;
+          for (const scr of String(arg('--ex', 'entries,handoffs,collections,colReports,comparison,report,profit')).split(',')) {
+            const from = events.length, name = `magic-${lang}-${scr}`;
+            await evaluate(send, `(function(){ var b = document.querySelector('.sb-item[data-k="${scr}"]'); if (b) b.click(); return true; })()`);
+            await sleep(scr === 'comparison' || scr === 'profit' ? 5000 : 3500);
+            if (scr === 'report') { await evaluate(send, `(function(){ var r = document.querySelector('#rRun'); if (r) r.click(); return true; })()`); await sleep(4000); }
+            if (scr === 'entries') { await evaluate(send, `(function(){ var b = document.querySelector('.el-view [data-v="list"], .el-view button:last-child'); if (b) b.click(); return true; })()`); await sleep(1500); }
+            const has = await evaluate(send, `window.__name = ${JSON.stringify(name)}; (function(){ var x = document.querySelector('#screenBody .rp-all') || document.querySelector('#screenBody .ex-xl'); if (!x) return false; x.click(); return true; })()`);
+            if (!has) { problems.push(`${name}: no Excel button`); continue; }
+            count++; try { await waitSaved(send, count, name + '.xlsx'); } catch (e) { problems.push(String(e.message)); continue; }
+            const hasPdf = await evaluate(send, `(function(){ var x = document.querySelector('#screenBody .rp-all-pdf') || document.querySelector('#screenBody .ex-pdf'); if (!x) return false; x.click(); return true; })()`);
+            if (hasPdf) { count++; try { await waitSaved(send, count, name + '.html'); } catch (e) { problems.push(String(e.message)); } }
+            errorsOf(events, from).forEach(e => problems.push(`${name}: ${e}`));
+            const chk = await evaluate(send, `(async function(){
+              if (!window.ExcelJS) await new Promise(function(res, rej){ var s = document.createElement('script'); s.src = 'https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js'; s.onload = res; s.onerror = rej; document.head.appendChild(s); });
+              await new Promise(function(r){ setTimeout(r, 400); });
+              var buf = await (await fetch('/.superpowers/exports/${name}.xlsx?_=' + Date.now())).arrayBuffer(), wb = new ExcelJS.Workbook(); await wb.xlsx.load(buf);
+              var ws0 = wb.worksheets[0], vals = [];
+              ws0.eachRow(function(row, r){ row.eachCell(function(c){ if (typeof c.value === 'number' && c.numFmt) vals.push({ r: r, v: c.value }); }); });
+              var nums = function(ws){ var o = []; ws.eachRow(function(row){ row.eachCell(function(c){ var v = c.value; if (v && typeof v === 'object' && 'result' in v) v = v.result; if (typeof v === 'number') o.push(v); }); }); return o; };
+              var found = wb.worksheets.slice(1).filter(function(ws){ var n = nums(ws); return vals.every(function(x){ return n.some(function(y){ return Math.abs(y - x.v) < 0.005; }); }); }).map(function(ws){ return ws.name; });
+              var pdfHtml = await (await fetch('/.superpowers/exports/${name}.html?_=' + Date.now())).text().catch(function(){ return ''; });
+              return { first: ws0.name, sheets: wb.worksheets.length, images: ws0.getImages().length, figures: vals.map(function(x){ return x.v; }), equalIn: found, pdfDash: /class="dash"/.test(pdfHtml), rtl: !!(ws0.views[0] && ws0.views[0].rightToLeft) };
+            })()`);
+            report.push(`${name}: ${JSON.stringify(chk)}`);
+            if (chk.sheets > 1 && chk.first !== (lang === 'en' ? 'Dashboard' : chk.first)) problems.push(`${name}: first sheet is ${chk.first}`);
+            if (!chk.figures.length) problems.push(`${name}: no figures on the Dashboard sheet`);
+            if (!chk.equalIn.length) problems.push(`${name}: Dashboard figures not found on a totals line`);
+            if (hasPdf && !chk.pdfDash) problems.push(`${name}: the PDF has no dashboard page`);
+            if ((lang !== 'en') !== chk.rtl) problems.push(`${name}: sheet direction wrong`);
           }
         }
       }
