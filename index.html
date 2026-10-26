@@ -5106,7 +5106,7 @@ var ICON_B64 = 'iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAYAAAA9zQYyAAAcG0lEQVR42u2dd1cU
 // Stamped by tools/stamp-build.js at publish time so the running app can
 // say which build it is — a cached page is the usual reason a shipped change
 // seems missing.
-var BUILD_ID = '2026-10-26 13:49 · ec73bec';
+var BUILD_ID = '2026-10-26 14:40 · 1e6ff10';
 var LOGO_SRC = 'data:image/png;base64,' + LOGO_B64;
 var ICON_SRC = LOGO_SRC; // same asset — see the comment above LOGO_B64
 // The sign-in mark (2026-09-30): the logo's round emblem as a coin with a
@@ -11396,47 +11396,39 @@ function reportTabs_(entries, res, note, filters){
           { h: t('eq_dChannelCommission'), num: true, v: function(r){ return Math.round(r.com * 100) / 100; } }
         ], chRows, ctot2); } },
     { key: 'ledger', label: t('rp_tabLedger'), card: function(){
-        var all = entries.slice().sort(function(a, b){ return String(b.date).localeCompare(String(a.date)) || String(a.locationId).localeCompare(String(b.locationId)); });
-        function r2(v){ return Math.round(Number(v || 0) * 100) / 100; }
+        // every line of every day: what it was, then the money block per line (2026-10-26, the user: the
+        // detailed sheet must carry the subtotal columns and one column per deduction)
+        var all = entries.slice().sort(function(a, b){ return String(b.date).localeCompare(String(a.date)) || String(a.locationId).localeCompare(String(b.locationId)); })
+          .map(function(e){ return { e: e, T: eqTotals_([e]) }; });
+        function loc(r){ return byId(meta.locations, r.e.locationId); }
         var cols = [
-          { h: t('rp_date'), v: function(e){ return e.date; } },
-          { h: t('lv_city'), v: function(e){ var l = byId(meta.locations, e.locationId); return l ? l.city : ''; } },
-          { h: t('lv_area'), v: function(e){ var l = byId(meta.locations, e.locationId); return l ? clusterName(l.clusterId) : ''; } },
-          { h: t('lv_branch'), v: function(e){ var l = byId(meta.locations, e.locationId); return l ? l.name : ''; } },
-          { h: t('rp_source'), v: function(e){ var nm = sourceName_(e); return t('entry_source_' + e.sourceType) + (nm ? ' — ' + nm : ''); } },
-          { h: t('report_enteredBy'), v: function(e){ return userName(e.enteredBy); } },
-          { h: t('report_product'), v: function(e){ return e.productId ? productName_(e.productId) : ''; } },
-          { h: t('rp_qty'), num: true, int: true, v: function(e){ return Number(e.qty || 0) || ''; } },
-          { h: t('entry_unitPrice'), num: true, v: function(e){ return Number(e.unitPrice || 0) || ''; } },
-          { h: t('eq_cashSales'), num: true, v: function(e){ return r2(e.cashSales); } },
-          { h: t('eq_posSales'), num: true, v: function(e){ return r2(e.posSales); } },
-          { h: t('eq_dCredit'), num: true, v: function(e){ return r2(e.creditSales); } },
-          { h: t('rp_customer'), v: function(e){ if (!(Number(e.creditSales) > 0)) return ''; var c = byId(meta.customers, e.creditCustomerId); return c ? (c.code ? c.code + ' · ' : '') + c.name : (e.creditCustomer || ''); } },
-          { h: t('eq_aCreditDelivery'), num: true, v: function(e){ return r2(e.creditDeliveryFee); } },
-          { h: t('eq_dCreditDelivery'), num: true, v: function(e){ return Number(e.creditFeeRule) >= 2 ? r2(e.creditDeliveryFee) : 0; } },
-          { h: t('eq_dCommission'), num: true, v: function(e){ return r2(e.creditCommission); } },
-          { h: t('ch_pick'), v: function(e){ var cq = e.channelQtys || {}; return Object.keys(cq).map(function(k){ var c = byId(meta.channels, k); return (c ? c.name : '') + ' ' + cq[k]; }).join('، '); } },
-          { h: t('eq_aChannelDelivery'), num: true, v: function(e){ return r2(e.channelDeliveryFee); } },
-          { h: t('eq_dChannelCommission'), num: true, v: function(e){ return r2(e.channelCommission); } },
-          { h: t('eq_dTransfer'), num: true, v: function(e){ return r2(e.bankTransferAmount); } },
-          { h: t('trf_col'), v: function(e){ return trForText_(e); } },
-          { h: t('eq_dBanked'), num: true, v: function(e){ return r2(e.directDepositAmount); } },
-          { h: t('entry_depositRef'), v: function(e){ return Number(e.directDepositAmount) > 0 ? (e.directDepositRef || '') : ''; } },
-          { h: t('eq_dExpense'), num: true, v: function(e){ return r2(e.expenseAmount); } },
-          { h: t('rp_expenseWhat'), v: function(e){ return Number(e.expenseAmount) > 0 ? [itemName_('expenseItems', e.expenseItemId), e.expenseReason].filter(Boolean).join(' — ') : ''; } },
-          { h: t('eq_aOther'), num: true, v: function(e){ return r2(e.otherCash); } },
-          { h: t('rp_otherWhat'), v: function(e){ return Number(e.otherCash) > 0 ? [itemName_('incomeItems', e.otherCashItemId), e.otherCashReason].filter(Boolean).join(' — ') : ''; } },
-          { h: t('entry_deliveryTitle'), num: true, v: function(e){ return r2(e.deliveryFeeBankAmount); } },
-          { h: t('eq_net'), num: true, v: function(e){ return r2(entryAmt_(e).net); } },
-          { h: t('rp_status'), v: function(e){ return entryStatus_(e).label; } },
-          { h: t('entry_note'), v: function(e){ return [e.note, e.deliveryNote].filter(Boolean).join(' · '); } }
-        ];
-        var tot = {}; cols.forEach(function(c, i){ if (c.num && !c.int && i > 8) tot[i] = entries.reduce(function(a, e){ return a + (Number(c.v(e)) || 0); }, 0); });
-        var footCols = cols.map(function(c, i){ return { h: c.h, num: c.num, int: c.int, v: function(r){ return r === '__foot' ? (tot[i] != null ? Math.round(tot[i] * 100) / 100 : '') : c.v(r); } }; });
-        var card = rpTableCard_(t('rp_tabLedger'), footCols, all.slice(0, 300), '__foot', function(e){ drawerOpen_(entryDocView_(e)); });
+          { h: t('rp_date'), v: function(r){ return r.e.date; } },
+          { h: t('lv_city'), v: function(r){ var l = loc(r); return l ? l.city : ''; } },
+          { h: t('lv_area'), v: function(r){ var l = loc(r); return l ? clusterName(l.clusterId) : ''; } },
+          { h: t('lv_branch'), v: function(r){ var l = loc(r); return l ? l.name : ''; } },
+          { h: t('rp_source'), v: function(r){ var nm = sourceName_(r.e); return t('entry_source_' + r.e.sourceType) + (nm ? ' — ' + nm : ''); } },
+          { h: t('report_enteredBy'), v: function(r){ return userName(r.e.enteredBy); } },
+          { h: t('report_product'), v: function(r){ return r.e.productId ? productName_(r.e.productId) : ''; } },
+          { h: t('rp_qty'), num: true, int: true, v: function(r){ return Number(r.e.qty || 0) || ''; } },
+          { h: t('entry_unitPrice'), num: true, int: true, v: function(r){ return Number(r.e.unitPrice || 0) || ''; } },
+          { h: t('rp_customer'), v: function(r){ var e = r.e; if (!(Number(e.creditSales) > 0)) return ''; var c = byId(meta.customers, e.creditCustomerId); return c ? (c.code ? c.code + ' · ' : '') + c.name : (e.creditCustomer || ''); } },
+          { h: t('ch_pick'), v: function(r){ var cq = r.e.channelQtys || {}; return Object.keys(cq).map(function(k){ var c = byId(meta.channels, k); return (c ? c.name : '') + ' ' + cq[k]; }).join('، '); } },
+          { h: t('trf_col'), v: function(r){ return trForText_(r.e); } },
+          { h: t('entry_depositRef'), v: function(r){ return Number(r.e.directDepositAmount) > 0 ? (r.e.directDepositRef || '') : ''; } },
+          { h: t('rp_expenseWhat'), v: function(r){ var e = r.e; return Number(e.expenseAmount) > 0 ? [itemName_('expenseItems', e.expenseItemId), e.expenseReason].filter(Boolean).join(' — ') : ''; } },
+          { h: t('rp_otherWhat'), v: function(r){ var e = r.e; return Number(e.otherCash) > 0 ? [itemName_('incomeItems', e.otherCashItemId), e.otherCashReason].filter(Boolean).join(' — ') : ''; } }
+        ].concat(moneyCols, [
+          { h: t('rp_status'), v: function(r){ return entryStatus_(r.e).label; } },
+          { h: t('entry_note'), v: function(r){ return [r.e.note, r.e.deliveryNote].filter(Boolean).join(' · '); } }
+        ]).map(function(c){ if (c.mb) return c; var f = c.v; return Object.assign({}, c, { v: function(r){ return r && r.e ? f(r) : ''; } }); });
+        var card = rpTableCard_(t('rp_tabLedger'), cols, all.slice(0, 300), total, function(r){ drawerOpen_(entryDocView_(r.e)); });
         if (all.length > 300) qs('.rp-head', card).insertAdjacentHTML('afterend', '<p class="muted rp-cap">'+esc(t('rp_ledgerCap').replace('{n}', 300).replace('{total}', all.length))+'</p>');
-        // the file always carries every line
-        card._aoa = function(){ return [footCols.map(function(c){ return c.h; })].concat(all.map(function(e){ return footCols.map(function(c){ var v = c.v(e); return v == null ? '' : v; }); }), [footCols.map(function(c, i){ return i === 0 ? t('rp_total') : (tot[i] != null ? Math.round(tot[i] * 100) / 100 : ''); })]); };
+        // the file always carries every line, and the total of every line
+        card._aoa = function(){
+          return [cols.map(function(c){ return c.h; })]
+            .concat(all.map(function(r){ return cols.map(function(c){ var v = c.v(r); return v == null ? '' : v; }); }))
+            .concat([cols.map(function(c, i){ return i === 0 ? t('rp_total') : !c.num || c.int ? '' : (c.v(total) == null ? '' : c.v(total)); })]);
+        };
         return card;
       } },
     { key: 'tx', label: t('rp_tabTx'), card: function(){
@@ -11842,12 +11834,21 @@ function branchBoard_(entries, opts){
   build();
   // Excel: the league (with bars on sales) and the day matrix (a colour scale), at the level shown
   function subLabel(){ return lvl === 'unit' ? t('admin_location') : lvl === 'branch' ? t('admin_cluster') : lvl === 'area' ? t('pl_lv_city') : ''; }
+  // the league carries the money block (2026-10-26): collections, total collections, each deduction,
+  // total deductions, net to deposit, POS deposits, cash to deposit
+  function leagueKeys(){
+    var T0 = mbOfEq_(eqTotals_([].concat.apply([], list.map(function(b){ return b.entries; }))));
+    return { T0: T0, keys: MB_KEYS_.filter(function(k){ return MB_KEEP_.indexOf(k) >= 0 || T0[k]; }) };
+  }
   function league(){
     if (!list.length) return [[t('bh_title')]];
-    return [['#', lvLabel(), subLabel(), t('bh_days'), t('eq_sales'), t(EQ_PARTS_.net.label)]].concat(list.map(function(b, i){
-      return [String(i + 1), b.name, b.area, t('bh_of').replace('{n}', b.reported).replace('{m}', cols.length), r2(b.sales), r2(b.net)];
-    }), [[t('rp_total'), '', '', '', r2(list.reduce(function(a, b){ return a + b.sales; }, 0)), r2(list.reduce(function(a, b){ return a + b.net; }, 0))]]);
+    var lk = leagueKeys();
+    return [['#', lvLabel(), subLabel(), t('bh_days')].concat(lk.keys.map(mbLabel_))].concat(list.map(function(b, i){
+      var c = b._mb || (b._mb = mbOfEq_(eqTotals_(b.entries)));
+      return [String(i + 1), b.name, b.area, t('bh_of').replace('{n}', b.reported).replace('{m}', cols.length)].concat(lk.keys.map(function(k){ return c[k] / 100; }));
+    }), [[t('rp_total'), '', '', ''].concat(lk.keys.map(function(k){ return lk.T0[k] / 100; }))]);
   }
+  function leagueMeta(){ return list.length ? mbSheetMeta_([null, null, null, null].concat(leagueKeys().keys)) : {}; }
   function matrix(){
     var sub = !!subLabel();
     return [[lvLabel()].concat(sub ? [subLabel()] : [], cols, [t('rp_total')])].concat(list.map(function(b){
@@ -11855,8 +11856,9 @@ function branchBoard_(entries, opts){
     }));
   }
   card._aoa = league;
+  Object.defineProperty(card, '_meta', { get: leagueMeta, configurable: true });
   card._more = function(){ var o = subLabel() ? 3 : 2; return list.length ? [{ name: t('bh_heat'), rows: matrix(), noBars: true, keepCols: true, heat: { from: o, to: o - 1 + cols.length } }] : []; };
-  qs('.rp-head', card).appendChild(exButtons_(function(){ return [{ name: t('bh_title'), rows: league() }].concat(card._more()); }, function(){ return t('bh_title'); }, function(){ return { note: card._note || '', filters: card._filters || [] }; }));
+  qs('.rp-head', card).appendChild(exButtons_(function(){ return [Object.assign({ name: t('bh_title'), rows: league() }, leagueMeta())].concat(card._more()); }, function(){ return t('bh_title'); }, function(){ return { note: card._note || '', filters: card._filters || [] }; }));
   return card;
 }
 // Rows with a label, sub-line, proportional bar and amount; clickable.
