@@ -173,7 +173,7 @@ console.log('North branch days handed to Muzafer: Olaya 1,850 / Naseem 2,400 / S
 console.log('');
 
 var ROOT = path.join(__dirname, '..');
-var MIME = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.png': 'image/png' };
+var MIME = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.png': 'image/png', '.webmanifest': 'application/manifest+json' };
 
 http.createServer(function (req, res) {
   if (req.method === 'POST' && req.url === '/api') {
