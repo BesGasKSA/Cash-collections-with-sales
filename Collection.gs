@@ -346,6 +346,13 @@ function checkNonSalesFields_(r, siblingCash) {
   // figure, but never cash in hand
   var transfer = Number(r.bankTransferAmount || 0);
   if (!isFinite(transfer) || transfer < 0) return 'invalid_amount';
+  // whose customers it came from (2026-10-26): a sales channel's (Souq Gas) or regular ones
+  if (transfer > 0 && r.bankTransferKind != null && r.bankTransferKind !== '') {
+    if (r.bankTransferKind === 'channel') {
+      var tch = typeof r.bankTransferChannelId === 'string' ? getById_(SHEETS.CHANNELS, r.bankTransferChannelId) : null;
+      if (!tch) return 'invalid_transfer_kind';
+    } else if (r.bankTransferKind !== 'normal') return 'invalid_transfer_kind';
+  }
   if (other > 0) {
     var inc = r.otherCashItemId ? getById_(SHEETS.INCOME_ITEMS, r.otherCashItemId) : null;
     if (!inc || inc.active === false) return 'invalid_income_item';
@@ -480,6 +487,8 @@ function nonSalesFields_(r) {
     directDepositPosId: Number(r.directDepositAmount || 0) > 0 ? (r.directDepositPosId || null) : null,
     directDepositPhotoId: Number(r.directDepositAmount || 0) > 0 ? (r.directDepositPhotoId || null) : null,
     bankTransferAmount: Number(r.bankTransferAmount || 0),
+    bankTransferKind: Number(r.bankTransferAmount || 0) > 0 && (r.bankTransferKind === 'normal' || r.bankTransferKind === 'channel') ? r.bankTransferKind : null,
+    bankTransferChannelId: Number(r.bankTransferAmount || 0) > 0 && r.bankTransferKind === 'channel' ? (r.bankTransferChannelId || null) : null,
     // what a delivery-fee line was for, and who owes a credit sale
     deliveryNote: Number(r.deliveryFeeBankAmount || 0) > 0 ? String(r.deliveryNote || '').trim().slice(0, 1000) : '',
     creditCustomer: Number(r.creditSales || 0) > 0 ? String(r.creditCustomer || '').trim() : '',
@@ -1765,7 +1774,7 @@ function resubmitError_(batch, user) {
 var BATCH_ROW_FIELDS_ = ['date', 'sourceType', 'sourceId', 'productId', 'qty', 'unitPrice', 'cashSales', 'posSales', 'creditSales',
   'creditCustomerId', 'channelQtys', 'channelComRates', 'deliveryFeeBankAmount', 'deliveryNote', 'otherCash', 'otherCashItemId',
   'otherCashReason', 'expenseAmount', 'expenseItemId', 'expenseReason', 'directDepositAmount', 'directDepositRef', 'directDepositNote',
-  'directDepositPosId', 'paymentCustomerId', 'discountAmount', 'discountReason', 'discountOnCard', 'discountNote', 'bankTransferAmount', 'cylindersOut', 'cylindersIn', 'note'];
+  'directDepositPosId', 'paymentCustomerId', 'discountAmount', 'discountReason', 'discountOnCard', 'discountNote', 'bankTransferAmount', 'bankTransferKind', 'bankTransferChannelId', 'cylindersOut', 'cylindersIn', 'note'];
 function actionAreaBatchRows_(req, user) {
   var batch = getById_(SHEETS.AREA_BULK_BATCHES, req.id);
   var err = resubmitError_(batch, user);
@@ -2793,7 +2802,10 @@ function actionCollectionReports_(req, user) {
       hopCorrections: (r.hops || []).reduce(function (a, hp) { var x = byId[hp.id]; return a.concat(((x && x.receiptCorrections) || []).map(function (c) { return { hopId: hp.id, at: c.at, by: c.by, fromAmount: c.fromAmount, toAmount: c.toAmount, reason: party ? (c.reason || '') : '' }; })); }, []),
       // the parts as typed (the client splits them into kinds; no net figure is worked out here)
       mix: b ? { cashSales: Math.round((n(b, 'storeCash') + n(b, 'carCash') + n(b, 'posCash')) * 100) / 100, card: n(b, 'posSales'), credit: n(b, 'creditSales'), transfer: n(b, 'bankTransfers'),
-        direct: n(b, 'directDeposit'), other: n(b, 'otherCash'), dFee: n(b, 'deliveryFee'), cFee: n(b, 'creditDeliveryFees'), chFee: n(b, 'channelDeliveryFees') } : null
+        direct: n(b, 'directDeposit'), other: n(b, 'otherCash'), dFee: n(b, 'deliveryFee'), cFee: n(b, 'creditDeliveryFees'), chFee: n(b, 'channelDeliveryFees'),
+        // each deduction as typed, so an export can spell them out (2026-10-21); the VAT and the net as the breakdown holds them
+        expense: n(b, 'expenses'), discount: n(b, 'discounts'), cCom: n(b, 'creditCommissions'), chCom: n(b, 'channelCommissions'), cUnpaid: n(b, 'creditDeliveryUnpaid'),
+        vat: n(b, 'vatOnDelivery'), net: n(b, 'netCashOwed'), short: n(b, 'shortfall') } : null
     };
   });
   return base;
