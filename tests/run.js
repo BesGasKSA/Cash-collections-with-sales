@@ -7034,5 +7034,21 @@ console.log('--- a duplicate inside a received handover ---');
   check(second.ok, 'a genuinely different second handover the same day still goes through (' + (second.error || 'ok') + ')');
 })();
 
+console.log('--- a customer bank transfer says whose customers it came from: Souq Gas or regular (2026-10-26) ---');
+(function () {
+  var base = { date: '2026-09-22', sourceType: 'store', sourceId: bigStore.id, cashSales: 1000 };
+  function entry(extra, sub) { var r = {}; Object.keys(base).forEach(function (k) { r[k] = base[k]; }); Object.keys(extra).forEach(function (k) { r[k] = extra[k]; }); r.submissionId = sub; return call({ action: 'importDailyEntries', token: adminTok, rows: [r] }); }
+  var ch = entry({ bankTransferAmount: 200, bankTransferKind: 'channel', bankTransferChannelId: souq.entity.id }, 'trf-1');
+  var saved = ch.ok && ctx.readSheet(SHEETS.ENTRIES).filter(function (e) { return e.submissionId === 'trf-1'; })[0];
+  check(saved && saved.bankTransferKind === 'channel' && saved.bankTransferChannelId === souq.entity.id, 'a transfer from Souq Gas customers is saved with its channel (' + (ch.error || 'ok') + ')');
+  var bad = entry({ bankTransferAmount: 50, bankTransferKind: 'channel', bankTransferChannelId: 'no-such-channel' }, 'trf-2');
+  check(((bad.results && bad.results[0] && bad.results[0].error) || bad.error) === 'invalid_transfer_kind', 'a channel that does not exist is refused');
+  var odd = entry({ bankTransferAmount: 50, bankTransferKind: 'other' }, 'trf-3');
+  check(((odd.results && odd.results[0] && odd.results[0].error) || odd.error) === 'invalid_transfer_kind', 'an unknown customer type is refused');
+  var none = entry({ cashSales: 300, bankTransferKind: 'normal' }, 'trf-4');
+  var noneRow = ctx.readSheet(SHEETS.ENTRIES).filter(function (e) { return e.submissionId === 'trf-4'; })[0];
+  check(!noneRow || noneRow.bankTransferKind === null, 'a row without a transfer keeps no customer type');
+})();
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);
