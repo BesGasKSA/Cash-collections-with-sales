@@ -73,7 +73,9 @@ var SHEETS = {
   RATE_CHANGES: 'rate_changes',
   // customers (Customers.gs): payments by bank transfer, and the sales invoices and credit notes issued from the app
   CUSTOMER_PAYMENTS: 'customer_payments',
-  SALES_INVOICES: 'sales_invoices'
+  SALES_INVOICES: 'sales_invoices',
+  // the devices that receive push notifications, one row per browser or phone (Push.gs, 2026-10-26)
+  PUSH_TOKENS: 'push_tokens'
 };
 
 var IDLE_MS = 2 * 3600 * 1000;   // was 12h; the screens sign out after 10 idle minutes (security review 2026-10-04)
@@ -721,7 +723,7 @@ function publicUser_(u) {
     active: u.active !== false, language: userLang_(u),
     locationId: u.locationId || null, clusterId: u.clusterId || null,
     mustChangePw: !!u.mustChangePw, iqamaId: u.iqamaId || null, phone: u.phone || null,
-    status: userStatus_(u), lastLoginAt: u.lastLoginAt || null,
+    status: userStatus_(u), lastLoginAt: u.lastLoginAt || null, pushOn: u.pushOn !== false,
     invitedAt: u.invitedAt || null, acceptedAt: u.acceptedAt || null,
     activatedAt: u.activatedAt || null, inviteExpiresAt: u.inviteExpiresAt || null
   };
@@ -884,6 +886,13 @@ function route_(req) {
     bootstrap: function () { var meta = actionMeta_(req, user); return { ok: true, user: publicUser_(user), meta: meta }; },
     setLanguage: function () { return actionSetLanguage_(req, user); },
     changePassword: function () { return actionChangePassword_(req, user); },
+    // push notifications (Push.gs): a person's own devices only
+    registerPushToken: function () { return actionRegisterPushToken_(req, user); },
+    unregisterPushToken: function () { return actionUnregisterPushToken_(req, user); },
+    setPushPref: function () { return actionSetPushPref_(req, user); },
+    sendTestPush: function () { return actionSendTestPush_(req, user); },
+    adminGetPushConfig: function () { return actionAdminGetPushConfig_(req, user); },
+    adminSetPushConfig: function () { return withMeta_(actionAdminSetPushConfig_(req, user), req, user); },
 
     // reference data
     listDashboard: function () { return actionDashboard_(req, user); },

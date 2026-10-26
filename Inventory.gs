@@ -997,7 +997,7 @@ function stockShortPending_(user) {
 }
 function escalateStockShort_(g, user) {
   var sc = invStockCtx_(), it = sc.item(g.itemId);
-  stockShortRecipients_(g.locationId).forEach(function (u) { if (u.email) nmStockShortMail_(u, g, it, user); });
+  stockShortRecipients_(g.locationId).forEach(function (u) { if (nmReach_(u)) nmStockShortMail_(u, g, it, user); });
 }
 
 // ---------- The stock card (2026-10-06) ----------

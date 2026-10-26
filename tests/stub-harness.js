@@ -149,6 +149,11 @@ function buildContext() {
     computeHmacSha256Signature: function (payload, key) {
       return Array.from(crypto.createHmac('sha256', toBuf(key)).update(toBuf(payload)).digest());
     },
+    // RS256 for the push service account's JWT (2026-10-26): Apps Script signs with the
+    // PEM private key and returns the signature as a byte array, as this does
+    computeRsaSha256Signature: function (value, key) {
+      return Array.from(crypto.createSign('RSA-SHA256').update(toBuf(value)).sign(String(key)));
+    },
     base64EncodeWebSafe: function (bytesOrStr) {
       var buf = Array.isArray(bytesOrStr) ? Buffer.from(bytesOrStr) : Buffer.from(String(bytesOrStr));
       return buf.toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
@@ -191,6 +196,11 @@ function buildContext() {
       urlFetch.log.push({ url: url, options: options || {} });
       var r = urlFetch.responder(url, options || {});
       return { getResponseCode: function () { return r.code; }, getContentText: function () { return r.body; } };
+    },
+    // several requests in one round trip, as the push sender batches a person's devices;
+    // like the real one, a responder that throws fails the whole call
+    fetchAll: function (requests) {
+      return requests.map(function (q) { var o = {}; for (var k in q) if (k !== 'url') o[k] = q[k]; return UrlFetchApp.fetch(q.url, o); });
     }
   };
   // Google Translate as the script sees it: tests read .log and can set .fail
@@ -275,7 +285,7 @@ function buildContext() {
     console: console
   };
 
-  var files = ['Code.gs', 'Admin.gs', 'Collection.gs', 'Reconciliation.gs', 'Risk.gs', 'MicrosoftMail.gs', 'Inventory.gs', 'Costing.gs', 'Customers.gs', 'Notify.gs'];
+  var files = ['Code.gs', 'Admin.gs', 'Collection.gs', 'Reconciliation.gs', 'Risk.gs', 'MicrosoftMail.gs', 'Inventory.gs', 'Costing.gs', 'Customers.gs', 'Notify.gs', 'Push.gs'];
   var src = files.map(function (f) { return fs.readFileSync(path.join(__dirname, '..', f), 'utf8'); }).join('\n');
   var context = vm.createContext(sandbox);
   vm.runInContext(src, context, { filename: 'apps-script-bundle.js' });

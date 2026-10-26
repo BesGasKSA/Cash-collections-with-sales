@@ -6761,5 +6761,264 @@ console.log('--- a duplicate inside a received handover ---');
   check(second.ok, 'a genuinely different second handover the same day still goes through (' + (second.error || 'ok') + ')');
 })();
 
+// ---------- push notifications through Firebase Cloud Messaging (2026-10-26) ----------
+console.log('--- push notifications ---');
+(function () {
+  var crypto = require('crypto'), fs = require('fs'), path = require('path');
+  var ctx = harness.buildContext(), SHEETS = ctx.SHEETS, D = ctx._debug;
+  function call(payload) { try { return ctx.route_(payload); } catch (e) { return { ok: false, error: String(e && e.message || e) }; } }
+  try {
+    check(typeof ctx.Utilities.computeRsaSha256Signature === 'function', 'push: the harness signs RS256');
+    var salt = ctx.randomSalt_(), pw = ctx.hashPw_('Bootstrap#1', salt);
+    function U(o) { o.active = true; o.salt = salt; o.pass = pw; o.mustChangePw = false; ctx.writeRow(SHEETS.USERS, o); return o; }
+    U({ id: 'pnAdmin', name: 'Push Admin', email: 'pn.admin@bestgas.sa', role: 'admin', language: 'en' });
+    U({ id: 'pnFin', name: 'Push Finance', email: 'pn.fin@bestgas.sa', role: 'finance', language: 'ur' });
+    U({ id: 'pnCol', name: 'Push Collector', email: 'pn.col@bestgas.sa', role: 'collector', language: 'en' });
+    U({ id: 'pnDrv', name: 'سائق التجربة', iqamaId: '2345678901', role: 'driver', language: 'ar', languageChosen: true });
+    U({ id: 'pnBm', name: 'Push Branch', email: 'pn.bm@bestgas.sa', role: 'store_manager', language: 'en' });
+    function tok(login) { return call({ action: 'login', email: login, password: 'Bootstrap#1' }).token; }
+    var adminTok = tok('pn.admin@bestgas.sa'), finTok = tok('pn.fin@bestgas.sa'), colTok = tok('pn.col@bestgas.sa'), drvTok = tok('2345678901'), bmTok = tok('pn.bm@bestgas.sa');
+    check(adminTok && finTok && colTok && drvTok && bmTok, 'push: everyone signs in (the driver by iqama)');
+
+    // the built-in public web config: ready only once the VAPID key and the service account are in
+    var m0 = call({ action: 'listMeta', token: colTok });
+    check(m0.ok && m0.config.push && m0.config.push.ready === false && m0.config.push.web && m0.config.push.web.projectId === 'bestgas-cash', 'push: meta carries the built-in web config, not ready yet (' + JSON.stringify(m0.config && m0.config.push) + ')');
+    check(m0.ok && m0.config.push.vapidKey === 'BAJRJ0ltn21nT17JdspGUzde5sCN14GnqlJ-yv_NfBpoXvDYsUfbmI1yYOSUI84Zo8TImHoOFj41HhAa6n8AWhA', 'push: and the built-in Web Push public key');
+
+    var kp = crypto.generateKeyPairSync('rsa', { modulusLength: 2048, publicKeyEncoding: { type: 'spki', format: 'pem' }, privateKeyEncoding: { type: 'pkcs8', format: 'pem' } });
+    var SA = { type: 'service_account', project_id: 'bestgas-cash', private_key_id: 'kid123', private_key: kp.privateKey,
+      client_email: 'firebase-adminsdk-x@bestgas-cash.iam.gserviceaccount.com', token_uri: 'https://oauth2.googleapis.com/token' };
+    var VAPID = 'BOr7q1Xyw2bS9Yb3vZ0d8sQ4mT1kL6pN2hJ5fG8cR0aW3eU7iO9yT2xV5bN8mK1lP4qS7dF0gH3jK6lZ9xC2vB5n';
+    var keyBody = kp.privateKey.split('\n')[1];
+
+    var f1 = call({ action: 'adminSetPushConfig', token: finTok, data: { vapidKey: VAPID, serviceAccount: JSON.stringify(SA) } });
+    check(!f1.ok && f1.error === 'forbidden', 'push: finance cannot set the push config (' + f1.error + ')');
+    var c1 = call({ action: 'adminSetPushConfig', token: colTok, data: { vapidKey: VAPID } });
+    check(!c1.ok && c1.error === 'forbidden', 'push: a collector cannot either');
+    var bad1 = call({ action: 'adminSetPushConfig', token: adminTok, data: { vapidKey: 'not a key' } });
+    check(!bad1.ok && bad1.error === 'invalid_push_vapid', 'push: a malformed VAPID key is refused (' + bad1.error + ')');
+    var bad2 = call({ action: 'adminSetPushConfig', token: adminTok, data: { serviceAccount: '{"type":"service_account","project_id":"bestgas-cash"}' } });
+    check(!bad2.ok && bad2.error === 'invalid_push_sa', 'push: a service account without its key is refused (' + bad2.error + ')');
+    var bad3 = call({ action: 'adminSetPushConfig', token: adminTok, data: { serviceAccount: 'hello' } });
+    check(!bad3.ok && bad3.error === 'invalid_push_sa', 'push: text that is not JSON is refused');
+    var other = JSON.parse(JSON.stringify(SA)); other.project_id = 'another-project';
+    var bad4 = call({ action: 'adminSetPushConfig', token: adminTok, data: { serviceAccount: JSON.stringify(other) } });
+    check(!bad4.ok && bad4.error === 'push_project_mismatch', 'push: a service account of another Firebase project is refused (' + bad4.error + ')');
+    var bad5 = call({ action: 'adminSetPushConfig', token: adminTok, data: { webConfig: '{"apiKey":"x"}' } });
+    check(!bad5.ok && bad5.error === 'invalid_push_web', 'push: a web config without its ids is refused (' + bad5.error + ')');
+    // with the built-in web config and key, the service account is all the admin pastes
+    var only = call({ action: 'adminSetPushConfig', token: adminTok, data: { serviceAccount: JSON.stringify(SA) } });
+    check(only.ok && only.push.ready === true && only.push.webIsDefault === true && only.push.vapidIsDefault === true, 'push: pasting the service account alone makes it ready (' + JSON.stringify(only).slice(0, 200) + ')');
+    var miss = JSON.parse(JSON.stringify(SA)); delete miss.client_email;
+    check(call({ action: 'adminSetPushConfig', token: adminTok, data: { serviceAccount: JSON.stringify(miss) } }).error === 'invalid_push_sa', 'push: a service account without client_email is refused');
+    var notSa = JSON.parse(JSON.stringify(SA)); notSa.type = 'authorized_user';
+    check(call({ action: 'adminSetPushConfig', token: adminTok, data: { serviceAccount: JSON.stringify(notSa) } }).error === 'invalid_push_sa', 'push: a key that is not a service account is refused');
+    // the snippet the Firebase console shows (a JS object, unquoted keys) is read as well
+    var snippet = 'const firebaseConfig = {\n  apiKey: "AIzaSyDSZcEDFJCRTd_-dMPVjfORe1zHpp0TaH8",\n  authDomain: "bestgas-cash.firebaseapp.com",\n  projectId: "bestgas-cash",\n  storageBucket: "bestgas-cash.firebasestorage.app",\n  messagingSenderId: "703265582003",\n  appId: "1:703265582003:web:f4f0200d6353090d24b9c6"\n};';
+    var ok1 = call({ action: 'adminSetPushConfig', token: adminTok, data: { webConfig: snippet, vapidKey: VAPID, serviceAccount: JSON.stringify(SA) } });
+    check(ok1.ok && ok1.push && ok1.push.ready === true && ok1.push.serviceAccountSet === true && ok1.push.projectId === 'bestgas-cash', 'push: the admin sets the config and it is ready (' + JSON.stringify(ok1) .slice(0, 300) + ')');
+    var aud = ctx.readSheet(SHEETS.AUDIT).filter(function (a) { return a.action === 'admin_set_push'; });
+    check(aud.length === 2, 'push: each change is audited (' + aud.length + ')');
+
+    // the service account never leaves the server
+    function leaks(res) { var s = JSON.stringify(res || {}); return s.indexOf(keyBody) >= 0 || s.indexOf('PRIVATE KEY') >= 0 || s.indexOf('private_key') >= 0 || s.indexOf('kid123') >= 0; }
+    check(!leaks(ok1), 'push: the save answer holds no private key');
+    var g1 = call({ action: 'adminGetPushConfig', token: adminTok });
+    check(g1.ok && g1.push.ready && !leaks(g1), 'push: the admin read holds no private key');
+    var g2 = call({ action: 'adminGetPushConfig', token: colTok });
+    check(!g2.ok && g2.error === 'forbidden', 'push: only the admin reads the push settings');
+    [['listMeta', adminTok], ['listMeta', colTok], ['bootstrap', adminTok], ['bootstrap', drvTok]].forEach(function (x) {
+      var r = call({ action: x[0], token: x[1] });
+      check(r.ok && !leaks(r), 'push: ' + x[0] + ' holds no private key');
+    });
+    var sc = call({ action: 'adminSetConfig', token: adminTok, data: { senderName: 'Best Gas Collections' } });
+    check(sc.ok && !leaks(sc), 'push: a settings save (with its meta) holds no private key');
+    var m1 = call({ action: 'listMeta', token: colTok });
+    check(m1.ok && m1.config.push.ready === true && m1.config.push.vapidKey === VAPID && m1.config.push.web.messagingSenderId === '703265582003', 'push: meta tells every client it is ready, with the public key (' + JSON.stringify(m1.config.push).slice(0, 200) + ')');
+
+    // registering a device: only for oneself
+    var badTok = call({ action: 'registerPushToken', token: colTok, pushToken: 'x y', platform: 'android' });
+    check(!badTok.ok && badTok.error === 'invalid_push_token', 'push: a malformed device token is refused');
+    var r1 = call({ action: 'registerPushToken', token: colTok, pushToken: 'tok-col-1:APA91b', platform: 'android', ua: 'Mozilla/5.0 (Linux; Android 14)' });
+    check(r1.ok, 'push: the collector registers his phone (' + r1.error + ')');
+    var r1b = call({ action: 'registerPushToken', token: colTok, pushToken: 'tok-col-1:APA91b', platform: 'android' });
+    var colRows = ctx.readSheet(SHEETS.PUSH_TOKENS).filter(function (r) { return r.token === 'tok-col-1:APA91b'; });
+    check(r1b.ok && colRows.length === 1 && colRows[0].userId === 'pnCol' && colRows[0].active === true && colRows[0].lastSeenAt && colRows[0].platform === 'android', 'push: registering again refreshes the same row');
+    var r2 = call({ action: 'registerPushToken', token: drvTok, pushToken: 'tok-drv-1', platform: 'ios', userId: 'pnCol' });
+    var drvRow = ctx.readSheet(SHEETS.PUSH_TOKENS).filter(function (r) { return r.token === 'tok-drv-1'; })[0];
+    check(r2.ok && drvRow && drvRow.userId === 'pnDrv', 'push: a userId in the request is ignored, the device is the signed-in person\'s');
+    var u1 = call({ action: 'unregisterPushToken', token: drvTok, pushToken: 'tok-col-1:APA91b' });
+    check(!u1.ok && u1.error === 'not_found' && ctx.readSheet(SHEETS.PUSH_TOKENS).filter(function (r) { return r.token === 'tok-col-1:APA91b'; })[0].active === true, 'push: nobody turns off another person\'s device');
+    call({ action: 'registerPushToken', token: bmTok, pushToken: 'tok-bm-1', platform: 'desktop' });
+    var u2 = call({ action: 'unregisterPushToken', token: bmTok, pushToken: 'tok-bm-1' });
+    check(u2.ok && ctx.readSheet(SHEETS.PUSH_TOKENS).filter(function (r) { return r.token === 'tok-bm-1'; })[0].active === false, 'push: a person turns off their own device');
+    // a shared phone: the next person to sign in on it takes its token
+    call({ action: 'registerPushToken', token: bmTok, pushToken: 'tok-shared', platform: 'android' });
+    call({ action: 'registerPushToken', token: finTok, pushToken: 'tok-shared', platform: 'android' });
+    var sh = ctx.readSheet(SHEETS.PUSH_TOKENS).filter(function (r) { return r.token === 'tok-shared'; });
+    check(sh.length === 1 && sh[0].userId === 'pnFin' && sh[0].active === true, 'push: a device signed in by someone else moves to them');
+    var regs = ctx.readSheet(SHEETS.PUSH_TOKENS);
+    check(regs.every(function (r) { return r.id && r.userId && r.token && r.createdAt; }), 'push: every row has its id, owner, token and date');
+
+    // FCM, stubbed: the OAuth token endpoint and messages:send
+    var FCM = 'https://fcm.googleapis.com/v1/projects/bestgas-cash/messages:send';
+    var mode = { fcm: 'ok', token: 'ok' };
+    D.urlFetch.log.length = 0;
+    D.urlFetch.responder = function (url, o) {
+      if (url === 'https://oauth2.googleapis.com/token') {
+        if (mode.token === 'fail') return { code: 500, body: '{"error":"internal"}' };
+        return { code: 200, body: JSON.stringify({ access_token: 'ya29.test-access', expires_in: 3599, token_type: 'Bearer' }) };
+      }
+      if (url === FCM) {
+        if (mode.fcm === 'throw') throw new Error('Address unavailable: fcm.googleapis.com');
+        if (mode.fcm === 'fail') return { code: 503, body: '{"error":{"code":503,"status":"UNAVAILABLE"}}' };
+        var t = JSON.parse(o.payload).message.token;
+        if (t === 'tok-dead') return { code: 404, body: JSON.stringify({ error: { code: 404, message: 'Requested entity was not found.', status: 'NOT_FOUND', details: [{ '@type': 'type.googleapis.com/google.firebase.fcm.v1.FcmError', errorCode: 'UNREGISTERED' }] } }) };
+        if (t === 'tok-invalid') return { code: 400, body: JSON.stringify({ error: { code: 400, message: 'The registration token is not a valid FCM registration token', status: 'INVALID_ARGUMENT' } }) };
+        if (t === 'tok-payload') return { code: 400, body: JSON.stringify({ error: { code: 400, message: 'Invalid value at \'message.webpush.headers\'', status: 'INVALID_ARGUMENT' } }) };
+        return { code: 200, body: JSON.stringify({ name: 'projects/bestgas-cash/messages/0:1' }) };
+      }
+      return { code: 404, body: '{}' };
+    };
+    function fcmCalls() { return D.urlFetch.log.filter(function (l) { return l.url === FCM; }); }
+    function tokenCalls() { return D.urlFetch.log.filter(function (l) { return l.url === 'https://oauth2.googleapis.com/token'; }); }
+
+    var t1 = call({ action: 'sendTestPush', token: colTok });
+    check(t1.ok && t1.sent === 1 && t1.devices === 1, 'push: the test notification reaches the collector\'s one phone (' + JSON.stringify(t1) + ')');
+    check(tokenCalls().length === 1, 'push: one OAuth token request');
+    var tq = tokenCalls()[0], form = String(tq.options.payload && (typeof tq.options.payload === 'string' ? tq.options.payload : JSON.stringify(tq.options.payload)));
+    var assertion = tq.options.payload && tq.options.payload.assertion;
+    check(tq.options.method === 'post' && tq.options.payload && tq.options.payload.grant_type === 'urn:ietf:params:oauth:grant-type:jwt-bearer' && assertion, 'push: the token request is a JWT-bearer grant (' + form.slice(0, 120) + ')');
+    var parts = String(assertion || '').split('.');
+    function b64j(s) { return JSON.parse(Buffer.from(s.replace(/-/g, '+').replace(/_/g, '/'), 'base64').toString('utf8')); }
+    var hdr = parts.length === 3 ? b64j(parts[0]) : {}, cl = parts.length === 3 ? b64j(parts[1]) : {};
+    check(hdr.alg === 'RS256' && hdr.typ === 'JWT', 'push: the JWT header is RS256 (' + JSON.stringify(hdr) + ')');
+    check(cl.iss === SA.client_email && cl.scope === 'https://www.googleapis.com/auth/firebase.messaging' && cl.aud === 'https://oauth2.googleapis.com/token' && cl.exp - cl.iat === 3600 && Math.abs(cl.iat - Date.now() / 1000) < 120, 'push: the JWT claims are iss, scope, aud, iat, exp (' + JSON.stringify(cl) + ')');
+    check(parts.length === 3 && !/=/.test(assertion) && crypto.createVerify('RSA-SHA256').update(parts[0] + '.' + parts[1]).verify(kp.publicKey, Buffer.from(parts[2].replace(/-/g, '+').replace(/_/g, '/'), 'base64')), 'push: the JWT signature verifies with the service account\'s public key');
+    var fc = fcmCalls()[0], msg = fc ? JSON.parse(fc.options.payload).message : {};
+    check(fc && fc.options.headers && fc.options.headers.Authorization === 'Bearer ya29.test-access' && fc.options.muteHttpExceptions === true, 'push: the send carries the access token');
+    check(msg.token === 'tok-col-1:APA91b' && msg.webpush && msg.webpush.notification && msg.webpush.notification.title && msg.webpush.headers.Urgency === 'high' && Number(msg.webpush.headers.TTL) > 0, 'push: one message for the device, urgent, with a TTL');
+    check(msg.webpush.notification.icon && /assets\/icon-192\.png$/.test(msg.webpush.notification.icon) && msg.webpush.notification.badge, 'push: the message has the app icon and a badge');
+    check(msg.webpush.fcm_options && msg.webpush.fcm_options.link.indexOf(ctx.DEFAULT_APP_URL) === 0 && msg.data && msg.data.open === msg.webpush.fcm_options.link, 'push: the link opens the app (' + (msg.webpush.fcm_options && msg.webpush.fcm_options.link) + ')');
+    check(Object.keys(msg.data || {}).every(function (k) { return typeof msg.data[k] === 'string'; }), 'push: every data value is a string (FCM refuses anything else)');
+    call({ action: 'sendTestPush', token: colTok });
+    check(tokenCalls().length === 1 && fcmCalls().length === 2, 'push: the access token is cached, the second send asks for none');
+    var none = call({ action: 'sendTestPush', token: bmTok });
+    check(none.ok && none.devices === 0 && none.sent === 0, 'push: a person with no device gets a clear "no devices"');
+
+    // an event reaches a driver without email, in Arabic, with the request link
+    D.urlFetch.log.length = 0;
+    var mails0 = D.mailLog.length;
+    var h = { id: 'pnH1', kind: 'car_to_location', status: 'pending', amount: 1250, fromUserId: 'pnBm', toUserId: 'pnDrv', createdAt: new Date().toISOString(), breakdown: { carCash: 1250, netCashOwed: 1250 } };
+    ctx.writeRow(SHEETS.HANDOFFS, h);
+    ctx.resetExecMemo_();
+    ctx.notifyPending_(h);
+    var ev = fcmCalls().map(function (c) { return JSON.parse(c.options.payload).message; });
+    var arS = ctx.fill_(ctx.NM_.ar.ev.confirm_receipt.s, { amount: ctx.nmMoney_(1250), from: 'Push Branch' });
+    check(ev.length === 1 && ev[0].token === 'tok-drv-1', 'push: the driver (no email) gets the confirm-receipt push on his phone (' + ev.length + ')');
+    check(ev[0] && ev[0].webpush.notification.title === arS && ev[0].webpush.notification.body === ctx.NM_.ar.ev.confirm_receipt.h, 'push: in his language, the email\'s subject and headline (' + (ev[0] && ev[0].webpush.notification.title) + ')');
+    check(ev[0] && ev[0].webpush.notification.dir === 'rtl' && ev[0].webpush.notification.lang === 'ar' && ev[0].data.dir === 'rtl', 'push: Arabic reads right to left');
+    check(ev[0] && ev[0].webpush.fcm_options.link === ctx.DEFAULT_APP_URL + '?open=' + encodeURIComponent('confirm_receipt:pnH1') && ev[0].webpush.notification.tag === 'bgc-pnH1', 'push: the same ?open= link as the email, one tag per request');
+    check(D.mailLog.length === mails0, 'push: and no email is attempted for him');
+
+    // the collector: email and push, same words
+    D.urlFetch.log.length = 0;
+    var h2 = { id: 'pnH2', kind: 'cluster_to_collector', status: 'pending', amount: 900, fromUserId: 'pnBm', toUserId: 'pnCol', createdAt: new Date().toISOString(), breakdown: { netCashOwed: 900 } };
+    ctx.writeRow(SHEETS.HANDOFFS, h2); ctx.resetExecMemo_();
+    var mails1 = D.mailLog.length;
+    ctx.notifyPending_(h2);
+    var ev2 = fcmCalls().map(function (c) { return JSON.parse(c.options.payload).message; });
+    var mail2 = D.mailLog.slice(mails1).filter(function (m) { return m.to === 'pn.col@bestgas.sa'; })[0];
+    check(mail2 && ev2.length === 1 && ev2[0].webpush.notification.title === mail2.subject, 'push: the collector gets the email and the push with its subject (' + (mail2 && mail2.subject) + ')');
+
+    // one push per active device; dead tokens are switched off, a payload error is not
+    ['tok-dead', 'tok-invalid', 'tok-payload', 'tok-col-2'].forEach(function (x) { call({ action: 'registerPushToken', token: colTok, pushToken: x, platform: 'desktop' }); });
+    D.urlFetch.log.length = 0;
+    var t3 = call({ action: 'sendTestPush', token: colTok });
+    var sentTo = fcmCalls().map(function (c) { return JSON.parse(c.options.payload).message.token; }).sort();
+    check(sentTo.join(',') === ['tok-invalid', 'tok-col-1:APA91b', 'tok-col-2', 'tok-dead', 'tok-payload'].sort().join(','), 'push: one message per active device (' + sentTo.join(',') + ')');
+    check(t3.ok && t3.sent === 2 && t3.removed === 2, 'push: two delivered, two dead devices removed (' + JSON.stringify(t3) + ')');
+    var byTok = {}; ctx.readSheet(SHEETS.PUSH_TOKENS).forEach(function (r) { byTok[r.token] = r; });
+    check(byTok['tok-dead'].active === false && byTok['tok-invalid'].active === false && byTok['tok-dead'].deactivatedReason, 'push: UNREGISTERED and an invalid token are deactivated');
+    check(byTok['tok-payload'].active === true && byTok['tok-col-2'].active === true, 'push: a message error leaves the device on');
+    D.urlFetch.log.length = 0;
+    call({ action: 'sendTestPush', token: colTok });
+    check(fcmCalls().length === 3, 'push: the dead devices are not tried again');
+    call({ action: 'unregisterPushToken', token: colTok, pushToken: 'tok-payload' });
+
+    // a failing push never fails the action
+    U({ id: 'pnFin2', name: 'Finance Phone Only', role: 'finance', iqamaId: '1122334455', language: 'en' });
+    var fin2Tok = tok('1122334455');
+    call({ action: 'registerPushToken', token: fin2Tok, pushToken: 'tok-fin2', platform: 'ios' });
+    call({ action: 'registerPushToken', token: adminTok, pushToken: 'tok-admin', platform: 'desktop' });
+    mode.fcm = 'throw';
+    var risk = call({ action: 'createRiskItem', token: bmTok, type: 'risk', title: 'Safe left open', severity: 'high', description: 'x' });
+    check(risk.ok, 'push: a send that throws never fails the action (' + risk.error + ')');
+    mode.fcm = 'fail';
+    var risk2 = call({ action: 'createRiskItem', token: bmTok, type: 'risk', title: 'Safe left open again', severity: 'high' });
+    check(risk2.ok, 'push: FCM down never fails the action');
+    mode.fcm = 'ok'; mode.token = 'fail'; ctx._debug.cache && Object.keys(ctx._debug.cache).forEach(function (k) { if (/^push_at/.test(k)) delete ctx._debug.cache[k]; });
+    var risk3 = call({ action: 'createRiskItem', token: bmTok, type: 'risk', title: 'Token down', severity: 'high' });
+    check(risk3.ok, 'push: an OAuth failure never fails the action');
+    mode.token = 'ok';
+    D.urlFetch.log.length = 0;
+    var risk4 = call({ action: 'createRiskItem', token: bmTok, type: 'risk', title: 'Cash bag torn', severity: 'high' });
+    var rk = fcmCalls().map(function (c) { return JSON.parse(c.options.payload).message.token; }).sort();
+    check(risk4.ok && rk.join(',') === 'tok-admin,tok-fin2,tok-shared', 'push: a high risk reaches admin and finance phones, finance without email too (' + rk.join(',') + ')');
+    var urTitle = fcmCalls().map(function (c) { return JSON.parse(c.options.payload).message; }).filter(function (m) { return m.token === 'tok-shared'; })[0];
+    check(urTitle && urTitle.webpush.notification.title === ctx.fill_(ctx.NM_.ur.ev.risk.s, { title: 'Cash bag torn', by: 'Push Branch' }) && urTitle.webpush.notification.dir === 'rtl', 'push: Urdu for the Urdu reader, right to left');
+
+    // the push waits for the cash lock to be released
+    D.urlFetch.log.length = 0;
+    var during = -1;
+    ctx.resetExecMemo_();
+    ctx.withCashLock_(function () { ctx.pushTo_('pnCol', { title: 'x', body: 'y', open: ctx.DEFAULT_APP_URL, tag: 'bgc-t', lang: 'en' }); during = fcmCalls().length; });
+    check(during === 0 && fcmCalls().length === 2, 'push: queued inside the cash lock, sent after it (' + during + ' / ' + fcmCalls().length + ')');
+
+    // turned off: nothing is sent
+    var off = call({ action: 'setPushPref', token: colTok, on: false });
+    check(off.ok && off.pushOn === false, 'push: a person turns push off');
+    D.urlFetch.log.length = 0;
+    ctx.resetExecMemo_(); ctx.pushTo_('pnCol', { title: 'x', body: 'y', open: ctx.DEFAULT_APP_URL, lang: 'en' });
+    check(fcmCalls().length === 0, 'push: nothing goes to someone who turned it off');
+    var me = call({ action: 'whoami', token: colTok });
+    check(me.user && me.user.pushOn === false, 'push: the setting rides on the user');
+    call({ action: 'setPushPref', token: colTok, on: true });
+    // a stale handover alerts the driver without email by push
+    D.urlFetch.log.length = 0; ctx.resetExecMemo_();
+    ctx.escalateStaleHandoff_(h, 30);
+    var st = fcmCalls().map(function (c) { return JSON.parse(c.options.payload).message.token; });
+    check(st.indexOf('tok-drv-1') >= 0, 'push: escalations reach people with no email (' + st.join(',') + ')');
+    // deactivated person: nothing
+    var drvU = ctx.getById_(SHEETS.USERS, 'pnDrv'); drvU.active = false; ctx.writeRow(SHEETS.USERS, drvU);
+    D.urlFetch.log.length = 0; ctx.resetExecMemo_(); ctx.pushTo_('pnDrv', { title: 'x', body: 'y', open: ctx.DEFAULT_APP_URL, lang: 'ar' });
+    check(fcmCalls().length === 0, 'push: a disabled account gets nothing');
+    // not configured: nothing is attempted at all
+    var clr = call({ action: 'adminSetPushConfig', token: adminTok, data: { clear: true } });
+    check(clr.ok && clr.push.ready === false, 'push: the admin can clear the service account');
+    D.urlFetch.log.length = 0; ctx.resetExecMemo_(); ctx.pushTo_('pnCol', { title: 'x', body: 'y', open: ctx.DEFAULT_APP_URL, lang: 'en' });
+    check(D.urlFetch.log.length === 0, 'push: without the config nothing is fetched');
+
+    // the client files
+    var root = path.join(__dirname, '..');
+    var sw = fs.existsSync(path.join(root, 'firebase-messaging-sw.js')) ? fs.readFileSync(path.join(root, 'firebase-messaging-sw.js'), 'utf8') : '';
+    check(/importScripts\([^)]*https:\/\/www\.gstatic\.com\/firebasejs\/10\.\d+\.\d+\/firebase-app-compat\.js/.test(sw) && /firebasejs\/10\.\d+\.\d+\/firebase-messaging-compat\.js/.test(sw), 'push: the service worker imports Firebase compat at an exact 10.x version');
+    check(/onBackgroundMessage/.test(sw) && /showNotification/.test(sw) && /notificationclick/.test(sw) && /icon-192\.png/.test(sw) && /bestgas-cash/.test(sw), 'push: the service worker shows, opens, and knows the default project');
+    var mf = null; try { mf = JSON.parse(fs.readFileSync(path.join(root, 'manifest.webmanifest'), 'utf8')); } catch (e) {}
+    check(mf && mf.short_name === 'Cash Collection' && mf.start_url === './' && mf.display === 'standalone' && mf.theme_color === '#4D6D51' && mf.background_color && (mf.icons || []).some(function (i) { return i.src === 'assets/icon-512.png'; }) && (mf.icons || []).some(function (i) { return i.src === 'assets/icon-192.png'; }), 'push: the web manifest is a real file with the brand and both icons');
+    var html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+    check(/<link rel="manifest" href="manifest\.webmanifest">/.test(html.slice(0, 6000)), 'push: the manifest is linked statically in <head>');
+    var pnSrc = (html.split('// ---------- Push notifications (2026-10-26) ----------')[1] || '').split('// ---------- end push notifications ----------')[0];
+    check(pnSrc.length > 2000, 'push: the client block exists');
+    check(!/el\('<tr/.test(pnSrc), 'push: no bare <tr> through el()');
+    check(/firebasejs\/10\.\d+\.\d+\/firebase-messaging-compat\.js/.test(pnSrc) && !/firebase-analytics/.test(html), 'push: the client loads messaging at an exact version, never analytics');
+    ['pn_title', 'pn_on', 'pn_off', 'pn_blocked', 'pn_unsupported', 'pn_iosStep1', 'pn_iosStep2', 'pn_enable', 'pn_settings', 'pn_test'].forEach(function (k) {
+      var n = (pnSrc.match(new RegExp('\\b' + k + ':', 'g')) || []).length;
+      check(n === 3, 'push: ' + k + ' in ar, en and ur (' + n + ')');
+    });
+    check(/prefers-reduced-motion[^}]*pn-/.test(html) || /\.pn-[\s\S]{0,4000}prefers-reduced-motion/.test(pnSrc), 'push: reduced motion respected');
+  } catch (e) { check(false, 'push section threw: ' + (e && e.stack || e)); }
+})();
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);
