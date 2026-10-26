@@ -4139,6 +4139,11 @@ if (impCtx.customerRowsFromCells_) {
 }
 
 console.log('--- the pivot splits a row: the product keeps its sale, each deduction is a line of its own ---');
+// the money block of every export (2026-10-25): its lists and helpers
+function mbSrc_() {
+  return ['MB_COLL_', 'MB_DED_', 'MB_POS_', 'MB_KEYS_', 'MB_DEP_', 'MB_STRONG_', 'MB_KEEP_', 'MB_LBL_', 'MB_GROUPS_'].map(function (n) { return clientVar_(n, ';'); })
+    .concat(['mbLabel_', 'mbTotals_', 'mbOfEq_', 'mbSheetMeta_', 'mbStatement_'].map(function (n) { return clientFn_(n); })).join('\n');
+}
 function clientVar_(name, end) {
   var at = clientHtml.indexOf('\nvar ' + name + ' = ');
   if (at < 0) return '';
@@ -6135,6 +6140,39 @@ console.log('--- every dashboard card opens a pivot whose total is the card, to 
   check(/outline/.test(clientFn_('drillPivotView_')) && /entryDocView_/.test(clientFn_('drillPivotView_')), 'drill: the Excel export carries the tree, and a transaction opens its document');
 })();
 
+// TOTAL COLLECTIONS - TOTAL DEDUCTIONS = NET TO DEPOSIT - POS DEPOSITS = CASH TO DEPOSIT (- deposited = remaining), in cents
+function mbOk(cx, c) {
+  function sum(list) { return list.reduce(function (a, k) { return a + (c[k] || 0); }, 0); }
+  return c.totColl === sum(cx.MB_COLL_) && c.totDed === sum(cx.MB_DED_) && c.netDeposit === c.totColl - c.totDed && c.totPos === sum(cx.MB_POS_) && c.net === c.netDeposit - c.totPos
+    && (c.deposited == null || c.remaining === c.net - c.deposited);
+}
+console.log('--- exports: the user\'s formula on the Sales Report (2026-10-25) ---');
+(function () {
+  var cx = vm.createContext({ t: function (k) { return k; } });
+  vm.runInContext([clientVar_('EQ_PARTS_', '\n};'), clientVar_('EQ_ADD_', ';'), clientVar_('EQ_DEDUCT_', ';'), mbSrc_()].join('\n'), cx);
+  var T = { cashSales: 1000, posSales: 200, aOther: 30, aCreditDelivery: 12, aChannelDelivery: 0, dPos: 200, dCredit: 100, dCreditDelivery: 12, dCommission: 5, dChannelCommission: 0, dDiscount: 10, dTransfer: 50, dDelivery: 86.96, dExpense: 20, dBanked: 300 };
+  T.net = Math.round((1000 + 200 + 30 + 12 - 200 - 100 - 12 - 5 - 10 - 50 - 86.96 - 20 - 300) * 100) / 100;
+  var c = cx.mbOfEq_(T);
+  check(mbOk(cx, c) && c.diff === 0 && c.net === Math.round(T.net * 100) && c.totColl === 124200 && c.totPos === 50000 && c.netDeposit === 95804,
+    'exports: total collections 1,242.00 - total deductions = net to deposit 958.04 - POS deposits 500.00 = cash to deposit, the app\'s net to the cent');
+  var st = cx.mbStatement_(c), lab = st.rows.map(function (r) { return r[0]; });
+  check(['crp_totColl', 'calc_totalOut', 'crp_netDeposit', 'crp_totPos', 'crp_cashDeposit'].every(function (k, i, a) { return lab.indexOf(k) > 0 && (!i || lab.indexOf(k) > lab.indexOf(a[i - 1])); }) && lab.indexOf('eq_dPos') > lab.indexOf('crp_netDeposit'),
+    'exports: the statement reads collections, deductions, net to deposit, POS deposits, cash to deposit, top to bottom');
+  var meta = cx.mbSheetMeta_([null].concat(cx.MB_KEYS_));
+  check(meta.bands.length === 4 && meta.bands[0].label === 'crp_bandColl' && meta.bands[1].label === 'crp_bandDed' && meta.bands[2].label === 'crp_bandPos' && meta.bands[3].label === 'crp_bandCash' && meta.strongCols.length === 5,
+    'exports: four header bands (collections, deductions, POS deposits, cash), the totals and results in bold');
+  check(/mbOfEq_/.test(clientFn_('rpMoneyCols_')) && /rpSheetMeta_/.test(clientFn_('rpTableCard_')), 'exports: the Sales Report tables use the same block and carry its bands');
+  ['ar', 'en', 'ur'].forEach(function (lg) {
+    var n = 0; ['crp_bandColl', 'crp_bandDed', 'crp_bandPos', 'crp_bandCash', 'crp_totColl', 'crp_netDeposit', 'crp_totPos', 'crp_cashDeposit', 'crp_depColl', 'crp_cashRem', 'crp_eqDiff'].forEach(function (k) { if (clientHtml.split(k + ': ').length - 1 >= 3) n++; });
+    check(n === 11, 'exports: every money block label exists in ' + lg);
+  });
+  check(!/eq_dBanked:'\u0627\u0644\u0645\u0648\u0627\u0632\u0646\u0627\u062a'/.test(clientHtml.split("eq_dPos:'Card sales (go to the bank)'")[1].split('\n')[0]) && /eq_dBanked:'Banked at the branch/.test(clientHtml),
+    'exports: the English label for banked at the branch is English');
+  // the Excel writer and the PDF draw the bands and the bold columns
+  check(/HR === 4/.test(clientFn_('exportXlsx_')) && /strongSet/.test(clientFn_('exportXlsx_')) && /exPdfBands_/.test(clientFn_('exportPdf_')) && /strongP/.test(clientFn_('exportPdf_')), 'exports: Excel and PDF draw the header bands and the bold total columns');
+  check(/intCols/.test(clientFn_('exSummaryOf_')), 'exports: the contents page reads counts as counts');
+})();
+
 console.log('--- collection reports: the same rows as Collections, and every pure report helper adds up to the cent (2026-10-15) ---');
 (function () {
   // server: collectionReports is collectionsData plus fields, same scope for every role
@@ -6156,11 +6194,10 @@ console.log('--- collection reports: the same rows as Collections, and every pur
   // 2026-10-21: every deduction as typed, and the net, so an export can spell them out
   check(withMix.every(function (r) { var m = r.rp.mix; return ['expense', 'discount', 'cCom', 'chCom', 'cUnpaid', 'vat', 'net'].every(function (k) { return typeof m[k] === 'number'; }); }), 'reports: the mix carries expenses, discounts, commissions, unpaid credit delivery, VAT and the net');
   (function () {
-    var ex = vm.createContext({});
-    vm.runInContext([clientVar_('EQ_ADD_', ';'), clientVar_('EQ_DEDUCT_', ';'), clientFn_('crpC_'), clientVar_('CRP_EQ_TYPED_', ';'), clientVar_('CRP_EQ_COLS_', ';'), clientFn_('crpEqOf_')].join('\n'), ex);
-    var off = withMix.filter(function (r) { var c = ex.crpEqOf_(r), ded = ex.EQ_DEDUCT_.reduce(function (a, k) { return a + c[k]; }, 0);
-      return ded !== c.deductions || c.sales - c.deductions + c.additions !== c.net || c.net !== Math.round(r.rp.mix.net * 100) || c.dDelivery < 0; });
-    check(!off.length, 'reports: each request\'s equation from the server\'s mix: sales - deductions + additions = its breakdown net, delivery never below zero (' + off.length + ' of ' + withMix.length + ' off)');
+    var ex = vm.createContext({ t: function (k) { return k; } });
+    vm.runInContext([clientVar_('EQ_PARTS_', '\n};'), clientVar_('EQ_ADD_', ';'), clientVar_('EQ_DEDUCT_', ';'), mbSrc_(), clientFn_('crpC_'), clientVar_('CRP_EQ_TYPED_', ';'), clientVar_('CRP_EQ_COLS_', ';'), clientFn_('crpEqOf_')].join('\n'), ex);
+    var off = withMix.filter(function (r) { var c = ex.crpEqOf_(r); return !mbOk(ex, c) || c.net !== Math.round(r.amount * 100) || c.dDelivery < 0; });
+    check(!off.length, 'reports: each request\'s money block from the server\'s mix holds every identity, cash to deposit is the request\'s amount, delivery never below zero (' + off.length + ' of ' + withMix.length + ' off)');
   })();
 
   // client: load the pure helpers with colCompute_ itself
@@ -6653,7 +6690,7 @@ console.log('--- report exports: every report\'s workbook totals are the screen\
     userName: function (id) { return 'U:' + id; }, locationName: function (id) { return 'L:' + id; }, clusterName: function (id) { return 'A:' + id; },
     localToday_: function () { return '2026-10-14'; }, crpSave_: function () {}
   });
-  var deps = [clientVar_('COL_ST_', ';'), clientVar_('COL_C_', ';'), clientVar_('PL_PRESETS_', ';'), clientVar_('EQ_PARTS_', '\n};'), clientVar_('EQ_ADD_', ';'), clientVar_('EQ_DEDUCT_', ';')].concat(['esc', 'money', 'byId', 'hoDay_', 'colDay_', 'colCompute_', 'colFill_', 'colPct_', 'cpDays_', 'plPresetRange_'].map(function (n) { return clientFn_(n); }));
+  var deps = [clientVar_('COL_ST_', ';'), clientVar_('COL_C_', ';'), clientVar_('PL_PRESETS_', ';'), clientVar_('EQ_PARTS_', '\n};'), clientVar_('EQ_ADD_', ';'), clientVar_('EQ_DEDUCT_', ';'), mbSrc_()].concat(['exKeepMark_', 'exDropEmptyCols_', 'exTrimSheets_', 'esc', 'money', 'byId', 'hoDay_', 'colDay_', 'colCompute_', 'colFill_', 'colPct_', 'cpDays_', 'plPresetRange_'].map(function (n) { return clientFn_(n); }));
   vm.runInContext(deps.join('\n') + '\n' + block, cx);
   check(typeof cx.CRP_REPS_ === 'object' && typeof cx.crpKpiSheet_ === 'function' && typeof cx.exChartSvg_ === 'function', 'exports: the template and the reports load');
   var loc = { b1: { id: 'b1', city: 'Riyadh', clusterId: 'a1' }, b2: { id: 'b2', city: 'Jeddah', clusterId: 'a2' } };
@@ -6665,7 +6702,7 @@ console.log('--- report exports: every report\'s workbook totals are the screen\
       confirmedAt: stage === 'held' || stage === 'deposited' ? day + 'T10:00:00.000Z' : null, stageAt: day + 'T11:00:00.000Z', hops: o.hops || [], depositId: stage === 'deposited' ? 'd1' : null, depositNo: stage === 'deposited' ? 'D1' : '',
       depositedAt: stage === 'deposited' ? '2026-10-12T12:00:00.000Z' : null, depositBy: stage === 'deposited' ? (o.holder || 'k1') : null, reconciled: !!o.rec, depositHasSlip: true, dateChanged: !!o.dch, entryDates: [day],
       rp: { deputyAt: stage === 'deputy' || stage === 'returned' ? null : day + 'T15:00:00.000Z', returnedAt: stage === 'returned' ? day + 'T18:00:00.000Z' : null, returnReason: o.reason || '', corrections: o.corr || [], hopCorrections: [],
-        mix: { cashSales: amt + 50, card: 30, credit: 20, transfer: 10, direct: 0, other: 5, dFee: 0, cFee: 0, chFee: 0 } } };
+        mix: { cashSales: amt + (o.mixShort || 0) + 30, card: 30, credit: 20, transfer: 10, direct: 0, other: 0, dFee: 0, cFee: 0, chFee: 0, short: o.mixShort || 0 } } };
   }
   var reqs = [
     q('1', 'b1', '2026-10-02', 1000.25, 'deposited', { rec: true }),
@@ -6674,7 +6711,11 @@ console.log('--- report exports: every report\'s workbook totals are the screen\
     q('4', 'b2', '2026-10-08', 0.33, 'pending', { to: 'k2', dch: true }),
     q('5', 'b2', '2026-10-09', 777.77, 'deputy', { to: 'k2' }),
     q('6', 'b1', '2026-10-09', 120, 'returned', { reason: 'wrong day' }),
-    q('7', 'b1', '2026-09-20', 88.8, 'deposited', {})
+    q('7', 'b1', '2026-09-20', 88.8, 'deposited', {}),
+    // review 2026-10-25: received short, received over, and corrected twice
+    q('8', 'b1', '2026-10-10', 480, 'held', { mixShort: 20, short: 20 }),
+    q('9', 'b2', '2026-10-10', 520, 'held', { mixShort: -20, short: -20 }),
+    q('10', 'b1', '2026-10-11', 740, 'held', { mixShort: 10, short: 10, corr: [{ at: '2026-10-12T09:00:00Z', by: 'ad', fromAmount: 0, toAmount: 700, reason: 'count' }, { at: '2026-10-13T09:00:00Z', by: 'ad', fromAmount: 700, toAmount: 740, reason: 'recount' }] })
   ];
   var locOf = function (id) { return loc[id] || {}; };
   var S = { rep: 'summary', preset: 'month', lv: 'city', city: '', area: '', branch: '', collector: '', day: '', stage: '', gran: 'day', mixBy: 'branch', who: 'k1', tOpen: {} };
@@ -6685,6 +6726,14 @@ console.log('--- report exports: every report\'s workbook totals are the screen\
   check(ids.length === 23, 'exports: 23 reports to check');
   function moneyTxt(v) { return cx.money(v); }
   var EQK = cx.CRP_EQ_COLS_, EQH = EQK.map(function (k) { return cx.crpEqLabel_(k); });
+  (function () {
+    var T = cx.crpEqSum_(cx.colCompute_(reqs, base).rows);
+    var r8 = cx.crpEqOf_(reqs[7]), r9 = cx.crpEqOf_(reqs[8]), r10 = cx.crpEqOf_(reqs[9]);
+    check(r8.short === 2000 && r8.over === 0 && r9.over === 2000 && r9.short === 0 && r10.short === 1000 && [r8, r9, r10].every(function (c) { return c.diff === 0 && c.dDelivery >= 0 && mbOk(cx, c); }),
+      'exports: received short and received over each have their own line; a receipt corrected twice keeps its last figure; no difference left on the delivery');
+    check(mbOk(cx, T) && T.short >= 3000 && T.over === 2000 && T.net === reqs.filter(function (r) { return cx.colCompute_([r], base).rows.length; }).reduce(function (a, r) { return a + Math.round(r.amount * 100); }, 0),
+      'exports: the period\'s block: every identity, and cash to deposit is the reports\' handed-over total');
+  })();
   ids.forEach(function (id) {
     shown = [];
     var ctx = { D: D, Dp: Dp, P: P, side: side, S: S, R: R, today: '2026-10-14', sheets: [], sentence: 'period', enter: false, redraw: function () {}, drill: function () {}, open: function () {},
@@ -6714,17 +6763,37 @@ console.log('--- report exports: every report\'s workbook totals are the screen\
     check(!bad.length, 'exports: ' + id + ': every total in the workbook is the one on screen (' + bad.slice(0, 4).join(', ') + ')');
     // the deductions spelled out (2026-10-21): on every row of every sheet that carries them, the parts add up to
     // the total deductions and the total additions, and sales - deductions + additions = net, to the cent
-    var eqBad = [], eqSheets = 0;
+    var eqBad = [], eqSheets = 0, totBad = [], hdBad = [], signBad = [], delNeg = 0;
+    var allSheets = (ctx.kpiList && ctx.kpiList.length ? [cx.crpKpiSheet_(ctx.kpiList, null, !ctx.P)] : []).concat(ctx.eqRows && ctx.eqRows.length ? [cx.crpEqSheet_(ctx.eqRows)] : [], ctx.sheets);
+    allSheets.forEach(function (sh) {
+      (sh.rows[0] || []).concat(sh.rows.slice(1).map(function (r) { return r[0]; }), (sh.bands || []).map(function (b) { return b.label; })).forEach(function (h) { if (/^\s*[+\-\u2212=\u00D7\u00F7]/.test(String(h == null ? '' : h))) signBad.push(sh.name + ': ' + h); });
+    });
     ctx.sheets.forEach(function (sh) {
       var head = sh.rows[0], ix = {}; EQK.forEach(function (k, j) { ix[k] = head.indexOf(EQH[j]); });
       if (ix.net < 0) return; eqSheets++;
+      var data = sh.rows.slice(1).filter(function (r) { return String(r[0]) !== 'rp_total'; });
       sh.rows.slice(1).forEach(function (r, n) {
-        function v(k) { return Math.round(Number(r[ix[k]] || 0) * 100); }
-        var ded = cx.EQ_DEDUCT_.reduce(function (a, k) { return a + v(k); }, 0), add = cx.EQ_ADD_.reduce(function (a, k) { return a + v(k); }, 0);
-        if (ded !== v('deductions') || add !== v('additions') || v('sales') - v('deductions') + v('additions') !== v('net')) eqBad.push(sh.name + ' row ' + (n + 1));
+        var c = {}; EQK.forEach(function (k) { c[k] = Math.round(Number(r[ix[k]] || 0) * 100); });
+        if (!mbOk(cx, c)) eqBad.push(sh.name + ' row ' + (n + 1));
+        if (c.dDelivery < 0) delNeg++;
       });
+      var last = sh.rows[sh.rows.length - 1];
+      if (String(last[0]) === 'rp_total' && !(sh.outline || []).some(function (d) { return d > 0; })) {
+        EQK.forEach(function (k) { var sum = data.reduce(function (a, r) { return a + Math.round(Number(r[ix[k]] || 0) * 100); }, 0); if (sum !== Math.round(Number(last[ix[k]] || 0) * 100)) totBad.push(sh.name + '/' + k); });
+      }
+      // after the empty columns go: every part with a figure keeps its own column, every total stays, the bands follow
+      var tr = cx.exTrimSheets_([sh])[0], th = tr.rows[0];
+      EQK.forEach(function (k) {
+        var any = data.some(function (r) { return Math.round(Number(r[ix[k]] || 0) * 100) !== 0; });
+        var keep = cx.MB_KEEP_.indexOf(k) >= 0;
+        if ((any || keep) !== (th.indexOf(EQH[EQK.indexOf(k)]) >= 0)) hdBad.push(sh.name + '/' + k);
+      });
+      if (!(tr.bands || []).length || tr.bands.some(function (b) { return b.from < 0 || b.to >= th.length || b.to < b.from; })) hdBad.push(sh.name + ' bands');
     });
-    check(eqSheets > 0 && !eqBad.length, 'exports: ' + id + ': ' + eqSheets + ' sheet(s) spell out the deductions; each row: parts = total deductions and total additions, sales - deductions + additions = net (' + (eqBad.slice(0, 3).join(', ') || 'ok') + ')');
+    check((eqSheets > 0 || id === 'statement') && !eqBad.length && !delNeg, 'exports: ' + id + ': ' + eqSheets + ' sheet(s) carry the money block; each row: total collections - total deductions = net to deposit, - POS deposits = cash to deposit, - deposited = remaining; delivery never negative (' + (eqBad.slice(0, 3).join(', ') || 'ok') + ')');
+    check(!totBad.length, 'exports: ' + id + ': the total row is the sum of its rows in every money column, no request counted twice (' + (totBad.slice(0, 4).join(', ') || 'ok') + ')');
+    check(!hdBad.length, 'exports: ' + id + ': every part with a figure has its own column, totals and results always stay, the header bands follow (' + (hdBad.slice(0, 4).join(', ') || 'ok') + ')');
+    check(!signBad.length, 'exports: ' + id + ': no header, band or label starts with a math sign (' + (signBad.slice(0, 3).join(', ') || 'ok') + ')');
     // the KPI sheet carries the strip's own figures
     if (ctx.kpiList && ctx.kpiList.length) {
       var ks = cx.crpKpiSheet_(ctx.kpiList), k0 = ctx.kpiList[0];
@@ -6885,6 +6954,36 @@ console.log('--- global search ---');
 })();
 
 // ---------- a day saved twice, already banked, is cancelled without moving cash (2026-10-21) ----------
+console.log('--- exports: received short, over and corrected twice, from the server to the money block (2026-10-25) ---');
+(function () {
+  var ctx = harness.buildContext(), SHEETS = ctx.SHEETS;
+  function call(payload) { try { return ctx.route_(payload); } catch (e) { return { ok: false, error: String(e && e.message || e) }; } }
+  var salt = ctx.randomSalt_();
+  ctx.writeRow(SHEETS.USERS, { id: 'mbadmin', name: 'Mb Admin', email: 'mb.admin@bestgas.sa', role: 'admin', active: true, language: 'en', salt: salt, pass: ctx.hashPw_('Bootstrap#1', salt), mustChangePw: false });
+  ctx.writeRow(SHEETS.USERS, { id: 'mbcol', name: 'Mb Collector', email: 'mb.col@bestgas.sa', role: 'collector', active: true, language: 'en', salt: salt, pass: ctx.hashPw_('Bootstrap#1', salt), mustChangePw: false });
+  ctx.writeRow(SHEETS.USERS, { id: 'mbam', name: 'Mb Area', email: 'mb.am@bestgas.sa', role: 'cluster_manager', active: true, language: 'en', salt: salt, pass: ctx.hashPw_('Bootstrap#1', salt), mustChangePw: false });
+  ctx.writeRow(SHEETS.CLUSTERS, { id: 'mbcl', name: 'Mb Area', clusterManagerUserId: 'mbam' });
+  ctx.writeRow(SHEETS.LOCATIONS, { id: 'mbloc', name: 'Mb Branch', city: 'Riyadh', clusterId: 'mbcl', collectorUserId: 'mbcol' });
+  // one branch day: 1,000 cash, 200 card, 30 other, 115 delivery (15 VAT), 100 credit, 50 transfer, 20 expense, 10 discount: net 750
+  function brk(net, short) { return { storeCash: 1000, carCash: 0, posCash: 0, deliveryFee: 115, posSales: 200, creditSales: 100, vatOnDelivery: 15, otherCash: 30, expenses: 20, directDeposit: 0, bankTransfers: 50,
+    creditDeliveryFees: 0, creditDeliveryUnpaid: 0, creditCommissions: 0, channelDeliveryFees: 0, channelCommissions: 0, discounts: 10, netCashOwed: net, shortfall: short }; }
+  function H(id, amount, short) { ctx.writeRow(SHEETS.HANDOFFS, { id: id, kind: 'cluster_to_collector', status: 'confirmed', fromUserId: 'mbam', toUserId: 'mbcol', confirmedBy: 'mbcol', locationId: 'mbloc', clusterId: 'mbcl',
+    amount: amount, receivedAmount: amount, originalAmount: 750, shortfall: short, breakdown: brk(amount, short), createdAt: '2026-10-20T09:00:00.000Z', confirmedAt: '2026-10-20T10:00:00.000Z', handoffDate: '2026-10-20' }); }
+  H('S', 730, 20); H('O', 770, -20); H('C', 0, 750);
+  var tok = call({ action: 'login', email: 'mb.admin@bestgas.sa', password: 'Bootstrap#1' }).token;
+  var c1 = call({ action: 'adminCorrectReceipt', token: tok, id: 'C', receivedAmount: 700, reason: 'counted again' }), c2 = call({ action: 'adminCorrectReceipt', token: tok, id: 'C', receivedAmount: 740, reason: 'counted a third time' });
+  check(c1.ok && c2.ok, 'mb: a receipt corrected twice (' + (c1.error || 'ok') + ' / ' + (c2.error || 'ok') + ')');
+  var rq = call({ action: 'collectionReports', token: tok }).requests || [], by = {}; rq.forEach(function (r) { by[r.id] = r; });
+  check(by.S && by.O && by.C && by.S.rp.mix.short === 20 && by.O.rp.mix.short === -20 && by.C.rp.mix.short === 10, 'mb: the mix carries each request\'s shortfall (short 20, over 20, corrected twice 10)');
+  var ex = vm.createContext({ t: function (k) { return k; } });
+  vm.runInContext([clientVar_('EQ_PARTS_', '\n};'), clientVar_('EQ_ADD_', ';'), clientVar_('EQ_DEDUCT_', ';'), mbSrc_(), clientFn_('crpC_'), clientVar_('CRP_EQ_TYPED_', ';'), clientVar_('CRP_EQ_COLS_', ';'), clientFn_('crpEqOf_')].join('\n'), ex);
+  var S = ex.crpEqOf_(by.S), O = ex.crpEqOf_(by.O), C = ex.crpEqOf_(by.C);
+  check([S, O, C].every(function (c) { return mbOk(ex, c) && c.dDelivery === 10000 && c.diff === 0; }), 'mb: delivery is the fee less its VAT (100.00) on every request, nothing left over');
+  check(S.short === 2000 && S.over === 0 && S.net === 73000 && O.over === 2000 && O.short === 0 && O.net === 77000 && C.short === 1000 && C.net === 74000,
+    'mb: short and over on their own lines, cash to deposit is what was received (730, 770, 740 after two corrections)');
+  check(S.totColl === 123000 && S.totPos === 20000 && S.totDed === 28000 + 2000, 'mb: collections 1,230.00 (sales and other), POS deposits 200.00, deductions with the short');
+})();
+
 console.log('--- a duplicate inside a received handover ---');
 (function () {
   var ctx = harness.buildContext(), SHEETS = ctx.SHEETS;
