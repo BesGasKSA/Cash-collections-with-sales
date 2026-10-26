@@ -7050,5 +7050,29 @@ console.log('--- a customer bank transfer says whose customers it came from: Sou
   check(!noneRow || noneRow.bankTransferKind === null, 'a row without a transfer keeps no customer type');
 })();
 
+console.log('--- the welcome after a sign-in: greeting, name, a line that turns (2026-10-26) ---');
+(function () {
+  var wx = vm.createContext({});
+  vm.runInContext(['firstName_', 'wlGreetKey_', 'wlLineKey_'].map(function (n) { var s = clientFn_(n); check(!!s, 'welcome: ' + n + ' exists'); return s; }).join('\n') + '\nvar WL_N_ = 12;', wx);
+  check(vm.runInContext("[3, 7, 13, 20].map(wlGreetKey_).join()", wx) === 'wl_night,greeting_morning,greeting_afternoon,greeting_evening', 'the greeting follows the hour (night, morning, afternoon, evening)');
+  check(vm.runInContext("firstName_('أبو مهدي العتيبي') + '|' + firstName_('Mohamed Mahdi') + '|' + firstName_('عبد الله سالم')", wx) === 'أبو مهدي|Mohamed|عبد الله', 'a kunya and عبد keep their second word; a plain name is its first word');
+  var keys = vm.runInContext("[0,1,11,12,13,-4,'x'].map(wlLineKey_).join()", wx);
+  check(keys === 'wl_l0,wl_l1,wl_l11,wl_l0,wl_l1,wl_l0,wl_l0', 'the line turns with every sign-in and wraps after twelve (' + keys + ')');
+  // every line exists in the three languages, without a dash for a pause
+  ['en', 'ar', 'ur'].forEach(function (lang) {
+    var block = clientHtml.slice(clientHtml.indexOf('var WL_N_ = 12;'), clientHtml.indexOf('function riyadhHour_('));
+    var m = new RegExp('\\b' + lang + ': \\{([\\s\\S]*?)\\}\\s*(,|\\n)').exec(block), body = m ? m[1] : '';
+    var n = 0; for (var i = 0; i < 12; i++) if (body.indexOf("wl_l" + i + ":'") >= 0) n++;
+    check(n === 12, 'welcome: twelve lines in ' + lang + ' (' + n + ')');
+    check(!/[—–]/.test(body), 'welcome: no em or en dash in the ' + lang + ' lines');
+  });
+  var tags = { en: 'We learn from the past to shape the present and build the future.', ar: 'نتعلم من الماضي لنصنع الحاضر ونبني المستقبل', ur: 'ہم ماضی سے سیکھتے ہیں تاکہ حال سنواریں اور مستقبل تعمیر کریں۔' };
+  Object.keys(tags).forEach(function (lang) { check(clientHtml.indexOf(lang + ": { wl_tagline:'" + tags[lang] + "'") >= 0, 'welcome: the brand line in ' + lang + ' is the company own words'); });
+  check(/wl-stage[\s\S]{0,400}wlTitle[\s\S]{0,300}wl_tagline/.test(clientFn_('wlOpen_')), 'welcome: the brand line sits on the green stage under the greeting');
+  var rp = clientFn_('refreshPending_');
+  check(/wlOpen_\(\)/.test(rp) && !/pendOpen_\(\)/.test(rp), 'the first list after a sign-in is the welcome, never a second popup');
+  check(/pendOpen_\(\)/.test(clientHtml.slice(clientHtml.indexOf("qs('#notifBell', tb)"), clientHtml.indexOf("qs('#notifBell', tb)") + 120)), 'the bell still opens the plain list');
+})();
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);
