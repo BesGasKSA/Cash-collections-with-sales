@@ -3767,6 +3767,53 @@
     .pa-row{flex-wrap:wrap;} .pa-tx{flex-basis:calc(100% - 60px);} .pa-amt{margin-inline-start:48px;} button.pa-go{margin-inline-start:auto;}
   }
   @media (prefers-reduced-motion:reduce){ *,*::before,*::after{animation:none!important;transition:none!important;} }
+  /* ---------- the welcome after signing in (2026-10-26): one popup, replaces the first pending list ----------
+     The stage behind the logo is the logo's own #4D6D51, flat, so the PNG's square never shows. Embers rise
+     slowly from the bottom of the stage (transform and opacity only); everything is still under reduced motion. */
+  .pa-ov.wl-ov{align-items:center;justify-content:center;padding:14px;}
+  .wl-card{position:relative;width:min(460px,100%);max-height:min(92vh,760px);display:flex;flex-direction:column;background:#FBFAF6;border-radius:24px;box-shadow:0 30px 70px rgba(18,30,20,.38);overflow:hidden;animation:wlRise .52s cubic-bezier(0,0,.2,1) both;}
+  .wl-card:lang(ar),.wl-card:lang(ur){font-family:'IBM Plex Sans Arabic','Cairo',var(--font-en,inherit),sans-serif;}
+  .wl-stage{position:relative;flex:none;background:#4D6D51;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:26px 24px 24px;text-align:center;overflow:hidden;}
+  .wl-stage .wl-hi{position:relative;z-index:1;color:#F2EEE4;margin-top:4px;}
+  /* the brand line: the stage's quiet centrepiece, cream on the logo's own green, gold marks */
+  .wl-tag{position:relative;z-index:1;margin:0;max-width:34ch;font-size:17px;line-height:1.75;font-weight:500;color:#F2EEE4;letter-spacing:.005em;text-wrap:balance;}
+  .wl-tag:lang(en){font-family:Georgia,'Times New Roman',serif;font-style:italic;font-size:17.5px;line-height:1.55;}
+  .wl-q{color:#E9C877;font-weight:700;padding:0 3px;}
+  .wl-bloom{position:absolute;left:50%;top:50%;width:300px;height:300px;margin:-150px 0 0 -150px;border-radius:50%;background:radial-gradient(circle,rgba(242,238,228,.30) 0%,rgba(242,238,228,.10) 38%,rgba(77,109,81,0) 68%);opacity:0;transform:scale(.6);animation:wlBloom 1.2s cubic-bezier(0,0,.2,1) .1s forwards;pointer-events:none;}
+  .wl-logo{position:relative;z-index:1;width:132px;height:auto;display:block;opacity:0;transform:scale(.86);animation:wlLogo .7s cubic-bezier(.34,1.3,.64,1) .18s forwards;}
+  .wl-emb{position:absolute;inset:0;pointer-events:none;}
+  .wl-emb i{position:absolute;bottom:-8px;left:var(--x);width:var(--s);height:var(--s);border-radius:50%;background:#F4D58A;box-shadow:0 0 6px 1px rgba(244,213,138,.55);opacity:0;animation:wlEmber var(--d) linear var(--w) infinite;}
+  .wl-body{padding:20px 22px 6px;overflow:auto;display:flex;flex-direction:column;gap:12px;}
+  .wl-hi{margin:0;font-size:24px;line-height:1.3;font-weight:800;color:#23372A;letter-spacing:-.01em;border:0;padding:0;}
+  .wl-line{margin:0;font-size:15px;line-height:1.65;color:#3C4A3E;}
+  .wl-date{display:flex;flex-wrap:wrap;gap:4px 10px;font-size:12.5px;font-weight:600;color:#6B7468;}
+  .wl-date span + span::before{content:"";display:inline-block;width:4px;height:4px;border-radius:50%;background:#B9B3A2;vertical-align:middle;margin-inline-end:10px;}
+  .wl-today{border-radius:16px;background:#fff;border:1px solid #E6E2D6;padding:12px 14px;}
+  .wl-th{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 4px;font-size:13px;font-weight:800;color:#23372A;}
+  .wl-th b{min-width:26px;height:26px;padding:0 8px;border-radius:999px;background:#4D6D51;color:#fff;display:inline-grid;place-items:center;font-size:13px;}
+  .wl-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px solid #EFECE3;}
+  .wl-row:first-of-type{border-top:0;}
+  .wl-row .pa-ic{width:32px;height:32px;border-radius:9px;}
+  .wl-row .pa-ic .ic2{width:17px;height:17px;}
+  .wl-row .pa-tx{flex:1;min-width:0;}
+  .wl-row .pa-s{font-size:13.5px;}
+  .wl-row button.pa-go{padding:6px 14px;min-height:34px;font-size:12.5px;}
+  .wl-more{margin:6px 0 0;font-size:12.5px;color:#6B7468;font-weight:600;}
+  .wl-clear{display:flex;align-items:center;gap:10px;font-size:14px;font-weight:700;color:#2E6A3F;line-height:1.5;}
+  .wl-clear .ic2{flex:none;width:22px;height:22px;stroke:#2E7D4F;}
+  .wl-foot{padding:14px 22px 20px;}
+  .wl-go{display:flex;align-items:center;justify-content:center;width:100%;min-height:52px;border:0;border-radius:14px;background:#4D6D51;color:#fff;font:inherit;font-size:16px;font-weight:800;cursor:pointer;box-shadow:0 10px 22px rgba(77,109,81,.32);transition:background-color .2s cubic-bezier(.2,0,0,1),transform .1s cubic-bezier(.2,0,0,1);}
+  .wl-go:hover{background:#3B5540;} .wl-go:active{transform:scale(.98);}
+  .wl-go:focus-visible,.wl-card button.pa-go:focus-visible{outline:3px solid #E0B54A;outline-offset:2px;}
+  .wl-in{opacity:0;animation:wlUp .5s cubic-bezier(0,0,.2,1) forwards;animation-delay:calc(.42s + var(--i,0) * 110ms);}
+  .pa-ov.wl-ov.out .wl-card{animation:paSink .2s ease both;}
+  @keyframes wlRise{from{opacity:0;transform:translateY(18px) scale(.97)}to{opacity:1;transform:none}}
+  @keyframes wlBloom{to{opacity:1;transform:scale(1)}}
+  @keyframes wlLogo{to{opacity:1;transform:none}}
+  @keyframes wlUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  @keyframes wlEmber{0%{opacity:0;transform:translate(0,0)}15%{opacity:.85}70%{opacity:.5}100%{opacity:0;transform:translate(var(--dx),-270px)}}
+  @media (max-width:430px){ .wl-stage{padding:20px 16px 18px;gap:8px;} .wl-logo{width:108px;} .wl-tag{font-size:15.5px;} .wl-body{padding:16px 16px 4px;} .wl-foot{padding:12px 16px 16px;} .wl-hi{font-size:21px;} }
+  @media (prefers-reduced-motion:reduce){ .wl-card,.wl-bloom,.wl-logo,.wl-in{animation:none!important;opacity:1!important;transform:none!important;} .wl-emb{display:none;} }
   /* ---------- customers & invoices (2026-10-06) ---------- */
   .card.cus-hero{background:linear-gradient(135deg,var(--green-dark),var(--green) 60%,#5f8463);color:var(--cream);border:0;position:relative;overflow:hidden;}
   .card.cus-hero::after{content:"";position:absolute;inset-inline-end:-60px;top:-60px;width:220px;height:220px;border-radius:50%;background:radial-gradient(circle,rgba(242,238,228,.18),transparent 70%);pointer-events:none;}
@@ -8716,6 +8763,8 @@ function pendClose_(){
   document.removeEventListener('keydown', ov._onKey);
   ov.classList.add('out');
   setTimeout(function(){ ov.remove(); }, 200);
+  // the welcome gives the focus back to where it was (2026-10-26)
+  if (ov._back && ov._back.isConnected && ov._back.focus) { try { ov._back.focus({ preventScroll: true }); } catch (e) {} }
 }
 
 // The welcome popup: centred on a desktop, a bottom sheet on a phone.
@@ -8920,6 +8969,122 @@ function pendOpen_(){
   setTimeout(function(){ try { first.focus({ preventScroll: true }); } catch (e) {} }, 60);
 }
 
+// ---------- the welcome after a sign-in (2026-10-26) ----------
+// The user: "an attractive popup, positive energy, design a magic one". One popup, once per
+// sign-in, in place of the first pending list: the logo on its own green, a greeting by the
+// time in Riyadh and the first name (a kunya kept whole, firstName_), a warm line that turns
+// with every sign-in (WL_N_ lines in each language), today in both calendars, what waits
+// today (count, the first three with Go) or an all-clear line, and one button. The bell still
+// opens the plain list (pendOpen_).
+var WL_N_ = 12;
+(function(){
+  var add = {
+    en: { wl_tagline:'We learn from the past to shape the present and build the future.', wl_aria:'Welcome', wl_today:'Today for you', wl_more:'and {n} more in the bell', wl_clear:'All clear. Nothing is waiting on you right now, a great way to start.',
+      wl_start:"Let's start", wl_night:'Good evening',
+      wl_l0:'Every accurate figure you record today makes tomorrow easier for the whole team.', wl_l1:'Start with the most important task. The rest will follow, one step at a time.',
+      wl_l2:'Each cylinder that reaches a customer on time carries your effort with it.', wl_l3:'Cash handed over on time keeps the chain clean and everyone at ease.',
+      wl_l4:'Small things done well add up to a day to be proud of.', wl_l5:'A team that helps each other goes further. You are an important part of it.',
+      wl_l6:'Your care with the details saves hours of checking later. Thank you.', wl_l7:'A calm start and a clear plan make a strong day.',
+      wl_l8:'Good work is often quiet. Today it counts for a lot.', wl_l9:'Every branch, every car, every riyal: together they make Best Gas.',
+      wl_l10:'One clear step now is worth more than a perfect plan later.', wl_l11:'Thank you for the trust you build with every handover.' },
+    ar: { wl_tagline:'نتعلم من الماضي لنصنع الحاضر ونبني المستقبل', wl_aria:'مرحبًا بك', wl_today:'لك اليوم', wl_more:'و{n} غيرها في الجرس', wl_clear:'كل شيء مكتمل. لا شيء ينتظرك الآن، بداية رائعة.',
+      wl_start:'لنبدأ', wl_night:'مساء الخير',
+      wl_l0:'كل رقم دقيق تسجّله اليوم يجعل الغد أسهل على الفريق كله.', wl_l1:'ابدأ بالأهم، والباقي يأتي خطوة بعد خطوة.',
+      wl_l2:'كل أسطوانة تصل إلى العميل في وقتها تحمل جهدك معها.', wl_l3:'تسليم النقد في وقته يُبقي السلسلة واضحة ويريح الجميع.',
+      wl_l4:'الأشياء الصغيرة المتقنة تصنع يومًا تفخر به.', wl_l5:'الفريق المتعاون يصل أبعد، وأنت جزء مهم منه.',
+      wl_l6:'عنايتك بالتفاصيل توفّر ساعات من المراجعة لاحقًا. شكرًا لك.', wl_l7:'بداية هادئة وخطة واضحة تصنعان يومًا قويًا.',
+      wl_l8:'العمل الجيد هادئ غالبًا، واليوم له أثر كبير.', wl_l9:'كل فرع وكل سيارة وكل ريال: معًا نصنع بست غاز.',
+      wl_l10:'خطوة واضحة الآن أفضل من خطة كاملة لاحقًا.', wl_l11:'شكرًا للثقة التي تبنيها مع كل تسليم.' },
+    ur: { wl_tagline:'ہم ماضی سے سیکھتے ہیں تاکہ حال سنواریں اور مستقبل تعمیر کریں۔', wl_aria:'خوش آمدید', wl_today:'آج آپ کے لیے', wl_more:'اور {n} گھنٹی میں', wl_clear:'سب مکمل ہے۔ ابھی آپ کا کچھ انتظار نہیں کر رہا، شاندار آغاز۔',
+      wl_start:'شروع کریں', wl_night:'شام بخیر',
+      wl_l0:'آج درج کیا گیا ہر درست عدد کل پوری ٹیم کا کام آسان بناتا ہے۔', wl_l1:'سب سے اہم کام سے شروع کریں، باقی قدم بہ قدم ہو جائے گا۔',
+      wl_l2:'وقت پر گاہک تک پہنچنے والا ہر سلنڈر آپ کی محنت ساتھ لے جاتا ہے۔', wl_l3:'وقت پر حوالے کی گئی رقم سلسلے کو صاف اور سب کو مطمئن رکھتی ہے۔',
+      wl_l4:'اچھی طرح کیے گئے چھوٹے کام مل کر قابلِ فخر دن بناتے ہیں۔', wl_l5:'ایک دوسرے کی مدد کرنے والی ٹیم آگے جاتی ہے، اور آپ اس کا اہم حصہ ہیں۔',
+      wl_l6:'تفصیلات پر آپ کی توجہ بعد کی جانچ کے گھنٹے بچاتی ہے۔ شکریہ۔', wl_l7:'پرسکون آغاز اور واضح منصوبہ ایک مضبوط دن بناتے ہیں۔',
+      wl_l8:'اچھا کام اکثر خاموش ہوتا ہے، آج اس کی بڑی اہمیت ہے۔', wl_l9:'ہر برانچ، ہر گاڑی، ہر ریال: مل کر بیسٹ گیس بنتی ہے۔',
+      wl_l10:'ابھی ایک واضح قدم بعد کے مکمل منصوبے سے بہتر ہے۔', wl_l11:'ہر حوالگی کے ساتھ بننے والے اعتماد کا شکریہ۔' }
+  };
+  Object.keys(add).forEach(function(lang){ Object.keys(add[lang]).forEach(function(k){ L[lang][k] = add[lang][k]; }); });
+})();
+// the hour in Riyadh, whatever the device's own clock zone
+function riyadhHour_(now){
+  try { return Number(new Intl.DateTimeFormat('en-GB', { hour: '2-digit', hour12: false, timeZone: 'Asia/Riyadh' }).format(now || new Date())) % 24; }
+  catch (e) { return new Date((now || new Date()).getTime() + 3 * 3600e3).getUTCHours(); }
+}
+// pure: the greeting key for an hour (night falls back to the evening greeting, not "welcome")
+function wlGreetKey_(h){ return h < 5 ? 'wl_night' : h < 12 ? 'greeting_morning' : h < 18 ? 'greeting_afternoon' : 'greeting_evening'; }
+// pure: which line a sign-in shows (the sign-in count turns it)
+function wlLineKey_(n){ n = Math.max(0, Math.floor(Number(n) || 0)); return 'wl_l' + (n % WL_N_); }
+// today in Riyadh: Gregorian with the weekday, and Hijri (Umm al-Qura)
+function wlDates_(){
+  var now = new Date(), loc = langLocale_(), o = { gregorian: '', hijri: '' };
+  try { o.gregorian = new Intl.DateTimeFormat(loc + '-u-ca-gregory-nu-latn', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Riyadh' }).format(now); } catch (e) { o.gregorian = todayDatesLines_().gregorian; }
+  try {
+    var d = {}; new Intl.DateTimeFormat(loc + '-u-ca-islamic-umalqura-nu-latn', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Riyadh' }).formatToParts(now).forEach(function(p){ d[p.type] = p.value; });
+    if (d.day && d.month && d.year) o.hijri = d.day + ' ' + d.month + ' ' + d.year + ' ' + t('home_hijriSuffix');
+  } catch (e) {}
+  return o;
+}
+function wlOpen_(){
+  if (!state.user || qs('.pa-ov')) return;
+  var items = (state.pend && state.pend.items) || [], n = items.length;
+  var signIns = 0; try { signIns = Number(localStorage.getItem('bgc_loginN_' + state.user.id) || 0); } catch (e) {}
+  var name = firstName_(state.user.name), D = wlDates_();
+  var greet = t(wlGreetKey_(riyadhHour_())) + (name ? (state.lang === 'en' ? ', ' : '، ') + name : '');
+  // embers: fixed positions, so the stage reads the same on every sign-in
+  var EMB = [[8, 3, 7.5, 0, 14], [17, 2, 9, 1.6, -10], [26, 4, 8, .7, 18], [35, 2, 10, 2.4, -6], [44, 3, 7, 1.1, 10], [52, 2, 9.5, 3, -14],
+    [61, 3, 8.5, .4, 12], [70, 2, 10, 2, -8], [78, 4, 7.8, 1.4, 16], [86, 2, 9, 2.8, -12], [93, 3, 8.2, .9, 8], [12, 2, 11, 3.6, 6]];
+  var emb = EMB.map(function(e){ return '<i style="--x:' + e[0] + '%;--s:' + e[1] + 'px;--d:' + e[2] + 's;--w:' + e[3] + 's;--dx:' + e[4] + 'px"></i>'; }).join('');
+  var ov = el('<div class="pa-ov wl-ov" role="dialog" aria-modal="true" aria-labelledby="wlTitle" aria-describedby="wlLine">' +
+    '<div class="pa-bg"></div>' +
+    '<div class="wl-card" lang="' + esc(state.lang) + '">' +
+      '<div class="wl-stage"><span class="wl-bloom" aria-hidden="true"></span><span class="wl-emb" aria-hidden="true">' + emb + '</span><img class="wl-logo" src="' + LOGO_SRC + '" alt="">' +
+        '<h2 class="wl-hi wl-in" id="wlTitle" style="--i:0">' + esc(greet) + '</h2>' +
+        // the company's brand line, fixed, in the language the person signed in with (2026-10-26)
+        '<p class="wl-tag wl-in" style="--i:1"><span class="wl-q" aria-hidden="true">' + (state.lang === 'en' ? '“' : '«') + '</span>' + esc(t('wl_tagline')) + '<span class="wl-q" aria-hidden="true">' + (state.lang === 'en' ? '”' : '»') + '</span></p></div>' +
+      '<div class="wl-body">' +
+        '<p class="wl-line wl-in" id="wlLine" style="--i:2">' + esc(t(wlLineKey_(signIns))) + '</p>' +
+        '<div class="wl-date wl-in" style="--i:3"><span>' + esc(D.gregorian) + '</span>' + (D.hijri ? '<span>' + esc(D.hijri) + '</span>' : '') + '</div>' +
+        '<section class="wl-today wl-in" style="--i:4" aria-labelledby="wlToday"></section>' +
+      '</div>' +
+      '<div class="wl-foot wl-in" style="--i:5"><button type="button" class="wl-go">' + esc(t('wl_start')) + '</button></div>' +
+    '</div></div>');
+  var box = qs('.wl-today', ov);
+  if (n) {
+    box.innerHTML = '<h3 class="wl-th" id="wlToday"><span>' + esc(t('wl_today')) + '</span><b class="num" aria-label="' + esc(n === 1 ? t('pa_one') : pendFill_(t('pa_many'), { n: n })) + '">' + n + '</b></h3>';
+    items.slice(0, 3).forEach(function(it){
+      var place = pendPlace_(it);
+      var row = el('<div class="wl-row" data-kind="' + esc(it.kind) + '"><span class="pa-ic">' + icon_(PEND_ICON_[it.kind] || 'alert') + '</span>' +
+        '<span class="pa-tx"><span class="pa-s">' + esc(pendText_(it)) + '</span>' + (place ? '<small>' + esc(place) + '</small>' : '') + '</span>' +
+        '<button type="button" class="pa-go">' + esc(t('pa_go')) + '</button></div>');
+      qs('.pa-go', row).addEventListener('click', function(){ pendGo_(it); });
+      box.appendChild(row);
+    });
+    if (n > 3) box.appendChild(el('<p class="wl-more">' + esc(pendFill_(t('wl_more'), { n: n - 3 })) + '</p>'));
+  } else {
+    box.innerHTML = '<h3 class="wl-th" id="wlToday"><span>' + esc(t('wl_today')) + '</span></h3><p class="wl-clear">' + icon_('check') + '<span>' + esc(t('wl_clear')) + '</span></p>';
+  }
+  var card = qs('.wl-card', ov);
+  function onKey(e){
+    if (e.key === 'Escape') { e.preventDefault(); pendClose_(); return; }
+    if (e.key !== 'Tab') return;
+    // the focus stays inside the popup
+    var f = qsa('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])', card).filter(function(x){ return !x.disabled && x.offsetParent !== null; });
+    if (!f.length) return;
+    var first = f[0], last = f[f.length - 1];
+    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    else if (!card.contains(document.activeElement)) { e.preventDefault(); first.focus(); }
+  }
+  ov._onKey = onKey;
+  ov._back = document.activeElement;
+  document.addEventListener('keydown', onKey);
+  qs('.pa-bg', ov).addEventListener('click', pendClose_);
+  qs('.wl-go', ov).addEventListener('click', pendClose_);
+  document.body.appendChild(ov);
+  setTimeout(function(){ try { qs('.wl-go', ov).focus({ preventScroll: true }); } catch (e) {} }, 60);
+}
+
 // Fetch the list. opts.popup: this is the first load after signing in, so show
 // the popup once if anything is waiting. Always updates the bell and the hero.
 function refreshPending_(opts){
@@ -8944,10 +9109,12 @@ function refreshPending_(opts){
     state.pend = { items: res.items || [], total: res.total != null ? res.total : (res.items || []).length };
     setNotifCount(state.pend.total);
     pendHeroPaint_();
-    if (want && state.pend.total) {
+    // once per sign-in: the welcome, with what waits inside it (2026-10-26). It replaces the first
+    // pending list, so it shows even when nothing waits (an all-clear line); the bell keeps the plain list.
+    if (want) {
       var shown = false;
       try { shown = !!sessionStorage.getItem(pendKey_()); sessionStorage.setItem(pendKey_(), '1'); } catch (e) {}
-      if (!shown) pendOpen_();
+      if (!shown) wlOpen_();
     }
   });
 }
