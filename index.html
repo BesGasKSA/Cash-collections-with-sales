@@ -28629,7 +28629,7 @@ function pnControl_(opts){
     if (on) on.addEventListener('click', function(){
       on.disabled = true; on.textContent = t('pn_working');
       pnEnable_().then(function(r){
-        if (r && r.ok) { msBuzz_(12); paint(t('pn_turnedOn'), true); if (opts.onChange) opts.onChange('on'); }
+        if (r && r.ok) { msBuzz_(12); paint(t('pn_turnedOn'), true); var ask = qs('.card.pn-ask'); if (ask) ask.remove(); if (opts.onChange) opts.onChange('on'); }
         else paint(r && r.state === 'blocked' ? '' : r && r.state === 'off' ? '' : r && r.error && r.error !== 'push_failed' ? errMsg_(r) : t('pn_failed'), false);
       });
     });
