@@ -951,8 +951,8 @@ deployment rather than creating a new one). Admin account: `aboumahdi04@gmail.co
 of `%TEMP%` on 2026-09-29, where Windows could have cleared it). It already has
 `.clasp.json` and the private `CustomerSeed.js`: `clasp pull`, copy `Code.gs` →
 `الرمز.js`, `Admin.gs` → `Admin.js`, `Collection.gs` → `Collection.js`,
-`Inventory.gs` → `Inventory.js`, `Costing.gs` → `Costing.js` (in
-`filePushOrder` too), then
+`Inventory.gs` → `Inventory.js`, `Costing.gs` → `Costing.js`, `Push.gs` →
+`Push.js` (new 2026-10-26; all in `filePushOrder` too, after `الرمز.js`), then
 `clasp push -f` and `clasp deploy -i …` as below. The steps below that create a
 fresh folder are only for rebuilding it.
 
@@ -2087,7 +2087,9 @@ base64 duplicated once more, accepted cost) so it's available before any
 script executes — same pattern the sibling rental app (`Downloads/7777`)
 already used. apple-touch-icon and the manifest stay JS-attached, since
 those only matter once, at "Add to Home Screen" time, not on every normal
-load.
+load. **Since 2026-10-26 (push notifications) the manifest is a static file**,
+`manifest.webmanifest`, linked in `<head>`; `attachIcons()` adds the blob
+manifest only for a copy opened from disk.
 
 ### 9. `.replace(str, val)` only swaps the *first* occurrence of a repeated placeholder
 
@@ -2196,7 +2198,8 @@ product lines for the same source/date.
 
 ## Deliberately out of scope for this build
 
-- No PWA/offline install or custom subdomain
+- No offline mode or custom subdomain (the app installs to the Home Screen
+  since 2026-10-26, for push notifications, but needs the network)
 - No free-form peer-to-peer transfers outside the defined chain
 
 ## Credit quantity in the reports (2026-10-05)
@@ -2240,3 +2243,57 @@ product lines for the same source/date.
   respects the area manager's active area, looks at flags of the last 60 days and is cached in
   CacheService under the entries/moves/items/products versions (`ssp|...`, 10 min). The home
   stories strip has `mss_stock_short`, and every pending sentence goes through `pendText_`.
+
+## Push notifications (2026-10-26)
+
+The user (urgent): "enable push notifications in the mobile layout, the mobile app and the
+desktop version". Web push through **Firebase Cloud Messaging HTTP v1**, project `bestgas-cash`.
+
+- **Server (`Push.gs`).** Apps Script cannot sign VAPID (ECDSA), so FCM sends. The service
+  account signs a JWT RS256 (`Utilities.computeRsaSha256Signature`; claims iss, scope
+  `firebase.messaging`, aud the token URL, iat, exp +3600) traded at oauth2.googleapis.com; the
+  access token sits in CacheService 50 min (`push_at`, cleared on a config change; a 401 gets one
+  fresh token and one retry). `pushTo_(userId, {title, body, open, tag, lang, dir})` is best-effort,
+  queued with `afterCashLock_`, one `UrlFetchApp.fetchAll` per person over their active devices.
+  404 / UNREGISTERED and a 400 naming the registration token switch the device off
+  (`deactivatedReason`); any other 400 is the message's fault and leaves it on.
+- **Every email also pushes.** `nmSend_` (Notify.gs, the one sender) pushes the email's subject as
+  title and headline as body, in the reader's language and direction, with the same `?open=` link
+  (tag `bgc-<id>`, one notification per request). Recipients are anyone `nmReach_` (email, or an
+  active device with push on), so drivers without email get push only: every `u.email` filter in
+  the escalations, Risk.gs and the stock-short mail became `nmReach_`.
+- **Devices**: sheet `push_tokens` `{userId, token, platform, ua, createdAt, lastSeenAt, active}`.
+  `registerPushToken {pushToken, platform, ua}` always for the signed-in person (a token signed in
+  by someone else moves to them: a shared phone; 10 active a person, oldest off);
+  `unregisterPushToken` only one's own (`not_found` otherwise); `setPushPref {on}` (`user.pushOn`,
+  default on, in `publicUser_`); `sendTestPush` (10 per 10 min) answers `{devices, sent, failed,
+  removed}`.
+- **Configuration.** The public web config and the Web Push public key (VAPID) are built in
+  (`PUSH_DEFAULT_WEB_`, `PUSH_DEFAULT_VAPID_`, the same in index.html and the service worker).
+  The admin pastes only the **service account JSON** in Admin › Settings › Push notifications
+  (`adminSetPushConfig`, admin only: type service_account, project_id = the web project,
+  client_email, a PEM private_key; stored in script property `PUSH_SA`). **No action ever returns
+  it**: `adminGetPushConfig` says `serviceAccountSet` and the project; `meta.config.push` is
+  `{ready, web, vapidKey}`. Overrides for another project (`PUSH_WEB`, `PUSH_VAPID`) sit behind
+  "advanced"; `resetWeb` goes back to the built-in ones. A config change bumps the config sheet's
+  version so cached `listMeta` answers follow.
+- **Client.** `firebase-messaging-sw.js` at the site root (Firebase compat **10.14.1** from gstatic,
+  messaging only, no analytics), registered by the app with scope `./` (the GitHub Pages sub-path,
+  never Firebase's default `/`); a non-default web config rides on its URL (`?c=`). FCM shows a
+  message with a notification part itself and opens its `fcm_options.link`; the worker draws only
+  data-only messages and handles their taps (focus the app and open the link, or tell it by
+  `postMessage({bgcOpen})`). index.html (block "Push notifications (2026-10-26)"): `pnState_` =
+  on / off / blocked / unsupported / ios_install / unavailable; `pnControl_` is the switch (phone:
+  the profile sheet `.msp-push`; desktop: a row in the bell popup; admin: inside the settings
+  card); `pnAskCard_` the one-time Home card (`bgc_pushAsk_<id>`). **The browser is asked only
+  inside a tap** (`Notification.requestPermission` first, then Firebase loads). The device's token
+  is kept in `bgc_pushTok_<id>`, re-sent once a session (`pnSync_`, a rotated token replaces the
+  old one), unregistered on turn-off and in `logout()`. While the app is open a message is a toast
+  (`pnToast_`, Open button) and a forced `refreshPending_`, never a second notification.
+- **iPhone**: web push only for an app added to the Home Screen, iOS 16.4+; until then the card
+  and the sheet show the Share › Add to Home Screen steps. Blocked: per-platform unblock text.
+- **Tests**: "push notifications" in `tests/run.js` (the harness gained
+  `computeRsaSha256Signature` and `UrlFetchApp.fetchAll`; the key is generated per run, never a
+  file). The browser check drove the real index.html on the mock in headless Chrome; the app is a
+  closure, so a fake `window.firebase` injected before load stood in for FCM, and one run used the
+  real gstatic scripts. The mock answers `GET /api` (the warm-up ping) with 404: that is the mock.

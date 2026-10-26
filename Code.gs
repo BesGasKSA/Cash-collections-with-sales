@@ -806,7 +806,8 @@ var RESP_CACHE_TTL_SEC = 120;
 function dataVersion_() {
   var parts = [];
   for (var k in SHEETS) {
-    if (SHEETS.hasOwnProperty(k)) parts.push(version_(SHEETS[k]));
+    // no cached answer reads the push devices: registering one must not clear every cache (review 2026-10-26)
+    if (SHEETS.hasOwnProperty(k) && k !== 'PUSH_TOKENS') parts.push(version_(SHEETS[k]));
   }
   return parts.join('.');
 }
@@ -1044,7 +1045,10 @@ function route_(req) {
     } catch (e) { respKey = null; }
   }
 
+  // push notifications the action asks for are gathered and sent once it has returned (Push.gs)
+  exec_().pushBatch = [];
   var result = handlers[action]();
+  try { pushFlush_(); } catch (e) { /* push is best-effort */ }
   if (respKey && result && result.ok) {
     try {
       var toCache = {};

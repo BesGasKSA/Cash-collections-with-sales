@@ -6926,6 +6926,8 @@ function idleStaleAtStart_(){
   if (!had || !last || Date.now() - last < IDLE_LIMIT_MS) return false;
   try { uid = (JSON.parse(localStorage.getItem('bgc_user') || 'null') || {}).id; } catch (e) {}
   try { kept = !!(uid && localStorage.getItem('bgc_entryDraft_' + uid)); } catch (e) {}
+  // this device stops receiving the person's push notifications, while the token can still say so
+  try { if (uid) pnUnregisterRaw_(localStorage.getItem('bgc_token'), uid); } catch (e) {}
   ['bgc_token', 'bgc_user', 'bgc_meta', 'bgc_lastLogin'].forEach(function(k){ try { localStorage.removeItem(k); } catch (e) {} });
   // the cached reports too: on a shared phone they outlived the session (security review 2026-10-04)
   try { clearScreenCache_(); } catch (e) {}
@@ -28149,7 +28151,7 @@ function cutoverCard_(){
       pn_iosTitle:'On iPhone, add the app to the Home Screen first', pn_iosStep1:'In Safari, tap the Share button.', pn_iosStep2:'Choose “Add to Home Screen”, then tap Add.',
       pn_iosStep3:'Open Cash Collection from the Home Screen and turn notifications on here.', pn_iosNeed:'Needs iOS 16.4 or later.',
       pn_enable:'Turn on notifications', pn_disable:'Turn off', pn_test:'Send a test notification to me', pn_testSent:'Sent to {n} of your devices. It should arrive in a few seconds.',
-      pn_testNone:'None of your devices has notifications on yet. Turn them on first.', pn_working:'Turning on…', pn_failed:'Notifications could not be turned on. Check the connection and try again.',
+      pn_testNone:'None of your devices has notifications on yet. Turn them on first.', pn_testFail:'Not delivered to your {n} devices: Firebase did not accept the message. Check the service account key in Settings, or try again later.', pn_working:'Turning on…', pn_failed:'Notifications could not be turned on. Check the connection and try again.',
       pn_turnedOn:'Notifications are on for this device.', pn_turnedOff:'Notifications are off for this device.',
       pn_askTitle:'Hear the moment something needs you', pn_askBody:'Cash to receive, a request returned, a dispute: a notification on this device, even with the app closed.',
       pn_later:'Not now', pn_gotIt:'Got it', pn_open:'Open',
@@ -28172,7 +28174,7 @@ function cutoverCard_(){
       pn_iosTitle:'على الآيفون: أضف التطبيق إلى الشاشة الرئيسية أولًا', pn_iosStep1:'في سفاري، اضغط زر المشاركة.', pn_iosStep2:'اختر «إضافة إلى الشاشة الرئيسية» ثم «إضافة».',
       pn_iosStep3:'افتح Cash Collection من الشاشة الرئيسية وفعّل الإشعارات من هنا.', pn_iosNeed:'يتطلب iOS 16.4 أو أحدث.',
       pn_enable:'تفعيل الإشعارات', pn_disable:'إيقاف', pn_test:'أرسل لي إشعارًا تجريبيًا', pn_testSent:'أُرسل إلى {n} من أجهزتك، ويصل خلال ثوانٍ.',
-      pn_testNone:'لا يوجد جهاز لك فُعّلت عليه الإشعارات بعد. فعّلها أولًا.', pn_working:'جارٍ التفعيل…', pn_failed:'تعذّر تفعيل الإشعارات. تحقق من الاتصال وحاول مرة أخرى.',
+      pn_testNone:'لا يوجد جهاز لك فُعّلت عليه الإشعارات بعد. فعّلها أولًا.', pn_testFail:'لم يصل إلى أجهزتك ({n}): لم يقبل Firebase الرسالة. تحقق من مفتاح حساب الخدمة في الإعدادات، أو حاول لاحقًا.', pn_working:'جارٍ التفعيل…', pn_failed:'تعذّر تفعيل الإشعارات. تحقق من الاتصال وحاول مرة أخرى.',
       pn_turnedOn:'فُعّلت الإشعارات على هذا الجهاز.', pn_turnedOff:'أُوقفت الإشعارات على هذا الجهاز.',
       pn_askTitle:'اعرف فورًا ما ينتظرك', pn_askBody:'نقدية تستلمها، طلب أُعيد إليك، اعتراض: إشعار على هذا الجهاز، حتى والتطبيق مغلق.',
       pn_later:'ليس الآن', pn_gotIt:'حسنًا', pn_open:'فتح',
@@ -28195,7 +28197,7 @@ function cutoverCard_(){
       pn_iosTitle:'آئی فون پر پہلے ایپ کو ہوم اسکرین پر شامل کریں', pn_iosStep1:'سفاری میں شیئر کا بٹن دبائیں۔', pn_iosStep2:'«Add to Home Screen» چنیں، پھر Add دبائیں۔',
       pn_iosStep3:'ہوم اسکرین سے Cash Collection کھولیں اور یہاں اطلاعات آن کریں۔', pn_iosNeed:'iOS 16.4 یا نیا درکار ہے۔',
       pn_enable:'اطلاعات آن کریں', pn_disable:'بند کریں', pn_test:'مجھے آزمائشی اطلاع بھیجیں', pn_testSent:'آپ کی {n} ڈیوائسز کو بھیج دی گئی، چند سیکنڈ میں پہنچ جائے گی۔',
-      pn_testNone:'آپ کی کسی ڈیوائس پر ابھی اطلاعات آن نہیں۔ پہلے آن کریں۔', pn_working:'آن ہو رہی ہیں…', pn_failed:'اطلاعات آن نہیں ہو سکیں۔ کنکشن چیک کر کے دوبارہ کوشش کریں۔',
+      pn_testNone:'آپ کی کسی ڈیوائس پر ابھی اطلاعات آن نہیں۔ پہلے آن کریں۔', pn_testFail:'آپ کی {n} ڈیوائسز تک نہیں پہنچی: Firebase نے پیغام قبول نہیں کیا۔ سیٹنگز میں سروس اکاؤنٹ کی کلید چیک کریں، یا بعد میں کوشش کریں۔', pn_working:'آن ہو رہی ہیں…', pn_failed:'اطلاعات آن نہیں ہو سکیں۔ کنکشن چیک کر کے دوبارہ کوشش کریں۔',
       pn_turnedOn:'اس ڈیوائس پر اطلاعات آن ہو گئیں۔', pn_turnedOff:'اس ڈیوائس پر اطلاعات بند ہو گئیں۔',
       pn_askTitle:'جو کام آپ کا منتظر ہو، فوراً جانیں', pn_askBody:'وصول کرنے والی نقدی، واپس کی گئی درخواست، تنازع: اس ڈیوائس پر اطلاع، ایپ بند ہو تب بھی۔',
       pn_later:'ابھی نہیں', pn_gotIt:'ٹھیک ہے', pn_open:'کھولیں',
@@ -28212,6 +28214,8 @@ function cutoverCard_(){
   Object.keys(add).forEach(function(lang){ Object.keys(add[lang]).forEach(function(k){ L[lang][k] = add[lang][k]; }); });
   ERROR_KEYS_.invalid_push_web = 'pn_errWeb'; ERROR_KEYS_.invalid_push_vapid = 'pn_errVapid'; ERROR_KEYS_.invalid_push_sa = 'pn_errSa';
   ERROR_KEYS_.push_project_mismatch = 'pn_errProject'; ERROR_KEYS_.invalid_push_token = 'pn_errToken'; ERROR_KEYS_.push_not_ready = 'pn_errNotReady';
+  // a device's own switch changes no figure: the screens' cached copies stay fresh (review 2026-10-26)
+  READ_ACTIONS.registerPushToken = 1; READ_ACTIONS.unregisterPushToken = 1; READ_ACTIONS.setPushPref = 1; READ_ACTIONS.sendTestPush = 1; READ_ACTIONS.adminGetPushConfig = 1;
   // the look: one stylesheet, the brand's own tokens; every movement off under reduced motion
   var css = document.createElement('style');
   css.textContent =
@@ -28239,7 +28243,7 @@ function cutoverCard_(){
     '.card.pn-ask h3{margin:0 0 4px;font-size:16px;}.card.pn-ask p{margin:0 0 10px;color:var(--muted);font-size:13px;line-height:1.7;}' +
     '@keyframes pnIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}' +
     '@keyframes pnRing{0%,100%{transform:rotate(0);}15%{transform:rotate(14deg);}30%{transform:rotate(-12deg);}45%{transform:rotate(8deg);}60%{transform:rotate(-5deg);}75%{transform:rotate(2deg);}}' +
-    '.pa-card .pn-row{border-top:1px solid var(--border-soft);margin-top:12px;padding-top:12px;}' +
+    '.pa-card .pn-row{border-top:1px solid var(--border-soft);margin-top:12px;padding:14px 18px;}' +
     '.pn-toast{position:fixed;z-index:100000;inset-inline-end:16px;top:16px;max-width:min(380px,calc(100vw - 32px));background:#fff;border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-lg);padding:12px 14px;display:flex;gap:12px;align-items:flex-start;opacity:0;transform:translateY(-8px);transition:opacity .2s,transform .2s;}' +
     '.pn-toast.in{opacity:1;transform:none;}.pn-toast .pn-ic{width:36px;height:36px;}.pn-toast b{display:block;font-size:14px;}.pn-toast small{display:block;color:var(--muted);font-size:12.5px;line-height:1.55;margin-top:2px;}' +
     '.pn-toast .pn-tacts{display:flex;gap:6px;margin-top:8px;}.pn-toast button{min-height:36px;}' +
@@ -28343,7 +28347,8 @@ function pnEnable_(){
   return Promise.resolve(ask).then(function(perm){
     perm = perm || Notification.permission;
     if (perm !== 'granted') return { ok: false, state: perm === 'denied' ? 'blocked' : 'off' };
-    return pnToken_().then(function(tok){
+    // a previous person's token still being deleted is finished first, or it could take this one with it
+    return (PN_.dropping || Promise.resolve()).then(pnToken_).then(function(tok){
       if (!tok) return { ok: false, error: 'invalid_push_token' };
       var was = pnLocal_();
       return api('registerPushToken', { pushToken: tok, platform: pnPlatform_(), ua: String(navigator.userAgent || '').slice(0, 300) }, { silent: true }).then(function(r){
@@ -28363,20 +28368,55 @@ function pnDisable_(){
   if (!tok) return Promise.resolve({ ok: true });
   return api('unregisterPushToken', { pushToken: tok }, { silent: true }).then(function(r){ return { ok: true, r: r }; });
 }
-// signing out: this device stops receiving this person's notifications
-function pnOnLogout_(){
+// Signing out: this device stops receiving the person's notifications. A plain fetch, not api():
+// api() writes the renewed session token back, which after logout() would sign the person in
+// again on the next load (review 2026-10-26). The device's key is dropped only once the server
+// has let the device go; if it could not (offline, an expired session), the key stays and the
+// next person to sign in on this device has Firebase delete the token (pnDropOthers_).
+// Used by logout() and by the idle sign-out at start-up (idleStaleAtStart_).
+function pnUnregisterRaw_(sessionToken, uid){
   try {
-    var tok = pnLocal_();
-    if (tok && state.token) api('unregisterPushToken', { pushToken: tok }, { silent: true });
-    pnSetLocal_('');
+    var k = 'bgc_pushTok_' + uid, tok = localStorage.getItem(k) || '';
+    if (!tok || !sessionToken || !state.apiUrl) return;
+    fetch(state.apiUrl, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: 'unregisterPushToken', token: sessionToken, pushToken: tok }) })
+      .then(function(r){ return r.json(); })
+      .then(function(res){ if (res && (res.ok || res.error === 'not_found')) { try { if (localStorage.getItem(k) === tok) localStorage.removeItem(k); } catch (e) {} } })
+      .catch(function(){});
   } catch (e) {}
+}
+function pnOnLogout_(){
+  if (state.user) pnUnregisterRaw_(state.token, state.user.id);
+  if (state.user && PN_.synced) delete PN_.synced[state.user.id];
+}
+// Someone signed out here without the server hearing it: their device key is still on this
+// browser. Firebase deletes the token, so FCM answers UNREGISTERED and the server switches the
+// row off on its next send; the next person turns their own notifications on afresh.
+function pnDropOthers_(){
+  var mine = pnKey_(), others = [];
+  try { Object.keys(localStorage).forEach(function(k){ if (/^bgc_pushTok_/.test(k) && k !== mine) others.push(k); }); } catch (e) {}
+  if (!others.length) return Promise.resolve();
+  if (!pnReady_() || !pnSupported_() || Notification.permission !== 'granted') return Promise.resolve();
+  return pnFirebase_().then(function(fb){
+    return pnRegisterSw_().then(function(reg){
+      var m = fb.messaging(); PN_.messaging = m;
+      return m.getToken({ vapidKey: pnCfg_().vapidKey, serviceWorkerRegistration: reg }).then(function(){ return m.deleteToken(); });
+    });
+  }).then(function(){ others.forEach(function(k){ try { localStorage.removeItem(k); } catch (e) {} }); }).catch(function(){});
 }
 // once a session: a device that is on re-sends its token (a new one if Firebase rotated it)
 function pnSync_(){
-  if (!state.user || PN_.synced[state.user.id] || !pnReady_() || !pnSupported_() || !pnLocal_()) return;
-  if (Notification.permission !== 'granted' || state.user.pushOn === false) return;
+  if (!state.user || PN_.synced[state.user.id] || !pnReady_() || !pnSupported_()) return;
   PN_.synced[state.user.id] = true;
-  var uid = state.user.id, was = pnLocal_();
+  var uid = state.user.id;
+  // a previous person's device key left behind goes first (their token is deleted at Firebase)
+  (PN_.dropping = pnDropOthers_()).then(function(){
+    if (!state.user || state.user.id !== uid || !pnLocal_()) return;
+    if (Notification.permission !== 'granted' || state.user.pushOn === false) return;
+    pnResync_(uid, pnLocal_());
+  });
+}
+function pnResync_(uid, was){
   pnToken_().then(function(tok){
     if (!tok || !state.user || state.user.id !== uid) return;
     api('registerPushToken', { pushToken: tok, platform: pnPlatform_(), ua: String(navigator.userAgent || '').slice(0, 300) }, { silent: true }).then(function(r){
@@ -28436,7 +28476,7 @@ function pnSendTest_(btn, done){
   api('sendTestPush', {}, { silent: true }).then(function(r){
     if (btn) btn.disabled = false;
     if (!r || !r.ok) { done(errMsg_(r), false); return; }
-    done(r.sent ? t('pn_testSent').replace('{n}', r.sent) : t('pn_testNone'), !!r.sent);
+    done(r.sent ? t('pn_testSent').replace('{n}', r.sent) : r.devices ? t('pn_testFail').replace('{n}', r.devices) : t('pn_testNone'), !!r.sent);
   });
 }
 // Home, once, after signing in: a card that asks (the browser's own question only on its button)

@@ -29,6 +29,7 @@ var PUSH_TOKEN_URL_ = 'https://oauth2.googleapis.com/token';
 var PUSH_AT_KEY_ = 'push_at';
 var PUSH_TTL_SEC_ = 86400;          // a phone off for a day still gets it when it comes back
 var PUSH_MAX_DEVICES_ = 10;          // per person; the oldest beyond this are switched off
+var PUSH_SEEN_MS_ = 20 * 3600 * 1000; // a device re-registered sooner than this is not written again
 
 // Reads a pasted web config: JSON, or the snippet the Firebase console shows
 // (`const firebaseConfig = { apiKey: "…", … };`, unquoted keys).
@@ -111,7 +112,8 @@ function actionAdminSetPushConfig_(req, user) {
     sa = pushParseSa_(d.serviceAccount);
     if (!sa) return { ok: false, error: 'invalid_push_sa' };
   }
-  var projectId = (web || pushWeb_()).projectId;
+  // the web config this save leaves in force: a new one, the built-in one on a reset, or the saved one
+  var projectId = (web || (d.resetWeb === true ? PUSH_DEFAULT_WEB_ : pushWeb_())).projectId;
   var saNow = sa || (d.clear === true ? null : pushSa_());
   if (saNow && saNow.project_id !== projectId) return { ok: false, error: 'push_project_mismatch' };
   if (web) { setScriptProp_('PUSH_WEB', JSON.stringify(web)); set.push('web'); }
@@ -140,6 +142,13 @@ function actionRegisterPushToken_(req, user) {
   var ua = String(req.ua || '').slice(0, 300), now = new Date().toISOString();
   var rows = readSheet(SHEETS.PUSH_TOKENS);
   var row = rows.filter(function (r) { return r.token === t; })[0];
+  // the app re-sends its token once a session: a device seen in the last day writes nothing
+  if (row && row.userId === user.id && row.active === true && row.platform === platform &&
+      Date.now() - new Date(row.lastSeenAt || 0).getTime() < PUSH_SEEN_MS_) return { ok: true, id: row.id, pushOn: user.pushOn !== false, ready: pushReady_() };
+  // nobody needs to register thirty devices in ten minutes
+  var cache = CacheService.getScriptCache(), rk = 'push_reg_' + user.id, rn = Number(cache.get(rk) || 0);
+  if (rn >= 30) return { ok: false, error: 'too_many_requests' };
+  cache.put(rk, String(rn + 1), 600);
   if (row) {
     // the same phone signed in by someone else now belongs to them (a shared phone)
     if (row.userId !== user.id) { row.movedFrom = row.userId; row.userId = user.id; row.createdAt = now; }
@@ -201,13 +210,29 @@ function nmReach_(u) {
   try { return pushHasDevice_(u.id); } catch (e) { return false; }
 }
 
-// One notification to one person's devices: best-effort, after the cash lock.
+// One notification to one person's devices: best-effort, never inside the cash lock.
 // msg: {title, body, open, tag, lang, dir}
+// Inside a request (route_ opens exec_().pushBatch) everything an action sends is gathered and
+// goes out at the end of the request in one fetchAll, after every lock is released and only
+// when the action did not throw (review 2026-10-26: one confirm alerted six people one after
+// another). Outside a request (a time trigger, a direct call) it waits for the cash lock.
 function pushTo_(userId, msg) {
   try {
     if (!userId || !msg) return;
-    afterCashLock_(function () { try { pushSendNow_(userId, msg); } catch (e) { console.error('push: ' + e); } });
+    var ex = exec_();
+    if (ex.pushBatch) { ex.pushBatch.push({ userId: userId, msg: msg }); return; }
+    afterCashLock_(function () { try { pushSendMany_([{ userId: userId, msg: msg }]); } catch (e) { console.error('push: ' + e); } });
   } catch (e) { console.error('push: ' + e); }
+}
+// route_ calls this once the action has returned
+function pushFlush_() {
+  var ex = exec_(), q = ex.pushBatch || [];
+  ex.pushBatch = null;
+  if (!q.length) return;
+  // one notification per person and request, whatever several code paths asked for
+  var seen = Object.create(null), list = [];
+  q.forEach(function (it) { var k = it.userId + '|' + (it.msg.tag || pushTagOf_(it.msg.open)) + '|' + it.msg.title; if (!seen[k]) { seen[k] = 1; list.push(it); } });
+  try { pushSendMany_(list); } catch (e) { console.error('push flush: ' + e); }
 }
 
 function pushB64url_(v) { return Utilities.base64EncodeWebSafe(v).replace(/=+$/, ''); }
@@ -256,22 +281,30 @@ function pushMessage_(token, msg) {
   } };
 }
 
-// Sends now. Returns {devices, sent, failed, removed}. Never throws.
+// Sends now to one person. Returns {devices, sent, failed, removed}. Never throws.
 function pushSendNow_(userId, msg, ignorePref) {
-  var out = { devices: 0, sent: 0, failed: 0, removed: 0 };
+  return pushSendMany_([{ userId: userId, msg: msg, ignorePref: !!ignorePref }])[0];
+}
+// Sends several notifications in one UrlFetchApp.fetchAll. items: [{userId, msg, ignorePref}].
+// Returns one {devices, sent, failed, removed} per item. Never throws.
+function pushSendMany_(items) {
+  var outs = items.map(function () { return { devices: 0, sent: 0, failed: 0, removed: 0 }; });
   try {
     var sa = pushSa_();
-    if (!sa || !pushReady_()) { out.error = 'push_not_ready'; return out; }
-    var u = getById_(SHEETS.USERS, userId);
-    if (!u || u.active === false || (!ignorePref && u.pushOn === false)) return out;
-    var rows = readSheet(SHEETS.PUSH_TOKENS).filter(function (r) { return r.userId === userId && r.active === true; });
-    out.devices = rows.length;
-    if (!rows.length) return out;
+    if (!sa || !pushReady_()) { outs.forEach(function (o) { o.error = 'push_not_ready'; }); return outs; }
+    var all = readSheet(SHEETS.PUSH_TOKENS);
+    var jobs = [];   // {i: item index, row}
+    items.forEach(function (it, i) {
+      var u = getById_(SHEETS.USERS, it.userId);
+      if (!u || u.active === false || (!it.ignorePref && u.pushOn === false)) return;
+      all.forEach(function (r) { if (r.userId === it.userId && r.active === true) { jobs.push({ i: i, row: r }); outs[i].devices++; } });
+    });
+    if (!jobs.length) return outs;
     var at = pushAccessToken_(sa);
     var url = 'https://fcm.googleapis.com/v1/projects/' + encodeURIComponent(sa.project_id) + '/messages:send';
     function reqs(token) {
-      return rows.map(function (r) { return { url: url, method: 'post', contentType: 'application/json', muteHttpExceptions: true,
-        headers: { Authorization: 'Bearer ' + token }, payload: JSON.stringify(pushMessage_(r.token, msg)) }; });
+      return jobs.map(function (j) { return { url: url, method: 'post', contentType: 'application/json', muteHttpExceptions: true,
+        headers: { Authorization: 'Bearer ' + token }, payload: JSON.stringify(pushMessage_(j.row.token, items[j.i].msg)) }; });
     }
     var res = UrlFetchApp.fetchAll(reqs(at));
     // a token revoked early (a key rotated): one fresh token, one retry
@@ -279,20 +312,21 @@ function pushSendNow_(userId, msg, ignorePref) {
       at = pushAccessToken_(sa, true);
       res = UrlFetchApp.fetchAll(reqs(at));
     }
-    var now = new Date().toISOString();
-    res.forEach(function (x, i) {
-      var code = x.getResponseCode(), body = '';
+    var now = new Date().toISOString(), gone = Object.create(null);
+    res.forEach(function (x, k) {
+      var j = jobs[k], o = outs[j.i], code = x.getResponseCode(), body = '';
       try { body = x.getContentText() || ''; } catch (e) {}
-      if (code >= 200 && code < 300) { out.sent++; return; }
-      out.failed++;
+      if (code >= 200 && code < 300) { o.sent++; return; }
+      o.failed++;
       // the device is gone (UNREGISTERED, 404) or its token is not a token (INVALID_ARGUMENT naming
       // the registration token, 400). Any other 400 is the message's fault, not the device's.
       var dead = code === 404 || /UNREGISTERED/.test(body) || (code === 400 && /registration token/i.test(body));
-      if (dead) {
-        var r = rows[i]; r.active = false; r.deactivatedAt = now; r.deactivatedReason = code === 404 || /UNREGISTERED/.test(body) ? 'unregistered' : 'invalid_token';
-        try { writeRow(SHEETS.PUSH_TOKENS, r); out.removed++; } catch (e) {}
+      if (dead && !gone[j.row.token]) {
+        gone[j.row.token] = 1;
+        var r = j.row; r.active = false; r.deactivatedAt = now; r.deactivatedReason = code === 404 || /UNREGISTERED/.test(body) ? 'unregistered' : 'invalid_token';
+        try { writeRow(SHEETS.PUSH_TOKENS, r); o.removed++; } catch (e) {}
       }
     });
-  } catch (e) { out.error = String(e && e.message || e).slice(0, 80); console.error('push send: ' + e); }
-  return out;
+  } catch (e) { var msg = String(e && e.message || e).slice(0, 80); outs.forEach(function (o) { o.error = msg; }); console.error('push send: ' + e); }
+  return outs;
 }

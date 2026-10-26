@@ -200,6 +200,7 @@ function buildContext() {
     // several requests in one round trip, as the push sender batches a person's devices;
     // like the real one, a responder that throws fails the whole call
     fetchAll: function (requests) {
+      urlFetch.fetchAllCalls = (urlFetch.fetchAllCalls || 0) + 1;
       return requests.map(function (q) { var o = {}; for (var k in q) if (k !== 'url') o[k] = q[k]; return UrlFetchApp.fetch(q.url, o); });
     }
   };

@@ -7241,6 +7241,24 @@ console.log('--- push notifications ---');
     var urTitle = fcmCalls().map(function (c) { return JSON.parse(c.options.payload).message; }).filter(function (m) { return m.token === 'tok-shared'; })[0];
     check(urTitle && urTitle.webpush.notification.title === ctx.fill_(ctx.NM_.ur.ev.risk.s, { title: 'Cash bag torn', by: 'Push Branch' }) && urTitle.webpush.notification.dir === 'rtl', 'push: Urdu for the Urdu reader, right to left');
 
+    // one request, one round trip to FCM, however many people it alerts (review 2026-10-26)
+    D.urlFetch.log.length = 0; D.urlFetch.fetchAllCalls = 0;
+    var risk5 = call({ action: 'createRiskItem', token: bmTok, type: 'risk', title: 'Batched', severity: 'high' });
+    check(risk5.ok && fcmCalls().length === 3 && D.urlFetch.fetchAllCalls === 1, 'push: three people alerted by one action go out in one fetchAll (' + fcmCalls().length + ' messages, ' + D.urlFetch.fetchAllCalls + ' calls)');
+    // a device seen again soon writes nothing, and devices never touch the response cache
+    var dv0 = ctx.dataVersion_();
+    var again = call({ action: 'registerPushToken', token: colTok, pushToken: 'tok-col-2', platform: 'desktop' });
+    check(again.ok && ctx.dataVersion_() === dv0, 'push: re-registering a fresh device leaves every cached response alone');
+    var vp = ctx.version_(SHEETS.PUSH_TOKENS);
+    call({ action: 'registerPushToken', token: colTok, pushToken: 'tok-col-2', platform: 'desktop' });
+    check(ctx.version_(SHEETS.PUSH_TOKENS) === vp, 'push: and writes no row');
+    call({ action: 'registerPushToken', token: colTok, pushToken: 'tok-col-3-new', platform: 'desktop' });
+    check(ctx.dataVersion_() === dv0, 'push: even a new device does not clear the response cache');
+    call({ action: 'unregisterPushToken', token: colTok, pushToken: 'tok-col-3-new' });
+    // registration is rate limited
+    var lim = null;
+    for (var li = 0; li < 40 && !lim; li++) { var rr = call({ action: 'registerPushToken', token: bmTok, pushToken: 'tok-spam-' + li + '-xxxx', platform: 'desktop' }); if (!rr.ok) lim = rr.error; }
+    check(lim === 'too_many_requests', 'push: a flood of registrations is refused (' + lim + ')');
     // the push waits for the cash lock to be released
     D.urlFetch.log.length = 0;
     var during = -1;
@@ -7266,6 +7284,15 @@ console.log('--- push notifications ---');
     var drvU = ctx.getById_(SHEETS.USERS, 'pnDrv'); drvU.active = false; ctx.writeRow(SHEETS.USERS, drvU);
     D.urlFetch.log.length = 0; ctx.resetExecMemo_(); ctx.pushTo_('pnDrv', { title: 'x', body: 'y', open: ctx.DEFAULT_APP_URL, lang: 'ar' });
     check(fcmCalls().length === 0, 'push: a disabled account gets nothing');
+    // back to the built-in project is checked against the saved service account like any change
+    var rw = call({ action: 'adminSetPushConfig', token: adminTok, data: { webConfig: snippet.replace(/bestgas-cash"/g, 'other-proj"').replace(/bestgas-cash\./g, 'other-proj.') } });
+    check(!rw.ok && rw.error === 'push_project_mismatch', 'push: another project\'s web config is refused while the service account is bestgas-cash');
+    var SA2 = JSON.parse(JSON.stringify(SA)); SA2.project_id = 'other-proj';
+    ctx.setScriptProp_('PUSH_WEB', JSON.stringify({ apiKey: 'k', projectId: 'other-proj', messagingSenderId: '12345', appId: '1:12345:web:x' }));
+    ctx.setScriptProp_('PUSH_SA', JSON.stringify(SA2));
+    var rd = call({ action: 'adminSetPushConfig', token: adminTok, data: { resetWeb: true } });
+    check(!rd.ok && rd.error === 'push_project_mismatch', 'push: going back to the built-in project with another project\'s key says so (' + (rd.error || 'ok') + ')');
+    ctx.setScriptProp_('PUSH_WEB', ''); ctx.setScriptProp_('PUSH_SA', JSON.stringify(SA));
     // not configured: nothing is attempted at all
     var clr = call({ action: 'adminSetPushConfig', token: adminTok, data: { clear: true } });
     check(clr.ok && clr.push.ready === false, 'push: the admin can clear the service account');

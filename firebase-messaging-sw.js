@@ -25,6 +25,23 @@ function bgcConfig() {
   return BGC_DEFAULT_WEB;
 }
 
+// Safari (iPhone, iPad, Mac) may cancel a subscription whose pushes show nothing, and Firebase
+// shows nothing while the app is on screen (it hands the message to the page instead). On
+// Safari, then, a push that arrives while a window is visible is drawn here as well. Added
+// before Firebase so it runs first; Firebase still tells the page (an in-app toast too).
+var BGC_SAFARI = /Safari/.test(self.navigator.userAgent) && !/Chrome|Chromium|CriOS|Edg|Firefox|FxiOS|Android/.test(self.navigator.userAgent);
+self.addEventListener('push', function (event) {
+  if (!BGC_SAFARI || !event.data) return;
+  var p = null; try { p = event.data.json(); } catch (e) { return; }
+  var d = (p && p.data) || {};
+  if (!d.title) return;
+  event.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (list) {
+    if (!list.some(function (c) { return c.visibilityState === 'visible'; })) return;   // Firebase shows it
+    return self.registration.showNotification(d.title, { body: d.body || '', icon: BGC_ICON, badge: BGC_BADGE, tag: d.tag || 'bgc',
+      dir: d.dir === 'rtl' ? 'rtl' : 'ltr', lang: d.lang || '', data: { open: d.open || self.registration.scope } });
+  }));
+});
+
 firebase.initializeApp(bgcConfig());
 var messaging = firebase.messaging();
 
