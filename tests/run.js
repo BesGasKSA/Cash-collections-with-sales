@@ -6529,7 +6529,7 @@ console.log('--- a sale without stock is saved and flagged, never refused (2026-
   var pc1 = pend(nsMgrTok);
   ctx.actionInventoryReport_ = realReport;
   check(pcReports === 0 && pc1.length === pc0, 'no stock review: a second look at what waits is served from the cache (' + pcReports + ' reports)');
-  mv({ stockItemId: it.id, state: 'full', kind: 'purchase', qty: 50, date: '2026-10-09' });
+  mv({ stockItemId: it.id, state: 'full', kind: 'purchase', qty: 50, newCylinders: true, date: '2026-10-09' });
   check(pend(nsMgrTok).length === 0, 'no stock review: a stock move clears the cache, and the covered line closes');
 })();
 
@@ -7557,6 +7557,54 @@ console.log('--- a test email to the approvers (2026-10-27) ---');
   check(call({ action: 'adminSendTestMail', token: deputy.token || adminTok, roles: ['admin'] }).ok === (deputy.token ? false : true) || true, 'admin only (checked below)');
   var depTok = call({ action: 'login', email: 'walid@bestgas.sa', password: 'x' }).token;
   check(!depTok || call({ action: 'adminSendTestMail', token: depTok }).error === 'forbidden', 'nobody but an admin can send it');
+})();
+
+console.log('--- the cylinder business model, step by step: filled, empty and the total (2026-10-26) ---');
+// The user's rule: buying gas is a refill (empties become filled, the total stays);
+// only new cylinders bought raise the total; an exchange sale turns a filled one into
+// an empty one; selling a cylinder with or without gas lowers the total.
+var bmT = { full: 0, empty: 0 };
+(function () {
+  var mgr = scUser('Bm Manager', 'store_manager');
+  var loc = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: 'Riyadh', name: 'Model Branch', clusterId: cluster.entity.id, collectorUserId: musa.id } }).entity;
+  var store = call({ action: 'adminSaveEntity', token: adminTok, kind: 'store', data: { locationId: loc.id, name: 'Model Store', storeManagerUserId: mgr.id } }).entity;
+  var it = siEnt('stock_item', { name: 'Bm Iron', kind: 'cylinder', gasCost: 11, cylinderCost: 140 });
+  var pEx = siEnt('product', { name: 'Bm Exchange', type: 'goods', unitPrice: 37, stockItemId: it.id, stockEffect: 'exchange' });
+  var pFull = siEnt('product', { name: 'Bm New Full', type: 'goods', unitPrice: 220, stockItemId: it.id, stockEffect: 'sell_full' });
+  var pBody = siEnt('product', { name: 'Bm Empty Body', type: 'goods', unitPrice: 186, stockItemId: it.id, stockEffect: 'sell_empty' });
+  function mv(o) { var p = { action: 'addInventoryMove', token: adminTok, locationId: loc.id, stockItemId: it.id, supplier: 'Plant', invoiceNo: 'INV-' + Math.random().toString(36).slice(2, 7) }; Object.keys(o).forEach(function (k) { p[k] = o[k]; }); return call(p); }
+  function sell(prod, qty, date) { return call({ action: 'importDailyEntries', token: adminTok, rows: [{ date: date, sourceType: 'store', sourceId: store.id, productId: prod.id, qty: qty, unitPrice: prod.unitPrice, cashSales: qty * prod.unitPrice, submissionId: 'bm-' + prod.id + '-' + date }] }); }
+  function now(date) {
+    var r = call({ action: 'getInventoryReport', token: adminTok, dateFrom: '2026-10-01', dateTo: date, locationId: loc.id });
+    var c = (r.cylSummary || []).filter(function (x) { return x.stockItemId === it.id; })[0] || {};
+    return { full: c.filled, empty: c.empty, plant: c.atPlant || 0, bodies: c.bodies };
+  }
+  function step(label, res, date, full, empty, total) {
+    var n = now(date);
+    check(res.ok !== false && n.full === full && n.empty === empty && n.bodies === total,
+      label + ': filled ' + n.full + ' (want ' + full + '), empty ' + n.empty + ' (want ' + empty + '), all cylinders ' + n.bodies + ' (want ' + total + ')' + (res.error ? ' — ' + res.error : '') + ((res.results && res.results[0] && res.results[0].error) ? ' — ' + res.results[0].error : ''));
+  }
+  step('opening 100 filled', mv({ state: 'full', kind: 'opening', qty: 100, date: '2026-10-01' }), '2026-10-01', 100, 0, 100);
+  step('opening 50 empty', mv({ state: 'empty', kind: 'opening', qty: 50, date: '2026-10-01' }), '2026-10-01', 100, 50, 150);
+  step('buying 30 gas is a refill: empties become filled, the total stays', mv({ state: 'full', kind: 'purchase', qty: 30, date: '2026-10-02' }), '2026-10-02', 130, 20, 150);
+  step('buying 10 new filled cylinders raises the total', mv({ state: 'full', kind: 'purchase', qty: 10, newCylinders: true, date: '2026-10-03' }), '2026-10-03', 140, 20, 160);
+  step('selling 5 gas exchanges: filled out, empties back', sell(pEx, 5, '2026-10-04'), '2026-10-04', 135, 25, 160);
+  step('selling 2 new filled cylinders lowers the total', sell(pFull, 2, '2026-10-05'), '2026-10-05', 133, 25, 158);
+  step('selling 3 empty cylinders lowers the total', sell(pBody, 3, '2026-10-06'), '2026-10-06', 133, 22, 155);
+  step('buying 4 new empty cylinders raises the total', mv({ state: 'empty', kind: 'purchase', qty: 4, date: '2026-10-06' }), '2026-10-06', 133, 26, 159);
+  step('6 empties sent to the plant are still ours', mv({ kind: 'refill_out', qty: 6, date: '2026-10-06' }), '2026-10-06', 133, 20, 159);
+  step('the 6 come back filled', mv({ kind: 'refill_in', qty: 6, date: '2026-10-06' }), '2026-10-06', 139, 20, 159);
+  step('a filled cylinder that leaks becomes an empty one', mv({ state: 'full', kind: 'waste', qty: 1, reason: 'gas_leak', date: '2026-10-07' }), '2026-10-07', 138, 21, 159);
+  step('a broken empty body is written off', mv({ state: 'empty', kind: 'damage', qty: 1, reason: 'broken_body', date: '2026-10-07' }), '2026-10-07', 138, 20, 158);
+  // the refill can never take more empties than the branch has
+  var over = mv({ state: 'full', kind: 'purchase', qty: 25, date: '2026-10-08' });
+  check(!over.ok && over.error === 'refill_over_empty', 'buying gas for 25 when 20 empties are on hand is refused (got ' + (over.error || 'ok') + ')');
+  step('and nothing changed', { ok: true }, '2026-10-08', 138, 20, 158);
+  // a branch whose count gave only filled cylinders: its empties start at zero that day
+  var loc2 = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: 'Riyadh', name: 'Model Branch 2', clusterId: cluster.entity.id, collectorUserId: musa.id } }).entity;
+  var o2 = call({ action: 'addInventoryMove', token: adminTok, locationId: loc2.id, stockItemId: it.id, state: 'full', kind: 'opening', qty: 40, date: '2026-10-01' });
+  var r2 = call({ action: 'addInventoryMove', token: adminTok, locationId: loc2.id, stockItemId: it.id, state: 'full', kind: 'purchase', qty: 10, supplier: 'Plant', invoiceNo: 'X-2', date: '2026-10-02' });
+  check(o2.ok && !r2.ok && r2.error === 'refill_over_empty', 'with no empties counted, gas cannot be bought as a refill: the purchase says it is new cylinders or the empties are counted first (got ' + (r2.error || 'ok') + ')');
 })();
 
 console.log('\n' + pass + ' passed, ' + fail + ' failed');

@@ -282,6 +282,28 @@ function invMoveRow_(locId, c, date, user, extra) {
   return row;
 }
 
+// The empties a branch holds of a cylinder item at the end of a day, as the report
+// counts them; null when the item was never counted there (nothing is tracked yet).
+function invEmptiesOn_(locId, itemId, date, user) {
+  var rep = actionInventoryReport_({ dateFrom: date, dateTo: date, locationId: locId }, user, invStockCtx_());
+  if (!rep.ok) return null;
+  var rows = rep.rows.filter(function (r) { return r.stockItemId === itemId && r.state; });
+  if (!rows.length || rows.every(function (r) { return r.noOpening; })) return null;
+  var e = rows.filter(function (r) { return r.state === 'empty'; })[0];
+  return e && !e.noOpening ? e.ending : 0;
+}
+// The business model (the user, 2026-10-26): gas bought is a refill. The plant fills the
+// branch's empties, so empties go down and filled cylinders up by the same number and the
+// total stays. Only new cylinders raise the total. A refill larger than the empties on hand
+// is refused: the extra are new cylinders (ticked as such), or the empties were never counted.
+function invRefillError_(c, locId, date, user) {
+  var it = c.move.stockItemId ? invStockCtx_().item(c.move.stockItemId) : null;
+  if (!it || it.kind !== 'cylinder' || c.move.kind !== 'purchase' || c.move.state !== 'full' || c.move.newCylinders === true) return null;
+  var have = invEmptiesOn_(locId, it.id, date, user);
+  if (have == null) return null;
+  if (c.move.qty > have + 0.0005) return { ok: false, error: 'refill_over_empty', emptyOnHand: Math.max(0, Math.round(have * 1000) / 1000), qty: c.move.qty };
+  return null;
+}
 function actionAddInventoryMove_(req, user) {
   var lf = invLocFor_(user, req.locationId);
   if (lf.error) return { ok: false, error: lf.error };
@@ -310,6 +332,9 @@ function actionAddInventoryMove_(req, user) {
       var pl = invPlant_(invStockCtx_(), lf.loc.id, c.itemId, date);
       if (c.move.qty > pl.atPlant + 0.0005) return { ok: false, error: 'refill_over_sent', atPlant: pl.atPlant };
     }
+    // gas bought fills empties the branch has; more than that are new cylinders
+    var rfErr = invRefillError_(c, lf.loc.id, date, user);
+    if (rfErr) return rfErr;
     var move = writeRow(SHEETS.INV_MOVES, invMoveRow_(lf.loc.id, c.move, date, user));
     logAudit_('inventory_' + c.move.kind, user.id, move.id);
     return { ok: true, move: move };
@@ -653,6 +678,9 @@ function actionInventoryReport_(req, user, scOverride, extraEntries, pre) {
     var k = invOpeningKey_(locId, it.id, state);
     if (!rows[k]) {
       var op = openingOf[k] || null;
+      // a cylinder is counted full and empty together (2026-10-26): a branch that counted only one
+      // state starts the other at zero on that day, so a refill or an exchange always reaches both
+      if (!op && it.kind === 'cylinder' && state) op = openingOf[invOpeningKey_(locId, it.id, state === 'full' ? 'empty' : 'full')] || null;
       rows[k] = { locationId: locId, stockItemId: it.id, state: state || null, cylinder: it.kind === 'cylinder', itemName: it.name || '',
         unitCost: Math.round(Number(invUnitValue_(it, state, to, hist) || 0) * 10000) / 10000,
         opening: 0, purchases: 0, newCylinders: 0, returns: 0, exchangeIn: 0, transfersIn: 0, fromPlant: 0, depositBack: 0, sales: 0, damaged: 0, refillOut: 0, toPlant: 0, transfersOut: 0, depositOut: 0,
