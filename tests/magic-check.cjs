@@ -171,10 +171,13 @@ async function main() {
               return { sd: !!sd, kpis: sd ? sd.querySelectorAll('.sd-kpi').length : 0, charts: sd ? sd.querySelectorAll('.sd-chart').length : 0, ins: sd ? sd.querySelectorAll('.sd-in').length : 0,
                 overflow: de.scrollWidth > de.clientWidth + 1 ? de.scrollWidth + '>' + de.clientWidth : '', err: (document.querySelector('#screenBody .msg.err') || {}).textContent || '' }; })()`);
             report.push(`${scr} ${lang} ${sz}: ${JSON.stringify(info)}`);
+            if (arg('--eval', '')) report.push('  eval: ' + JSON.stringify(await evaluate(send, arg('--eval', ''))));
             if (!info.sd) problems.push(`${scr} ${lang} ${sz}: no dashboard`);
             if (info.overflow) problems.push(`${scr} ${lang} ${sz}: page scrolls sideways ${info.overflow}`);
             await evaluate(send, `window.scrollTo(0, 0); true`); await sleep(1300);
             await shot(send, `${scr}-${lang}-${sz}.png`);
+            // and the dashboard itself, scrolled into view
+            if (info.sd) { await evaluate(send, "(function(){ var c = document.querySelector('.card.sd'); var tb = document.querySelector('.tb, header'); window.scrollTo(0, c.getBoundingClientRect().top + window.scrollY - (tb ? tb.offsetHeight : 0) - 8); return true; })()"); await sleep(1400); await shot(send, `${scr}-${lang}-${sz}-sd.png`); }
             errorsOf(events, from).forEach(e => problems.push(`${scr} ${lang} ${sz}: ${e}`));
           }
         }

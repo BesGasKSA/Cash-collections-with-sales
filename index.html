@@ -3854,8 +3854,8 @@
   .sd-bar{display:grid;grid-template-columns:minmax(0,38%) 1fr auto;align-items:center;gap:8px;border:0;background:none;padding:4px 2px;font:inherit;color:inherit;text-align:start;cursor:pointer;border-radius:8px;}
   .sd-bar:hover{background:#F4F6F2;} .sd-bar:disabled{cursor:default;}
   .sd-bl{font-size:12.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-  .sd-bt{height:10px;border-radius:5px;background:#EEF1EC;overflow:hidden;}
-  .sd-bt i{display:block;height:100%;width:calc(var(--w) * 100%);background:#4D6D51;border-radius:5px;transform-origin:left;}
+  .sd-bt{height:10px;border-radius:5px;background:#EEF1EC;overflow:hidden;display:flex;justify-content:flex-start;}
+  .sd-bt i{display:block;flex:none;height:100%;width:calc(var(--w) * 100%);background:#4D6D51;border-radius:5px;transform-origin:left;}
   html[dir="rtl"] .sd-bt i{transform-origin:right;}
   .sd-bar b{font-size:12px;font-variant-numeric:tabular-nums;}
   .sd-more{margin:2px 0 0;font-size:11.5px;color:#7A8277;}
@@ -13259,6 +13259,8 @@ function sdChg_(k){
 function sdChart_(ch, i){
   var rows = (ch.rows || []).filter(function(r){ return r && isFinite(r.v); });
   if (!rows.length || !rows.some(function(r){ return Math.abs(r.v) > 0.004; })) return null;
+  // a day chart needs two days at least: one day is a single slab, not a trend
+  if (ch.kind === 'day' && rows.length < 2) return null;
   var box = el('<figure class="sd-chart sd-' + ch.kind + '" style="--i:' + i + '"><figcaption>' + esc(ch.title) + '</figcaption><div class="sd-plot"></div></figure>');
   var plot = qs('.sd-plot', box);
   if (ch.kind === 'day') {
@@ -13487,7 +13489,7 @@ function exDashOf_(fileName, sheets, model){
   var byLabel = {}; ((model && model.kpis) || []).forEach(function(k){ byLabel[String(trText_(k.label))] = k; });
   kp.forEach(function(k){ var m = byLabel[String(trText_(k.label))]; if (m && m.prev != null && Math.abs(m.v - k.v) < 0.006) { k.prev = m.prev; k.down = m.down; } });
   // charts and insights: the screen's, else worked out from the sheet (a day column and a grouping column)
-  var charts = model && model.charts ? model.charts.filter(function(c){ return (c.rows || []).some(function(r){ return Math.abs(r.v) > 0.004; }); }).map(function(c){ return { title: c.title, kind: c.kind, unit: c.unit, rows: c.rows.map(function(r){ return { label: r.label, v: r.v }; }) }; }) : null;
+  var charts = model && model.charts ? model.charts.filter(function(c){ return (c.kind !== 'day' || (c.rows || []).length >= 2) && (c.rows || []).some(function(r){ return Math.abs(r.v) > 0.004; }); }).map(function(c){ return { title: c.title, kind: c.kind, unit: c.unit, rows: c.rows.map(function(r){ return { label: r.label, v: r.v }; }) }; }) : null;
   var insights = model && model.insights ? model.insights.map(function(x){ return x.text; }) : null;
   if (!charts || !insights) {
     var mc = kinds.indexOf('money'), body = data.filter(function(r){ return !exIsTotal_(r); });
