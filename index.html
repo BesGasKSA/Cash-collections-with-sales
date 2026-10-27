@@ -13426,8 +13426,12 @@ function sdPlModel_(res, F, prev, kids, onKid){
 // pure: the export's main sheet (the first table that is not a summary or a pivot and has numbers)
 function exDashMain_(sheets){
   var list = (sheets || []).filter(function(sh){ return sh && !sh.isSummary && !sh.isPivot && !sh.isDash && Array.isArray(sh.rows) && sh.rows.length > 1; });
-  var num = function(sh){ return sh.rows.slice(1).some(function(r){ return Array.isArray(r) && r.some(function(v){ return typeof v === 'number' && v !== 0; }); }); };
-  return list.filter(num)[0] || null;
+  var num = function(nz){ return function(sh){ return sh.rows.slice(1).some(function(r){ return Array.isArray(r) && r.some(function(v){ return typeof v === 'number' && (!nz || v !== 0); }); }); }; };
+  // a period with nothing in it still gets its dashboard (zeros), from the first table with figures
+  // first a key-figures sheet, then a table with a totals line, then any table with figures
+  var kpi = function(sh){ return sh.rows[0] && sh.rows[0][1] === t('crp_now') && sh.rows[0][2] === t('crp_prev'); };
+  var tot = function(sh){ return sh.rows.slice(1).some(exIsTotal_); };
+  return list.filter(kpi)[0] || list.filter(function(sh){ return tot(sh) && num(true)(sh); })[0] || list.filter(num(true))[0] || list.filter(tot)[0] || list.filter(num(false))[0] || null;
 }
 // pure: the dashboard of a workbook. Its figures come from the main sheet's own totals line (so they
 // equal it to the cent): a statement (label, amount, its totals marked) gives one card per total; a table
@@ -13435,12 +13439,22 @@ function exDashMain_(sheets){
 // (when the export comes from the screen it was drawn on) adds the change against the previous period,
 // the insights and the charts.
 function exDashOf_(fileName, sheets, model){
-  var sh = exDashMain_(sheets); if (!sh) return null;
+  var sh = exDashMain_(sheets);
+  // nothing with figures in the workbook (an empty period): the screen's own cards, as the screen shows them
+  if (!sh) {
+    if (!model || !(model.kpis || []).length) return null;
+    return { title: trText_(fileName), sheet: null, charts: [], insights: (model.insights || []).map(function(x){ return x.text; }).slice(0, 5),
+      kpis: model.kpis.map(function(k){ return { label: k.label, v: k.v, prev: k.prev, kind: k.kind, down: k.down }; }) };
+  }
   var rows = sh.rows, kinds = exColKinds_(rows), head = rows[0] || [], kp = [];
   (sh.intCols || []).forEach(function(i){ if (kinds[i] === 'money') kinds[i] = 'int'; });
   var data = rows.slice(1).filter(Array.isArray), totals = data.filter(exIsTotal_);
   var isStmt = head.length === 2 && kinds[0] === 'text' && kinds[1] !== 'text' && totals.length >= 2;
-  if (isStmt) totals.forEach(function(r){ kp.push({ label: String(r[0]), v: Number(r[1] || 0), kind: kinds[1], src: { sheet: sh.name, row: rows.indexOf(r), col: 1 } }); });
+  // a KPI sheet (crpKpiSheet_: metric, now, before, ...): one card per row, its own figure and its own before
+  var isKpi = head[1] === t('crp_now') && head[2] === t('crp_prev');
+  if (isKpi) data.forEach(function(r){ if (typeof r[1] !== 'number') return; var f = sh.rowFmt && sh.rowFmt[data.indexOf(r)];
+    kp.push({ label: String(r[0]), v: r[1], prev: typeof r[2] === 'number' ? r[2] : null, kind: f === 'int' ? 'int' : f ? 'd1' : 'money', src: { sheet: sh.name, row: rows.indexOf(r), col: 1 } }); });
+  else if (isStmt) totals.forEach(function(r){ kp.push({ label: String(r[0]), v: Number(r[1] || 0), kind: kinds[1], src: { sheet: sh.name, row: rows.indexOf(r), col: 1 } }); });
   else {
     var tot = totals[totals.length - 1];
     if (tot) {

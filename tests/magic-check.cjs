@@ -86,6 +86,23 @@ async function size(send, s) {
 }
 async function main() {
   if (!CHROME) throw new Error('No Chrome');
+  // --seed: the North area manager sends his branches' cash to the collectors, the deputy validates, and the
+  // collectors receive it, so Collections and its reports have money to show (the mock seeds none that far)
+  if (process.argv.includes('--seed')) {
+    const lg = async (e) => (await api({ action: 'login', email: e, password: 'Welcome#1' })).token;
+    const mz = await lg('muzafer@bestgas.sa'), dp = await lg('ahmed@bestgas.sa');
+    const meta = await api({ action: 'listMeta', token: mz });
+    const me = (await api({ action: 'whoami', token: mz })).user || {};
+    const area = (meta.clusters || []).find(c => c.clusterManagerUserId === me.id);
+    const sent = await api({ action: 'createHandoff', token: mz, kind: 'cluster_to_collector', clusterId: area && area.id });
+    const list = (sent.handoffs || (sent.handoff ? [sent.handoff] : []));
+    for (const h of list) {
+      const v = await api({ action: 'deputyValidateHandoff', token: dp, id: h.id });
+      const coll = (meta.users || []).find(u => u.id === h.toUserId);
+      if (coll && coll.email && v.ok) { const ct = await lg(coll.email); await api({ action: 'confirmHandoff', token: ct, id: h.id, receivedAmount: h.amount }); }
+    }
+    console.log('seeded ' + list.length + ' collection request(s)' + (sent.ok ? '' : ': ' + sent.error));
+  }
   fs.mkdirSync(OUT, { recursive: true });
   const EMAIL = arg('--user', 'admin@bestgas.sa');
   const login = await api({ action: 'login', email: EMAIL, password: EMAIL === 'admin@bestgas.sa' ? 'Bootstrap#1' : 'Welcome#1' });
@@ -143,7 +160,7 @@ async function main() {
           if (again) problems.push(`welcome ${lang} ${sz}: shown again after a reload`);
         }
         if (!ONLY || ONLY === 'screens') {
-          await evaluate(send, `localStorage.setItem('bgc_apiUrl', '${BASE}/api'); localStorage.setItem('bgc_token', ${JSON.stringify(login.token)}); localStorage.setItem('bgc_lang', '${lang}'); sessionStorage.setItem('bgc_pendShown_' + ${JSON.stringify(login.user.id)}, '1'); sessionStorage.setItem('bgc_updTried', '1'); sessionStorage.setItem('bgc_col', JSON.stringify({ preset: 'lastMonth' })); sessionStorage.setItem('bgc_crp', JSON.stringify({ rep: 'summary', preset: 'lastMonth' })); true`);
+          await evaluate(send, `localStorage.setItem('bgc_apiUrl', '${BASE}/api'); localStorage.setItem('bgc_token', ${JSON.stringify(login.token)}); localStorage.setItem('bgc_lang', '${lang}'); sessionStorage.setItem('bgc_pendShown_' + ${JSON.stringify(login.user.id)}, '1'); sessionStorage.setItem('bgc_updTried', '1'); sessionStorage.setItem('bgc_col', JSON.stringify({ preset: '${process.env.SDP || 'lastMonth'}' })); sessionStorage.setItem('bgc_crp', JSON.stringify({ rep: 'summary', preset: '${process.env.SDP || 'lastMonth'}' })); true`);
           await send('Page.reload'); await sleep(1500); await waitApp(send); await sleep(1500);
           for (const scr of SCREENS) {
             const from = events.length;
@@ -164,7 +181,7 @@ async function main() {
         // exports: each screen's first Excel and PDF button; the workbook is read back with ExcelJS: its first sheet
         // is the Dashboard and every figure on it is a figure of a totals line of the export, to the cent
         if (ONLY === 'exports' && sz === 'desk') {
-          await evaluate(send, `localStorage.setItem('bgc_apiUrl', '${BASE}/api'); localStorage.setItem('bgc_token', ${JSON.stringify(login.token)}); localStorage.setItem('bgc_lang', '${lang}'); sessionStorage.setItem('bgc_pendShown_' + ${JSON.stringify(login.user.id)}, '1'); sessionStorage.setItem('bgc_updTried', '1'); sessionStorage.setItem('bgc_col', JSON.stringify({ preset: 'lastMonth' })); sessionStorage.setItem('bgc_crp', JSON.stringify({ rep: 'summary', preset: 'lastMonth' })); true`);
+          await evaluate(send, `localStorage.setItem('bgc_apiUrl', '${BASE}/api'); localStorage.setItem('bgc_token', ${JSON.stringify(login.token)}); localStorage.setItem('bgc_lang', '${lang}'); sessionStorage.setItem('bgc_pendShown_' + ${JSON.stringify(login.user.id)}, '1'); sessionStorage.setItem('bgc_updTried', '1'); sessionStorage.setItem('bgc_col', JSON.stringify({ preset: '${process.env.SDP || 'lastMonth'}' })); sessionStorage.setItem('bgc_crp', JSON.stringify({ rep: 'summary', preset: '${process.env.SDP || 'lastMonth'}' })); true`);
           await send('Page.reload'); await sleep(1500); await waitApp(send); await sleep(1500);
           await evaluate(send, HOOKS);
           let count = 0;
@@ -174,10 +191,10 @@ async function main() {
             await sleep(scr === 'comparison' || scr === 'profit' ? 5000 : 3500);
             if (scr === 'report') { await evaluate(send, `(function(){ var r = document.querySelector('#rRun'); if (r) r.click(); return true; })()`); await sleep(4000); }
             if (scr === 'entries') { await evaluate(send, `(function(){ var b = document.querySelector('.el-view [data-v="list"], .el-view button:last-child'); if (b) b.click(); return true; })()`); await sleep(1500); }
-            const has = await evaluate(send, `window.__name = ${JSON.stringify(name)}; (function(){ var x = document.querySelector('#screenBody .rp-all') || document.querySelector('#screenBody .ex-xl'); if (!x) return false; x.click(); return true; })()`);
+            const has = await evaluate(send, `window.__name = ${JSON.stringify(name)}; (function(){ var x = document.querySelector('#screenBody .rp-all') || document.querySelector('#screenBody .ex-xl') || document.querySelector('#screenBody .ex-bar .ex-btn'); if (!x) return false; x.click(); return true; })()`);
             if (!has) { problems.push(`${name}: no Excel button`); continue; }
             count++; try { await waitSaved(send, count, name + '.xlsx'); } catch (e) { problems.push(String(e.message)); continue; }
-            const hasPdf = await evaluate(send, `(function(){ var x = document.querySelector('#screenBody .rp-all-pdf') || document.querySelector('#screenBody .ex-pdf'); if (!x) return false; x.click(); return true; })()`);
+            const hasPdf = await evaluate(send, `(function(){ var x = document.querySelector('#screenBody .rp-all-pdf') || document.querySelector('#screenBody .ex-pdf') || document.querySelector('#screenBody .ex-bar .ex-btn:nth-child(2)'); if (!x) return false; x.click(); return true; })()`);
             if (hasPdf) { count++; try { await waitSaved(send, count, name + '.html'); } catch (e) { problems.push(String(e.message)); } }
             errorsOf(events, from).forEach(e => problems.push(`${name}: ${e}`));
             const chk = await evaluate(send, `(async function(){
@@ -194,7 +211,7 @@ async function main() {
             report.push(`${name}: ${JSON.stringify(chk)}`);
             if (chk.sheets > 1 && chk.first !== (lang === 'en' ? 'Dashboard' : chk.first)) problems.push(`${name}: first sheet is ${chk.first}`);
             if (!chk.figures.length) problems.push(`${name}: no figures on the Dashboard sheet`);
-            if (!chk.equalIn.length) problems.push(`${name}: Dashboard figures not found on a totals line`);
+            if (!chk.equalIn.length && chk.figures.some(function(v){ return Math.abs(v) > 0.004; })) problems.push(`${name}: Dashboard figures not found on a totals line`);
             if (hasPdf && !chk.pdfDash) problems.push(`${name}: the PDF has no dashboard page`);
             if ((lang !== 'en') !== chk.rtl) problems.push(`${name}: sheet direction wrong`);
           }
