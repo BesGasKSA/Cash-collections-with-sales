@@ -7788,6 +7788,8 @@ function sbSpot_(sb){
 
 var MS_POP_ = false, MS_HIST_INIT_ = false;
 function goScreen_(screen, keepOpen){
+  // a new visit plays the dashboard's entrance once more (2026-10-27)
+  if (state.screen !== screen) { try { delete SD_SIG_[screen]; } catch (e) {} }
   if (state.screen === screen) { var sb = qs('#screenBody'); if (sb) window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
   drawerClose_();
   // Direction of travel through the tab order, so the new screen slides in
@@ -10824,6 +10826,7 @@ function exportXlsx_(fileName, sheets, opts){
     try { logoId = wb.addImage({ base64: LOGO_B64, extension: 'png' }); } catch (e) {}
     if (dash) { var dashName = String(t('sd_sheet')).replace(/[:\\\/?*\[\]]/g, ' ').slice(0, 31); exDashSheet_(wb, dash, logoId, rtl, dashName); used[dashName] = 1; }
     var names =sheets.map(function(sh){ var nm = String(trText_(sh.name || 'Sheet')).replace(/[:\\\/?*\[\]]/g, ' ').slice(0, 31) || 'Sheet'; while (used[nm]) nm = nm.slice(0, 28) + '_' + Object.keys(used).length; used[nm] = 1; return nm; });
+    var nameOf = {}; sheets.forEach(function(sh, i){ var o = String(trText_(sh.name || 'Sheet')); if (!nameOf[o]) nameOf[o] = names[i]; });
     sheets.forEach(function(sh, shIdx){
       var rows = (sh.rows || []).map(function(r){ return Array.isArray(r) ? exKeepMark_(r, r.map(trText_)) : r; });
       var name = names[shIdx];
@@ -10906,7 +10909,8 @@ function exportXlsx_(fileName, sheets, opts){
           // the totals line of a flat table is a formula: it follows Excel's own filter (SUBTOTAL skips hidden rows)
           if (onlyTotal && !grouped && (kind === 'money' || kind === 'int') && typeof c.value === 'number' && rowNo > HR + 1) { var CL = exColLetter_(ci); c.value = { formula: 'SUBTOTAL(9,' + CL + (HR + 1) + ':' + CL + (rowNo - 1) + ')', result: c.value }; }
           // the summary's sheet names go to their sheets
-          if (sh.links && ci === 1 && typeof c.value === 'string' && names.indexOf(c.value) > 0) { c.value = { text: c.value, hyperlink: "#'" + c.value.replace(/'/g, "''") + "'!A1" }; c.font = { name: 'Arial', size: 10, bold: true, underline: true, color: { argb: 'FF2F5D8A' } }; }
+          var lnk = sh.links && ci === 1 && typeof c.value === 'string' ? (nameOf[c.value] || c.value) : null;
+          if (lnk && names.indexOf(lnk) > 0) { c.value = { text: c.value, hyperlink: "#'" + lnk.replace(/'/g, "''") + "'!A1" }; c.font = { name: 'Arial', size: 10, bold: true, underline: true, color: { argb: 'FF2F5D8A' } }; }
           if (!(c.value && c.value.hyperlink)) c.font = { name: 'Arial', size: 10, bold: total || lvl === 0, color: { argb: total ? 'FF' + EX_DARK_ : 'FF1F2A20' } };
           c.alignment = { vertical: 'middle', horizontal: kind === 'text' ? (rtl ? 'right' : 'left') : 'right',
             indent: kind === 'text' && ci === 1 && lvl ? Math.min(lvl * 2, 10) : 0 };
@@ -11756,13 +11760,9 @@ function reportTabs_(entries, res, note, filters){
       .map(function(tb){ var c = tb.card(); return Object.assign({ name: c._title, rows: c._aoa(), outline: c._outline ? c._outline() : null }, c._meta || {}); })
       .filter(function(sh){ return sh.rows.length > 2; }));
     var branchesN = {}; entries.forEach(function(e){ branchesN[e.locationId] = 1; });
-    // the key figures in the user's formula (2026-10-25), the same as the statement under them
-    var mbK = mbOfEq_(T);
-    exportPdf_(t('report_title'), sheets, { note: wrap._note || '', filters: wrap._filters, kpis: [
-      { label: mbLabel_('totColl'), value: money(mbK.totColl / 100) }, { label: mbLabel_('totDed'), value: money(mbK.totDed / 100) },
-      { label: mbLabel_('netDeposit'), value: money(mbK.netDeposit / 100) }, { label: mbLabel_('totPos'), value: money(mbK.totPos / 100) },
-      { label: mbLabel_('net'), value: money(mbK.net / 100), strong: true }, { label: t('rp_count'), value: T.count.toLocaleString('en-US') }
-    ] });
+    // the key figures in the user's formula are on the dashboard page that opens the PDF (2026-10-27: the
+    // report's own KPI row repeated them)
+    exportPdf_(t('report_title'), sheets, { note: wrap._note || '', filters: wrap._filters });
   });
   show(current);
   return wrap;
@@ -13058,7 +13058,7 @@ var SD_DOWN_ = { totDed: 1, remaining: 1, unmatched: 1, unmatchedAmt: 1, openRis
       sd_i_owed:'{n} customers owe {a} SAR; {top} owes the most, {b} SAR.',
       sd_i_loss:'{n} places made a loss in the period; {w} lost the most, {a} SAR.',
       sd_i_pending:'{n} handovers wait to be received, {a} SAR.',
-      sd_k_count:'Handovers', sd_k_amount:'Amount handed over', sd_k_pending:'Waiting to be received', sd_k_disputed:'Disputed', sd_k_short:'Received short', sd_k_deposits:'Banked by collectors',
+      sd_k_count:'Handovers', sd_k_amount:'Amount handed over', sd_k_pending:'Waiting to be received', sd_k_disputed:'Disputed', sd_k_short:'Received short', sd_k_deposits:'Banked by collectors', sd_k_depCount:'Deposits (number)',
       sd_k_customers:'Customers with a balance', sd_k_owed:'Owed by customers', sd_k_credit:'Credit sold', sd_k_paid:'Paid by customers', sd_k_overdue:'Owed over 30 days',
       sd_k_lines:'Bank statement lines', sd_k_matched:'Deposits matched', sd_k_unmatched:'Deposits not matched', sd_k_unmatchedAmt:'Not matched (SAR)', sd_k_rate:'Matched share',
       sd_k_openRisk:'Open risks', sd_k_highRisk:'High severity open', sd_k_newRisk:'Raised in 30 days', sd_k_resolved:'Resolved in 30 days', sd_k_age:'Average age of open (days)',
@@ -13079,7 +13079,7 @@ var SD_DOWN_ = { totDed: 1, remaining: 1, unmatched: 1, unmatchedAmt: 1, openRis
       sd_i_owed:'{n} عملاء عليهم {a} ريال؛ وأعلاهم {top} بمبلغ {b} ريال.',
       sd_i_loss:'{n} مواقع حققت خسارة في الفترة؛ أكبرها {w} بمبلغ {a} ريال.',
       sd_i_pending:'{n} تسليمات بانتظار الاستلام، بمبلغ {a} ريال.',
-      sd_k_count:'التسليمات', sd_k_amount:'المبلغ المُسلَّم', sd_k_pending:'بانتظار الاستلام', sd_k_disputed:'عليها اعتراض', sd_k_short:'نقص عند الاستلام', sd_k_deposits:'أودعه المحصّلون',
+      sd_k_count:'التسليمات', sd_k_amount:'المبلغ المُسلَّم', sd_k_pending:'بانتظار الاستلام', sd_k_disputed:'عليها اعتراض', sd_k_short:'نقص عند الاستلام', sd_k_deposits:'أودعه المحصّلون', sd_k_depCount:'عدد الإيداعات',
       sd_k_customers:'عملاء عليهم رصيد', sd_k_owed:'المستحق على العملاء', sd_k_credit:'المبيعات الآجلة', sd_k_paid:'المدفوع من العملاء', sd_k_overdue:'مستحق أكثر من 30 يومًا',
       sd_k_lines:'أسطر كشف البنك', sd_k_matched:'إيداعات مطابقة', sd_k_unmatched:'إيداعات غير مطابقة', sd_k_unmatchedAmt:'غير مطابق (ريال)', sd_k_rate:'نسبة المطابقة',
       sd_k_openRisk:'مخاطر مفتوحة', sd_k_highRisk:'عالية الخطورة مفتوحة', sd_k_newRisk:'سُجّلت خلال 30 يومًا', sd_k_resolved:'حُلّت خلال 30 يومًا', sd_k_age:'متوسط عمر المفتوح (أيام)',
@@ -13100,7 +13100,7 @@ var SD_DOWN_ = { totDed: 1, remaining: 1, unmatched: 1, unmatchedAmt: 1, openRis
       sd_i_owed:'{n} گاہکوں پر {a} ریال واجب ہیں؛ سب سے زیادہ {top} پر، {b} ریال۔',
       sd_i_loss:'مدت میں {n} جگہوں کو نقصان ہوا؛ سب سے زیادہ {w} کو، {a} ریال۔',
       sd_i_pending:'{n} حوالگیاں وصولی کی منتظر ہیں، {a} ریال۔',
-      sd_k_count:'حوالگیاں', sd_k_amount:'حوالے کی گئی رقم', sd_k_pending:'وصولی کی منتظر', sd_k_disputed:'اعتراض شدہ', sd_k_short:'وصولی پر کمی', sd_k_deposits:'کلیکٹرز نے جمع کیا',
+      sd_k_count:'حوالگیاں', sd_k_amount:'حوالے کی گئی رقم', sd_k_pending:'وصولی کی منتظر', sd_k_disputed:'اعتراض شدہ', sd_k_short:'وصولی پر کمی', sd_k_deposits:'کلیکٹرز نے جمع کیا', sd_k_depCount:'جمع کی تعداد',
       sd_k_customers:'بیلنس والے گاہک', sd_k_owed:'گاہکوں پر واجب', sd_k_credit:'ادھار فروخت', sd_k_paid:'گاہکوں کی ادائیگی', sd_k_overdue:'30 دن سے زیادہ واجب',
       sd_k_lines:'بینک اسٹیٹمنٹ لائنیں', sd_k_matched:'ملائی گئی جمع', sd_k_unmatched:'غیر ملائی گئی جمع', sd_k_unmatchedAmt:'غیر ملائی گئی (ریال)', sd_k_rate:'ملانے کا تناسب',
       sd_k_openRisk:'کھلے خطرات', sd_k_highRisk:'زیادہ شدت کھلے', sd_k_newRisk:'30 دن میں درج', sd_k_resolved:'30 دن میں حل', sd_k_age:'کھلے خطرات کی اوسط عمر (دن)',
@@ -13121,8 +13121,11 @@ function sdPrev_(from, to){
 // pure: every day of [from, to], at most the last `max`
 function sdDays_(from, to, max){
   var out = []; if (!from || !to || to < from) return out;
-  for (var d = from; d <= to && out.length < 800; d = sdIsoAdd_(d, 1)) out.push(d);
-  return max ? out.slice(-max) : out;
+  // start at the later of the span's first day and (last day - max + 1): the last days show
+  var start = from, cap = max || 800, s0 = sdIsoAdd_(to, -(cap - 1));
+  if (s0 > start) start = s0;
+  for (var d = start; d <= to && out.length < cap; d = sdIsoAdd_(d, 1)) out.push(d);
+  return out;
 }
 function sdMedian_(a){ var s = a.slice().sort(function(x, y){ return x - y; }), n = s.length; return n ? (n % 2 ? s[(n - 1) / 2] : (s[n / 2 - 1] + s[n / 2]) / 2) : 0; }
 // pure: the change in percent, or null when the earlier figure is nothing to compare with
@@ -13183,9 +13186,29 @@ function sdEntryMoney_(entries, byEntry){
   if (byEntry) { var CS = cohortSum_(entries, byEntry); c.deposited = Math.round(CS.deposited * 100); c.remaining = Math.round(CS.remaining * 100); }
   return c;
 }
+// pure: every live entry's money block in cents, shared out over the whole list at once (eqCents_ and the
+// cohort's cohortAlloc_, both largest remainder), so any subset sums to its part of the card exactly
+function sdEntryCents_(list, byEntry){
+  var IN = ['cashSales', 'posSales', 'aOther', 'aCreditDelivery', 'aChannelDelivery'].concat(EQ_DEDUCT_);
+  var C = eqCents_(list, byEntry), A = byEntry ? cohortAlloc_(list, byEntry) : null, byId = {};
+  list.forEach(function(e){
+    var x = C.byId[e.id]; if (!x) return;
+    var c = {}; IN.forEach(function(k){ c[k] = x[k] || 0; }); c._net = x.net; mbTotals_(c);
+    if (A) { var a = A.byId[e.id]; c.deposited = a && a.s === 'deposited' ? a.c : 0; c.remaining = a ? (a.s === 'deposited' || a.s === 'settled' ? 0 : a.c) + a.k : 0; }
+    byId[e.id] = c;
+  });
+  return byId;
+}
+// pure: the cents of a subset, summed (zeros for every money key; deposited/remaining only with the cohort)
+function sdSumCents_(byId, list, withCohort){
+  var T = {}; MB_KEYS_.forEach(function(k){ T[k] = 0; }); if (withCohort) { T.deposited = 0; T.remaining = 0; }
+  (list || []).forEach(function(e){ var c = byId[e.id]; if (!c) return; Object.keys(c).forEach(function(k){ if (k.charAt(0) !== '_') T[k] = (T[k] || 0) + c[k]; }); });
+  return T;
+}
 function sdEntriesModel_(o){
   var live = (o.entries || []).filter(function(e){ return e && !e.voided; });
-  var cur = sdEntryMoney_(live, o.byEntry);
+  var EC = sdEntryCents_(live, o.byEntry), withC = !!o.byEntry;
+  var cur = sdSumCents_(EC, live, withC);
   var prev = o.prevEntries ? sdEntryMoney_(o.prevEntries.filter(function(e){ return e && !e.voided; }), o.prevByEntry || o.byEntry) : null;
   // the days drawn: the period's own days, else the days the entries cover; at most 31
   var dates = live.map(function(e){ return String(e.date || '').slice(0, 10); }).filter(Boolean).sort();
@@ -13193,17 +13216,17 @@ function sdEntriesModel_(o){
   var days = sdDays_(from, to, 31), byDay = {}, groupsMap = {};
   var dayEntries = {};
   live.forEach(function(e){ var d = String(e.date || '').slice(0, 10); (dayEntries[d] = dayEntries[d] || []).push(e); });
-  days.forEach(function(d){ if (dayEntries[d]) byDay[d] = sdEntryMoney_(dayEntries[d], o.byEntry); });
+  days.forEach(function(d){ if (dayEntries[d]) byDay[d] = sdSumCents_(EC, dayEntries[d], withC); });
   var spark = {}; SD_MONEY_.forEach(function(k){ spark[k] = sdSeries_(days, byDay, k).map(function(v){ return v / 100; }); });
   var kpis = sdMoneyKpis_(cur, prev, spark);
-  kpis.forEach(function(k){ k.open = o.onPart ? function(){ o.onPart(k.k); } : function(){ sdOpenEntries_(k.label, live, o.byEntry, k.k); }; });
+  kpis.forEach(function(k){ k.open = o.onPart ? function(){ o.onPart(k.k); } : function(){ sdOpenEntries_(k.label, live, EC, k.k); }; });
   // net by branch
   live.forEach(function(e){ var k = e.locationId || '_'; (groupsMap[k] = groupsMap[k] || []).push(e); });
   var groups = Object.keys(groupsMap).map(function(k){
     var list = groupsMap[k];
-    return { key: k, name: k === '_' ? t('report_unspecified') : locationName(k), v: sdEntryMoney_(list, o.byEntry).net / 100, open: function(){ sdOpenEntries_(locationName(k), list, o.byEntry, 'net'); } };
+    return { key: k, name: k === '_' ? t('report_unspecified') : locationName(k), v: sdSumCents_(EC, list, withC).net / 100, open: function(){ sdOpenEntries_(locationName(k), list, EC, 'net'); } };
   }).sort(function(a, b){ return b.v - a.v; });
-  var dayRows = days.map(function(d){ var list = dayEntries[d] || []; return { d: d, label: sdDayLabel_(d), v: byDay[d] ? byDay[d].net / 100 : 0, open: list.length ? function(){ sdOpenEntries_(d, list, o.byEntry, 'net'); } : null }; });
+  var dayRows = days.map(function(d){ var list = dayEntries[d] || []; return { d: d, label: sdDayLabel_(d), v: byDay[d] ? byDay[d].net / 100 : 0, open: list.length ? function(){ sdOpenEntries_(d, list, EC, 'net'); } : null }; });
   // the oldest day whose cash has not reached the bank
   var oldest = null;
   if (o.byEntry) {
@@ -13227,15 +13250,9 @@ function sdEntriesModel_(o){
 }
 function sdDayLabel_(iso){ try { return new Date(iso + 'T00:00:00').toLocaleDateString(state.lang === 'ar' ? 'ar-SA-u-ca-gregory-nu-latn' : state.lang === 'ur' ? 'ur-PK-u-nu-latn' : 'en-GB', { day: 'numeric', month: 'short' }); } catch (e) { return iso; } }
 // a money card's entries, each carrying its own part of that figure (the cohort's cents when known)
-function sdOpenEntries_(title, list, byEntry, k){
-  var EQK = { totColl: null, net: 'net' };
-  if (k === 'deposited' || k === 'remaining') {
-    var A = cohortAlloc_(list, byEntry || {});
-    cardDrawer_({ title: title, items: list.map(function(e){ var x = A.byId[e.id]; if (!x) return null; var v = k === 'deposited' ? (x.s === 'deposited' ? x.c : 0) : (x.s === 'deposited' || x.s === 'settled' ? 0 : x.c) + x.k; return v ? entryRowData_(e, v / 100) : null; }).filter(Boolean) });
-    return;
-  }
-  cardDrawer_({ title: title, items: list.map(function(e){ var c = sdEntryMoney_([e], byEntry); var v = (c[k] || 0) / 100; return v ? entryRowData_(e, v) : null; }).filter(Boolean) });
-}
+// the cents come from sdEntryCents_ over the card's whole list, so the drawer adds up to the card
+function sdOpenItems_(list, EC, k){ return list.map(function(e){ var c = EC[e.id]; var v = c ? (c[k] || 0) : 0; return v ? entryRowData_(e, v / 100) : null; }).filter(Boolean); }
+function sdOpenEntries_(title, list, EC, k){ cardDrawer_({ title: title, items: sdOpenItems_(list, EC, k) }); }
 // ---- the money model from collection requests (Collections, Collection reports) ----
 // o: { D: colCompute_ result, Dp: the previous period's, from, to, prev, openRows(title, rows) }
 function sdReqModel_(o){
@@ -13250,7 +13267,7 @@ function sdReqModel_(o){
   var cols = D.collectors.map(function(g){ return { name: g.key === '_' ? t('report_unspecified') : userName(g.key), v: g.remaining, open: function(){ openRows(userName(g.key), D.rows.filter(function(x){ return (x.r.holder || '_') === g.key && x.st !== 'deposited'; })); } }; });
   var dayRows = days.map(function(d){ var rs = rowsBy[d] || []; return { d: d, label: sdDayLabel_(d), v: byDay[d] ? byDay[d].net / 100 : 0, open: rs.length ? function(){ openRows(d, rs); } : null }; });
   var oldRows = D.rows.filter(function(x){ return x.st !== 'deposited' && x.day === D.T.oldest; });
-  var oldest = D.T.oldest ? { days: Math.max(0, Math.round((Date.parse(localToday_() + 'T00:00:00Z') - Date.parse(D.T.oldest + 'T00:00:00Z')) / 864e5)), amount: oldRows.reduce(function(s, x){ return s + Number(x.r.amount || 0); }, 0),
+  var oldest = D.T.oldest ? { days: Math.max(0, Math.round((Date.parse(localToday_() + 'T00:00:00Z') - Date.parse(D.T.oldest + 'T00:00:00Z')) / 864e5)), amount: crpEqSum_(oldRows).net / 100,
     name: oldRows[0] ? locationName(oldRows[0].r.locationId) : '', open: function(){ openRows(D.T.oldest, oldRows); } } : null;
   var counts = [];
   if (D.T.disputed) counts.push({ key: 'disputed', n: D.T.disputed });
@@ -13307,6 +13324,20 @@ function sdPeriodText_(m){
   var p = m.from && m.to ? t('inv_period').replace('{from}', m.from).replace('{to}', m.to) : '';
   return p;
 }
+// Review fix (2026-10-27): apiCached can draw a screen twice (the kept copy, then the fresh answer) and a
+// filter change draws it again, each wanting the previous period. Each paint takes a sequence number
+// (sdSeq_); a reply is used only while its paint is still the latest one on that screen (sdSeqLive_), so a
+// stale reply never overwrites the header or SD_CUR_. The previous period's report is asked once per
+// payload: the request in flight is shared, and an answer is kept a minute (SD_PREV_).
+var SD_SEQ_ = {}, SD_PREV_ = {};
+function sdSeq_(screen){ SD_SEQ_[screen] = (SD_SEQ_[screen] || 0) + 1; return { screen: screen, n: SD_SEQ_[screen] }; }
+function sdSeqLive_(screen, tok){ return !!tok && SD_SEQ_[screen] === tok.n && state.screen === screen; }
+function sdPrevReport_(payload, cb){
+  var key = JSON.stringify(payload), hit = SD_PREV_[key];
+  if (hit && hit.res && Date.now() - hit.at < 60000) { cb(hit.res); return; }
+  if (!hit || !hit.p) { hit = SD_PREV_[key] = { p: api('getSalesReport', payload, { silent: true }) }; hit.p.then(function(res){ if (res && res.ok) { hit.res = res; hit.at = Date.now(); } hit.p = null; if (!(res && res.ok)) delete SD_PREV_[key]; }); }
+  hit.p.then(function(res){ if (res && res.ok) cb(res); });
+}
 // draw a model at the top of a screen (replacing the one already there); keeps it for the exports
 function sdMount_(host, model, before, quiet){
   if (!host || !model) return null;
@@ -13314,7 +13345,7 @@ function sdMount_(host, model, before, quiet){
   SD_CUR_ = model;
   var old = qs(':scope > .card.sd', host);
   var sig = state.screen + '|' + (model.kpis || []).map(function(k){ return sdRound_(k.v, 2); }).join(',');
-  var enter = !quiet && SD_SIG_[state.screen] !== sig && !(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+  var enter = !quiet && !SD_SIG_[state.screen] && !(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
   SD_SIG_[state.screen] = sig;
   var per = sdPeriodText_(model), cmp = model.prev && model.prev.from ? sdFill_(t('sd_vs'), { from: model.prev.from, to: model.prev.to }) : (model.kpis || []).some(function(k){ return k.prev != null; }) ? '' : t('sd_noPrev');
   var node = el('<section class="card sd no-collapse' + (enter ? ' sd-enter' : '') + '" aria-label="' + esc(model.title || t('sd_title')) + '">' +
@@ -13354,10 +13385,10 @@ function sdGroup_(list, keyOf, nameOf, valOf){
   return Object.keys(m).map(function(k){ return { key: k, name: nameOf(k), list: m[k], v: m[k].reduce(function(s, x){ return s + valOf(x); }, 0) }; }).sort(function(a, b){ return b.v - a.v; });
 }
 // Handovers: what the bar lets through (amounts over every hop), against the period before the bar's dates
-function sdHoModel_(visible, prevVisible, from, to, prev){
+function sdHoModel_(visible, prevVisible, from, to, prev, pendingOf){
   function figs(list){
     var hops = list.filter(function(h){ return h.kind !== 'deposit' && h.status !== 'voided' && h.status !== 'rejected'; });
-    var pend = hops.filter(function(h){ return h.status === 'pending' || h.status === 'pending_deputy'; });
+    var pend = hops.filter(pendingOf || function(h){ return h.status === 'pending' || h.status === 'pending_deputy'; });
     var deps = list.filter(function(h){ return h.kind === 'deposit' && h.status !== 'voided'; });
     var sum = function(l, f){ return l.reduce(function(s, h){ return s + Number(f ? f(h) : h.amount || 0); }, 0); };
     return { hops: hops, pend: pend, deps: deps, disp: hops.filter(function(h){ return h.status === 'disputed'; }), shortL: hops.filter(function(h){ return Number(h.shortfall || 0) > 0.004; }),
@@ -13408,7 +13439,7 @@ function sdRecModel_(res){
   var amt = und.reduce(function(s, h){ return s + Number(h.amount || 0); }, 0);
   var op = function(title, list){ return function(){ cardDrawer_({ title: title, items: hoItems_(list), placeOf: placeCollector_ }); }; };
   var kpis = [
-    { k: 'deposits', label: t('sd_k_deposits'), v: tot, kind: 'int' },
+    { k: 'depCount', label: t('sd_k_depCount'), v: tot, kind: 'int' },
     { k: 'matched', label: t('sd_k_matched'), v: rec, kind: 'int' },
     { k: 'unmatched', label: t('sd_k_unmatched'), v: und.length, kind: 'int', down: true, open: op(t('sd_k_unmatched'), und) },
     { k: 'unmatchedAmt', label: t('sd_k_unmatchedAmt'), v: amt, kind: 'money', down: true, strong: true, open: op(t('sd_k_unmatched'), und) },
@@ -13494,7 +13525,8 @@ function exDashOf_(fileName, sheets, model){
   // a KPI sheet (crpKpiSheet_: metric, now, before, ...): one card per row, its own figure and its own before
   var isKpi = head[1] === t('crp_now') && head[2] === t('crp_prev');
   if (isKpi) data.forEach(function(r){ if (typeof r[1] !== 'number') return; var f = sh.rowFmt && sh.rowFmt[data.indexOf(r)];
-    kp.push({ label: String(r[0]), v: r[1], prev: typeof r[2] === 'number' ? r[2] : null, kind: f === 'int' ? 'int' : f ? 'd1' : 'money', src: { sheet: sh.name, row: rows.indexOf(r), col: 1 } }); });
+    var pct = /(%)|%$/.test(String(r[0]));
+    kp.push({ label: String(r[0]), v: r[1], prev: typeof r[2] === 'number' ? r[2] : null, kind: pct ? 'pct' : f === 'int' ? 'int' : f ? 'd1' : 'money', src: { sheet: sh.name, row: rows.indexOf(r), col: 1 } }); });
   else if (isStmt) totals.forEach(function(r){ kp.push({ label: String(r[0]), v: Number(r[1] || 0), kind: kinds[1], src: { sheet: sh.name, row: rows.indexOf(r), col: 1 } }); });
   else {
     var tot = totals[totals.length - 1];
@@ -13508,8 +13540,12 @@ function exDashOf_(fileName, sheets, model){
   }
   // the change against the previous period: the screen's own card of the same name
   var byLabel = {}; ((model && model.kpis) || []).forEach(function(k){ byLabel[String(trText_(k.label))] = k; });
-  kp.forEach(function(k){ var m = byLabel[String(trText_(k.label))]; if (m && m.prev != null && Math.abs(m.v - k.v) < 0.006) { k.prev = m.prev; k.down = m.down; } });
-  // charts and insights: the screen's, else worked out from the sheet (a day column and a grouping column)
+  var matched = false;
+  kp.forEach(function(k){ var m = byLabel[String(trText_(k.label))]; if (m && Math.abs(m.v - k.v) < 0.006) { matched = true; if (m.prev != null) { k.prev = m.prev; k.down = m.down; } } });
+  // charts and insights: the screen's only when at least one card of the screen is a figure of this export
+  // (review 2026-10-27: an export from a drawer on the same screen is not the screen's figures); else
+  // worked out from the sheet (a day column and a grouping column)
+  if (!matched) model = null;
   var charts = model && model.charts ? model.charts.filter(function(c){ return (c.kind !== 'day' || (c.rows || []).length >= 2) && (c.rows || []).some(function(r){ return Math.abs(r.v) > 0.004; }); }).map(function(c){ return { title: c.title, kind: c.kind, unit: c.unit, rows: c.rows.map(function(r){ return { label: r.label, v: r.v }; }) }; }) : null;
   var insights = model && model.insights ? model.insights.map(function(x){ return x.text; }) : null;
   if (!charts || !insights) {
@@ -13600,7 +13636,7 @@ function exDashSheet_(wb, dash, logoId, rtl, name){
     [0, 1, 2].forEach(function(d){ ws.mergeCells(row + d, col, row + d, col + 1); });
     var lab = ws.getCell(row, col), val = ws.getCell(row + 1, col), chg = ws.getCell(row + 2, col);
     lab.value = k.label; lab.font = { name: 'Arial', size: 9.5, bold: true, color: { argb: 'FF5B665C' } };
-    val.value = k.v; val.numFmt = k.kind === 'int' ? '#,##0' : '#,##0.00;[Red]-#,##0.00';
+    val.value = k.v; val.numFmt = k.kind === 'int' ? '#,##0' : k.kind === 'pct' ? '0.0"%"' : k.kind === 'd1' ? '0.0' : '#,##0.00;[Red]-#,##0.00';
     val.font = { name: 'Arial', size: 18, bold: true, color: { argb: 'FF' + EX_DARK_ } };
     var p = k.prev != null ? sdPct_(k.v, k.prev) : null;
     chg.value = p == null ? (k.prev != null ? t('sd_new') : '') : (Math.abs(p) < 0.05 ? t('sd_flat') : (p > 0 ? '▲ ' : '▼ ') + Math.abs(sdRound_(p, 1)).toFixed(1) + '%  ·  ' + sdFill_(t('sd_prevWas'), { v: sdFmt_(k.prev, k.kind) }));
@@ -13636,7 +13672,7 @@ function exDashHtml_(dash, rtl){
   var kp = dash.kpis.map(function(k){
     var p = k.prev != null ? sdPct_(k.v, k.prev) : null, tone = p == null || Math.abs(p) < 0.05 ? '' : ((p > 0) !== !!k.down ? 'good' : 'bad');
     var sub = p == null ? '' : (Math.abs(p) < 0.05 ? t('sd_flat') : (p > 0 ? '▲ ' : '▼ ') + Math.abs(sdRound_(p, 1)).toFixed(1) + '% · ' + sdFill_(t('sd_prevWas'), { v: sdFmt_(k.prev, k.kind) }));
-    return '<div class="kpi"><span>' + esc(trText_(k.label)) + '</span><b>' + esc(sdFmt_(k.v, k.kind === 'int' ? 'int' : 'money')) + '</b>' + (sub ? '<small class="' + tone + '">' + esc(sub) + '</small>' : '') + '</div>';
+    return '<div class="kpi"><span>' + esc(trText_(k.label)) + '</span><b>' + esc(sdFmt_(k.v, k.kind || 'money')) + '</b>' + (sub ? '<small class="' + tone + '">' + esc(sub) + '</small>' : '') + '</div>';
   }).join('');
   return '<section class="dash"><h2>' + esc(t('sd_sheet')) + '</h2><div class="kpis" style="grid-template-columns:repeat(4,1fr)">' + kp + '</div>' +
     (dash.insights.length ? '<h3>' + esc(t('sd_insights')) + '</h3><ul class="ins">' + dash.insights.map(function(s){ return '<li>' + esc(s) + '</li>'; }).join('') + '</ul>' : '') +
@@ -14134,8 +14170,9 @@ function renderDashboard(body, animate){
       var F0 = DASH_F_ || {}, prD = sdPrev_(F0.from, F0.to);
       var mkD = function(pr){ return sdEntriesModel_({ entries: entries, byEntry: ctx.cohort, prevEntries: pr ? pr.entries || [] : null, prevByEntry: pr && pr.cohort ? pr.cohort.byEntry : null, from: F0.from || null, to: F0.to || null, prev: pr ? prD : null }); };
       var dsd = sdMount_(body, mkD(null)); if (dsd) body.appendChild(dsd);
-      if (prD) api('getSalesReport', Object.assign(dashPayload_(), { dateFrom: prD.from, dateTo: prD.to }), { silent: true }).then(function(pr){
-        if (pr && pr.ok && body.isConnected && state.screen === 'dashboard') sdMount_(body, mkD(pr), null, true);
+      var seqD = sdSeq_('dashboard');
+      if (prD) sdPrevReport_(Object.assign(dashPayload_(), { dateFrom: prD.from, dateTo: prD.to }), function(pr){
+        if (sdSeqLive_('dashboard', seqD) && body.isConnected) sdMount_(body, mkD(pr), null, true);
       });
     } catch (e) { try { console.warn('smart dashboard', e); } catch (e2) {} }
     var onF = dashFilterOn_(), forF = onF ? ' · ' + t('dash_forFilter') : '';
@@ -23146,7 +23183,9 @@ function renderHandoffs(body){
       // the smart dashboard (2026-10-26): what the bar lets through, against the period before its dates
       try {
         var hv = hFilter.values(), hp = sdPrev_(hv.from, hv.to);
-        sdMount_(waitBox, sdHoModel_(visible, hp ? res.handoffs.filter(function(h){ return hFilter.match(hNorm(h), hp); }) : null, hv.from || null, hv.to || null, hp));
+        // the same rule as the pending card below: addressed to me (an admin sees all), and the deputy's queue for the deputy roles
+        var pendOf = function(h){ if (h.status === 'pending' && (h.toUserId === state.user.id || role === 'admin')) return true; return h.status === 'pending_deputy' && (role === 'deputy_operations_manager' || role === 'operations_manager' || role === 'admin'); };
+        sdMount_(waitBox, sdHoModel_(visible, hp ? res.handoffs.filter(function(h){ return hFilter.match(hNorm(h), hp); }) : null, hv.from || null, hv.to || null, hp, pendOf));
       } catch (e) { try { console.warn('smart dashboard', e); } catch (e2) {} }
 
       if (pending.length){
@@ -23763,7 +23802,8 @@ function renderReport(body){
         var prS = sdPrev_(payload.dateFrom, payload.dateTo);
         var mkS = function(pr){ return sdEntriesModel_({ entries: rEntries, byEntry: rCtx.cohort, prevEntries: pr ? pr.entries || [] : null, prevByEntry: pr && pr.cohort ? pr.cohort.byEntry : null, from: payload.dateFrom || null, to: payload.dateTo || null, prev: pr ? prS : null }); };
         sdMount_(out, mkS(null));
-        if (prS) api('getSalesReport', Object.assign({}, payload, { dateFrom: prS.from, dateTo: prS.to }), { silent: true }).then(function(pr){ if (pr && pr.ok && out.isConnected && state.screen === 'report') sdMount_(out, mkS(pr), null, true); });
+        var seqS = sdSeq_('report');
+        if (prS) sdPrevReport_(Object.assign({}, payload, { dateFrom: prS.from, dateTo: prS.to }), function(pr){ if (sdSeqLive_('report', seqS) && out.isConnected) sdMount_(out, mkS(pr), null, true); });
       } catch (e) { try { console.warn('smart dashboard', e); } catch (e2) {} }
       // the report reads as the equation, then the detail behind it, level
       // by level, with every table ready for Excel
@@ -24810,8 +24850,8 @@ function renderInventory(body){
     var exBar = el('<div class="ex-bar"><button type="button" class="ex-btn">'+icon_('doc')+'<span>'+esc(t('ex_button'))+'</span></button><button type="button" class="ex-btn">'+icon_('printer')+'<span>'+esc(t('ex_pdf'))+'</span></button></div>');
     qs('.pv-head', card).appendChild(exBar);
     var eb = qsa('button', exBar);
-    eb[0].addEventListener('click', function(){ var a = levelRows(true); exportXlsx_(t('inv_title') + ' ' + INV_.from + ' ' + INV_.to, [{ name: t('inv_title'), rows: a.rows, outline: a.outline, note: note().note }, { name: t('inv_moves'), rows: moveRows() }], note()); });
-    eb[1].addEventListener('click', function(){ var a = levelRows(false); exportPdf_(t('inv_title'), [{ name: t('inv_byLevels'), rows: a.rows, outline: a.outline }], note()); });
+    eb[0].addEventListener('click', function(){ var a = levelRows(true); exportXlsx_(t('inv_title') + ' ' + INV_.from + ' ' + INV_.to, [{ name: t('inv_title'), rows: a.rows, outline: a.outline, note: note().note }, { name: t('inv_moves'), rows: moveRows() }], Object.assign({ noDash: true }, note())); });
+    eb[1].addEventListener('click', function(){ var a = levelRows(false); exportPdf_(t('inv_title'), [{ name: t('inv_byLevels'), rows: a.rows, outline: a.outline }], Object.assign({ noDash: true }, note())); });
     out.appendChild(card);
 
     // typing in a movement

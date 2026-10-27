@@ -7393,19 +7393,20 @@ console.log('--- smart dashboards: insights, the screen\'s own totals, the expor
   var L = { en: {}, ar: {}, ur: {} };
   var sx = vm.createContext({ L: L, state: { lang: 'en', meta: { locations: [], customers: [] } }, money: function (n) { return Number(n || 0).toFixed(2); },
     vatRateClient_: function () { return 0.15; }, byId: function () { return null; }, userName: function (x) { return 'U:' + x; }, locationName: function (x) { return 'B:' + x; },
-    clusterName: function (x) { return x; }, trText_: function (x) { return x; }, localToday_: function () { return '2026-10-26'; }, cardDrawer_: function () {}, reqItems_: function () { return []; } });
+    clusterName: function (x) { return x; }, trText_: function (x) { return x; }, localToday_: function () { return '2026-10-26'; }, cardDrawer_: function () {}, reqItems_: function () { return []; },
+    entryRowData_: function (e, a) { return { kind: 'entry', ref: e, amount: a }; } });
   sx.t = function (k) { return sx.L.en[k] !== undefined ? sx.L.en[k] : k; };
   // the dashboard's strings, run as the page runs them
   var sAt = clientHtml.indexOf('var SD_CUR_ = null'), sEnd = clientHtml.indexOf('})();', sAt) + 5;
   vm.runInContext(clientHtml.slice(sAt, sEnd), sx);
   check(sx.L.ar.sd_i_top && sx.L.ur.sd_i_top && sx.L.en.sd_sheet === 'Dashboard', 'dashboard strings exist in en, ar and ur');
   ['en', 'ar', 'ur'].forEach(function (lang) { var miss = Object.keys(sx.L.en).filter(function (k) { return /^sd_/.test(k) && !sx.L[lang][k]; }); check(!miss.length, 'every dashboard string has its ' + lang + ' text (' + miss.join(',') + ')'); });
-  var names = ['sdFill_', 'sdIsoAdd_', 'sdPrev_', 'sdDays_', 'sdMedian_', 'sdPct_', 'sdRound_', 'sdFmt_', 'sdInsights_', 'sdSeries_', 'sdMoneyKpis_', 'sdEntryMoney_', 'sdDayLabel_', 'sdEntriesModel_', 'sdReqModel_',
+  var names = ['sdFill_', 'sdIsoAdd_', 'sdPrev_', 'sdDays_', 'sdMedian_', 'sdPct_', 'sdRound_', 'sdFmt_', 'sdInsights_', 'sdSeries_', 'sdMoneyKpis_', 'sdEntryMoney_', 'sdDayLabel_', 'sdEntryCents_', 'sdSumCents_', 'sdOpenItems_', 'sdSeq_', 'sdSeqLive_', 'sdPrevReport_', 'sdEntriesModel_', 'sdReqModel_',
     'exIsTotal_', 'exHeaderOf_', 'exColKinds_', 'exDashMain_', 'exDashOf_',
     'mbLabel_', 'mbTotals_', 'mbOfEq_', 'eqTotals_', 'eqCents_', 'cohortCents_', 'cohortAlloc_', 'cohortSum_', 'entryAmt_', 'vatRateFor_', 'hoDay_', 'colDay_', 'colCompute_', 'crpC_', 'crpEqOf_', 'crpEqSum_'];
   var vars = [clientVar_('EQ_PARTS_', '\n};'), clientVar_('EQ_SALES_', ';'), clientVar_('EQ_ADD_', ';'), clientVar_('EQ_DEDUCT_', ';'), clientVar_('MB_COLL_', ';'), clientVar_('MB_DED_', ';'), clientVar_('MB_POS_', ';'),
     clientVar_('MB_KEYS_', ';'), clientVar_('MB_DEP_', ';'), clientVar_('MB_STRONG_', ';'), clientVar_('MB_KEEP_', ';'), clientVar_('MB_LBL_', '};'), clientVar_('EQ_DED_SIMPLE_', '];'),
-    clientVar_('COHORT_ST_', '];'), clientVar_('COHORT_DED_', '];'), clientVar_('COHORT_ADD_', '];'), clientVar_('CRP_EQ_TYPED_', '};'), clientVar_('CRP_EQ_COLS_', ';'), clientVar_('SD_MONEY_', ';'), clientVar_('SD_DOWN_', '};')];
+    clientVar_('COHORT_ST_', '];'), clientVar_('COHORT_DED_', '];'), clientVar_('COHORT_ADD_', '];'), clientVar_('CRP_EQ_TYPED_', '};'), clientVar_('CRP_EQ_COLS_', ';'), clientVar_('SD_MONEY_', ';'), clientVar_('SD_DOWN_', '};'), clientVar_('SD_SEQ_', ';')];
   vars.forEach(function (v, i) { check(!!v, 'dashboard: client variable ' + i + ' found'); });
   vm.runInContext(vars.join('\n') + '\n' + names.map(function (n) { var s = clientFn_(n); check(!!s, 'dashboard: ' + n + ' exists'); return s; }).join('\n'), sx);
   function J(x) { return JSON.stringify(x); }
@@ -7470,7 +7471,53 @@ console.log('--- smart dashboards: insights, the screen\'s own totals, the expor
   // every export path goes through it, and templates opt out
   check(/exDashFor_\(fileName, sheets, opts\)/.test(clientFn_('exportXlsx_')) && /exDashSheet_\(wb, dash/.test(clientFn_('exportXlsx_')), 'every workbook gets the Dashboard sheet first');
   check(/exDashFor_\(title, sheets, opts\)/.test(clientFn_('exportPdf_')) && /exDashHtml_\(dash, rtl\)/.test(clientFn_('exportPdf_')), 'every PDF gets the dashboard page first');
-  check((clientHtml.match(/noDash: true/g) || []).length === 2, 'the two import templates have no Dashboard sheet');
+  check((clientHtml.match(/noDash: true/g) || []).length === 4, 'the two import templates and the two Inventory exports have no Dashboard sheet');
+  var invX = clientHtml.slice(clientHtml.indexOf("exportXlsx_(t('inv_title')"), clientHtml.indexOf("exportXlsx_(t('inv_title')") + 400);
+  check(invX.indexOf('Object.assign({ noDash: true }, note())') >= 0, 'Inventory: the Excel export opts out of the Dashboard sheet');
+  check(clientHtml.indexOf("exportPdf_(t('report_title'), sheets, { note: wrap._note || '', filters: wrap._filters });") >= 0, 'the Sales Report PDF has no second KPI row');
+
+  // review 2026-10-27, blocking 2: card = drawer items = branch bars = day bars, to the cent, on half-cent nets
+  sx.hc = [
+    { id: 'h1', date: '2026-10-01', locationId: 'L1', sourceType: 'store', cashSales: 0.01 },
+    { id: 'h2', date: '2026-10-01', locationId: 'L2', sourceType: 'store', cashSales: 0.01 },
+    { id: 'h3', date: '2026-10-02', locationId: 'L1', sourceType: 'car', cashSales: 10.01, deliveryFeeBankAmount: 1.15 },
+    { id: 'h4', date: '2026-10-02', locationId: 'L2', sourceType: 'car', cashSales: 10.01, deliveryFeeBankAmount: 1.15 },
+    { id: 'h5', date: '2026-10-03', locationId: 'L3', sourceType: 'store', cashSales: 0.01, expenseAmount: 0.005 } ];
+  sx.hcB = { h1: { s: 'held', r: 0.005, f: 1 }, h2: { s: 'deposited', r: 0.005, f: 1 }, h3: { s: 'held', r: 8.865, f: 1 }, h4: { s: 'notHanded', r: 8.865, f: 1 }, h5: { s: 'held', r: 0.005, f: 1 } };
+  var HC = vm.runInContext("(function(){ var m = sdEntriesModel_({ entries: hc, byEntry: hcB, from: '2026-10-01', to: '2026-10-03' }), EC = sdEntryCents_(hc, hcB), out = {};" +
+    "m.kpis.forEach(function(k){ var items = sdOpenItems_(hc, EC, k.k), sum = items.reduce(function(s, it){ return s + Math.round(it.amount * 100); }, 0); out[k.k] = { card: Math.round(k.v * 100), drawer: sum }; });" +
+    "out.branchBars = m.charts[1].rows.reduce(function(s, r){ return s + Math.round(r.v * 100); }, 0); out.dayBars = m.charts[0].rows.reduce(function(s, r){ return s + Math.round(r.v * 100); }, 0);" +
+    "out.cohortNet = Math.round(cohortSum_(hc, hcB).net * 100); return out; })()", sx);
+  ['totColl', 'totDed', 'netDeposit', 'totPos', 'net', 'deposited', 'remaining'].forEach(function (k) {
+    check(HC[k] && HC[k].card === HC[k].drawer, 'half-cent nets: the ' + k + ' drawer adds up to its card (' + J(HC[k]) + ')');
+  });
+  check(HC.net.card === HC.cohortNet, 'half-cent nets: the card is the cohort net (' + HC.net.card + ' / ' + HC.cohortNet + ')');
+  check(HC.branchBars === HC.net.card && HC.dayBars === HC.net.card, 'half-cent nets: the branch bars and the day bars add up to the card (' + HC.branchBars + ', ' + HC.dayBars + ', ' + HC.net.card + ')');
+
+  // blocking 1: one request per payload, and a stale paint's reply is dropped
+  sx.calls = []; sx.resolvers = [];
+  // a thenable that answers synchronously, so the checks run before the summary line
+  sx.api = function (a, p) { sx.calls.push(p); var hs = [], val, done = false; var th = { then: function (cb) { if (done) cb(val); else hs.push(cb); return th; } }; sx.resolvers.push(function (v) { val = v; done = true; hs.forEach(function (h) { h(v); }); }); return th; };
+  sx.state.screen = 'report'; sx.got = [];
+  vm.runInContext("var t1 = sdSeq_('report'); sdPrevReport_({ dateFrom: 'a' }, function(r){ if (sdSeqLive_('report', t1)) got.push('first:' + r.tag); });" +
+    "var t2 = sdSeq_('report'); sdPrevReport_({ dateFrom: 'a' }, function(r){ if (sdSeqLive_('report', t2)) got.push('second:' + r.tag); });", sx);
+  check(sx.calls.length === 1, 'the previous period is asked once for one payload (' + sx.calls.length + ' requests)');
+  sx.resolvers[0]({ ok: true, tag: 'A' });
+  (function () {
+    check(J(sx.got) === J(['second:A']), 'only the latest paint takes the reply; the stale one is dropped (' + J(sx.got) + ')');
+    vm.runInContext("var t3 = sdSeq_('report'); sdPrevReport_({ dateFrom: 'a' }, function(r){ if (sdSeqLive_('report', t3)) got.push('cached:' + r.tag); });", sx);
+    check(sx.calls.length === 1 && sx.got[1] === 'cached:A', 'a second paint within a minute is served from the kept answer');
+    sx.state.screen = 'dashboard';
+    check(vm.runInContext("!sdSeqLive_('report', t3)", sx), 'a reply after leaving the screen is dropped');
+  })();
+
+  // blocking 3: a drawer's export on the same screen does not take the screen's charts or insights
+  sx.model3 = { kpis: [{ label: 'Something else', v: 1, prev: 2, kind: 'money' }], insights: [{ text: 'From the screen.' }], charts: [{ title: 'c', kind: 'rank', rows: [{ label: 'X', v: 5 }] }] };
+  var DS3 = vm.runInContext("exDashOf_('Entries 2026', sheets, model3)", sx);
+  check(DS3.insights.indexOf('From the screen.') < 0 && !DS3.charts.some(function (c) { return c.rows[0] && c.rows[0].label === 'X'; }), 'no card matched: the charts and insights come from the sheet, not the screen');
+  // minor: the last days of a long span
+  var dd = vm.runInContext("sdDays_('2020-01-01', '2026-10-26', 31)", sx);
+  check(dd.length === 31 && dd[30] === '2026-10-26' && dd[0] === '2026-09-26', 'a long span shows its last 31 days (' + dd[0] + ' .. ' + dd[30] + ')');
   // the dashboard sheet sets fit-to-page only, never an outline (Excel refuses a sheet with both)
   var dsh = clientFn_('exDashSheet_');
   check(/fitToPage: true/.test(dsh) && !/outline/i.test(dsh), 'the Dashboard sheet is fitted to the page and has no outline');
