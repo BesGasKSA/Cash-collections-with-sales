@@ -507,9 +507,32 @@ function sendMail_(to, subject, body, html) {
       }
     }
   }
-  if (html) MailApp.sendEmail(to, subject, body, { htmlBody: html, name: config_().senderName || 'Best Gas Collections' });
-  else MailApp.sendEmail(to, subject, body);
+  try {
+    if (html) MailApp.sendEmail(to, subject, body, { htmlBody: html, name: config_().senderName || 'Best Gas Collections' });
+    else MailApp.sendEmail(to, subject, body);
+  } catch (eM) { mailNote_(false, eM); throw eM; }
+  mailNote_(true);
   return 'mailapp';
+}
+// Email health (2026-10-27): every caller treats a mail failure as best-effort and swallows it, so a
+// day over Google's sending limit was invisible. The last success and the last 20 failures (time and
+// error text only, no address or content) are kept in a script property for Admin's mail check.
+function mailNote_(ok, err) {
+  try {
+    var p = PropertiesService.getScriptProperties(), now = new Date().toISOString();
+    if (ok) { p.setProperty('MAIL_LAST_OK', now); return; }
+    var list = []; try { list = JSON.parse(p.getProperty('MAIL_FAILS') || '[]'); } catch (e) { list = []; }
+    list.unshift({ at: now, err: String(err && err.message || err).slice(0, 200) });
+    p.setProperty('MAIL_FAILS', JSON.stringify(list.slice(0, 20)));
+  } catch (e) { /* the note never breaks a send */ }
+}
+function actionMailHealth_(req, user) {
+  requireManager_(user);
+  var p = PropertiesService.getScriptProperties(), quota = null, fails = [];
+  try { quota = MailApp.getRemainingDailyQuota(); } catch (e) { quota = null; }
+  try { fails = JSON.parse(p.getProperty('MAIL_FAILS') || '[]'); } catch (e) { fails = []; }
+  return { ok: true, quota: quota, sender: (typeof graphMailConfig_ === 'function' && graphMailConfig_()) ? 'microsoft365' : 'gmail',
+    lastOk: p.getProperty('MAIL_LAST_OK') || null, fails: fails };
 }
 
 // Hours a handoff can sit 'pending' before checkStaleHandoffs_ escalates it.
@@ -924,6 +947,7 @@ function route_(req) {
     collectionsData: function () { return actionCollectionsData_(req, user); },
     collectionReports: function () { return actionCollectionReports_(req, user); },
     dataHealthCheck: function () { return actionDataHealthCheck_(req, user); },
+    mailHealth: function () { return actionMailHealth_(req, user); },
     adminSetWhatsApp: function () { return actionAdminSetWhatsApp_(req, user); },
     addInventoryMove: function () { return actionAddInventoryMove_(req, user); },
     recordStockCount: function () { return actionRecordStockCount_(req, user); },
