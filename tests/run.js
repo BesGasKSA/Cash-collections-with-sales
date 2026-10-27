@@ -7315,6 +7315,21 @@ console.log('--- push notifications ---');
     var nf = call({ action: 'createRiskItem', token: bmTok, type: 'risk', title: '' });
     ctx.actionCreateRiskItem_ = realRisk;
     check(stubRan && !nf.ok && fcmCalls().length === 0, 'push: a refused action sends nothing it queued (' + fcmCalls().length + ')');
+    // Google's own reason travels back with a refused test send (the live diagnosis relies on it)
+    mode.fcm = 'fail';
+    var whyRes = call({ action: 'sendTestPush', token: fin2Tok });
+    mode.fcm = 'ok';
+    check(whyRes.ok && whyRes.sent === 0 && /^HTTP 503 UNAVAILABLE/.test(whyRes.why || ''), 'push: a refused test send says Google\'s reason (' + whyRes.why + ')');
+    // and when Google refuses the service account's sign-in (the OAuth step, before FCM), its reason too
+    var realResponder = D.urlFetch.responder;
+    D.urlFetch.responder = function (url, o) {
+      if (url === 'https://oauth2.googleapis.com/token') return { code: 400, body: JSON.stringify({ error: 'invalid_grant', error_description: 'Invalid JWT Signature.' }) };
+      return realResponder(url, o);
+    };
+    Object.keys(D.cache).forEach(function (k) { if (/^push_at/.test(k)) delete D.cache[k]; });
+    var oaRes = call({ action: 'sendTestPush', token: fin2Tok });
+    D.urlFetch.responder = realResponder;
+    check(oaRes.ok && oaRes.sent === 0 && oaRes.error === 'push_oauth_400' && /invalid_grant: Invalid JWT Signature/.test(oaRes.why || ''), 'push: a refused service-account sign-in says Google\'s reason (' + oaRes.error + ' / ' + oaRes.why + ')');
     // (a) the client deletes the Firebase token on sign-out and on Turn off; (f) the worker checks the scope
     var htmlA = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
     var fnSrc = function (name) { var i = htmlA.indexOf('function ' + name + '('); return i < 0 ? '' : htmlA.slice(i, htmlA.indexOf('\nfunction ', i + 10)); };

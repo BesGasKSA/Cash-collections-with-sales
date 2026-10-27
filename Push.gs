@@ -298,7 +298,13 @@ function pushAccessToken_(sa, fresh) {
   var sig = pushB64url_(Utilities.computeRsaSha256Signature(input, sa.private_key));
   var res = UrlFetchApp.fetch(PUSH_TOKEN_URL_, { method: 'post', muteHttpExceptions: true,
     payload: { grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer', assertion: input + '.' + sig } });
-  if (res.getResponseCode() !== 200) throw new Error('push_oauth_' + res.getResponseCode());
+  if (res.getResponseCode() !== 200) {
+    // Google's own words travel with it (e.g. invalid_grant: Invalid JWT Signature), so the admin's test says why
+    var ge = null; try { ge = JSON.parse(res.getContentText()); } catch (eJ) {}
+    var err = new Error('push_oauth_' + res.getResponseCode());
+    err.why = ('OAuth HTTP ' + res.getResponseCode() + (ge && ge.error ? ' ' + (typeof ge.error === 'string' ? ge.error : (ge.error.status || '')) : '') + (ge && (ge.error_description || (ge.error && ge.error.message)) ? ': ' + (ge.error_description || ge.error.message) : '')).slice(0, 240);
+    throw err;
+  }
   var at = JSON.parse(res.getContentText()).access_token;
   if (!at) throw new Error('push_oauth_empty');
   try { cache.put(PUSH_AT_KEY_, at, 3000); } catch (e) {}
@@ -379,6 +385,6 @@ function pushSendMany_(items) {
         try { if (pushMarkDead_(j.row.token, code === 404 || /UNREGISTERED/.test(body) ? 'unregistered' : 'invalid_token')) o.removed++; } catch (e) {}
       }
     });
-  } catch (e) { var msg = String(e && e.message || e).slice(0, 80); outs.forEach(function (o) { o.error = msg; }); console.error('push send: ' + e); }
+  } catch (e) { var msg = String(e && e.message || e).slice(0, 80), why = e && e.why ? String(e.why) : ''; outs.forEach(function (o) { o.error = msg; if (why && !o.why) o.why = why; }); console.error('push send: ' + e + (why ? ' ' + why : '')); }
   return outs;
 }
