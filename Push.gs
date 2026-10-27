@@ -388,3 +388,10 @@ function pushSendMany_(items) {
   } catch (e) { var msg = String(e && e.message || e).slice(0, 80), why = e && e.why ? String(e.why) : ''; outs.forEach(function (o) { o.error = msg; if (why && !o.why) o.why = why; }); console.error('push send: ' + e + (why ? ' ' + why : '')); }
   return outs;
 }
+
+// Run once from the Apps Script editor (Run > approvePushPermission) to grant the internet permission
+// (script.external_request) that sending notifications needs. Changes nothing; it only asks Google once.
+function approvePushPermission() {
+  var code = UrlFetchApp.fetch(PUSH_TOKEN_URL_, { muteHttpExceptions: true }).getResponseCode();
+  Logger.log("Permission approved. Google reachable: HTTP " + code + ". Now press Send a test notification in the app.");
+}
