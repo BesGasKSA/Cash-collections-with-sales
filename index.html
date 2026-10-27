@@ -7458,6 +7458,7 @@ function logout(){
   // this device stops receiving the person's notifications (while the session can still say so)
   try { pnOnLogout_(); } catch (e) {}
   try { HF_STATE_ = {}; DP_STATE_ = {}; AU_STATE_ = {}; } catch (e) {}
+  try { SD_PREV_ = {}; SD_SEQ_ = {}; } catch (e) {}
   // an open document or drill-down lives outside #app: it goes too
   try { drawerClose_(); } catch (e) {}
   // and its content: a closed drawer kept the last person's breakdown in the page (found 2026-10-18)
@@ -13333,7 +13334,10 @@ var SD_SEQ_ = {}, SD_PREV_ = {};
 function sdSeq_(screen){ SD_SEQ_[screen] = (SD_SEQ_[screen] || 0) + 1; return { screen: screen, n: SD_SEQ_[screen] }; }
 function sdSeqLive_(screen, tok){ return !!tok && SD_SEQ_[screen] === tok.n && state.screen === screen; }
 function sdPrevReport_(payload, cb){
-  var key = JSON.stringify(payload), hit = SD_PREV_[key];
+  // the person and their active area are part of the key: a shared device or an area switch never reuses another answer (review 2026-10-27)
+  var now = Date.now();
+  Object.keys(SD_PREV_).forEach(function(k){ var h = SD_PREV_[k]; if (h && h.res && now - h.at >= 60000 && !h.p) delete SD_PREV_[k]; });
+  var key = JSON.stringify([state.user ? state.user.id : '', typeof activeArea_ === 'function' ? (activeArea_() || '') : '', payload]), hit = SD_PREV_[key];
   if (hit && hit.res && Date.now() - hit.at < 60000) { cb(hit.res); return; }
   if (!hit || !hit.p) { hit = SD_PREV_[key] = { p: api('getSalesReport', payload, { silent: true }) }; hit.p.then(function(res){ if (res && res.ok) { hit.res = res; hit.at = Date.now(); } hit.p = null; if (!(res && res.ok)) delete SD_PREV_[key]; }); }
   hit.p.then(function(res){ if (res && res.ok) cb(res); });
