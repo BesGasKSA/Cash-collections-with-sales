@@ -28531,11 +28531,21 @@ function pnEnable_(){
     });
   }).catch(function(e){ try { console.error(e); } catch (x) {} return { ok: false, error: 'push_failed' }; });
 }
+// Turn off: Firebase deletes this device's token first (so even a row the server missed stops
+// receiving: FCM answers UNREGISTERED), then the server lets the device go, then the key is cleared.
 function pnDisable_(){
   var tok = pnLocal_();
-  pnSetLocal_('');
-  if (!tok) return Promise.resolve({ ok: true });
-  return api('unregisterPushToken', { pushToken: tok }, { silent: true }).then(function(r){ return { ok: true, r: r }; });
+  return pnDeleteFcmToken_().then(function(){
+    return tok ? api('unregisterPushToken', { pushToken: tok }, { silent: true }) : null;
+  }).then(function(r){ pnSetLocal_(''); return { ok: true, r: r }; });
+}
+// Deletes the Firebase token when Firebase is loaded on this page (a token was fetched this
+// session); otherwise the leftover clean-up at the next sign-in does it (pnDropOthers_).
+function pnDeleteFcmToken_(){
+  var m = PN_.messaging;
+  if (!m) return Promise.resolve(false);
+  PN_.messaging = null;
+  try { return Promise.resolve(m.deleteToken()).then(function(){ return true; }).catch(function(){ return false; }); } catch (e) { return Promise.resolve(false); }
 }
 // Signing out: this device stops receiving the person's notifications. A plain fetch, not api():
 // api() writes the renewed session token back, which after logout() would sign the person in
@@ -28555,7 +28565,11 @@ function pnUnregisterRaw_(sessionToken, uid){
   } catch (e) {}
 }
 function pnOnLogout_(){
+  // the server call captures the session and the device key now, before logout() clears them
   if (state.user) pnUnregisterRaw_(state.token, state.user.id);
+  // and Firebase deletes the token itself, so nothing reaches this browser even if the server missed it
+  var m = PN_.messaging;
+  if (m) { PN_.messaging = null; try { Promise.resolve(m.deleteToken()).catch(function(){}); } catch (e) {} }
   if (state.user && PN_.synced) delete PN_.synced[state.user.id];
 }
 // Someone signed out here without the server hearing it: their device key is still on this

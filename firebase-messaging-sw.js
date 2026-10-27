@@ -67,7 +67,9 @@ self.addEventListener('notificationclick', function (event) {
   if (data.FCM_MSG) return;   // Firebase's own notification: its handler opens the link
   event.notification.close();
   var scope = self.registration.scope, link = data.open || scope;
-  try { if (new URL(link).origin !== new URL(scope).origin) link = scope; } catch (e) { link = scope; }
+  // only a link inside this worker's own scope (the app's folder), never elsewhere on the host
+  try { link = new URL(link, scope).href; } catch (e) { link = scope; }
+  if (link.indexOf(scope) !== 0) link = scope;
   event.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (list) {
     for (var i = 0; i < list.length; i++) {
       var w = list[i];
