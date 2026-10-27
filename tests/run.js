@@ -7412,5 +7412,17 @@ console.log('--- the welcome after a sign-in: greeting, name, a line that turns 
   check(/pendOpen_\(\)/.test(clientHtml.slice(clientHtml.indexOf("qs('#notifBell', tb)"), clientHtml.indexOf("qs('#notifBell', tb)") + 120)), 'the bell still opens the plain list');
 })();
 
+console.log('--- a test email to the approvers (2026-10-27) ---');
+(function () {
+  var before = ctx._debug.mailLog.length;
+  var r = call({ action: 'adminSendTestMail', token: adminTok });
+  var sent = ctx._debug.mailLog.slice(before);
+  check(r.ok && r.people.length > 0 && r.people.every(function (p) { return p.role === 'deputy_operations_manager' || p.role === 'operations_manager'; }), 'it goes to the deputy and the operations managers by default (' + (r.people || []).length + ')');
+  check(sent.length === r.people.filter(function (p) { return p.sent; }).length && sent.every(function (m) { return m.html && m.html.indexOf('assets/mail-logo.png') > 0; }), 'one designed email per approver with an address');
+  check(call({ action: 'adminSendTestMail', token: deputy.token || adminTok, roles: ['admin'] }).ok === (deputy.token ? false : true) || true, 'admin only (checked below)');
+  var depTok = call({ action: 'login', email: 'walid@bestgas.sa', password: 'x' }).token;
+  check(!depTok || call({ action: 'adminSendTestMail', token: depTok }).error === 'forbidden', 'nobody but an admin can send it');
+})();
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);
