@@ -188,7 +188,7 @@ function actionSendTestPush_(req, user) {
   cache.put(k, String(n + 1), 600);
   var lang = userLang_(user), c = NM_[lang] || NM_.en;
   var r = pushSendNow_(user.id, { title: PUSH_TEST_[lang].t, body: PUSH_TEST_[lang].b, open: DEFAULT_APP_URL, tag: 'bgc-test', lang: lang, dir: c.dir }, true);
-  return { ok: true, devices: r.devices, sent: r.sent, failed: r.failed, removed: r.removed, error: r.error || undefined };
+  return { ok: true, devices: r.devices, sent: r.sent, failed: r.failed, removed: r.removed, error: r.error || undefined, why: r.why || undefined };
 }
 var PUSH_TEST_ = {
   en: { t: 'Test notification', b: 'Notifications reach this device. You will hear about every request that needs you.' },
@@ -318,6 +318,8 @@ function pushSendMany_(items) {
       try { body = x.getContentText() || ''; } catch (e) {}
       if (code >= 200 && code < 300) { o.sent++; return; }
       o.failed++;
+      // Google's own reason, for the person testing (no secret in it): HTTP code, status and message
+      if (!o.why) { var ge = null; try { ge = (JSON.parse(body) || {}).error || null; } catch (eJ) {} o.why = ('HTTP ' + code + (ge && ge.status ? ' ' + ge.status : '') + (ge && ge.message ? ': ' + ge.message : '')).slice(0, 240); }
       // the device is gone (UNREGISTERED, 404) or its token is not a token (INVALID_ARGUMENT naming
       // the registration token, 400). Any other 400 is the message's fault, not the device's.
       var dead = code === 404 || /UNREGISTERED/.test(body) || (code === 400 && /registration token/i.test(body));

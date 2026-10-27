@@ -5067,6 +5067,10 @@
   html.gs-lock, html.gs-lock body{overflow:hidden;}
   .tb-actions .gs-btn{display:inline-flex;align-items:center;gap:8px;}
   .tb-actions .gs-btn .gs-kh{font-size:11px;color:var(--muted);border:1px solid var(--border);border-radius:6px;padding:1px 6px;font-family:var(--font-en);line-height:18px;}
+  /* a pill, not a circle, when it carries the shortcut hint (2026-10-27: the hint was squeezed into the round button) */
+  .tb-actions .icon-btn.gs-btn:has(.gs-kh){width:auto;min-width:42px;padding:0 10px 0 12px;border-radius:999px;gap:8px;white-space:nowrap;}
+  html[dir="rtl"] .tb-actions .icon-btn.gs-btn:has(.gs-kh){padding:0 12px 0 10px;}
+  .tb-actions .icon-btn.gs-btn .gs-kh{display:inline-block;white-space:nowrap;line-height:18px;}
   .gs-ov{position:fixed;inset:0;z-index:4000;background:rgba(24,30,25,.42);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);display:flex;align-items:flex-start;justify-content:center;padding:10vh 16px 16px;opacity:0;transition:opacity .16s ease;}
   .gs-ov.in{opacity:1;}
   .gs-box{width:min(680px,100%);max-height:min(72vh,640px);display:flex;flex-direction:column;background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow-lg);overflow:hidden;transform:translateY(-6px) scale(.985);transition:transform .16s ease;}
@@ -28645,7 +28649,7 @@ function pnSendTest_(btn, done){
   api('sendTestPush', {}, { silent: true }).then(function(r){
     if (btn) btn.disabled = false;
     if (!r || !r.ok) { done(errMsg_(r), false); return; }
-    done(r.sent ? t('pn_testSent').replace('{n}', r.sent) : r.devices ? t('pn_testFail').replace('{n}', r.devices) : t('pn_testNone'), !!r.sent);
+    var why = r.why || r.error || ''; done((r.sent ? t('pn_testSent').replace('{n}', r.sent) : r.devices ? t('pn_testFail').replace('{n}', r.devices) : t('pn_testNone')) + (!r.sent && why ? ' (' + why + ')' : ''), !!r.sent);
   });
 }
 // Home, once, after signing in: a card that asks (the browser's own question only on its button)
