@@ -7284,6 +7284,58 @@ console.log('--- push notifications ---');
     var drvU = ctx.getById_(SHEETS.USERS, 'pnDrv'); drvU.active = false; ctx.writeRow(SHEETS.USERS, drvU);
     D.urlFetch.log.length = 0; ctx.resetExecMemo_(); ctx.pushTo_('pnDrv', { title: 'x', body: 'y', open: ctx.DEFAULT_APP_URL, lang: 'ar' });
     check(fcmCalls().length === 0, 'push: a disabled account gets nothing');
+    // ---- minors from the security review (2026-10-26) ----
+    // (b) a person's rows are capped (active or not) and old inactive rows go
+    ctx.writeRow(SHEETS.PUSH_TOKENS, { userId: 'pnFin2', token: 'tok-ancient-0001', platform: 'desktop', ua: '', createdAt: '2026-08-01T00:00:00.000Z', lastSeenAt: '2026-08-01T00:00:00.000Z', active: false, deactivatedAt: '2026-08-01T00:00:00.000Z', deactivatedReason: 'user' });
+    for (var ci = 0; ci < 22; ci++) call({ action: 'registerPushToken', token: fin2Tok, pushToken: 'tok-cap-' + ci + '-xxxxxxxx', platform: 'desktop' });
+    var fin2Rows = ctx.readSheet(SHEETS.PUSH_TOKENS).filter(function (r) { return r.userId === 'pnFin2'; });
+    check(fin2Rows.length <= 20, 'push: at most 20 rows a person, active or not (' + fin2Rows.length + ')');
+    check(fin2Rows.some(function (r) { return r.token === 'tok-cap-21-xxxxxxxx' && r.active === true; }), 'push: the newest device is the one kept');
+    check(!fin2Rows.some(function (r) { return r.token === 'tok-ancient-0001'; }), 'push: an inactive row older than 30 days is pruned');
+    check(fin2Rows.filter(function (r) { return r.active === true; }).length <= 10, 'push: still 10 active at most');
+    // (c) the daily trigger sends everything it raises in one batch
+    var oldAt = new Date(Date.now() - 5 * 86400000).toISOString();
+    ctx.writeRow(SHEETS.HANDOFFS, { id: 'pnS1', kind: 'car_to_location', status: 'pending', amount: 100, fromUserId: 'pnBm', toUserId: 'pnCol', createdAt: oldAt, breakdown: { netCashOwed: 100 } });
+    ctx.writeRow(SHEETS.HANDOFFS, { id: 'pnS2', kind: 'car_to_location', status: 'pending', amount: 200, fromUserId: 'pnBm', toUserId: 'pnFin2', createdAt: oldAt, breakdown: { netCashOwed: 200 } });
+    ctx.resetExecMemo_(); D.urlFetch.log.length = 0; D.urlFetch.fetchAllCalls = 0;
+    ctx.checkStaleHandoffs_();
+    check(fcmCalls().length >= 2 && D.urlFetch.fetchAllCalls === 1, 'push: the stale check sends all its alerts in one fetchAll (' + fcmCalls().length + ' messages, ' + D.urlFetch.fetchAllCalls + ' calls)');
+    check(!(ctx.EXEC_ && ctx.EXEC_.pushBatch), 'push: and leaves no batch open behind it');
+    // (d) registering and switching off a dead device hold the script lock for the read and the write
+    check(/waitLock/.test(String(ctx.actionRegisterPushToken_)) && /waitLock/.test(String(ctx.pushMarkDead_)), 'push: register and the dead-device write take the script lock');
+    // (e) contradictory settings in one request are refused
+    var e1 = call({ action: 'adminSetPushConfig', token: adminTok, data: { resetWeb: true, vapidKey: VAPID } });
+    check(!e1.ok && e1.error === 'invalid_input', 'push: resetWeb with a VAPID key is refused (' + e1.error + ')');
+    var e2 = call({ action: 'adminSetPushConfig', token: adminTok, data: { clear: true, serviceAccount: JSON.stringify(SA) } });
+    check(!e2.ok && e2.error === 'invalid_input', 'push: clear with a service account is refused (' + e2.error + ')');
+    // (f) an action that answers ok:false sends none of what it queued
+    var realRisk = ctx.actionCreateRiskItem_, stubRan = false;
+    ctx.actionCreateRiskItem_ = function (req, user) { stubRan = true; ctx.pushTo_('pnCol', { title: 'never', body: 'x', open: ctx.DEFAULT_APP_URL, lang: 'en' }); return { ok: false, error: 'title_required' }; };
+    D.urlFetch.log.length = 0;
+    var nf = call({ action: 'createRiskItem', token: bmTok, type: 'risk', title: '' });
+    ctx.actionCreateRiskItem_ = realRisk;
+    check(stubRan && !nf.ok && fcmCalls().length === 0, 'push: a refused action sends nothing it queued (' + fcmCalls().length + ')');
+    // Google's own reason travels back with a refused test send (the live diagnosis relies on it)
+    mode.fcm = 'fail';
+    var whyRes = call({ action: 'sendTestPush', token: fin2Tok });
+    mode.fcm = 'ok';
+    check(whyRes.ok && whyRes.sent === 0 && /^HTTP 503 UNAVAILABLE/.test(whyRes.why || ''), 'push: a refused test send says Google\'s reason (' + whyRes.why + ')');
+    // and when Google refuses the service account's sign-in (the OAuth step, before FCM), its reason too
+    var realResponder = D.urlFetch.responder;
+    D.urlFetch.responder = function (url, o) {
+      if (url === 'https://oauth2.googleapis.com/token') return { code: 400, body: JSON.stringify({ error: 'invalid_grant', error_description: 'Invalid JWT Signature.' }) };
+      return realResponder(url, o);
+    };
+    Object.keys(D.cache).forEach(function (k) { if (/^push_at/.test(k)) delete D.cache[k]; });
+    var oaRes = call({ action: 'sendTestPush', token: fin2Tok });
+    D.urlFetch.responder = realResponder;
+    check(oaRes.ok && oaRes.sent === 0 && oaRes.error === 'push_oauth_400' && /invalid_grant: Invalid JWT Signature/.test(oaRes.why || ''), 'push: a refused service-account sign-in says Google\'s reason (' + oaRes.error + ' / ' + oaRes.why + ')');
+    // (a) the client deletes the Firebase token on sign-out and on Turn off; (f) the worker checks the scope
+    var htmlA = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
+    var fnSrc = function (name) { var i = htmlA.indexOf('function ' + name + '('); return i < 0 ? '' : htmlA.slice(i, htmlA.indexOf('\nfunction ', i + 10)); };
+    check(/pnDeleteFcmToken_\(\)\.then/.test(fnSrc('pnDisable_')) && /deleteToken\(\)/.test(fnSrc('pnDeleteFcmToken_')) && /deleteToken\(\)/.test(fnSrc('pnOnLogout_')), 'push: Turn off and sign-out delete the Firebase token');
+    var swA = fs.readFileSync(path.join(__dirname, '..', 'firebase-messaging-sw.js'), 'utf8');
+    check(/link\.indexOf\(scope\) !== 0/.test(swA) && !/\.origin !==/.test(swA), 'push: the worker opens only links inside its own scope');
     // back to the built-in project is checked against the saved service account like any change
     var rw = call({ action: 'adminSetPushConfig', token: adminTok, data: { webConfig: snippet.replace(/bestgas-cash"/g, 'other-proj"').replace(/bestgas-cash\./g, 'other-proj.') } });
     check(!rw.ok && rw.error === 'push_project_mismatch', 'push: another project\'s web config is refused while the service account is bestgas-cash');

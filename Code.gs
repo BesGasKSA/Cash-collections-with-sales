@@ -1072,7 +1072,9 @@ function route_(req) {
   // push notifications the action asks for are gathered and sent once it has returned (Push.gs)
   exec_().pushBatch = [];
   var result = handlers[action]();
-  try { pushFlush_(); } catch (e) { /* push is best-effort */ }
+  // an action that answered ok:false did not happen: nothing it queued goes out
+  if (result && result.ok === false) exec_().pushBatch = null;
+  else { try { pushFlush_(); } catch (e) { /* push is best-effort */ } }
   if (respKey && result && result.ok) {
     try {
       var toCache = {};

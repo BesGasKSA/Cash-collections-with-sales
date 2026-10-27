@@ -30,6 +30,8 @@ var PUSH_AT_KEY_ = 'push_at';
 var PUSH_TTL_SEC_ = 86400;          // a phone off for a day still gets it when it comes back
 var PUSH_MAX_DEVICES_ = 10;          // per person; the oldest beyond this are switched off
 var PUSH_SEEN_MS_ = 20 * 3600 * 1000; // a device re-registered sooner than this is not written again
+var PUSH_MAX_ROWS_ = 20;             // rows a person keeps, active or not (review 2026-10-26)
+var PUSH_PRUNE_MS_ = 30 * 86400000;   // an inactive row older than this is deleted
 
 // Reads a pasted web config: JSON, or the snippet the Firebase console shows
 // (`const firebaseConfig = { apiKey: "…", … };`, unquoted keys).
@@ -98,6 +100,10 @@ function actionAdminSetPushConfig_(req, user) {
   if (!user || user.role !== 'admin') return { ok: false, error: 'forbidden' };
   var d = req.data || {}, set = [];
   var web = null, vapid = null, sa = null;
+  function given(v) { return v != null && String(typeof v === 'object' ? 'x' : v).trim() !== ''; }
+  // one request asks for one thing: going back to the built-in project while sending a key or a
+  // config of another, or removing the service account while sending one, is a malformed request
+  if ((d.resetWeb === true && (given(d.vapidKey) || given(d.webConfig))) || (d.clear === true && given(d.serviceAccount))) return { ok: false, error: 'invalid_input' };
   if (d.webConfig != null && String(typeof d.webConfig === 'object' ? 'x' : d.webConfig).trim()) {
     web = pushCleanWeb_(pushParseWeb_(d.webConfig));
     if (!web) return { ok: false, error: 'invalid_push_web' };
@@ -149,20 +155,61 @@ function actionRegisterPushToken_(req, user) {
   var cache = CacheService.getScriptCache(), rk = 'push_reg_' + user.id, rn = Number(cache.get(rk) || 0);
   if (rn >= 30) return { ok: false, error: 'too_many_requests' };
   cache.put(rk, String(rn + 1), 600);
-  if (row) {
-    // the same phone signed in by someone else now belongs to them (a shared phone)
-    if (row.userId !== user.id) { row.movedFrom = row.userId; row.userId = user.id; row.createdAt = now; }
-    row.active = true; row.lastSeenAt = now; row.platform = platform; if (ua) row.ua = ua;
-    delete row.deactivatedAt; delete row.deactivatedReason;
-  } else {
-    row = { userId: user.id, token: t, platform: platform, ua: ua, createdAt: now, lastSeenAt: now, active: true };
-  }
-  writeRow(SHEETS.PUSH_TOKENS, row);
-  // a person's oldest devices beyond the limit are switched off
-  var mine = readSheet(SHEETS.PUSH_TOKENS).filter(function (r) { return r.userId === user.id && r.active === true; })
-    .sort(function (a, b) { return String(b.lastSeenAt || '').localeCompare(String(a.lastSeenAt || '')); });
-  mine.slice(PUSH_MAX_DEVICES_).forEach(function (r) { r.active = false; r.deactivatedAt = now; r.deactivatedReason = 'too_many'; writeRow(SHEETS.PUSH_TOKENS, r); });
-  return { ok: true, id: row.id, pushOn: user.pushOn !== false, ready: pushReady_() };
+  // the read, the write and the tidying run under the script lock against a fresh read, so two
+  // devices registering at once cannot both pass the limits or write one token twice (review 2026-10-26)
+  var lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  try {
+    freshenExec_();
+    row = readSheet(SHEETS.PUSH_TOKENS).filter(function (r) { return r.token === t; })[0];
+    if (row) {
+      // the same phone signed in by someone else now belongs to them (a shared phone)
+      if (row.userId !== user.id) { row.movedFrom = row.userId; row.userId = user.id; row.createdAt = now; }
+      row.active = true; row.lastSeenAt = now; row.platform = platform; if (ua) row.ua = ua;
+      delete row.deactivatedAt; delete row.deactivatedReason;
+    } else {
+      row = { userId: user.id, token: t, platform: platform, ua: ua, createdAt: now, lastSeenAt: now, active: true };
+    }
+    writeRow(SHEETS.PUSH_TOKENS, row);
+    pushTidyUser_(user.id, row.token, now);
+    return { ok: true, id: row.id, pushOn: user.pushOn !== false, ready: pushReady_() };
+  } finally { try { lock.releaseLock(); } catch (e) {} }
+}
+// A person's rows, under the caller's lock: at most PUSH_MAX_DEVICES_ active (the oldest are
+// switched off), inactive rows older than PUSH_PRUNE_MS_ deleted, and PUSH_MAX_ROWS_ rows in all,
+// active or not (the oldest inactive ones go first). `keep` is the device just registered.
+function pushTidyUser_(userId, keep, now) {
+  function seen(r) { return String(r.active === true ? r.lastSeenAt || '' : r.deactivatedAt || r.lastSeenAt || ''); }
+  var mine = readSheet(SHEETS.PUSH_TOKENS).filter(function (r) { return r.userId === userId; });
+  mine.filter(function (r) { return r.active === true; })
+    .sort(function (a, b) { return (b.token === keep) - (a.token === keep) || seen(b).localeCompare(seen(a)); })
+    .slice(PUSH_MAX_DEVICES_).forEach(function (r) { r.active = false; r.deactivatedAt = now; r.deactivatedReason = 'too_many'; writeRow(SHEETS.PUSH_TOKENS, r); });
+  var cutoff = new Date(Date.now() - PUSH_PRUNE_MS_).toISOString(), drop = [];
+  mine.forEach(function (r) { if (r.active !== true && r.token !== keep && seen(r) && seen(r) < cutoff) drop.push(r.id); });
+  var left = mine.filter(function (r) { return drop.indexOf(r.id) < 0; })
+    .sort(function (a, b) { return (b.active === true) - (a.active === true) || (b.token === keep) - (a.token === keep) || seen(b).localeCompare(seen(a)); });
+  left.slice(PUSH_MAX_ROWS_).forEach(function (r) { if (r.token !== keep) drop.push(r.id); });
+  if (drop.length) pushDeleteRows_(drop);
+}
+// Deletes these rows of push_tokens (bottom up, so the row numbers stay right). The caller holds the lock.
+function pushDeleteRows_(ids) {
+  var sh = sheet_(SHEETS.PUSH_TOKENS);
+  var idx = ids.map(function (id) { return findRow_(sh, id); }).filter(function (i) { return i > 1; }).sort(function (a, b) { return b - a; });
+  idx.forEach(function (i) { sh.deleteRow(i); });
+  bumpVersion_(SHEETS.PUSH_TOKENS);
+}
+// A device FCM says is gone, switched off under the script lock against a fresh read of its row.
+function pushMarkDead_(token, reason) {
+  var lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  try {
+    freshenExec_();
+    var r = readSheet(SHEETS.PUSH_TOKENS).filter(function (x) { return x.token === token; })[0];
+    if (!r || r.active !== true) return false;
+    r.active = false; r.deactivatedAt = new Date().toISOString(); r.deactivatedReason = reason;
+    writeRow(SHEETS.PUSH_TOKENS, r);
+    return true;
+  } finally { try { lock.releaseLock(); } catch (e) {} }
 }
 function actionUnregisterPushToken_(req, user) {
   var t = pushCleanToken_(req.pushToken);
@@ -224,6 +271,10 @@ function pushTo_(userId, msg) {
     afterCashLock_(function () { try { pushSendMany_([{ userId: userId, msg: msg }]); } catch (e) { console.error('push: ' + e); } });
   } catch (e) { console.error('push: ' + e); }
 }
+// A time trigger (checkStaleHandoffs_, checkHeldTooLong_) gathers its pushes the same way:
+// begin returns true only when it opened the batch (a check run from a request leaves it to route_).
+function pushBatchBegin_() { var ex = exec_(); if (ex.pushBatch) return false; ex.pushBatch = []; return true; }
+function pushBatchEnd_(opened) { if (opened) pushFlush_(); }
 // route_ calls this once the action has returned
 function pushFlush_() {
   var ex = exec_(), q = ex.pushBatch || [];
@@ -247,7 +298,13 @@ function pushAccessToken_(sa, fresh) {
   var sig = pushB64url_(Utilities.computeRsaSha256Signature(input, sa.private_key));
   var res = UrlFetchApp.fetch(PUSH_TOKEN_URL_, { method: 'post', muteHttpExceptions: true,
     payload: { grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer', assertion: input + '.' + sig } });
-  if (res.getResponseCode() !== 200) throw new Error('push_oauth_' + res.getResponseCode());
+  if (res.getResponseCode() !== 200) {
+    // Google's own words travel with it (e.g. invalid_grant: Invalid JWT Signature), so the admin's test says why
+    var ge = null; try { ge = JSON.parse(res.getContentText()); } catch (eJ) {}
+    var err = new Error('push_oauth_' + res.getResponseCode());
+    err.why = ('OAuth HTTP ' + res.getResponseCode() + (ge && ge.error ? ' ' + (typeof ge.error === 'string' ? ge.error : (ge.error.status || '')) : '') + (ge && (ge.error_description || (ge.error && ge.error.message)) ? ': ' + (ge.error_description || ge.error.message) : '')).slice(0, 240);
+    throw err;
+  }
   var at = JSON.parse(res.getContentText()).access_token;
   if (!at) throw new Error('push_oauth_empty');
   try { cache.put(PUSH_AT_KEY_, at, 3000); } catch (e) {}
@@ -325,10 +382,16 @@ function pushSendMany_(items) {
       var dead = code === 404 || /UNREGISTERED/.test(body) || (code === 400 && /registration token/i.test(body));
       if (dead && !gone[j.row.token]) {
         gone[j.row.token] = 1;
-        var r = j.row; r.active = false; r.deactivatedAt = now; r.deactivatedReason = code === 404 || /UNREGISTERED/.test(body) ? 'unregistered' : 'invalid_token';
-        try { writeRow(SHEETS.PUSH_TOKENS, r); o.removed++; } catch (e) {}
+        try { if (pushMarkDead_(j.row.token, code === 404 || /UNREGISTERED/.test(body) ? 'unregistered' : 'invalid_token')) o.removed++; } catch (e) {}
       }
     });
-  } catch (e) { var msg = String(e && e.message || e).slice(0, 80); outs.forEach(function (o) { o.error = msg; }); console.error('push send: ' + e); }
+  } catch (e) { var msg = String(e && e.message || e).slice(0, 80), why = e && e.why ? String(e.why) : ''; outs.forEach(function (o) { o.error = msg; if (why && !o.why) o.why = why; }); console.error('push send: ' + e + (why ? ' ' + why : '')); }
   return outs;
+}
+
+// Run once from the Apps Script editor (Run > approvePushPermission) to grant the internet permission
+// (script.external_request) that sending notifications needs. Changes nothing; it only asks Google once.
+function approvePushPermission() {
+  var code = UrlFetchApp.fetch(PUSH_TOKEN_URL_, { muteHttpExceptions: true }).getResponseCode();
+  Logger.log("Permission approved. Google reachable: HTTP " + code + ". Now press Send a test notification in the app.");
 }

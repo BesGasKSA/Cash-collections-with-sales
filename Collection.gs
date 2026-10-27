@@ -2959,18 +2959,22 @@ function checkHeldTooLong_() {
   var thresholdMs = heldThresholdHours_() * 3600000;
   var now = Date.now();
   var escalated = 0;
-  readSheet(SHEETS.HANDOFFS)
-    .filter(function (h) { return h.status === 'confirmed' && !h.consumedBy && h.kind !== 'deposit' && !h.heldEscalatedAt; })
-    .forEach(function (h) {
-      var heldFromAt = h.resolvedAt || h.confirmedAt;
-      if (!heldFromAt) return;
-      var ageMs = now - new Date(heldFromAt).getTime();
-      if (ageMs < thresholdMs) return;
-      h.heldEscalatedAt = new Date().toISOString();
-      writeRow(SHEETS.HANDOFFS, h);
-      escalateHeldTooLong_(h, ageMs / 3600000);
-      escalated++;
-    });
+  // its push notifications go out together at the end (Push.gs)
+  var pushOpened = pushBatchBegin_();
+  try {
+    readSheet(SHEETS.HANDOFFS)
+      .filter(function (h) { return h.status === 'confirmed' && !h.consumedBy && h.kind !== 'deposit' && !h.heldEscalatedAt; })
+      .forEach(function (h) {
+        var heldFromAt = h.resolvedAt || h.confirmedAt;
+        if (!heldFromAt) return;
+        var ageMs = now - new Date(heldFromAt).getTime();
+        if (ageMs < thresholdMs) return;
+        h.heldEscalatedAt = new Date().toISOString();
+        writeRow(SHEETS.HANDOFFS, h);
+        escalateHeldTooLong_(h, ageMs / 3600000);
+        escalated++;
+      });
+  } finally { pushBatchEnd_(pushOpened); }
   return escalated;
 }
 
@@ -2986,17 +2990,21 @@ function checkStaleHandoffs_() {
   var thresholdMs = staleThresholdHours_() * 3600000;
   var now = Date.now();
   var escalated = 0;
-  readSheet(SHEETS.HANDOFFS)
-    .filter(function (h) { return h.status === 'pending' && !h.staleEscalatedAt; })
-    .forEach(function (h) {
-      var ageMs = now - new Date(h.createdAt).getTime();
-      if (ageMs < thresholdMs) return;
-      h.staleEscalatedAt = new Date().toISOString();
-      writeRow(SHEETS.HANDOFFS, h);
-      escalateStaleHandoff_(h, ageMs / 3600000);
-      escalated++;
-    });
-  escalated += checkHeldTooLong_();
+  // the daily trigger's push notifications, stale and held alike, go out in one batch (Push.gs)
+  var pushOpened = pushBatchBegin_();
+  try {
+    readSheet(SHEETS.HANDOFFS)
+      .filter(function (h) { return h.status === 'pending' && !h.staleEscalatedAt; })
+      .forEach(function (h) {
+        var ageMs = now - new Date(h.createdAt).getTime();
+        if (ageMs < thresholdMs) return;
+        h.staleEscalatedAt = new Date().toISOString();
+        writeRow(SHEETS.HANDOFFS, h);
+        escalateStaleHandoff_(h, ageMs / 3600000);
+        escalated++;
+      });
+    escalated += checkHeldTooLong_();
+  } finally { pushBatchEnd_(pushOpened); }
   return escalated;
 }
 
