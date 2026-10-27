@@ -68,5 +68,5 @@ function actionUpdateRiskItemStatus_(req, user) {
 // whoever reviews it next, no need to interrupt anyone.
 function notifyRiskItem_(item, reporter) {
   if (item.severity !== 'high') return;
-  readSheet(SHEETS.USERS).filter(function (u) { return (u.role === 'admin' || u.role === 'finance') && u.active !== false && u.email; }).forEach(function (u) { nmRiskMail_(u, item, reporter); });
+  readSheet(SHEETS.USERS).filter(function (u) { return (u.role === 'admin' || u.role === 'finance') && nmReach_(u); }).forEach(function (u) { nmRiskMail_(u, item, reporter); });
 }

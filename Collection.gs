@@ -2002,7 +2002,7 @@ function actionDeputyRejectBatch_(req, user) {
 
 function notifyDeputyPendingBatch_(batch) {
   readSheet(SHEETS.USERS).filter(function (u) {
-    return (isAreaApprover_(u.role) || u.role === 'admin' || u.role === 'finance') && u.active !== false && u.email && u.id !== batch.uploadedBy;
+    return (isAreaApprover_(u.role) || u.role === 'admin' || u.role === 'finance') && nmReach_(u) && u.id !== batch.uploadedBy;
   }).forEach(function (u) { nmBatchMail_(u, 'batch_pending', batch, { open: 'deputy_batch' }); });
 }
 
@@ -2085,7 +2085,7 @@ function actionConfirmHandoff_(req, user) {
 // large amount just moved through their cluster, not just admin/finance.
 function escalateLargeAmount_(handoff, skip) {
   var recipients = {};
-  function add(u) { if (u && u.email) recipients[u.id] = u; }
+  function add(u) { if (nmReach_(u)) recipients[u.id] = u; }
 
   if (handoff.clusterId) {
     var cluster = getById_(SHEETS.CLUSTERS, handoff.clusterId);
@@ -2093,7 +2093,7 @@ function escalateLargeAmount_(handoff, skip) {
   }
   add(getById_(SHEETS.USERS, collectorForHandoff_(handoff)));
   readSheet(SHEETS.USERS)
-    .filter(function (u) { return (u.role === 'admin' || u.role === 'finance') && u.email; })
+    .filter(function (u) { return (u.role === 'admin' || u.role === 'finance') && nmReach_(u); })
     .forEach(add);
 
   var limit = handoff.secondApprovalThresholdAtTime || secondApprovalThreshold_();
@@ -2237,7 +2237,7 @@ function actionDeputyReturnHandoff_(req, user) {
 }
 function notifyDeputyPendingHandoff_(h) {
   readSheet(SHEETS.USERS).filter(function (u) {
-    return u.active !== false && u.email && (isAreaApprover_(u.role) || u.role === 'admin') && u.id !== h.fromUserId && u.id !== h.toUserId;
+    return nmReach_(u) && (isAreaApprover_(u.role) || u.role === 'admin') && u.id !== h.fromUserId && u.id !== h.toUserId;
   }).forEach(function (u) { nmHandoffMail_(u, h.resubmitOf ? 'deputy_validate_rev' : 'deputy_validate', h, { open: 'deputy_validate' }); });
 }
 
@@ -2868,7 +2868,7 @@ function notifyPending_(handoff) {
 
 function notifyDispute_(handoff) {
   var sent = {};
-  readSheet(SHEETS.USERS).filter(function (u) { return (u.role === 'admin' || u.role === 'finance') && u.active !== false && u.email; }).forEach(function (a) {
+  readSheet(SHEETS.USERS).filter(function (u) { return (u.role === 'admin' || u.role === 'finance') && nmReach_(u); }).forEach(function (a) {
     if (a.id === handoff.fromUserId || a.id === handoff.toUserId) return;
     sent[a.id] = 1;
     nmHandoffMail_(a, 'disputed', handoff, { by: handoff.disputedBy, open: 'dispute_open' });
@@ -2886,7 +2886,7 @@ function notifyDispute_(handoff) {
 // this was.
 function escalateShortfall_(handoff, skip) {
   var recipients = {};
-  function add(u) { if (u && u.email) recipients[u.id] = u; }
+  function add(u) { if (nmReach_(u)) recipients[u.id] = u; }
 
   var clusterId = clusterIdForHandoff_(handoff);
   if (clusterId) {
@@ -2895,7 +2895,7 @@ function escalateShortfall_(handoff, skip) {
   }
   add(getById_(SHEETS.USERS, collectorForHandoff_(handoff)));
   readSheet(SHEETS.USERS)
-    .filter(function (u) { return (u.role === 'admin' || u.role === 'finance') && u.email; })
+    .filter(function (u) { return (u.role === 'admin' || u.role === 'finance') && nmReach_(u); })
     .forEach(add);
 
   Object.keys(recipients).forEach(function (id) { if (!(skip && skip[id])) nmHandoffMail_(recipients[id], Number(handoff.shortfall) < 0 ? 'overage' : 'shortfall', handoff); });
@@ -2908,7 +2908,7 @@ function escalateShortfall_(handoff, skip) {
 // best-effort email, never blocks anything.
 function escalateStaleHandoff_(handoff, hoursOld) {
   var recipients = {};
-  function add(u) { if (u && u.email) recipients[u.id] = u; }
+  function add(u) { if (nmReach_(u)) recipients[u.id] = u; }
   add(getById_(SHEETS.USERS, handoff.toUserId));
   var clusterId = clusterIdForHandoff_(handoff);
   if (clusterId) {
@@ -2917,7 +2917,7 @@ function escalateStaleHandoff_(handoff, hoursOld) {
   }
   add(getById_(SHEETS.USERS, collectorForHandoff_(handoff)));
   readSheet(SHEETS.USERS)
-    .filter(function (u) { return (u.role === 'admin' || u.role === 'finance') && u.email; })
+    .filter(function (u) { return (u.role === 'admin' || u.role === 'finance') && nmReach_(u); })
     .forEach(add);
 
   Object.keys(recipients).forEach(function (id) { nmHandoffMail_(recipients[id], 'stale', handoff, { hours: hoursOld }); });
@@ -2933,7 +2933,7 @@ function escalateStaleHandoff_(handoff, hoursOld) {
 // move further.
 function escalateHeldTooLong_(handoff, hoursHeld) {
   var recipients = {};
-  function add(u) { if (u && u.email) recipients[u.id] = u; }
+  function add(u) { if (nmReach_(u)) recipients[u.id] = u; }
   add(getById_(SHEETS.USERS, handoff.toUserId));
   var clusterId = clusterIdForHandoff_(handoff);
   if (clusterId) {
@@ -2942,7 +2942,7 @@ function escalateHeldTooLong_(handoff, hoursHeld) {
   }
   add(getById_(SHEETS.USERS, collectorForHandoff_(handoff)));
   readSheet(SHEETS.USERS)
-    .filter(function (u) { return (u.role === 'admin' || u.role === 'finance') && u.email; })
+    .filter(function (u) { return (u.role === 'admin' || u.role === 'finance') && nmReach_(u); })
     .forEach(add);
 
   var holder = getById_(SHEETS.USERS, handoff.toUserId);

@@ -225,7 +225,7 @@ function nmRiskMail_(u, item, reporter) { try { nmRiskMailIn_(u, item, reporter)
 // statement and transactions: those are what the app itself does not show them.
 var NM_FULL_ROLES_ = ['admin', 'finance', 'accountant', 'operations_manager', 'deputy_operations_manager'];
 function nmHandoffMailIn_(u, ev, h, x) {
-  if (!u || !u.email || !h || u.active === false) return;
+  if (!h || !nmReach_(u)) return;
   x = x || {};
   var lang = userLang_(u), c = NM_[lang] || NM_.en, E = c.ev[ev]; if (!E) return;
   var p = nmPlace_(h), declared = h.originalAmount != null ? Number(h.originalAmount) : Number(h.amount);
@@ -267,7 +267,7 @@ function nmHandoffMailIn_(u, ev, h, x) {
 }
 
 function nmBatchMailIn_(u, ev, batch, x) {
-  if (!u || !u.email || !batch || u.active === false) return;
+  if (!batch || !nmReach_(u)) return;
   x = x || {};
   var lang = userLang_(u), c = NM_[lang] || NM_.en, E = c.ev[ev]; if (!E) return;
   var cl = batch.clusterId ? getById_(SHEETS.CLUSTERS, batch.clusterId) : null;
@@ -291,7 +291,7 @@ function nmBatchMailIn_(u, ev, batch, x) {
 }
 
 function nmRiskMailIn_(u, item, reporter) {
-  if (!u || !u.email || u.active === false) return;
+  if (!nmReach_(u)) return;
   var lang = userLang_(u), c = NM_[lang] || NM_.en, E = c.ev.risk;
   var vars = { title: item.title || '', by: reporter ? reporter.name || '' : '' };
   nmSend_(u, c, lang, {
@@ -305,7 +305,7 @@ function nmRiskMailIn_(u, item, reporter) {
 // once per branch and item a day (stockShortAfterSave_).
 function nmStockShortMail_(u, g, it, by) { try { nmStockShortMailIn_(u, g, it, by); } catch (e) { console.error('mail stock_short: ' + e); } }
 function nmStockShortMailIn_(u, g, it, by) {
-  if (!u || !u.email || u.active === false || !g || !g.lines || !g.lines.length) return;
+  if (!nmReach_(u) || !g || !g.lines || !g.lines.length) return;
   var lang = userLang_(u), c = NM_[lang] || NM_.en, E = c.ev.stock_short;
   var f = g.lines[0].stockShort, pl = nmPlace_({ locationId: g.locationId });
   var q = function (n) { return String(Math.round(Number(n || 0) * 1000) / 1000); };
@@ -319,8 +319,12 @@ function nmStockShortMailIn_(u, g, it, by) {
 }
 
 // Builds and sends: the HTML and its plain-text twin.
+// The same words go out as a push notification to the person's devices (Push.gs, 2026-10-26):
+// the subject as its title, the headline as its body, the same ?open= link. Someone without
+// email (a driver who signs in by iqama) gets the push alone.
 function nmSend_(u, c, lang, o) {
-  try { sendMail_(u.email, o.subject, nmText_(c, o), nmHtml_(c, lang, o)); } catch (e) { /* email is best-effort */ }
+  if (u.email) { try { sendMail_(u.email, o.subject, nmText_(c, o), nmHtml_(c, lang, o)); } catch (e) { /* email is best-effort */ } }
+  try { pushTo_(u.id, { title: o.subject, body: o.head, open: o.link, lang: lang, dir: c.dir }); } catch (e) { /* so is push */ }
 }
 
 function nmText_(c, o) {

@@ -73,7 +73,9 @@ var SHEETS = {
   RATE_CHANGES: 'rate_changes',
   // customers (Customers.gs): payments by bank transfer, and the sales invoices and credit notes issued from the app
   CUSTOMER_PAYMENTS: 'customer_payments',
-  SALES_INVOICES: 'sales_invoices'
+  SALES_INVOICES: 'sales_invoices',
+  // the devices that receive push notifications, one row per browser or phone (Push.gs, 2026-10-26)
+  PUSH_TOKENS: 'push_tokens'
 };
 
 var IDLE_MS = 2 * 3600 * 1000;   // was 12h; the screens sign out after 10 idle minutes (security review 2026-10-04)
@@ -505,9 +507,32 @@ function sendMail_(to, subject, body, html) {
       }
     }
   }
-  if (html) MailApp.sendEmail(to, subject, body, { htmlBody: html, name: config_().senderName || 'Best Gas Collections' });
-  else MailApp.sendEmail(to, subject, body);
+  try {
+    if (html) MailApp.sendEmail(to, subject, body, { htmlBody: html, name: config_().senderName || 'Best Gas Collections' });
+    else MailApp.sendEmail(to, subject, body);
+  } catch (eM) { mailNote_(false, eM); throw eM; }
+  mailNote_(true);
   return 'mailapp';
+}
+// Email health (2026-10-27): every caller treats a mail failure as best-effort and swallows it, so a
+// day over Google's sending limit was invisible. The last success and the last 20 failures (time and
+// error text only, no address or content) are kept in a script property for Admin's mail check.
+function mailNote_(ok, err) {
+  try {
+    var p = PropertiesService.getScriptProperties(), now = new Date().toISOString();
+    if (ok) { p.setProperty('MAIL_LAST_OK', now); return; }
+    var list = []; try { list = JSON.parse(p.getProperty('MAIL_FAILS') || '[]'); } catch (e) { list = []; }
+    list.unshift({ at: now, err: String(err && err.message || err).slice(0, 200) });
+    p.setProperty('MAIL_FAILS', JSON.stringify(list.slice(0, 20)));
+  } catch (e) { /* the note never breaks a send */ }
+}
+function actionMailHealth_(req, user) {
+  requireManager_(user);
+  var p = PropertiesService.getScriptProperties(), quota = null, fails = [];
+  try { quota = MailApp.getRemainingDailyQuota(); } catch (e) { quota = null; }
+  try { fails = JSON.parse(p.getProperty('MAIL_FAILS') || '[]'); } catch (e) { fails = []; }
+  return { ok: true, quota: quota, sender: (typeof graphMailConfig_ === 'function' && graphMailConfig_()) ? 'microsoft365' : 'gmail',
+    lastOk: p.getProperty('MAIL_LAST_OK') || null, fails: fails };
 }
 
 // Hours a handoff can sit 'pending' before checkStaleHandoffs_ escalates it.
@@ -721,7 +746,7 @@ function publicUser_(u) {
     active: u.active !== false, language: userLang_(u),
     locationId: u.locationId || null, clusterId: u.clusterId || null,
     mustChangePw: !!u.mustChangePw, iqamaId: u.iqamaId || null, phone: u.phone || null,
-    status: userStatus_(u), lastLoginAt: u.lastLoginAt || null,
+    status: userStatus_(u), lastLoginAt: u.lastLoginAt || null, pushOn: u.pushOn !== false,
     invitedAt: u.invitedAt || null, acceptedAt: u.acceptedAt || null,
     activatedAt: u.activatedAt || null, inviteExpiresAt: u.inviteExpiresAt || null
   };
@@ -804,7 +829,8 @@ var RESP_CACHE_TTL_SEC = 120;
 function dataVersion_() {
   var parts = [];
   for (var k in SHEETS) {
-    if (SHEETS.hasOwnProperty(k)) parts.push(version_(SHEETS[k]));
+    // no cached answer reads the push devices: registering one must not clear every cache (review 2026-10-26)
+    if (SHEETS.hasOwnProperty(k) && k !== 'PUSH_TOKENS') parts.push(version_(SHEETS[k]));
   }
   return parts.join('.');
 }
@@ -884,6 +910,13 @@ function route_(req) {
     bootstrap: function () { var meta = actionMeta_(req, user); return { ok: true, user: publicUser_(user), meta: meta }; },
     setLanguage: function () { return actionSetLanguage_(req, user); },
     changePassword: function () { return actionChangePassword_(req, user); },
+    // push notifications (Push.gs): a person's own devices only
+    registerPushToken: function () { return actionRegisterPushToken_(req, user); },
+    unregisterPushToken: function () { return actionUnregisterPushToken_(req, user); },
+    setPushPref: function () { return actionSetPushPref_(req, user); },
+    sendTestPush: function () { return actionSendTestPush_(req, user); },
+    adminGetPushConfig: function () { return actionAdminGetPushConfig_(req, user); },
+    adminSetPushConfig: function () { return withMeta_(actionAdminSetPushConfig_(req, user), req, user); },
 
     // reference data
     listDashboard: function () { return actionDashboard_(req, user); },
@@ -914,6 +947,7 @@ function route_(req) {
     collectionsData: function () { return actionCollectionsData_(req, user); },
     collectionReports: function () { return actionCollectionReports_(req, user); },
     dataHealthCheck: function () { return actionDataHealthCheck_(req, user); },
+    mailHealth: function () { return actionMailHealth_(req, user); },
     adminSetWhatsApp: function () { return actionAdminSetWhatsApp_(req, user); },
     addInventoryMove: function () { return actionAddInventoryMove_(req, user); },
     recordStockCount: function () { return actionRecordStockCount_(req, user); },
@@ -1035,7 +1069,10 @@ function route_(req) {
     } catch (e) { respKey = null; }
   }
 
+  // push notifications the action asks for are gathered and sent once it has returned (Push.gs)
+  exec_().pushBatch = [];
   var result = handlers[action]();
+  try { pushFlush_(); } catch (e) { /* push is best-effort */ }
   if (respKey && result && result.ok) {
     try {
       var toCache = {};
