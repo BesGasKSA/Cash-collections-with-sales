@@ -28693,6 +28693,74 @@ function pnAskCard_(){
   return card;
 }
 // Admin › Settings › Push notifications: only the service account to paste; the rest is built in
+// Email status (2026-10-27): the app sends from a free Gmail account, about 100 emails in 24 hours.
+// Past that, every email fails quietly; this card shows what is left and what failed.
+var MS_L_ = {
+  en: { ms_title:'Email status', ms_hint:'Emails go out from the app\'s Gmail account, about 100 in any 24 hours. Push notifications do not count against this limit.',
+    ms_left:'Emails left today', ms_of:'of about 100', ms_last:'Last email sent', ms_never:'None recorded yet', ms_sender:'Sending account', ms_gmail:'Gmail', ms_m365:'Microsoft 365',
+    ms_okState:'Sending normally', ms_lowState:'Running low: emails after the limit will not arrive until the window frees up', ms_outState:'Limit reached: emails are not going out now',
+    ms_fails:'Latest failures', ms_noFails:'No failure recorded', ms_refresh:'Refresh' },
+  ar: { ms_title:'حالة البريد الإلكتروني', ms_hint:'تُرسل الرسائل من حساب Gmail الخاص بالنظام، بحد يقارب 100 رسالة في كل 24 ساعة. الإشعارات الفورية لا تُحسب من هذا الحد.',
+    ms_left:'الرسائل المتبقية اليوم', ms_of:'من حوالي 100', ms_last:'آخر رسالة أُرسلت', ms_never:'لم يُسجَّل شيء بعد', ms_sender:'حساب الإرسال', ms_gmail:'Gmail', ms_m365:'Microsoft 365',
+    ms_okState:'الإرسال يعمل بشكل طبيعي', ms_lowState:'الرصيد يقترب من النهاية: الرسائل بعد الحد لن تصل حتى يتجدد الرصيد', ms_outState:'وصل الإرسال إلى الحد: الرسائل لا تُرسل الآن',
+    ms_fails:'آخر حالات الفشل', ms_noFails:'لا توجد حالات فشل مسجلة', ms_refresh:'تحديث' },
+  ur: { ms_title:'ای میل کی حالت', ms_hint:'ای میلز ایپ کے Gmail اکاؤنٹ سے جاتی ہیں، ہر 24 گھنٹوں میں تقریباً 100۔ فوری اطلاعات اس حد میں شامل نہیں۔',
+    ms_left:'آج باقی ای میلز', ms_of:'تقریباً 100 میں سے', ms_last:'آخری بھیجی گئی ای میل', ms_never:'ابھی کچھ درج نہیں', ms_sender:'بھیجنے والا اکاؤنٹ', ms_gmail:'Gmail', ms_m365:'Microsoft 365',
+    ms_okState:'بھیجنا معمول کے مطابق ہے', ms_lowState:'حد قریب ہے: حد کے بعد کی ای میلز وقت کھلنے تک نہیں پہنچیں گی', ms_outState:'حد پوری ہو گئی: ای میلز ابھی نہیں جا رہیں',
+    ms_fails:'حالیہ ناکامیاں', ms_noFails:'کوئی ناکامی درج نہیں', ms_refresh:'تازہ کریں' }
+};
+Object.keys(MS_L_).forEach(function(lang){ Object.keys(MS_L_[lang]).forEach(function(k){ L[lang][k] = MS_L_[lang][k]; }); });
+READ_ACTIONS.mailHealth = 1;
+function mailStatusCard_(){
+  var c = el('<div class="card ms-card"><div class="ms-head"><h2>'+esc(t('ms_title'))+'</h2><button type="button" class="btn secondary ms-refresh">'+esc(t('ms_refresh'))+'</button></div>' +
+    '<p class="muted" style="font-size:12.5px;line-height:1.8;margin:4px 0 12px;">'+esc(t('ms_hint'))+'</p><div class="ms-body"><div class="skeleton" style="height:70px"></div></div></div>');
+  var body = qs('.ms-body', c);
+  function when(iso){ if (!iso) return t('ms_never'); try { return new Date(iso).toLocaleString(state.lang === 'en' ? 'en-GB' : 'ar-SA-u-ca-gregory-nu-latn', { timeZone: 'Asia/Riyadh', dateStyle: 'medium', timeStyle: 'short' }); } catch (e) { return String(iso).slice(0, 16).replace('T', ' '); } }
+  function load(){
+    body.innerHTML = '<div class="skeleton" style="height:70px"></div>';
+    api('mailHealth', {}, { silent: true }).then(function(r){
+      if (!r || !r.ok) { body.innerHTML = '<div class="msg err">'+esc(errMsg_(r))+'</div>'; return; }
+      var q = r.quota == null ? null : Number(r.quota);
+      var tone = q == null ? '' : q <= 0 ? 'out' : q <= 20 ? 'low' : 'ok';
+      var state_ = tone === 'out' ? t('ms_outState') : tone === 'low' ? t('ms_lowState') : t('ms_okState');
+      var fails = (r.fails || []).slice(0, 10);
+      body.innerHTML =
+        '<div class="ms-state ms-'+tone+'">'+esc(state_)+'</div>' +
+        '<div class="ms-grid">' +
+          '<div class="ms-k"><span>'+esc(t('ms_left'))+'</span><b><bdi dir="ltr">'+(q == null ? '—' : esc(String(q)))+'</bdi></b><small>'+esc(t('ms_of'))+'</small></div>' +
+          '<div class="ms-k"><span>'+esc(t('ms_last'))+'</span><b class="ms-sm"><bdi dir="ltr">'+esc(when(r.lastOk))+'</bdi></b></div>' +
+          '<div class="ms-k"><span>'+esc(t('ms_sender'))+'</span><b class="ms-sm">'+esc(t(r.sender === 'microsoft365' ? 'ms_m365' : 'ms_gmail'))+'</b></div>' +
+        '</div>' +
+        '<h3 class="ms-fh">'+esc(t('ms_fails'))+'</h3>' +
+        (fails.length ? '<ul class="ms-fails">' + fails.map(function(f){ return '<li><bdi dir="ltr" class="ms-at">'+esc(when(f.at))+'</bdi><span dir="auto">'+esc(f.err || '')+'</span></li>'; }).join('') + '</ul>'
+          : '<p class="muted ms-none">'+esc(t('ms_noFails'))+'</p>');
+    });
+  }
+  qs('.ms-refresh', c).addEventListener('click', load);
+  load();
+  return c;
+}
+(function(){
+  var css = document.createElement('style');
+  css.textContent =
+    '.card.ms-card .ms-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;}' +
+    '.card.ms-card .ms-head h2{margin:0;}' +
+    '.card.ms-card .ms-state{padding:10px 14px;border-radius:12px;font-weight:700;font-size:13.5px;margin-bottom:12px;background:#EEF3EE;color:#2E7D4F;}' +
+    '.card.ms-card .ms-state.ms-low{background:#FCF3DE;color:#865600;}' +
+    '.card.ms-card .ms-state.ms-out{background:#FBEDEA;color:#9a3b2f;}' +
+    '.card.ms-card .ms-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;}' +
+    '.card.ms-card .ms-k{border:1px solid var(--border);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:2px;}' +
+    '.card.ms-card .ms-k span{font-size:12px;color:var(--muted);}' +
+    '.card.ms-card .ms-k b{font-size:22px;}' +
+    '.card.ms-card .ms-k b.ms-sm{font-size:14px;}' +
+    '.card.ms-card .ms-k small{font-size:11.5px;color:var(--muted);}' +
+    '.card.ms-card .ms-fh{font-size:14px;margin:14px 0 6px;}' +
+    '.card.ms-card .ms-fails{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;}' +
+    '.card.ms-card .ms-fails li{display:flex;gap:10px;flex-wrap:wrap;font-size:12.5px;padding:8px 10px;border-radius:10px;background:#FBEDEA;color:#7a2f26;}' +
+    '.card.ms-card .ms-at{font-weight:700;white-space:nowrap;}' +
+    '.card.ms-card .ms-none{font-size:12.5px;margin:0;}';
+  document.head.appendChild(css);
+})();
 function pushSettingsCard_(){
   var c = el('<div class="card pn-admin"><h2>'+esc(t('pn_settings'))+'</h2><p class="muted pn-hint" style="font-size:12.5px;line-height:1.8;"></p>' +
     '<div class="pn-status"></div>' +
@@ -28787,6 +28855,7 @@ function renderAdminConfig(content){
   content.appendChild(form);
   if (state.user && state.user.role === 'admin') content.appendChild(waSettingsCard_());
   if (state.user && state.user.role === 'admin') content.appendChild(pushSettingsCard_());
+  if (state.user && (state.user.role === 'admin' || state.user.role === 'finance')) content.appendChild(mailStatusCard_());
   // cut-over card waits for its server side (branch cutover)
   if (state.user && (state.user.role === 'admin' || state.user.role === 'finance')) content.appendChild(healthCard_());
   if (window.CUTOVER_READY_ && state.user && (state.user.role === 'admin' || state.user.role === 'finance')) content.appendChild(cutoverCard_());
