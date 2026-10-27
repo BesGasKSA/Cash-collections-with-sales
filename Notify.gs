@@ -546,3 +546,33 @@ function nmHtml_(c, lang, o) {
   out.push(mailClose_({ rtl: rtl, link: o.link, fallback: c.fallback, why: c.why, foot: c.org + ' · ' + c.app + ' · ' + new Date().getFullYear(), width: 600 }));
   return out.join('');
 }
+
+// ---------- A test email to the approvers (2026-10-27) ----------
+// The user: "ensure the mail is delivered to the operations manager and the deputy to approve
+// their pending requests; send them a test mail". Admin only. Sends the same frame every
+// notification uses, in each person's language, to every active user of the chosen roles (by
+// default the two area approvers), and answers who was sent to and what happened, per person.
+var NM_TEST_ = {
+  en: { s: 'Test email: notifications reach you', h: 'Your notifications are working', l: 'This is a test from Best Gas Cash Collection. When a request needs your approval, an email like this one arrives with a button that opens it.', b: 'Open the app' },
+  ar: { s: 'رسالة تجريبية: الإشعارات تصلك', h: 'إشعاراتك تعمل', l: 'هذه رسالة تجريبية من نظام تحصيل النقدية. عندما يحتاج طلب إلى اعتمادك تصلك رسالة مثل هذه مع زر يفتحه مباشرة.', b: 'فتح النظام' },
+  ur: { s: 'آزمائشی ای میل: اطلاعات آپ تک پہنچ رہی ہیں', h: 'آپ کی اطلاعات کام کر رہی ہیں', l: 'یہ بیسٹ گیس کیش کلیکشن کی آزمائشی ای میل ہے۔ جب کسی درخواست کو آپ کی منظوری درکار ہو گی تو اسی طرح کی ای میل ایک بٹن کے ساتھ آئے گی جو اسے کھول دے گا۔', b: 'ایپ کھولیں' }
+};
+function actionAdminSendTestMail_(req, user) {
+  if (user.role !== 'admin') return { ok: false, error: 'forbidden' };
+  var roles = Array.isArray(req.roles) && req.roles.length ? req.roles.filter(function (r) { return typeof r === 'string'; }).slice(0, 10) : AREA_APPROVER_ROLES_.slice();
+  var people = readSheet(SHEETS.USERS).filter(function (u) { return u.active !== false && roles.indexOf(u.role) >= 0; });
+  var out = people.map(function (u) {
+    var lang = userLang_(u), c = NM_[lang] || NM_.en, T = NM_TEST_[lang] || NM_TEST_.en;
+    var r = { name: u.name || '', role: u.role, email: u.email || '', sent: false, pushed: false, error: '' };
+    var o = { subject: T.s, tone: 'good', head: T.h, lead: T.l, name: firstName_(u.name), button: T.b, link: DEFAULT_APP_URL, facts: [], notes: [] };
+    if (u.email) {
+      try { var via = sendMail_(u.email, o.subject, nmText_(c, o), nmHtml_(c, lang, o)); r.sent = via !== 'none'; }
+      catch (e) { r.error = String(e && e.message || e).slice(0, 160); }
+    } else r.error = 'no_email';
+    try { if (pushHasDevice_(u.id)) { pushTo_(u.id, { title: o.subject, body: o.head, open: DEFAULT_APP_URL, lang: lang, dir: c.dir }); r.pushed = true; } } catch (eP) {}
+    return r;
+  });
+  logAudit_('admin_test_mail', user.id, roles.join(',') + ' ' + out.filter(function (x) { return x.sent; }).length + '/' + out.length);
+  var quota = null; try { quota = MailApp.getRemainingDailyQuota(); } catch (eQ) {}
+  return { ok: true, roles: roles, people: out, quota: quota };
+}

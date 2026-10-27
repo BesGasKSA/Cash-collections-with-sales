@@ -948,6 +948,7 @@ function route_(req) {
     collectionReports: function () { return actionCollectionReports_(req, user); },
     dataHealthCheck: function () { return actionDataHealthCheck_(req, user); },
     mailHealth: function () { return actionMailHealth_(req, user); },
+    adminSendTestMail: function () { return actionAdminSendTestMail_(req, user); },
     adminSetWhatsApp: function () { return actionAdminSetWhatsApp_(req, user); },
     addInventoryMove: function () { return actionAddInventoryMove_(req, user); },
     recordStockCount: function () { return actionRecordStockCount_(req, user); },

@@ -3774,7 +3774,7 @@
      The stage behind the logo is the logo's own #4D6D51, flat, so the PNG's square never shows. Embers rise
      slowly from the bottom of the stage (transform and opacity only); everything is still under reduced motion. */
   .pa-ov.wl-ov{align-items:center;justify-content:center;padding:14px;}
-  .wl-card{position:relative;width:min(460px,100%);max-height:min(92vh,760px);display:flex;flex-direction:column;background:#FBFAF6;border-radius:24px;box-shadow:0 30px 70px rgba(18,30,20,.38);overflow:hidden;animation:wlRise .52s cubic-bezier(0,0,.2,1) both;}
+  .wl-card{position:relative;width:min(460px,100%);max-height:min(92vh,760px);display:flex;flex-direction:column;background:#FBFAF6;border-radius:24px;box-shadow:0 30px 70px rgba(18,30,20,.38);overflow:hidden;animation:wlRise .9s cubic-bezier(.16,1,.3,1) both;}
   .wl-card:lang(ar),.wl-card:lang(ur){font-family:'IBM Plex Sans Arabic','Cairo',var(--font-en,inherit),sans-serif;}
   .wl-stage{position:relative;flex:none;background:#4D6D51;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:26px 24px 24px;text-align:center;overflow:hidden;}
   .wl-stage .wl-hi{position:relative;z-index:1;color:#F2EEE4;margin-top:4px;}
@@ -3782,8 +3782,8 @@
   .wl-tag{position:relative;z-index:1;margin:0;max-width:34ch;font-size:17px;line-height:1.75;font-weight:500;color:#F2EEE4;letter-spacing:.005em;text-wrap:balance;}
   .wl-tag:lang(en){font-family:Georgia,'Times New Roman',serif;font-style:italic;font-size:17.5px;line-height:1.55;}
   .wl-q{color:#E9C877;font-weight:700;padding:0 3px;}
-  .wl-bloom{position:absolute;left:50%;top:50%;width:300px;height:300px;margin:-150px 0 0 -150px;border-radius:50%;background:radial-gradient(circle,rgba(242,238,228,.30) 0%,rgba(242,238,228,.10) 38%,rgba(77,109,81,0) 68%);opacity:0;transform:scale(.6);animation:wlBloom 1.2s cubic-bezier(0,0,.2,1) .1s forwards;pointer-events:none;}
-  .wl-logo{position:relative;z-index:1;width:132px;height:auto;display:block;opacity:0;transform:scale(.86);animation:wlLogo .7s cubic-bezier(.34,1.3,.64,1) .18s forwards;}
+  .wl-bloom{position:absolute;left:50%;top:50%;width:300px;height:300px;margin:-150px 0 0 -150px;border-radius:50%;background:radial-gradient(circle,rgba(242,238,228,.30) 0%,rgba(242,238,228,.10) 38%,rgba(77,109,81,0) 68%);opacity:0;transform:scale(.6);animation:wlBloom 1.8s cubic-bezier(0,0,.2,1) .3s forwards, wlBreathe 4s ease-in-out 2.1s infinite;pointer-events:none;}
+  .wl-logo{position:relative;z-index:1;width:132px;height:auto;display:block;opacity:0;transform:scale(.86);animation:wlLogo 1.1s cubic-bezier(.34,1.3,.64,1) .5s forwards, wlGlow 2.6s ease-in-out 1.6s 2;}
   .wl-emb{position:absolute;inset:0;pointer-events:none;}
   .wl-emb i{position:absolute;bottom:-8px;left:var(--x);width:var(--s);height:var(--s);border-radius:50%;background:#F4D58A;box-shadow:0 0 6px 1px rgba(244,213,138,.55);opacity:0;animation:wlEmber var(--d) linear var(--w) infinite;}
   .wl-body{padding:20px 22px 6px;overflow:auto;display:flex;flex-direction:column;gap:12px;}
@@ -3808,15 +3808,25 @@
   .wl-go{display:flex;align-items:center;justify-content:center;width:100%;min-height:52px;border:0;border-radius:14px;background:#4D6D51;color:#fff;font:inherit;font-size:16px;font-weight:800;cursor:pointer;box-shadow:0 10px 22px rgba(77,109,81,.32);transition:background-color .2s cubic-bezier(.2,0,0,1),transform .1s cubic-bezier(.2,0,0,1);}
   .wl-go:hover{background:#3B5540;} .wl-go:active{transform:scale(.98);}
   .wl-go:focus-visible,.wl-card button.pa-go:focus-visible{outline:3px solid #E0B54A;outline-offset:2px;}
-  .wl-in{opacity:0;animation:wlUp .5s cubic-bezier(0,0,.2,1) forwards;animation-delay:calc(.42s + var(--i,0) * 110ms);}
+  .wl-in{opacity:0;animation:wlUp .9s cubic-bezier(.16,1,.3,1) forwards;animation-delay:var(--t,calc(.42s + var(--i,0) * 110ms));}
+  .wl-shine{background:linear-gradient(100deg,#F2EEE4 0%,#F2EEE4 40%,#FFF6D8 50%,#F2EEE4 60%,#F2EEE4 100%);background-size:250% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:wlUp .9s cubic-bezier(.16,1,.3,1) forwards,wlSweep 2.2s ease-in-out 3.2s 1;animation-delay:var(--t),3.2s;}
+  .wl-shine .wl-q{-webkit-text-fill-color:#E9C877;}
+  .wl-team{margin:0;position:relative;padding:14px 16px 12px;border-radius:16px;background:linear-gradient(180deg,#F3F7F1,#EAF1E8);border:1px solid #DCE6D8;}
+  .wl-team::before{content:'\201C';position:absolute;inset-inline-start:10px;top:-6px;font:700 46px/1 Georgia,serif;color:#4D6D51;opacity:.25;}
+  .wl-team-h{font-size:11.5px;font-weight:800;color:#4D6D51;margin:0 0 4px;}
+  .wl-team .wl-line{margin:0;font-size:15.5px;line-height:1.7;font-weight:600;color:#23372A;}
+  .wl-src{display:block;margin-top:6px;font-size:12px;font-style:normal;font-weight:700;color:#6B7468;}
+  @keyframes wlSweep{from{background-position:120% 0}to{background-position:-20% 0}}
+  @keyframes wlBreathe{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.08);opacity:.75}}
+  @keyframes wlGlow{0%,100%{filter:drop-shadow(0 0 0 rgba(244,213,138,0))}50%{filter:drop-shadow(0 0 14px rgba(244,213,138,.55))}}
   .pa-ov.wl-ov.out .wl-card{animation:paSink .2s ease both;}
   @keyframes wlRise{from{opacity:0;transform:translateY(18px) scale(.97)}to{opacity:1;transform:none}}
   @keyframes wlBloom{to{opacity:1;transform:scale(1)}}
   @keyframes wlLogo{to{opacity:1;transform:none}}
-  @keyframes wlUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  @keyframes wlUp{from{opacity:0;transform:translateY(14px);filter:blur(4px)}to{opacity:1;transform:none;filter:none}}
   @keyframes wlEmber{0%{opacity:0;transform:translate(0,0)}15%{opacity:.85}70%{opacity:.5}100%{opacity:0;transform:translate(var(--dx),-270px)}}
   @media (max-width:430px){ .wl-stage{padding:20px 16px 18px;gap:8px;} .wl-logo{width:108px;} .wl-tag{font-size:15.5px;} .wl-body{padding:16px 16px 4px;} .wl-foot{padding:12px 16px 16px;} .wl-hi{font-size:21px;} }
-  @media (prefers-reduced-motion:reduce){ .wl-card,.wl-bloom,.wl-logo,.wl-in{animation:none!important;opacity:1!important;transform:none!important;} .wl-emb{display:none;} }
+  @media (prefers-reduced-motion:reduce){ .wl-card,.wl-bloom,.wl-logo,.wl-in,.wl-shine{animation:none!important;opacity:1!important;transform:none!important;filter:none!important;} .wl-shine{color:#F2EEE4!important;background:none!important;} .wl-emb{display:none;} }
   /* ---------- smart dashboards on every screen (2026-10-26) ----------
      One header card: KPI cards (figure, change against the previous period, sparkline), two charts whose
      bars open the screen's drawer, and the smart insights. Motion: cards rise, figures count up, bars grow,
@@ -5224,7 +5234,7 @@ var ICON_B64 = 'iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAYAAAA9zQYyAAAcG0lEQVR42u2dd1cU
 // Stamped by tools/stamp-build.js at publish time so the running app can
 // say which build it is — a cached page is the usual reason a shipped change
 // seems missing.
-var BUILD_ID = '2026-10-27 10:02 · f116c85';
+var BUILD_ID = '2026-10-27 10:21 · fd0b4af';
 var LOGO_SRC = 'data:image/png;base64,' + LOGO_B64;
 var ICON_SRC = LOGO_SRC; // same asset — see the comment above LOGO_B64
 // The sign-in mark (2026-09-30): the logo's round emblem as a coin with a
@@ -9085,6 +9095,16 @@ var WL_N_ = 12;
   };
   Object.keys(add).forEach(function(lang){ Object.keys(add[lang]).forEach(function(k){ L[lang][k] = add[lang][k]; }); });
 })();
+// teamwork, always (2026-10-27): the line under the brand is a teamwork quote, 12 per language,
+// with its source where one is reliable (none for the company's own lines)
+(function(){
+  var TQ = {
+    en: { wl_team:'Teamwork', wl_l0:'Alone we can do so little; together we can do so much.', wl_a0:'Helen Keller', wl_l1:'If you want to go fast, go alone. If you want to go far, go together.', wl_a1:'African proverb', wl_l2:'Many hands make light work.', wl_a2:'Proverb', wl_l3:'None of us is as smart as all of us.', wl_a3:'Ken Blanchard', wl_l4:'Talent wins games, but teamwork and intelligence win championships.', wl_a4:'Michael Jordan', wl_l5:'In unity there is strength.', wl_a5:'Proverb', wl_l6:'The strength of the team is each individual member. The strength of each member is the team.', wl_a6:'Phil Jackson', wl_l7:'One hand cannot clap.', wl_a7:'Arabic proverb', wl_l8:'Great things in business are never done by one person. They are done by a team of people.', wl_a8:'Steve Jobs', wl_l9:'Teamwork divides the task and multiplies the success.', wl_a9:'Saying', wl_l10:'Every branch, every car, every handover: together we are Best Gas.', wl_a10:'', wl_l11:'When one of us is short, the team carries the gap. That is how we win together.', wl_a11:'' },
+    ar: { wl_team:'روح الفريق', wl_l0:'وحدنا نستطيع القليل، ومعًا نستطيع الكثير.', wl_a0:'هيلين كيلر', wl_l1:'إن أردت أن تسير بسرعة فامضِ وحدك، وإن أردت أن تصل بعيدًا فامضِ مع الآخرين.', wl_a1:'مثل أفريقي', wl_l2:'كثرة الأيدي تخفّف العمل.', wl_a2:'مثل', wl_l3:'لا أحد منا أذكى منا جميعًا.', wl_a3:'كين بلانشارد', wl_l4:'الموهبة تكسب المباريات، أما العمل الجماعي والذكاء فيكسبان البطولات.', wl_a4:'مايكل جوردن', wl_l5:'في الاتحاد قوة.', wl_a5:'مثل', wl_l6:'قوة الفريق في كل فرد فيه، وقوة كل فرد في فريقه.', wl_a6:'فيل جاكسون', wl_l7:'يدٌ واحدة لا تصفّق.', wl_a7:'مثل عربي', wl_l8:'الأعمال العظيمة لا يصنعها شخص واحد، بل يصنعها فريق.', wl_a8:'ستيف جوبز', wl_l9:'العمل الجماعي يقسّم المهمة ويضاعف النجاح.', wl_a9:'قول مأثور', wl_l10:'كل فرع وكل سيارة وكل تسليم: معًا نحن الناقل الأفضل للغاز.', wl_a10:'', wl_l11:'إذا تعثّر أحدنا حمله الفريق، وهكذا ننجح معًا.', wl_a11:'' },
+    ur: { wl_team:'ٹیم ورک', wl_l0:'اکیلے ہم بہت کم کر سکتے ہیں، مل کر بہت کچھ۔', wl_a0:'ہیلن کیلر', wl_l1:'تیز چلنا ہو تو اکیلے چلو، دور جانا ہو تو مل کر چلو۔', wl_a1:'افریقی کہاوت', wl_l2:'زیادہ ہاتھ کام کو ہلکا کر دیتے ہیں۔', wl_a2:'کہاوت', wl_l3:'ہم میں سے کوئی بھی ہم سب سے زیادہ سمجھدار نہیں۔', wl_a3:'کین بلانچرڈ', wl_l4:'ہنر میچ جتاتا ہے، مگر ٹیم ورک اور سمجھداری چیمپئن شپ جتاتے ہیں۔', wl_a4:'مائیکل جورڈن', wl_l5:'اتحاد میں طاقت ہے۔', wl_a5:'کہاوت', wl_l6:'ٹیم کی طاقت اس کا ہر فرد ہے، اور ہر فرد کی طاقت اس کی ٹیم ہے۔', wl_a6:'فل جیکسن', wl_l7:'ایک ہاتھ سے تالی نہیں بجتی۔', wl_a7:'کہاوت', wl_l8:'کاروبار میں بڑے کام کبھی ایک شخص نہیں کرتا، انہیں ایک ٹیم کرتی ہے۔', wl_a8:'اسٹیو جابز', wl_l9:'ٹیم ورک کام کو بانٹتا اور کامیابی کو بڑھاتا ہے۔', wl_a9:'قول', wl_l10:'ہر برانچ، ہر گاڑی، ہر حوالگی: مل کر ہم بیسٹ گیس ہیں۔', wl_a10:'', wl_l11:'جب ہم میں سے کوئی پیچھے رہ جائے تو ٹیم اسے سنبھال لیتی ہے، یوں ہم مل کر جیتتے ہیں۔', wl_a11:'' }
+  };
+  Object.keys(TQ).forEach(function(lang){ Object.keys(TQ[lang]).forEach(function(k){ L[lang][k] = TQ[lang][k]; }); });
+})();
 // the hour in Riyadh, whatever the device's own clock zone
 function riyadhHour_(now){
   try { return Number(new Intl.DateTimeFormat('en-GB', { hour: '2-digit', hour12: false, timeZone: 'Asia/Riyadh' }).format(now || new Date())) % 24; }
@@ -9118,15 +9138,16 @@ function wlOpen_(){
     '<div class="pa-bg"></div>' +
     '<div class="wl-card" lang="' + esc(state.lang) + '">' +
       '<div class="wl-stage"><span class="wl-bloom" aria-hidden="true"></span><span class="wl-emb" aria-hidden="true">' + emb + '</span><img class="wl-logo" src="' + LOGO_SRC + '" alt="">' +
-        '<h2 class="wl-hi wl-in" id="wlTitle" style="--i:0">' + esc(greet) + '</h2>' +
+        '<h2 class="wl-hi wl-in" id="wlTitle" style="--t:1.5s">' + esc(greet) + '</h2>' +
         // the company's brand line, fixed, in the language the person signed in with (2026-10-26)
-        '<p class="wl-tag wl-in" style="--i:1"><span class="wl-q" aria-hidden="true">' + (state.lang === 'en' ? '“' : '«') + '</span>' + esc(t('wl_tagline')) + '<span class="wl-q" aria-hidden="true">' + (state.lang === 'en' ? '”' : '»') + '</span></p></div>' +
+        '<p class="wl-tag wl-in wl-shine" style="--t:2.4s"><span class="wl-q" aria-hidden="true">' + (state.lang === 'en' ? '“' : '«') + '</span>' + esc(t('wl_tagline')) + '<span class="wl-q" aria-hidden="true">' + (state.lang === 'en' ? '”' : '»') + '</span></p></div>' +
       '<div class="wl-body">' +
-        '<p class="wl-line wl-in" id="wlLine" style="--i:2">' + esc(t(wlLineKey_(signIns))) + '</p>' +
-        '<div class="wl-date wl-in" style="--i:3"><span>' + esc(D.gregorian) + '</span>' + (D.hijri ? '<span>' + esc(D.hijri) + '</span>' : '') + '</div>' +
-        '<section class="wl-today wl-in" style="--i:4" aria-labelledby="wlToday"></section>' +
+        (function(){ var lk = wlLineKey_(signIns), src = t(lk.replace('wl_l', 'wl_a')); return '<figure class="wl-team wl-in" style="--t:3.6s"><figcaption class="wl-team-h">' + esc(t('wl_team')) + '</figcaption>' +
+          '<blockquote class="wl-line" id="wlLine">' + esc(t(lk)) + '</blockquote>' + (src && src !== lk.replace('wl_l', 'wl_a') ? '<cite class="wl-src">' + esc(src) + '</cite>' : '') + '</figure>'; })() +
+        '<div class="wl-date wl-in" style="--t:4.6s"><span>' + esc(D.gregorian) + '</span>' + (D.hijri ? '<span>' + esc(D.hijri) + '</span>' : '') + '</div>' +
+        '<section class="wl-today wl-in" style="--t:5.4s" aria-labelledby="wlToday"></section>' +
       '</div>' +
-      '<div class="wl-foot wl-in" style="--i:5"><button type="button" class="wl-go">' + esc(t('wl_start')) + '</button></div>' +
+      '<div class="wl-foot wl-in" style="--t:6.3s"><button type="button" class="wl-go">' + esc(t('wl_start')) + '</button></div>' +
     '</div></div>');
   var box = qs('.wl-today', ov);
   if (n) {
