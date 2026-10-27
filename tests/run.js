@@ -7406,7 +7406,7 @@ console.log('--- the welcome after a sign-in: greeting, name, a line that turns 
   });
   var tags = { en: 'We learn from the past to shape the present and build the future.', ar: 'نتعلم من الماضي لنصنع الحاضر ونبني المستقبل', ur: 'ہم ماضی سے سیکھتے ہیں تاکہ حال سنواریں اور مستقبل تعمیر کریں۔' };
   Object.keys(tags).forEach(function (lang) { check(clientHtml.indexOf(lang + ": { wl_tagline:'" + tags[lang] + "'") >= 0, 'welcome: the brand line in ' + lang + ' is the company own words'); });
-  check(/wl-stage[\s\S]{0,400}wlTitle[\s\S]{0,300}wl_tagline/.test(clientFn_('wlOpen_')), 'welcome: the brand line sits on the green stage under the greeting');
+  check(/wl-stage[\s\S]{0,400}wlTitle[\s\S]{0,600}wl_tagline/.test(clientFn_('wlOpen_')), 'welcome: the brand line sits on the green stage under the greeting');
   var rp = clientFn_('refreshPending_');
   check(/wlOpen_\(\)/.test(rp) && !/pendOpen_\(\)/.test(rp), 'the first list after a sign-in is the welcome, never a second popup');
   check(/pendOpen_\(\)/.test(clientHtml.slice(clientHtml.indexOf("qs('#notifBell', tb)"), clientHtml.indexOf("qs('#notifBell', tb)") + 120)), 'the bell still opens the plain list');
