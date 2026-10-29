@@ -17,6 +17,8 @@ function close(a, b, label) {
 }
 
 var ctx = harness.buildContext();
+// archiving is off in the live system (2026-10-29); the older sections still exercise its logic here
+ctx.ARCHIVE_OFF_ = false;
 var SHEETS = ctx.SHEETS;
 
 // mirrors doPost's own try/catch (route_ itself throws on auth/permission
@@ -7605,6 +7607,63 @@ var bmT = { full: 0, empty: 0 };
   var o2 = call({ action: 'addInventoryMove', token: adminTok, locationId: loc2.id, stockItemId: it.id, state: 'full', kind: 'opening', qty: 40, date: '2026-10-01' });
   var r2 = call({ action: 'addInventoryMove', token: adminTok, locationId: loc2.id, stockItemId: it.id, state: 'full', kind: 'purchase', qty: 10, supplier: 'Plant', invoiceNo: 'X-2', date: '2026-10-02' });
   check(o2.ok && !r2.ok && r2.error === 'refill_over_empty', 'with no empties counted, gas cannot be bought as a refill: the purchase says it is new cylinders or the empties are counted first (got ' + (r2.error || 'ok') + ')');
+})();
+
+console.log('--- nothing submitted is taken out again; the old archives are backed up and deleted for good (2026-10-29) ---');
+(function () {
+  ctx.ARCHIVE_OFF_ = true;
+  check(call({ action: 'archiveRange', token: adminTok, dateFrom: '2026-09-01', dateTo: '2026-09-02', confirm: 'ARCHIVE', reason: 'x' }).error === 'archiving_disabled', 'archiving a date range is refused, even for the admin');
+  check(call({ action: 'archiveRangePreview', token: adminTok, dateFrom: '2026-09-01', dateTo: '2026-09-02' }).error === 'archiving_disabled', 'its preview too');
+  check(call({ action: 'adminArchiveTransactions', token: adminTok, confirm: 'ARCHIVE', includeOpen: true }).error === 'archiving_disabled', 'starting a fresh test round is refused');
+  // an archive as the live sheet holds it: a run with its copies, and an old round's tab
+  ctx.resetExecMemo_();
+  var run = ctx.writeRow(SHEETS.ARCHIVE_RUNS, { dateFrom: '2026-08-01', dateTo: '2026-08-02', status: 'archived', by: 'x', at: '2026-08-03T00:00:00Z', counts: {} });
+  ctx.writeRow(SHEETS.ARCHIVED_ROWS, { runId: run.id, sheet: SHEETS.ENTRIES, rowId: 'e-old', raw: ['e-old', '{}', ''] });
+  var tab = ctx.sheet_('daily_entries_archive_2026-08-03_101010');
+  tab.appendRow(['e-tab', JSON.stringify({ id: 'e-tab', cashSales: 5 }), '2026-08-03T00:00:00Z']);
+  var liveBefore = ctx.readSheet(SHEETS.ENTRIES).length;
+  var list = call({ action: 'archiveBackupList', token: adminTok });
+  check(list.ok && list.tabs.some(function (t) { return t.name === 'daily_entries_archive_2026-08-03_101010' && t.rows === 1; }) && list.archivedRows >= 1, 'the backup lists every archived copy and old tab (' + (list.error || 'ok') + ')');
+  var part = call({ action: 'archiveBackupPart', token: adminTok, tab: 'daily_entries_archive_2026-08-03_101010' });
+  check(part.ok && part.rows.length === 1 && part.rows[0].id === 'e-tab' && part.rows[0].data.cashSales === 5, 'a tab comes back row by row, its data readable');
+  check(call({ action: 'archiveBackupPart', token: adminTok, tab: SHEETS.ENTRIES }).error === 'not_found', 'only archive tabs can be read this way, never a live sheet');
+  check(call({ action: 'archivePurge', token: aliTok, confirm: 'DELETE', backupTaken: true }).error === 'forbidden', 'only the admin deletes the archive');
+  check(call({ action: 'archivePurge', token: adminTok, confirm: 'DELETE' }).error === 'backup_required', 'not before the backup');
+  check(call({ action: 'archivePurge', token: adminTok, backupTaken: true }).error === 'confirm_required', 'nor without the word DELETE');
+  var pg = call({ action: 'archivePurge', token: adminTok, confirm: 'DELETE', backupTaken: true });
+  ctx.resetExecMemo_();
+  check(pg.ok && pg.deletedTabs >= 1 && pg.deletedCopies >= 1, 'the archive is deleted (' + (pg.error || JSON.stringify(pg)) + ')');
+  var after = call({ action: 'archiveBackupList', token: adminTok });
+  check(after.ok && after.tabs.length === 0 && after.archivedRows === 0, 'nothing archived is left');
+  check(ctx.readSheet(SHEETS.ENTRIES).length === liveBefore, 'and no live transaction was touched');
+  var runAfter = ctx.getById_(SHEETS.ARCHIVE_RUNS, run.id);
+  check(runAfter && runAfter.status === 'purged' && runAfter.purgedBy, 'the run says it was deleted, by whom');
+  check(call({ action: 'archiveRestore', token: adminTok, id: run.id, confirm: 'RESTORE' }).error === 'archive_purged', 'a deleted run cannot be restored, and says why');
+  check(ctx.readSheet(SHEETS.AUDIT).some(function (a) { return a.action === 'archive_purge'; }), 'the audit trail keeps the deletion');
+})();
+
+console.log('--- profitability: every cost line is named on the statement (2026-10-29) ---');
+(function () {
+  var rent = ctx.readSheet(SHEETS.COST_TYPES).filter(function (x) { return x.name === 'إيجار المحل'; })[0];
+  var st = ctx.readSheet(SHEETS.STORES).filter(function (s) { return s.active !== false; })[0];
+  var hq = ctx.readSheet(SHEETS.COST_TYPES).filter(function (x) { return x.name === 'إيجار المكتب الرئيسي'; })[0];
+  check(!!rent && !!st && !!hq, 'the seeded rent types and a store are there');
+  if (!rent || !st || !hq) return;
+  var a = pfLine(adminTok, { centreType: 'store', centreId: st.id, typeId: rent.id, amount: 3000, fromMonth: '2027-01', label: 'bm rent' });
+  var b = pfLine(adminTok, { centreType: 'company', centreId: 'company', typeId: hq.id, amount: 6200, fromMonth: '2027-01', label: 'bm hq' });
+  check(a.ok && b.ok, 'a store rent and a head-office rent are saved (' + (a.error || b.error || 'ok') + ')');
+  var r = call({ action: 'getProfitReport', token: adminTok, dateFrom: '2027-01-01', dateTo: '2027-01-31' });
+  var co = (r.nodes || []).filter(function (n) { return n.key === 'company'; })[0] || {};
+  var unitN = (r.nodes || []).filter(function (n) { return n.key === 'store:' + st.id; })[0] || {};
+  var ty = co.types || {};
+  var unitRent = (r.nodes || []).filter(function (n) { return n.level === 'unit'; }).reduce(function (s, n) { return s + ((n.types || {})['fixedPremises|' + rent.id] || 0); }, 0);
+  check(unitRent >= 3000 - 0.01 && Math.abs((ty['fixedPremises|' + rent.id] || 0) - unitRent) < 0.01, 'the company statement carries every store\'s shop rent under premises, by its own type (got ' + ty['fixedPremises|' + rent.id] + ' of ' + unitRent + ')');
+  check(Math.abs((ty['ovhCompany|' + hq.id] || 0) - 6200) < 0.01, 'and the head-office rent under head-office costs (got ' + ty['ovhCompany|' + hq.id] + ')');
+  check(Math.abs(((unitN.types || {})['fixedPremises|' + rent.id] || 0) - 3000) < 0.01, 'the store itself carries its rent');
+  var sumPrem = Object.keys(ty).filter(function (k) { return k.indexOf('fixedPremises|') === 0; }).reduce(function (s, k) { return s + ty[k]; }, 0);
+  check(Math.abs(sumPrem - co.T.fixedPremises) < 0.01, 'the named lines add up to the group line (' + sumPrem + ' vs ' + co.T.fixedPremises + ')');
+  var sumOvh = Object.keys(ty).filter(function (k) { return k.indexOf('ovhCompany|') === 0; }).reduce(function (s, k) { return s + ty[k]; }, 0);
+  check(Math.abs(sumOvh - co.T.ovhCompany) < 0.01, 'and so do the head-office costs');
 })();
 
 console.log('\n' + pass + ' passed, ' + fail + ' failed');

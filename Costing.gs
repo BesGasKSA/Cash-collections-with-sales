@@ -723,6 +723,13 @@ function costFinishT_(T) {
   return T;
 }
 
+// each unit and node also keeps what each cost type came to, under the line it sits on
+// (fixedPremises|<typeId>, ovhCompany|<typeId>, ...), so the statement can name it (2026-10-29)
+function costAddType_(holder, field, typeId, v) {
+  if (!v) return;
+  var m = holder.types || (holder.types = Object.create(null)), k = field + '|' + (typeId || '');
+  m[k] = (m[k] || 0) + v;
+}
 function profitCompute_(from, to, basis, vatIncl) {
   var vatHist = vatHistory_();
   var maps = costMaps_(), productsById = Object.create(null), typeById = Object.create(null), hist = costHistory_(), stkItems = stockItemsById_();
@@ -797,9 +804,9 @@ function profitCompute_(from, to, basis, vatIncl) {
     if (!ser) return;
     if (l.centreType === 'car' || l.centreType === 'store') {
       var u = unit(l.centreType + ':' + l.centreId), g = COST_GROUP_FIELD_[(typeById[l.typeId] || {}).group] || 'fixedOperations';
-      u.touched = true; u.T.fixed += total; u.T[g] += total;
+      u.touched = true; u.T.fixed += total; u.T[g] += total; costAddType_(u, g, l.typeId, total);
       ser.forEach(function (v, i) { u.series.fixed[i] += v; });
-    } else pools.push({ level: l.centreType, id: l.centreId, series: ser, total: total });
+    } else pools.push({ level: l.centreType, id: l.centreId, series: ser, total: total, typeId: l.typeId });
   });
 
   // each pool is shared among the stores and cars under it
@@ -831,6 +838,7 @@ function profitCompute_(from, to, basis, vatIncl) {
       if (!w[i]) return;
       var share = w[i] / sum;
       u.T[field] += pool.total * share;
+      costAddType_(u, field, pool.typeId, pool.total * share);
       pool.series.forEach(function (v, k) { u.series.ovh[k] += v * share; });
     });
   });
@@ -863,12 +871,20 @@ function profitCompute_(from, to, basis, vatIncl) {
     }
     node(k, 'unit', parent, { unitType: u.type, unitId: u.id, locationId: loc ? loc.id : null, clusterId: loc ? (loc.clusterId || null) : null, city: loc ? (loc.city || '') : null });
     chain.push(k);
-    chain.forEach(function (nk) { COST_SUM_FIELDS_.forEach(function (f) { nodes[nk].T[f] += u.T[f]; }); });
+    chain.forEach(function (nk) {
+      COST_SUM_FIELDS_.forEach(function (f) { nodes[nk].T[f] += u.T[f]; });
+      if (u.types) Object.keys(u.types).forEach(function (tk) { costAddType_(nodes[nk], tk.slice(0, tk.indexOf('|')), tk.slice(tk.indexOf('|') + 1), u.types[tk]); });
+    });
     var s = u.series, any = false, ser = {};
     ['gross', 'net', 'other', 'cogs', 'variable', 'fixed', 'ovh'].forEach(function (f) { ser[f] = s[f].map(function (v) { if (v) any = true; return costR4_(v); }); });
     if (any) outUnits.push({ key: k, series: ser });
   });
-  var list = nodeOrder.map(function (k) { costFinishT_(nodes[k].T); return nodes[k]; });
+  var list = nodeOrder.map(function (k) {
+    costFinishT_(nodes[k].T);
+    var ty = nodes[k].types;
+    if (ty) { var o = {}; Object.keys(ty).forEach(function (tk) { var v = costR4_(ty[tk]); if (v) o[tk] = v; }); nodes[k].types = o; }
+    return nodes[k];
+  });
   var company = nodes.company.T;
   return {
     bucket: byMonth ? 'month' : 'day', buckets: buckets, nodes: list, units: outUnits,

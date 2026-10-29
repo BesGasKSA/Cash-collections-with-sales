@@ -1050,7 +1050,10 @@ function route_(req) {
     archiveRangePreview: function () { return actionArchiveRange_(req, user, true); },
     archiveRange: function () { return actionArchiveRange_(req, user, false); },
     archiveRestore: function () { return actionArchiveRestore_(req, user); },
-    listArchiveRuns: function () { return actionListArchiveRuns_(req, user); }
+    listArchiveRuns: function () { return actionListArchiveRuns_(req, user); },
+    archiveBackupList: function () { return actionArchiveBackupList_(req, user); },
+    archiveBackupPart: function () { return actionArchiveBackupPart_(req, user); },
+    archivePurge: function () { return actionArchivePurge_(req, user); }
   };
 
   if (!hasOwn_(handlers, action)) throw new Error('unknown_action');

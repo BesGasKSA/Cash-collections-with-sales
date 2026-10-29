@@ -1466,8 +1466,13 @@ var TRANSACTIONAL_SHEETS_ = [
 // The audit trail is not in the list (security review 2026-10-04): a fresh round
 // must never hide who did what.
 
+// Nothing submitted is ever taken out of the live sheets again (the user, 2026-10-29: "no one
+// at all can delete any transactions after submitted"). Archiving a date range and starting a
+// fresh test round both refuse; a mistake is cancelled, which keeps the row with its reason.
+var ARCHIVE_OFF_ = true;
 function actionAdminArchiveTransactions_(req, user) {
   requireManager_(user);
+  if (ARCHIVE_OFF_) return { ok: false, error: 'archiving_disabled' };
   // A word the caller has to type, so this can never be one stray tap.
   if (String(req.confirm || '') !== 'ARCHIVE') return { ok: false, error: 'confirm_required' };
   if (config_().liveLocked === true) return { ok: false, error: 'live_locked' };
@@ -2106,6 +2111,7 @@ function archRangeOk_(from, to) {
 }
 function archCell_(v) { return v instanceof Date ? v.toISOString() : v; }
 function actionArchiveRange_(req, user, previewOnly) {
+  if (ARCHIVE_OFF_) return { ok: false, error: 'archiving_disabled' };
   if (user.role !== 'admin') return { ok: false, error: 'forbidden' };
   var from = String(req.dateFrom || ''), to = String(req.dateTo || '');
   var bad = archRangeOk_(from, to); if (bad) return { ok: false, error: bad };
@@ -2165,7 +2171,82 @@ function actionArchiveRange_(req, user, previewOnly) {
 }
 function archRunView_(r) {
   return { id: r.id, dateFrom: r.dateFrom, dateTo: r.dateTo, reason: r.reason, by: r.by, at: r.at, status: r.status, counts: r.counts, rows: r.rows,
-    money: r.money, outside: r.outside || [], restoredBy: r.restoredBy || null, restoredAt: r.restoredAt || null, patches: (r.patches || []).length };
+    money: r.money, outside: r.outside || [], restoredBy: r.restoredBy || null, restoredAt: r.restoredAt || null, patches: (r.patches || []).length,
+    purgedBy: r.purgedBy || null, purgedAt: r.purgedAt || null };
+}
+// ---------- Archives deleted for good (2026-10-29) ----------
+// The user: the transactions archived before are not needed any more, delete them
+// permanently. Both kinds go: the date-range runs (their copies in archived_rows, which
+// the Restore button could put back) and the tabs the old "fresh test round" renamed to
+// <sheet>_archive_<stamp>. The screen downloads a backup first (archiveBackupList and
+// archiveBackupPart, read-only), and the delete asks for the word DELETE and for the
+// backup to have been taken. Live sheets, users and master data are never touched. The
+// date-range run headers stay, marked 'purged' (old rounds' own copies of archive_runs go
+// with their tabs);
+// the audit trail keeps one line with everything removed. A run still 'archiving' (cut
+// short) stops it: its copies are the only way back for what it took.
+var ARCH_TAB_RE_ = /_archive_\d{4}-\d{2}-\d{2}_\d{6}(_\d+)?$/;
+var ARCH_PART_MAX_ = 1500;
+function archOldTabs_() {
+  return spreadsheet_().getSheets().filter(function (s) { return ARCH_TAB_RE_.test(String(s.getName())); });
+}
+function archTabRows_(sh) { return Math.max(0, sh.getLastRow() - 1); }
+function actionArchiveBackupList_(req, user) {
+  if (user.role !== 'admin') return { ok: false, error: 'forbidden' };
+  var tabs = archOldTabs_().map(function (s) { return { name: s.getName(), rows: archTabRows_(s) }; });
+  var runs = readSheet(SHEETS.ARCHIVE_RUNS).filter(function (r) { return r.status === 'archived' || r.status === 'archiving'; });
+  return { ok: true, tabs: tabs, runs: runs.map(archRunView_), archivedRows: readSheet(SHEETS.ARCHIVED_ROWS).length };
+}
+// One page of the backup: the archived copies, or one old tab, as {id, at, data} rows.
+function actionArchiveBackupPart_(req, user) {
+  if (user.role !== 'admin') return { ok: false, error: 'forbidden' };
+  var from = Math.max(0, Math.floor(Number(req.offset) || 0)), out = [], total = 0;
+  if (req.tab === '__archived_rows__') {
+    var all = readSheet(SHEETS.ARCHIVED_ROWS);
+    total = all.length;
+    out = all.slice(from, from + ARCH_PART_MAX_).map(function (r) { return { id: r.id, at: r.updatedAt || r.at || '', data: r }; });
+  } else {
+    var sh = archOldTabs_().filter(function (s) { return s.getName() === String(req.tab || ''); })[0];
+    if (!sh) return { ok: false, error: 'not_found' };
+    total = archTabRows_(sh);
+    var n = Math.min(ARCH_PART_MAX_, total - from), w = Math.max(3, sh.getLastColumn ? sh.getLastColumn() : 3);
+    if (n > 0) out = sh.getRange(2 + from, 1, n, w).getValues().map(function (v) {
+      v = v.map(archCell_);
+      var d = null; try { d = JSON.parse(v[1]); } catch (e) { d = null; }
+      // the cells exactly as stored, and the record read from them
+      return { id: String(v[0] == null ? '' : v[0]), at: String(v[2] == null ? '' : v[2]), data: d, cells: v };
+    });
+  }
+  return { ok: true, rows: out, total: total, next: from + out.length < total ? from + out.length : null };
+}
+function actionArchivePurge_(req, user) {
+  if (user.role !== 'admin') return { ok: false, error: 'forbidden' };
+  if (String(req.confirm || '') !== 'DELETE') return { ok: false, error: 'confirm_required' };
+  if (req.backupTaken !== true) return { ok: false, error: 'backup_required' };
+  var lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  try {
+    freshenExec_();
+    var runs = readSheet(SHEETS.ARCHIVE_RUNS);
+    if (runs.some(function (r) { return r.status === 'archiving'; })) return { ok: false, error: 'archive_busy' };
+    var ss = spreadsheet_(), gone = [], copies = 0;
+    archOldTabs_().forEach(function (s) { gone.push(s.getName() + ':' + archTabRows_(s)); ss.deleteSheet(s); });
+    var copyTab = ss.getSheetByName(SHEETS.ARCHIVED_ROWS);
+    if (copyTab) {
+      copies = archTabRows_(copyTab);
+      // the tab goes whole; sheet_() makes it again, empty, the next time an archive is made
+      if (copies) ss.deleteSheet(copyTab);
+      delete exec_().sheets[SHEETS.ARCHIVED_ROWS];
+      bumpVersion_(SHEETS.ARCHIVED_ROWS);
+    }
+    var at = new Date().toISOString(), purged = 0;
+    runs.forEach(function (r) {
+      if (r.status !== 'archived') return;
+      r.status = 'purged'; r.purgedAt = at; r.purgedBy = user.id; writeRow(SHEETS.ARCHIVE_RUNS, r); purged++;
+    });
+    logAudit_('archive_purge', user.id, 'runs ' + purged + ', copies ' + copies + (gone.length ? ', tabs ' + gone.join(', ') : ''));
+    return { ok: true, purgedRuns: purged, deletedCopies: copies, deletedTabs: gone.length };
+  } finally { try { lock.releaseLock(); } catch (e) {} }
 }
 function actionListArchiveRuns_(req, user) {
   if (user.role !== 'admin') return { ok: false, error: 'forbidden' };
@@ -2184,6 +2265,7 @@ function actionArchiveRestore_(req, user) {
     var run = getById_(SHEETS.ARCHIVE_RUNS, req.id);
     if (!run) return { ok: false, error: 'not_found' };
     // a run cut short ('archiving') is restored too: whatever it took comes back
+    if (run.status === 'purged') return { ok: false, error: 'archive_purged' };
     if (run.status !== 'archived' && run.status !== 'archiving') return { ok: false, error: 'already_restored' };
     var copies = readSheet(SHEETS.ARCHIVED_ROWS).filter(function (r) { return r.runId === run.id; });
     var rows = copies.filter(function (r) { return r.kind !== 'patch'; }), patchCopy = Object.create(null);

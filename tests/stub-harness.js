@@ -89,7 +89,9 @@ function buildContext() {
     getActiveSpreadsheet: function () {
       return {
         getSheetByName: function (name) { return sheets[name] || null; },
-        insertSheet: function (name) { var s = makeSheet(name, svcCalls, sheets); sheets[name] = s; return s; }
+        insertSheet: function (name) { var s = makeSheet(name, svcCalls, sheets); sheets[name] = s; return s; },
+        getSheets: function () { return Object.keys(sheets).map(function (k) { return sheets[k]; }); },
+        deleteSheet: function (s) { Object.keys(sheets).forEach(function (k) { if (sheets[k] === s) delete sheets[k]; }); }
       };
     }
   };
