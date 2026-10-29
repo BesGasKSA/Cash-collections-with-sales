@@ -3115,7 +3115,7 @@ function mgMv(pid, st, kind, qty, date, extra) {
 mgMv(mgIron.id, 'full', 'opening', 60, '2026-09-01'); mgMv(mgIron.id, 'empty', 'opening', 25, '2026-09-01');
 mgMv(mgFiber.id, 'full', 'opening', 30, '2026-09-01'); mgMv(mgFiber.id, 'empty', 'opening', 4, '2026-09-01');
 mgMv(mgHose.id, null, 'opening', 40, '2026-09-01');
-mgMv(mgIron.id, 'full', 'purchase', 35, '2026-09-11'); mgMv(mgIron.id, 'full', 'purchase', 20, '2026-09-11', { newCylinders: true });
+mgMv(mgIron.id, 'full', 'purchase', 25, '2026-09-11'); mgMv(mgIron.id, 'full', 'purchase', 20, '2026-09-11', { newCylinders: true });
 var mgVoided = mgMv(mgHose.id, null, 'damage', 3, '2026-09-12');
 check(call({ action: 'voidInventoryMove', token: adminTok, id: mgVoided.move.id, reason: 'counted twice' }).ok, 'an old-shape move voided');
 var mgDay = call({ action: 'importDailyEntries', token: adminTok, rows: [
@@ -7664,6 +7664,50 @@ console.log('--- profitability: every cost line is named on the statement (2026-
   check(Math.abs(sumPrem - co.T.fixedPremises) < 0.01, 'the named lines add up to the group line (' + sumPrem + ' vs ' + co.T.fixedPremises + ')');
   var sumOvh = Object.keys(ty).filter(function (k) { return k.indexOf('ovhCompany|') === 0; }).reduce(function (s, k) { return s + ty[k]; }, 0);
   check(Math.abs(sumOvh - co.T.ovhCompany) < 0.01, 'and so do the head-office costs');
+})();
+
+console.log('--- the stock guard: no movement takes stock below zero, on its day or later (2026-10-29) ---');
+(function () {
+  var loc = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: 'Riyadh', name: 'Guard Branch', clusterId: cluster.entity.id, collectorUserId: musa.id } }).entity;
+  var loc2 = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: 'Riyadh', name: 'Guard Branch 2', clusterId: cluster.entity.id, collectorUserId: musa.id } }).entity;
+  var it = siEnt('stock_item', { name: 'Gd Iron', kind: 'cylinder', gasCost: 11, cylinderCost: 140 });
+  var cu = call({ action: 'adminSaveEntity', token: adminTok, kind: 'customer', data: { name: 'Guard Customer ' + Date.now() } }).entity;
+  function mv(o, at) { var p = { action: 'addInventoryMove', token: adminTok, locationId: (at || loc).id, stockItemId: it.id, supplier: 'Plant', invoiceNo: 'G-' + Math.random().toString(36).slice(2, 7) }; Object.keys(o).forEach(function (k) { p[k] = o[k]; }); return call(p); }
+  function err(r) { return r.ok ? 'ok' : r.error; }
+  check(mv({ state: 'full', kind: 'opening', qty: 10, date: '2026-10-01' }).ok && mv({ state: 'empty', kind: 'opening', qty: 10, date: '2026-10-01' }).ok, 'counted: 10 filled, 10 empty');
+  check(mv({ state: 'full', kind: 'purchase', qty: 10, date: '2026-10-03' }).ok, 'a refill of all 10 empties on the 3rd');
+  var back = mv({ state: 'full', kind: 'purchase', qty: 10, date: '2026-10-02' });
+  check(err(back) === 'refill_over_empty_later' && back.shortBy === 10 && back.date === '2026-10-03', 'a refill backdated to the 2nd fits that day but is refused: the 3rd would be 10 empties short (' + err(back) + ' ' + back.shortBy + ' ' + back.date + ')');
+  check(err(mv({ kind: 'refill_out', qty: 50, date: '2026-10-04' })) === 'stock_over_on_hand', 'sending 50 empties to the plant with none on hand is refused');
+  check(err(mv({ state: 'full', kind: 'damage', qty: 30, reason: 'broken_body', date: '2026-10-04' })) === 'stock_over_on_hand', 'writing off 30 filled when 20 are on hand is refused');
+  check(err(mv({ state: 'full', kind: 'waste', qty: 25, reason: 'gas_leak', date: '2026-10-04' })) === 'stock_over_on_hand', 'and so is a gas loss of 25');
+  check(err(mv({ state: 'full', kind: 'deposit_out', qty: 21, customerId: cu.id, date: '2026-10-04' })) === 'stock_over_on_hand', 'and a deposit of 21 with a customer');
+  var tr = call({ action: 'transferInventory', token: adminTok, fromLocationId: loc.id, toLocationId: loc2.id, date: '2026-10-04', lines: [{ stockItemId: it.id, state: 'full', qty: 40 }] });
+  check(err(tr) === 'stock_over_on_hand', 'a transfer of 40 filled when 20 are on hand is refused');
+  check(mv({ state: 'full', kind: 'damage', qty: 2, reason: 'broken_body', date: '2026-10-04' }).ok, 'what the stock can carry still goes in');
+  // the plant cycle: no gas purchase on top of empties already sent
+  check(mv({ state: 'empty', kind: 'purchase', qty: 5, date: '2026-10-05' }).ok && mv({ kind: 'refill_out', qty: 5, date: '2026-10-05' }).ok, '5 new empties bought and sent to the plant');
+  var dbl = mv({ state: 'full', kind: 'purchase', qty: 5, date: '2026-10-06' });
+  check(err(dbl) === 'use_refill_in' && dbl.atPlant === 5, 'a gas purchase while 5 empties sit at the plant is refused: they come back as received from the plant (' + err(dbl) + ')');
+  check(mv({ kind: 'refill_in', qty: 5, date: '2026-10-06' }).ok, 'and the 5 come back that way');
+  // the branch sheet import is guarded the same way, its own counts included
+  var day = function (moves, ref) { return call({ action: 'importInventoryDay', token: adminTok, locationId: loc2.id, date: '2026-10-07', ref: ref, moves: moves.map(function (m) { m.stockItemId = it.id; return m; }) }); };
+  var bad = day([{ state: 'full', kind: 'opening', qty: 10 }, { state: 'empty', kind: 'opening', qty: 5 }, { state: 'full', kind: 'purchase', qty: 30 }], 'g-1');
+  check(err(bad) === 'stock_over_on_hand' && bad.state === 'empty', 'a sheet day refilling 30 with 5 empties is refused (' + err(bad) + ')');
+  check(err(day([{ state: 'full', kind: 'opening', qty: 10 }, { state: 'empty', kind: 'opening', qty: 5 }, { kind: 'refill_in', qty: 7 }], 'g-2')) === 'stock_over_on_hand', 'and filled back with nothing sent to the plant');
+  check(err(day([{ state: 'full', kind: 'car_load', qty: 99 }], 'g-3')) === 'use_car_move', 'a car load does not come in through the sheet');
+  var good = day([{ state: 'full', kind: 'opening', qty: 10 }, { state: 'empty', kind: 'opening', qty: 5 }, { state: 'full', kind: 'purchase', qty: 5 }], 'g-4');
+  check(good.ok, 'the usual day, counts and a refill of the empties it has, goes in (' + err(good) + ')');
+  // a branch already short (a sale without stock) still records what does not make it worse
+  var p = siEnt('product', { name: 'Gd Full Sale', type: 'goods', unitPrice: 200, stockItemId: it.id, stockEffect: 'sell_full' });
+  var st = call({ action: 'adminSaveEntity', token: adminTok, kind: 'store', data: { locationId: loc2.id, name: 'Guard Store', storeManagerUserId: scUser('Gd Manager', 'store_manager').id } }).entity;
+  call({ action: 'importDailyEntries', token: adminTok, rows: [{ date: '2026-10-08', sourceType: 'store', sourceId: st.id, productId: p.id, qty: 40, unitPrice: 200, cashSales: 8000, submissionId: 'gd-short' }] });
+  check(mv({ state: 'full', kind: 'purchase', qty: 3, newCylinders: true, date: '2026-10-09' }, loc2).ok, 'a branch already short after a sale still takes new cylinders in');
+  check(mv({ state: 'empty', kind: 'purchase', qty: 2, date: '2026-10-09' }, loc2).ok && mv({ state: 'empty', kind: 'damage', qty: 1, reason: 'broken_body', date: '2026-10-09' }, loc2).ok, 'and a write-off its empties can carry');
+  // the plant in a past period: what came back later is still at the plant then
+  var past = call({ action: 'getInventoryReport', token: adminTok, dateFrom: '2026-10-01', dateTo: '2026-10-05', locationId: loc.id });
+  var cs = (past.cylSummary || []).filter(function (c) { return c.stockItemId === it.id; })[0] || {};
+  check(cs.atPlant === 5, 'a report ending on the 5th shows the 5 empties at the plant, though they came back on the 6th (got ' + cs.atPlant + ')');
 })();
 
 console.log('\n' + pass + ' passed, ' + fail + ' failed');

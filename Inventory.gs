@@ -259,7 +259,7 @@ function invPlant_(sc, locId, itemId, uptoDate) {
     var tg = sc.moveTarget(m); if (!tg || tg.item.id !== itemId) return;
     var q = Number(m.qty || 0);
     if (m.kind === 'refill_out') { if (!uptoDate || m.date <= uptoDate) { sent += q; outs.push({ date: m.date, qty: q }); } }
-    else back += q;
+    else if (!uptoDate || m.date <= uptoDate) back += q;
   });
   // first in, first out: the receipts close the oldest dispatches first
   outs.sort(function (a, b) { return String(a.date).localeCompare(String(b.date)); });
@@ -304,6 +304,49 @@ function invRefillError_(c, locId, date, user) {
   if (c.move.qty > have + 0.0005) return { ok: false, error: 'refill_over_empty', emptyOnHand: Math.max(0, Math.round(have * 1000) / 1000), qty: c.move.qty };
   return null;
 }
+// The stock guard (2026-10-29; the stock audits of 2026-10-26 found refills, transfers,
+// write-offs, deposits and backdated moves that took stock below zero unnoticed). The
+// movements are run through the branch's stock card as if saved: if filled, empty, at the
+// plant, with customers (or a unit item's count) would fall below zero on their day or any
+// day after, and lower than it already does without them, they are refused. Sales are never
+// refused: a sale without stock is saved and flagged (2026-10-18). An item never counted at
+// the branch is not tracked yet, so nothing is checked for it.
+var INV_GUARD_ROUND_ = 0.0005;
+function invGuard_(locId, user, rows) {
+  if (!rows || !rows.length) return null;
+  var base = invStockCtx_(), byItem = Object.create(null), order = [];
+  rows.forEach(function (r) {
+    var tg = base.moveTarget(r); if (!tg) return;
+    if (!byItem[tg.item.id]) { byItem[tg.item.id] = []; order.push(tg.item.id); }
+    byItem[tg.item.id].push(r);
+  });
+  for (var i = 0; i < order.length; i++) {
+    var id = order[i], mine = byItem[id];
+    var from = mine.map(function (r) { return String(r.date); }).sort()[0];
+    var req = { locationId: locId, stockItemId: id, dateFrom: '2020-01-01' };
+    var before = actionStockLedger_(req, user, base);
+    if (!before.ok) continue;
+    var sc2 = {}; Object.keys(base).forEach(function (k) { sc2[k] = base[k]; });
+    sc2.moves = base.moves.concat(mine);
+    var after = actionStockLedger_(req, user, sc2);
+    if (!after.ok || after.noOpening) continue;
+    var keys = after.cylinder ? ['full', 'empty', 'plant', 'cust'] : ['unit'];
+    var low = function (res, k) {
+      var m = Infinity, at = null;
+      (res.lines || []).forEach(function (x) { if (x.date >= from && x.bal && x.bal[k] < m) { m = x.bal[k]; at = x.date; } });
+      if (m === Infinity) { m = res.ending ? Number(res.ending[k] || 0) : 0; at = from; }
+      return { v: m, at: at };
+    };
+    for (var j = 0; j < keys.length; j++) {
+      var a = low(after, keys[j]), b = low(before, keys[j]);
+      if (a.v < -INV_GUARD_ROUND_ && a.v < Math.min(b.v, 0) - INV_GUARD_ROUND_) {
+        return { ok: false, error: 'stock_over_on_hand', stockItemId: id, itemName: after.itemName || '', state: keys[j], date: a.at,
+          shortBy: Math.round((Math.min(b.v, 0) - a.v) * 1000) / 1000 };
+      }
+    }
+  }
+  return null;
+}
 function actionAddInventoryMove_(req, user) {
   var lf = invLocFor_(user, req.locationId);
   if (lf.error) return { ok: false, error: lf.error };
@@ -332,10 +375,23 @@ function actionAddInventoryMove_(req, user) {
       var pl = invPlant_(invStockCtx_(), lf.loc.id, c.itemId, date);
       if (c.move.qty > pl.atPlant + 0.0005) return { ok: false, error: 'refill_over_sent', atPlant: pl.atPlant };
     }
+    // empties already at the plant come back as 'received from the plant': a gas purchase
+    // as well would take the same empties off twice (stock audit 2026-10-26)
+    if (c.move.kind === 'purchase' && c.move.state === 'full' && c.move.newCylinders !== true && c.move.stockItemId) {
+      var pl0 = invPlant_(invStockCtx_(), lf.loc.id, c.itemId, null);
+      if (pl0.atPlant > INV_GUARD_ROUND_) return { ok: false, error: 'use_refill_in', atPlant: pl0.atPlant };
+    }
     // gas bought fills empties the branch has; more than that are new cylinders
     var rfErr = invRefillError_(c, lf.loc.id, date, user);
     if (rfErr) return rfErr;
-    var move = writeRow(SHEETS.INV_MOVES, invMoveRow_(lf.loc.id, c.move, date, user));
+    var row = invMoveRow_(lf.loc.id, c.move, date, user);
+    var gErr = invGuard_(lf.loc.id, user, [row]);
+    if (gErr) {
+      // a refill that later days cannot carry reads as the refill rule
+      if (gErr.state === 'empty' && c.move.kind === 'purchase' && c.move.state === 'full' && c.move.newCylinders !== true) { gErr.error = 'refill_over_empty_later'; gErr.date0 = date; }
+      return gErr;
+    }
+    var move = writeRow(SHEETS.INV_MOVES, row);
     logAudit_('inventory_' + c.move.kind, user.id, move.id);
     return { ok: true, move: move };
   } finally { try { lock.releaseLock(); } catch (e) {} }
@@ -362,6 +418,8 @@ function actionTransferInventory_(req, user) {
   lock.waitLock(30000);
   try {
     freshenExec_();
+    var tErr = invGuard_(lf.loc.id, user, checked.map(function (c) { var o = {}; safeOwnKeys_(c.move).forEach(function (k) { o[k] = c.move[k]; }); return invMoveRow_(lf.loc.id, o, date, user); }));
+    if (tErr) return tErr;
     var linkId = Utilities.getUuid(), moves = [];
     checked.forEach(function (c) {
       var outM = {}, inM = {};
@@ -418,6 +476,7 @@ function actionImportInventoryDay_(req, user) {
   for (var i = 0; i < list.length; i++) {
     var c = invCheckMove_(list[i] || {}, date, sc);
     if (!c.error && hasOwn_(INV_COUNT_, c.move.kind)) c = { error: 'use_stock_count' };
+    if (!c.error && hasOwn_(INV_CAR_, c.move.kind)) c = { error: 'use_car_move' };
     if (!c.error && invControls_() && hasOwn_(INV_REASONS_, c.move.kind) && !c.move.reason) c = { error: 'reason_required' };
     if (c.error) return { ok: false, error: c.error, index: i };
     if (c.move.kind === 'opening') {
@@ -436,7 +495,12 @@ function actionImportInventoryDay_(req, user) {
     for (var j = 0; j < checked.length; j++) {
       if (checked[j].move.kind === 'opening' && open[invOpeningKey_(lf.loc.id, checked[j].itemId, checked[j].move.state)]) return { ok: false, error: 'opening_exists', index: j };
     }
-    var written = checked.map(function (x) { return writeRow(SHEETS.INV_MOVES, invMoveRow_(lf.loc.id, x.move, date, user, { importRef: ref })); });
+    // the day's lines together, its own counts included: a refill bigger than the empties,
+    // filled back with nothing at the plant, a return no customer holds, are refused
+    var iRows = checked.map(function (x) { return invMoveRow_(lf.loc.id, x.move, date, user, { importRef: ref }); });
+    var iErr = invGuard_(lf.loc.id, user, iRows);
+    if (iErr) return iErr;
+    var written = iRows.map(function (r) { return writeRow(SHEETS.INV_MOVES, r); });
     logAudit_('inventory_import', user.id, lf.loc.id + ' ' + date + ' (' + written.length + ')');
     return { ok: true, moves: written };
   } finally { try { lock.releaseLock(); } catch (e) {} }
@@ -1036,7 +1100,7 @@ function escalateStockShort_(g, user) {
 // plant, and the balances after it: filled, empty, at the plant, gas, cylinders.
 // The same rules as actionInventoryReport_, so the card's last line is the
 // report's ending. Nothing before the opening count counts.
-function actionStockLedger_(req, user) {
+function actionStockLedger_(req, user, scOverride) {
   var scope = invReadBranches_(user);
   if (scope === false) return { ok: false, error: 'forbidden' };
   var locId = String(req.locationId || ''), itemId = String(req.stockItemId || req.productId || '');
@@ -1045,7 +1109,7 @@ function actionStockLedger_(req, user) {
   var today = todayRiyadh_();
   var from = req.dateFrom ? String(req.dateFrom) : '2020-01-01', to = req.dateTo ? String(req.dateTo) : today;
   if (!invDateOk_(from) || !invDateOk_(to) || from > to) return { ok: false, error: 'invalid_period' };
-  var sc = invStockCtx_(), it = sc.item(itemId);
+  var sc = scOverride || invStockCtx_(), it = sc.item(itemId);
   if (!it) return { ok: false, error: 'invalid_stock_item' };
   var cyl = it.kind === 'cylinder';
   // the opening count: per state for a cylinder, one for a unit item
