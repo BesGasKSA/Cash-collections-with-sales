@@ -39,16 +39,19 @@ function daysBetween_(isoA, isoB) {
 
 // Links one bank line to one deposit handoff both ways — never called with
 // an already-matched line or an already-reconciled deposit.
-function linkReconciliation_(line, deposit, user) {
+function stampReconciliation_(line, deposit, user) {
+  var at = new Date().toISOString();
   line.status = 'matched';
   line.matchedHandoffId = deposit.id;
-  line.matchedAt = new Date().toISOString();
+  line.matchedAt = at;
   line.matchedBy = user.id;
-  writeRow(SHEETS.BANK_LINES, line);
-
   deposit.reconciled = true;
-  deposit.reconciledAt = new Date().toISOString();
+  deposit.reconciledAt = at;
   deposit.reconciledLineId = line.id;
+}
+function linkReconciliation_(line, deposit, user) {
+  stampReconciliation_(line, deposit, user);
+  writeRow(SHEETS.BANK_LINES, line);
   writeRow(SHEETS.HANDOFFS, deposit);
 }
 
@@ -59,18 +62,21 @@ function linkReconciliation_(line, deposit, user) {
 function autoMatchBankLines_(user) {
   var lines = unmatchedBankLines_();
   var deposits = unmatchedDeposits_();
-  var matched = 0;
+  var matched = 0, doneLines = [], doneDeposits = [];
   lines.forEach(function (line) {
     var candidates = deposits.filter(function (d) {
       return Math.abs(Number(d.amount) - Number(line.amount)) < RECON_AMOUNT_TOLERANCE &&
         daysBetween_(d.confirmedAt || d.createdAt, line.date) <= RECON_DATE_WINDOW_DAYS;
     });
     if (candidates.length === 1) {
-      linkReconciliation_(line, candidates[0], user);
+      stampReconciliation_(line, candidates[0], user);
+      doneLines.push(line); doneDeposits.push(candidates[0]);
       deposits = deposits.filter(function (d) { return d.id !== candidates[0].id; });
       matched++;
     }
   });
+  writeRows_(SHEETS.BANK_LINES, doneLines);
+  writeRows_(SHEETS.HANDOFFS, doneDeposits);
   return matched;
 }
 

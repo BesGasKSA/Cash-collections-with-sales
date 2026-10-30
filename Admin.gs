@@ -29,14 +29,14 @@ var ENTITY_CHILDREN = {
   // a place with cost lines keeps its row, or the months already reported would lose them
   // (a voided line does not count: `live`)
   location: [{ sheet: SHEETS.STORES, field: 'locationId' }, { sheet: SHEETS.CARS, field: 'locationId' }, { sheet: SHEETS.COST_LINES, field: 'centreId', centreType: 'location', live: true },
-    { sheet: SHEETS.ENTRIES, field: 'locationId' }, { sheet: SHEETS.HANDOFFS, field: 'locationId' }, { sheet: SHEETS.INV_MOVES, field: 'locationId' }],
-  store: [{ sheet: SHEETS.POS, field: 'ownerId', ownerType: 'store' }, { sheet: SHEETS.COST_LINES, field: 'centreId', centreType: 'store', live: true }, { sheet: SHEETS.ENTRIES, field: 'sourceId', sourceType: 'store' }],
-  car: [{ sheet: SHEETS.POS, field: 'ownerId', ownerType: 'car' }, { sheet: SHEETS.COST_LINES, field: 'centreId', centreType: 'car', live: true }, { sheet: SHEETS.ENTRIES, field: 'sourceId', sourceType: 'car' }, { sheet: SHEETS.HANDOFFS, field: 'carId' }],
-  cluster: [{ sheet: SHEETS.LOCATIONS, field: 'clusterId' }, { sheet: SHEETS.COST_LINES, field: 'centreId', centreType: 'cluster', live: true }, { sheet: SHEETS.HANDOFFS, field: 'clusterId' }],
+    { sheet: SHEETS.ENTRIES, field: 'locationId', live: true }, { sheet: SHEETS.HANDOFFS, field: 'locationId', live: true }, { sheet: SHEETS.INV_MOVES, field: 'locationId', live: true }],
+  store: [{ sheet: SHEETS.POS, field: 'ownerId', ownerType: 'store' }, { sheet: SHEETS.COST_LINES, field: 'centreId', centreType: 'store', live: true }, { sheet: SHEETS.ENTRIES, field: 'sourceId', sourceType: 'store', live: true }],
+  car: [{ sheet: SHEETS.POS, field: 'ownerId', ownerType: 'car' }, { sheet: SHEETS.COST_LINES, field: 'centreId', centreType: 'car', live: true }, { sheet: SHEETS.ENTRIES, field: 'sourceId', sourceType: 'car', live: true }, { sheet: SHEETS.HANDOFFS, field: 'carId', live: true }],
+  cluster: [{ sheet: SHEETS.LOCATIONS, field: 'clusterId' }, { sheet: SHEETS.COST_LINES, field: 'centreId', centreType: 'cluster', live: true }, { sheet: SHEETS.HANDOFFS, field: 'clusterId', live: true }],
   // a cost type with lines on it stays on file (deactivate instead)
   cost_type: [{ sheet: SHEETS.COST_LINES, field: 'typeId', live: true }],
   zone: [{ sheet: SHEETS.LOCATIONS, field: 'zoneId' }],
-  pos: [{ sheet: SHEETS.ENTRIES, field: 'sourceId', sourceType: 'pos' }],
+  pos: [{ sheet: SHEETS.ENTRIES, field: 'sourceId', sourceType: 'pos', live: true }],
   // a product with existing sales history stays selectable in entry forms
   // (deactivate instead) but blocking delete protects the report from
   // orphaned productIds it can no longer label.
@@ -1333,7 +1333,7 @@ function actionAdminDeleteEntity_(req, user) {
       if (rule.ownerType && rows[j].ownerType !== rule.ownerType) continue;
       if (rule.sourceType && rows[j].sourceType !== rule.sourceType) continue;
       if (rule.centreType && rows[j].centreType !== rule.centreType) continue;
-      if (rule.live && rows[j].voided) continue;
+      if (rule.live && (rows[j].voided || rows[j].status === 'voided')) continue;
       return { ok: false, error: 'has_children' };
     }
   }

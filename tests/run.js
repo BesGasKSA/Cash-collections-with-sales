@@ -7762,11 +7762,23 @@ console.log('--- the stock guard: no movement takes stock below zero, on its day
   var past = call({ action: 'getInventoryReport', token: adminTok, dateFrom: '2026-10-01', dateTo: '2026-10-05', locationId: loc.id });
   var cs = (past.cylSummary || []).filter(function (c) { return c.stockItemId === it.id; })[0] || {};
   check(cs.atPlant === 5, 'a report ending on the 5th shows the 5 empties at the plant, though they came back on the 6th (got ' + cs.atPlant + ')');
+  // the reviews of the sweep: an average of nothing, and saved days keep their cost
+  var cogsOf = function () { ctx.resetExecMemo_(); var p = ctx.profitCompute_('2026-10-01', '2026-10-31', 'sales', true); return Math.round(p.nodes.filter(function (n) { return n.key === 'company'; })[0].T.cogs * 100) / 100; };
+  var realAvg = ctx.invAvgCostEx_, cutoff = ctx.AVG_COGS_FROM_, cogsBase = cogsOf();
+  ctx.invAvgCostEx_ = function () { return 7; };
+  check(cogsOf() === cogsBase, 'a saved day keeps its cost of goods (' + cogsOf() + ' / ' + cogsBase + ')');
+  ctx.AVG_COGS_FROM_ = '2020-01-01';
+  var cogsAvg = cogsOf();
+  check(cogsAvg !== cogsBase, 'from the start day the average is the cost (' + cogsAvg + ')');
+  ctx.invAvgCostEx_ = function () { return 0; };
+  check(cogsOf() === cogsBase, 'an average of nothing leaves the known cost standing');
+  ctx.invAvgCostEx_ = realAvg; ctx.AVG_COGS_FROM_ = cutoff; ctx.resetExecMemo_();
   // a count compares with everything saved for its own day (2026-10-30)
   var loc8 = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: 'Riyadh', name: 'Guard Branch 8', clusterId: cluster.entity.id, collectorUserId: musa.id } }).entity;
   mv({ state: 'full', kind: 'opening', qty: 100, date: '2026-10-01' }, loc8); mv({ state: 'empty', kind: 'opening', qty: 0, date: '2026-10-01' }, loc8);
   var pur8 = mv({ state: 'full', kind: 'purchase', qty: 20, newCylinders: true, supplier: 'S', invoiceNo: 'I8', date: '2026-10-02' }, loc8);
   function count8(n) { return call({ action: 'recordStockCount', token: adminTok, locationId: loc8.id, date: '2026-10-02', lines: [{ stockItemId: it.id, state: 'full', counted: n }] }); }
+  check(err(call({ action: 'recordStockCount', token: adminTok, locationId: loc8.id, date: '2026-10-02', lines: [{ stockItemId: it.id, state: 'full', counted: 120, system: 100 }] })) === 'count_changed', 'a figure changed since the screen opened is not counted over');
   var c8a = count8(120), c8b = count8(130), c8c = count8(130);
   check(c8a.ok && c8a.moves.length === 0, 'a purchase of the day is no gain at the count (' + err(c8a) + ')');
   check(c8b.ok && c8b.moves.length === 1 && c8b.lines[0].diff === 10 && c8c.ok && c8c.moves.length === 0, 'a second count of the same shelf changes nothing (' + JSON.stringify(c8c.lines) + ')');
@@ -7778,6 +7790,11 @@ console.log('--- the stock guard: no movement takes stock below zero, on its day
   var open8 = ctx.readSheet(SHEETS.INV_MOVES).filter(function (m) { return m.locationId === loc8.id && m.kind === 'opening' && m.state === 'full'; })[0];
   check(err(call({ action: 'voidInventoryMove', token: adminTok, id: open8.id, reason: 'x' })) === 'opening_in_use', 'nor an opening with moves after it');
   check(call({ action: 'voidInventoryMove', token: adminTok, id: dmg8.move.id, reason: 'wrong' }).ok, 'a move the stock does not lean on still can');
+  // a transfer dated before the receiver's count would lose its receiving side
+  var loc9 = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: 'Riyadh', name: 'Guard Branch 9', clusterId: cluster.entity.id, collectorUserId: musa.id } }).entity;
+  mv({ state: 'full', kind: 'opening', qty: 1, date: '2026-10-20' }, loc9);
+  check(err(call({ action: 'transferInventory', token: adminTok, fromLocationId: loc8.id, toLocationId: loc9.id, date: '2026-10-05', lines: [{ stockItemId: it.id, state: 'full', qty: 2 }] })) === 'transfer_before_opening', 'a transfer before the receiver was counted is refused');
+  check(call({ action: 'transferInventory', token: adminTok, fromLocationId: loc8.id, toLocationId: loc9.id, date: '2026-10-21', lines: [{ stockItemId: it.id, state: 'full', qty: 2 }] }).ok, 'after it, it goes through');
 })();
 
 console.log('--- the sweep: nothing lost, nothing doubled (2026-10-30) ---');
@@ -7826,10 +7843,15 @@ console.log('--- the sweep: nothing lost, nothing doubled (2026-10-30) ---');
 
   // nothing with transactions is deleted
   [['pos', 'swP'], ['car', 'swK'], ['store', 'swS'], ['location', 'swL'], ['cluster', 'swA']].forEach(function (x) {
-    if (x[0] === 'pos') ctx.writeRow(SHEETS.ENTRIES, { id: 'swE3', date: '2026-10-11', sourceType: 'pos', sourceId: 'swP', locationId: 'swL', cashSales: 5, voided: true, enteredBy: 'swDrv', createdAt: at });
-    if (x[0] === 'car') ctx.writeRow(SHEETS.ENTRIES, { id: 'swE4', date: '2026-10-11', sourceType: 'car', sourceId: 'swK', locationId: 'swL', cashSales: 5, voided: true, enteredBy: 'swDrv', createdAt: at });
+    if (x[0] === 'pos') ctx.writeRow(SHEETS.ENTRIES, { id: 'swE3', date: '2026-10-11', sourceType: 'pos', sourceId: 'swP', locationId: 'swL', cashSales: 5, consumedBy: 'gone', enteredBy: 'swDrv', createdAt: at });
+    if (x[0] === 'car') ctx.writeRow(SHEETS.ENTRIES, { id: 'swE4', date: '2026-10-11', sourceType: 'car', sourceId: 'swK', locationId: 'swL', cashSales: 5, consumedBy: 'gone', enteredBy: 'swDrv', createdAt: at });
     check(call({ action: 'adminDeleteEntity', token: finTok, kind: x[0], id: x[1] }).error === 'has_children', 'a ' + x[0] + ' with transactions stays on file');
   });
+
+  // a branch made by mistake, with only cancelled rows, can still go
+  ctx.writeRow(SHEETS.LOCATIONS, { id: 'swMis', name: 'Mistake', city: 'Riyadh', clusterId: 'swA', collectorUserId: 'swCol' });
+  ctx.writeRow(SHEETS.ENTRIES, { id: 'swV', date: '2026-10-11', sourceType: 'store', sourceId: 'zz', locationId: 'swMis', cashSales: 5, voided: true, voidReason: 'x', enteredBy: 'swDrv', createdAt: at });
+  check(call({ action: 'adminDeleteEntity', token: finTok, kind: 'location', id: 'swMis' }).ok, 'cancelled rows alone do not hold a record');
 
   // bank statements
   ctx.writeRow(SHEETS.HANDOFFS, { id: 'swB1', kind: 'deposit', status: 'completed', fromUserId: 'swCol', amount: 777, createdAt: at, confirmedAt: at, sourceEntryIds: [], sourceHandoffIds: [] });
@@ -7861,11 +7883,21 @@ console.log('--- the sweep: nothing lost, nothing doubled (2026-10-30) ---');
   var part = call({ action: 'adminCorrectReceipt', token: adminTok, id: 'swC1', receivedAmount: 1000, reason: 'counted' });
   check(part.error === 'receipt_part_banked' && H('swC1').amount === 600 && H('swC1').consumedBy === 'swCD', 'cash partly banked is not counted twice (' + part.error + ')');
   var down = call({ action: 'adminCorrectReceipt', token: adminTok, id: 'swC1', receivedAmount: 550, reason: 'counted' });
+  check(call({ action: 'dataHealthCheck', token: adminTok }).issues.some(function (i) { return i.kind === 'over_banked' && i.id === 'swCD'; }), 'the health check names money banked beyond its requests');
   check(down.ok && H('swC1').consumedBy === 'swCD' && H('swCD').overBanked === 50 && H('swCD').sourceHandoffIds.length === 2, 'a figure the deposit covers stays in it, the extra on record (' + JSON.stringify(H('swCD').overBanked) + ')');
 
   // stuck work
   ctx.writeRow(SHEETS.ENTRIES, { id: 'swZ', date: '2026-10-12', sourceType: 'car', sourceId: 'swK', locationId: 'swL', cashSales: 300, creditSales: 300, enteredBy: 'swDrv', createdAt: at });
   check(ctx.personBusy_('swDrv') === false, 'a day that nets to nothing keeps nobody on the books');
+  ctx.writeRow(SHEETS.LOCATIONS, { id: 'swL2', name: 'Branch 2', city: 'Riyadh', clusterId: 'swA', collectorUserId: 'swCol' });
+  ctx.writeRow(SHEETS.ENTRIES, { id: 'swP1', date: '2026-10-12', sourceType: 'store', sourceId: 'swS', locationId: 'swL', cashSales: 1000, enteredBy: 'swCm', createdAt: at });
+  ctx.writeRow(SHEETS.ENTRIES, { id: 'swP2', date: '2026-10-12', sourceType: 'store', sourceId: 'swS2', locationId: 'swL2', cashSales: 0, expenseAmount: 1000, enteredBy: 'swCm', createdAt: at });
+  check(ctx.personBusy_('swCm') === true, 'a deficit at one branch hides no cash at another');
+  var cmTok = tok('swCm');
+  ctx.writeRow(SHEETS.ENTRIES, { id: 'swB9', date: '2026-10-12', sourceType: 'store', sourceId: 'swS', locationId: 'swL', cashSales: 0, expenseAmount: 10, enteredBy: 'swCm', releasedByBatch: 'bb', createdAt: at });
+  check(call({ action: 'voidEntries', token: cmTok, ids: ['swB9'], reason: 'x' }).error === 'batch_approved', 'an approved day carried forward cannot be cancelled by its author');
+  check(call({ action: 'adminVoidTransaction', token: adminTok, ids: ['swB9'], reason: 'x' }).error === 'batch_approved', 'nor by an admin');
+  ctx.writeRow(SHEETS.ENTRIES, Object.assign(E('swP1'), { voided: true, voidReason: 't' })); ctx.writeRow(SHEETS.ENTRIES, Object.assign(E('swP2'), { voided: true, voidReason: 't' })); ctx.writeRow(SHEETS.ENTRIES, Object.assign(E('swB9'), { voided: true, voidReason: 't' }));
   held('swH1', 250, 'swCol2');
   var admT2 = tok('swAdmin2');
   check(call({ action: 'createHandoff', token: colTok, kind: 'collector_to_collector', toUserId: 'swCol2', fromUserId: 'swCm' }).error === 'forbidden', 'a collector acts for himself only');

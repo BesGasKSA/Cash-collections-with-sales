@@ -44,6 +44,8 @@ var INV_COUNT_ = { count_gain: 1, count_loss: 1 };
 function invControls_() { return config_().invControls !== false; }
 // stock is valued at the weighted average of what it cost (default), or at the standard cost
 function invAverage_() { return config_().invValuation !== 'standard'; }
+// The cost of goods follows the average from this day on: no update rewrites a saved day (the owner's rule).
+var AVG_COGS_FROM_ = '2026-10-31';
 var INV_REFILL_STATE_ = { refill_out: 'empty', refill_in: 'full' };
 // Cylinders on deposit with a customer (عهدة): out leaves the branch, return comes
 // back; a customer never returns more than he holds of an item. A car's load and
@@ -345,9 +347,10 @@ function invGuard_(locId, user, all, opts) {
     var sc1 = {}, sc2 = {}; Object.keys(base).forEach(function (k) { sc1[k] = base[k]; sc2[k] = base[k]; });
     sc1.moves = removing ? base.moves : base.moves.concat(ofItem.filter(function (r) { return r.kind === 'opening'; }));
     sc2.moves = removing ? base.moves.filter(function (r) { return !gone[r.id]; }) : base.moves.concat(ofItem);
-    var before = actionStockLedger_(req, user, sc1);
+    // the stock itself is judged, whoever pressed the button: the other side of a transfer may be out of his reach
+    var before = actionStockLedger_(req, INV_SYSTEM_READER_, sc1);
     if (!before.ok) continue;
-    var after = actionStockLedger_(req, user, sc2);
+    var after = actionStockLedger_(req, INV_SYSTEM_READER_, sc2);
     if (!after.ok) continue;
     var away = ['plant', 'cust'], keys = before.noOpening ? away : (after.cylinder ? ['full', 'empty'] : ['unit']).concat(away);
     // the balance at the end of each day from the first move on, and the same day without the moves
@@ -443,10 +446,18 @@ function actionTransferInventory_(req, user) {
     freshenExec_();
     var tErr = invGuard_(lf.loc.id, user, checked.map(function (c) { var o = {}; safeOwnKeys_(c.move).forEach(function (k) { o[k] = c.move[k]; }); return invMoveRow_(lf.loc.id, o, date, user); }));
     if (tErr) return tErr;
-    var opened = invOpenings_();
+    // both branches must have counted the item by that day, or one side of the move drops out of the stock
+    var firstCount = Object.create(null), scT = invStockCtx_();
+    scT.moves.forEach(function (m) {
+      if (m.voided || m.kind !== 'opening') return;
+      var tg = scT.moveTarget(m); if (!tg) return;
+      var key = m.locationId + '|' + tg.item.id;
+      if (!firstCount[key] || String(m.date) < firstCount[key]) firstCount[key] = String(m.date);
+    });
     for (var ci = 0; ci < checked.length; ci++) {
-      var cc = checked[ci], itm = sc.items[cc.itemId];
-      if (!opened[invOpeningKey_(to.id, cc.itemId, cc.move.state)] && !opened[invOpeningKey_(to.id, cc.itemId, cc.move.state === 'full' ? 'empty' : 'full')]) return { ok: false, error: 'transfer_no_opening', name: itm ? itm.name : '', index: ci };
+      var cc = checked[ci], itm = sc.items[cc.itemId], fromC = firstCount[lf.loc.id + '|' + cc.itemId], toC = firstCount[to.id + '|' + cc.itemId];
+      if (!fromC || !toC) return { ok: false, error: 'transfer_no_opening', name: itm ? itm.name : '', index: ci };
+      if (date < fromC || date < toC) return { ok: false, error: 'transfer_before_opening', name: itm ? itm.name : '', index: ci };
     }
     var linkId = Utilities.getUuid(), moves = [];
     checked.forEach(function (c) {
@@ -565,8 +576,8 @@ function actionVoidInventoryMove_(req, user) {
     if (m.kind === 'opening') {
       var sc2 = invStockCtx_(), tg2 = sc2.moveTarget(m);
       if (tg2) {
-        var later = sc2.moves.some(function (x) { if (x.voided || x.id === m.id || x.locationId !== m.locationId || x.kind === 'opening') return false; var t = sc2.moveTarget(x); return t && t.item.id === tg2.item.id; });
-        if (!later) later = readSheet(SHEETS.ENTRIES).some(function (e) { if (e.voided || e.locationId !== m.locationId || !e.productId) return false; var p = sc2.products[e.productId]; return p && (p.stockItemId === tg2.item.id || p.returnItemId === tg2.item.id); });
+        var later = sc2.moves.some(function (x) { if (x.voided || x.id === m.id || x.locationId !== m.locationId || x.kind === 'opening' || String(x.date) < String(m.date)) return false; var t = sc2.moveTarget(x); return t && t.item.id === tg2.item.id; });
+        if (!later) later = readSheet(SHEETS.ENTRIES).some(function (e) { if (e.voided || e.locationId !== m.locationId || !e.productId || !(Number(e.qty) > 0) || String(e.date) < String(m.date)) return false; var p = sc2.products[e.productId]; return p && (p.stockItemId === tg2.item.id || p.returnItemId === tg2.item.id); });
         if (later) return { ok: false, error: 'opening_in_use' };
       }
     } else {
@@ -596,7 +607,7 @@ function actionVoidInventoryMove_(req, user) {
 function actionInventoryLive_(req, user) {
   var today = todayRiyadh_();
   // polled every minute by every open Home: worked out again only when the stock has changed
-  var key = 'invlive|' + user.id + '|' + (req.locationId || '') + '|' + activeAreaOf_(user.id) + '|' + today + '|' + [SHEETS.ENTRIES, SHEETS.INV_MOVES, SHEETS.STOCK_ITEMS, SHEETS.PRODUCTS, SHEETS.LOCATIONS].map(version_).join('.');
+  var key = 'invlive_' + hmac_([user.id, req.locationId || '', activeAreaOf_(user.id) || '', today, dataVersion_()].join('|'), secret_() + '|invlive').slice(0, 96);
   var cache = null;
   try { cache = CacheService.getScriptCache(); var hit = cacheGetBig_(cache, key); if (hit) return JSON.parse(hit); } catch (x) { cache = null; }
   var res = actionInventoryReport_({ dateFrom: today, dateTo: today, locationId: req.locationId || null }, user);
@@ -645,10 +656,10 @@ function invAvgPools_(hist) {
   var counted = Object.create(null);
   readSheet(SHEETS.INV_MOVES).forEach(function (m) {
     if (m.voided) return;
-    var it = items[m.stockItemId || (products[m.productId] || {}).stockItemId]; if (!it) return;
-    if (m.kind === 'opening') { var ck = m.locationId + '|' + it.id; if (!counted[ck] || String(m.date) < counted[ck]) counted[ck] = String(m.date); }
+    var it = items[m.stockItemId]; if (!it) return;
     // a move from before the setup keeps its old value: the setup never rewrites the past
     if (!m.stockItemId) return;
+    if (m.kind === 'opening') { var ck = m.locationId + '|' + it.id; if (!counted[ck] || String(m.date) < counted[ck]) counted[ck] = String(m.date); }
     var q = Number(m.qty || 0); if (!(q > 0)) return;
     var d = m.date, at = m.createdAt, own = m.unitCost != null && m.unitCost !== '' ? costExVat_(Number(m.unitCost), d) : null;
     var cylF = it.kind === 'cylinder' && m.state !== 'empty', cylE = it.kind === 'cylinder' && m.state === 'empty';
@@ -701,6 +712,8 @@ function invAvgPools_(hist) {
     if (x.rcv) {
       if (x.atAvg && s.avg != null) x.c = s.avg;
       var held = Math.max(0, s.q);
+      // a receipt with no cost on it counts as stock and teaches the average nothing
+      if (!(x.c > 0)) { s.q = held + x.q; return; }
       s.avg = held > 0 && s.avg != null ? (held * s.avg + x.q * x.c) / (held + x.q) : x.c;
       s.q = held + x.q;
       (line[x.k] = line[x.k] || []).push({ d: x.d, avg: s.avg });
@@ -764,7 +777,7 @@ function actionRecordStockCount_(req, user) {
     if (!sc.live) return { ok: false, error: 'setup_required' };
     // what the app holds for that day with everything saved so far: its purchases, sales and any
     // earlier count (2026-10-30: the closing of the day before counted a day's moves again as a
-    // gain or a loss, and a second count twice). Sales saved after the count still come off.
+    // gain or a loss, and a second count twice). The screen asks for the count once the day is saved.
     var rep = actionInventoryReport_({ dateFrom: date, dateTo: date, locationId: lf.loc.id }, user, sc);
     if (!rep.ok) return rep;
     var have = Object.create(null); rep.rows.forEach(function (r) { if (!r.noOpening) have[r.stockItemId + '|' + (r.state || '')] = r.ending; });
@@ -778,6 +791,8 @@ function actionRecordStockCount_(req, user) {
       var cv = l.counted, counted = (typeof cv === 'number' && cv === 0) || cv === '0' ? 0 : invQty_(cv);
       if (counted == null) return { ok: false, error: 'invalid_qty', index: i };
       if (!hasOwn_(have, key)) return { ok: false, error: 'opening_required', index: i, name: it.name };
+      // the screen shows what the app holds; a sale saved since then changes the difference
+      if (l.system != null && Math.abs(Number(l.system) - have[key]) > 0.0005) return { ok: false, error: 'count_changed', index: i, name: it.name };
       var diff = Math.round((counted - have[key]) * 1000) / 1000;
       out.push({ it: it, st: st, counted: counted, system: have[key], diff: diff });
     }
