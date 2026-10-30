@@ -7770,9 +7770,28 @@ console.log('--- the stock guard: no movement takes stock below zero, on its day
   ctx.AVG_COGS_FROM_ = '2020-01-01';
   var cogsAvg = cogsOf();
   check(cogsAvg !== cogsBase, 'from the start day the average is the cost (' + cogsAvg + ')');
-  ctx.invAvgCostEx_ = function () { return 0; };
-  check(cogsOf() === cogsBase, 'an average of nothing leaves the known cost standing');
+  ctx.invAvgCostEx_ = function () { return null; };
+  check(cogsOf() === cogsBase, 'no average leaves the known cost standing');
   ctx.invAvgCostEx_ = realAvg; ctx.AVG_COGS_FROM_ = cutoff; ctx.resetExecMemo_();
+  // the opening stock replaced in one step
+  var roLoc = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: 'Riyadh', name: 'Guard Branch 10', clusterId: cluster.entity.id, collectorUserId: musa.id } }).entity;
+  mv({ state: 'full', kind: 'opening', qty: 7, date: '2026-10-15' }, roLoc);
+  var roRows = [{ locationId: roLoc.id, stockItemId: it.id, state: 'full', qty: 40, unitCost: '' }, { locationId: roLoc.id, stockItemId: it.id, state: 'empty', qty: 0, unitCost: '' }];
+  check(err(call({ action: 'replaceOpenings', token: adminTok, date: '2026-09-30', rows: roRows })) === 'reason_required', 'replacing the openings needs a reason');
+  var roPv = call({ action: 'replaceOpenings', token: adminTok, date: '2026-09-30', rows: roRows, dryRun: true });
+  check(roPv.ok && roPv.preview.newOpenings === 2 && roPv.preview.oldOpenings > 0 && ctx.readSheet(SHEETS.INV_MOVES).filter(function (m) { return m.locationId === roLoc.id && !m.voided; }).length === 1, 'the preview writes nothing and names what would change');
+  var salesBefore = JSON.stringify(ctx.readSheet(SHEETS.ENTRIES).map(function (e) { return [e.id, e.cashSales, e.posSales, e.qty, e.voided, e.consumedBy, e.updatedAt]; }));
+  var movesBefore = ctx.readSheet(SHEETS.INV_MOVES).filter(function (m) { return m.kind !== 'opening'; }).map(function (m) { return m.id + m.updatedAt; }).join();
+  var roOk = call({ action: 'replaceOpenings', token: adminTok, date: '2026-09-30', rows: roRows, reason: 'count of 30 Sep', confirm: 'REPLACE' });
+  check(JSON.stringify(ctx.readSheet(SHEETS.ENTRIES).map(function (e) { return [e.id, e.cashSales, e.posSales, e.qty, e.voided, e.consumedBy, e.updatedAt]; })) === salesBefore, 'the sales are not touched, not one row');
+  check(ctx.readSheet(SHEETS.INV_MOVES).filter(function (m) { return m.kind !== 'opening'; }).map(function (m) { return m.id + m.updatedAt; }).join() === movesBefore, 'nor any other stock move');
+  var roLive = ctx.readSheet(SHEETS.INV_MOVES).filter(function (m) { return !m.voided && m.kind === 'opening'; });
+  check(roOk.ok && roLive.length === 2 && roLive.every(function (m) { return m.locationId === roLoc.id && m.date === '2026-09-30'; }), 'every old opening is out, and only the new ones stand (' + err(roOk) + ')');
+  check(ctx.readSheet(SHEETS.INV_MOVES).some(function (m) { return m.voided && m.replacedOpening && m.voidReason === 'count of 30 Sep'; }), 'the old ones stay on file with the reason');
+  var roRep = call({ action: 'getInventoryReport', token: adminTok, dateFrom: '2026-10-01', dateTo: '2026-10-01', locationId: roLoc.id });
+  var roF = (roRep.rows || []).filter(function (r) { return r.stockItemId === it.id && r.state === 'full'; })[0] || {};
+  check(roF.ending === 40 && !roF.noOpening, 'the report reads the new opening (' + roF.ending + ')');
+  check(err(call({ action: 'replaceOpenings', token: adminTok, date: '2026-09-30', rows: [roRows[0], roRows[0]], dryRun: true })) === 'duplicate_line', 'a line twice in the file is refused');
   // a count compares with everything saved for its own day (2026-10-30)
   var loc8 = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: 'Riyadh', name: 'Guard Branch 8', clusterId: cluster.entity.id, collectorUserId: musa.id } }).entity;
   mv({ state: 'full', kind: 'opening', qty: 100, date: '2026-10-01' }, loc8); mv({ state: 'empty', kind: 'opening', qty: 0, date: '2026-10-01' }, loc8);
@@ -7793,7 +7812,16 @@ console.log('--- the stock guard: no movement takes stock below zero, on its day
   // a transfer dated before the receiver's count would lose its receiving side
   var loc9 = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: 'Riyadh', name: 'Guard Branch 9', clusterId: cluster.entity.id, collectorUserId: musa.id } }).entity;
   mv({ state: 'full', kind: 'opening', qty: 1, date: '2026-10-20' }, loc9);
-  check(err(call({ action: 'transferInventory', token: adminTok, fromLocationId: loc8.id, toLocationId: loc9.id, date: '2026-10-05', lines: [{ stockItemId: it.id, state: 'full', qty: 2 }] })) === 'transfer_before_opening', 'a transfer before the receiver was counted is refused');
+  var trB = call({ action: 'transferInventory', token: adminTok, fromLocationId: loc8.id, toLocationId: loc9.id, date: '2026-10-05', lines: [{ stockItemId: it.id, state: 'full', qty: 2 }] });
+  check(err(trB) === 'transfer_before_opening' && trB.branch === 'Guard Branch 9', 'a transfer before the receiver was counted is refused, and names the branch');
+  mv({ state: 'empty', kind: 'opening', qty: 3, date: '2026-10-25' }, loc9);
+  call({ action: 'recordStockCount', token: adminTok, locationId: loc8.id, date: '2026-10-20', lines: [{ stockItemId: it.id, state: 'empty', counted: 5 }] });
+  check(err(call({ action: 'transferInventory', token: adminTok, fromLocationId: loc8.id, toLocationId: loc9.id, date: '2026-10-22', lines: [{ stockItemId: it.id, state: 'empty', qty: 1 }] })) === 'transfer_before_opening', 'each state answers for its own count');
+  // the pool: a branch outside the stock neither feeds it nor drains it
+  var poolIt = ctx.invAvgPools_; ctx.resetExecMemo_();
+  ctx.writeRow(SHEETS.INV_MOVES, { locationId: 'never-counted', stockItemId: it.id, state: 'full', kind: 'purchase', qty: 1000, unitCost: 1, date: '2026-10-20', createdAt: new Date().toISOString(), voided: false });
+  var linePool = ctx.invAvgPools_(); var gasPts = (linePool[it.id + '|gas'] || []);
+  check(!gasPts.some(function (p) { return p.d === '2026-10-20' && p.avg < 2; }), 'an uncounted branch stays out of the average');
   check(call({ action: 'transferInventory', token: adminTok, fromLocationId: loc8.id, toLocationId: loc9.id, date: '2026-10-21', lines: [{ stockItemId: it.id, state: 'full', qty: 2 }] }).ok, 'after it, it goes through');
 })();
 
@@ -7897,6 +7925,7 @@ console.log('--- the sweep: nothing lost, nothing doubled (2026-10-30) ---');
   ctx.writeRow(SHEETS.ENTRIES, { id: 'swB9', date: '2026-10-12', sourceType: 'store', sourceId: 'swS', locationId: 'swL', cashSales: 0, expenseAmount: 10, enteredBy: 'swCm', releasedByBatch: 'bb', createdAt: at });
   check(call({ action: 'voidEntries', token: cmTok, ids: ['swB9'], reason: 'x' }).error === 'batch_approved', 'an approved day carried forward cannot be cancelled by its author');
   check(call({ action: 'adminVoidTransaction', token: adminTok, ids: ['swB9'], reason: 'x' }).error === 'batch_approved', 'nor by an admin');
+  check(ctx.personBusy_('swCm') === true, 'still busy for his own cash');
   ctx.writeRow(SHEETS.ENTRIES, Object.assign(E('swP1'), { voided: true, voidReason: 't' })); ctx.writeRow(SHEETS.ENTRIES, Object.assign(E('swP2'), { voided: true, voidReason: 't' })); ctx.writeRow(SHEETS.ENTRIES, Object.assign(E('swB9'), { voided: true, voidReason: 't' }));
   held('swH1', 250, 'swCol2');
   var admT2 = tok('swAdmin2');
@@ -7905,6 +7934,14 @@ console.log('--- the sweep: nothing lost, nothing doubled (2026-10-30) ---');
   var hand = call({ action: 'createHandoff', token: admT2, kind: 'collector_to_collector', toUserId: 'swCol', fromUserId: 'swCol2', note: 'left the company' });
   check(hand.ok && hand.handoff.fromUserId === 'swCol2' && hand.handoff.createdBy === 'swAdmin2' && H('swH1').consumedBy === hand.handoff.id, 'an admin hands on the cash of a collector who cannot act (' + (hand.error || 'ok') + ')');
   ctx.writeRow(SHEETS.AREA_BULK_BATCHES, { id: 'swBt', status: 'approving', uploadedBy: 'swCm', clusterId: 'swA', entryIds: [], createdAt: at });
+  // a carried deficit nets off in the branch's next batch and holds nobody
+  ctx.writeRow(SHEETS.ENTRIES, { id: 'swDf', date: '2026-10-13', sourceType: 'store', sourceId: 'swS', locationId: 'swL', cashSales: 100, expenseAmount: 300, enteredBy: 'swAdmin', releasedByBatch: 'old', createdAt: at });
+  check(ctx.carriedDeficits_('swL', 'now').length === 1 && !ctx.carriedDeficits_('swL', 'old').length, 'a batch never carries its own lines');
+  check(ctx.placeBusy_('location', 'swL') === false || ctx.readSheet(SHEETS.ENTRIES).some(function (e) { return !e.consumedBy && !e.voided && !e.releasedByBatch && e.locationId === 'swL'; }), 'a carried deficit does not pin the branch');
+  ctx.writeRow(SHEETS.ENTRIES, { id: 'swDn', date: '2026-10-14', sourceType: 'store', sourceId: 'swS', locationId: 'swL', cashSales: 1000, enteredBy: 'swCm', consumedBy: 'swBn', batchId: 'swBn', createdAt: at });
+  ctx.writeRow(SHEETS.AREA_BULK_BATCHES, { id: 'swBn', status: 'pending_deputy', uploadedBy: 'swCm', clusterId: 'swA', entryIds: ['swDn'], perLocation: [{ locationId: 'swL', amount: 1000, breakdown: ctx.computeNet_([E('swDn')]) }], createdAt: at });
+  var dpApp = call({ action: 'deputyApproveBatch', token: admT2, id: 'swBn' });
+  check(dpApp.ok && dpApp.handoffs.length === 1 && dpApp.handoffs[0].amount === 800 && E('swDf').consumedBy === dpApp.handoffs[0].id, 'the next batch nets the deficit off (' + (dpApp.error || (dpApp.handoffs && dpApp.handoffs[0].amount)) + ')');
   var dl = call({ action: 'listAreaBulkBatches', token: adminTok, status: 'pending_deputy' });
   check(dl.ok && dl.batches.some(function (b) { return b.id === 'swBt'; }), 'an approval cut short stays on the deputy\'s list');
 

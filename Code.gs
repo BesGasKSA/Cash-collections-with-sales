@@ -1024,6 +1024,7 @@ function route_(req) {
     addInventoryMove: function () { return actionAddInventoryMove_(req, user); },
     recordStockCount: function () { return actionRecordStockCount_(req, user); },
     voidInventoryMove: function () { return actionVoidInventoryMove_(req, user); },
+    replaceOpenings: function () { return actionReplaceOpenings_(req, user); },
     getInventoryReport: function () { return actionInventoryReport_(req, user); },
     getInventoryLive: function () { return actionInventoryLive_(req, user); },
     getStockLedger: function () { return actionStockLedger_(req, user); },

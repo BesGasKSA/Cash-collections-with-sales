@@ -1906,8 +1906,11 @@ Deputy screen filtered by `createdAt`. Live: of 216 lines of 13 Oct, 190 were ha
 - **Cost of goods** uses the same pools (`invAvgCostEx_`), so the stock screen and the profit report agree.
 - **Workflow:** an `approving` batch stays on the deputy's list; an admin hands on the cash of a collector who cannot act (`fromUserId` + note); open days that net to nothing do not make a person busy; a branch below zero in an area batch goes back to open cash.
 - **History after a change:** a moved or replaced manager keeps the days he handled (`entriesHandled_`), and the current manager reads his branches' handovers of his level.
+- **Average and cost of goods:** `AVG_COGS_FROM_` is the first day the cost of goods follows the average; earlier days keep their cost. A branch is in the pools from its first stock-item opening, receipts and issues alike. A receipt with no cost teaches the average nothing.
+- **Opening stock replaced:** `replaceOpenings` (admin; `replaceOpeningsCard_` in Settings): one Excel file, previewed, a reason and the word REPLACE. Every old opening is voided (`replacedOpening`) and the new ones written together. Moves dated after the new opening stay; the preview counts them, so the same purchases are not entered twice.
+- **A batch branch below zero** carries forward: `releasedByBatch`, not cancellable, nets off in the branch's next batch or area request, never on the branch manager or driver, and pins nobody (`carriedDeficits_`).
 - **Speed:** `getById_` indexes per request; the audit sheet no longer clears cached reports; a repeat sign-in within the hour writes nothing; `getInventoryLive` is cached by the stock's versions; Home entries drop empty fields; the opening runs two seconds.
-- **The statement's lines open as a pivot** (`placeKids` in `plIfrsModel_`): collapsed, city, area when a city has several, branch, store or car. Its Excel and PDF keep the statement's own lines.
+- **The statement's lines open as a pivot** (`placeKids` in `plIfrsModel_`): collapsed, city, area when a city has several, branch, store or car, written to the page when first opened (`m.rowHtml`). Its Excel and PDF keep the statement's own lines.
 
 ## Traps
 

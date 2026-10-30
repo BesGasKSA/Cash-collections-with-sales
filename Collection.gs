@@ -998,7 +998,7 @@ function actionListEntries_(req, user) {
 function personBusy_(userId) {
   if (!userId) return false;
   // open days that net to nothing hold no cash (a credit-only day cannot be handed over)
-  var openDays = readSheet(SHEETS.ENTRIES).filter(function (e) { return e.enteredBy === userId && !e.consumedBy && !e.voided; });
+  var openDays = readSheet(SHEETS.ENTRIES).filter(function (e) { return e.enteredBy === userId && !e.consumedBy && !e.voided && !e.releasedByBatch; });
   var byBranch = {};
   openDays.forEach(function (e) { (byBranch[e.locationId] = byBranch[e.locationId] || []).push(e); });
   if (Object.keys(byBranch).some(function (k) { return Math.abs(Number(computeNet_(byBranch[k]).netCashOwed || 0)) > 0.005; })) return true;
@@ -1011,7 +1011,7 @@ function personBusy_(userId) {
 }
 // The same for a place: a branch, or one store / car / POS machine.
 function placeBusy_(kind, id) {
-  var entries = readSheet(SHEETS.ENTRIES).filter(function (e) { return !e.consumedBy && !e.voided; });
+  var entries = readSheet(SHEETS.ENTRIES).filter(function (e) { return !e.consumedBy && !e.voided && !e.releasedByBatch; });
   if (kind === 'location') {
     if (entries.some(function (e) { return e.locationId === id; })) return true;
     return readSheet(SHEETS.HANDOFFS).some(function (h) {
@@ -1283,7 +1283,7 @@ function createCarHandoff_(req, user) {
 
   var posMap = posById_();
   var entries = readSheet(SHEETS.ENTRIES).filter(function (e) {
-    return entryCarId_(e, posMap) === car.id && !e.consumedBy && !e.voided;
+    return entryCarId_(e, posMap) === car.id && !e.consumedBy && !e.voided && !e.releasedByBatch;
   });
   if (!entries.length) return { ok: false, error: 'no_entries' };
   var totals = computeNet_(entries);
@@ -1344,8 +1344,9 @@ function createLocationHandoff_(req, user) {
   var allUnconsumed = unconsumedEntriesForLocation_(location.id), posMap = posById_();
   var directEntries = allUnconsumed.filter(function (e) {
     // what the area manager entered for this branch is his cash, handed on
-    // in his own request (createClusterHandoff_), never by the branch manager
-    if (e.enteredBy === cluster.clusterManagerUserId) return false;
+    // in his own request (createClusterHandoff_), never by the branch manager;
+    // so is a deficit carried from an approved batch
+    if (e.enteredBy === cluster.clusterManagerUserId || e.releasedByBatch) return false;
     return !entryCarId_(e, posMap) || (store && e.enteredBy === store.storeManagerUserId);
   });
 
@@ -1422,7 +1423,7 @@ function createClusterHandoff_(req, user) {
   // himself: it travels in his own request, not through the branch
   // manager's handover (createLocationHandoff_ leaves it out).
   var ownEntries = readSheet(SHEETS.ENTRIES).filter(function (e) {
-    return !e.consumedBy && !e.voided && e.enteredBy === cluster.clusterManagerUserId && areaLocIds.indexOf(e.locationId) >= 0 && wanted(e.locationId);
+    return !e.consumedBy && !e.voided && (e.enteredBy === cluster.clusterManagerUserId || e.releasedByBatch) && areaLocIds.indexOf(e.locationId) >= 0 && wanted(e.locationId);
   });
   if (!held.length && !ownEntries.length) return { ok: false, error: prior ? 'nothing_owed' : 'no_held_cash' };
 
@@ -1859,6 +1860,11 @@ function actionAreaBulkBatchDetail_(req, user) {
   return { ok: true, batch: batch, byProduct: byProduct };
 }
 
+// A branch's open deficit from an earlier approved batch (the deputy approved it, nothing was
+// owed, and it waits for the branch's next cash). Never this batch's own lines.
+function carriedDeficits_(locationId, batchId) {
+  return readSheet(SHEETS.ENTRIES).filter(function (e) { return e.releasedByBatch && e.releasedByBatch !== batchId && e.locationId === locationId && !e.consumedBy && !e.voided; });
+}
 // Hand-builds a cluster_to_collector-shaped handoff directly rather than
 // routing the Deputy's decision through actionConfirmHandoff_/dispute — see
 // CLAUDE.md for the full reasoning. Short version: confirmHandoff_ exists to
@@ -1893,12 +1899,19 @@ function actionDeputyApproveBatch_(req, user) {
   var plans = [];
   for (var i = 0; i < (batch.perLocation || []).length; i++) {
     var pl = batch.perLocation[i];
-    if (Number(pl.amount || 0) < -0.005) { (batch.deficitLocations = batch.deficitLocations || []).push(pl.locationId); continue; }
+    // what the branch carries from an earlier approved batch nets off here, not on someone's shoulders
+    var carried = carriedDeficits_(pl.locationId, batch.id);
+    if (carried.length) {
+      pl = Object.assign({}, pl);
+      pl.breakdown = sumBreakdowns_([pl.breakdown, computeNet_(carried)]);
+      pl.amount = Math.round((Number(pl.amount || 0) + Number(computeNet_(carried).netCashOwed || 0)) * 100) / 100;
+    }
+    if (Number(pl.amount || 0) < -0.005) { if ((batch.deficitLocations = batch.deficitLocations || []).indexOf(pl.locationId) < 0) batch.deficitLocations.push(pl.locationId); continue; }
     if (Number(pl.amount || 0) <= 0) continue;
     var collectorId = branchCollector_(pl.locationId);
     if (!collectorId) return { ok: false, error: 'no_collector', locationId: pl.locationId };
     if (collectorId === user.id || collectorId === batch.uploadedBy) return { ok: false, error: 'conflict_of_interest', locationId: pl.locationId };
-    plans.push({ pl: pl, collectorId: collectorId, entryIds: batch.entryIds.filter(function (id) { return entryLoc[id] === pl.locationId; }) });
+    plans.push({ pl: pl, collectorId: collectorId, entryIds: batch.entryIds.filter(function (id) { return entryLoc[id] === pl.locationId; }), carried: carried.map(function (e) { return e.id; }) });
   }
 
   // mark the run first, so a timeout leaves 'approving', not 'pending_deputy'
@@ -1910,6 +1923,7 @@ function actionDeputyApproveBatch_(req, user) {
   var handoffs = plans.map(function (p) {
     if (already[p.pl.locationId]) {
       p.entryIds.forEach(function (id) { handoffOfEntry[id] = already[p.pl.locationId].id; });
+      linkRows_(SHEETS.ENTRIES, p.carried, already[p.pl.locationId].id);
       return already[p.pl.locationId];
     }
     var handoff = {
@@ -1932,6 +1946,7 @@ function actionDeputyApproveBatch_(req, user) {
     try { hoStampDate_(dctxB, handoff, null, null, user); } catch (eD) {}
     writeRow(SHEETS.HANDOFFS, handoff);
     p.entryIds.forEach(function (id) { handoffOfEntry[id] = handoff.id; });
+    linkRows_(SHEETS.ENTRIES, p.carried, handoff.id);
     return handoff;
   });
   var uploader = getById_(SHEETS.USERS, batch.uploadedBy) || user;
@@ -2764,7 +2779,7 @@ function actionDataHealthCheck_(req, user) {
       }
       checked.deposits++;
       var dsum = srcH.reduce(function (a, x) { return a + (x ? Number(x.amount || 0) : 0); }, 0);
-      if (Math.abs(r2(dsum) - r2(h.amount)) > 0.05) add('deposit', h, 'deposit differs from the requests it banked', dsum, h.amount);
+      if (Math.abs(r2(dsum + Number(h.overBanked || 0)) - r2(h.amount)) > 0.05) add('deposit', h, 'deposit differs from the requests it banked', dsum, h.amount);
       return;
     }
     checked.handovers++;
@@ -2791,10 +2806,10 @@ function actionDataHealthCheck_(req, user) {
     (open[k] = open[k] || {})[sub] = 1;
   });
   Object.keys(open).forEach(function (k) { var n = Object.keys(open[k]).length; if (n > 1) add('day', null, 'source and day with ' + n + ' open sets of sales: ' + k); });
-  var byKind = {};
-  issues.forEach(function (i) { byKind[i.kind] = (byKind[i.kind] || 0) + 1; });
   // banked more than its requests say after a receipt was corrected: for Finance to look at
   H.forEach(function (h) { if (h.kind === 'deposit' && h.status !== 'voided' && Number(h.overBanked || 0) > 0.005) add('over_banked', h, 'deposit carries ' + h.overBanked + ' more than its requests', 0, Number(h.overBanked)); });
+  var byKind = {};
+  issues.forEach(function (i) { byKind[i.kind] = (byKind[i.kind] || 0) + 1; });
   return { ok: true, at: new Date().toISOString(), checked: checked, issues: issues, byKind: byKind };
 }
 
@@ -3009,11 +3024,11 @@ function escalateHeldTooLong_(handoff, hoursHeld) {
 // Twenty at a time: each group is stamped against a fresh read, under the lock, and sent after it,
 // so a run cut short leaves the rest to the next run.
 function alertInGroups_(flag, isDue, send) {
-  var sent = 0, group;
+  var sent = 0, group, seen = Object.create(null);
   do {
     group = withCashLock_(function () {
-      var rows = readSheet(SHEETS.HANDOFFS).filter(isDue).slice(0, 20), at = new Date().toISOString();
-      rows.forEach(function (h) { h[flag] = at; });
+      var rows = readSheet(SHEETS.HANDOFFS).filter(function (h) { return !seen[h.id] && isDue(h); }).slice(0, 20), at = new Date().toISOString();
+      rows.forEach(function (h) { h[flag] = at; seen[h.id] = 1; });
       writeRows_(SHEETS.HANDOFFS, rows);
       return rows;
     });
@@ -3179,9 +3194,13 @@ function actionMyPendingActions_(req, user) {
       if (clusterManagerOwnsCluster_(user.id, l.clusterId)) myLocs[l.id] = true;
     });
     var heldC = handoffs.filter(function (h) { return h.kind === 'location_to_cluster' && h.status === 'confirmed' && h.toUserId === user.id && !h.consumedBy && inActiveArea_(user, h); });
-    var ownC = openEntries_().filter(function (e) { return e.enteredBy === user.id && myLocs[e.locationId]; });
-    var rc = ready_(heldC, ownC);
-    if (rc.count && rc.amount > 0) add('send_ready', rc);
+    var ownC = openEntries_().filter(function (e) { return (e.enteredBy === user.id || e.releasedByBatch) && myLocs[e.locationId]; });
+    var rc = ready_(heldC, ownC), locReady = {};
+    heldC.forEach(function (h) { locReady[h.locationId] = (locReady[h.locationId] || 0) + Number(h.amount || 0); });
+    var ownBy = {}; ownC.forEach(function (e) { (ownBy[e.locationId] = ownBy[e.locationId] || []).push(e); });
+    Object.keys(ownBy).forEach(function (k) { locReady[k] = (locReady[k] || 0) + Number(computeNet_(ownBy[k]).netCashOwed || 0); });
+    var readyLocs = Object.keys(locReady).filter(function (k) { return locReady[k] > 0.005; });
+    if (readyLocs.length) { rc.amount = readyLocs.reduce(function (s, k) { return s + locReady[k]; }, 0); add('send_ready', rc); }
   } else if (user.role === 'store_manager') {
     var posMap = posById_();
     var heldS = handoffs.filter(function (h) { return h.kind === 'car_to_location' && h.status === 'confirmed' && h.toUserId === user.id && !h.consumedBy; });
@@ -3462,6 +3481,8 @@ function jrEntrySteps_(c, e) {
     steps = steps.concat(jrPath_(c, main, { skipBatch: true }));
   } else if (batch && batch.status === 'deputy_approved' && e.consumedBy === batch.id) {
     steps.push(jrStep_(c, 'batch_nocash', 'done', {}));
+  } else if (e.releasedByBatch && !e.voided) {
+    steps.push(jrStep_(c, 'batch_carried', 'wait', {}));
   } else if (!e.voided && net > 0.005 && !(batch && batch.status !== 'deputy_approved') && !steps.some(function (s) { return s.st === 'wait'; })) {
     var open = jrOpenKey_(c, e);
     steps.push(jrStep_(c, open.k, 'wait', { to: open.to }));

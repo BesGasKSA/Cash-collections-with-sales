@@ -44,8 +44,10 @@ var INV_COUNT_ = { count_gain: 1, count_loss: 1 };
 function invControls_() { return config_().invControls !== false; }
 // stock is valued at the weighted average of what it cost (default), or at the standard cost
 function invAverage_() { return config_().invValuation !== 'standard'; }
-// The cost of goods follows the average from this day on: no update rewrites a saved day (the owner's rule).
-var AVG_COGS_FROM_ = '2026-10-31';
+// The cost of goods follows the average from this day on, so this update rewrites no saved day (the
+// owner's rule). From then on it is a moving average: a receipt saved or voided with an earlier date
+// moves the cost of the sales after that date, as it moves the stock's value.
+var AVG_COGS_FROM_ = '2026-11-01';
 var INV_REFILL_STATE_ = { refill_out: 'empty', refill_in: 'full' };
 // Cylinders on deposit with a customer (عهدة): out leaves the branch, return comes
 // back; a customer never returns more than he holds of an item. A car's load and
@@ -451,13 +453,14 @@ function actionTransferInventory_(req, user) {
     scT.moves.forEach(function (m) {
       if (m.voided || m.kind !== 'opening') return;
       var tg = scT.moveTarget(m); if (!tg) return;
-      var key = m.locationId + '|' + tg.item.id;
+      var key = invOpeningKey_(m.locationId, tg.item.id, tg.state);
       if (!firstCount[key] || String(m.date) < firstCount[key]) firstCount[key] = String(m.date);
     });
+    function countOf(locId, itemId, st) { return firstCount[invOpeningKey_(locId, itemId, st)] || (st ? firstCount[invOpeningKey_(locId, itemId, st === 'full' ? 'empty' : 'full')] : null); }
     for (var ci = 0; ci < checked.length; ci++) {
-      var cc = checked[ci], itm = sc.items[cc.itemId], fromC = firstCount[lf.loc.id + '|' + cc.itemId], toC = firstCount[to.id + '|' + cc.itemId];
-      if (!fromC || !toC) return { ok: false, error: 'transfer_no_opening', name: itm ? itm.name : '', index: ci };
-      if (date < fromC || date < toC) return { ok: false, error: 'transfer_before_opening', name: itm ? itm.name : '', index: ci };
+      var cc = checked[ci], itm = sc.items[cc.itemId], fromC = countOf(lf.loc.id, cc.itemId, cc.move.state), toC = countOf(to.id, cc.itemId, cc.move.state);
+      if (!fromC || !toC) return { ok: false, error: 'transfer_no_opening', name: itm ? itm.name : '', branch: fromC ? to.name : lf.loc.name, index: ci };
+      if (date < fromC || date < toC) return { ok: false, error: 'transfer_before_opening', name: itm ? itm.name : '', branch: date < fromC ? lf.loc.name : to.name, index: ci };
     }
     var linkId = Utilities.getUuid(), moves = [];
     checked.forEach(function (c) {
@@ -542,6 +545,61 @@ function actionImportInventoryDay_(req, user) {
     var written = iRows.map(function (r) { return writeRow(SHEETS.INV_MOVES, r); });
     logAudit_('inventory_import', user.id, lf.loc.id + ' ' + date + ' (' + written.length + ')');
     return { ok: true, moves: written };
+  } finally { try { lock.releaseLock(); } catch (e) {} }
+}
+
+// The opening stock replaced (2026-10-30, the user: new openings at 30 Sep, any old opening
+// removed). Admin only, previewed first, all or nothing. The old openings are cancelled with the
+// reason, as every correction here: out of every figure, still on file. Moves dated after the new
+// opening stay, so the preview names the counts and purchases already there.
+function actionReplaceOpenings_(req, user) {
+  if (user.role !== 'admin') return { ok: false, error: 'forbidden' };
+  var date = String(req.date || ''), list = Array.isArray(req.rows) ? req.rows : [];
+  if (!invDateOk_(date)) return { ok: false, error: 'invalid_date' };
+  if (date > todayRiyadh_()) return { ok: false, error: 'future_date' };
+  if (!list.length || list.length > 3000) return { ok: false, error: 'invalid_input' };
+  var reason = String(req.reason || '').trim().slice(0, 300);
+  if (!req.dryRun) {
+    if (!reason) return { ok: false, error: 'reason_required' };
+    if (String(req.confirm || '') !== 'REPLACE') return { ok: false, error: 'confirm_required' };
+  }
+  var lock = scriptLock_(); lock.waitLock(30000);
+  try {
+    freshenExec_();
+    var sc = invStockCtx_();
+    if (!sc.live) return { ok: false, error: 'setup_required' };
+    var locs = Object.create(null), seen = Object.create(null), rows = [], inFile = Object.create(null);
+    readSheet(SHEETS.LOCATIONS).forEach(function (l) { locs[l.id] = l; });
+    for (var i = 0; i < list.length; i++) {
+      var r = list[i] || {}, it = hasOwn_(sc.items, String(r.stockItemId)) ? sc.items[r.stockItemId] : null;
+      if (!locs[r.locationId]) return { ok: false, error: 'branch_required', index: i };
+      if (!it) return { ok: false, error: 'invalid_stock_item', index: i };
+      var st = it.kind === 'cylinder' ? String(r.state || '') : '';
+      if (it.kind === 'cylinder' && INV_STATES_.indexOf(st) < 0) return { ok: false, error: 'invalid_state', index: i };
+      var q = Math.round(Number(r.qty) * 1000) / 1000;
+      if (r.qty === '' || r.qty == null || !isFinite(q) || q < 0 || q > INV_MAX_QTY_) return { ok: false, error: 'invalid_qty', index: i };
+      var cost = r.unitCost === '' || r.unitCost == null ? null : Number(r.unitCost);
+      if (cost != null && !(isFinite(cost) && cost >= 0)) return { ok: false, error: 'invalid_cost', index: i };
+      var key = r.locationId + '|' + it.id + '|' + st;
+      if (seen[key]) return { ok: false, error: 'duplicate_line', index: i };
+      seen[key] = 1; inFile[r.locationId] = 1;
+      rows.push({ locId: r.locationId, c: { stockItemId: it.id, state: st || null, kind: 'opening', qty: q, unitCost: cost, newCylinders: false, note: reason } });
+    }
+    var old = sc.moves.filter(function (m) { return !m.voided && m.kind === 'opening'; });
+    var after = sc.moves.filter(function (m) { return !m.voided && m.kind !== 'opening' && String(m.date) > date; });
+    var missing = Object.create(null);
+    old.forEach(function (m) { if (!inFile[m.locationId] && locs[m.locationId]) missing[m.locationId] = locs[m.locationId].name; });
+    var pv = { oldOpenings: old.length, newOpenings: rows.length, branches: Object.keys(inFile).length,
+      missingBranches: Object.keys(missing).map(function (k) { return missing[k]; }),
+      laterCounts: after.filter(function (m) { return hasOwn_(INV_COUNT_, m.kind); }).length,
+      laterPurchases: after.filter(function (m) { return m.kind === 'purchase' || m.kind === 'refill_in'; }).length };
+    if (req.dryRun) return { ok: true, dryRun: true, preview: pv };
+    var at = new Date().toISOString();
+    old.forEach(function (m) { m.voided = true; m.voidedAt = at; m.voidedBy = user.id; m.voidReason = reason; m.replacedOpening = true; });
+    writeRows_(SHEETS.INV_MOVES, old);
+    costAppendMany_(SHEETS.INV_MOVES, rows.map(function (x) { return invMoveRow_(x.locId, x.c, date, user, {}); }));
+    logAudit_('inventory_replace_openings', user.id, date + ': ' + old.length + ' cancelled, ' + rows.length + ' written (' + reason + ')');
+    return { ok: true, preview: pv };
   } finally { try { lock.releaseLock(); } catch (e) {} }
 }
 
@@ -653,13 +711,17 @@ function invAvgPools_(hist) {
   function out(itemId, pool, d, at, q) { ev.push({ k: itemId + '|' + pool, d: d, at: at || '', q: q, rcv: false }); }
   // a branch's sales count from the day it was counted: a branch outside the stock must not
   // drain what the counted ones hold (2026-10-30)
-  var counted = Object.create(null);
-  readSheet(SHEETS.INV_MOVES).forEach(function (m) {
+  // a move from before the setup keeps its old value: the setup never rewrites the past
+  var counted = Object.create(null), allMoves = readSheet(SHEETS.INV_MOVES);
+  allMoves.forEach(function (m) {
+    if (m.voided || m.kind !== 'opening' || !items[m.stockItemId]) return;
+    var ck = m.locationId + '|' + m.stockItemId;
+    if (!counted[ck] || String(m.date) < counted[ck]) counted[ck] = String(m.date);
+  });
+  function countedFrom(locId, itemId, d) { var c = counted[locId + '|' + itemId]; return !!c && String(d) >= c; }
+  allMoves.forEach(function (m) {
     if (m.voided) return;
-    var it = items[m.stockItemId]; if (!it) return;
-    // a move from before the setup keeps its old value: the setup never rewrites the past
-    if (!m.stockItemId) return;
-    if (m.kind === 'opening') { var ck = m.locationId + '|' + it.id; if (!counted[ck] || String(m.date) < counted[ck]) counted[ck] = String(m.date); }
+    var it = items[m.stockItemId]; if (!it || !countedFrom(m.locationId, it.id, m.date)) return;
     var q = Number(m.qty || 0); if (!(q > 0)) return;
     var d = m.date, at = m.createdAt, own = m.unitCost != null && m.unitCost !== '' ? costExVat_(Number(m.unitCost), d) : null;
     var cylF = it.kind === 'cylinder' && m.state !== 'empty', cylE = it.kind === 'cylinder' && m.state === 'empty';
@@ -693,7 +755,7 @@ function invAvgPools_(hist) {
     if (e.voided || !e.productId || !(Number(e.qty || 0) > 0)) return;
     var p = products[e.productId]; if (!p || !p.stockItemId || !items[p.stockItemId]) return;
     var it = items[p.stockItemId], q = Number(e.qty), d = e.date, at = e.createdAt;
-    if (!counted[e.locationId + '|' + it.id] || String(d) < counted[e.locationId + '|' + it.id]) return;
+    if (!countedFrom(e.locationId, it.id, d)) return;
     if (it.kind !== 'cylinder') { out(it.id, 'unit', d, at, q); return; }
     var eff = INV_EFFECTS_.indexOf(p.stockEffect) >= 0 ? p.stockEffect : 'exchange';
     if (eff === 'sell_empty') { out(it.id, 'body', d, at, q); return; }
