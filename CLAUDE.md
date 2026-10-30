@@ -2297,3 +2297,10 @@ desktop version". Web push through **Firebase Cloud Messaging HTTP v1**, project
   file). The browser check drove the real index.html on the mock in headless Chrome; the app is a
   closure, so a fake `window.firebase` injected before load stood in for FCM, and one run used the
   real gstatic scripts. The mock answers `GET /api` (the warm-up ping) with 404: that is the mock.
+
+## Stock guard, no archiving, IFRS statement (2026-10-29/30)
+
+- **Nothing submitted leaves the live sheets.** `ARCHIVE_OFF_` (Admin.gs) refuses the date-range archive and the fresh test round for everyone. `actionArchivePurge_` deletes what was archived before (admin, the word DELETE, after the .json backup from `archiveBackupPart`); run headers stay as `purged`.
+- **The LPG rule.** Gas bought = refill: filled +N, empty -N, total unchanged. Only new cylinders raise the total. `invGuard_` (Inventory.gs) runs movements through the stock card and refuses a day that ends below zero, lower than without them. Filled, units, plant and customers are checked every day. Sales are never refused, so a sale still to be entered can only add empties: on today and yesterday the empties may lean on the filled on hand (`invGraceFrom_`), and on a branch sheet's own day they are left to its panel, which has the file's sales. Counts are facts: openings are never judged and they stay in both sides of the simulation.
+- **Profitability statement** (`plIfrsModel_`): IAS 1, expenses by function, with comparatives from `res.prevNodes`. Lines and subtotals: `plFoot_` shares cents down the lines and keeps the report's own subtotals, so the statement and the tiles agree. `node.types` is keyed `<field>|<id>` (costs by type, net and cogs by product, `dep|` for depreciation). Every figure opens `plLineItems_` > `plLeafOpen_`: the entries, or the cost lines. It is a management statement: zakat and finance costs are not recorded.
+- Deploy folder is now `D:\Claude\bestgas-cash-collection\apps-script`, and Notify.js and Push.js go with the others.
