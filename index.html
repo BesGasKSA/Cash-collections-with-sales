@@ -29072,7 +29072,12 @@ function replaceOpeningsCard_(){
   var COLS_ = { branch: ['branch', 'فرع', 'برانچ'], item: ['item', 'product', 'صنف', 'آئٹم'], cost: ['cost', 'تكلفة', 'لاگت'], full: ['filled', 'full', 'مليان', 'ممتلئ', 'بھرا'], empty: ['empty', 'فارغ', 'فوارغ', 'خالی'], qty: ['quantity', 'qty', 'كمية', 'مقدار'] };
   function build(table){
     var meta = state.meta || {}, head = (table[0] || []).map(function(h){ return String(h == null ? '' : h).toLowerCase().replace(/[\s_\-]+/g, ''); }), at = {};
-    Object.keys(COLS_).forEach(function(k){ at[k] = head.findIndex(function(h){ return COLS_[k].some(function(w){ return h.indexOf(w) >= 0; }); }); });
+    // each column answers once, in this order: "Filled qty" is Filled, "Empty cost" is a cost
+    var taken = {};
+    Object.keys(COLS_).forEach(function(k){
+      at[k] = head.findIndex(function(h, i){ return !taken[i] && COLS_[k].some(function(w){ return h.indexOf(w) >= 0; }); });
+      if (at[k] >= 0) taken[at[k]] = 1;
+    });
     if (at.branch < 0 || at.item < 0) return { error: t('ro_needCols') };
     // a name in any of the three languages; a branch also by city and name
     var tr = {}, locs = {}, items = {};
