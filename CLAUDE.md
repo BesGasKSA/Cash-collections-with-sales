@@ -1894,6 +1894,21 @@ Deputy screen filtered by `createdAt`. Live: of 216 lines of 13 Oct, 190 were ha
   lifts single functions, so a bracket missing between two of them once passed every test while the
   page did not start at all.
 
+## System sweep: nothing lost, nothing doubled (2026-10-30)
+
+- **One lock per execution:** every lock goes through `scriptLock_()` (Code.gs), never `LockService` directly. Inner holders only count; the outermost releases, after a flush and a new version for each sheet written. `withCashLock_` is re-entrant. Every read-then-write of cash runs inside it; mail waits for the release (`sendMail_` queues through `afterCashLock_`).
+- **Self-mending links:** `healLinks_` (createHandoff, recordDeposit, the daily check) takes rows a live handover lists and frees rows pointing at a returned, rejected or voided one. A direct deposit lists its day without taking it. `linkRows_`/`writeRows_` write many rows with one id read and one version.
+- **Nothing with transactions is deleted:** master data with entries or handovers answers `has_children`. The `duplicate` flag on adminVoidTransaction is gone. Unmatching a bank line needs a reason and sets `wasReconciled`, which keeps the day from being cancelled.
+- **Finding a number:** `traceNumber` (admin, finance) searches live rows, archived copies, old archive tabs and the audit trail; the card is in Admin → Settings with the archive runs (Restore) above the delete card, which says what the copies hold.
+- **Bank statements:** a line already on file is skipped, counted per key, so two equal lines in one file stay two.
+- **Receipt corrections:** a request stays in its deposit when the deposit's room covers the new figure (`overBanked` keeps any extra), leaves it when there is no room, and is refused when part of it was banked (`receipt_part_banked`).
+- **Stock:** a count compares with the report of its own day. Voiding goes through `invGuard_` with `{remove:true}`; an opening with later moves or sales is refused (`opening_in_use`). A transfer needs an opening at the receiver (`transfer_no_opening`). The average skips sales before a branch's opening and moves a body between pools on an exchange of another type, at the receiving pool's own average. Moves from before the setup stay out of the pools: the setup never rewrites the past.
+- **Cost of goods** uses the same pools (`invAvgCostEx_`), so the stock screen and the profit report agree.
+- **Workflow:** an `approving` batch stays on the deputy's list; an admin hands on the cash of a collector who cannot act (`fromUserId` + note); open days that net to nothing do not make a person busy; a branch below zero in an area batch goes back to open cash.
+- **History after a change:** a moved or replaced manager keeps the days he handled (`entriesHandled_`), and the current manager reads his branches' handovers of his level.
+- **Speed:** `getById_` indexes per request; the audit sheet no longer clears cached reports; a repeat sign-in within the hour writes nothing; `getInventoryLive` is cached by the stock's versions; Home entries drop empty fields; the opening runs two seconds.
+- **The statement's lines open as a pivot** (`placeKids` in `plIfrsModel_`): collapsed, city, area when a city has several, branch, store or car. Its Excel and PDF keep the statement's own lines.
+
 ## Traps
 
 ### 1. A bare `<tr>` built through `el()` silently loses its content

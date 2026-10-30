@@ -924,6 +924,8 @@ function responseCacheKey_(action, req, user) {
 // Work queued with afterCashLock_ (alerts, emails) runs once the lock is released,
 // and only when the locked work finished without throwing (2026-10-18).
 function withCashLock_(fn) {
+  // already inside: the outer call keeps the lock and sends the queued work
+  if (exec_().inCashLock) return fn();
   var lock = scriptLock_();
   lock.waitLock(30000);
   var ex = exec_(), ok = false, res;
