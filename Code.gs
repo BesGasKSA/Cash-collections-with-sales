@@ -1191,6 +1191,7 @@ function actionLogin_(req) {
     user.mustChangePw = true;
     bumpEpoch_(user);   // whoever else was signed in is not any more
   }
+  var hadReset = !!user.resetPass, wasNew = user.inviteStatus !== 'active';
   delete user.resetPass; delete user.resetSalt; delete user.resetExpires;
   if (user.inviteStatus !== 'active') {
     user.inviteStatus = 'active';
@@ -1200,8 +1201,11 @@ function actionLogin_(req) {
   // previous session's login time — that's the one worth showing back to
   // the user ("last login: ..."), not the one that's happening right now.
   var previousLoginAt = user.lastLoginAt || null;
-  user.lastLoginAt = new Date().toISOString();
-  writeRow(SHEETS.USERS, user);
+  // at most once an hour: every write to the users clears every cached report, for everyone
+  if (viaReset || hadReset || wasNew || !previousLoginAt || Date.now() - new Date(previousLoginAt).getTime() > 3600000) {
+    user.lastLoginAt = new Date().toISOString();
+    writeRow(SHEETS.USERS, user);
+  }
   var token = issueToken_(user.id, epochOf_(user));
   logAudit_('login', user.id, null);
   // Reference data rides along with the login reply, so the client can

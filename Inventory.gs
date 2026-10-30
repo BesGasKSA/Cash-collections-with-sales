@@ -325,6 +325,9 @@ var INV_GUARD_ROUND_ = 0.0005;
 function invGraceFrom_() { return costDateAdd_(todayRiyadh_(), -1); }
 function invGuard_(locId, user, all, opts) {
   all = all || [];
+  // opts.remove: these moves are on file and are being taken out, not added
+  var removing = opts && opts.remove, gone = Object.create(null);
+  if (removing) all.forEach(function (r) { gone[r.id] = 1; });
   var rows = all.filter(function (r) { return r.kind !== 'opening' && r.stockItemId; });
   if (!rows.length) return null;
   var base = invStockCtx_(), byItem = Object.create(null), order = [], grace = invGraceFrom_(), ownDay = opts && opts.ownDay;
@@ -340,8 +343,8 @@ function invGuard_(locId, user, all, opts) {
     // the file's own counts stand on both sides: a count is a fact, never what is judged
     var ofItem = all.filter(function (r) { var tg = base.moveTarget(r); return tg && tg.item.id === id; });
     var sc1 = {}, sc2 = {}; Object.keys(base).forEach(function (k) { sc1[k] = base[k]; sc2[k] = base[k]; });
-    sc1.moves = base.moves.concat(ofItem.filter(function (r) { return r.kind === 'opening'; }));
-    sc2.moves = base.moves.concat(ofItem);
+    sc1.moves = removing ? base.moves : base.moves.concat(ofItem.filter(function (r) { return r.kind === 'opening'; }));
+    sc2.moves = removing ? base.moves.filter(function (r) { return !gone[r.id]; }) : base.moves.concat(ofItem);
     var before = actionStockLedger_(req, user, sc1);
     if (!before.ok) continue;
     var after = actionStockLedger_(req, user, sc2);
@@ -440,6 +443,11 @@ function actionTransferInventory_(req, user) {
     freshenExec_();
     var tErr = invGuard_(lf.loc.id, user, checked.map(function (c) { var o = {}; safeOwnKeys_(c.move).forEach(function (k) { o[k] = c.move[k]; }); return invMoveRow_(lf.loc.id, o, date, user); }));
     if (tErr) return tErr;
+    var opened = invOpenings_();
+    for (var ci = 0; ci < checked.length; ci++) {
+      var cc = checked[ci], itm = sc.items[cc.itemId];
+      if (!opened[invOpeningKey_(to.id, cc.itemId, cc.move.state)] && !opened[invOpeningKey_(to.id, cc.itemId, cc.move.state === 'full' ? 'empty' : 'full')]) return { ok: false, error: 'transfer_no_opening', name: itm ? itm.name : '', index: ci };
+    }
     var linkId = Utilities.getUuid(), moves = [];
     checked.forEach(function (c) {
       var outM = {}, inM = {};
@@ -553,6 +561,21 @@ function actionVoidInventoryMove_(req, user) {
       var sc1 = invStockCtx_(), tg1 = sc1.moveTarget(m);
       if (tg1 && invHeld_(sc1, m.locationId, tg1.item.id, m.customerId) - Number(m.qty || 0) < -0.0005) return { ok: false, error: 'deposit_returned' };
     }
+    // an opening with moves or sales after it carries them: a count corrects it
+    if (m.kind === 'opening') {
+      var sc2 = invStockCtx_(), tg2 = sc2.moveTarget(m);
+      if (tg2) {
+        var later = sc2.moves.some(function (x) { if (x.voided || x.id === m.id || x.locationId !== m.locationId || x.kind === 'opening') return false; var t = sc2.moveTarget(x); return t && t.item.id === tg2.item.id; });
+        if (!later) later = readSheet(SHEETS.ENTRIES).some(function (e) { if (e.voided || e.locationId !== m.locationId || !e.productId) return false; var p = sc2.products[e.productId]; return p && (p.stockItemId === tg2.item.id || p.returnItemId === tg2.item.id); });
+        if (later) return { ok: false, error: 'opening_in_use' };
+      }
+    } else {
+      // taking it away must not leave the branch short, nor the branch that received a transfer
+      var both = m.linkId ? readSheet(SHEETS.INV_MOVES).filter(function (x) { return x.linkId === m.linkId && !x.voided; }) : [m], locs = {};
+      both.forEach(function (x) { (locs[x.locationId] = locs[x.locationId] || []).push(x); });
+      var locIds = Object.keys(locs);
+      for (var li = 0; li < locIds.length; li++) { var gErr = invGuard_(locIds[li], user, locs[locIds[li]], { remove: true }); if (gErr) return gErr; }
+    }
     var stamp = { voidReason: reason.slice(0, 300), voidedBy: user.id, voidedAt: new Date().toISOString() };
     m.voided = true; m.voidReason = stamp.voidReason; m.voidedBy = stamp.voidedBy; m.voidedAt = stamp.voidedAt;
     writeRow(SHEETS.INV_MOVES, m);
@@ -572,11 +595,16 @@ function actionVoidInventoryMove_(req, user) {
 // every branch in reach (or one). Never served from the response cache.
 function actionInventoryLive_(req, user) {
   var today = todayRiyadh_();
+  // polled every minute by every open Home: worked out again only when the stock has changed
+  var key = 'invlive|' + user.id + '|' + (req.locationId || '') + '|' + activeAreaOf_(user.id) + '|' + today + '|' + [SHEETS.ENTRIES, SHEETS.INV_MOVES, SHEETS.STOCK_ITEMS, SHEETS.PRODUCTS, SHEETS.LOCATIONS].map(version_).join('.');
+  var cache = null;
+  try { cache = CacheService.getScriptCache(); var hit = cacheGetBig_(cache, key); if (hit) return JSON.parse(hit); } catch (x) { cache = null; }
   var res = actionInventoryReport_({ dateFrom: today, dateTo: today, locationId: req.locationId || null }, user);
   if (!res.ok) return res;
   res.asOf = new Date().toISOString();
   res.live = true;
   delete res.moves;                  // the live card shows stock, not the day's movements
+  try { if (cache) cachePutBig_(cache, key, JSON.stringify(res), 600); } catch (x) { /* the answer still stands */ }
   return res;
 }
 
@@ -612,9 +640,15 @@ function invAvgPools_(hist) {
   // atAvg: what is found by a count comes in at the average it joins (the standard cost only while there is none)
   function inn(itemId, pool, d, at, q, unitEx, atAvg) { ev.push({ k: itemId + '|' + pool, d: d, at: at || '', q: q, c: unitEx, rcv: true, atAvg: !!atAvg }); }
   function out(itemId, pool, d, at, q) { ev.push({ k: itemId + '|' + pool, d: d, at: at || '', q: q, rcv: false }); }
+  // a branch's sales count from the day it was counted: a branch outside the stock must not
+  // drain what the counted ones hold (2026-10-30)
+  var counted = Object.create(null);
   readSheet(SHEETS.INV_MOVES).forEach(function (m) {
-    if (m.voided || !m.stockItemId) return;
-    var it = items[m.stockItemId]; if (!it) return;
+    if (m.voided) return;
+    var it = items[m.stockItemId || (products[m.productId] || {}).stockItemId]; if (!it) return;
+    if (m.kind === 'opening') { var ck = m.locationId + '|' + it.id; if (!counted[ck] || String(m.date) < counted[ck]) counted[ck] = String(m.date); }
+    // a move from before the setup keeps its old value: the setup never rewrites the past
+    if (!m.stockItemId) return;
     var q = Number(m.qty || 0); if (!(q > 0)) return;
     var d = m.date, at = m.createdAt, own = m.unitCost != null && m.unitCost !== '' ? costExVat_(Number(m.unitCost), d) : null;
     var cylF = it.kind === 'cylinder' && m.state !== 'empty', cylE = it.kind === 'cylinder' && m.state === 'empty';
@@ -648,11 +682,16 @@ function invAvgPools_(hist) {
     if (e.voided || !e.productId || !(Number(e.qty || 0) > 0)) return;
     var p = products[e.productId]; if (!p || !p.stockItemId || !items[p.stockItemId]) return;
     var it = items[p.stockItemId], q = Number(e.qty), d = e.date, at = e.createdAt;
+    if (!counted[e.locationId + '|' + it.id] || String(d) < counted[e.locationId + '|' + it.id]) return;
     if (it.kind !== 'cylinder') { out(it.id, 'unit', d, at, q); return; }
     var eff = INV_EFFECTS_.indexOf(p.stockEffect) >= 0 ? p.stockEffect : 'exchange';
     if (eff === 'sell_empty') { out(it.id, 'body', d, at, q); return; }
     out(it.id, 'gas', d, at, q);
     if (eff === 'sell_full') out(it.id, 'body', d, at, q);
+    // another type's empty came back: one body of this item left, one of that item joined at its own
+    // average (the cost of goods books the difference between the two, costOfProduct_)
+    var back = eff === 'exchange' && p.returnItemId && p.returnItemId !== it.id && items[p.returnItemId] && items[p.returnItemId].kind === 'cylinder' ? items[p.returnItemId] : null;
+    if (back) ev.push({ k: it.id + '|body', to: back.id + '|body', d: d, at: at || '', q: q, rcv: false });
   });
   // in date order; within a day, receipts first
   ev.sort(function (a, b) { return String(a.d).localeCompare(String(b.d)) || (a.rcv === b.rcv ? String(a.at).localeCompare(String(b.at)) : (a.rcv ? -1 : 1)); });
@@ -665,7 +704,10 @@ function invAvgPools_(hist) {
       s.avg = held > 0 && s.avg != null ? (held * s.avg + x.q * x.c) / (held + x.q) : x.c;
       s.q = held + x.q;
       (line[x.k] = line[x.k] || []).push({ d: x.d, avg: s.avg });
-    } else s.q -= x.q;
+    } else {
+      s.q -= x.q;
+      if (x.to) { var t = st[x.to] || (st[x.to] = { q: 0, avg: null }); t.q = Math.max(0, t.q) + x.q; }
+    }
   });
   ex.invAvg = line; return line;
 }
@@ -684,6 +726,26 @@ function invAvgEx_(it, state, date, hist) {
   return gas + body;
 }
 
+// What a sale of a product cost at the average (before VAT), or null when no part of it has one.
+// The same pools value the stock, so the stock screen and the profit report cannot disagree.
+function invAvgCostEx_(p, date, hist, items) {
+  var it = p && p.stockItemId && items[p.stockItemId]; if (!it || it.virtual) return null;
+  var line = invAvgPools_(hist);
+  function pool(id, name) { return invAvgOf_(line, id, name, date); }
+  if (it.kind !== 'cylinder') return pool(it.id, 'unit');
+  var eff = INV_EFFECTS_.indexOf(p.stockEffect) >= 0 ? p.stockEffect : 'exchange';
+  var back = eff === 'exchange' && p.returnItemId && p.returnItemId !== it.id && items[p.returnItemId] && items[p.returnItemId].kind === 'cylinder' ? items[p.returnItemId] : null;
+  function or(v, id, field) { return v != null ? v : costExVat_(stockItemCostOn_(items[id], field, date, hist).v, date); }
+  var gas = pool(it.id, 'gas'), body = pool(it.id, 'body');
+  if (eff === 'sell_empty') return body;
+  if (eff === 'sell_full') return gas == null && body == null ? null : or(gas, it.id, 'gasCost') + or(body, it.id, 'cylinderCost');
+  if (!back) return gas;
+  var bb = pool(back.id, 'body');
+  if (gas == null && body == null && bb == null) return null;
+  // a downgrade swap (dearer cylinder taken back) never books a negative cost
+  return Math.max(0, or(gas, it.id, 'gasCost') + or(body, it.id, 'cylinderCost') - or(bb, back.id, 'cylinderCost'));
+}
+
 // ---------- a physical count (2026-10-07) ----------
 // The branch counts what it holds; the difference from what the app says is
 // written as a count gain or loss on the count's day, with the counted figure.
@@ -700,10 +762,10 @@ function actionRecordStockCount_(req, user) {
     freshenExec_();
     var sc = invStockCtx_();
     if (!sc.live) return { ok: false, error: 'setup_required' };
-    // the shelf is counted before the day's sales (they arrive later in the day's entry):
-    // the figure it is compared with is the closing of the day before
-    var prev = Utilities.formatDate(new Date(Date.parse(date + 'T12:00:00Z') - 86400000), 'UTC', 'yyyy-MM-dd');
-    var rep = actionInventoryReport_({ dateFrom: prev, dateTo: prev, locationId: lf.loc.id }, user, sc);
+    // what the app holds for that day with everything saved so far: its purchases, sales and any
+    // earlier count (2026-10-30: the closing of the day before counted a day's moves again as a
+    // gain or a loss, and a second count twice). Sales saved after the count still come off.
+    var rep = actionInventoryReport_({ dateFrom: date, dateTo: date, locationId: lf.loc.id }, user, sc);
     if (!rep.ok) return rep;
     var have = Object.create(null); rep.rows.forEach(function (r) { if (!r.noOpening) have[r.stockItemId + '|' + (r.state || '')] = r.ending; });
     var out = [], seen = Object.create(null);

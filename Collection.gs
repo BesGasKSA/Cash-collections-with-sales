@@ -993,8 +993,9 @@ function actionListEntries_(req, user) {
 // confirmed cash they received and have not passed on.
 function personBusy_(userId) {
   if (!userId) return false;
-  var busyEntry = readSheet(SHEETS.ENTRIES).some(function (e) { return e.enteredBy === userId && !e.consumedBy && !e.voided; });
-  if (busyEntry) return true;
+  // open days that net to nothing hold no cash (a credit-only day cannot be handed over)
+  var openDays = readSheet(SHEETS.ENTRIES).filter(function (e) { return e.enteredBy === userId && !e.consumedBy && !e.voided; });
+  if (openDays.length && Number(computeNet_(openDays).netCashOwed || 0) > 0.005) return true;
   return readSheet(SHEETS.HANDOFFS).some(function (h) {
     if (h.kind === 'deposit') return false;
     var open = h.status === 'pending' || h.status === 'disputed' || h.status === 'pending_deputy';
@@ -1206,11 +1207,20 @@ function createCollectorHandoff_(req, user) {
   if (to.id === user.id) return { ok: false, error: 'conflict_of_interest' };
   if (to.role !== 'collector') return { ok: false, error: 'wrong_role' };
   if (to.active === false) return { ok: false, error: 'inactive_user' };
-  var held = collectorHeld_(user.id);
+  // an admin hands on the cash of a collector who has left or cannot act, as with every other
+  // hop: the holder stays the sender, the admin is on record, and the receiver confirms it
+  var holderId = user.id;
+  if (req.fromUserId && req.fromUserId !== user.id) {
+    if (user.role !== 'admin') return { ok: false, error: 'forbidden' };
+    if (req.fromUserId === to.id) return { ok: false, error: 'conflict_of_interest' };
+    if (!String(req.note || '').trim()) return { ok: false, error: 'note_required' };
+    holderId = String(req.fromUserId);
+  }
+  var held = collectorHeld_(holderId);
   if (!held.length) return { ok: false, error: 'no_held_cash' };
   var amount = Math.round(held.reduce(function (s, h) { return s + Number(h.amount || 0); }, 0) * 100) / 100;
   var h = {
-    id: Utilities.getUuid(), kind: 'collector_to_collector', fromUserId: user.id, toUserId: to.id, amount: amount,
+    id: Utilities.getUuid(), kind: 'collector_to_collector', fromUserId: holderId, createdBy: user.id, toUserId: to.id, amount: amount,
     breakdown: sumBreakdowns_(held.map(function (x) { return x.breakdown; })), perCluster: collectorPerCluster_(held),
     note: String(req.note || '').trim().slice(0, 1000), sourceEntryIds: [], sourceHandoffIds: held.map(function (x) { return x.id; }),
     consumedBy: null, status: 'pending', createdAt: new Date().toISOString()
@@ -1773,7 +1783,8 @@ function actionListAreaBulkBatches_(req, user) {
   } else if (user.role !== 'deputy_operations_manager' && !isCompanyWide_(user.role)) {
     rows = [];
   }
-  if (req.status) rows = rows.filter(function (b) { return b.status === req.status; });
+  // an approval cut short is still the deputy's: approving it again finishes it
+  if (req.status) rows = rows.filter(function (b) { return b.status === req.status || (req.status === 'pending_deputy' && b.status === 'approving'); });
   rows.sort(function (a, b) { return new Date(b.createdAt) - new Date(a.createdAt); });
   // the batch's own day is the day of its entries, like a handover's (2026-10-15): the Deputy
   // screen's date filter places it by handoffDate, the latest of its entry dates
@@ -1821,12 +1832,9 @@ function actionAreaBulkBatchDetail_(req, user) {
   entries.forEach(function (e) {
     var key = e.productId || '__unspecified__';
     if (!byProductMap[key]) byProductMap[key] = { productId: e.productId || null, qty: 0, subtotal: 0, base: 0 };
-    // Every bulk-upload row routes its qty*unitPrice subtotal into exactly
-    // one of these four fields depending on paymentMethod (see
-    // actionBulkSubmitAreaBatch_/renderAreaBulk) — summing all four per
-    // entry recovers that same subtotal without re-deriving it from
-    // qty*unitPrice, so it still works even if either was left blank.
-    var sub = Number(e.cashSales || 0) + Number(e.posSales || 0) + Number(e.creditSales || 0) + Number(e.deliveryFeeBankAmount || 0);
+    // the line's sales: credit is inside the typed figure; a line that is only a credit or a
+    // delivery fee keeps its own amount
+    var sub = entrySalesTotal_(e) || Number(e.creditSales || 0) + Number(e.deliveryFeeBankAmount || 0);
     byProductMap[key].subtotal += sub;
     byProductMap[key].base += sub / (1 + entryVatRate_(e, vatHist));
     byProductMap[key].qty += Number(e.qty || 0);
@@ -1879,6 +1887,7 @@ function actionDeputyApproveBatch_(req, user) {
   var plans = [];
   for (var i = 0; i < (batch.perLocation || []).length; i++) {
     var pl = batch.perLocation[i];
+    if (Number(pl.amount || 0) < -0.005) { (batch.deficitLocations = batch.deficitLocations || []).push(pl.locationId); continue; }
     if (Number(pl.amount || 0) <= 0) continue;
     var collectorId = branchCollector_(pl.locationId);
     if (!collectorId) return { ok: false, error: 'no_collector', locationId: pl.locationId };
@@ -1927,8 +1936,10 @@ function actionDeputyApproveBatch_(req, user) {
   batch.entryIds.forEach(function (id) {
     var e = entryById[id];
     if (!e) return;
-    // an entry of a branch with nothing to hand over stays with the batch
+    // an entry of a branch with nothing to hand over stays with the batch; a branch below
+    // zero goes back to the area manager's open cash, where its next day nets it off
     if (handoffOfEntry[id] && e.consumedBy !== handoffOfEntry[id]) { e.consumedBy = handoffOfEntry[id]; writeRow(SHEETS.ENTRIES, e); }
+    else if (!handoffOfEntry[id] && (batch.deficitLocations || []).indexOf(e.locationId) >= 0 && e.consumedBy) { e.consumedBy = null; writeRow(SHEETS.ENTRIES, e); }
     // Cash the branch banked itself, reported through the upload: the
     // deposit record is created now, not at upload time, so a rejected
     // batch never leaves a deposit behind (and a resumed run never twice).
@@ -2244,6 +2255,17 @@ function actionAdminCorrectReceipt_(req, user) {
   if (Math.abs(to - now) < 0.005) return { ok: false, error: 'nothing_to_change' };
   var dep = h.consumedBy ? getById_(SHEETS.HANDOFFS, h.consumedBy) : null;
   if (dep && (dep.kind !== 'deposit' || dep.reconciled)) return { ok: false, error: 'receipt_passed_on' };
+  // What the deposit banked beyond its other requests is this request's room in it (2026-10-30).
+  // It stays in the deposit when the room covers the new figure; with no room it leaves, as cash
+  // the collector still holds. Part of it banked would count that part twice: refused.
+  var room = 0, stays = false;
+  if (dep) {
+    room = Number(dep.amount || 0);
+    (dep.sourceHandoffIds || []).forEach(function (id) { if (id === h.id) return; var o = getById_(SHEETS.HANDOFFS, id); if (o) room -= Number(o.amount || 0); });
+    room = Math.round(room * 100) / 100;
+    stays = room >= to - 0.005;
+    if (!stays && room > 0.005) return { ok: false, error: 'receipt_part_banked', banked: room };
+  }
   var delta = Math.round((to - now) * 100) / 100;
   // the declared amount stays on record, so every reader scales what this hop carried (2026-10-15)
   if (h.originalAmount == null) h.originalAmount = declared;
@@ -2251,15 +2273,19 @@ function actionAdminCorrectReceipt_(req, user) {
   h.amount = to; h.receivedAmount = to;
   h.shortfall = Math.round((declared - to) * 100) / 100;
   if (h.breakdown) h.breakdown = Object.assign({}, h.breakdown, { netCashOwed: to, shortfall: Math.round((Number(h.breakdown.shortfall || 0) - delta) * 100) / 100 });
-  if (dep) {
+  if (dep && !stays) {
     dep.sourceHandoffIds = (dep.sourceHandoffIds || []).filter(function (id) { return id !== h.id; });
     (dep.correctedOut = dep.correctedOut || []).push({ handoffId: h.id, at: new Date().toISOString(), by: user.id });
     writeRow(SHEETS.HANDOFFS, dep);
     h.consumedBy = null; h.leftDepositId = dep.id;
+  } else if (dep) {
+    // banked more than the request now says: on the deposit for Finance to see
+    dep.overBanked = Math.round((room - to) * 100) / 100;
+    writeRow(SHEETS.HANDOFFS, dep);
   }
   writeRow(SHEETS.HANDOFFS, h);
-  logAudit_('receipt_corrected', user.id, h.id + ' ' + now + ' -> ' + to + (dep ? ' (left ' + (dep.txNo || dep.id) + ')' : '') + ': ' + reason);
-  return { ok: true, handoff: h, depositId: dep ? dep.id : null };
+  logAudit_('receipt_corrected', user.id, h.id + ' ' + now + ' -> ' + to + (dep ? (stays ? ' (stays in ' : ' (left ') + (dep.txNo || dep.id) + ')' : '') + ': ' + reason);
+  return { ok: true, handoff: h, depositId: dep && !stays ? dep.id : null };
 }
 function actionAcknowledgeSecondApproval_(req, user) {
   requireAdminOrFinance_(user);
@@ -3111,7 +3137,7 @@ function actionMyPendingActions_(req, user) {
   var batches = readSheet(SHEETS.AREA_BULK_BATCHES);
   batches.forEach(function (b) {
     var net = Number((b.breakdown || {}).netCashOwed || 0);
-    if (isDeputy && b.status === 'pending_deputy' && b.uploadedBy !== user.id) {
+    if (isDeputy && (b.status === 'pending_deputy' || b.status === 'approving') && b.uploadedBy !== user.id) {
       add('deputy_batch', { count: 1, amount: net, refId: b.id, since: b.createdAt });
     }
     if (b.status === 'deputy_rejected' && b.uploadedBy === user.id) {
@@ -3512,6 +3538,12 @@ function dashboardAllInner_(req, user) {
   // every handover id the viewer's role sees, filtered or not: an entry whose handover lies
   // outside the filter is not "waiting for the deputy"
   var scopedIds = readSheet(SHEETS.HANDOFFS).filter(function (h) { return isCompanyWide_(user.role) || ((h.fromUserId === user.id || h.toUserId === user.id) && inActiveArea_(user, h)); }).map(function (h) { return h.id; });
+  // half of an entry's fields are empty: left out, the answer shrinks by about half
+  if (report.entries) report.entries = report.entries.map(function (e) {
+    var o = {};
+    for (var k in e) if (e.hasOwnProperty(k) && e[k] !== null && e[k] !== '' && e[k] !== undefined) o[k] = e[k];
+    return o;
+  });
   return { ok: true, report: report, handoffs: handoffs, dashboard: dashboard, handoffIds: scopedIds };
 }
 
@@ -3631,7 +3663,7 @@ function actionSalesReport_(req, user) {
     return {
       productId: bucket.productId, name: p ? p.name : null,
       cashAmount: bucket.cashAmount, posAmount: bucket.posAmount, creditAmount: bucket.creditAmount,
-      total: bucket.cashAmount + bucket.posAmount + bucket.creditAmount, entryCount: bucket.qty,
+      total: bucket.cashAmount + bucket.posAmount, entryCount: bucket.qty,
       cylindersOut: bucket.cylindersOut, cylindersIn: bucket.cylindersIn,
       cylinderBalance: bucket.cylindersOut - bucket.cylindersIn
     };
@@ -3857,6 +3889,10 @@ function actionShortfallByEntrant_(req, user) {
   var byEntrant = {}; // userId -> { userId, totalShortfall, handoffIds:{} }
   var rows = flagged.map(function (h) {
     var entries = (h.sourceEntryIds || []).map(function (id) { return getById_(SHEETS.ENTRIES, id); }).filter(Boolean);
+    (h.sourceHandoffIds || []).forEach(function (id) {
+      var car = getById_(SHEETS.HANDOFFS, id);
+      if (car) (car.sourceEntryIds || []).forEach(function (x) { var e = getById_(SHEETS.ENTRIES, x); if (e) entries.push(e); });
+    });
     var totalDeclaredCash = entries.reduce(function (s, e) { return s + Number(e.cashSales || 0); }, 0);
     var entrants = entries.map(function (e) {
       var share = totalDeclaredCash > 0 ? Number(e.cashSales || 0) / totalDeclaredCash : 0;

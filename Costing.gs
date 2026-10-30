@@ -781,7 +781,9 @@ function profitCompute_(from, to, basis, vatIncl) {
     if (p && p.type === 'services') { /* a service has no cost of goods */ }
     else if (p && qty > 0) {
       var c = costOfProduct_(p, e.date, hist, productsById, stkItems);
-      if (c > 0) cogs = qty * costExVat_(c, e.date, vatHist);
+      var avgC = invAverage_() && stockItemsLive_() ? invAvgCostEx_(p, e.date, hist, stkItems) : null;
+      if (avgC != null) cogs = qty * avgC;
+      else if (c > 0) cogs = qty * costExVat_(c, e.date, vatHist);
       else if (net > 0) { T.uncostedSales += net; noCost[p.id] = true; }
     } else if (net > 0) T.uncostedSales += net;   // a sale typed as an amount only cannot be costed
     if (gross || deliv || com || exp || qty) u.touched = true;
