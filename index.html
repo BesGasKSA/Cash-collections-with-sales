@@ -3109,6 +3109,10 @@
   .ifrs .ifrs-t .ifrs-d1 th{padding-inline-start:30px;font-weight:400;}
   .ifrs .ifrs-t .ifrs-d2 th{padding-inline-start:52px;font-weight:400;font-size:13px;color:var(--muted);}
   .ifrs .ifrs-t .ifrs-d1 .ifrs-c{font-size:13.5px;} .ifrs .ifrs-t .ifrs-d2 .ifrs-c{font-size:13px;color:var(--muted);}
+  .ifrs .ifrs-t .ifrs-d3 th,.ifrs .ifrs-t .ifrs-d4 th,.ifrs .ifrs-t .ifrs-d5 th,.ifrs .ifrs-t .ifrs-d6 th{font-weight:400;font-size:13px;color:var(--muted);}
+  .ifrs .ifrs-t .ifrs-d3 th{padding-inline-start:70px;} .ifrs .ifrs-t .ifrs-d4 th{padding-inline-start:88px;} .ifrs .ifrs-t .ifrs-d5 th{padding-inline-start:106px;} .ifrs .ifrs-t .ifrs-d6 th{padding-inline-start:124px;}
+  .ifrs .ifrs-t .ifrs-d3 .ifrs-c,.ifrs .ifrs-t .ifrs-d4 .ifrs-c,.ifrs .ifrs-t .ifrs-d5 .ifrs-c,.ifrs .ifrs-t .ifrs-d6 .ifrs-c{font-size:13px;color:var(--muted);}
+  @media (max-width:700px){.ifrs .ifrs-t .ifrs-d3 th{padding-inline-start:44px;} .ifrs .ifrs-t .ifrs-d4 th{padding-inline-start:54px;} .ifrs .ifrs-t .ifrs-d5 th{padding-inline-start:64px;} .ifrs .ifrs-t .ifrs-d6 th{padding-inline-start:74px;}}
   .ifrs .ifrs-t .ifrs-sub th,.ifrs .ifrs-t .ifrs-sub .ifrs-c{font-weight:800;}
   .ifrs .ifrs-t .ifrs-sub .ifrs-c{border-top:1px solid currentColor;}
   .ifrs-sub .ifrs-n{font-weight:800;}
@@ -25737,12 +25741,41 @@ function plIfrsModel_(res, F, P){
     if (f === 'expenses') { var x = byId(meta.expenseItems, id); return x ? x.name : t('ifrs_otherItem'); }
     var ct = byId(meta.costTypes, id); return ct ? ct.name : t('pl_typeUnknown');
   }
+  // a line opens as a pivot, collapsed: city, then area, branch, store or car. An area that is
+  // the only one in its city adds nothing, so its branches sit directly under the city.
+  var prevR = res.prevNodes ? { nodes: res.prevNodes, dateFrom: res.prevFrom, dateTo: res.prevTo, vatIncluded: res.vatIncluded } : null;
+  function placeKids(leaf){
+    var root = { kids: [], map: {} };
+    function add(R, col){
+      plUnitsUnder_(R, F.key).forEach(function(u){
+        var val = Number((u.types || {})[leaf.only] || 0); if (!val) return;
+        var path = plPath_(R, u.key), at = path.map(function(n){ return n.key; }).indexOf(F.key), node = root;
+        path.slice(at + 1).forEach(function(n){
+          var c = node.map[n.key];
+          if (!c) { c = node.map[n.key] = { label: plNodeName_(n), level: n.level, cur: 0, prv: 0, fields: leaf.fields, only: leaf.only, under: n.key, place: 1, kids: [], map: {} }; node.kids.push(c); }
+          c[col] += val; node = c;
+        });
+      });
+    }
+    add(res, 'cur'); if (prevR && P) add(prevR, 'prv');
+    (function tidy(list){
+      list.sort(function(a, b){ return Math.abs(b.cur) - Math.abs(a.cur) || Math.abs(b.prv) - Math.abs(a.prv); });
+      list.forEach(function(n){
+        delete n.map;
+        if (n.kids.length === 1 && n.kids[0].level === 'cluster') n.kids = n.kids[0].kids;
+        tidy(n.kids);
+      });
+    })(root.kids);
+    return root.kids;
+  }
   function leafs(f){
     var keys = {}, out = [];
     [F, P].forEach(function(n){ Object.keys((n && n.types) || {}).forEach(function(k){ if (k.indexOf(f + '|') === 0) keys[k] = 1; }); });
     Object.keys(keys).forEach(function(k){
       var id = k.slice(f.length + 1);
-      out.push({ label: lineName(f, id), cur: Number(((F && F.types) || {})[k] || 0), prv: Number(((P && P.types) || {})[k] || 0), fields: [f], only: k });
+      var lf = { label: lineName(f, id), cur: Number(((F && F.types) || {})[k] || 0), prv: Number(((P && P.types) || {})[k] || 0), fields: [f], only: k };
+      lf.kids = placeKids(lf);
+      out.push(lf);
     });
     return out.sort(function(a, b){ return Math.abs(b.cur) - Math.abs(a.cur); });
   }
@@ -25908,7 +25941,7 @@ function plIfrsOpen_(m, id, col, res, F){
   var row = m.byId[id]; if (!row) return;
   var prv = col === 'prv', R = prv ? { nodes: res.prevNodes, dateFrom: res.prevFrom, dateTo: res.prevTo, vatIncluded: res.vatIncluded } : res;
   var title = row.label + ' \u00B7 ' + plNodeName_(F), sub = R.dateFrom + ' \u2192 ' + R.dateTo;
-  cardDrawer_({ title: title, sub: sub, items: plItemsFoot_(row.measure ? plDrillItems_(R, F.key, row.measure) : plLineItems_(R, F.key, row), prv ? row.prv : row.cur) });
+  cardDrawer_({ title: title, sub: sub, items: plItemsFoot_(row.measure ? plDrillItems_(R, F.key, row.measure) : plLineItems_(R, row.under || F.key, row), prv ? row.prv : row.cur) });
 }
 function plIfrsWire_(host, m, res, F){
   host.addEventListener('click', function(ev){
@@ -25930,6 +25963,7 @@ function plIfrsSheetRows_(m, res){
   var out = [head];
   function r2(v){ return Math.round(v * 100) / 100; }
   m.flat.forEach(function(r){
+    if (r.place) return;
     var pre = r.depth ? new Array(r.depth + 1).join('      ') : '', row = [pre + (r.cost && !r.depth ? t('pl_less') + ' ' : '') + r.label, r2(r.cur)];
     if (m.hasPrev) row.push(r2(r.prv));
     if (r.sub) row.isTotal = true;
