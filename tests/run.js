@@ -7692,8 +7692,6 @@ console.log('--- the stock guard: no movement takes stock below zero, on its day
   check(mv({ kind: 'refill_in', qty: 5, date: '2026-10-06' }).ok, 'and the 5 come back that way');
   // the branch sheet import is guarded the same way, its own counts included
   var day = function (moves, ref) { return call({ action: 'importInventoryDay', token: adminTok, locationId: loc2.id, date: '2026-10-07', ref: ref, moves: moves.map(function (m) { m.stockItemId = it.id; return m; }) }); };
-  var bad = day([{ state: 'full', kind: 'opening', qty: 10 }, { state: 'empty', kind: 'opening', qty: 5 }, { state: 'full', kind: 'purchase', qty: 30 }], 'g-1');
-  check(err(bad) === 'stock_over_on_hand' && bad.state === 'empty', 'a sheet day refilling 30 with 5 empties is refused (' + err(bad) + ')');
   check(err(day([{ state: 'full', kind: 'opening', qty: 10 }, { state: 'empty', kind: 'opening', qty: 5 }, { kind: 'refill_in', qty: 7 }], 'g-2')) === 'stock_over_on_hand', 'and filled back with nothing sent to the plant');
   check(err(day([{ state: 'full', kind: 'car_load', qty: 99 }], 'g-3')) === 'use_car_move', 'a car load does not come in through the sheet');
   var good = day([{ state: 'full', kind: 'opening', qty: 10 }, { state: 'empty', kind: 'opening', qty: 5 }, { state: 'full', kind: 'purchase', qty: 5 }], 'g-4');
@@ -7704,6 +7702,24 @@ console.log('--- the stock guard: no movement takes stock below zero, on its day
   call({ action: 'importDailyEntries', token: adminTok, rows: [{ date: '2026-10-08', sourceType: 'store', sourceId: st.id, productId: p.id, qty: 40, unitPrice: 200, cashSales: 8000, submissionId: 'gd-short' }] });
   check(mv({ state: 'full', kind: 'purchase', qty: 3, newCylinders: true, date: '2026-10-09' }, loc2).ok, 'a branch already short after a sale still takes new cylinders in');
   check(mv({ state: 'empty', kind: 'purchase', qty: 2, date: '2026-10-09' }, loc2).ok && mv({ state: 'empty', kind: 'damage', qty: 1, reason: 'broken_body', date: '2026-10-09' }, loc2).ok, 'and a write-off its empties can carry');
+  // review of the live guard (2026-10-30): daily work is never refused for what is still to be entered
+  var loc3 = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: 'Riyadh', name: 'Guard Branch 3', clusterId: cluster.entity.id, collectorUserId: musa.id } }).entity;
+  var day3 = function (date, moves, ref) { return call({ action: 'importInventoryDay', token: adminTok, locationId: loc3.id, date: date, ref: ref, moves: moves.map(function (m) { m.stockItemId = it.id; return m; }) }); };
+  var ownDay = day3('2026-10-07', [{ state: 'full', kind: 'opening', qty: 30 }, { state: 'empty', kind: 'opening', qty: 1 }, { state: 'full', kind: 'purchase', qty: 10 }], 'g-5');
+  check(ownDay.ok, 'a sheet day whose refill leans on the sales still to be saved goes in: its panel checks it with the file\'s own sales (' + err(ownDay) + ')');
+  var byDay = day3('2026-10-08', [{ state: 'full', kind: 'transfer_out', qty: 40 }, { state: 'full', kind: 'transfer_in', qty: 40 }], 'g-6');
+  check(byDay.ok, 'out and in the same day balance by the end of the day, whatever their order (' + err(byDay) + ')');
+  var loc4 = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: 'Riyadh', name: 'Guard Branch 4', clusterId: cluster.entity.id, collectorUserId: musa.id } }).entity;
+  check(mv({ state: 'full', kind: 'opening', qty: 10, date: '2026-10-01' }, loc4).ok && mv({ state: 'empty', kind: 'opening', qty: 2, date: '2026-10-01' }, loc4).ok, 'another branch counted');
+  var today = ctx.todayRiyadh_();
+  var dayOf = call({ action: 'addInventoryMove', token: adminTok, locationId: loc4.id, stockItemId: it.id, kind: 'refill_out', qty: 5, date: today });
+  check(dayOf.ok, 'empties sent today, before today\'s sales are entered, are not refused (' + err(dayOf) + ')');
+  var early = mv({ state: 'full', kind: 'purchase', qty: 1, date: '2026-10-02' }, loc4);
+  check(early.ok, 'a gas purchase dated before a dispatch is not stopped by that dispatch (' + err(early) + ')');
+  var fp = siEnt('product', { name: 'Gd Unit', type: 'goods', unitPrice: 5, stockItemId: siEnt('stock_item', { name: 'Gd Washer', kind: 'unit', unitCost: 1 }).id, stockEffect: 'unit' });
+  var st5 = call({ action: 'adminSaveEntity', token: adminTok, kind: 'store', data: { locationId: loc4.id, name: 'Guard Store 4', storeManagerUserId: scUser('Gd Manager 4', 'store_manager').id } }).entity;
+  call({ action: 'importDailyEntries', token: adminTok, rows: [{ date: '2026-10-05', sourceType: 'store', sourceId: st5.id, productId: fp.id, qty: 25, unitPrice: 5, cashSales: 125, submissionId: 'gd-unit' }] });
+  check(call({ action: 'addInventoryMove', token: adminTok, locationId: loc4.id, stockItemId: fp.stockItemId, kind: 'opening', qty: 10, date: '2026-10-01' }).ok, 'a first count is a fact: it goes in even when sales on file are more than it');
   // the plant in a past period: what came back later is still at the plant then
   var past = call({ action: 'getInventoryReport', token: adminTok, dateFrom: '2026-10-01', dateTo: '2026-10-05', locationId: loc.id });
   var cs = (past.cylSummary || []).filter(function (c) { return c.stockItemId === it.id; })[0] || {};

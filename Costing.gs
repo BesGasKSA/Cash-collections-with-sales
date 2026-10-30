@@ -786,6 +786,12 @@ function profitCompute_(from, to, basis, vatIncl) {
     } else if (net > 0) T.uncostedSales += net;   // a sale typed as an amount only cannot be costed
     if (gross || deliv || com || exp || qty) u.touched = true;
     T.gross += gross; T.net += net; T.vat += gross - net; T.deliveryIncome += deliv; T.cogs += cogs; T.commission += com; T.expenses += exp;
+    // what each line is made of, for the statement's drill-down (2026-10-30)
+    var lineKey = e.productId || '';
+    costAddType_(u, 'net', lineKey, net); costAddType_(u, 'cogs', lineKey, cogs);
+    costAddType_(u, 'deliveryIncome', 'channel', Number(e.channelDeliveryFee || 0) / div); costAddType_(u, 'deliveryIncome', 'credit', Number(e.creditDeliveryFee || 0) / div);
+    costAddType_(u, 'commission', 'channel', Number(e.channelCommission || 0)); costAddType_(u, 'commission', 'credit', Number(e.creditCommission || 0));
+    costAddType_(u, 'expenses', e.expenseItemId || '', exp);
     if (p && p.type !== 'services') T.qty += qty;
     u.series.gross[b] += gross; u.series.net[b] += net; u.series.other[b] += deliv; u.series.cogs[b] += cogs; u.series.variable[b] += com + exp;
   });
@@ -922,7 +928,7 @@ function actionProfitReport_(req, user) {
     if (pr[0] >= '2020-01-01') {
       var prev = profitCompute_(pr[0], pr[1], basis, vatIncl), map = Object.create(null);
       prev.nodes.forEach(function (n) { map[n.key] = { net: n.T.net, cogs: n.T.cogs, gm: n.T.gm, fixed: n.T.fixed, cm: n.T.cm, ovh: n.T.ovh, profit: n.T.profit, qty: n.T.qty }; });
-      res.prev = map; res.prevFrom = pr[0]; res.prevTo = pr[1];
+      res.prev = map; res.prevNodes = prev.nodes; res.prevFrom = pr[0]; res.prevTo = pr[1];
     }
   }
   return res;

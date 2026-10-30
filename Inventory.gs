@@ -299,6 +299,7 @@ function invEmptiesOn_(locId, itemId, date, user) {
 function invRefillError_(c, locId, date, user) {
   var it = c.move.stockItemId ? invStockCtx_().item(c.move.stockItemId) : null;
   if (!it || it.kind !== 'cylinder' || c.move.kind !== 'purchase' || c.move.state !== 'full' || c.move.newCylinders === true) return null;
+  if (date >= invGraceFrom_()) return null;   // that day's sales may still bring the empties
   var have = invEmptiesOn_(locId, it.id, date, user);
   if (have == null) return null;
   if (c.move.qty > have + 0.0005) return { ok: false, error: 'refill_over_empty', emptyOnHand: Math.max(0, Math.round(have * 1000) / 1000), qty: c.move.qty };
@@ -312,9 +313,18 @@ function invRefillError_(c, locId, date, user) {
 // refused: a sale without stock is saved and flagged (2026-10-18). An item never counted at
 // the branch is not tracked yet, so nothing is checked for it.
 var INV_GUARD_ROUND_ = 0.0005;
-function invGuard_(locId, user, rows) {
-  if (!rows || !rows.length) return null;
-  var base = invStockCtx_(), byItem = Object.create(null), order = [];
+// Review of the live guard (2026-10-30). Stock balances by day, as the report and the sheets do, so
+// only end-of-day balances count. Today's and yesterday's sales may not be entered yet, and they can
+// bring the empties a refill needs, so filled, empty and unit counts are not refused on those two days;
+// what is left short shows as short. opts.ownDay: the branch sheet's own day, which its panel checks with
+// the file's own sales. The plant and the customers have no such delay and are always checked. A count
+// is a fact: an opening is never refused, and nothing but the plant and the customers is checked before
+// the first count. Movements on old-shape items (before the inventory setup) are not guarded.
+function invGraceFrom_() { return costDateAdd_(todayRiyadh_(), -1); }
+function invGuard_(locId, user, rows, opts) {
+  rows = (rows || []).filter(function (r) { return r.kind !== 'opening' && r.stockItemId; });
+  if (!rows.length) return null;
+  var base = invStockCtx_(), byItem = Object.create(null), order = [], grace = invGraceFrom_(), ownDay = opts && opts.ownDay;
   rows.forEach(function (r) {
     var tg = base.moveTarget(r); if (!tg) return;
     if (!byItem[tg.item.id]) { byItem[tg.item.id] = []; order.push(tg.item.id); }
@@ -329,19 +339,20 @@ function invGuard_(locId, user, rows) {
     var sc2 = {}; Object.keys(base).forEach(function (k) { sc2[k] = base[k]; });
     sc2.moves = base.moves.concat(mine);
     var after = actionStockLedger_(req, user, sc2);
-    if (!after.ok || after.noOpening) continue;
-    var keys = after.cylinder ? ['full', 'empty', 'plant', 'cust'] : ['unit'];
-    var low = function (res, k) {
-      var m = Infinity, at = null;
-      (res.lines || []).forEach(function (x) { if (x.date >= from && x.bal && x.bal[k] < m) { m = x.bal[k]; at = x.date; } });
-      if (m === Infinity) { m = res.ending ? Number(res.ending[k] || 0) : 0; at = from; }
-      return { v: m, at: at };
-    };
-    for (var j = 0; j < keys.length; j++) {
-      var a = low(after, keys[j]), b = low(before, keys[j]);
-      if (a.v < -INV_GUARD_ROUND_ && a.v < Math.min(b.v, 0) - INV_GUARD_ROUND_) {
-        return { ok: false, error: 'stock_over_on_hand', stockItemId: id, itemName: after.itemName || '', state: keys[j], date: a.at,
-          shortBy: Math.round((Math.min(b.v, 0) - a.v) * 1000) / 1000 };
+    if (!after.ok) continue;
+    var away = ['plant', 'cust'], keys = before.noOpening ? away : (after.cylinder ? ['full', 'empty'] : ['unit']).concat(away);
+    // the balance at the end of each day from the first move on, and the same day without the moves
+    var endOf = Object.create(null), days = [];
+    (after.lines || []).forEach(function (x) { if (x.date >= from && x.bal) { if (!endOf[x.date]) days.push(x.date); endOf[x.date] = x.bal; } });
+    var prior = (before.lines || []).filter(function (x) { return x.bal; }), p = -1;
+    for (var d = 0; d < days.length; d++) {
+      while (p + 1 < prior.length && prior[p + 1].date <= days[d]) p++;
+      for (var j = 0; j < keys.length; j++) {
+        var k = keys[j], a = Number(endOf[days[d]][k] || 0), was = p >= 0 ? Number(prior[p].bal[k] || 0) : 0;
+        if (away.indexOf(k) < 0 && (days[d] >= grace || days[d] === ownDay)) continue;
+        if (a < -INV_GUARD_ROUND_ && a < Math.min(was, 0) - INV_GUARD_ROUND_) {
+          return { ok: false, error: 'stock_over_on_hand', stockItemId: id, itemName: after.itemName || '', state: k, date: days[d], shortBy: Math.round((Math.min(was, 0) - a) * 1000) / 1000 };
+        }
       }
     }
   }
@@ -378,7 +389,7 @@ function actionAddInventoryMove_(req, user) {
     // empties already at the plant come back as 'received from the plant': a gas purchase
     // as well would take the same empties off twice (stock audit 2026-10-26)
     if (c.move.kind === 'purchase' && c.move.state === 'full' && c.move.newCylinders !== true && c.move.stockItemId) {
-      var pl0 = invPlant_(invStockCtx_(), lf.loc.id, c.itemId, null);
+      var pl0 = invPlant_(invStockCtx_(), lf.loc.id, c.itemId, date);
       if (pl0.atPlant > INV_GUARD_ROUND_) return { ok: false, error: 'use_refill_in', atPlant: pl0.atPlant };
     }
     // gas bought fills empties the branch has; more than that are new cylinders
@@ -495,10 +506,10 @@ function actionImportInventoryDay_(req, user) {
     for (var j = 0; j < checked.length; j++) {
       if (checked[j].move.kind === 'opening' && open[invOpeningKey_(lf.loc.id, checked[j].itemId, checked[j].move.state)]) return { ok: false, error: 'opening_exists', index: j };
     }
-    // the day's lines together, its own counts included: a refill bigger than the empties,
-    // filled back with nothing at the plant, a return no customer holds, are refused
+    // the day's lines together: filled back with nothing at the plant or a return no customer holds
+    // are refused; the day's own filled and empties are the panel's, with the file's own sales
     var iRows = checked.map(function (x) { return invMoveRow_(lf.loc.id, x.move, date, user, { importRef: ref }); });
-    var iErr = invGuard_(lf.loc.id, user, iRows);
+    var iErr = invGuard_(lf.loc.id, user, iRows, { ownDay: date });
     if (iErr) return iErr;
     var written = iRows.map(function (r) { return writeRow(SHEETS.INV_MOVES, r); });
     logAudit_('inventory_import', user.id, lf.loc.id + ' ' + date + ' (' + written.length + ')');
@@ -1169,6 +1180,8 @@ function actionStockLedger_(req, user, scOverride) {
     var counted = openDate && x.date >= openDate;
     if (!counted && !(x.d.plant || x.d.cust)) return;
     if (!counted) x.d = { full: 0, empty: 0, plant: x.d.plant, cust: x.d.cust, unit: 0 };
+    // each state starts at its own count, the other's date only while it has none (as the report)
+    else if (cyl) ['full', 'empty'].forEach(function (st) { var o = openings[st]; if (o && x.date < o.date) x.d[st] = 0; });
     if (x.date < from) { KS.forEach(function (k) { bal[k] += x.d[k]; }); return; }
     if (!openBal) openBal = snap();
     KS.forEach(function (k) { bal[k] += x.d[k]; x.d[k] = r3(x.d[k]); });
