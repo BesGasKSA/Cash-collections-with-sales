@@ -7815,8 +7815,8 @@ console.log('--- the stock guard: no movement takes stock below zero, on its day
   var trB = call({ action: 'transferInventory', token: adminTok, fromLocationId: loc8.id, toLocationId: loc9.id, date: '2026-10-05', lines: [{ stockItemId: it.id, state: 'full', qty: 2 }] });
   check(err(trB) === 'transfer_before_opening' && trB.branch === 'Guard Branch 9', 'a transfer before the receiver was counted is refused, and names the branch');
   mv({ state: 'empty', kind: 'opening', qty: 3, date: '2026-10-25' }, loc9);
-  call({ action: 'recordStockCount', token: adminTok, locationId: loc8.id, date: '2026-10-20', lines: [{ stockItemId: it.id, state: 'empty', counted: 5 }] });
-  check(err(call({ action: 'transferInventory', token: adminTok, fromLocationId: loc8.id, toLocationId: loc9.id, date: '2026-10-22', lines: [{ stockItemId: it.id, state: 'empty', qty: 1 }] })) === 'transfer_before_opening', 'each state answers for its own count');
+  mv({ state: 'empty', kind: 'opening', qty: 5, date: '2026-10-01' }, loc8);
+  check(err(call({ action: 'transferInventory', token: adminTok, fromLocationId: loc8.id, toLocationId: loc9.id, date: '2026-10-22', lines: [{ stockItemId: it.id, state: 'empty', qty: 1 }] })) === 'transfer_before_opening', 'each state answers for its own count (' + err(call({ action: 'transferInventory', token: adminTok, fromLocationId: loc8.id, toLocationId: loc9.id, date: '2026-10-22', lines: [{ stockItemId: it.id, state: 'empty', qty: 1 }], dryRun: true })) + ')');
   // the pool: a branch outside the stock neither feeds it nor drains it
   var poolIt = ctx.invAvgPools_; ctx.resetExecMemo_();
   ctx.writeRow(SHEETS.INV_MOVES, { locationId: 'never-counted', stockItemId: it.id, state: 'full', kind: 'purchase', qty: 1000, unitCost: 1, date: '2026-10-20', createdAt: new Date().toISOString(), voided: false });
