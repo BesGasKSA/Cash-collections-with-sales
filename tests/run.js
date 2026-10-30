@@ -7782,6 +7782,7 @@ console.log('--- the stock guard: no movement takes stock below zero, on its day
   check(roPv.ok && roPv.preview.newOpenings === 2 && roPv.preview.oldOpenings > 0 && ctx.readSheet(SHEETS.INV_MOVES).filter(function (m) { return m.locationId === roLoc.id && !m.voided; }).length === 1, 'the preview writes nothing and names what would change');
   var salesBefore = JSON.stringify(ctx.readSheet(SHEETS.ENTRIES).map(function (e) { return [e.id, e.cashSales, e.posSales, e.qty, e.voided, e.consumedBy, e.updatedAt]; }));
   var movesBefore = ctx.readSheet(SHEETS.INV_MOVES).filter(function (m) { return m.kind !== 'opening'; }).map(function (m) { return m.id + m.updatedAt; }).join();
+  check(roPv.preview.missingLines.length > 0 && roPv.preview.missingLines[0].item, 'the preview names what would lose its opening');
   var roOk = call({ action: 'replaceOpenings', token: adminTok, date: '2026-09-30', rows: roRows, reason: 'count of 30 Sep', confirm: 'REPLACE' });
   check(JSON.stringify(ctx.readSheet(SHEETS.ENTRIES).map(function (e) { return [e.id, e.cashSales, e.posSales, e.qty, e.voided, e.consumedBy, e.updatedAt]; })) === salesBefore, 'the sales are not touched, not one row');
   check(ctx.readSheet(SHEETS.INV_MOVES).filter(function (m) { return m.kind !== 'opening'; }).map(function (m) { return m.id + m.updatedAt; }).join() === movesBefore, 'nor any other stock move');

@@ -568,7 +568,7 @@ function actionReplaceOpenings_(req, user) {
     freshenExec_();
     var sc = invStockCtx_();
     if (!sc.live) return { ok: false, error: 'setup_required' };
-    var locs = Object.create(null), seen = Object.create(null), rows = [], inFile = Object.create(null);
+    var locs = Object.create(null), seen = Object.create(null), rows = [], inFile = Object.create(null), seenItem = Object.create(null);
     readSheet(SHEETS.LOCATIONS).forEach(function (l) { locs[l.id] = l; });
     for (var i = 0; i < list.length; i++) {
       var r = list[i] || {}, it = hasOwn_(sc.items, String(r.stockItemId)) ? sc.items[r.stockItemId] : null;
@@ -582,19 +582,34 @@ function actionReplaceOpenings_(req, user) {
       if (cost != null && !(isFinite(cost) && cost >= 0)) return { ok: false, error: 'invalid_cost', index: i };
       var key = r.locationId + '|' + it.id + '|' + st;
       if (seen[key]) return { ok: false, error: 'duplicate_line', index: i };
-      seen[key] = 1; inFile[r.locationId] = 1;
+      seen[key] = 1; inFile[r.locationId] = 1; seenItem[r.locationId + '|' + it.id] = 1;
       rows.push({ locId: r.locationId, c: { stockItemId: it.id, state: st || null, kind: 'opening', qty: q, unitCost: cost, newCylinders: false, note: reason } });
     }
     var old = sc.moves.filter(function (m) { return !m.voided && m.kind === 'opening'; });
-    var after = sc.moves.filter(function (m) { return !m.voided && m.kind !== 'opening' && String(m.date) > date; });
-    var missing = Object.create(null);
-    old.forEach(function (m) { if (!inFile[m.locationId] && locs[m.locationId]) missing[m.locationId] = locs[m.locationId].name; });
+    // an opening counts from the start of its day, so that day's moves stay after it
+    var after = sc.moves.filter(function (m) { return !m.voided && m.kind !== 'opening' && String(m.date) >= date; });
+    // what loses its opening without a new one, and cylinders still at the plant, which stop a plain purchase
+    var missing = Object.create(null), plant = Object.create(null);
+    old.forEach(function (m) {
+      var tg = sc.moveTarget(m); if (!tg || !locs[m.locationId]) return;
+      if (!seenItem[m.locationId + '|' + tg.item.id]) missing[m.locationId + '|' + tg.item.id] = { branch: locs[m.locationId].name, item: tg.item.name };
+    });
+    sc.moves.forEach(function (m) {
+      if (m.voided || m.kind !== 'refill_out' || !locs[m.locationId]) return;
+      var tg = sc.moveTarget(m), key = tg ? m.locationId + '|' + tg.item.id : null;
+      if (!key || plant[key]) return;
+      var left = invPlant_(sc, m.locationId, tg.item.id, null).atPlant;
+      if (left > 0.0005) plant[key] = { branch: locs[m.locationId].name, item: tg.item.name, qty: left };
+    });
     var pv = { oldOpenings: old.length, newOpenings: rows.length, branches: Object.keys(inFile).length,
-      missingBranches: Object.keys(missing).map(function (k) { return missing[k]; }),
+      missingLines: Object.keys(missing).map(function (k) { return missing[k]; }),
+      atPlant: Object.keys(plant).map(function (k) { return plant[k]; }),
       laterCounts: after.filter(function (m) { return hasOwn_(INV_COUNT_, m.kind); }).length,
       laterPurchases: after.filter(function (m) { return m.kind === 'purchase' || m.kind === 'refill_in'; }).length };
     if (req.dryRun) return { ok: true, dryRun: true, preview: pv };
     var at = new Date().toISOString();
+    // on record first: sending the same file again finishes a run cut short
+    logAudit_('inventory_replace_openings_start', user.id, date + ': ' + old.length + ' to cancel, ' + rows.length + ' to write');
     old.forEach(function (m) { m.voided = true; m.voidedAt = at; m.voidedBy = user.id; m.voidReason = reason; m.replacedOpening = true; });
     writeRows_(SHEETS.INV_MOVES, old);
     costAppendMany_(SHEETS.INV_MOVES, rows.map(function (x) { return invMoveRow_(x.locId, x.c, date, user, {}); }));
