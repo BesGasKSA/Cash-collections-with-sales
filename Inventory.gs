@@ -373,7 +373,7 @@ function actionAddInventoryMove_(req, user) {
   var date = String(req.date || '');
   var c = invCheckMove_(req, date, invStockCtx_());
   if (c.error) return { ok: false, error: c.error };
-  var lock = LockService.getScriptLock();
+  var lock = scriptLock_();
   lock.waitLock(30000);
   try {
     freshenExec_();
@@ -434,7 +434,7 @@ function actionTransferInventory_(req, user) {
     if (c.error) return { ok: false, error: c.error, index: i };
     checked.push(c);
   }
-  var lock = LockService.getScriptLock();
+  var lock = scriptLock_();
   lock.waitLock(30000);
   try {
     freshenExec_();
@@ -472,7 +472,7 @@ function actionCarStockMove_(req, user) {
     c.move.kind = kind; c.move.newCylinders = false;
     checked.push(c);
   }
-  var lock = LockService.getScriptLock();
+  var lock = scriptLock_();
   lock.waitLock(30000);
   try {
     freshenExec_();
@@ -506,7 +506,7 @@ function actionImportInventoryDay_(req, user) {
     }
     checked.push(c);
   }
-  var lock = LockService.getScriptLock();
+  var lock = scriptLock_();
   lock.waitLock(30000);
   try {
     freshenExec_();
@@ -531,7 +531,7 @@ function actionImportInventoryDay_(req, user) {
 function actionVoidInventoryMove_(req, user) {
   var reason = String(req.reason || '').trim();
   if (!reason) return { ok: false, error: 'reason_required' };
-  var lock = LockService.getScriptLock();
+  var lock = scriptLock_();
   lock.waitLock(30000);
   try {
     freshenExec_();
@@ -695,7 +695,7 @@ function actionRecordStockCount_(req, user) {
   if (date > todayRiyadh_()) return { ok: false, error: 'future_date' };
   var lines = Array.isArray(req.lines) ? req.lines : [];
   if (!lines.length || lines.length > 100) return { ok: false, error: 'invalid_input' };
-  var lock = LockService.getScriptLock(); lock.waitLock(30000);
+  var lock = scriptLock_(); lock.waitLock(30000);
   try {
     freshenExec_();
     var sc = invStockCtx_();
@@ -1443,7 +1443,7 @@ function migrateStockItems_(plan, userId) {
 
 function actionApplyInventorySetup_(req, user) {
   requireManager_(user);
-  var lock = LockService.getScriptLock();
+  var lock = scriptLock_();
   lock.waitLock(30000);
   var res;
   try {

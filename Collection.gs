@@ -592,7 +592,7 @@ function actionVoidEntries_(req, user) {
     // deposit to the bank statement: then the bank has confirmed the money
     // moved, and the day stays as it is.
     var dep = directDepositOf_(e.id);
-    if (dep && dep.reconciled) return { ok: false, error: 'deposit_reconciled' };
+    if (dep && (dep.reconciled || dep.wasReconciled)) return { ok: false, error: 'deposit_reconciled' };
     if (dep) deposits.push(dep);
     rows.push(e);
   }
@@ -637,18 +637,17 @@ function actionAdminVoidTransaction_(req, user) {
   });
   var rows = Object.keys(pick).map(function (k) { return pick[k]; }).filter(function (e) { return !e.voided; });
   if (!rows.length) return { ok: false, error: 'not_found' };
-  var inv = invoicedEntries_(), handoffs = {}, deposits = [], strip = null;
+  var inv = invoicedEntries_(), handoffs = {}, deposits = [];
   for (var i = 0; i < rows.length; i++) {
     var e = rows[i];
     if (e.creditCustomerId && inv[e.id]) return { ok: false, error: 'entry_invoiced' };
     var dep = directDepositOf_(e.id);
-    if (dep && dep.reconciled) return { ok: false, error: 'deposit_reconciled' };
+    if (dep && (dep.reconciled || dep.wasReconciled)) return { ok: false, error: 'deposit_reconciled' };
     if (dep) deposits.push(dep);
     if (e.consumedBy) {
       var h = getById_(SHEETS.HANDOFFS, e.consumedBy);
       // inside an area batch, or a handover already received or passed on: not here
       if (!h || h.consumedBy || ['pending', 'pending_deputy', 'disputed'].indexOf(h.status) < 0) {
-        if (req.duplicate && h && h.status !== 'voided' && h.status !== 'returned' && h.status !== 'rejected') { strip = strip && strip.h && strip.h.id === h.id ? strip : dupStripCheck_(rows, h, user); if (strip.error) return { ok: false, error: strip.error, existingTxNo: h.txNo || '' }; continue; }
         return { ok: false, error: 'entry_handed_on', existingTxNo: h ? (h.txNo || '') : '' };
       }
       // an admin who is a party to it, or who raised its dispute, does not cancel it
@@ -657,7 +656,6 @@ function actionAdminVoidTransaction_(req, user) {
     }
   }
   var at = new Date().toISOString(), hList = Object.keys(handoffs).map(function (k) { return handoffs[k]; });
-  if (strip) dupStrip_(strip, rows, user, at, reason);
   hList.forEach(function (h) {
     releaseConsumed_(h);
     h.status = 'voided'; h.voidedAt = at; h.voidedBy = user.id; h.voidReason = reason;
@@ -676,51 +674,8 @@ function actionAdminVoidTransaction_(req, user) {
     writeRow(SHEETS.HANDOFFS, d);
     logAudit_('void_direct_deposit', user.id, d.id);
   });
-  return { ok: true, voided: rows.length, handoffsVoided: hList.length, depositsVoided: deposits.length, duplicateRemovedFrom: strip ? strip.chain.map(function (x) { return x.txNo || x.id; }) : [] };
+  return { ok: true, voided: rows.length, handoffsVoided: hList.length, depositsVoided: deposits.length };
 }
-
-// A duplicate already inside a received handover (2026-10-21). Allowed only when taking it out moves
-// no cash: its own net is 0 (its الموازنة banked all of it), every line of it sits in that one
-// handover, and the same source and day stays on file under another live transaction. An admin who
-// is a party to any handover up the chain does not do it.
-function dupStripCheck_(rows, h, user) {
-  if (rows.some(function (e) { return e.consumedBy !== h.id; })) return { error: 'entry_handed_on' };
-  var net = Number(computeNet_(rows).netCashOwed || 0);
-  if (Math.abs(net) > 0.005) return { error: 'duplicate_moves_cash' };
-  var ids = {}; rows.forEach(function (e) { ids[e.id] = 1; });
-  var keep = readSheet(SHEETS.ENTRIES).filter(function (x) {
-    return !ids[x.id] && !x.voided && entryHasSales_(x) && rows.some(function (e) { return e.sourceType === x.sourceType && e.sourceId === x.sourceId && e.date === x.date && sameSale_(e, x); });
-  })[0];
-  if (!keep) return { error: 'not_a_duplicate' };
-  var chain = [], cur = h, guard = 0;
-  while (cur && guard++ < 10) {
-    if (cur.fromUserId === user.id || cur.toUserId === user.id || cur.createdBy === user.id) return { error: 'conflict_of_interest' };
-    chain.push(cur);
-    cur = cur.consumedBy ? getById_(SHEETS.HANDOFFS, cur.consumedBy) : null;
-  }
-  return { h: h, chain: chain, keepTxNo: keep.txNo || '' };
-}
-function dupStrip_(strip, rows, user, at, reason) {
-  var b = computeNet_(rows), ids = rows.map(function (e) { return e.id; });
-  function minus(x) {
-    if (!x) return;
-    Object.keys(b).forEach(function (k) { if (Number(b[k] || 0) && x[k] != null) x[k] = Math.round((Number(x[k] || 0) - Number(b[k] || 0)) * 100) / 100; });
-  }
-  var locId = rows[0].locationId, cl = locId ? getById_(SHEETS.LOCATIONS, locId) : null;
-  strip.chain.forEach(function (x, i) {
-    minus(x.breakdown);
-    (x.perLocation || []).forEach(function (pl) { if (pl.locationId === locId) minus(pl.breakdown || pl); });
-    (x.perCluster || []).forEach(function (pc) { if (cl && pc.clusterId === cl.clusterId) minus(pc.breakdown || pc); });
-    if (i === 0) {
-      x.sourceEntryIds = (x.sourceEntryIds || []).filter(function (id) { return ids.indexOf(id) < 0; });
-      x.removedEntryIds = (x.removedEntryIds || []).concat(ids);
-    }
-    x.duplicateRemoved = (x.duplicateRemoved || []).concat([{ entryIds: ids, txNo: rows[0].txNo || '', keepTxNo: strip.keepTxNo, by: user.id, at: at, reason: reason }]);
-    writeRow(SHEETS.HANDOFFS, x);
-    logAudit_('admin_remove_duplicate', user.id, x.id);
-  });
-}
-
 
 // The bank deposit a day's الموازنة wrote, if it is still standing.
 function directDepositOf_(entryId) {
@@ -955,19 +910,40 @@ function entriesScope_(user) {
     var locIds = Object.create(null), owned = Object.create(null), active = activeAreaOf_(user.id);
     readSheet(SHEETS.CLUSTERS).forEach(function (c) { if (c.clusterManagerUserId === user.id && (!active || active === c.id)) owned[c.id] = 1; });
     readSheet(SHEETS.LOCATIONS).forEach(function (l) { if (l.clusterId && owned[l.clusterId]) locIds[l.id] = 1; });
-    return function (e) { return !!locIds[e.locationId]; };
+    var handled = entriesHandled_(user);
+    return function (e) { return !!locIds[e.locationId] || !!handled[e.id]; };
   }
   if (user.role === 'store_manager') {
-    var store = storeOfManager_(user.id);
-    return function (e) { return !!(store && e.locationId === store.locationId); };
+    var store = storeOfManager_(user.id), handled2 = entriesHandled_(user);
+    return function (e) { return !!(store && e.locationId === store.locationId) || !!handled2[e.id]; };
   }
   if (user.role === 'driver' || user.role === 'branch_worker') return function (e) { return e.enteredBy === user.id; };
   return function () { return false; };
 }
+// The days a person handed over or received: a manager moved or replaced still sees them
+// (2026-10-30: changing a branch's area or manager emptied both people's lists).
+function entriesHandled_(user) {
+  var m = Object.create(null);
+  readSheet(SHEETS.HANDOFFS).forEach(function (h) {
+    if ((h.fromUserId === user.id || h.toUserId === user.id) && inActiveArea_(user, h)) (h.sourceEntryIds || []).forEach(function (id) { m[id] = 1; });
+  });
+  return m;
+}
 // Which handovers a person may read on the Handovers screen: the global search shares it.
+// Beyond his own, a manager reads his branches' handovers of his own level, whoever made them.
 function handoffsScope_(user) {
   if (isCompanyWide_(user.role)) return function () { return true; };
-  return function (h) { return (h.fromUserId === user.id || h.toUserId === user.id) && inActiveArea_(user, h); };
+  var locs = Object.create(null), kinds = {};
+  if (user.role === 'cluster_manager') {
+    var active = activeAreaOf_(user.id);
+    readSheet(SHEETS.LOCATIONS).forEach(function (l) { if (l.clusterId && clusterManagerOwnsCluster_(user.id, l.clusterId) && (!active || l.clusterId === active)) locs[l.id] = 1; });
+    kinds = { location_to_cluster: 1, cluster_to_collector: 1 };
+  } else if (user.role === 'store_manager') {
+    var st = storeOfManager_(user.id);
+    if (st) locs[st.locationId] = 1;
+    kinds = { car_to_location: 1, location_to_cluster: 1 };
+  }
+  return function (h) { return ((h.fromUserId === user.id || h.toUserId === user.id) && inActiveArea_(user, h)) || !!(kinds[h.kind] && h.locationId && locs[h.locationId] && h.status !== 'voided'); };
 }
 
 function actionListEntries_(req, user) {
@@ -1244,7 +1220,7 @@ function createCollectorHandoff_(req, user) {
   var derr = hoStampDate_(dctx, h, req.handoffDate, req.dateChangeReason, user);
   if (derr) return { ok: false, error: derr };
   writeRow(SHEETS.HANDOFFS, h);
-  held.forEach(function (x) { x.consumedBy = h.id; writeRow(SHEETS.HANDOFFS, x); });
+  linkRows_(SHEETS.HANDOFFS, h.sourceHandoffIds, h.id);
   logAudit_('create_handoff', user.id, h.id);
   hoAuditDate_(h, user);
   notifyPending_(h);
@@ -1319,7 +1295,7 @@ function createCarHandoff_(req, user) {
   var derr = hoStampDate_(dctx, handoff, req.handoffDate, req.dateChangeReason, user);
   if (derr) return { ok: false, error: derr };
   writeRow(SHEETS.HANDOFFS, handoff);
-  entries.forEach(function (e) { e.consumedBy = handoff.id; writeRow(SHEETS.ENTRIES, e); });
+  linkRows_(SHEETS.ENTRIES, handoff.sourceEntryIds, handoff.id);
   logAudit_('create_handoff_car', user.id, handoff.id);
   hoAuditDate_(handoff, user);
   notifyPending_(handoff);
@@ -1386,8 +1362,8 @@ function createLocationHandoff_(req, user) {
   var derr = hoStampDate_(dctx, handoff, req.handoffDate, req.dateChangeReason, user);
   if (derr) return { ok: false, error: derr };
   writeRow(SHEETS.HANDOFFS, handoff);
-  directEntries.forEach(function (e) { e.consumedBy = handoff.id; writeRow(SHEETS.ENTRIES, e); });
-  heldCarHandoffs.forEach(function (h) { h.consumedBy = handoff.id; writeRow(SHEETS.HANDOFFS, h); });
+  linkRows_(SHEETS.ENTRIES, handoff.sourceEntryIds, handoff.id);
+  linkRows_(SHEETS.HANDOFFS, handoff.sourceHandoffIds, handoff.id);
   logAudit_('create_handoff_location', user.id, handoff.id);
   hoAuditDate_(handoff, user);
   notifyPending_(handoff);
@@ -1509,8 +1485,8 @@ function createClusterHandoff_(req, user) {
     }
     HO_DATE_FIELDS_.forEach(function (k) { if (p.stamp[k] !== undefined) handoff[k] = p.stamp[k]; });
     writeRow(SHEETS.HANDOFFS, handoff);
-    p.g.held.forEach(function (h) { h.consumedBy = handoff.id; writeRow(SHEETS.HANDOFFS, h); });
-    p.g.own.forEach(function (e) { e.consumedBy = handoff.id; writeRow(SHEETS.ENTRIES, e); });
+    linkRows_(SHEETS.HANDOFFS, handoff.sourceHandoffIds, handoff.id);
+    linkRows_(SHEETS.ENTRIES, handoff.sourceEntryIds, handoff.id);
     // any other returned request of this branch and area manager can no longer
     // be resent: the cash it released is in this one now
     readSheet(SHEETS.HANDOFFS).forEach(function (r) {
@@ -1739,7 +1715,7 @@ function actionBulkSubmitAreaBatch_(req, user) {
 
   if (prior) {
     // two taps on "send again" must not both go through
-    var lock = LockService.getScriptLock(), heldAlready = lock.hasLock ? lock.hasLock() : false;
+    var lock = scriptLock_(), heldAlready = lock.hasLock ? lock.hasLock() : false;
     if (!heldAlready) lock.waitLock(30000);
     try {
       var fresh = getById_(SHEETS.AREA_BULK_BATCHES, prior.id);
@@ -1984,10 +1960,11 @@ function actionDeputyRejectBatch_(req, user) {
   if (batch.status !== 'pending_deputy') return { ok: false, error: 'not_pending' };
   if (batch.uploadedBy === user.id) return { ok: false, error: 'conflict_of_interest' };
 
-  batch.entryIds.forEach(function (id) {
-    var e = getById_(SHEETS.ENTRIES, id);
-    if (e) { e.voided = true; e.consumedBy = null; writeRow(SHEETS.ENTRIES, e); }
-  });
+  var bIds = Object.create(null), bAt = new Date().toISOString(), bWhy = String(req.note || '').trim().slice(0, 1000);
+  batch.entryIds.forEach(function (id) { bIds[id] = 1; });
+  var bRows = readSheet(SHEETS.ENTRIES).filter(function (e) { return bIds[e.id]; });
+  bRows.forEach(function (e) { e.voided = true; e.consumedBy = null; e.voidedAt = bAt; e.voidedBy = user.id; e.voidReason = bWhy; e.voidedWithBatch = batch.id; });
+  writeRows_(SHEETS.ENTRIES, bRows);
 
   batch.status = 'deputy_rejected';
   batch.rejectionNote = req.note || '';
@@ -2214,7 +2191,7 @@ function actionDeputyValidateHandoff_(req, user) {
   logAudit_('deputy_validate_handoff', user.id, h.id);
   notifyPending_(h);
   nmHandoffMail_(getById_(SHEETS.USERS, h.fromUserId), 'validated', h, { by: user.id });
-  return { ok: true, handoff: h, wa: waNotifyCollector_(h) };
+  return { ok: true, handoff: h };
 }
 function actionDeputyReturnHandoff_(req, user) {
   requireDeputy_(user);
@@ -2223,14 +2200,14 @@ function actionDeputyReturnHandoff_(req, user) {
   var h = getById_(SHEETS.HANDOFFS, req.id);
   var err = deputyHandoffGuard_(h, user);
   if (err) return { ok: false, error: err };
+  // the branch handovers go back to the area manager's held cash, to be
+  // corrected and sent again; first, so a return cut short mends itself (healLinks_)
+  releaseConsumed_(h);
   h.status = 'returned';
   h.deputyReturnedBy = user.id;
   h.deputyReturnedAt = new Date().toISOString();
   h.returnReason = reason;
   writeRow(SHEETS.HANDOFFS, h);
-  // the branch handovers go back to the area manager's held cash, to be
-  // corrected and sent again
-  releaseConsumed_(h);
   logAudit_('deputy_return_handoff', user.id, h.id);
   nmHandoffMail_(getById_(SHEETS.USERS, h.fromUserId), 'returned', h, { by: user.id, reason: reason, open: 'returned_fix' });
   return { ok: true, handoff: h };
@@ -2325,14 +2302,42 @@ function actionDisputeHandoff_(req, user) {
 }
 
 function releaseConsumed_(h) {
-  (h.sourceEntryIds || []).forEach(function (id) {
-    var e = getById_(SHEETS.ENTRIES, id);
-    if (e) { e.consumedBy = null; writeRow(SHEETS.ENTRIES, e); }
+  linkRows_(SHEETS.ENTRIES, h.sourceEntryIds, null);
+  linkRows_(SHEETS.HANDOFFS, h.sourceHandoffIds, null);
+}
+// Points a set of rows at the handover that took them (or at nobody), in one go.
+function linkRows_(name, ids, holderId) {
+  if (!ids || !ids.length) return;
+  var want = Object.create(null); ids.forEach(function (id) { want[id] = 1; });
+  var rows = readSheet(name).filter(function (r) { return want[r.id]; });
+  rows.forEach(function (r) { r.consumedBy = holderId; });
+  writeRows_(name, rows);
+}
+// A save cut short leaves a handover without all its links, and a retry would then move the
+// same cash twice or strand it (2026-10-30). Before cash moves, and on the daily check, the
+// links are put right from the handovers themselves: a row a live handover lists is taken;
+// a row still pointing at a returned, rejected or cancelled one is free. A الموازنة's deposit
+// lists its day without taking it, so it plays no part. Runs under the lock.
+function healLinks_() {
+  var hs = readSheet(SHEETS.HANDOFFS), es = readSheet(SHEETS.ENTRIES), hById = Object.create(null), eById = Object.create(null);
+  hs.forEach(function (h) { hById[h.id] = h; }); es.forEach(function (e) { eById[e.id] = e; });
+  var dead = { voided: 1, returned: 1, rejected: 1 }, fixE = Object.create(null), fixH = Object.create(null);
+  function each(h, fn) {
+    (h.sourceEntryIds || []).forEach(function (id) { var e = eById[id]; if (e && !e.voided) fn(e, fixE); });
+    (h.sourceHandoffIds || []).forEach(function (id) { var s = hById[id]; if (s && !dead[s.status]) fn(s, fixH); });
+  }
+  var list = hs.filter(function (h) { return !h.direct; });
+  list.filter(function (h) { return dead[h.status]; }).forEach(function (h) {
+    each(h, function (r, fix) { if (r.consumedBy === h.id) { r.consumedBy = null; fix[r.id] = r; } });
   });
-  (h.sourceHandoffIds || []).forEach(function (id) {
-    var sh = getById_(SHEETS.HANDOFFS, id);
-    if (sh) { sh.consumedBy = null; writeRow(SHEETS.HANDOFFS, sh); }
+  list.filter(function (h) { return !dead[h.status]; }).forEach(function (h) {
+    each(h, function (r, fix) { if (!r.consumedBy) { r.consumedBy = h.id; fix[r.id] = r; } });
   });
+  var e2 = Object.keys(fixE).map(function (k) { return fixE[k]; }), h2 = Object.keys(fixH).map(function (k) { return fixH[k]; });
+  if (!e2.length && !h2.length) return 0;
+  writeRows_(SHEETS.ENTRIES, e2); writeRows_(SHEETS.HANDOFFS, h2);
+  logAudit_('heal_links', 'system', e2.concat(h2).map(function (r) { return r.txNo || r.id; }).slice(0, 40).join(', '));
+  return e2.length + h2.length;
 }
 
 function actionResolveDispute_(req, user) {
@@ -2452,7 +2457,7 @@ function actionRecordDeposit_(req, user) {
   HO_DATE_FIELDS_.forEach(function (k) { if (dcand[k] !== undefined) deposit[k] = dcand[k]; });
   writeRow(SHEETS.HANDOFFS, deposit);
   if (slipPhoto) claimPhoto_(slipPhoto.id, deposit.id);
-  held.forEach(function (h) { h.consumedBy = deposit.id; writeRow(SHEETS.HANDOFFS, h); });
+  linkRows_(SHEETS.HANDOFFS, deposit.sourceHandoffIds, deposit.id);
   logAudit_('record_deposit', user.id, deposit.id);
   hoAuditDate_(deposit, user);
   return { ok: true, handoff: deposit };
@@ -2612,7 +2617,13 @@ function collectionsScope_(user) {
     // his branches only (2026-10-12): the branches of the areas he manages
     var areas = {}; managedAreas_(me).forEach(function (c) { areas[c.id] = 1; });
     var myLocs = {}; readSheet(SHEETS.LOCATIONS).forEach(function (l) { if (areas[l.clusterId]) myLocs[l.id] = 1; });
-    return function (h) { return ((h.locationId && myLocs[h.locationId]) || (!h.locationId && h.fromUserId === me)) && inActiveArea_(user, h); };
+    var active = activeAreaOf_(me), areaOfLoc = {};
+    readSheet(SHEETS.LOCATIONS).forEach(function (l) { areaOfLoc[l.id] = l.clusterId; });
+    // a request follows its branch to the area it is in now, and stays with the manager who sent it
+    return function (h) {
+      if (!((h.locationId && myLocs[h.locationId]) || h.fromUserId === me)) return false;
+      return !active || h.clusterId === active || areaOfLoc[h.locationId] === active;
+    };
   }
   // a collector: his own only (2026-10-12) — sent to him, or holding it now
   if (role === 'collector') return function (h, hops, holder) { return h.toUserId === me || holder === me; };
@@ -2962,18 +2973,15 @@ function checkHeldTooLong_() {
   // its push notifications go out together at the end (Push.gs)
   var pushOpened = pushBatchBegin_();
   try {
-    readSheet(SHEETS.HANDOFFS)
-      .filter(function (h) { return h.status === 'confirmed' && !h.consumedBy && h.kind !== 'deposit' && !h.heldEscalatedAt; })
-      .forEach(function (h) {
-        var heldFromAt = h.resolvedAt || h.confirmedAt;
-        if (!heldFromAt) return;
-        var ageMs = now - new Date(heldFromAt).getTime();
-        if (ageMs < thresholdMs) return;
-        h.heldEscalatedAt = new Date().toISOString();
-        writeRow(SHEETS.HANDOFFS, h);
-        escalateHeldTooLong_(h, ageMs / 3600000);
-        escalated++;
-      });
+    function ageOf(h) { var at = h.resolvedAt || h.confirmedAt; return at ? now - new Date(at).getTime() : -1; }
+    var due = withCashLock_(function () {
+      var rows = readSheet(SHEETS.HANDOFFS).filter(function (h) { return h.status === 'confirmed' && !h.consumedBy && h.kind !== 'deposit' && !h.heldEscalatedAt && ageOf(h) >= thresholdMs; });
+      var at = new Date().toISOString();
+      rows.forEach(function (h) { h.heldEscalatedAt = at; });
+      writeRows_(SHEETS.HANDOFFS, rows);
+      return rows;
+    });
+    due.forEach(function (h) { escalateHeldTooLong_(h, ageOf(h) / 3600000); escalated++; });
   } finally { pushBatchEnd_(pushOpened); }
   return escalated;
 }
@@ -2993,16 +3001,16 @@ function checkStaleHandoffs_() {
   // the daily trigger's push notifications, stale and held alike, go out in one batch (Push.gs)
   var pushOpened = pushBatchBegin_();
   try {
-    readSheet(SHEETS.HANDOFFS)
-      .filter(function (h) { return h.status === 'pending' && !h.staleEscalatedAt; })
-      .forEach(function (h) {
-        var ageMs = now - new Date(h.createdAt).getTime();
-        if (ageMs < thresholdMs) return;
-        h.staleEscalatedAt = new Date().toISOString();
-        writeRow(SHEETS.HANDOFFS, h);
-        escalateStaleHandoff_(h, ageMs / 3600000);
-        escalated++;
-      });
+    function ageOf(h) { return now - new Date(h.createdAt).getTime(); }
+    var due = withCashLock_(function () {
+      healLinks_();
+      var rows = readSheet(SHEETS.HANDOFFS).filter(function (h) { return h.status === 'pending' && !h.staleEscalatedAt && ageOf(h) >= thresholdMs; });
+      var at = new Date().toISOString();
+      rows.forEach(function (h) { h.staleEscalatedAt = at; });
+      writeRows_(SHEETS.HANDOFFS, rows);
+      return rows;
+    });
+    due.forEach(function (h) { escalateStaleHandoff_(h, ageOf(h) / 3600000); escalated++; });
     escalated += checkHeldTooLong_();
   } finally { pushBatchEnd_(pushOpened); }
   return escalated;
@@ -3393,7 +3401,7 @@ function jrEntrySteps_(c, e) {
   var group = e.submissionId && c.siblings[e.submissionId] ? c.siblings[e.submissionId].filter(function (x) { return !x.voided && jrVisibleEntry_(c, x); }) : (e.voided ? [] : [e]);
   var net = group.length ? computeNet_(group).netCashOwed : 0;
   var batch = e.batchId ? c.bById[e.batchId] : null;
-  var cancelled = e.voided && e.voidReason;
+  var cancelled = e.voided && e.voidReason && !e.voidedWithBatch;
   // a line of a rejected version is not in any handover: it follows its batch
   if (batch && !cancelled && e.voided) return jrBatchJourney_(c, batch);
   if (batch && !cancelled) steps = steps.concat(jrBatchSteps_(c, batch));

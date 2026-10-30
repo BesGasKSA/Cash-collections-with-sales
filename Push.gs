@@ -157,7 +157,7 @@ function actionRegisterPushToken_(req, user) {
   cache.put(rk, String(rn + 1), 600);
   // the read, the write and the tidying run under the script lock against a fresh read, so two
   // devices registering at once cannot both pass the limits or write one token twice (review 2026-10-26)
-  var lock = LockService.getScriptLock();
+  var lock = scriptLock_();
   lock.waitLock(30000);
   try {
     freshenExec_();
@@ -200,7 +200,7 @@ function pushDeleteRows_(ids) {
 }
 // A device FCM says is gone, switched off under the script lock against a fresh read of its row.
 function pushMarkDead_(token, reason) {
-  var lock = LockService.getScriptLock();
+  var lock = scriptLock_();
   lock.waitLock(30000);
   try {
     freshenExec_();

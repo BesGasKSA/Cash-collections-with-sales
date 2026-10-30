@@ -133,6 +133,45 @@ function inActiveArea_(user, h) {
 // those older reads (a duplicate name, the next number) would be wrong.
 function freshenExec_() { var ex = exec_(); ex.props = null; ex.rows = {}; }
 
+// The one script lock of this execution, counted here (2026-10-30). Google's hasLock
+// speaks for one Lock object, so a new object asked by writeRow could not tell that the
+// request already held the lock, and releasing that object could end the protection
+// half-way through a check-then-write. Every lock in the app goes through this: inner
+// holders only count, and the real lock is released once, by the outermost. Before it
+// goes, the writes are flushed and the sheets written get a new version, so nobody can
+// keep a copy read before those writes under the version they announced.
+function scriptLock_() {
+  var ex = exec_(), mine = false;
+  function take() { ex.lockDepth = (ex.lockDepth || 0) + 1; mine = true; }
+  return {
+    waitLock: function (ms) {
+      if (mine) return;
+      if (!ex.lockDepth) { var real = LockService.getScriptLock(); real.waitLock(ms); ex.realLock = real; ex.dirty = {}; }
+      take();
+    },
+    tryLock: function (ms) {
+      if (mine) return true;
+      if (!ex.lockDepth) { var real = LockService.getScriptLock(); if (!real.tryLock(ms)) return false; ex.realLock = real; ex.dirty = {}; }
+      take();
+      return true;
+    },
+    hasLock: function () { return !!ex.lockDepth; },
+    releaseLock: function () {
+      if (!mine) return;
+      mine = false;
+      ex.lockDepth--;
+      if (ex.lockDepth) return;
+      var dirty = Object.keys(ex.dirty || {}).filter(function (n) { return n !== SHEETS.AUDIT; });
+      ex.dirty = null;
+      try {
+        if (dirty.length) { SpreadsheetApp.flush(); dirty.forEach(bumpVersion_); }
+      } catch (e) { console.error('flush: ' + e); }
+      var real = ex.realLock; ex.realLock = null;
+      real.releaseLock();
+    }
+  };
+}
+
 function scriptProps_() {
   var ex = exec_();
   if (!ex.props) ex.props = PropertiesService.getScriptProperties().getProperties() || {};
@@ -183,6 +222,7 @@ function bumpVersion_(name) {
   var v = Utilities.getUuid();
   setScriptProp_(verKey_(name), v);
   delete exec_().rows[name];
+  if (exec_().dirty) exec_().dirty[name] = 1;
   return v;
 }
 
@@ -262,8 +302,8 @@ function findRow_(sh, id) {
 function writeRow(name, obj) {
   // A caller that already holds the lock (a check-then-write that must stay
   // atomic) keeps it: writeRow only releases a lock it took itself.
-  var lock = LockService.getScriptLock();
-  var held = lock.hasLock ? lock.hasLock() : false;
+  var lock = scriptLock_();
+  var held = lock.hasLock();
   if (!held) lock.waitLock(30000);
   try {
     var sh = sheet_(name);
@@ -302,6 +342,25 @@ function writeRow(name, obj) {
   } finally {
     if (!held) lock.releaseLock();
   }
+}
+
+// Rows already in a sheet, written together: one read of the id column and one new
+// version, however many rows (2026-10-30: rejecting an area batch read the whole sheet
+// for each line, under the lock). A row no longer in the sheet goes through writeRow.
+function writeRows_(name, rows) {
+  if (!rows.length) return;
+  var lock = scriptLock_(), held = lock.hasLock();
+  if (!held) lock.waitLock(30000);
+  try {
+    var sh = sheet_(name), last = sh.getLastRow(), at = Object.create(null), now = new Date().toISOString();
+    if (last > 1) sh.getRange(2, 1, last - 1, 1).getValues().forEach(function (v, i) { at[v[0]] = i + 2; });
+    rows.forEach(function (obj) {
+      if (!at[obj.id]) { writeRow(name, obj); return; }
+      obj.updatedAt = now;
+      sh.getRange(at[obj.id], 1, 1, 3).setValues([[obj.id, JSON.stringify(obj), now]]);
+    });
+    bumpVersion_(name);
+  } finally { if (!held) lock.releaseLock(); }
 }
 
 // ---------- Transaction numbers (2026-10-06) ----------
@@ -360,7 +419,7 @@ function isTxSheet_(name) { return name === SHEETS.HANDOFFS || hasOwn_(TX_PREFIX
 // Numbers every transaction saved before numbers existed: one read and one write
 // of each sheet's data column, in the order the rows were written, under the lock.
 function txNumbersBackfill_() {
-  var lock = LockService.getScriptLock();
+  var lock = scriptLock_();
   lock.waitLock(30000);
   try {
     freshenExec_();
@@ -399,7 +458,7 @@ function txNumbersBackfill_() {
 }
 
 function deleteRow_(name, id) {
-  var lock = LockService.getScriptLock();
+  var lock = scriptLock_();
   lock.waitLock(30000);
   try {
     var sh = sheet_(name);
@@ -437,10 +496,18 @@ function hasOwn_(obj, key) {
   return Object.prototype.hasOwnProperty.call(obj, key);
 }
 
+// One index per sheet per request: a lookup used to re-parse the whole sheet each time.
+// The caller gets its own copy, as it always did.
 function getById_(name, id) {
-  var rows = readSheet(name);
-  for (var i = 0; i < rows.length; i++) if (rows[i].id === id) return rows[i];
-  return null;
+  var ex = exec_(), ix = ex.idx && ex.idx[name];
+  if (!ix || ix.src !== ex.rows[name]) {
+    var rows = readSheet(name), map = Object.create(null);
+    rows.forEach(function (r) { map[r.id] = r; });
+    ix = { src: ex.rows[name], map: map };
+    (ex.idx = ex.idx || {})[name] = ix;
+  }
+  var r = ix.map[id];
+  return r && r.id === id ? JSON.parse(JSON.stringify(r)) : null;
 }
 
 function logAudit_(action, userId, detail) {
@@ -496,6 +563,8 @@ function sendMail_(to, subject, body, html) {
   // accounts without email (drivers who sign in by iqama) simply get nothing
   to = String(to || '').split(',').map(function (x) { return x.trim(); }).filter(function (x) { return x.indexOf('@') > 0; }).join(',');
   if (!to) return 'none';
+  // nobody waits for the lock while a message goes out
+  if (exec_().inCashLock) { afterCashLock_(function () { sendMail_(to, subject, body, html); }); return 'queued'; }
   if (typeof sendViaGraph_ === 'function') {
     var cfg = graphMailConfig_();
     if (cfg) {
@@ -830,7 +899,7 @@ function dataVersion_() {
   var parts = [];
   for (var k in SHEETS) {
     // no cached answer reads the push devices: registering one must not clear every cache (review 2026-10-26)
-    if (SHEETS.hasOwnProperty(k) && k !== 'PUSH_TOKENS') parts.push(version_(SHEETS[k]));
+    if (SHEETS.hasOwnProperty(k) && k !== 'PUSH_TOKENS' && k !== 'AUDIT') parts.push(version_(SHEETS[k]));
   }
   return parts.join('.');
 }
@@ -842,7 +911,7 @@ function responseCacheKey_(action, req, user) {
   safeOwnKeys_(req).forEach(function (k) {
     if (k !== 'token' && k !== 'action') payload[k] = req[k];
   });
-  var raw = user.id + '|' + action + '|' + JSON.stringify(payload) + '|' + dataVersion_();
+  var raw = user.id + '|' + action + '|' + JSON.stringify(payload) + '|' + dataVersion_() + (action === 'listAudit' ? '|' + version_(SHEETS.AUDIT) : '');
   return 'resp_' + hmac_(raw, secret_() + '|resp').slice(0, 96);
 }
 
@@ -855,7 +924,7 @@ function responseCacheKey_(action, req, user) {
 // Work queued with afterCashLock_ (alerts, emails) runs once the lock is released,
 // and only when the locked work finished without throwing (2026-10-18).
 function withCashLock_(fn) {
-  var lock = LockService.getScriptLock();
+  var lock = scriptLock_();
   lock.waitLock(30000);
   var ex = exec_(), ok = false, res;
   ex.afterLock = []; ex.inCashLock = true;
@@ -926,20 +995,20 @@ function route_(req) {
     listMeta: function () { return actionMeta_(req, user); },
 
     // entries
-    voidEntries: function () { return actionVoidEntries_(req, user); },
+    voidEntries: function () { return withCashLock_(function () { return actionVoidEntries_(req, user); }); },
     adminVoidTransaction: function () { return withCashLock_(function () { return actionAdminVoidTransaction_(req, user); }); },
-    deputyValidateHandoff: function () { return actionDeputyValidateHandoff_(req, user); },
-    deputyReturnHandoff: function () { return actionDeputyReturnHandoff_(req, user); },
+    deputyValidateHandoff: function () { var r = withCashLock_(function () { return actionDeputyValidateHandoff_(req, user); }); if (r && r.ok) r.wa = waNotifyCollector_(r.handoff); return r; },
+    deputyReturnHandoff: function () { return withCashLock_(function () { return actionDeputyReturnHandoff_(req, user); }); },
     createDailyEntry: function () { return withCashLock_(function () { return actionCreateEntry_(req, user); }); },
     importDailyEntries: function () { return withCashLock_(function () { return actionImportEntries_(req, user); }); },
     listEntries: function () { return actionListEntries_(req, user); },
 
     // handoffs
-    createHandoff: function () { return withCashLock_(function () { return actionCreateHandoff_(req, user); }); },
-    confirmHandoff: function () { return actionConfirmHandoff_(req, user); },
-    disputeHandoff: function () { return actionDisputeHandoff_(req, user); },
-    resolveDispute: function () { return actionResolveDispute_(req, user); },
-    recordDeposit: function () { return withCashLock_(function () { return actionRecordDeposit_(req, user); }); },
+    createHandoff: function () { return withCashLock_(function () { healLinks_(); return actionCreateHandoff_(req, user); }); },
+    confirmHandoff: function () { return withCashLock_(function () { return actionConfirmHandoff_(req, user); }); },
+    disputeHandoff: function () { return withCashLock_(function () { return actionDisputeHandoff_(req, user); }); },
+    resolveDispute: function () { return withCashLock_(function () { return actionResolveDispute_(req, user); }); },
+    recordDeposit: function () { return withCashLock_(function () { healLinks_(); return actionRecordDeposit_(req, user); }); },
     uploadEntryPhoto: function () { return actionUploadEntryPhoto_(req, user); },
     listHandoffs: function () { return actionListHandoffs_(req, user); },
     // the command palette: read-only, the screens' own scope (2026-10-19)
@@ -995,16 +1064,16 @@ function route_(req) {
 
     // bank reconciliation — admin/finance only, same authority split as
     // dispute resolution (see Reconciliation.gs)
-    importBankStatement: function () { return actionImportBankStatement_(req, user); },
+    importBankStatement: function () { return withCashLock_(function () { return actionImportBankStatement_(req, user); }); },
     getReconciliation: function () { return actionReconciliationSummary_(req, user); },
-    manualMatchReconciliation: function () { return actionManualMatchReconciliation_(req, user); },
-    unmatchReconciliation: function () { return actionUnmatchReconciliation_(req, user); },
+    manualMatchReconciliation: function () { return withCashLock_(function () { return actionManualMatchReconciliation_(req, user); }); },
+    unmatchReconciliation: function () { return withCashLock_(function () { return actionUnmatchReconciliation_(req, user); }); },
 
     // SLA escalation on stale (long-pending) handoffs, and a second
     // sign-off flag on large confirmed amounts (see Collection.gs)
     runStaleCheck: function () { return actionRunStaleCheck_(req, user); },
     adminInstallStaleTrigger: function () { return actionAdminInstallStaleTrigger_(req, user); },
-    acknowledgeSecondApproval: function () { return actionAcknowledgeSecondApproval_(req, user); },
+    acknowledgeSecondApproval: function () { return withCashLock_(function () { return actionAcknowledgeSecondApproval_(req, user); }); },
     adminCorrectReceipt: function () { return withCashLock_(function () { return actionAdminCorrectReceipt_(req, user); }); },
 
     // operational risk / complaint register (see Risk.gs)
@@ -1053,7 +1122,8 @@ function route_(req) {
     listArchiveRuns: function () { return actionListArchiveRuns_(req, user); },
     archiveBackupList: function () { return actionArchiveBackupList_(req, user); },
     archiveBackupPart: function () { return actionArchiveBackupPart_(req, user); },
-    archivePurge: function () { return actionArchivePurge_(req, user); }
+    archivePurge: function () { return actionArchivePurge_(req, user); },
+    traceNumber: function () { return actionTraceNumber_(req, user); }
   };
 
   if (!hasOwn_(handlers, action)) throw new Error('unknown_action');

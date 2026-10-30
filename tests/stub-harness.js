@@ -86,6 +86,7 @@ function buildContext() {
   var svcCalls = { getProperty: 0, getProperties: 0, cacheGet: 0, sheetRead: 0 };
 
   var SpreadsheetApp = {
+    flush: function () {},
     getActiveSpreadsheet: function () {
       return {
         getSheetByName: function (name) { return sheets[name] || null; },

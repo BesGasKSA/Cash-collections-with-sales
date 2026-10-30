@@ -80,11 +80,16 @@ function actionImportBankStatement_(req, user) {
   if (!rows.length) return { ok: false, error: 'invalid_input' };
   if (rows.length > 1000) return { ok: false, error: 'too_many_rows' };
 
-  var imported = 0;
+  // A statement imported twice, or two statements that overlap: a line already on file is
+  // skipped, or its copy would reconcile a deposit the bank never showed (2026-10-30). Two
+  // equal lines in one statement are two real lines, so they are counted, not merged.
+  function lineKey(l) { return String(l.date).slice(0, 10) + '|' + Number(l.amount).toFixed(2) + '|' + String(l.reference || '').trim(); }
+  var onFile = {}, fresh = [], skipped = 0;
+  readSheet(SHEETS.BANK_LINES).forEach(function (l) { var k = lineKey(l); onFile[k] = (onFile[k] || 0) + 1; });
   for (var i = 0; i < rows.length; i++) {
     var r = rows[i] || {};
     if (!r.date || r.amount == null || r.amount === '') continue;
-    writeRow(SHEETS.BANK_LINES, {
+    var line = {
       id: Utilities.getUuid(),
       date: r.date,
       amount: Number(r.amount),
@@ -92,12 +97,16 @@ function actionImportBankStatement_(req, user) {
       status: 'unmatched',
       matchedHandoffId: null,
       importedBy: user.id
-    });
-    imported++;
+    };
+    var key = lineKey(line);
+    if (onFile[key]) { onFile[key]--; skipped++; continue; }
+    fresh.push(line);
   }
+  costAppendMany_(SHEETS.BANK_LINES, fresh);
+  var imported = fresh.length;
   var matched = autoMatchBankLines_(user);
-  logAudit_('import_bank_statement', user.id, imported + ' rows, ' + matched + ' auto-matched');
-  return { ok: true, imported: imported, autoMatched: matched };
+  logAudit_('import_bank_statement', user.id, imported + ' rows, ' + matched + ' auto-matched' + (skipped ? ', ' + skipped + ' already on file' : ''));
+  return { ok: true, imported: imported, autoMatched: matched, skipped: skipped };
 }
 
 function actionReconciliationSummary_(req, user) {
@@ -133,6 +142,8 @@ function actionManualMatchReconciliation_(req, user) {
 // row). Never destructive to the deposit itself, only clears the link.
 function actionUnmatchReconciliation_(req, user) {
   requireReconciliationAccess_(user);
+  var reason = String(req.reason || '').trim().slice(0, 1000);
+  if (!reason) return { ok: false, error: 'reason_required' };
   var line = getById_(SHEETS.BANK_LINES, req.lineId);
   if (!line) return { ok: false, error: 'not_found' };
   var deposit = line.matchedHandoffId ? getById_(SHEETS.HANDOFFS, line.matchedHandoffId) : null;
@@ -147,8 +158,11 @@ function actionUnmatchReconciliation_(req, user) {
     deposit.reconciled = false;
     deposit.reconciledAt = null;
     deposit.reconciledLineId = null;
+    // the bank saw it once: the day behind it can no longer be cancelled in two steps
+    deposit.wasReconciled = true;
+    deposit.unmatchReason = reason;
     writeRow(SHEETS.HANDOFFS, deposit);
   }
-  logAudit_('unmatch_reconciliation', user.id, line.id);
+  logAudit_('unmatch_reconciliation', user.id, line.id + ': ' + reason);
   return { ok: true };
 }

@@ -28,14 +28,15 @@ var ENTITY_SHEET = {
 var ENTITY_CHILDREN = {
   // a place with cost lines keeps its row, or the months already reported would lose them
   // (a voided line does not count: `live`)
-  location: [{ sheet: SHEETS.STORES, field: 'locationId' }, { sheet: SHEETS.CARS, field: 'locationId' }, { sheet: SHEETS.COST_LINES, field: 'centreId', centreType: 'location', live: true }],
-  store: [{ sheet: SHEETS.POS, field: 'ownerId', ownerType: 'store' }, { sheet: SHEETS.COST_LINES, field: 'centreId', centreType: 'store', live: true }],
-  car: [{ sheet: SHEETS.POS, field: 'ownerId', ownerType: 'car' }, { sheet: SHEETS.COST_LINES, field: 'centreId', centreType: 'car', live: true }],
-  cluster: [{ sheet: SHEETS.LOCATIONS, field: 'clusterId' }, { sheet: SHEETS.COST_LINES, field: 'centreId', centreType: 'cluster', live: true }],
+  location: [{ sheet: SHEETS.STORES, field: 'locationId' }, { sheet: SHEETS.CARS, field: 'locationId' }, { sheet: SHEETS.COST_LINES, field: 'centreId', centreType: 'location', live: true },
+    { sheet: SHEETS.ENTRIES, field: 'locationId' }, { sheet: SHEETS.HANDOFFS, field: 'locationId' }, { sheet: SHEETS.INV_MOVES, field: 'locationId' }],
+  store: [{ sheet: SHEETS.POS, field: 'ownerId', ownerType: 'store' }, { sheet: SHEETS.COST_LINES, field: 'centreId', centreType: 'store', live: true }, { sheet: SHEETS.ENTRIES, field: 'sourceId', sourceType: 'store' }],
+  car: [{ sheet: SHEETS.POS, field: 'ownerId', ownerType: 'car' }, { sheet: SHEETS.COST_LINES, field: 'centreId', centreType: 'car', live: true }, { sheet: SHEETS.ENTRIES, field: 'sourceId', sourceType: 'car' }, { sheet: SHEETS.HANDOFFS, field: 'carId' }],
+  cluster: [{ sheet: SHEETS.LOCATIONS, field: 'clusterId' }, { sheet: SHEETS.COST_LINES, field: 'centreId', centreType: 'cluster', live: true }, { sheet: SHEETS.HANDOFFS, field: 'clusterId' }],
   // a cost type with lines on it stays on file (deactivate instead)
   cost_type: [{ sheet: SHEETS.COST_LINES, field: 'typeId', live: true }],
   zone: [{ sheet: SHEETS.LOCATIONS, field: 'zoneId' }],
-  pos: [],
+  pos: [{ sheet: SHEETS.ENTRIES, field: 'sourceId', sourceType: 'pos' }],
   // a product with existing sales history stays selectable in entry forms
   // (deactivate instead) but blocking delete protects the report from
   // orphaned productIds it can no longer label.
@@ -138,7 +139,7 @@ function actionAdminCreateUser_(req, user) {
   };
   var token = issueInvite_(newUser, user);
   // the employee number and the write under one lock
-  var userLock = LockService.getScriptLock();
+  var userLock = scriptLock_();
   userLock.waitLock(30000);
   try {
     freshenExec_();
@@ -496,7 +497,7 @@ function createIqamaUser_(d, iq, user) {
     iqamaId: iq, phone: waNumber_(d.phone) || null, salt: salt, pass: hashPw_(temp, salt), mustChangePw: true,
     inviteStatus: 'accepted', createdAt: new Date().toISOString()
   };
-  var lock = LockService.getScriptLock();
+  var lock = scriptLock_();
   lock.waitLock(30000);
   try { freshenExec_(); newUser.code = nextCode_('user'); writeRow(SHEETS.USERS, newUser); }
   finally { try { lock.releaseLock(); } catch (e) {} }
@@ -919,7 +920,7 @@ function actionAdminSaveEntity_(req, user) {
   requireManager_(user);
   // the duplicate check and the new number must see the same file: hold the
   // lock from the check to the write (writeRow releases it)
-  var lock = LockService.getScriptLock();
+  var lock = scriptLock_();
   lock.waitLock(30000);
   var res;
   try { freshenExec_(); res = saveEntity_({ kind: req.kind, id: req.id, data: req.data, noTranslate: true }, user); } finally { try { lock.releaseLock(); } catch (e) {} }
@@ -941,7 +942,7 @@ function actionAdminImportEntities_(req, user) {
   var results = [], created = 0, updated = 0, saved = [];
   rows.forEach(function (r, i) {
     r = r || {};
-    var lock = LockService.getScriptLock();
+    var lock = scriptLock_();
     lock.waitLock(30000);
     var res;
     try { freshenExec_(); res = saveEntity_({ kind: req.kind, id: r.id || null, data: r.data || {}, noTranslate: true }, user); }
@@ -1330,6 +1331,7 @@ function actionAdminDeleteEntity_(req, user) {
     for (var j = 0; j < rows.length; j++) {
       if (rows[j][rule.field] !== req.id) continue;
       if (rule.ownerType && rows[j].ownerType !== rule.ownerType) continue;
+      if (rule.sourceType && rows[j].sourceType !== rule.sourceType) continue;
       if (rule.centreType && rows[j].centreType !== rule.centreType) continue;
       if (rule.live && rows[j].voided) continue;
       return { ok: false, error: 'has_children' };
@@ -1620,7 +1622,7 @@ function nextCode_(kind) {
 // rows were written. Never renumbers. Returns how many it numbered.
 function backfillCodes_() {
   var done = 0;
-  var lock = LockService.getScriptLock();
+  var lock = scriptLock_();
   Object.keys(CODE_PREFIX_).forEach(function (kind) {
     readSheet(codeSheet_(kind)).forEach(function (r) {
       if (r.code) return;
@@ -1654,7 +1656,7 @@ function backfillCodesOnce_() {
 function runOnce_(flag, fn) {
   if (scriptProps_()[flag]) return false;
   var props = PropertiesService.getScriptProperties();
-  var lock = LockService.getScriptLock();
+  var lock = scriptLock_();
   lock.waitLock(30000);
   try {
     freshenExec_();
@@ -1728,7 +1730,7 @@ function importCustomers_(rows, opts) {
   opts = opts || {};
   var created = [], skipped = [], updated = [], changes = [];
   var goods = null;
-  var lock = LockService.getScriptLock();
+  var lock = scriptLock_();
   try {
   for (var i = 0; i < rows.length; i++) {
     var r = typeof rows[i] === 'string' ? { name: rows[i] } : (rows[i] || {});
@@ -1810,7 +1812,7 @@ function seedCities_() {
     if (r.city) names.push(String(r.city).trim());
   });
   var added = 0;
-  var lock = LockService.getScriptLock();
+  var lock = scriptLock_();
   names.forEach(function (n) {
     var k = normalizeName_(n);
     if (!k || have[k]) return;
@@ -2123,7 +2125,7 @@ function actionArchiveRange_(req, user, previewOnly) {
   if (String(req.confirm || '') !== 'ARCHIVE') return { ok: false, error: 'confirm_required' };
   var reason = String(req.reason || '').trim().slice(0, 500);
   if (!reason) return { ok: false, error: 'reason_required' };
-  var lock = LockService.getScriptLock();
+  var lock = scriptLock_();
   lock.waitLock(30000);
   try {
     freshenExec_();
@@ -2195,7 +2197,20 @@ function actionArchiveBackupList_(req, user) {
   if (user.role !== 'admin') return { ok: false, error: 'forbidden' };
   var tabs = archOldTabs_().map(function (s) { return { name: s.getName(), rows: archTabRows_(s) }; });
   var runs = readSheet(SHEETS.ARCHIVE_RUNS).filter(function (r) { return r.status === 'archived' || r.status === 'archiving'; });
-  return { ok: true, tabs: tabs, runs: runs.map(archRunView_), archivedRows: readSheet(SHEETS.ARCHIVED_ROWS).length };
+  var copies = readSheet(SHEETS.ARCHIVED_ROWS), inside = { entries: 0, handoffs: 0, deposits: 0, deposited: 0, from: '', to: '' };
+  copies.forEach(function (c) {
+    if (c.kind === 'patch' || (c.sheet !== SHEETS.ENTRIES && c.sheet !== SHEETS.HANDOFFS)) return;
+    var o; try { o = JSON.parse(c.data); } catch (e) { return; }
+    if (c.sheet === SHEETS.ENTRIES) {
+      inside.entries++;
+      var d = archDay_(o.date);
+      if (d && (!inside.from || d < inside.from)) inside.from = d;
+      if (d && d > inside.to) inside.to = d;
+    } else if (o.kind === 'deposit' && o.status !== 'voided') { inside.deposits++; inside.deposited += Number(o.amount || 0); }
+    else inside.handoffs++;
+  });
+  inside.deposited = Math.round(inside.deposited * 100) / 100;
+  return { ok: true, tabs: tabs, runs: runs.map(archRunView_), archivedRows: copies.length, inside: inside };
 }
 // One page of the backup: the archived copies, or one old tab, as {id, at, data} rows.
 function actionArchiveBackupPart_(req, user) {
@@ -2223,7 +2238,7 @@ function actionArchivePurge_(req, user) {
   if (user.role !== 'admin') return { ok: false, error: 'forbidden' };
   if (String(req.confirm || '') !== 'DELETE') return { ok: false, error: 'confirm_required' };
   if (req.backupTaken !== true) return { ok: false, error: 'backup_required' };
-  var lock = LockService.getScriptLock();
+  var lock = scriptLock_();
   lock.waitLock(30000);
   try {
     freshenExec_();
@@ -2248,6 +2263,43 @@ function actionArchivePurge_(req, user) {
     return { ok: true, purgedRuns: purged, deletedCopies: copies, deletedTabs: gone.length };
   } finally { try { lock.releaseLock(); } catch (e) {} }
 }
+// ---------- Where a transaction number is (2026-10-30) ----------
+// The one place that answers "this number is gone": the live rows, the archived copies
+// with the run that took them, the old archive tabs, and the audit trail of what it found.
+// Read-only.
+function traceView_(sheet, o) {
+  return { sheet: sheet, id: o.id, txNo: o.txNo || '', kind: o.kind || '', status: o.status || '', date: o.date || o.handoffDate || '', amount: sheet === SHEETS.ENTRIES ? entrySalesTotal_(o) : Number(o.amount || 0),
+    voided: !!o.voided, voidReason: o.voidReason || '', voidedBy: o.voidedBy || null, voidedAt: o.voidedAt || null, locationId: o.locationId || null, by: o.enteredBy || o.fromUserId || null };
+}
+function actionTraceNumber_(req, user) {
+  requireManager_(user);
+  var no = String(req.no || '').trim().toUpperCase();
+  if (!no) return { ok: false, error: 'invalid_input' };
+  var sheets = [SHEETS.HANDOFFS].concat(Object.keys(TX_PREFIX_)), live = [], ids = {}, needle = '"txNo":"' + no + '"';
+  sheets.forEach(function (s) {
+    readSheet(s).forEach(function (r) { if (String(r.txNo || '').toUpperCase() === no) { live.push(traceView_(s, r)); ids[r.id] = 1; } });
+  });
+  var runs = {}, archived = [];
+  readSheet(SHEETS.ARCHIVE_RUNS).forEach(function (r) { runs[r.id] = r; });
+  readSheet(SHEETS.ARCHIVED_ROWS).forEach(function (c) {
+    if (c.kind === 'patch' || String(c.data).indexOf(needle) < 0) return;
+    var o; try { o = JSON.parse(c.data); } catch (e) { return; }
+    var v = traceView_(c.sheet, o); v.run = runs[c.runId] ? archRunView_(runs[c.runId]) : null;
+    archived.push(v); ids[c.rowId] = 1;
+  });
+  var tabs = [];
+  archOldTabs_().forEach(function (s) {
+    var n = archTabRows_(s);
+    if (!n) return;
+    var hit = s.getRange(2, 1, n, 2).getValues().some(function (v) { return String(v[1]).indexOf(needle) >= 0; });
+    if (hit) tabs.push(s.getName());
+  });
+  var keys = Object.keys(ids).concat([no]);
+  var audit = readSheet(SHEETS.AUDIT).filter(function (a) { var d = String(a.detail || ''); return keys.some(function (k) { return d.indexOf(k) >= 0; }); }).slice(-50).map(function (a) { return { action: a.action, at: a.at, userId: a.userId, detail: a.detail }; });
+  var m = /^([A-Z]+)-(\d{4})-(\d+)$/.exec(no), issued = null;
+  if (m) issued = Number(scriptProps_()['TXSEQ_' + m[1] + '_' + m[2]] || 0) >= Number(m[3]);
+  return { ok: true, no: no, live: live, archived: archived, tabs: tabs, audit: audit, issued: issued };
+}
 function actionListArchiveRuns_(req, user) {
   if (user.role !== 'admin') return { ok: false, error: 'forbidden' };
   return { ok: true, runs: readSheet(SHEETS.ARCHIVE_RUNS).sort(function (a, b) { return String(b.at).localeCompare(String(a.at)); }).map(archRunView_) };
@@ -2258,7 +2310,7 @@ function actionListArchiveRuns_(req, user) {
 function actionArchiveRestore_(req, user) {
   if (user.role !== 'admin') return { ok: false, error: 'forbidden' };
   if (String(req.confirm || '') !== 'RESTORE') return { ok: false, error: 'confirm_required' };
-  var lock = LockService.getScriptLock();
+  var lock = scriptLock_();
   lock.waitLock(30000);
   try {
     freshenExec_();

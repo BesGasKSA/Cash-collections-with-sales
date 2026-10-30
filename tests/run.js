@@ -527,7 +527,8 @@ var matchedLineId = null;
 })();
 check(!!matchedLineId, 'the deposit records which statement line it was matched to');
 
-var unmatchRes = call({ action: 'unmatchReconciliation', token: financeTok, lineId: matchedLineId });
+check(call({ action: 'unmatchReconciliation', token: financeTok, lineId: matchedLineId }).error === 'reason_required', 'undoing a match needs a reason');
+var unmatchRes = call({ action: 'unmatchReconciliation', token: financeTok, lineId: matchedLineId, reason: 'wrong line' });
 check(unmatchRes.ok, 'a match can be undone');
 var afterUnmatch = call({ action: 'getReconciliation', token: financeTok });
 check(afterUnmatch.unmatchedDeposits.some(function (d) { return d.id === reconDeposit.handoff.id; }), 'the deposit is back in the unmatched list after undoing the match');
@@ -2352,7 +2353,7 @@ var fxD = ctx.actionAdminSaveEntity_({ kind: 'customer', data: { name: 'Race Cus
 check(fxC.ok && fxD.ok && fxC.entity.code !== fxD.entity.code, 'and two different customers saved at once get two different numbers');
 ctx.resetExecMemo_();
 check(ctx._debug.lock && ctx._debug.lock.held === false, 'a save leaves the lock free');
-var fxLock = ctx.LockService.getScriptLock(); fxLock.waitLock(1000);
+var fxLock = ctx.scriptLock_(); fxLock.waitLock(1000);
 ctx.writeRow(ctx.SHEETS.CITIES, { id: 'fx-city', name: 'Fx City', active: true });
 check(ctx._debug.lock.held === true, 'writeRow does not release a lock its caller holds');
 fxLock.releaseLock();
@@ -7011,20 +7012,10 @@ console.log('--- a duplicate inside a received handover ---');
 
   var plain = call({ action: 'adminVoidTransaction', token: tok, ids: ['e237'], reason: 'saved twice' });
   check(!plain.ok && plain.error === 'entry_handed_on', 'the ordinary cancel still refuses a handed-on entry');
-  var wrong = call({ action: 'adminVoidTransaction', token: tok, ids: ['e238'], reason: 'saved twice', duplicate: true });
-  check(!wrong.ok && wrong.error === 'duplicate_moves_cash', 'the copy that carries the cash cannot be cancelled as a duplicate (' + wrong.error + ')');
-  var ok = call({ action: 'adminVoidTransaction', token: tok, ids: ['e237'], reason: 'saved twice', duplicate: true });
-  check(ok.ok && ok.voided === 1 && ok.depositsVoided === 1, 'the duplicate and its own الموازنة are cancelled (' + JSON.stringify(ok) + ')');
-  var h = ctx.getById_(SHEETS.HANDOFFS, 'H1'), d = ctx.getById_(SHEETS.HANDOFFS, 'D1'), e237 = ctx.getById_(SHEETS.ENTRIES, 'e237');
-  check(h.amount === 2330 && d.amount === 2330, 'no amount moves up the chain');
-  check(h.sourceEntryIds.length === 1 && h.sourceEntryIds[0] === 'e238' && h.removedEntryIds[0] === 'e237', 'the handover now carries the one real day');
-  check(h.breakdown.storeCash === 5069 && h.breakdown.directDeposit === 2739 && h.breakdown.netCashOwed === 2330, 'the handover statement adds up again (' + h.breakdown.storeCash + ')');
-  check(d.breakdown.storeCash === 5069 && d.perCluster[0].breakdown.storeCash === 5069, 'and so does the deposit that banked it');
-  check(e237.voided && ctx.getById_(SHEETS.HANDOFFS, 'DD1').status === 'voided' && ctx.getById_(SHEETS.HANDOFFS, 'DD2').status === 'completed', 'the kept day and its deposit stay');
-  var health = call({ action: 'dataHealthCheck', token: tok });
-  check(health.ok && !health.issues.some(function (i) { return i.id === 'H1' || i.id === 'D1'; }), 'the data health check finds nothing on the chain afterwards (' + JSON.stringify(health.byKind) + ')');
-  var lone = call({ action: 'adminVoidTransaction', token: tok, ids: ['e238'], reason: 'x', duplicate: true });
-  check(!lone.ok, 'the last copy of a day is never cancelled as a duplicate');
+  // the owner's rule (2026-10-30): nothing handed on is cancelled, however the request is worded
+  var flagged = call({ action: 'adminVoidTransaction', token: tok, ids: ['e237'], reason: 'saved twice', duplicate: true });
+  check(flagged.error === 'entry_handed_on', 'a handed-on day stays, even when sent as a duplicate (' + flagged.error + ')');
+  check(!ctx.getById_(SHEETS.ENTRIES, 'e237').voided && ctx.getById_(SHEETS.HANDOFFS, 'DD1').status === 'completed' && ctx.getById_(SHEETS.HANDOFFS, 'H1').sourceEntryIds.length === 2, 'and nothing on the chain moved');
 
   // the rule from now on: a day handed over cannot be entered again
   var bmTok = call({ action: 'login', email: 'dup.bm@bestgas.sa', password: 'Bootstrap#1' }).token;

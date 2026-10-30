@@ -220,7 +220,7 @@ function actionCreateInvoice_(req, user) {
   if (!cu) return { ok: false, error: 'unknown_customer' };
   var ids = Array.isArray(req.entryIds) ? req.entryIds.map(String).filter(function (x, i, a) { return a.indexOf(x) === i; }) : [];
   if (!ids.length || ids.length > 300) return { ok: false, error: 'invalid_input' };
-  var lock = LockService.getScriptLock();
+  var lock = scriptLock_();
   lock.waitLock(30000);
   try {
     freshenExec_();
@@ -252,7 +252,7 @@ function actionCreditInvoice_(req, user) {
   if (!custCanWrite_(user)) return { ok: false, error: 'forbidden' };
   var reason = String(req.reason || '').trim();
   if (!reason) return { ok: false, error: 'reason_required' };
-  var lock = LockService.getScriptLock();
+  var lock = scriptLock_();
   lock.waitLock(30000);
   try {
     freshenExec_();
@@ -290,7 +290,7 @@ function actionListCustomerPayments_(req, user) {
 function seedCustomerPaymentItemOnce_() {
   runOnce_('SEEDED_CUSTOMER_PAYMENT_ITEM', function () {
     if (readSheet(SHEETS.INCOME_ITEMS).some(function (i) { return i.system === 'customer_payment'; })) return;
-    var lock = LockService.getScriptLock(); lock.waitLock(30000);
+    var lock = scriptLock_(); lock.waitLock(30000);
     try {
       freshenExec_();
       var row = { name: 'تحصيل من عميل آجل', system: 'customer_payment', active: true, createdAt: new Date().toISOString() };

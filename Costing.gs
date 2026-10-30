@@ -70,7 +70,7 @@ function costAppendMany_(name, rows) {
   if (!rows.length) return [];
   var sh = sheet_(name), now = new Date().toISOString(), vals = [], out = [];
   // transaction numbers come from a counter: take the lock unless the caller holds it
-  var lock = LockService.getScriptLock(), held = lock.hasLock ? lock.hasLock() : false;
+  var lock = scriptLock_(), held = lock.hasLock ? lock.hasLock() : false;
   if (!held) lock.waitLock(30000);
   try {
   rows.forEach(function (obj) {
@@ -146,7 +146,7 @@ var COST_TYPE_SEED_ = [
 // and the English and Urdu come with it so nothing waits on a translation.
 function seedCostTypes_() {
   var n = 0;
-  var lock = LockService.getScriptLock();
+  var lock = scriptLock_();
   lock.waitLock(30000);
   try {
     freshenExec_();
@@ -445,7 +445,7 @@ function costRow_(line, user, extra) {
 }
 function costWrite_(line, user, extra) { return costAppendMany_(SHEETS.COST_LINES, [costRow_(line, user, extra)])[0]; }
 function costLocked_(fn) {
-  var lock = LockService.getScriptLock();
+  var lock = scriptLock_();
   lock.waitLock(30000);
   try { freshenExec_(); return fn(); } finally { try { lock.releaseLock(); } catch (e) {} }
 }
