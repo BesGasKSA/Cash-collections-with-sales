@@ -811,8 +811,9 @@ function profitCompute_(from, to, basis, vatIncl) {
     if (l.centreType === 'car' || l.centreType === 'store') {
       var u = unit(l.centreType + ':' + l.centreId), g = COST_GROUP_FIELD_[(typeById[l.typeId] || {}).group] || 'fixedOperations';
       u.touched = true; u.T.fixed += total; u.T[g] += total; costAddType_(u, g, l.typeId, total);
+      if (l.asset || (typeById[l.typeId] || {}).depreciation) costAddType_(u, 'dep', l.typeId, total);
       ser.forEach(function (v, i) { u.series.fixed[i] += v; });
-    } else pools.push({ level: l.centreType, id: l.centreId, series: ser, total: total, typeId: l.typeId });
+    } else pools.push({ level: l.centreType, id: l.centreId, series: ser, total: total, typeId: l.typeId, dep: !!(l.asset || (typeById[l.typeId] || {}).depreciation) });
   });
 
   // each pool is shared among the stores and cars under it
@@ -845,6 +846,7 @@ function profitCompute_(from, to, basis, vatIncl) {
       var share = w[i] / sum;
       u.T[field] += pool.total * share;
       costAddType_(u, field, pool.typeId, pool.total * share);
+      if (pool.dep) costAddType_(u, 'dep', pool.typeId, pool.total * share);
       pool.series.forEach(function (v, k) { u.series.ovh[k] += v * share; });
     });
   });

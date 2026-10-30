@@ -7666,6 +7666,25 @@ console.log('--- profitability: every cost line is named on the statement (2026-
   check(Math.abs(sumOvh - co.T.ovhCompany) < 0.01, 'and so do the head-office costs');
 })();
 
+console.log('--- the statement adds up as printed, to the cent (2026-10-30) ---');
+(function () {
+  var c2 = {}; vm.createContext(c2);
+  vm.runInContext(['cohortCents_', 'plFootKids_', 'plFoot_', 'plItemsFoot_'].map(clientFn_).join('\n'), c2);
+  var rows = [{ label: 'rev', cur: 347.826, kids: [{ label: 'a', cur: 173.913 }, { label: 'b', cur: 173.913 }] },
+    { label: 'cos', cur: 100.004, cost: 1, kids: [{ label: 'a', cur: 50.002 }, { label: 'b', cur: 50.002 }] }, { label: 'gp', cur: 247.822, measure: 'gm', sub: 1 },
+    { label: 'sd', cur: 33.335, cost: 1, kids: [{ label: 'x', cur: 22.225, kids: [{ label: 'p', cur: 11.113 }, { label: 'q', cur: 11.112 }] }, { label: 'y', cur: 11.11 }] }, { label: 'op', cur: 214.487, measure: 'profit', sub: 1 }];
+  c2.plFoot_(rows, 'cur');
+  function cents(v) { return Math.round(v * 100); }
+  function sum(l) { return l.reduce(function (a, k) { return a + cents(k.cur); }, 0); }
+  check(sum(rows[0].kids) === cents(rows[0].cur), 'revenue equals its printed parts (' + rows[0].kids[0].cur + ' + ' + rows[0].kids[1].cur + ' = ' + rows[0].cur + ')');
+  check(sum(rows[1].kids) === cents(rows[1].cur) && sum(rows[3].kids) === cents(rows[3].cur) && sum(rows[3].kids[0].kids) === cents(rows[3].kids[0].cur), 'every line equals its printed parts, at every level');
+  check(cents(rows[2].cur) === cents(rows[0].cur) - cents(rows[1].cur), 'gross profit is revenue less cost of sales as printed');
+  check(cents(rows[2].cur) === 24782 && cents(rows[4].cur) === 21449, 'and the subtotals stay the report\'s own, the same as the tiles');
+  check(cents(rows[4].cur) === cents(rows[2].cur) - cents(rows[3].cur), 'operating profit follows from the printed lines');
+  var its = c2.plItemsFoot_([{ amount: 2.61 }, { amount: 1.3 }], 3.92);
+  check(cents(its[0].amount) + cents(its[1].amount) === 392, 'a drawer lands on the figure tapped');
+})();
+
 console.log('--- the stock guard: no movement takes stock below zero, on its day or later (2026-10-29) ---');
 (function () {
   var loc = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: 'Riyadh', name: 'Guard Branch', clusterId: cluster.entity.id, collectorUserId: musa.id } }).entity;
@@ -7720,6 +7739,32 @@ console.log('--- the stock guard: no movement takes stock below zero, on its day
   var st5 = call({ action: 'adminSaveEntity', token: adminTok, kind: 'store', data: { locationId: loc4.id, name: 'Guard Store 4', storeManagerUserId: scUser('Gd Manager 4', 'store_manager').id } }).entity;
   call({ action: 'importDailyEntries', token: adminTok, rows: [{ date: '2026-10-05', sourceType: 'store', sourceId: st5.id, productId: fp.id, qty: 25, unitPrice: 5, cashSales: 125, submissionId: 'gd-unit' }] });
   check(call({ action: 'addInventoryMove', token: adminTok, locationId: loc4.id, stockItemId: fp.stockItemId, kind: 'opening', qty: 10, date: '2026-10-01' }).ok, 'a first count is a fact: it goes in even when sales on file are more than it');
+  // second review (2026-10-30): the grace is for empties only, and it has a limit
+  check(err(call({ action: 'transferInventory', token: adminTok, fromLocationId: loc4.id, toLocationId: loc2.id, date: today, lines: [{ stockItemId: it.id, state: 'full', qty: 1000 }] })) === 'stock_over_on_hand', 'a transfer of 1000 filled today is refused: sales still to come only lower the filled');
+  check(err(call({ action: 'addInventoryMove', token: adminTok, locationId: loc4.id, stockItemId: it.id, state: 'full', kind: 'damage', qty: 1000, reason: 'broken_body', date: today })) === 'stock_over_on_hand', 'and so is a write-off of 1000 today');
+  check(err(call({ action: 'addInventoryMove', token: adminTok, locationId: loc4.id, stockItemId: it.id, kind: 'refill_out', qty: 500, date: today })) === 'stock_over_on_hand', 'empties today may lean on the filled on hand, no further');
+  var refillBig = call({ action: 'addInventoryMove', token: adminTok, locationId: loc4.id, stockItemId: it.id, state: 'full', kind: 'purchase', qty: 500, supplier: 'P', invoiceNo: 'I', date: today });
+  check(err(refillBig) === 'stock_over_on_hand' || err(refillBig) === 'refill_over_empty_later' || err(refillBig) === 'use_refill_in', 'and gas for 500 today is refused too (' + err(refillBig) + ')');
+  // third review: a refill entered after the day's sales, with filled gone negative
+  var loc6 = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: 'Riyadh', name: 'Guard Branch 6', clusterId: cluster.entity.id, collectorUserId: musa.id } }).entity;
+  check(mv({ state: 'full', kind: 'opening', qty: 3, date: '2026-10-01' }, loc6).ok && mv({ state: 'empty', kind: 'opening', qty: 0, date: '2026-10-01' }, loc6).error !== 'x', 'a branch with 3 filled');
+  var pEx6 = siEnt('product', { name: 'Gd Exchange 6', type: 'goods', unitPrice: 37, stockItemId: it.id, stockEffect: 'exchange' });
+  var st7 = call({ action: 'adminSaveEntity', token: adminTok, kind: 'store', data: { locationId: loc6.id, name: 'Guard Store 6', storeManagerUserId: scUser('Gd Manager 6', 'store_manager').id } }).entity;
+  call({ action: 'importDailyEntries', token: adminTok, rows: [{ date: today, sourceType: 'store', sourceId: st7.id, productId: pEx6.id, qty: 5, unitPrice: 37, cashSales: 185, submissionId: 'gd-ex6' }] });
+  var afterSales = call({ action: 'addInventoryMove', token: adminTok, locationId: loc6.id, stockItemId: it.id, state: 'full', kind: 'purchase', qty: 5, supplier: 'P', invoiceNo: 'I6', date: today });
+  check(afterSales.ok, 'the 5 empties those sales brought can be refilled today, though filled went below zero (' + err(afterSales) + ')');
+  // the sheet's own counts stand on both sides
+  var loc7 = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: 'Riyadh', name: 'Guard Branch 7', clusterId: cluster.entity.id, collectorUserId: musa.id } }).entity;
+  var sheet7 = call({ action: 'importInventoryDay', token: adminTok, locationId: loc7.id, date: '2026-10-09', ref: 'g-8', moves: [{ stockItemId: it.id, state: 'full', kind: 'opening', qty: 10 }, { stockItemId: it.id, state: 'empty', kind: 'opening', qty: 5 }, { stockItemId: it.id, state: 'full', kind: 'transfer_out', qty: 1000 }] });
+  check(err(sheet7) === 'stock_over_on_hand', 'a first sheet sending 1000 out of 10 filled is refused (' + err(sheet7) + ')');
+  // a sheet's own count of empties stands in the check
+  var loc5 = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: 'Riyadh', name: 'Guard Branch 5', clusterId: cluster.entity.id, collectorUserId: musa.id } }).entity;
+  check(mv({ state: 'full', kind: 'opening', qty: 20, date: '2026-10-01' }, loc5).ok, 'filled counted first');
+  var pEx = siEnt('product', { name: 'Gd Exchange', type: 'goods', unitPrice: 37, stockItemId: it.id, stockEffect: 'exchange' });
+  var st6 = call({ action: 'adminSaveEntity', token: adminTok, kind: 'store', data: { locationId: loc5.id, name: 'Guard Store 5', storeManagerUserId: scUser('Gd Manager 5', 'store_manager').id } }).entity;
+  call({ action: 'importDailyEntries', token: adminTok, rows: [{ date: '2026-10-10', sourceType: 'store', sourceId: st6.id, productId: pEx.id, qty: 5, unitPrice: 37, cashSales: 185, submissionId: 'gd-ex' }] });
+  var sheetOpen = call({ action: 'importInventoryDay', token: adminTok, locationId: loc5.id, date: '2026-10-05', ref: 'g-7', moves: [{ stockItemId: it.id, state: 'empty', kind: 'opening', qty: 50 }, { stockItemId: it.id, state: 'full', kind: 'purchase', qty: 30 }] });
+  check(sheetOpen.ok, 'a sheet carrying its own empties count and a refill goes in (' + err(sheetOpen) + ')');
   // the plant in a past period: what came back later is still at the plant then
   var past = call({ action: 'getInventoryReport', token: adminTok, dateFrom: '2026-10-01', dateTo: '2026-10-05', locationId: loc.id });
   var cs = (past.cylSummary || []).filter(function (c) { return c.stockItemId === it.id; })[0] || {};

@@ -290,7 +290,9 @@ function invEmptiesOn_(locId, itemId, date, user) {
   var rows = rep.rows.filter(function (r) { return r.stockItemId === itemId && r.state; });
   if (!rows.length || rows.every(function (r) { return r.noOpening; })) return null;
   var e = rows.filter(function (r) { return r.state === 'empty'; })[0];
-  return e && !e.noOpening ? e.ending : 0;
+  // empties counted only later are not tracked yet on this date
+  if (e && e.noOpening) return null;
+  return e ? e.ending : 0;
 }
 // The business model (the user, 2026-10-26): gas bought is a refill. The plant fills the
 // branch's empties, so empties go down and filled cylinders up by the same number and the
@@ -315,14 +317,15 @@ function invRefillError_(c, locId, date, user) {
 var INV_GUARD_ROUND_ = 0.0005;
 // Review of the live guard (2026-10-30). Stock balances by day, as the report and the sheets do, so
 // only end-of-day balances count. Today's and yesterday's sales may not be entered yet, and they can
-// bring the empties a refill needs, so filled, empty and unit counts are not refused on those two days;
-// what is left short shows as short. opts.ownDay: the branch sheet's own day, which its panel checks with
-// the file's own sales. The plant and the customers have no such delay and are always checked. A count
+// bring the empties a refill needs, so on those two days the empties may lean on the filled on hand;
+// what is left short shows as short. opts.ownDay: the branch sheet's own day, whose empties its panel
+// checks with the file's own sales. Filled, units, the plant and the customers are always checked. A count
 // is a fact: an opening is never refused, and nothing but the plant and the customers is checked before
 // the first count. Movements on old-shape items (before the inventory setup) are not guarded.
 function invGraceFrom_() { return costDateAdd_(todayRiyadh_(), -1); }
-function invGuard_(locId, user, rows, opts) {
-  rows = (rows || []).filter(function (r) { return r.kind !== 'opening' && r.stockItemId; });
+function invGuard_(locId, user, all, opts) {
+  all = all || [];
+  var rows = all.filter(function (r) { return r.kind !== 'opening' && r.stockItemId; });
   if (!rows.length) return null;
   var base = invStockCtx_(), byItem = Object.create(null), order = [], grace = invGraceFrom_(), ownDay = opts && opts.ownDay;
   rows.forEach(function (r) {
@@ -333,11 +336,14 @@ function invGuard_(locId, user, rows, opts) {
   for (var i = 0; i < order.length; i++) {
     var id = order[i], mine = byItem[id];
     var from = mine.map(function (r) { return String(r.date); }).sort()[0];
-    var req = { locationId: locId, stockItemId: id, dateFrom: '2020-01-01' };
-    var before = actionStockLedger_(req, user, base);
+    var req = { locationId: locId, stockItemId: id, dateFrom: '2020-01-01', allLines: true };
+    // the file's own counts stand on both sides: a count is a fact, never what is judged
+    var ofItem = all.filter(function (r) { var tg = base.moveTarget(r); return tg && tg.item.id === id; });
+    var sc1 = {}, sc2 = {}; Object.keys(base).forEach(function (k) { sc1[k] = base[k]; sc2[k] = base[k]; });
+    sc1.moves = base.moves.concat(ofItem.filter(function (r) { return r.kind === 'opening'; }));
+    sc2.moves = base.moves.concat(ofItem);
+    var before = actionStockLedger_(req, user, sc1);
     if (!before.ok) continue;
-    var sc2 = {}; Object.keys(base).forEach(function (k) { sc2[k] = base[k]; });
-    sc2.moves = base.moves.concat(mine);
     var after = actionStockLedger_(req, user, sc2);
     if (!after.ok) continue;
     var away = ['plant', 'cust'], keys = before.noOpening ? away : (after.cylinder ? ['full', 'empty'] : ['unit']).concat(away);
@@ -349,7 +355,10 @@ function invGuard_(locId, user, rows, opts) {
       while (p + 1 < prior.length && prior[p + 1].date <= days[d]) p++;
       for (var j = 0; j < keys.length; j++) {
         var k = keys[j], a = Number(endOf[days[d]][k] || 0), was = p >= 0 ? Number(prior[p].bal[k] || 0) : 0;
-        if (away.indexOf(k) < 0 && (days[d] >= grace || days[d] === ownDay)) continue;
+        // sales still to be entered can only bring empties, each one out of a filled cylinder: on those
+        // days the empties may lean on the filled on hand, and no further. Filled and units have no such grace
+        if (k === 'empty' && days[d] === ownDay) continue;
+        if (k === 'empty' && days[d] >= grace) { var fullThen = Math.max(0, p >= 0 ? Number(prior[p].bal.full || 0) : 0); a += fullThen; was += fullThen; }
         if (a < -INV_GUARD_ROUND_ && a < Math.min(was, 0) - INV_GUARD_ROUND_) {
           return { ok: false, error: 'stock_over_on_hand', stockItemId: id, itemName: after.itemName || '', state: k, date: days[d], shortBy: Math.round((Math.min(was, 0) - a) * 1000) / 1000 };
         }
@@ -1192,7 +1201,7 @@ function actionStockLedger_(req, user, scOverride) {
   if (!openBal) openBal = snap();
   var endBal = lines.length ? lines[lines.length - 1].bal : openBal;
   return { ok: true, locationId: locId, stockItemId: it.id, itemName: it.name || '', cylinder: cyl, fillKg: Number(it.fillKg || 0) || null,
-    dateFrom: from, dateTo: to, openingDate: openDate, noOpening: !openDate, opening: openBal, ending: endBal, lines: lines.slice(-3000), linesTotal: lines.length };
+    dateFrom: from, dateTo: to, openingDate: openDate, noOpening: !openDate, opening: openBal, ending: endBal, lines: req.allLines ? lines : lines.slice(-3000), linesTotal: lines.length };
 }
 
 // ---------- Setting up the inventory items (once, confirmed by a manager) ----------

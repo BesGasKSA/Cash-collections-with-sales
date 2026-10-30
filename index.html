@@ -25694,6 +25694,39 @@ function companyCard_(content){
 // A store's or car's own running costs and the branch, area and city costs above them are selling
 // and distribution; head-office costs and the admin group are administrative. It is a management
 // statement, unaudited: zakat and finance costs are not recorded in this system.
+// Cents (review 2026-10-30): a line's parts are shared out of the line by largest remainder, and each
+// subtotal is the report's own, the same as the tiles, with any rounding cent on the largest line above it.
+function plFootKids_(r, col){
+  var kids = r.kids || []; if (!kids.length) return;
+  var c = Math.round(r[col] * 100), cs = cohortCents_(kids.map(function(k){ return k[col]; }), kids.map(function(k, i){ return i + k.label; }));
+  var diff = c - cs.reduce(function(a, x){ return a + x; }, 0), big = 0;
+  kids.forEach(function(k, i){ if (Math.abs(k[col]) > Math.abs(kids[big][col])) big = i; });
+  cs[big] += diff;
+  kids.forEach(function(k, i){ k[col] = cs[i] / 100; plFootKids_(k, col); });
+}
+function plFoot_(rows, col){
+  var run = 0, last = null;
+  rows.forEach(function(r){
+    if (r.measure) {
+      // the report's own subtotal stands: the cent of rounding goes on the largest line above it
+      var want = Math.round(r[col] * 100), gap = run - want;
+      if (gap && last) { last.c += last.cost ? gap : -gap; run = want; }
+      r[col] = run / 100; last = null; return;
+    }
+    r.c = Math.round(r[col] * 100);
+    run += r.cost ? -r.c : r.c;
+    if (!last || Math.abs(r.c) > Math.abs(last.c)) last = r;
+  });
+  rows.forEach(function(r){ if (r.measure) return; r[col] = r.c / 100; delete r.c; plFootKids_(r, col); });
+}
+// a drawer's items land exactly on the figure tapped
+function plItemsFoot_(items, target){
+  if (!items.length) return items;
+  var c = Math.round(target * 100), sum = items.reduce(function(a, it){ return a + Math.round(it.amount * 100); }, 0), big = items[0];
+  items.forEach(function(it){ if (Math.abs(it.amount) > Math.abs(big.amount)) big = it; });
+  big.amount = (Math.round(big.amount * 100) + c - sum) / 100;
+  return items;
+}
 function plIfrsModel_(res, F, P){
   var meta = state.meta || {};
   function v(n, f){ return n ? Number((n.T || {})[f] || 0) : 0; }
@@ -25733,11 +25766,14 @@ function plIfrsModel_(res, F, P){
   if (oth.length) line({ label: t('ifrs_oth'), cur: v(F, 'expenses'), prv: v(P, 'expenses'), fields: ['expenses'], kids: oth, cost: 1, note: 1 });
   line({ label: t(v(F, 'profit') < 0 ? 'ifrs_ol' : 'ifrs_op'), cur: v(F, 'profit'), prv: v(P, 'profit'), measure: 'profit', sub: 1 });
   line({ label: t(v(F, 'profit') < 0 ? 'ifrs_lbz' : 'ifrs_pbz'), cur: v(F, 'profit'), prv: v(P, 'profit'), measure: 'profit', sub: 1, final: 1 });
+  plFoot_(rows, 'cur'); plFoot_(rows, 'prv');
   // what IAS 1 asks for beside expenses by function: depreciation and employee benefits
   function nature(n, test){ var s = 0; Object.keys((n && n.types) || {}).forEach(function(k){ if (!/^(fixed|ovh)/.test(k)) return; var ct = byId(meta.costTypes, k.slice(k.indexOf('|') + 1)); if (ct && test(ct)) s += Number(n.types[k] || 0); }); return s; }
   function natKeys(test){ var ks = {}; [F, P].forEach(function(n){ Object.keys((n && n.types) || {}).forEach(function(k){ if (!/^(fixed|ovh)/.test(k)) return; var ct = byId(meta.costTypes, k.slice(k.indexOf('|') + 1)); if (ct && test(ct)) ks[k] = 1; }); }); return Object.keys(ks); }
-  var isDep = function(ct){ return !!ct.depreciation; }, isEmp = function(ct){ return ct.group === 'staff'; };
-  var nat = [{ label: t('ifrs_dep'), cur: nature(F, isDep), prv: nature(P, isDep), keys: natKeys(isDep), cost: 1 }, { label: t('ifrs_emp'), cur: nature(F, isEmp), prv: nature(P, isEmp), keys: natKeys(isEmp), cost: 1 }]
+  var isEmp = function(ct){ return ct.group === 'staff'; };
+  function depOf(n){ return Object.keys((n && n.types) || {}).reduce(function(s, k){ return k.indexOf('dep|') === 0 ? s + Number(n.types[k] || 0) : s; }, 0); }
+  var depKeys = {}; [F, P].forEach(function(n){ Object.keys((n && n.types) || {}).forEach(function(k){ if (k.indexOf('dep|') === 0) depKeys[k] = 1; }); });
+  var nat = [{ label: t('ifrs_dep'), cur: depOf(F), prv: depOf(P), keys: Object.keys(depKeys), cost: 1 }, { label: t('ifrs_emp'), cur: nature(F, isEmp), prv: nature(P, isEmp), keys: natKeys(isEmp), cost: 1 }]
     .filter(function(r){ return Math.abs(r.cur) > 0.004 || Math.abs(r.prv) > 0.004; });
   // ids and note numbers, in reading order
   var no = 0, byId_ = {}, flat = [];
@@ -25749,7 +25785,7 @@ function plIfrsModel_(res, F, P){
   }); })(rows, '', 0);
   (function cost(list, on){ list.forEach(function(r){ r.cost = r.cost || on; if (r.kids) cost(r.kids, r.cost); }); })(rows, 0);
   nat.forEach(function(r, i){ r.id = 'n' + i; r.depth = 0; byId_[r.id] = r; });
-  return { rows: rows, flat: flat, nat: nat, byId: byId_, hasPrev: !!P };
+  return { rows: rows, flat: flat, nat: nat, byId: byId_, hasPrev: !!res.prevNodes };
 }
 function plIfrsAmt_(v, cost){
   if (Math.abs(v) < 0.005) return '\u2014';
@@ -25798,9 +25834,10 @@ function plLineItems_(R, key, row){
   return raw.map(function(x, i){
     var path = plPath_(R, x.u.key), lvl = function(l){ return path.filter(function(n){ return n.level === l; })[0]; }, city = lvl('city'), area = lvl('cluster'), loc = lvl('location');
     var name = plIfrsLineName_(x.f, x.id);
-    return { kind: 'unit', ref: x.u, amount: cents[i] / 100, title: plNodeName_(x.u), sub: plLevelLabel_(x.u),
+    var it = { kind: 'unit', ref: x.u, amount: cents[i] / 100, title: plNodeName_(x.u), sub: plLevelLabel_(x.u),
       place: [[x.k, name, 'line'], [city ? city.key : '_', city ? plNodeName_(city) : t('report_unspecified'), 'city'], [area ? area.key : '_', area ? plNodeName_(area) : t('pl_noArea'), 'area'], [loc ? loc.key : '_', loc ? plNodeName_(loc) : t('report_unspecified'), 'branch']],
-      open: function(){ plLeafOpen_(R, x.u, x.f, x.id, name, x.v); } };
+      open: function(){ plLeafOpen_(R, x.u, x.f, x.id, name, x.v, it.amount); } };
+    return it;
   }).filter(function(it){ return Math.abs(it.amount) > 0.004; });
 }
 function plIfrsLineName_(f, id){
@@ -25811,10 +25848,11 @@ function plIfrsLineName_(f, id){
   var ct = byId(meta.costTypes, id); return ct ? ct.name : t('pl_typeUnknown');
 }
 // the bottom of the drill-down: the transactions behind a sales-side figure, the cost lines behind a cost
-function plLeafOpen_(R, u, f, id, name, value){
+function plLeafOpen_(R, u, f, id, name, value, shown){
   var title = name + ' \u00B7 ' + plNodeName_(u), sub = R.dateFrom + ' \u2192 ' + R.dateTo;
   if (['net', 'cogs', 'deliveryIncome', 'commission', 'expenses'].indexOf(f) >= 0) {
-    var p = { dateFrom: R.dateFrom, dateTo: R.dateTo }; if (u.locationId) p.locationId = u.locationId;
+    // a car or store is found by its own entries: it may have changed branch since
+    var p = { dateFrom: R.dateFrom, dateTo: R.dateTo }; if (u.unitType === 'none' && u.locationId) p.locationId = u.locationId;
     api('getSalesReport', p, { silent: true }).then(function(r){
       if (!r.ok) { showToast_(errMsg_(r), 'err'); return; }
       var meta = state.meta || {};
@@ -25834,21 +25872,31 @@ function plLeafOpen_(R, u, f, id, name, value){
         if (f === 'commission') return Number((id === 'channel' ? e.channelCommission : e.creditCommission) || 0);
         return (e.expenseItemId || '') === id ? Number(e.expenseAmount || 0) : 0;
       };
-      var items = mine.map(function(e){ var v = of(e); return Math.abs(v) > 0.004 ? entryRowData_(e, Math.round(v * 100) / 100) : null; }).filter(Boolean);
+      // shared in cents, so the list adds up to the row it opened from
+      var hit = mine.map(function(e){ return { e: e, v: of(e) }; }).filter(function(x){ return Math.abs(x.v) > 0.00001; });
+      var cs = cohortCents_(hit.map(function(x){ return x.v; }), hit.map(function(x){ return x.e.id; }));
+      var items = plItemsFoot_(hit.map(function(x, i){ return entryRowData_(x.e, cs[i] / 100); }), shown != null ? shown : value);
       drawerPush_(txListView_({ title: title, sub: sub, items: items, note: f === 'cogs' ? t('ifrs_cogsNote') : '' }));
     });
     return;
   }
   api('listCosts', {}, { silent: true }).then(function(r){
     if (!r.ok) { showToast_(errMsg_(r), 'err'); return; }
-    var level = { ovhLocation: ['location', u.locationId], ovhCluster: ['cluster', u.clusterId], ovhCity: ['city', u.city], ovhCompany: ['company', 'company'] }[f];
+    var pool = u.unitType === 'ovh' ? String(u.unitId).slice(String(u.unitId).indexOf(':') + 1) : null;
+    var level = { ovhLocation: ['location', pool || u.locationId], ovhCluster: ['cluster', pool || u.clusterId], ovhCity: ['city', pool || u.city], ovhCompany: ['company', 'company'] }[f];
     var m0 = String(R.dateFrom).slice(0, 7), m1 = String(R.dateTo).slice(0, 7);
     var lines = (r.lines || []).filter(function(l){
       if (l.typeId !== id || l.fromMonth > m1 || (l.toMonth && l.toMonth < m0)) return false;
-      return level ? l.centreType === level[0] && String(l.centreId) === String(level[1]) : l.centreType === u.unitType && String(l.centreId) === String(u.unitId);
+      if (f === 'dep') {
+        var dct = byId((state.meta || {}).costTypes, id); if (!l.asset && !(dct && dct.depreciation)) return false;
+        var cid = String(l.centreId), uid = String(u.unitId), own = u.unitType === 'ovh' ? l.centreType === uid.slice(0, uid.indexOf(':')) && cid === uid.slice(uid.indexOf(':') + 1) : l.centreType === u.unitType && cid === uid;
+        return own || l.centreType === 'company' || (l.centreType === 'location' && cid === String(u.locationId)) || (l.centreType === 'cluster' && cid === String(u.clusterId)) || (l.centreType === 'city' && normName_(l.centreId) === normName_(u.city || ''));
+      }
+      if (level) return l.centreType === level[0] && (level[0] === 'city' ? normName_(l.centreId) === normName_(level[1]) : String(l.centreId) === String(level[1]));
+      return l.centreType === u.unitType && String(l.centreId) === String(u.unitId);
     });
     drawerPush_({ title: title, sub: sub, crumb: name, render: function(body){
-      body.appendChild(el('<div class="doc-sec"><p class="muted">' + esc(t(level ? 'ifrs_shareNote' : 'ifrs_lineNote').replace('{a}', money(Math.abs(value)))) + '</p>' +
+      body.appendChild(el('<div class="doc-sec"><p class="muted">' + esc(t(level ? 'ifrs_shareNote' : 'ifrs_lineNote').replace('{a}', money(Math.abs(shown != null ? shown : value)))) + '</p>' +
         '<div class="tbl-scroll"><table class="rp-table" data-nosort><thead><tr><th>' + esc(t('ifrs_from')) + '</th><th>' + esc(t('ifrs_to')) + '</th><th>' + esc(t('entry_reason')) + '</th><th class="n">' + esc(t('ifrs_monthly')) + '</th></tr></thead><tbody>' +
         lines.map(function(l){ return '<tr><td><bdi dir="ltr">' + esc(l.fromMonth) + '</bdi></td><td><bdi dir="ltr">' + esc(l.toMonth || '\u2014') + '</bdi></td><td>' + esc([l.label, l.employeeUserId ? userName(l.employeeUserId) : ''].filter(Boolean).join(' \u00B7 ')) + '</td><td class="n num">' + money(l.amount) + '</td></tr>'; }).join('') +
         '</tbody></table></div></div>'));
@@ -25859,7 +25907,7 @@ function plIfrsOpen_(m, id, col, res, F){
   var row = m.byId[id]; if (!row) return;
   var prv = col === 'prv', R = prv ? { nodes: res.prevNodes, dateFrom: res.prevFrom, dateTo: res.prevTo, vatIncluded: res.vatIncluded } : res;
   var title = row.label + ' \u00B7 ' + plNodeName_(F), sub = R.dateFrom + ' \u2192 ' + R.dateTo;
-  cardDrawer_({ title: title, sub: sub, items: row.measure ? plDrillItems_(R, F.key, row.measure) : plLineItems_(R, F.key, row) });
+  cardDrawer_({ title: title, sub: sub, items: plItemsFoot_(row.measure ? plDrillItems_(R, F.key, row.measure) : plLineItems_(R, F.key, row), prv ? row.prv : row.cur) });
 }
 function plIfrsWire_(host, m, res, F){
   host.addEventListener('click', function(ev){
@@ -25886,6 +25934,7 @@ function plIfrsSheetRows_(m, res){
     if (r.sub) row.isTotal = true;
     out.push(row);
   });
+  if (m.nat.length) { out.push(m.hasPrev ? [t('ifrs_natTitle'), '', ''] : [t('ifrs_natTitle'), '']); m.nat.forEach(function(r){ var row = [r.label, r2(r.cur)]; if (m.hasPrev) row.push(r2(r.prv)); out.push(row); }); }
   return out;
 }
 function renderProfit(body){
