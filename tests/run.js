@@ -7923,11 +7923,7 @@ console.log('--- the sweep: nothing lost, nothing doubled (2026-10-30) ---');
   ctx.writeRow(SHEETS.ENTRIES, { id: 'swP2', date: '2026-10-12', sourceType: 'store', sourceId: 'swS2', locationId: 'swL2', cashSales: 0, expenseAmount: 1000, enteredBy: 'swCm', createdAt: at });
   check(ctx.personBusy_('swCm') === true, 'a deficit at one branch hides no cash at another');
   var cmTok = tok('swCm');
-  ctx.writeRow(SHEETS.ENTRIES, { id: 'swB9', date: '2026-10-12', sourceType: 'store', sourceId: 'swS', locationId: 'swL', cashSales: 0, expenseAmount: 10, enteredBy: 'swCm', releasedByBatch: 'bb', createdAt: at });
-  check(call({ action: 'voidEntries', token: cmTok, ids: ['swB9'], reason: 'x' }).error === 'batch_approved', 'an approved day carried forward cannot be cancelled by its author');
-  check(call({ action: 'adminVoidTransaction', token: adminTok, ids: ['swB9'], reason: 'x' }).error === 'batch_approved', 'nor by an admin');
-  check(ctx.personBusy_('swCm') === true, 'still busy for his own cash');
-  ctx.writeRow(SHEETS.ENTRIES, Object.assign(E('swP1'), { voided: true, voidReason: 't' })); ctx.writeRow(SHEETS.ENTRIES, Object.assign(E('swP2'), { voided: true, voidReason: 't' })); ctx.writeRow(SHEETS.ENTRIES, Object.assign(E('swB9'), { voided: true, voidReason: 't' }));
+  ctx.writeRow(SHEETS.ENTRIES, Object.assign(E('swP1'), { voided: true, voidReason: 't' })); ctx.writeRow(SHEETS.ENTRIES, Object.assign(E('swP2'), { voided: true, voidReason: 't' }));
   held('swH1', 250, 'swCol2');
   var admT2 = tok('swAdmin2');
   check(call({ action: 'createHandoff', token: colTok, kind: 'collector_to_collector', toUserId: 'swCol2', fromUserId: 'swCm' }).error === 'forbidden', 'a collector acts for himself only');
@@ -7935,14 +7931,16 @@ console.log('--- the sweep: nothing lost, nothing doubled (2026-10-30) ---');
   var hand = call({ action: 'createHandoff', token: admT2, kind: 'collector_to_collector', toUserId: 'swCol', fromUserId: 'swCol2', note: 'left the company' });
   check(hand.ok && hand.handoff.fromUserId === 'swCol2' && hand.handoff.createdBy === 'swAdmin2' && H('swH1').consumedBy === hand.handoff.id, 'an admin hands on the cash of a collector who cannot act (' + (hand.error || 'ok') + ')');
   ctx.writeRow(SHEETS.AREA_BULK_BATCHES, { id: 'swBt', status: 'approving', uploadedBy: 'swCm', clusterId: 'swA', entryIds: [], createdAt: at });
-  // a carried deficit nets off in the branch's next batch and holds nobody
-  ctx.writeRow(SHEETS.ENTRIES, { id: 'swDf', date: '2026-10-13', sourceType: 'store', sourceId: 'swS', locationId: 'swL', cashSales: 100, expenseAmount: 300, enteredBy: 'swAdmin', releasedByBatch: 'old', createdAt: at });
-  check(ctx.carriedDeficits_('swL', 'now').length === 1 && !ctx.carriedDeficits_('swL', 'old').length, 'a batch never carries its own lines');
-  check(ctx.placeBusy_('location', 'swL') === false || ctx.readSheet(SHEETS.ENTRIES).some(function (e) { return !e.consumedBy && !e.voided && !e.releasedByBatch && e.locationId === 'swL'; }), 'a carried deficit does not pin the branch');
-  ctx.writeRow(SHEETS.ENTRIES, { id: 'swDn', date: '2026-10-14', sourceType: 'store', sourceId: 'swS', locationId: 'swL', cashSales: 1000, enteredBy: 'swCm', consumedBy: 'swBn', batchId: 'swBn', createdAt: at });
-  ctx.writeRow(SHEETS.AREA_BULK_BATCHES, { id: 'swBn', status: 'pending_deputy', uploadedBy: 'swCm', clusterId: 'swA', entryIds: ['swDn'], perLocation: [{ locationId: 'swL', amount: 1000, breakdown: ctx.computeNet_([E('swDn')]) }], createdAt: at });
-  var dpApp = call({ action: 'deputyApproveBatch', token: admT2, id: 'swBn' });
-  check(dpApp.ok && dpApp.handoffs.length === 1 && dpApp.handoffs[0].amount === 800 && E('swDf').consumedBy === dpApp.handoffs[0].id, 'the next batch nets the deficit off (' + (dpApp.error || (dpApp.handoffs && dpApp.handoffs[0].amount)) + ')');
+  // a branch below zero in an approved batch stays with the batch, and Finance sees it
+  ctx.writeRow(SHEETS.ENTRIES, { id: 'swDf', date: '2026-10-13', sourceType: 'store', sourceId: 'swS', locationId: 'swL', cashSales: 100, expenseAmount: 300, enteredBy: 'swCm', consumedBy: 'swBd', batchId: 'swBd', createdAt: at });
+  ctx.writeRow(SHEETS.AREA_BULK_BATCHES, { id: 'swBd', status: 'pending_deputy', uploadedBy: 'swCm', clusterId: 'swA', entryIds: ['swDf'], perLocation: [{ locationId: 'swL', amount: -200, breakdown: ctx.computeNet_([E('swDf')]) }], createdAt: at });
+  var dpApp = call({ action: 'deputyApproveBatch', token: admT2, id: 'swBd' });
+  check(dpApp.ok && !dpApp.handoffs.length && E('swDf').consumedBy === 'swBd', 'a branch below zero sends nothing and stays with its batch (' + (dpApp.error || 'ok') + ')');
+  check(call({ action: 'dataHealthCheck', token: adminTok }).issues.some(function (i) { return i.kind === 'batch_deficit' && i.locationId === 'swL'; }), 'the health check names it');
+  // a row left open by the release in the earlier build goes back to its batch
+  ctx.writeRow(SHEETS.ENTRIES, Object.assign(E('swDf'), { consumedBy: null, releasedByBatch: 'swBd' }));
+  ctx.resetExecMemo_(); var lk2 = ctx.scriptLock_(); lk2.waitLock(1000); ctx.healLinks_(); lk2.releaseLock();
+  check(E('swDf').consumedBy === 'swBd', 'and is healed back');
   var dl = call({ action: 'listAreaBulkBatches', token: adminTok, status: 'pending_deputy' });
   check(dl.ok && dl.batches.some(function (b) { return b.id === 'swBt'; }), 'an approval cut short stays on the deputy\'s list');
 
