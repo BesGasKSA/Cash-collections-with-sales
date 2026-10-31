@@ -385,6 +385,8 @@ function actionAddInventoryMove_(req, user) {
   lock.waitLock(30000);
   try {
     freshenExec_();
+    var cRef = req.clientRef ? String(req.clientRef).slice(0, 120) : '';
+    if (cRef) { var sent = readSheet(SHEETS.INV_MOVES).filter(function (m) { return m.clientRef === cRef && !m.voided; })[0]; if (sent) return { ok: true, move: sent, already: true }; }
     if (c.move.kind === 'opening' && invOpenings_()[invOpeningKey_(lf.loc.id, c.itemId, c.move.state)]) return { ok: false, error: 'opening_exists' };
     if (hasOwn_(INV_COUNT_, c.move.kind)) return { ok: false, error: 'use_stock_count' };
     if (invControls_()) {
@@ -420,6 +422,7 @@ function actionAddInventoryMove_(req, user) {
       if (gErr.state === 'empty' && c.move.kind === 'purchase' && c.move.state === 'full' && c.move.newCylinders !== true) { gErr.error = 'refill_over_empty_later'; gErr.date0 = date; }
       return gErr;
     }
+    if (cRef) row.clientRef = cRef;
     var move = writeRow(SHEETS.INV_MOVES, row);
     logAudit_('inventory_' + c.move.kind, user.id, move.id);
     return { ok: true, move: move };
@@ -643,19 +646,36 @@ function purchaseDayState_(ix, locId, date) {
   }
   return { done: false, via: null, rec: null };
 }
+// the oldest day of this branch put off past its time
+function purchaseOverdue_(ix, locId) {
+  var today = todayRiyadh_(), out = null;
+  Object.keys(ix.recs).forEach(function (k) {
+    var r = ix.recs[k];
+    if (r.locationId !== locId || r.status !== 'deferred' || ix.moved[k] || today <= String(r.until)) return;
+    if (!out || String(r.date) < out) out = String(r.date);
+  });
+  return out;
+}
 function purchaseGateOn_(user, date) { return !!PURCHASE_GATE_ROLES_[user.role] && stockItemsLive_() && String(date) >= PURCHASE_GATE_FROM_; }
 // the branch days of these rows that still wait for an answer
 function purchaseGateRows_(user, rows) {
   var want = Object.create(null), list = [];
   rows.forEach(function (r) {
-    if (!r || !r.date || !r.sourceType || !r.sourceId || !purchaseGateOn_(user, r.date) || !entryHasSales_(r)) return;
+    if (!r || !r.date || !r.sourceType || !r.sourceId || !purchaseGateOn_(user, r.date)) return;
+    if (!entryHasSales_(r) && !(Array.isArray(r.creditItems) && r.creditItems.length)) return;
     var sc = checkEntryScope_(user, r.sourceType, r.sourceId);
     if (!sc.ok || !sc.locationId) return;
     var k = sc.locationId + '|' + r.date;
     if (!want[k]) { want[k] = 1; list.push({ locationId: sc.locationId, date: String(r.date) }); }
   });
   if (!list.length) return null;
-  var ix = purchaseIndex_(), missing = list.filter(function (x) { return !purchaseDayState_(ix, x.locationId, x.date).done; });
+  var ix = purchaseIndex_(), missing = list.filter(function (x) { return !purchaseDayState_(ix, x.locationId, x.date).done; }), locs = Object.create(null);
+  list.forEach(function (x) {
+    if (locs[x.locationId]) return;
+    locs[x.locationId] = 1;
+    var od = purchaseOverdue_(ix, x.locationId);
+    if (od && !missing.some(function (m) { return m.locationId === x.locationId && m.date === od; })) missing.unshift({ locationId: x.locationId, date: od });
+  });
   if (!missing.length) return null;
   missing.forEach(function (x) { var l = getById_(SHEETS.LOCATIONS, x.locationId); x.name = l ? l.name : ''; });
   return { ok: false, error: 'purchases_first', locationId: missing[0].locationId, date: missing[0].date, name: missing[0].name, missing: missing.slice(0, 50), count: missing.length };
@@ -665,7 +685,10 @@ function actionPurchaseDayStatus_(req, user) {
   if (!purchaseGateOn_(user, date)) return { ok: true, required: false, done: true };
   var lf = invLocFor_(user, req.locationId);
   if (lf.error) return { ok: true, required: false, done: true };
-  var st = purchaseDayState_(purchaseIndex_(), lf.loc.id, date);
+  var ix = purchaseIndex_(), od = purchaseOverdue_(ix, lf.loc.id);
+  // an older day put off past its time comes first
+  if (od && od !== date) return { ok: true, required: true, done: false, overdue: od, expired: true, canDefer: false };
+  var st = purchaseDayState_(ix, lf.loc.id, date);
   return { ok: true, required: true, done: st.done, via: st.via, expired: !!st.expired, until: st.rec ? st.rec.until || null : null, canDefer: user.role !== 'admin' && !st.rec };
 }
 function actionPurchaseDayConfirm_(req, user) {

@@ -3172,10 +3172,11 @@ function actionMyPendingActions_(req, user) {
   // today's purchases, and days put off, not answered yet
   var purchToday = todayRiyadh_();
   if ((user.role === 'store_manager' || user.role === 'cluster_manager') && purchaseGateOn_(user, purchToday)) {
-    var mineB = invBranches_(user) || [], pix = purchaseIndex_(), waiting = 0;
-    mineB.forEach(function (id) { if (!purchaseDayState_(pix, id, purchToday).done) waiting++; });
-    Object.keys(pix.recs).forEach(function (k) { var r = pix.recs[k]; if (r.status === 'deferred' && mineB.indexOf(r.locationId) >= 0 && !pix.moved[k]) waiting++; });
-    if (waiting) add('purchases_due', { count: waiting, amount: 0, since: purchToday });
+    var mineB = invBranches_(user) || [], pix = purchaseIndex_(), due = Object.create(null);
+    Object.keys(pix.recs).forEach(function (k) { var r = pix.recs[k]; if (r.status === 'deferred' && mineB.indexOf(r.locationId) >= 0 && !pix.moved[k]) due[k] = 1; });
+    mineB.forEach(function (id) { if (!purchaseDayState_(pix, id, purchToday).done) due[id + '|' + purchToday] = 1; });
+    var dueKeys = Object.keys(due).sort(function (a, b) { return a.slice(a.indexOf('|')).localeCompare(b.slice(b.indexOf('|'))); });
+    if (dueKeys.length) add('purchases_due', { count: dueKeys.length, amount: 0, refId: dueKeys[0], since: purchToday });
   }
 
   // cash ready to pass up: confirmed handovers held, and the person's own open entries

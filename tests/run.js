@@ -7861,8 +7861,26 @@ console.log('--- purchases come before sales (2026-10-31) ---');
   ctx.writeRow(SHEETS.ENTRIES, { id: 'pgVoidMe', voided: true, date: 'x' });
   var late = call({ action: 'purchaseDayStatus', token: bm, locationId: 'pgL', date: today });
   check(late.required && !late.done && late.expired, 'after two days it blocks again');
+  // a later day is stopped too until the overdue one is answered
+  var nextDay = ctx.costDateAdd_(today, -1);
+  var od = call({ action: 'purchaseDayStatus', token: bm, locationId: 'pgL', date: nextDay });
+  check(od.required && !od.done && od.overdue === today, 'an overdue day comes first, on any other day (' + JSON.stringify(od.overdue) + ')');
+  check(call({ action: 'importDailyEntries', token: bm, rows: [{ date: nextDay, sourceType: 'store', sourceId: 'pgS', cashSales: 10, submissionId: 'p6' }] }).error === 'purchases_first', 'its sales stop until then');
   var none = call({ action: 'purchaseDayConfirm', token: bm, locationId: 'pgL', date: today, status: 'none' });
   check(none.ok && call({ action: 'purchaseDayStatus', token: bm, locationId: 'pgL', date: today }).done, 'no purchases today clears it');
+  // a figure sent twice is saved once
+  var mv1 = call({ action: 'addInventoryMove', token: adm, locationId: 'pgL', stockItemId: 'pgU', kind: 'opening', qty: 5, date: '2026-10-01' });
+  var p1 = call({ action: 'addInventoryMove', token: adm, locationId: 'pgL', stockItemId: 'pgU', kind: 'purchase', qty: 3, date: '2026-10-02', supplier: 'Khazeen', clientRef: 'r1' });
+  var p2 = call({ action: 'addInventoryMove', token: adm, locationId: 'pgL', stockItemId: 'pgU', kind: 'purchase', qty: 3, date: '2026-10-02', supplier: 'Khazeen', clientRef: 'r1' });
+  check(mv1.ok && p1.ok && p2.already && ctx.readSheet(SHEETS.INV_MOVES).filter(function (m) { return m.clientRef === 'r1'; }).length === 1, 'a lost reply never saves a purchase twice (' + (p1.error || '') + ')');
+  check(p1.ok, 'the invoice number can wait');
+  check(call({ action: 'addInventoryMove', token: adm, locationId: 'pgL', stockItemId: 'pgU', kind: 'purchase', qty: 1, date: '2026-10-03' }).error === 'purchase_needs_reference', 'the supplier cannot');
+  // the area upload stops the same way, and lists the days
+  ctx.writeRow(SHEETS.CONFIG, ctx.readSheet(SHEETS.CONFIG)[0] || { id: 'cfg' });
+  var bulkUser = tok('pgCm');
+  var gateRows = ctx.purchaseGateRows_({ id: 'pgCm', role: 'cluster_manager' }, [{ date: '2026-10-25', sourceType: 'store', sourceId: 'pgS', cashSales: 9 }]);
+  check(gateRows && gateRows.error === 'purchases_first' && gateRows.missing.length === 1 && gateRows.missing[0].name === 'Gate Branch', 'the upload gets the list of days');
+  check(ctx.purchaseGateRows_({ id: 'pgCm', role: 'cluster_manager' }, [{ date: '2026-10-25', sourceType: 'store', sourceId: 'pgS', creditItems: [{ productId: 'x', qty: 1 }] }]).error === 'purchases_first', 'a day of credit items is a day of sales');
   // a purchase clears a day by itself, and voiding it reopens the day
   var other = '2026-10-20';
   ctx.writeRow(SHEETS.INV_MOVES, { id: 'pgM', locationId: 'pgL', stockItemId: 'pgU', kind: 'purchase', qty: 1, date: other, voided: false });
