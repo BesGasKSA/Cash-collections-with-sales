@@ -16511,7 +16511,7 @@ function purchPopup_(loc, date, st, done, cancel){
   ov.addEventListener('input', sum);
   ov.addEventListener('click', function(e){
     var b = e.target.closest && e.target.closest('.pg-b'); if (!b) return;
-    var f = qs('input', b.parentNode), v = Math.max(0, (countNum_(f.value) || 0) + Number(b.getAttribute('data-d')));
+    var f = qs('input', b.parentNode), v = Math.round(Math.max(0, (countNum_(f.value) || 0) + Number(b.getAttribute('data-d'))) * 1000) / 1000;
     f.value = v ? String(v) : ''; sum();
   });
   var yes = qs('.pgYes', ov);
@@ -16560,7 +16560,7 @@ function purchPopup_(loc, date, st, done, cancel){
         if (!r.ok) { save.disabled = false; say('err', errMsg_(r)); m.field.focus(); return; }
         refSeq[m.key] = (refSeq[m.key] || 0) + 1;
         // the reply to an earlier try was lost and the figure was changed since: nothing is dropped silently
-        if (r.already && r.move && Number(r.move.qty) !== Number(m.qty)) { saved++; save.disabled = false; say('warn', fill(t('pbuy_already'), { n: r.move.qty })); m.field.focus(); sum(); return; }
+        if (r.already && r.move && Number(r.move.qty) !== Math.round(Number(m.qty) * 1000) / 1000) { saved++; save.disabled = false; m.field.value = ''; say('warn', fill(t('pbuy_already'), { n: r.move.qty })); m.field.focus(); sum(); return; }
         // a saved figure leaves the sheet, so Save never enters it again
         m.field.value = ''; saved++; sum();
         next(i + 1);
@@ -16577,7 +16577,7 @@ function purchDueOpen_(ref, after){
   if (!p[0] || !p[1]) { goScreen_('entries'); return; }
   api('purchaseDayStatus', { locationId: p[0], date: p[1] }, { silent: true }).then(function(r){
     if (!r.ok) { showToast_(errMsg_(r), 'err'); return; }
-    if (r.done && r.via !== 'deferred') { if (after) after(); return; }
+    if (r.done && r.via !== 'deferred') { state.pendDirty = true; try { refreshPending_({ force: true }); } catch (e) {} if (after) after(); return; }
     purchPopup_(p[0], r.overdue || p[1], r, function(){ state.pendDirty = true; try { refreshPending_(); } catch (e) {} if (after) after(); }, function(){});
   });
 }
