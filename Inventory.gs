@@ -388,7 +388,8 @@ function actionAddInventoryMove_(req, user) {
     if (c.move.kind === 'opening' && invOpenings_()[invOpeningKey_(lf.loc.id, c.itemId, c.move.state)]) return { ok: false, error: 'opening_exists' };
     if (hasOwn_(INV_COUNT_, c.move.kind)) return { ok: false, error: 'use_stock_count' };
     if (invControls_()) {
-      if (c.move.kind === 'purchase' && (!c.move.supplier || !c.move.invoiceNo)) return { ok: false, error: 'purchase_needs_reference' };
+      // the invoice number may come later (the owner, 2026-10-31); the supplier is named
+      if (c.move.kind === 'purchase' && !c.move.supplier) return { ok: false, error: 'purchase_needs_reference' };
       if (hasOwn_(INV_REASONS_, c.move.kind) && !c.move.reason) return { ok: false, error: 'reason_required' };
     }
     // a car's load and return go through carStockMove, which names the car
