@@ -7826,6 +7826,53 @@ console.log('--- the stock guard: no movement takes stock below zero, on its day
   check(call({ action: 'transferInventory', token: adminTok, fromLocationId: loc8.id, toLocationId: loc9.id, date: '2026-10-21', lines: [{ stockItemId: it.id, state: 'full', qty: 2 }] }).ok, 'after it, it goes through');
 })();
 
+console.log('--- purchases come before sales (2026-10-31) ---');
+(function () {
+  var ctx = harness.buildContext(), SHEETS = ctx.SHEETS, salt = ctx.randomSalt_();
+  function call(payload) { try { return ctx.route_(payload); } catch (e) { return { ok: false, error: String(e && e.message || e) }; } }
+  function user(id, role) { ctx.writeRow(SHEETS.USERS, { id: id, name: id, email: id + '@bestgas.sa', role: role, active: true, language: 'en', salt: salt, pass: ctx.hashPw_('Bootstrap#1', salt), mustChangePw: false }); }
+  function tok(id) { return call({ action: 'login', email: id + '@bestgas.sa', password: 'Bootstrap#1' }).token; }
+  user('pgAdm', 'admin'); user('pgBm', 'store_manager'); user('pgCm', 'cluster_manager'); user('pgDr', 'driver'); user('pgCol', 'collector');
+  ctx.writeRow(SHEETS.CLUSTERS, { id: 'pgA', name: 'A', clusterManagerUserId: 'pgCm' });
+  ctx.writeRow(SHEETS.LOCATIONS, { id: 'pgL', name: 'Gate Branch', city: 'Riyadh', clusterId: 'pgA', collectorUserId: 'pgCol' });
+  ctx.writeRow(SHEETS.STORES, { id: 'pgS', name: 'S', locationId: 'pgL', storeManagerUserId: 'pgBm' });
+  ctx.writeRow(SHEETS.CARS, { id: 'pgK', label: 'K', locationId: 'pgL', driverUserId: 'pgDr' });
+  ctx.writeRow(SHEETS.STOCK_ITEMS, { id: 'pgU', name: 'Hose', kind: 'unit', unitCost: 5, active: true });
+  ctx.setScriptProp_(ctx.INV_SETUP_FLAG_, 'yes'); ctx.resetExecMemo_();
+  var today = new Date(Date.now() + 3 * 3600e3).toISOString().slice(0, 10), bm = tok('pgBm'), dr = tok('pgDr'), adm = tok('pgAdm');
+  ctx.PURCHASE_GATE_FROM_ = '2020-01-01';
+  function day(t, sub, type, src) { return call({ action: 'importDailyEntries', token: t, rows: [{ date: today, sourceType: type || 'store', sourceId: src || 'pgS', cashSales: 100, submissionId: sub }] }); }
+  var st0 = call({ action: 'purchaseDayStatus', token: bm, locationId: 'pgL', date: today });
+  check(st0.ok && st0.required && !st0.done && st0.canDefer, 'a new branch day asks for its purchases');
+  var refused = day(bm, 'p1');
+  check(refused.error === 'purchases_first' && refused.locationId === 'pgL' && refused.count === 1, 'sales stop until it is answered (' + refused.error + ')');
+  check(call({ action: 'createDailyEntry', token: bm, date: today, sourceType: 'store', sourceId: 'pgS', cashSales: 5, submissionId: 'p2' }).error === 'purchases_first', 'on every way in');
+  check(day(dr, 'p3', 'car', 'pgK').ok, 'a driver is never blocked');
+  check(call({ action: 'importDailyEntries', token: bm, rows: [{ date: today, sourceType: 'store', sourceId: 'pgS', cashSales: 0, otherCash: 0, submissionId: 'p4' }] }).error !== 'purchases_first', 'a line with no sales is not blocked');
+  check(call({ action: 'myPendingActions', token: bm }).items.some(function (i) { return i.kind === 'purchases_due'; }), 'it is on the manager\'s list');
+  check(call({ action: 'purchaseDayConfirm', token: bm, locationId: 'pgL', date: today, status: 'deferred' }).error === 'reason_required', 'putting it off needs a reason');
+  check(call({ action: 'purchaseDayConfirm', token: dr, locationId: 'pgL', date: today, status: 'none' }).error !== undefined, 'a driver does not answer it');
+  check(call({ action: 'purchaseDayConfirm', token: adm, locationId: 'pgL', date: today, status: 'deferred', reason: 'x' }).error === 'forbidden', 'only the managers put it off');
+  var dfr = call({ action: 'purchaseDayConfirm', token: bm, locationId: 'pgL', date: today, status: 'deferred', reason: 'invoice not here' });
+  check(dfr.ok && dfr.day.until > today && day(bm, 'p5').ok, 'put off with a reason, sales go through (' + (dfr.error || '') + ')');
+  check(call({ action: 'myPendingActions', token: bm }).items.some(function (i) { return i.kind === 'purchases_due'; }), 'and it stays on the list');
+  check(call({ action: 'purchaseDayConfirm', token: bm, locationId: 'pgL', date: today, status: 'deferred', reason: 'again' }).error === 'defer_used', 'once only');
+  var rec = ctx.readSheet(SHEETS.PURCHASE_DAYS)[0]; rec.until = '2020-01-01'; ctx.writeRow(SHEETS.PURCHASE_DAYS, rec);
+  ctx.writeRow(SHEETS.ENTRIES, { id: 'pgVoidMe', voided: true, date: 'x' });
+  var late = call({ action: 'purchaseDayStatus', token: bm, locationId: 'pgL', date: today });
+  check(late.required && !late.done && late.expired, 'after two days it blocks again');
+  var none = call({ action: 'purchaseDayConfirm', token: bm, locationId: 'pgL', date: today, status: 'none' });
+  check(none.ok && call({ action: 'purchaseDayStatus', token: bm, locationId: 'pgL', date: today }).done, 'no purchases today clears it');
+  // a purchase clears a day by itself, and voiding it reopens the day
+  var other = '2026-10-20';
+  ctx.writeRow(SHEETS.INV_MOVES, { id: 'pgM', locationId: 'pgL', stockItemId: 'pgU', kind: 'purchase', qty: 1, date: other, voided: false });
+  check(call({ action: 'purchaseDayStatus', token: bm, locationId: 'pgL', date: other }).done, 'a purchase on file clears its day');
+  ctx.writeRow(SHEETS.INV_MOVES, Object.assign(ctx.readSheet(SHEETS.INV_MOVES).filter(function (m) { return m.id === 'pgM'; })[0], { voided: true }));
+  check(!call({ action: 'purchaseDayStatus', token: bm, locationId: 'pgL', date: other }).done, 'voiding it reopens the day');
+  ctx.PURCHASE_GATE_FROM_ = '2099-01-01';
+  check(!call({ action: 'purchaseDayStatus', token: bm, locationId: 'pgL', date: other }).required, 'days before the start are not asked');
+})();
+
 console.log('--- the sweep: nothing lost, nothing doubled (2026-10-30) ---');
 (function () {
   var ctx = harness.buildContext(), SHEETS = ctx.SHEETS, salt = ctx.randomSalt_();

@@ -298,4 +298,4 @@ function buildContext() {
   return context;
 }
 
-module.exports = { buildContext: buildContext };
+module.exports = { buildContext: function () { var c = buildContext(); c.PURCHASE_GATE_FROM_ = '2099-01-01'; return c; } };

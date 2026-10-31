@@ -737,6 +737,8 @@ function actionCreateEntry_(req, user) {
   // every screen sends a form number; a bare API call (the test harness) keeps the old behaviour
   var dup = req.submissionId && entryHasSales_(req) ? openDayEntry_(req.sourceType, req.sourceId, req.date, req.submissionId, req) : null;
   if (dup) return { ok: false, error: 'day_already_entered', existingTxNo: dup.txNo || '', existingId: dup.id, enteredBy: dup.enteredBy };
+  var purchErr = purchaseGateRows_(user, [req]);
+  if (purchErr) return purchErr;
 
   var entry = {
     id: Utilities.getUuid(),
@@ -796,6 +798,8 @@ function actionImportEntries_(req, user) {
   if (!rows.length) return { ok: false, error: 'invalid_input' };
   if (rows.length > 500) return { ok: false, error: 'too_many_rows' };
   if (creditOverLines_(rows)) return { ok: false, error: 'credit_over_lines' };
+  var purchErr = purchaseGateRows_(user, rows);
+  if (purchErr) return purchErr;
   // the same form sent twice is saved once
   var sids = {}; rows.forEach(function (r) { if (r && r.submissionId) sids[String(r.submissionId).slice(0, 64)] = 1; });
   var sidList = Object.keys(sids);
@@ -1587,6 +1591,9 @@ function actionBulkSubmitAreaBatch_(req, user) {
   if (user.role !== 'admin' && (user.role !== 'cluster_manager' || !clusterManagerOwnsCluster_(user.id, cluster.id))) {
     return { ok: false, error: 'forbidden' };
   }
+
+  var bulkPurch = purchaseGateRows_(user, Array.isArray(req.rows) ? req.rows : []);
+  if (bulkPurch) return bulkPurch;
 
   // A batch the deputy rejected is corrected and sent again as itself
   // (2026-10-05): same id, its next version, the rejected version kept on it.
@@ -3120,7 +3127,7 @@ function actionDashboard_(req, user) {
 // a person is told only about what they may act on. Nothing is written.
 // kind order below is the order the client lists them in.
 var PENDING_KINDS_ = ['confirm_receipt', 'deputy_validate', 'deputy_batch', 'returned_fix', 'batch_rejected',
-  'send_ready', 'car_handover', 'dispute_open', 'second_approval', 'deposit_due', 'stock_short', 'risk_high'];
+  'send_ready', 'car_handover', 'dispute_open', 'second_approval', 'deposit_due', 'purchases_due', 'stock_short', 'risk_high'];
 function actionMyPendingActions_(req, user) {
   var items = [];
   function add(kind, o) { o.kind = kind; items.push(o); }
@@ -3161,6 +3168,15 @@ function actionMyPendingActions_(req, user) {
       if (user.role !== 'cluster_manager' || !activeAreaOf_(user.id) || b.clusterId === activeAreaOf_(user.id)) add('batch_rejected', { count: 1, amount: net, refId: b.id, since: b.deputyActedAt || b.createdAt });
     }
   });
+
+  // today's purchases, and days put off, not answered yet
+  var purchToday = todayRiyadh_();
+  if ((user.role === 'store_manager' || user.role === 'cluster_manager') && purchaseGateOn_(user, purchToday)) {
+    var mineB = invBranches_(user) || [], pix = purchaseIndex_(), waiting = 0;
+    mineB.forEach(function (id) { if (!purchaseDayState_(pix, id, purchToday).done) waiting++; });
+    Object.keys(pix.recs).forEach(function (k) { var r = pix.recs[k]; if (r.status === 'deferred' && mineB.indexOf(r.locationId) >= 0 && !pix.moved[k]) waiting++; });
+    if (waiting) add('purchases_due', { count: waiting, amount: 0, since: purchToday });
+  }
 
   // cash ready to pass up: confirmed handovers held, and the person's own open entries
   var entries = null;

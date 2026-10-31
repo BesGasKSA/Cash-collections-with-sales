@@ -618,6 +618,80 @@ function actionReplaceOpenings_(req, user) {
   } finally { try { lock.releaseLock(); } catch (e) {} }
 }
 
+// ---------- Purchases come before sales (2026-10-31) ----------
+// The owner: before sales are recorded, the day's purchases are entered, per branch and date.
+// A branch day is clear once a purchase or a receipt from the plant is on file, or someone
+// says there were none. "Can't enter now" (a reason, branch and area managers) clears it for
+// two days and stays on their list; after that sales stop until the day is answered. A day
+// with no sales is never blocked, a driver is never blocked, and days before the start stay as
+// they are. Every way of saving a day goes through purchaseGateRows_.
+var PURCHASE_GATE_FROM_ = '2026-11-01', PURCHASE_DEFER_DAYS_ = 2, PURCHASE_GATE_ROLES_ = { store_manager: 1, cluster_manager: 1, admin: 1 };
+function purchaseIndex_() {
+  var moved = Object.create(null), recs = Object.create(null);
+  readSheet(SHEETS.INV_MOVES).forEach(function (m) { if (!m.voided && (m.kind === 'purchase' || m.kind === 'refill_in')) moved[m.locationId + '|' + m.date] = 1; });
+  readSheet(SHEETS.PURCHASE_DAYS).forEach(function (r) { recs[r.locationId + '|' + r.date] = r; });
+  return { moved: moved, recs: recs };
+}
+function purchaseDayState_(ix, locId, date) {
+  var key = locId + '|' + date, rec = ix.recs[key] || null;
+  if (ix.moved[key]) return { done: true, via: 'purchase', rec: rec };
+  if (rec && rec.status === 'none') return { done: true, via: 'none', rec: rec };
+  if (rec && rec.status === 'deferred') {
+    var open = todayRiyadh_() <= String(rec.until);
+    return { done: open, via: open ? 'deferred' : null, expired: !open, rec: rec };
+  }
+  return { done: false, via: null, rec: null };
+}
+function purchaseGateOn_(user, date) { return !!PURCHASE_GATE_ROLES_[user.role] && stockItemsLive_() && String(date) >= PURCHASE_GATE_FROM_; }
+// the branch days of these rows that still wait for an answer
+function purchaseGateRows_(user, rows) {
+  var want = Object.create(null), list = [];
+  rows.forEach(function (r) {
+    if (!r || !r.date || !r.sourceType || !r.sourceId || !purchaseGateOn_(user, r.date) || !entryHasSales_(r)) return;
+    var sc = checkEntryScope_(user, r.sourceType, r.sourceId);
+    if (!sc.ok || !sc.locationId) return;
+    var k = sc.locationId + '|' + r.date;
+    if (!want[k]) { want[k] = 1; list.push({ locationId: sc.locationId, date: String(r.date) }); }
+  });
+  if (!list.length) return null;
+  var ix = purchaseIndex_(), missing = list.filter(function (x) { return !purchaseDayState_(ix, x.locationId, x.date).done; });
+  if (!missing.length) return null;
+  missing.forEach(function (x) { var l = getById_(SHEETS.LOCATIONS, x.locationId); x.name = l ? l.name : ''; });
+  return { ok: false, error: 'purchases_first', locationId: missing[0].locationId, date: missing[0].date, name: missing[0].name, missing: missing.slice(0, 50), count: missing.length };
+}
+function actionPurchaseDayStatus_(req, user) {
+  var date = String(req.date || '');
+  if (!purchaseGateOn_(user, date)) return { ok: true, required: false, done: true };
+  var lf = invLocFor_(user, req.locationId);
+  if (lf.error) return { ok: true, required: false, done: true };
+  var st = purchaseDayState_(purchaseIndex_(), lf.loc.id, date);
+  return { ok: true, required: true, done: st.done, via: st.via, expired: !!st.expired, until: st.rec ? st.rec.until || null : null, canDefer: user.role !== 'admin' && !st.rec };
+}
+function actionPurchaseDayConfirm_(req, user) {
+  var lf = invLocFor_(user, req.locationId);
+  if (lf.error) return { ok: false, error: lf.error };
+  var date = String(req.date || ''), status = String(req.status || ''), reason = String(req.reason || '').trim().slice(0, 500);
+  if (!invDateOk_(date)) return { ok: false, error: 'invalid_date' };
+  if (date > todayRiyadh_()) return { ok: false, error: 'future_date' };
+  if (status !== 'none' && status !== 'deferred') return { ok: false, error: 'invalid_input' };
+  if (status === 'deferred' && user.role !== 'store_manager' && user.role !== 'cluster_manager') return { ok: false, error: 'forbidden' };
+  if (status === 'deferred' && !reason) return { ok: false, error: 'reason_required' };
+  var lock = scriptLock_(); lock.waitLock(30000);
+  try {
+    freshenExec_();
+    var old = purchaseIndex_().recs[lf.loc.id + '|' + date] || null;
+    // once only: a day put off and not answered in time is answered, not put off again
+    if (status === 'deferred' && old) return { ok: false, error: 'defer_used' };
+    var at = new Date().toISOString(), row = old || { locationId: lf.loc.id, date: date };
+    row.status = status; row.by = user.id; row.at = at; row.reason = reason || null;
+    row.until = status === 'deferred' ? costDateAdd_(todayRiyadh_(), PURCHASE_DEFER_DAYS_) : null;
+    (row.history = row.history || []).push({ status: status, by: user.id, at: at, reason: reason || null });
+    row = writeRow(SHEETS.PURCHASE_DAYS, row);
+    logAudit_('purchase_day_' + status, user.id, lf.loc.id + ' ' + date + (reason ? ': ' + reason : ''));
+    return { ok: true, day: row };
+  } finally { try { lock.releaseLock(); } catch (e) {} }
+}
+
 // The author voids his own wrong movement while the branch is still his;
 // admin and finance, and the area manager over that branch, may too.
 function actionVoidInventoryMove_(req, user) {

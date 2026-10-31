@@ -29,6 +29,7 @@ var SHEETS = {
   TRANSLATIONS: 'translations',
   // stock movements typed in by hand: opening, purchase, return, damage (Inventory.gs)
   INV_MOVES: 'inventory_moves',
+  PURCHASE_DAYS: 'purchase_days',
   // what a branch holds and counts (LPG Task 1b): cylinder items full and empty,
   // unit items in units; the products (sales items) name the item they move
   STOCK_ITEMS: 'stock_items',
@@ -1024,6 +1025,8 @@ function route_(req) {
     addInventoryMove: function () { return actionAddInventoryMove_(req, user); },
     recordStockCount: function () { return actionRecordStockCount_(req, user); },
     voidInventoryMove: function () { return actionVoidInventoryMove_(req, user); },
+    purchaseDayStatus: function () { return actionPurchaseDayStatus_(req, user); },
+    purchaseDayConfirm: function () { return actionPurchaseDayConfirm_(req, user); },
     replaceOpenings: function () { return actionReplaceOpenings_(req, user); },
     getInventoryReport: function () { return actionInventoryReport_(req, user); },
     getInventoryLive: function () { return actionInventoryLive_(req, user); },
