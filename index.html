@@ -29074,7 +29074,7 @@ function replaceOpeningsCard_(){
     var meta = state.meta || {}, head = (table[0] || []).map(function(h){ return String(h == null ? '' : h).toLowerCase().replace(/[\s_\-]+/g, ''); }), at = {};
     // each column answers once: "Filled qty" is Filled, and a column of money (a cost, a value, a
     // price) is never a quantity. The file's cost is the filled cylinder's, so "Empty cost" is not it.
-    var taken = {}, MONEY_ = COLS_.cost.concat(['value', 'price', 'amount', 'total', 'قيمة', 'سعر', 'مبلغ', 'اجمالي', 'إجمالي', 'قیمت', 'رقم']);
+    var taken = {}, MONEY_ = COLS_.cost.concat(['value', 'price', 'amount', 'قيمة', 'سعر', 'مبلغ', 'قیمت']);
     var isCost = function(h){ return MONEY_.some(function(w){ return h.indexOf(w) >= 0; }); }, isEmpty = function(h){ return COLS_.empty.some(function(w){ return h.indexOf(w) >= 0; }); };
     Object.keys(COLS_).forEach(function(k){
       at[k] = head.findIndex(function(h, i){
