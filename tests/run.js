@@ -7826,6 +7826,30 @@ console.log('--- the stock guard: no movement takes stock below zero, on its day
   check(call({ action: 'transferInventory', token: adminTok, fromLocationId: loc8.id, toLocationId: loc9.id, date: '2026-10-21', lines: [{ stockItemId: it.id, state: 'full', qty: 2 }] }).ok, 'after it, it goes through');
 })();
 
+console.log('--- several requests approved in one click (2026-10-31) ---');
+(function () {
+  var ctx = harness.buildContext(), SHEETS = ctx.SHEETS, salt = ctx.randomSalt_(), at = new Date().toISOString();
+  function call(p) { try { return ctx.route_(p); } catch (e) { return { ok: false, error: String(e && e.message || e) }; } }
+  function user(id, role) { ctx.writeRow(SHEETS.USERS, { id: id, name: id, email: id + '@bestgas.sa', role: role, active: true, language: 'en', salt: salt, pass: ctx.hashPw_('Bootstrap#1', salt), mustChangePw: false }); }
+  function tok(id) { return call({ action: 'login', email: id + '@bestgas.sa', password: 'Bootstrap#1' }).token; }
+  function H(id) { return ctx.readSheet(SHEETS.HANDOFFS).filter(function (h) { return h.id === id; })[0]; }
+  user('mvDep', 'deputy_operations_manager'); user('mvOps', 'operations_manager'); user('mvCm', 'cluster_manager'); user('mvCol', 'collector'); user('mvFin', 'finance');
+  function req(id, from, st) { ctx.writeRow(SHEETS.HANDOFFS, { id: id, kind: 'cluster_to_collector', status: st || 'pending_deputy', fromUserId: from || 'mvCm', toUserId: 'mvCol', amount: 100, breakdown: { netCashOwed: 100 }, sourceEntryIds: [], sourceHandoffIds: [], createdAt: at }); }
+  req('mvA'); req('mvB'); req('mvParty', 'mvOps'); req('mvDone', 'mvCm', 'pending');
+  var dep = tok('mvDep'), ops = tok('mvOps');
+  check(call({ action: 'deputyValidateMany', token: tok('mvFin'), ids: ['mvA'] }).error === 'forbidden', 'finance does not approve requests');
+  check(call({ action: 'deputyValidateMany', token: tok('mvCol'), ids: ['mvA'] }).error === 'forbidden', 'nor a collector');
+  check(call({ action: 'deputyValidateMany', token: dep, ids: [] }).error === 'invalid_input', 'nothing selected, nothing done');
+  var r = call({ action: 'deputyValidateMany', token: ops, ids: ['mvA', 'mvA', 'mvParty', 'mvDone', 'gone'] });
+  check(r.ok && r.approved === 1 && r.failed === 3 && H('mvA').status === 'pending' && H('mvA').deputyValidatedBy === 'mvOps', 'what can be approved is, once (' + JSON.stringify([r.approved, r.failed]) + ')');
+  check(H('mvParty').status === 'pending_deputy' && r.results.filter(function (x) { return x.id === 'mvParty'; })[0].error === 'conflict_of_interest', 'nobody approves their own request');
+  check(H('mvDone').deputyValidatedBy === undefined && r.results.filter(function (x) { return x.id === 'mvDone'; })[0].error === 'not_pending', 'one already acted on stays as it is');
+  check(!r.handoffs, 'the answer lists results, not the requests');
+  var d2 = call({ action: 'deputyValidateMany', token: dep, ids: ['mvB', 'mvParty'] });
+  check(d2.ok && d2.approved === 2 && H('mvB').status === 'pending', 'the deputy approves too');
+  check(ctx.readSheet(SHEETS.AUDIT).filter(function (a) { return a.action === 'deputy_validate_handoff'; }).length === 3, 'each approval is in the audit trail');
+})();
+
 console.log('--- purchases come before sales (2026-10-31) ---');
 (function () {
   var ctx = harness.buildContext(), SHEETS = ctx.SHEETS, salt = ctx.randomSalt_();

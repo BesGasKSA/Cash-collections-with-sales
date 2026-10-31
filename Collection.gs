@@ -2210,6 +2210,31 @@ function actionDeputyValidateHandoff_(req, user) {
   nmHandoffMail_(getById_(SHEETS.USERS, h.fromUserId), 'validated', h, { by: user.id });
   return { ok: true, handoff: h };
 }
+// Several requests approved in one click (the owner, 2026-10-31). Each goes through the same guard
+// as one approved alone, so a request of which the approver is a party, or one already acted on,
+// is left as it is and reported; the others go through.
+function actionDeputyValidateMany_(req, user) {
+  requireDeputy_(user);
+  var ids = Array.isArray(req.ids) ? req.ids.map(String) : [], seen = Object.create(null);
+  ids = ids.filter(function (id) { if (seen[id]) return false; seen[id] = 1; return true; });
+  if (!ids.length) return { ok: false, error: 'invalid_input' };
+  if (ids.length > 100) return { ok: false, error: 'too_many_rows' };
+  var byId = Object.create(null), rows = [], results = [], at = new Date().toISOString();
+  readSheet(SHEETS.HANDOFFS).forEach(function (h) { byId[h.id] = h; });
+  ids.forEach(function (id) {
+    var h = byId[id] || null, err = deputyHandoffGuard_(h, user);
+    if (err) { results.push({ id: id, ok: false, error: err, txNo: h ? h.txNo || '' : '' }); return; }
+    h.status = 'pending'; h.deputyValidatedBy = user.id; h.deputyValidatedAt = at; h.deputyNote = ''; h.deputyBulk = true;
+    rows.push(h); results.push({ id: id, ok: true, txNo: h.txNo || '' });
+  });
+  writeRows_(SHEETS.HANDOFFS, rows);
+  rows.forEach(function (h) {
+    logAudit_('deputy_validate_handoff', user.id, h.id + ' (selected)');
+    notifyPending_(h);
+    nmHandoffMail_(getById_(SHEETS.USERS, h.fromUserId), 'validated', h, { by: user.id });
+  });
+  return { ok: true, approved: rows.length, failed: results.length - rows.length, results: results, handoffs: rows };
+}
 function actionDeputyReturnHandoff_(req, user) {
   requireDeputy_(user);
   var reason = String(req.reason || '').trim();

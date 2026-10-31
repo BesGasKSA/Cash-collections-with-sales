@@ -1001,6 +1001,8 @@ function route_(req) {
     voidEntries: function () { return withCashLock_(function () { return actionVoidEntries_(req, user); }); },
     adminVoidTransaction: function () { return withCashLock_(function () { return actionAdminVoidTransaction_(req, user); }); },
     deputyValidateHandoff: function () { var r = withCashLock_(function () { return actionDeputyValidateHandoff_(req, user); }); if (r && r.ok) r.wa = waNotifyCollector_(r.handoff); return r; },
+    // several requests approved in one click (2026-10-31)
+    deputyValidateMany: function () { var r = withCashLock_(function () { return actionDeputyValidateMany_(req, user); }); if (r && r.ok) { (r.handoffs || []).forEach(function (h) { try { waNotifyCollector_(h); } catch (e) { console.error('wa: ' + e); } }); delete r.handoffs; } return r; },
     deputyReturnHandoff: function () { return withCashLock_(function () { return actionDeputyReturnHandoff_(req, user); }); },
     createDailyEntry: function () { return withCashLock_(function () { return actionCreateEntry_(req, user); }); },
     importDailyEntries: function () { return withCashLock_(function () { return actionImportEntries_(req, user); }); },
