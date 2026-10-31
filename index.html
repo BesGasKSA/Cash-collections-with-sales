@@ -29072,9 +29072,10 @@ function replaceOpeningsCard_(){
   var COLS_ = { branch: ['branch', 'فرع', 'برانچ'], item: ['item', 'product', 'صنف', 'آئٹم'], cost: ['cost', 'تكلفة', 'لاگت'], full: ['filled', 'full', 'مليان', 'ممتلئ', 'بھرا'], empty: ['empty', 'فارغ', 'فوارغ', 'خالی'], qty: ['quantity', 'qty', 'كمية', 'مقدار'] };
   function build(table){
     var meta = state.meta || {}, head = (table[0] || []).map(function(h){ return String(h == null ? '' : h).toLowerCase().replace(/[\s_\-]+/g, ''); }), at = {};
-    // each column answers once: "Filled qty" is Filled, and a column with a cost word is never a
-    // quantity. The file's cost is the filled cylinder's, so "Empty cost" is not it.
-    var taken = {}, isCost = function(h){ return COLS_.cost.some(function(w){ return h.indexOf(w) >= 0; }); }, isEmpty = function(h){ return COLS_.empty.some(function(w){ return h.indexOf(w) >= 0; }); };
+    // each column answers once: "Filled qty" is Filled, and a column of money (a cost, a value, a
+    // price) is never a quantity. The file's cost is the filled cylinder's, so "Empty cost" is not it.
+    var taken = {}, MONEY_ = COLS_.cost.concat(['value', 'price', 'amount', 'total', 'قيمة', 'سعر', 'مبلغ', 'اجمالي', 'إجمالي', 'قیمت', 'رقم']);
+    var isCost = function(h){ return MONEY_.some(function(w){ return h.indexOf(w) >= 0; }); }, isEmpty = function(h){ return COLS_.empty.some(function(w){ return h.indexOf(w) >= 0; }); };
     Object.keys(COLS_).forEach(function(k){
       at[k] = head.findIndex(function(h, i){
         if (taken[i] || !COLS_[k].some(function(w){ return h.indexOf(w) >= 0; })) return false;
@@ -29167,11 +29168,13 @@ function replaceOpeningsCard_(){
   qs('.roFile', card).addEventListener('change', function(){
     var f = this.files && this.files[0], picker = this; parsed = null; if (!f) return;
     readTableRows_(f, function(table){
-      if (!table) { picker.value = ''; msg('err', t('ro_needCols')); return; }
+      // the same file, corrected, can always be picked again
+      picker.value = '';
+      if (!table) { msg('err', t('ro_needCols')); return; }
       var b = build(table);
-      if (b.error) { picker.value = ''; msg('err', b.error); return; }
-      if (b.bad.length) { picker.value = ''; out.innerHTML = '<div class="msg err">'+esc(t('ro_fix'))+'<ul class="ar-out">'+b.bad.slice(0, 40).map(function(x){ return '<li>'+esc(x)+'</li>'; }).join('')+'</ul></div>'; return; }
-      if (!b.rows.length) { picker.value = ''; msg('err', t('ro_needCols')); return; }
+      if (b.error) { msg('err', b.error); return; }
+      if (b.bad.length) { out.innerHTML = '<div class="msg err">'+esc(t('ro_fix'))+'<ul class="ar-out">'+b.bad.slice(0, 40).map(function(x){ return '<li>'+esc(x)+'</li>'; }).join('')+'</ul></div>'; return; }
+      if (!b.rows.length) { msg('err', t('ro_needCols')); return; }
       parsed = b.rows; preview();
     });
   });
