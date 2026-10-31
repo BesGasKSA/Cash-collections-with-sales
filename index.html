@@ -3821,7 +3821,6 @@
      The stage behind the logo is the logo's own #4D6D51, flat, so the PNG's square never shows. Embers rise
      slowly from the bottom of the stage (transform and opacity only); everything is still under reduced motion. */
   .pa-ov.wl-ov{align-items:center;justify-content:center;padding:14px;}
-  .pa-ov.wl-ov.wl-fade{transition:opacity .6s ease;opacity:0;}
   .wl-card{position:relative;width:min(460px,100%);max-height:min(92vh,760px);display:flex;flex-direction:column;background:#FBFAF6;border-radius:24px;box-shadow:0 30px 70px rgba(18,30,20,.38);overflow:hidden;animation:wlRise .9s cubic-bezier(.16,1,.3,1) both;}
   .wl-card:lang(ar),.wl-card:lang(ur){font-family:'IBM Plex Sans Arabic','Cairo',var(--font-en,inherit),sans-serif;}
   .wl-stage{position:relative;flex:none;background:#4D6D51;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:26px 24px 24px;text-align:center;overflow:hidden;}
@@ -9241,12 +9240,7 @@ function wlOpen_(){
   qs('.wl-go', ov).addEventListener('click', pendClose_);
   document.body.appendChild(ov);
   setTimeout(function(){ try { qs('.wl-go', ov).focus({ preventScroll: true }); } catch (e) {} }, 60);
-  // four seconds on screen, then it fades out by itself (the user, 2026-10-29); the bell keeps the list
-  setTimeout(function(){
-    if (!ov.isConnected || ov.classList.contains('out')) return;
-    ov.classList.add('wl-fade');
-    setTimeout(function(){ if (ov.isConnected) pendClose_(); }, 650);
-  }, 4000);
+  // it stays until the person closes it (the user, 2026-10-31)
 }
 
 // Fetch the list. opts.popup: this is the first load after signing in, so show
