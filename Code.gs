@@ -1002,7 +1002,7 @@ function route_(req) {
     adminVoidTransaction: function () { return withCashLock_(function () { return actionAdminVoidTransaction_(req, user); }); },
     deputyValidateHandoff: function () { var r = withCashLock_(function () { return actionDeputyValidateHandoff_(req, user); }); if (r && r.ok) r.wa = waNotifyCollector_(r.handoff); return r; },
     // several requests approved in one click (2026-10-31)
-    deputyValidateMany: function () { var r = withCashLock_(function () { return actionDeputyValidateMany_(req, user); }); if (r && r.ok) { (r.handoffs || []).forEach(function (h) { try { waNotifyCollector_(h); } catch (e) { console.error('wa: ' + e); } }); delete r.handoffs; } return r; },
+    deputyValidateMany: function () { var r = withCashLock_(function () { return actionDeputyValidateMany_(req, user); }); if (r && r.ok) { r.wa = (r.handoffs || []).map(waNotifyCollector_).filter(Boolean); delete r.handoffs; } return r; },
     deputyReturnHandoff: function () { return withCashLock_(function () { return actionDeputyReturnHandoff_(req, user); }); },
     createDailyEntry: function () { return withCashLock_(function () { return actionCreateEntry_(req, user); }); },
     importDailyEntries: function () { return withCashLock_(function () { return actionImportEntries_(req, user); }); },
@@ -1031,6 +1031,7 @@ function route_(req) {
     purchaseDayConfirm: function () { return actionPurchaseDayConfirm_(req, user); },
     replaceOpenings: function () { return actionReplaceOpenings_(req, user); },
     getInventoryReport: function () { return actionInventoryReport_(req, user); },
+    firstDataDay: function () { return actionFirstDataDay_(); },
     getInventoryLive: function () { return actionInventoryLive_(req, user); },
     getStockLedger: function () { return actionStockLedger_(req, user); },
     recordCustomerPayment: function () { return actionRecordCustomerPayment_(req, user); },

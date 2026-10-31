@@ -775,6 +775,14 @@ function actionVoidInventoryMove_(req, user) {
 
 // The stock on hand right now: every movement and sale up to this moment, at
 // every branch in reach (or one). Never served from the response cache.
+// The first day anything happened, for screens that need a start date to show everything. A date, nothing else.
+function actionFirstDataDay_() {
+  var first = '';
+  function see(r) { if (!r.voided && r.date && (!first || String(r.date) < first)) first = String(r.date); }
+  readSheet(SHEETS.ENTRIES).forEach(see);
+  readSheet(SHEETS.INV_MOVES).forEach(see);
+  return { ok: true, day: first };
+}
 function actionInventoryLive_(req, user) {
   var today = todayRiyadh_();
   // polled every minute by every open Home: worked out again only when the stock has changed

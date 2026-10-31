@@ -7848,6 +7848,35 @@ console.log('--- several requests approved in one click (2026-10-31) ---');
   var d2 = call({ action: 'deputyValidateMany', token: dep, ids: ['mvB', 'mvParty'] });
   check(d2.ok && d2.approved === 2 && H('mvB').status === 'pending', 'the deputy approves too');
   check(ctx.readSheet(SHEETS.AUDIT).filter(function (a) { return a.action === 'deputy_validate_handoff'; }).length === 3, 'each approval is in the audit trail');
+  check(r.results.filter(function (x) { return x.id === 'gone'; })[0].error === 'not_found', 'an unknown request says so');
+  var again = call({ action: 'deputyValidateMany', token: ops, ids: ['mvA'] });
+  check(again.ok && again.approved === 1 && again.results[0].already === true, 'sending again after a lost reply counts what was already approved');
+  check(ctx.readSheet(SHEETS.AUDIT).filter(function (a) { return a.action === 'deputy_validate_handoff'; }).length === 3, 'and is not approved a second time');
+  check(Array.isArray(r.wa), 'the answer carries the WhatsApp messages for the screen');
+  ['mvTo', 'mvBy'].forEach(function (id, i) { req(id); var h = H(id); if (i) h.createdBy = 'mvDep'; else h.toUserId = 'mvDep'; ctx.writeRow(SHEETS.HANDOFFS, h); });
+  ['mvTo', 'mvBy'].forEach(function (id) { var x = call({ action: 'deputyValidateMany', token: dep, ids: [id] }); check(x.results[0].error === 'conflict_of_interest', 'the receiver and the creator cannot approve either (' + id + ')'); });
+  req('mvKind'); var kh = H('mvKind'); kh.kind = 'collector_to_collector'; ctx.writeRow(SHEETS.HANDOFFS, kh);
+  check(call({ action: 'deputyValidateMany', token: dep, ids: ['mvKind'] }).results[0].error === 'invalid_kind', 'only area requests go through here');
+  check(call({ action: 'deputyValidateMany', token: dep, ids: 'mvA' }).error === 'invalid_input' && call({ action: 'deputyValidateMany', token: dep, ids: [{ toString: 1, valueOf: 1 }, 7, null] }).error === 'invalid_input', 'anything that is not a list of ids is refused');
+  var many = []; for (var mi = 0; mi < 31; mi++) many.push('x' + mi);
+  check(call({ action: 'deputyValidateMany', token: dep, ids: many }).error === 'too_many_rows', 'the server takes 30 at a time');
+  var mails = ctx._debug.mailLog.length; req('mvMail');
+  call({ action: 'deputyValidateMany', token: dep, ids: ['mvMail'] });
+  check(ctx._debug.mailLog.length === mails + 2, 'the collector and the area manager are told, after the lock (' + (ctx._debug.mailLog.length - mails) + ')');
+})();
+
+console.log('--- a quick filter tapped again comes off, and All (2026-10-31) ---');
+(function () {
+  var f = new Function(clientFn_('quickToggle_') + '; return quickToggle_;')();
+  check(f('month', 'month') === 'all' && f('today', 'today') === 'all', 'the same filter tapped again shows everything');
+  check(f('month', 'today') === 'today' && f('', 'month') === 'month', 'another filter simply replaces it');
+  check(f('all', 'all') === 'all', 'All stays All');
+  var ctx = harness.buildContext(), SHEETS = ctx.SHEETS;
+  ctx.writeRow(SHEETS.ENTRIES, { id: 'fd1', date: '2026-09-05' });
+  ctx.writeRow(SHEETS.ENTRIES, { id: 'fd2', date: '2026-08-01', voided: true });
+  ctx.writeRow(SHEETS.INV_MOVES, { id: 'fd3', date: '2026-09-03' });
+  check(ctx.actionFirstDataDay_().day === '2026-09-03', 'the first day counts entries and stock moves, not what was cancelled');
+  check((clientHtml.match(/pp_all:'/g) || []).length === 3, 'the All label is translated');
 })();
 
 console.log('--- purchases come before sales (2026-10-31) ---');

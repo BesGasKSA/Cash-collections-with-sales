@@ -2213,27 +2213,37 @@ function actionDeputyValidateHandoff_(req, user) {
 // Several requests approved in one click (the owner, 2026-10-31). Each goes through the same guard
 // as one approved alone, so a request of which the approver is a party, or one already acted on,
 // is left as it is and reported; the others go through.
+var DEPUTY_MANY_MAX_ = 30;
 function actionDeputyValidateMany_(req, user) {
   requireDeputy_(user);
-  var ids = Array.isArray(req.ids) ? req.ids.map(String) : [], seen = Object.create(null);
-  ids = ids.filter(function (id) { if (seen[id]) return false; seen[id] = 1; return true; });
+  var seen = Object.create(null), ids = (Array.isArray(req.ids) ? req.ids : []).filter(function (id) {
+    if (typeof id !== 'string' || !id || seen[id]) return false;
+    seen[id] = 1; return true;
+  });
   if (!ids.length) return { ok: false, error: 'invalid_input' };
-  if (ids.length > 100) return { ok: false, error: 'too_many_rows' };
+  // the screen sends a long selection in parts, each with its own lock
+  if (ids.length > DEPUTY_MANY_MAX_) return { ok: false, error: 'too_many_rows' };
   var byId = Object.create(null), rows = [], results = [], at = new Date().toISOString();
   readSheet(SHEETS.HANDOFFS).forEach(function (h) { byId[h.id] = h; });
   ids.forEach(function (id) {
     var h = byId[id] || null, err = deputyHandoffGuard_(h, user);
+    // a reply that never arrived: this person's own approval still counts as done
+    if (err === 'not_pending' && h.deputyValidatedBy === user.id) { results.push({ id: id, ok: true, txNo: h.txNo || '', already: true }); return; }
     if (err) { results.push({ id: id, ok: false, error: err, txNo: h ? h.txNo || '' : '' }); return; }
     h.status = 'pending'; h.deputyValidatedBy = user.id; h.deputyValidatedAt = at; h.deputyNote = ''; h.deputyBulk = true;
     rows.push(h); results.push({ id: id, ok: true, txNo: h.txNo || '' });
   });
   writeRows_(SHEETS.HANDOFFS, rows);
-  rows.forEach(function (h) {
-    logAudit_('deputy_validate_handoff', user.id, h.id + ' (selected)');
-    notifyPending_(h);
-    nmHandoffMail_(getById_(SHEETS.USERS, h.fromUserId), 'validated', h, { by: user.id });
+  // every approval is on the audit trail before anyone is told, and a mail that fails undoes nothing
+  costAppendMany_(SHEETS.AUDIT, rows.map(function (h) { return { action: 'deputy_validate_handoff', userId: user.id, detail: h.id + ' (selected)', at: at }; }));
+  afterCashLock_(function () {
+    rows.forEach(function (h) {
+      try { notifyPending_(h); } catch (e) { console.error('notify: ' + e); }
+      nmHandoffMail_(getById_(SHEETS.USERS, h.fromUserId), 'validated', h, { by: user.id });
+    });
   });
-  return { ok: true, approved: rows.length, failed: results.length - rows.length, results: results, handoffs: rows };
+  var okN = results.filter(function (x) { return x.ok; }).length;
+  return { ok: true, approved: okN, failed: results.length - okN, results: results, handoffs: rows };
 }
 function actionDeputyReturnHandoff_(req, user) {
   requireDeputy_(user);
