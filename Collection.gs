@@ -2789,7 +2789,7 @@ function actionDataHealthCheck_(req, user) {
   // a branch below zero in an approved batch: no cash moved for it, and nothing carries it forward
   readSheet(SHEETS.AREA_BULK_BATCHES).forEach(function (b) {
     if (b.status !== 'deputy_approved') return;
-    (b.perLocation || []).forEach(function (p) { if (Number(p.amount || 0) < -0.005) add('batch_deficit', { id: b.id, txNo: b.txNo, kind: 'batch', status: b.status, locationId: p.locationId, createdAt: b.createdAt }, 'approved batch left this branch below zero', 0, Number(p.amount)); });
+    (b.perLocation || []).forEach(function (p) { if (Number(p.amount || 0) < -0.005) { var dl = getById_(SHEETS.LOCATIONS, p.locationId); add('batch_deficit', { id: b.id, txNo: b.txNo, kind: 'batch', status: b.status, locationId: p.locationId, createdAt: b.createdAt }, (dl ? dl.name : p.locationId) + ': approved batch left this branch below zero', 0, Number(p.amount)); } });
   });
   // banked more than its requests say after a receipt was corrected: for Finance to look at
   H.forEach(function (h) { if (h.kind === 'deposit' && h.status !== 'voided' && Number(h.overBanked || 0) > 0.005) add('over_banked', h, 'deposit carries ' + h.overBanked + ' more than its requests', 0, Number(h.overBanked)); });
@@ -3180,12 +3180,16 @@ function actionMyPendingActions_(req, user) {
     });
     var heldC = handoffs.filter(function (h) { return h.kind === 'location_to_cluster' && h.status === 'confirmed' && h.toUserId === user.id && !h.consumedBy && inActiveArea_(user, h); });
     var ownC = openEntries_().filter(function (e) { return e.enteredBy === user.id && myLocs[e.locationId]; });
-    var rc = ready_(heldC, ownC), locReady = {};
+    var locReady = {};
     heldC.forEach(function (h) { locReady[h.locationId] = (locReady[h.locationId] || 0) + Number(h.amount || 0); });
     var ownBy = {}; ownC.forEach(function (e) { (ownBy[e.locationId] = ownBy[e.locationId] || []).push(e); });
     Object.keys(ownBy).forEach(function (k) { locReady[k] = (locReady[k] || 0) + Number(computeNet_(ownBy[k]).netCashOwed || 0); });
     var readyLocs = Object.keys(locReady).filter(function (k) { return locReady[k] > 0.005; });
-    if (readyLocs.length) { rc.amount = readyLocs.reduce(function (s, k) { return s + locReady[k]; }, 0); add('send_ready', rc); }
+    if (readyLocs.length) {
+      var rc = ready_(heldC.filter(function (h) { return locReady[h.locationId] > 0.005; }), ownC.filter(function (e) { return locReady[e.locationId] > 0.005; }));
+      rc.amount = readyLocs.reduce(function (s, k) { return s + locReady[k]; }, 0);
+      add('send_ready', rc);
+    }
   } else if (user.role === 'store_manager') {
     var posMap = posById_();
     var heldS = handoffs.filter(function (h) { return h.kind === 'car_to_location' && h.status === 'confirmed' && h.toUserId === user.id && !h.consumedBy; });
