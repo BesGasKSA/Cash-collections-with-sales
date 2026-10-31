@@ -5370,7 +5370,7 @@ var ICON_B64 = 'iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAYAAAA9zQYyAAAcG0lEQVR42u2dd1cU
 // Stamped by tools/stamp-build.js at publish time so the running app can
 // say which build it is — a cached page is the usual reason a shipped change
 // seems missing.
-var BUILD_ID = '2026-10-31 12:23 · afe603d';
+var BUILD_ID = '2026-10-31 12:31 · ce899cd';
 var LOGO_SRC = 'data:image/png;base64,' + LOGO_B64;
 var ICON_SRC = LOGO_SRC; // same asset — see the comment above LOGO_B64
 // The sign-in mark (2026-09-30): the logo's round emblem as a coin with a
@@ -26725,15 +26725,25 @@ function renderProfit(body){
       ({ overview: overview, levels: levels, daily: daily, costs: costs })[PL_.tab](res);
     });
   }
+  // the quick periods, one tap each (the owner, 2026-10-31); the picker keeps the rest
+  qs('.pl-bar-row', bar).insertAdjacentHTML('afterend', '<div class="rp-periods pl-quick" role="group" aria-label="'+esc(t('pp_quick'))+'">' +
+    ['today', 'yesterday', 'thisWeek', 'lastWeek', 'thisMonth', 'lastMonth', 'thisYear', 'lastYear'].map(function(p){ return '<button type="button" data-p="'+p+'">'+esc(t('pp_' + p))+'</button>'; }).join('') + '</div>');
+  function plChips_(){ qsa('.pl-quick button', bar).forEach(function(b){ var on = !!PL_.custom && PL_.preset === b.getAttribute('data-p'); b.classList.toggle('on', on); b.setAttribute('aria-pressed', on ? 'true' : 'false'); }); }
+  qsa('.pl-quick button', bar).forEach(function(b){ b.addEventListener('click', function(){
+    var sel = qs('#plMonth', bar); sel.value = 'p:' + b.getAttribute('data-p');
+    sel.dispatchEvent(new Event('change', { bubbles: true }));
+  }); });
+  plChips_();
   qs('#plMonth', bar).addEventListener('change', function(){
     var v = this.value;
+    setTimeout(plChips_, 0);
     if (v.indexOf('p:') === 0) { var pr = plPresetRange_(v.slice(2)); PL_.preset = v.slice(2); PL_.custom = true; PL_.from = pr[0]; PL_.to = pr[1]; qs('#plFrom', bar).value = pr[0]; qs('#plTo', bar).value = pr[1]; qsa('.pl-cust', bar).forEach(function(f){ f.hidden = false; }); show(); return; }
     PL_.preset = ''; PL_.custom = v === 'custom'; if (!PL_.custom) PL_.month = v;
     qsa('.pl-cust', bar).forEach(function(f){ f.hidden = !PL_.custom; });
     if (PL_.custom) { PL_.from = qs('#plFrom', bar).value; PL_.to = qs('#plTo', bar).value; }
     show();
   });
-  ['#plFrom', '#plTo'].forEach(function(s){ qs(s, bar).addEventListener('change', function(){ PL_.preset = ''; PL_.from = qs('#plFrom', bar).value; PL_.to = qs('#plTo', bar).value; if (PL_.from && PL_.to && PL_.from <= PL_.to) show(); }); });
+  ['#plFrom', '#plTo'].forEach(function(s){ qs(s, bar).addEventListener('change', function(){ PL_.preset = ''; plChips_(); PL_.from = qs('#plFrom', bar).value; PL_.to = qs('#plTo', bar).value; if (PL_.from && PL_.to && PL_.from <= PL_.to) show(); }); });
   qs('#plBasis', bar).addEventListener('change', function(){ PL_.basis = this.value; show(); });
   qsa('.pl-tabs button', bar).forEach(function(b){ b.addEventListener('click', function(){
     PL_.tab = b.dataset.tab;
