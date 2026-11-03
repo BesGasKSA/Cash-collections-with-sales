@@ -2223,14 +2223,16 @@ function actionDeputyValidateMany_(req, user) {
   if (!ids.length) return { ok: false, error: 'invalid_input' };
   // the screen sends a long selection in parts, each with its own lock
   if (ids.length > DEPUTY_MANY_MAX_) return { ok: false, error: 'too_many_rows' };
-  var byId = Object.create(null), rows = [], results = [], at = new Date().toISOString();
+  var byId = Object.create(null), rows = [], again = [], results = [], at = new Date().toISOString();
+  // the screen's own reference for this part, the same when it asks again after a lost reply
+  var bref = typeof req.ref === 'string' ? req.ref.slice(0, 64) : '';
   readSheet(SHEETS.HANDOFFS).forEach(function (h) { byId[h.id] = h; });
   ids.forEach(function (id) {
     var h = byId[id] || null, err = deputyHandoffGuard_(h, user);
-    // a reply that never arrived: this person's own approval still counts as done
-    if (err === 'not_pending' && h.deputyValidatedBy === user.id) { results.push({ id: id, ok: true, txNo: h.txNo || '', already: true }); return; }
+    // a reply that never arrived: this very part already approved it, and it is still approved
+    if (err === 'not_pending' && bref && h.deputyBulkRef === bref && h.status === 'pending' && h.deputyValidatedBy === user.id) { again.push(h); results.push({ id: id, ok: true, txNo: h.txNo || '', already: true }); return; }
     if (err) { results.push({ id: id, ok: false, error: err, txNo: h ? h.txNo || '' : '' }); return; }
-    h.status = 'pending'; h.deputyValidatedBy = user.id; h.deputyValidatedAt = at; h.deputyNote = ''; h.deputyBulk = true;
+    h.status = 'pending'; h.deputyValidatedBy = user.id; h.deputyValidatedAt = at; h.deputyNote = ''; h.deputyBulk = true; h.deputyBulkRef = bref || null;
     rows.push(h); results.push({ id: id, ok: true, txNo: h.txNo || '' });
   });
   writeRows_(SHEETS.HANDOFFS, rows);
@@ -2243,7 +2245,8 @@ function actionDeputyValidateMany_(req, user) {
     });
   });
   var okN = results.filter(function (x) { return x.ok; }).length;
-  return { ok: true, approved: okN, failed: results.length - okN, results: results, handoffs: rows };
+  // WhatsApp for every approved one, those of a part asked again included (mail went the first time)
+  return { ok: true, approved: okN, failed: results.length - okN, results: results, handoffs: rows.concat(again) };
 }
 function actionDeputyReturnHandoff_(req, user) {
   requireDeputy_(user);

@@ -2997,6 +2997,17 @@ var cyN = (cyNext.rows || []).filter(function (r) { return r.stockItemId === cyI
 check(cyN.opening === 1593, 'the next day opens with the day\'s ending (got ' + cyN.opening + ')');
 check(call({ action: 'importInventoryDay', token: noorTok, locationId: dpLoc.id, date: '2026-09-29', ref: 'tr', moves: [{ productId: cyIron.id, state: 'full', kind: 'transfer_out', qty: 10 }, { productId: cyIron.id, state: 'empty', kind: 'transfer_in', qty: 2 }] }).ok, 'transfers out of and into the branch are movements too');
 check(call({ action: 'adminSaveEntity', token: adminTok, kind: 'product', id: cyIron.id, data: { cylinder: false } }).error === 'has_stock', 'a cylinder item with stock cannot stop being one');
+// a branch sheet's purchases go in once, item by item (2026-11-03)
+function cySheet(date, ref, moves, accept) { var p = { action: 'importInventoryDay', token: noorTok, locationId: dpLoc.id, date: date, ref: ref, moves: moves }; if (accept) p.acceptOnFile = true; return call(p); }
+var cyP1 = cySheet('2026-09-30', 'brsheet|2026-09-30', [{ productId: cyReg.id, kind: 'purchase', qty: 3 }]);
+check(cyP1.ok, 'a sheet with the day\'s purchases goes in (' + (cyP1.error || 'ok') + ')');
+var cyP2 = cySheet('2026-09-30', 'another sheet', [{ productId: cyIron.id, state: 'full', kind: 'transfer_in', qty: 1 }, { productId: cyReg.id, kind: 'purchase', qty: 5 }]);
+check(cyP2.error === 'purchase_exists' && cyP2.items.length === 1 && cyP2.items[0].index === 1 && cyP2.items[0].onFile === 3 && cyP2.items[0].qty === 5, 'a second sheet names the item already bought that day, with both figures');
+var cyP3 = cySheet('2026-09-30', 'another sheet', [{ productId: cyIron.id, state: 'full', kind: 'transfer_in', qty: 1 }, { productId: cyReg.id, kind: 'purchase', qty: 2 }], true);
+check(cyP3.ok && cyP3.moves.length === 2, 'the difference goes in once the person has seen it (' + (cyP3.error || 'ok') + ')');
+check(cySheet('2026-09-30', 'Branch sheet 2026-09-30', [{ productId: cyIron.id, state: 'full', kind: 'transfer_in', qty: 1 }]).error === 'already_imported', 'the old language-bound reference of the same day counts as the same sheet');
+var cyPop = call({ action: 'addInventoryMove', token: noorTok, locationId: dpLoc.id, productId: cyReg.id, kind: 'purchase', qty: 3, date: '2026-09-30', supplier: 'Khazeen', clientRef: 'popup-1' });
+check(cyPop.error === 'purchase_sheet', 'the purchases step does not add what the sheet already brought (' + (cyPop.error || 'ok') + ')');
 
 console.log('--- every way a sale is entered reaches the stock, once (2026-10-05) ---');
 var scLoc = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: 'Riyadh', name: 'Scenario Branch', clusterId: cluster.entity.id, collectorUserId: musa.id } }).entity;
@@ -7842,7 +7853,7 @@ console.log('--- several requests approved in one click (2026-10-31) ---');
   check(call({ action: 'deputyValidateMany', token: tok('mvFin'), ids: ['mvA'] }).error === 'forbidden', 'finance does not approve requests');
   check(call({ action: 'deputyValidateMany', token: tok('mvCol'), ids: ['mvA'] }).error === 'forbidden', 'nor a collector');
   check(call({ action: 'deputyValidateMany', token: dep, ids: [] }).error === 'invalid_input', 'nothing selected, nothing done');
-  var r = call({ action: 'deputyValidateMany', token: ops, ids: ['mvA', 'mvA', 'mvParty', 'mvDone', 'gone'] });
+  var r = call({ action: 'deputyValidateMany', token: ops, ids: ['mvA', 'mvA', 'mvParty', 'mvDone', 'gone'], ref: 'part-1' });
   check(r.ok && r.approved === 1 && r.failed === 3 && H('mvA').status === 'pending' && H('mvA').deputyValidatedBy === 'mvOps', 'what can be approved is, once (' + JSON.stringify([r.approved, r.failed]) + ')');
   check(H('mvParty').status === 'pending_deputy' && r.results.filter(function (x) { return x.id === 'mvParty'; })[0].error === 'conflict_of_interest', 'nobody approves their own request');
   check(H('mvDone').deputyValidatedBy === undefined && r.results.filter(function (x) { return x.id === 'mvDone'; })[0].error === 'not_pending', 'one already acted on stays as it is');
@@ -7851,8 +7862,11 @@ console.log('--- several requests approved in one click (2026-10-31) ---');
   check(d2.ok && d2.approved === 2 && H('mvB').status === 'pending', 'the deputy approves too');
   check(ctx.readSheet(SHEETS.AUDIT).filter(function (a) { return a.action === 'deputy_validate_handoff'; }).length === 3, 'each approval is in the audit trail');
   check(r.results.filter(function (x) { return x.id === 'gone'; })[0].error === 'not_found', 'an unknown request says so');
-  var again = call({ action: 'deputyValidateMany', token: ops, ids: ['mvA'] });
-  check(again.ok && again.approved === 1 && again.results[0].already === true, 'sending again after a lost reply counts what was already approved');
+  var again = call({ action: 'deputyValidateMany', token: ops, ids: ['mvA'], ref: 'part-1' });
+  check(again.ok && again.approved === 1 && again.results[0].already === true && again.wa !== undefined, 'the same part asked again after a lost reply counts what it approved');
+  check(call({ action: 'deputyValidateMany', token: ops, ids: ['mvA'], ref: 'part-2' }).results[0].error === 'not_pending', 'another part, or a later look, says it is no longer waiting');
+  var mvAh = H('mvA'); mvAh.status = 'rejected'; ctx.writeRow(SHEETS.HANDOFFS, mvAh);
+  check(call({ action: 'deputyValidateMany', token: ops, ids: ['mvA'], ref: 'part-1' }).results[0].ok === false, 'a request rejected since is not reported as approved');
   check(ctx.readSheet(SHEETS.AUDIT).filter(function (a) { return a.action === 'deputy_validate_handoff'; }).length === 3, 'and is not approved a second time');
   check(Array.isArray(r.wa), 'the answer carries the WhatsApp messages for the screen');
   ['mvTo', 'mvBy'].forEach(function (id, i) { req(id); var h = H(id); if (i) h.createdBy = 'mvDep'; else h.toUserId = 'mvDep'; ctx.writeRow(SHEETS.HANDOFFS, h); });

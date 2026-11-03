@@ -389,6 +389,14 @@ function actionAddInventoryMove_(req, user) {
     if (cRef) { var sent = readSheet(SHEETS.INV_MOVES).filter(function (m) { return m.clientRef === cRef && !m.voided; })[0]; if (sent) return { ok: true, move: sent, already: true }; }
     if (c.move.kind === 'opening' && invOpenings_()[invOpeningKey_(lf.loc.id, c.itemId, c.move.state)]) return { ok: false, error: 'opening_exists' };
     if (hasOwn_(INV_COUNT_, c.move.kind)) return { ok: false, error: 'use_stock_count' };
+    // the purchases step (it sends clientRef) after a branch sheet brought this item's purchases that day
+    if (cRef && c.move.kind === 'purchase') {
+      var scP = invStockCtx_(), fromSheet = scP.moves.filter(function (m) {
+        if (m.voided || m.locationId !== lf.loc.id || m.date !== date || !m.importRef || m.kind !== 'purchase') return false;
+        var tg = scP.moveTarget(m); return !!tg && tg.item.id === c.itemId && (m.state || '') === (c.move.state || '');
+      });
+      if (fromSheet.length) return { ok: false, error: 'purchase_sheet', onFile: fromSheet.reduce(function (s, m) { return s + Number(m.qty || 0); }, 0) };
+    }
     if (invControls_()) {
       // the invoice number may come later (the owner, 2026-10-31); the supplier is named
       if (c.move.kind === 'purchase' && !c.move.supplier) return { ok: false, error: 'purchase_needs_reference' };
@@ -537,15 +545,30 @@ function actionImportInventoryDay_(req, user) {
   try {
     freshenExec_();
     var dayMoves = readSheet(SHEETS.INV_MOVES).filter(function (m) { return !m.voided && m.locationId === lf.loc.id; });
-    if (dayMoves.some(function (m) { return m.importRef === ref; })) return { ok: false, error: 'already_imported' };
+    // the branch sheet's reference no longer follows the screen's language; the old ones still count
+    var refs = [ref], BR_REF_ = ['ورقة الفرع', 'Branch sheet', 'برانچ شیٹ'], refDay = ref.indexOf('brsheet|') === 0 ? ref.slice(8) : '';
+    BR_REF_.forEach(function (w) { if (ref.indexOf(w + ' ') === 0) refDay = ref.slice(w.length + 1); });
+    if (refDay) { refs.push('brsheet|' + refDay); BR_REF_.forEach(function (w) { refs.push(w + ' ' + refDay); }); }
+    if (dayMoves.some(function (m) { return refs.indexOf(m.importRef) >= 0; })) return { ok: false, error: 'already_imported' };
     var open = invOpenings_();
     for (var j = 0; j < checked.length; j++) {
       if (checked[j].move.kind === 'opening' && open[invOpeningKey_(lf.loc.id, checked[j].itemId, checked[j].move.state)]) return { ok: false, error: 'opening_exists', index: j };
     }
-    // the day's purchases already entered (the purchases step, the stock screen): the sheet's own
-    // would count them twice, so the screen offers to save the sheet without them (2026-11-03)
-    if (dayMoves.some(function (m) { return m.date === date && (m.kind === 'purchase' || m.kind === 'refill_in'); })) {
-      for (var pj = 0; pj < checked.length; pj++) if (checked[pj].move.kind === 'purchase') return { ok: false, error: 'purchase_exists', index: pj };
+    // an item whose purchases that day are already on file (the purchases step, the stock screen):
+    // the sheet's own would count them twice. Item by item, with both figures, so the screen can
+    // save the difference or leave the item out; the other items are not held back (2026-11-03)
+    if (!req.acceptOnFile) {
+      var onFile = Object.create(null), hits = [];
+      dayMoves.forEach(function (m) {
+        if (m.date !== date || (m.kind !== 'purchase' && m.kind !== 'refill_in')) return;
+        var tg = sc.moveTarget(m); if (!tg) return;
+        var k = tg.item.id + '|' + (m.state || ''); onFile[k] = (onFile[k] || 0) + Number(m.qty || 0);
+      });
+      checked.forEach(function (x, i) {
+        var k = x.itemId + '|' + (x.move.state || '');
+        if (x.move.kind === 'purchase' && onFile[k] > 0.0005) hits.push({ index: i, onFile: Math.round(onFile[k] * 1000) / 1000, qty: x.move.qty });
+      });
+      if (hits.length) return { ok: false, error: 'purchase_exists', items: hits };
     }
     // the day's lines together: filled back with nothing at the plant or a return no customer holds
     // are refused; the day's own filled and empties are the panel's, with the file's own sales
@@ -598,7 +621,9 @@ function actionReplaceOpenings_(req, user) {
     var old = sc.moves.filter(function (m) { return !m.voided && m.kind === 'opening'; });
     // an opening counts from the start of its day, so that day's moves stay after it
     var after = sc.moves.filter(function (m) { return !m.voided && m.kind !== 'opening' && String(m.date) >= date; });
-    var before = sc.moves.filter(function (m) { return !m.voided && m.kind !== 'opening' && String(m.date) < date; }).length;
+    var oldOpen = Object.create(null);
+    old.forEach(function (m) { if (!oldOpen[m.locationId] || String(m.date) < oldOpen[m.locationId]) oldOpen[m.locationId] = String(m.date); });
+    var before = sc.moves.filter(function (m) { return !m.voided && m.kind !== 'opening' && !hasOwn_(INV_CAR_, m.kind) && String(m.date) < date && oldOpen[m.locationId] && String(m.date) >= oldOpen[m.locationId]; }).length;
     // what loses its opening without a new one, and cylinders still at the plant, which stop a plain purchase
     var missing = Object.create(null), plant = Object.create(null);
     old.forEach(function (m) {
