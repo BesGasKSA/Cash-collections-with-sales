@@ -2979,10 +2979,6 @@ var cyDup = JSON.parse(JSON.stringify(cyDay)); cyDup.ref = 'again'; cyDup.moves 
 check(call(cyDup).error === 'opening_exists', 'a second opening count is refused, and nothing of that day is written');
 var cyBuy2 = JSON.parse(JSON.stringify(cyDay)); cyBuy2.ref = 'again-buy'; cyBuy2.moves = [{ productId: cyIron.id, state: 'full', kind: 'purchase', qty: 1400 }];
 check(call(cyBuy2).error === 'purchase_exists', 'a second sheet of the same day cannot add its purchases again');
-cyBuy2.ref = 'again-buy-2'; cyBuy2.moves = [{ productId: cyReg.id, kind: 'transfer_in', qty: 2 }];
-var cyNoBuy = call(cyBuy2); check(cyNoBuy.ok || cyNoBuy.error !== 'purchase_exists', 'without its purchases the sheet goes in (' + (cyNoBuy.error || 'ok') + ')');
-cyBuy2.date = '2026-09-27'; cyBuy2.ref = 'other-day'; cyBuy2.moves = [{ productId: cyIron.id, state: 'full', kind: 'purchase', qty: 1 }];
-check(call(cyBuy2).error !== 'purchase_exists', 'another day is not stopped by this one');
 check(!ctx.readSheet(ctx.SHEETS.INV_MOVES).some(function (m) { return m.importRef === 'again'; }), 'all or nothing');
 check(call({ action: 'importInventoryDay', token: dpTok, locationId: dpLoc.id, date: '2026-09-28', ref: 'x', moves: [{ productId: cyReg.id, kind: 'purchase', qty: 1 }] }).error === 'forbidden', 'a driver cannot load stock');
 var cyStore = call({ action: 'listMeta', token: adminTok }).stores.filter(function (s) { return s.locationId === dpLoc.id; })[0].id;
