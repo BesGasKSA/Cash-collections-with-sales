@@ -3011,6 +3011,9 @@ check(cySheet('2026-09-30', 'Branch sheet 2026-09-30', [{ productId: cyIron.id, 
 var cyPop = call({ action: 'addInventoryMove', token: noorTok, locationId: dpLoc.id, productId: cyReg.id, kind: 'purchase', qty: 3, date: '2026-09-30', supplier: 'Khazeen', clientRef: 'popup-1' });
 check(cyPop.error === 'purchase_sheet', 'the purchases step does not add what the sheet already brought (' + (cyPop.error || 'ok') + ')');
 check(cySheet('2026-09-30', 'a fourth sheet', [{ productId: cyReg.id, kind: 'purchase', qty: 1 }], (function () { var o = {}; o[cyP2.items[0].key] = 'abc'; return o; })()).error === 'purchase_exists', 'a figure that is not a number counts as not seen');
+// a figure decided on that moved, even when no line of that item is sent any more
+var cyKey = cyP2.items[0].key, cyMoved = cySheet('2026-09-30', 'a fifth sheet', [{ productId: cyIron.id, state: 'full', kind: 'transfer_in', qty: 1 }], (function () { var o = {}; o[cyKey] = 99; return o; })());
+check(cyMoved.error === 'purchase_exists' && cyMoved.items[0].key === cyKey && cyMoved.items[0].index === -1 && cyMoved.items[0].onFile === 5, 'an item left out whose figure moved since is asked again, by its key (' + JSON.stringify(cyMoved.items || cyMoved.error) + ')');
 var cyFullDay = cySheet('2026-10-01', 'brsheet|2026-10-01', [{ productId: cyIron.id, state: 'full', kind: 'purchase', qty: 1 }]);
 if (cyFullDay.ok) {
   check(call({ action: 'addInventoryMove', token: noorTok, locationId: dpLoc.id, productId: cyIron.id, state: 'full', kind: 'refill_in', qty: 1, date: '2026-10-01', clientRef: 'popup-2' }).error === 'purchase_sheet', 'a plant receipt of the same cylinders after the sheet is refused too');

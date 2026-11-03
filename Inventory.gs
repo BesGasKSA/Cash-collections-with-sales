@@ -566,11 +566,19 @@ function actionImportInventoryDay_(req, user) {
       var tg = sc.moveTarget(m); if (!tg) return;
       var k = tg.item.id + '|' + (tg.state || ''); onFile[k] = (onFile[k] || 0) + Number(m.qty || 0);
     });
+    var seenKeys = seen ? safeOwnKeys_(seen).filter(function (k) { return typeof seen[k] === 'number' && isFinite(seen[k]); }) : [];
+    function nowOf(k) { return Math.round((onFile[k] || 0) * 1000) / 1000; }
+    // an item not decided yet that has purchases on file
     checked.forEach(function (x, i) {
-      var k = x.itemId + '|' + (x.move.state || ''), now = Math.round((onFile[k] || 0) * 1000) / 1000;
-      if (x.move.kind !== 'purchase' || now <= 0.0005) return;
-      var saw = seen && hasOwn_(seen, k) ? Number(seen[k]) : null;
-      if (saw === null || !isFinite(saw) || Math.abs(saw - now) > 0.0005) hits.push({ index: i, key: k, onFile: now, qty: x.move.qty });
+      var k = x.itemId + '|' + (x.move.state || '');
+      if (x.move.kind !== 'purchase' || seenKeys.indexOf(k) >= 0 || nowOf(k) <= 0.0005) return;
+      hits.push({ index: i, key: k, onFile: nowOf(k), qty: x.move.qty });
+    });
+    // an item decided on whose figure moved since, even to nothing, even when none of its lines is sent now
+    seenKeys.forEach(function (k) {
+      if (Math.abs(seen[k] - nowOf(k)) <= 0.0005) return;
+      var at = -1; checked.forEach(function (x, i) { if (at < 0 && x.move.kind === 'purchase' && x.itemId + '|' + (x.move.state || '') === k) at = i; });
+      hits.push({ index: at, key: k, onFile: nowOf(k) });
     });
     if (hits.length) return { ok: false, error: 'purchase_exists', items: hits };
     // the day's lines together: filled back with nothing at the plant or a return no customer holds

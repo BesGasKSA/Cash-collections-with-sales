@@ -19542,37 +19542,41 @@ function renderAreaBulk(body){
           if (!l.hasOpen && l.x.opening) { moves.push(mv({ state: l.st || null, kind: 'opening', qty: l.x.opening, note: l.x.header })); names.push(l.x.header); }
           ['purchase', 'transfer_out', 'transfer_in'].forEach(function(kd){ if (l.x[kd]) { moves.push(mv({ state: l.st || null, kind: kd, qty: l.x[kd], note: l.x.header })); names.push(l.x.header + (l.st ? ' (' + t('inv_st_' + l.st) + ')' : '')); } });
         });
-        // list[i] goes with names[i]; accept: what was on file when the person chose what to do with it
-        // og[i] is the sheet's own figure for list[i]; seen carries every figure already settled
-        function send(list, nm, og, accept){
-          var mb = qs('.brStMsg', holder);
-          if (!list.length) { mb.innerHTML = '<div class="msg ok">'+esc(t('br_stNothing'))+'</div>'; sb.textContent = t('br_stDone'); sb.disabled = true; brPurchPending = false; renderAreaBulkPreview(); return; }
+        // every round is built again from the sheet's own lines: the decision per item (the difference or
+        // left out) and the figure on file the person saw. keyAt: the server's item key of a sheet line
+        var dec = {}, seen = {}, keyAt = {}, keyName = {};
+        function build(){
+          var left = {}, list = [], idx = [];
+          Object.keys(seen).forEach(function(k){ left[k] = seen[k]; });
+          moves.forEach(function(m, i){
+            var k = keyAt[i], dd = k ? dec[k] : null, q = Number(m.qty);
+            if (dd === 'skip') return;
+            if (dd === 'diff') { var take = Math.min(q, left[k] || 0); left[k] = (left[k] || 0) - take; q = Math.round((q - take) * 1000) / 1000; }
+            if (q > 0.0005) { list.push(q === Number(m.qty) ? m : Object.assign({}, m, { qty: q })); idx.push(i); }
+          });
+          return { list: list, idx: idx };
+        }
+        function sheetQty(k){ var s = 0; moves.forEach(function(m, i){ if (keyAt[i] === k) s += Number(m.qty); }); return Math.round(s * 1000) / 1000; }
+        function send(){
+          var mb = qs('.brStMsg', holder), b = build();
+          if (!b.list.length) { mb.innerHTML = '<div class="msg ok">'+esc(t('br_stNothing'))+'</div>'; sb.textContent = t('br_stDone'); sb.disabled = true; brPurchPending = false; renderAreaBulkPreview(); return; }
           sb.disabled = true;
-          var q = { locationId: locId, date: dateOf(), ref: 'brsheet|' + dateOf(), moves: list };
-          if (accept) q.seenOnFile = accept;
+          var q = { locationId: locId, date: dateOf(), ref: 'brsheet|' + dateOf(), moves: b.list };
+          if (Object.keys(seen).length) q.seenOnFile = seen;
           api('importInventoryDay', q).then(function(res){
             if (!res.ok && res.error === 'purchase_exists' && Array.isArray(res.items)) {
-              var hit = {}, seen = Object.assign({}, accept || {}); res.items.forEach(function(x){ hit[x.index] = x; seen[x.key] = x.onFile; });
-              mb.innerHTML = '<div class="msg warn">'+esc(errMsg_(res))+'<ul class="ar-out">' + res.items.map(function(x){ return '<li>'+esc(nm[x.index] || '')+': '+esc(t('br_stOnFile').replace('{f}', invQty_(x.onFile)).replace('{s}', invQty_(og[x.index])))+'</li>'; }).join('') + '</ul></div>' +
+              var keys = [];
+              res.items.forEach(function(x){
+                if (x.index >= 0 && b.idx[x.index] != null) { keyAt[b.idx[x.index]] = x.key; keyName[x.key] = names[b.idx[x.index]]; }
+                if (keys.indexOf(x.key) < 0) keys.push(x.key);
+              });
+              var onNow = {}; res.items.forEach(function(x){ onNow[x.key] = x.onFile; });
+              mb.innerHTML = '<div class="msg warn">'+esc(errMsg_(res))+'<ul class="ar-out">' + keys.map(function(k){ return '<li>'+esc(keyName[k] || '')+': '+esc(t('br_stOnFile').replace('{f}', invQty_(onNow[k])).replace('{s}', invQty_(sheetQty(k))))+'</li>'; }).join('') + '</ul></div>' +
                 '<button type="button" class="btn brStDiff">'+esc(t('br_stDiff'))+'</button> <button type="button" class="btn secondary brStSkip">'+esc(t('br_stSkip'))+'</button>';
               sb.disabled = false;
-              qs('.brStDiff', mb).addEventListener('click', function(){
-                // what is on file comes off the sheet's own figure, once per item even when two lines name it
-                var l2 = [], n2 = [], o2 = [], left = {};
-                res.items.forEach(function(x){ left[x.key] = x.onFile; });
-                list.forEach(function(m, i){
-                  var x = hit[i], c = m;
-                  if (x) { var take = Math.min(Number(og[i]), left[x.key]); left[x.key] -= take; c = Object.assign({}, m, { qty: Math.round((Number(og[i]) - take) * 1000) / 1000 }); }
-                  if (Number(c.qty) > 0.0005) { l2.push(c); n2.push(nm[i]); o2.push(og[i]); }
-                });
-                send(l2, n2, o2, seen);
-              });
-              qs('.brStSkip', mb).addEventListener('click', function(){
-                var l2 = [], n2 = [];
-                var o2 = [];
-                list.forEach(function(m, i){ if (!hit[i]) { l2.push(m); n2.push(nm[i]); o2.push(og[i]); } });
-                send(l2, n2, o2, seen);
-              });
+              function decide(how){ keys.forEach(function(k){ dec[k] = how; seen[k] = onNow[k]; }); send(); }
+              qs('.brStDiff', mb).addEventListener('click', function(){ decide('diff'); });
+              qs('.brStSkip', mb).addEventListener('click', function(){ decide('skip'); });
               return;
             }
             if (!res.ok) { sb.disabled = false; mb.innerHTML = '<div class="msg err">'+esc(errMsg_(res))+'</div>'; return; }
@@ -19583,7 +19587,7 @@ function renderAreaBulk(body){
             renderAreaBulkPreview();
           });
         }
-        send(moves, names, moves.map(function(m){ return m.qty; }), false);
+        send();
       });
       var fb = qs('.brStSetup', holder);
       if (fb) fb.addEventListener('click', function(){
