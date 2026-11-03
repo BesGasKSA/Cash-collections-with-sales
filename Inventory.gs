@@ -525,7 +525,8 @@ function actionImportInventoryDay_(req, user) {
   if (lf.error) return { ok: false, error: lf.error };
   var date = String(req.date || ''), ref = String(req.ref || '').trim().slice(0, 120);
   var list = Array.isArray(req.moves) ? req.moves : null;
-  if (!ref || !list || !list.length || list.length > 200) return { ok: false, error: 'invalid_input' };
+  var checkOnly = !!list && !list.length && !!req.seenOnFile;
+  if (!ref || !list || (!list.length && !checkOnly) || list.length > 200) return { ok: false, error: 'invalid_input' };
   var sc = invStockCtx_();
   var checked = [], seen = {};
   for (var i = 0; i < list.length; i++) {
@@ -566,7 +567,7 @@ function actionImportInventoryDay_(req, user) {
       var tg = sc.moveTarget(m); if (!tg) return;
       var k = tg.item.id + '|' + (tg.state || ''); onFile[k] = (onFile[k] || 0) + Number(m.qty || 0);
     });
-    var seenKeys = seen ? safeOwnKeys_(seen).filter(function (k) { return typeof seen[k] === 'number' && isFinite(seen[k]); }) : [];
+    var seenKeys = seen ? Object.keys(seen).filter(function (k) { return hasOwn_(seen, k) && typeof seen[k] === 'number' && isFinite(seen[k]); }) : [];
     function nowOf(k) { return Math.round((onFile[k] || 0) * 1000) / 1000; }
     // an item not decided yet that has purchases on file
     checked.forEach(function (x, i) {
@@ -581,6 +582,8 @@ function actionImportInventoryDay_(req, user) {
       hits.push({ index: at, key: k, onFile: nowOf(k) });
     });
     if (hits.length) return { ok: false, error: 'purchase_exists', items: hits };
+    // nothing left to save, and every figure decided on still stands
+    if (checkOnly) return { ok: true, moves: [] };
     // the day's lines together: filled back with nothing at the plant or a return no customer holds
     // are refused; the day's own filled and empties are the panel's, with the file's own sales
     var iRows = checked.map(function (x) { return invMoveRow_(lf.loc.id, x.move, date, user, { importRef: ref }); });

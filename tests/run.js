@@ -3011,6 +3011,10 @@ check(cySheet('2026-09-30', 'Branch sheet 2026-09-30', [{ productId: cyIron.id, 
 var cyPop = call({ action: 'addInventoryMove', token: noorTok, locationId: dpLoc.id, productId: cyReg.id, kind: 'purchase', qty: 3, date: '2026-09-30', supplier: 'Khazeen', clientRef: 'popup-1' });
 check(cyPop.error === 'purchase_sheet', 'the purchases step does not add what the sheet already brought (' + (cyPop.error || 'ok') + ')');
 check(cySheet('2026-09-30', 'a fourth sheet', [{ productId: cyReg.id, kind: 'purchase', qty: 1 }], (function () { var o = {}; o[cyP2.items[0].key] = 'abc'; return o; })()).error === 'purchase_exists', 'a figure that is not a number counts as not seen');
+// nothing left to send after the difference: the figures decided on are still checked, nothing written
+var cyEmpty = cySheet('2026-09-30', 'a sixth sheet', [], (function () { var o = {}; o[cyP2.items[0].key] = 5; return o; })()); check(cyEmpty.ok === true, 'an empty round whose figures stand writes nothing and says so (' + JSON.stringify(cyEmpty) + ')');
+check(cySheet('2026-09-30', 'a sixth sheet', [], (function () { var o = {}; o[cyP2.items[0].key] = 3; return o; })()).error === 'purchase_exists', 'an empty round whose figure moved is asked again');
+check(cySheet('2026-09-30', 'a sixth sheet', []).error === 'invalid_input', 'an empty sheet with nothing decided is still refused');
 // a figure decided on that moved, even when no line of that item is sent any more
 var cyKey = cyP2.items[0].key, cyMoved = cySheet('2026-09-30', 'a fifth sheet', [{ productId: cyIron.id, state: 'full', kind: 'transfer_in', qty: 1 }], (function () { var o = {}; o[cyKey] = 99; return o; })());
 check(cyMoved.error === 'purchase_exists' && cyMoved.items[0].key === cyKey && cyMoved.items[0].index === -1 && cyMoved.items[0].onFile === 5, 'an item left out whose figure moved since is asked again, by its key (' + JSON.stringify(cyMoved.items || cyMoved.error) + ')');

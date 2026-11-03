@@ -19561,7 +19561,8 @@ function renderAreaBulk(body){
         function sheetQty(k){ var s = 0; moves.forEach(function(m, i){ if (keyAt[i] === k) s += Number(m.qty); }); return Math.round(s * 1000) / 1000; }
         function send(){
           var mb = qs('.brStMsg', holder), b = build();
-          if (!b.list.length) { mb.innerHTML = '<div class="msg ok">'+esc(t('br_stNothing'))+'</div>'; sb.textContent = t('br_stDone'); sb.disabled = true; brPurchPending = false; renderAreaBulkPreview(); return; }
+          // nothing left to send: the server still checks the figures decided on, and writes nothing
+          if (!b.list.length && !Object.keys(seen).length) { mb.innerHTML = '<div class="msg ok">'+esc(t('br_stNothing'))+'</div>'; sb.textContent = t('br_stDone'); sb.disabled = true; brPurchPending = false; renderAreaBulkPreview(); return; }
           sb.disabled = true;
           var q = { locationId: locId, date: dateOf(), ref: 'brsheet|' + dateOf(), moves: b.list };
           if (Object.keys(seen).length) q.seenOnFile = seen;
@@ -19582,8 +19583,8 @@ function renderAreaBulk(body){
               return;
             }
             if (!res.ok) { sb.disabled = false; mb.innerHTML = '<div class="msg err">'+esc(errMsg_(res))+'</div>'; return; }
-            mb.innerHTML = '<div class="msg ok">'+esc(t('br_stSaved').replace('{n}', res.moves.length))+'</div>';
-            sb.textContent = t('br_stDone');
+            mb.innerHTML = '<div class="msg ok">'+esc(res.moves.length ? t('br_stSaved').replace('{n}', res.moves.length) : t('br_stNothing'))+'</div>';
+            sb.textContent = t('br_stDone'); sb.disabled = true;
             // the day's purchases are on file now: the days still asked for are asked again
             brPurchPending = false;
             renderAreaBulkPreview();
