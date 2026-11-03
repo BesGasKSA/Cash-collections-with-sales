@@ -14324,7 +14324,7 @@ function dashFilterBar_(onChange){
     var td = localToday_(), x = td.split('-').map(Number), d = new Date(x[0], x[1] - 1, x[2]);
     if (p === 'today') return [td, td];
     if (p === 'yesterday') { d.setDate(d.getDate() - 1); return [ymd(d), ymd(d)]; }
-    if (p === 'week') { var w = new Date(d); w.setDate(d.getDate() - ((d.getDay() + 1) % 7)); return [ymd(w), td]; }
+    if (p === 'week') { var w = new Date(d); w.setDate(d.getDate() - d.getDay()); return [ymd(w), td]; }
     if (p === 'month') return [td.slice(0, 8) + '01', td];
     if (p === 'lastMonth') { var e = new Date(x[0], x[1] - 1, 0); return [ymd(new Date(e.getFullYear(), e.getMonth(), 1)), ymd(e)]; }
     return ['', ''];
@@ -24208,7 +24208,7 @@ function renderReport(body){
     var td = localToday_(), parts = td.split('-').map(Number), d = new Date(parts[0], parts[1] - 1, parts[2]);
     if (p === 'today') return [td, td];
     if (p === 'yesterday') { var y = new Date(d); y.setDate(d.getDate() - 1); return [ymdLocal_(y), ymdLocal_(y)]; }
-    if (p === 'week') { var w = new Date(d); w.setDate(d.getDate() - ((d.getDay() + 1) % 7)); return [ymdLocal_(w), td]; } // week starts Saturday
+    if (p === 'week') { var w = new Date(d); w.setDate(d.getDate() - d.getDay()); return [ymdLocal_(w), td]; } // week starts Sunday, as on every other screen
     if (p === 'month') return [td.slice(0, 8) + '01', td];
     if (p === 'lastMonth') { var e = new Date(parts[0], parts[1] - 1, 0); return [ymdLocal_(new Date(e.getFullYear(), e.getMonth(), 1)), ymdLocal_(e)]; }
     return ['', ''];
