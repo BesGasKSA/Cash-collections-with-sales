@@ -3165,7 +3165,7 @@ function actionDashboard_(req, user) {
 // a person is told only about what they may act on. Nothing is written.
 // kind order below is the order the client lists them in.
 var PENDING_KINDS_ = ['confirm_receipt', 'deputy_validate', 'deputy_batch', 'returned_fix', 'batch_rejected',
-  'send_ready', 'car_handover', 'dispute_open', 'second_approval', 'deposit_due', 'purchases_due', 'stock_short', 'risk_high'];
+  'send_ready', 'car_handover', 'dispute_open', 'second_approval', 'deposit_due', 'purchases_due', 'count_approve', 'stock_short', 'risk_high'];
 function actionMyPendingActions_(req, user) {
   var items = [];
   function add(kind, o) { o.kind = kind; items.push(o); }
@@ -3217,6 +3217,11 @@ function actionMyPendingActions_(req, user) {
     if (dueKeys.length) add('purchases_due', { count: dueKeys.length, amount: 0, refId: dueKeys[0], since: purchToday });
   }
 
+  // physical counts waiting for this person's approval (2026-11-04)
+  if (['admin', 'finance', 'cluster_manager', 'operations_manager', 'deputy_operations_manager'].indexOf(user.role) >= 0) {
+    var cw = readSheet(SHEETS.STOCK_COUNTS).filter(function (c) { return hasOwn_(COUNT_STEPS_, c.status) && !countStepError_(c, user); });
+    if (cw.length) add('count_approve', { count: cw.length, amount: 0, refId: cw[0].id, since: cw[0].submittedAt });
+  }
   // cash ready to pass up: confirmed handovers held, and the person's own open entries
   var entries = null;
   function openEntries_() {

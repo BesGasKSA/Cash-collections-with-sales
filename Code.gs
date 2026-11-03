@@ -30,6 +30,7 @@ var SHEETS = {
   // stock movements typed in by hand: opening, purchase, return, damage (Inventory.gs)
   INV_MOVES: 'inventory_moves',
   PURCHASE_DAYS: 'purchase_days',
+  STOCK_COUNTS: 'stock_counts',
   // what a branch holds and counts (LPG Task 1b): cylinder items full and empty,
   // unit items in units; the products (sales items) name the item they move
   STOCK_ITEMS: 'stock_items',
@@ -375,7 +376,7 @@ function writeRows_(name, rows) {
 var TX_PREFIX_ = {
   daily_entries: 'DAY', area_bulk_batches: 'ABU', inventory_moves: 'STM', bank_statement_lines: 'BST',
   risk_items: 'RSK', cost_lines: 'CSL', product_costs: 'PCH', rate_changes: 'RCH', entry_photos: 'PHO',
-  customer_payments: 'CPY', sales_invoices: 'INV'
+  customer_payments: 'CPY', sales_invoices: 'INV', stock_counts: 'CNT'
 };
 var TX_HANDOFF_PREFIX_ = { car_to_location: 'HCB', location_to_cluster: 'HBA', cluster_to_collector: 'HAC', collector_to_collector: 'HCC', deposit: 'DEP' };
 var TX_FLAG_ = 'TX_NUMBERED_V1';
@@ -1025,7 +1026,13 @@ function route_(req) {
     adminSendTestMail: function () { return actionAdminSendTestMail_(req, user); },
     adminSetWhatsApp: function () { return actionAdminSetWhatsApp_(req, user); },
     addInventoryMove: function () { return actionAddInventoryMove_(req, user); },
-    recordStockCount: function () { return actionRecordStockCount_(req, user); },
+    // a count is submitted and posts only once approved (2026-11-04); the old name submits too
+    recordStockCount: function () { return actionStockCountSubmit_(req, user); },
+    stockCountSubmit: function () { return actionStockCountSubmit_(req, user); },
+    stockCountDecide: function () { return actionStockCountDecide_(req, user); },
+    stockCountCancel: function () { return actionStockCountCancel_(req, user); },
+    stockCountPreview: function () { return actionStockCountPreview_(req, user); },
+    listStockCounts: function () { return actionListStockCounts_(req, user); },
     voidInventoryMove: function () { return actionVoidInventoryMove_(req, user); },
     purchaseDayStatus: function () { return actionPurchaseDayStatus_(req, user); },
     purchaseDayConfirm: function () { return actionPurchaseDayConfirm_(req, user); },

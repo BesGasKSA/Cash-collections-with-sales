@@ -23,6 +23,23 @@ var SHEETS = ctx.SHEETS;
 
 // mirrors doPost's own try/catch (route_ itself throws on auth/permission
 // failures — doPost is what turns that into {ok:false,error:...} in prod).
+// a count submitted, then approved by the area manager, operations and finance (2026-11-04)
+function countDone_(r) {
+  if (!r || !r.ok || !r.count) return r;
+  var c = r.count, used = [c.submittedBy], last = r, users = ctx.readSheet(ctx.SHEETS.USERS);
+  function who(role) { var u = users.filter(function (x) { return x.role === role && x.active !== false && used.indexOf(x.id) < 0; })[0]; if (!u) { u = ctx.writeRow(ctx.SHEETS.USERS, { name: 'T ' + role, email: 't-' + role + '-' + used.length + '@bestgas.sa', role: role, active: true }); users.push(u); } return u; }
+  for (var i = 0; i < 3 && /^pending_/.test(c.status); i++) {
+    var u = null;
+    if (c.status === 'pending_area') { var mid = ctx.countAreaManager_(c.locationId); u = mid && used.indexOf(mid) < 0 ? ctx.getById_(ctx.SHEETS.USERS, mid) : who('admin'); }
+    else u = who(c.status === 'pending_ops' ? 'operations_manager' : 'finance');
+    used.push(u.id);
+    if (ctx.resetExecMemo_) ctx.resetExecMemo_();
+    last = ctx.actionStockCountDecide_({ id: c.id, decision: 'approve' }, u);
+    if (!last.ok) return last;
+    c = last.count;
+  }
+  return last;
+}
 function call(payload) {
   try { return ctx.route_(payload); }
   catch (e) { return { ok: false, error: String(e && e.message || e) }; }
@@ -3337,6 +3354,13 @@ check(lvRow(lvRep(), lvIron, 'full').opening === 2051, 'and iron full still open
 check(lvCall({ action: 'adminSaveEntity', token: lvTok, kind: 'product', id: lvExch.id, data: { stockItemId: '' } }).error === 'stock_link_locked', 'nor can its link be cleared');
 check(lvCall({ action: 'adminSaveEntity', token: lvTok, kind: 'product', id: lvExch.id, data: { unitPrice: 38 } }).ok, 'an edit that leaves the link alone is fine');
 check(lvCall({ action: 'adminSaveEntity', token: lvTok, kind: 'product', id: lvExch.id, data: { type: 'services' } }).error === 'stock_link_locked', 'and turning it into a service is refused too');
+// a sales item never linked to stock, with sales, is linked by an admin with a reason (2026-11-04)
+var lvLoose = lvEnt('product', { name: 'Lv Loose Empty', type: 'goods', unitPrice: 50 });
+lv.writeRow(lv.SHEETS.ENTRIES, { date: '2026-09-29', sourceType: 'store', sourceId: 'x', locationId: lvLoc.id, productId: lvLoose.id, qty: 2, cashSales: 100, enteredBy: lvAdminId });
+check(lvCall({ action: 'adminSaveEntity', token: lvTok, kind: 'product', id: lvLoose.id, data: { stockItemId: lvIron, stockEffect: 'sell_empty' } }).error === 'stock_link_locked', 'an unlinked sales item with sales is not linked without a reason');
+var lvRel = lvCall({ action: 'adminSaveEntity', token: lvTok, kind: 'product', id: lvLoose.id, data: { stockItemId: lvIron, stockEffect: 'sell_empty' }, relinkReason: 'its sales should reduce the empties' });
+check(lvRel.ok && lvRel.entity.stockItemId === lvIron && lv.readSheet(lv.SHEETS.AUDIT).some(function (a) { return a.action === 'product_stock_relink'; }), 'an admin links it with a reason, on the audit trail (' + (lvRel.error || 'ok') + ')');
+check(lvCall({ action: 'adminSaveEntity', token: lvTok, kind: 'product', id: lvLoose.id, data: { stockEffect: 'sell_full' }, relinkReason: 'x' }).error === 'stock_link_locked', 'once linked, the link is not changed again this way');
 
 console.log('--- LPG: a confirm that stopped half-way is resumed only with the same items ---');
 var l2 = harness.buildContext();
@@ -5019,7 +5043,7 @@ check(ipMv({ state: 'full', kind: 'waste', qty: 2, date: '2026-09-03', reason: '
 check(ipMv({ state: 'full', kind: 'count_loss', qty: 1, date: '2026-09-03' }).error === 'use_stock_count', 'a count difference comes from a count only');
 check(ipMv({ state: 'empty', kind: 'damage', qty: 1, date: '2026-09-03', reason: 'other', unitCost: 5 }).error === 'invalid_cost', 'a cost goes on stock coming in only');
 // the count: filled 10 + 10 - 2 = 18, counted 17; empty 5 + 2 (gas lost) - 1 = 6, counted 7
-var ipCnt = call({ action: 'recordStockCount', token: adminTok, locationId: ipLoc.id, date: '2026-09-04', lines: [{ stockItemId: ipCyl.id, state: 'full', counted: 17 }, { stockItemId: ipCyl.id, state: 'empty', counted: 7 }, { stockItemId: ipUnit.id, counted: 4 }] });
+var ipCnt = countDone_(call({ action: 'recordStockCount', token: adminTok, locationId: ipLoc.id, date: '2026-09-04', lines: [{ stockItemId: ipCyl.id, state: 'full', counted: 17 }, { stockItemId: ipCyl.id, state: 'empty', counted: 7 }, { stockItemId: ipUnit.id, counted: 4 }] }));
 var ipL = function (st) { return (ipCnt.lines || []).filter(function (l) { return l.stockItemId === ipCyl.id && l.state === st; })[0] || {}; };
 check(ipCnt.ok && ipL('full').system === 18 && ipL('full').diff === -1 && ipL('empty').system === 6 && ipL('empty').diff === 1, 'a count records filled 18 → 17 (−1) and empty 6 → 7 (+1) (' + JSON.stringify(ipCnt.error || ipCnt.lines) + ')');
 check(ipCnt.ok && ipCnt.moves.length === 2, 'only the differences are written; the hoses matched');
@@ -7826,7 +7850,7 @@ console.log('--- the stock guard: no movement takes stock below zero, on its day
   var loc8 = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: 'Riyadh', name: 'Guard Branch 8', clusterId: cluster.entity.id, collectorUserId: musa.id } }).entity;
   mv({ state: 'full', kind: 'opening', qty: 100, date: '2026-10-01' }, loc8); mv({ state: 'empty', kind: 'opening', qty: 0, date: '2026-10-01' }, loc8);
   var pur8 = mv({ state: 'full', kind: 'purchase', qty: 20, newCylinders: true, supplier: 'S', invoiceNo: 'I8', date: '2026-10-02' }, loc8);
-  function count8(n) { return call({ action: 'recordStockCount', token: adminTok, locationId: loc8.id, date: '2026-10-02', lines: [{ stockItemId: it.id, state: 'full', counted: n }] }); }
+  function count8(n) { return countDone_(call({ action: 'recordStockCount', token: adminTok, locationId: loc8.id, date: '2026-10-02', lines: [{ stockItemId: it.id, state: 'full', counted: n }] })); }
   check(err(call({ action: 'recordStockCount', token: adminTok, locationId: loc8.id, date: '2026-10-02', lines: [{ stockItemId: it.id, state: 'full', counted: 120, system: 100 }] })) === 'count_changed', 'a figure changed since the screen opened is not counted over');
   var c8a = count8(120), c8b = count8(130), c8c = count8(130);
   check(c8a.ok && c8a.moves.length === 0, 'a purchase of the day is no gain at the count (' + err(c8a) + ')');
@@ -7895,6 +7919,75 @@ console.log('--- several requests approved in one click (2026-10-31) ---');
   var mails = ctx._debug.mailLog.length; req('mvMail');
   call({ action: 'deputyValidateMany', token: dep, ids: ['mvMail'] });
   check(ctx._debug.mailLog.length === mails + 2, 'the collector and the area manager are told, after the lock (' + (ctx._debug.mailLog.length - mails) + ')');
+})();
+
+console.log('--- physical counts: area manager, operations, finance; only finance posts (2026-11-04) ---');
+(function () {
+  var c2 = harness.buildContext(), S = c2.SHEETS, salt = c2.randomSalt_();
+  function cl(p) { try { return c2.route_(p); } catch (e) { return { ok: false, error: String(e && e.message || e) }; } }
+  function u(id, role) { c2.writeRow(S.USERS, { id: id, name: id, email: id + '@bestgas.sa', role: role, active: true, language: 'en', salt: salt, pass: c2.hashPw_('Bootstrap#1', salt), mustChangePw: false }); }
+  function tk(id) { return cl({ action: 'login', email: id + '@bestgas.sa', password: 'Bootstrap#1' }).token; }
+  ['ckAdm:admin', 'ckBm:store_manager', 'ckAm:cluster_manager', 'ckOps:operations_manager', 'ckDep:deputy_operations_manager', 'ckFin:finance', 'ckFin2:finance', 'ckCol:collector'].forEach(function (x) { var p = x.split(':'); u(p[0], p[1]); });
+  var adm = tk('ckAdm');
+  c2.writeRow(S.CLUSTERS, { id: 'ckArea', name: 'Count Area', clusterManagerUserId: 'ckAm' });
+  c2.writeRow(S.LOCATIONS, { id: 'ckLoc', city: 'Riyadh', name: 'Count Branch', clusterId: 'ckArea', collectorUserId: 'ckCol' });
+  c2.writeRow(S.STORES, { id: 'ckStore', locationId: 'ckLoc', name: 'Count Store', storeManagerUserId: 'ckBm' });
+  var it = cl({ action: 'adminSaveEntity', token: adm, kind: 'stock_item', data: { name: 'Count Unit', kind: 'unit', unitCost: 10 } }).entity;
+  c2.PropertiesService.getScriptProperties().setProperty('STOCK_ITEMS_SETUP', '1');
+  c2.PropertiesService.getScriptProperties().setProperty('TX_NUMBERED_V1', '1');
+  var op = cl({ action: 'addInventoryMove', token: adm, locationId: 'ckLoc', stockItemId: it && it.id, kind: 'opening', qty: 50, date: '2026-10-01' });
+  check(it && op.ok, 'a stock item with an opening of 50 (' + (op.error || 'ok') + ')');
+  function rep() { var r = cl({ action: 'getInventoryReport', token: adm, dateFrom: '2026-10-05', dateTo: '2026-10-05', locationId: 'ckLoc' }); return ((r.rows || []).filter(function (x) { return x.stockItemId === it.id; })[0] || {}).ending; }
+  var bm = tk('ckBm'), am = tk('ckAm'), ops = tk('ckOps'), fin = tk('ckFin'), dep = tk('ckDep');
+  var s = cl({ action: 'stockCountSubmit', token: bm, locationId: 'ckLoc', date: '2026-10-05', lines: [{ stockItemId: it.id, counted: 46 }] });
+  check(s.ok && s.count.status === 'pending_area' && s.count.lines[0].system === 50 && s.count.lines[0].diff === -4 && s.count.lines[0].value < 0 && Math.abs(s.count.lines[0].value - (-4 * s.count.lines[0].unitCost)) < 0.01, 'a count is submitted with what the app holds and the difference (' + (s.error || JSON.stringify(s.count && s.count.lines)) + ')');
+  check(rep() === 50, 'a submitted count changes nothing yet');
+  check(cl({ action: 'stockCountSubmit', token: bm, locationId: 'ckLoc', date: '2026-10-05', lines: [{ stockItemId: it.id, counted: 46 }] }).error === 'count_pending', 'one count of a branch day waits at a time');
+  var id = s.count.id;
+  check(cl({ action: 'stockCountDecide', token: ops, id: id, decision: 'approve' }).error === 'forbidden', 'operations waits for the area manager');
+  check(cl({ action: 'stockCountDecide', token: fin, id: id, decision: 'approve' }).error === 'forbidden', 'finance too');
+  check(cl({ action: 'stockCountDecide', token: am, id: id, decision: 'approve' }).count.status === 'pending_ops', 'the area manager approves');
+  check(cl({ action: 'stockCountDecide', token: fin, id: id, decision: 'approve' }).error === 'forbidden', 'finance still waits for operations');
+  check(cl({ action: 'stockCountDecide', token: ops, id: id, decision: 'approve' }).count.status === 'pending_finance', 'operations approves');
+  check(rep() === 50, 'two approvals still change nothing');
+  // a sale saved since: what finance posts is the counted figure against what the app holds now
+  cl({ action: 'addInventoryMove', token: adm, locationId: 'ckLoc', stockItemId: it.id, kind: 'damage', qty: 1, date: '2026-10-05', reason: 'other' });
+  var pv = cl({ action: 'stockCountPreview', token: fin, id: id });
+  check(pv.ok && pv.lines[0].systemNow === 49 && pv.lines[0].diffNow === -3, 'finance sees the difference as it stands now (' + JSON.stringify(pv.lines || pv.error) + ')');
+  var key = it.id + '|';
+  check(cl({ action: 'stockCountDecide', token: fin, id: id, decision: 'approve', expect: (function () { var o = {}; o[key] = 50; return o; })() }).error === 'count_changed', 'a figure that moved since finance looked is not posted');
+  var post = cl({ action: 'stockCountDecide', token: fin, id: id, decision: 'approve', expect: (function () { var o = {}; o[key] = 49; return o; })() });
+  check(post.ok && post.count.status === 'posted' && post.moves.length === 1 && post.moves[0].kind === 'count_loss' && post.moves[0].qty === 3, 'finance posts: the stock becomes what was counted (' + (post.error || '') + ')');
+  check(rep() === 46, 'the stock on the count day is the counted 46');
+  check(cl({ action: 'stockCountDecide', token: fin, id: id, decision: 'approve' }).error === 'count_not_pending', 'a posted count stays as it is');
+  // a count that matches is kept too, and the area manager's own count goes to operations
+  var m = cl({ action: 'stockCountSubmit', token: am, locationId: 'ckLoc', date: '2026-10-06', lines: [{ stockItemId: it.id, counted: 46 }] });
+  check(m.ok && m.count.status === 'pending_ops' && m.count.history[1].skipped, 'the area manager\'s own count starts at operations');
+  check(cl({ action: 'stockCountDecide', token: am, id: m.count.id, decision: 'approve' }).error === 'conflict_of_interest', 'nobody approves their own count');
+  check(cl({ action: 'stockCountDecide', token: dep, id: m.count.id, decision: 'approve' }).ok, 'the deputy may take the operations step');
+  check(cl({ action: 'stockCountDecide', token: dep, id: m.count.id, decision: 'approve' }).error === 'already_acted', 'and not the finance step of the same count');
+  var m2 = cl({ action: 'stockCountDecide', token: fin, id: m.count.id, decision: 'approve' });
+  check(m2.ok && m2.count.status === 'posted' && m2.moves.length === 0 && m2.count.lines.length === 1, 'a count that matched is posted with its line and no movement');
+  // rejected, cancelled, the purchases first
+  var r = cl({ action: 'stockCountSubmit', token: bm, locationId: 'ckLoc', date: '2026-10-07', lines: [{ stockItemId: it.id, counted: 40 }] });
+  check(cl({ action: 'stockCountDecide', token: am, id: r.count.id, decision: 'reject' }).error === 'reason_required', 'a rejection needs its reason');
+  var rj = cl({ action: 'stockCountDecide', token: am, id: r.count.id, decision: 'reject', reason: 'count again, shelf B missed' });
+  check(rj.ok && rj.count.status === 'rejected' && rep() === 46, 'rejected: nothing posts');
+  var cc = cl({ action: 'stockCountSubmit', token: bm, locationId: 'ckLoc', date: '2026-10-07', lines: [{ stockItemId: it.id, counted: 45 }] });
+  check(cc.ok, 'after a rejection the branch counts again');
+  check(cl({ action: 'stockCountCancel', token: am, id: cc.count.id, reason: 'x' }).error === 'forbidden', 'only the counter takes a count back');
+  check(cl({ action: 'stockCountCancel', token: bm, id: cc.count.id, reason: 'wrong day' }).count.status === 'cancelled', 'the counter takes it back before any approval');
+  c2.PURCHASE_GATE_FROM_ = '2026-10-01';
+  var pf = cl({ action: 'stockCountSubmit', token: bm, locationId: 'ckLoc', date: '2026-10-08', lines: [{ stockItemId: it.id, counted: 45 }] });
+  check(pf.error === 'purchases_first' && pf.missing[0].date === '2026-10-08', 'a count waits for the day\'s purchases, like its sales');
+  c2.PURCHASE_GATE_FROM_ = '2099-01-01';
+  // the report: every count, scoped
+  var ls = cl({ action: 'listStockCounts', token: am, dateFrom: '2026-10-01', dateTo: '2026-10-31' });
+  check(ls.ok && ls.counts.length === 4, 'every count is in the report, posted, rejected and cancelled alike (' + (ls.counts || []).length + ')');
+  check(cl({ action: 'listStockCounts', token: tk('ckCol') }).error === 'forbidden', 'a collector does not read counts');
+  check(c2.readSheet(S.STOCK_COUNTS)[0].txNo && /^CNT-/.test(c2.readSheet(S.STOCK_COUNTS)[0].txNo), 'each count has its CNT number');
+  var pa = cl({ action: 'myPendingActions', token: am });
+  check(pa.ok, 'the to-do list still answers');
 })();
 
 console.log('--- a branch sheet does not bring the day\'s purchases twice (2026-11-03) ---');

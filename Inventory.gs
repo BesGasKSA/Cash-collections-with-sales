@@ -988,10 +988,43 @@ function invAvgCostEx_(p, date, hist, items) {
   return Math.max(0, or(gas, it.id, 'gasCost') + or(body, it.id, 'cylinderCost') - or(bb, back.id, 'cylinderCost'));
 }
 
-// ---------- a physical count (2026-10-07) ----------
-// The branch counts what it holds; the difference from what the app says is
-// written as a count gain or loss on the count's day, with the counted figure.
-function actionRecordStockCount_(req, user) {
+// ---------- a physical count, approved before it posts (2026-10-07, approvals 2026-11-04) ----------
+// The branch counts what it holds. The owner (2026-11-04): a count changes the stock only once it is
+// approved, by the branch's area manager, then the operations manager, then finance, whose approval
+// posts it: the difference from what the app holds is written as a count gain or loss on the count's
+// day, with the counted figure. Every count is kept with every line, matched ones too, and every step.
+// Nobody approves their own count or two steps of one count; admin may stand in at any step.
+var COUNT_STEPS_ = { pending_area: 'area', pending_ops: 'ops', pending_finance: 'finance' };
+var COUNT_ROLES_ = { store_manager: 1, cluster_manager: 1, admin: 1, finance: 1 };
+function countAreaManager_(locId) {
+  var l = getById_(SHEETS.LOCATIONS, locId), c = l && l.clusterId ? getById_(SHEETS.CLUSTERS, l.clusterId) : null;
+  return c && c.clusterManagerUserId ? c.clusterManagerUserId : null;
+}
+// why this person may not act on the count's current step, or null
+function countStepError_(cnt, user) {
+  if (!cnt) return 'not_found';
+  if (!hasOwn_(COUNT_STEPS_, cnt.status)) return 'count_not_pending';
+  if (cnt.submittedBy === user.id) return 'conflict_of_interest';
+  if ((cnt.history || []).some(function (x) { return x.by === user.id && x.step !== 'submitted'; })) return 'already_acted';
+  if (user.role === 'admin') return null;
+  if (cnt.status === 'pending_area') return user.id === countAreaManager_(cnt.locationId) ? null : 'forbidden';
+  if (cnt.status === 'pending_ops') return user.role === 'operations_manager' || user.role === 'deputy_operations_manager' ? null : 'forbidden';
+  return user.role === 'finance' ? null : 'forbidden';
+}
+// what the app holds per stock line at the end of a day, with its unit cost
+function countHave_(locId, date, sc) {
+  var rep = actionInventoryReport_({ dateFrom: date, dateTo: date, locationId: locId }, INV_SYSTEM_READER_, sc);
+  if (!rep.ok) return rep;
+  var have = Object.create(null);
+  rep.rows.forEach(function (r) { if (r.locationId === locId && !r.noOpening) have[r.stockItemId + '|' + (r.state || '')] = { qty: r.ending, cost: r.unitCost != null ? Number(r.unitCost) : null }; });
+  return { ok: true, have: have };
+}
+function countLineOut_(l) {
+  return { stockItemId: l.stockItemId, state: l.state || null, counted: l.counted, system: l.system, diff: l.diff, unitCost: l.unitCost, value: l.value,
+    systemAtPost: l.systemAtPost, diffPosted: l.diffPosted };
+}
+function actionStockCountSubmit_(req, user) {
+  if (!COUNT_ROLES_[user.role]) return { ok: false, error: 'forbidden' };
   var lf = invLocFor_(user, req.locationId);
   if (lf.error) return { ok: false, error: lf.error };
   var date = String(req.date || '');
@@ -1004,12 +1037,16 @@ function actionRecordStockCount_(req, user) {
     freshenExec_();
     var sc = invStockCtx_();
     if (!sc.live) return { ok: false, error: 'setup_required' };
+    // the day's purchases come first, as for its sales: a delivery still to be entered would read as missing stock
+    if (date >= PURCHASE_GATE_FROM_ && !purchaseDayState_(purchaseIndex_(), lf.loc.id, date).done) {
+      var miss = { locationId: lf.loc.id, date: date, name: lf.loc.name || '' };
+      return { ok: false, error: 'purchases_first', locationId: miss.locationId, date: date, name: miss.name, missing: [miss], count: 1 };
+    }
+    if (readSheet(SHEETS.STOCK_COUNTS).some(function (c) { return c.locationId === lf.loc.id && c.date === date && hasOwn_(COUNT_STEPS_, c.status); })) return { ok: false, error: 'count_pending' };
     // what the app holds for that day with everything saved so far: its purchases, sales and any
-    // earlier count (2026-10-30: the closing of the day before counted a day's moves again as a
-    // gain or a loss, and a second count twice). The screen asks for the count once the day is saved.
-    var rep = actionInventoryReport_({ dateFrom: date, dateTo: date, locationId: lf.loc.id }, user, sc);
-    if (!rep.ok) return rep;
-    var have = Object.create(null); rep.rows.forEach(function (r) { if (!r.noOpening) have[r.stockItemId + '|' + (r.state || '')] = r.ending; });
+    // earlier count (2026-10-30: the closing of the day before counted a day's moves again)
+    var hv = countHave_(lf.loc.id, date, sc);
+    if (!hv.ok) return hv;
     var out = [], seen = Object.create(null);
     for (var i = 0; i < lines.length; i++) {
       var l = lines[i] || {}, it = hasOwn_(sc.items, String(l.stockItemId)) ? sc.items[l.stockItemId] : null;
@@ -1019,21 +1056,124 @@ function actionRecordStockCount_(req, user) {
       var key = it.id + '|' + st; if (seen[key]) return { ok: false, error: 'invalid_input', index: i }; seen[key] = true;
       var cv = l.counted, counted = (typeof cv === 'number' && cv === 0) || cv === '0' ? 0 : invQty_(cv);
       if (counted == null) return { ok: false, error: 'invalid_qty', index: i };
-      if (!hasOwn_(have, key)) return { ok: false, error: 'opening_required', index: i, name: it.name };
+      if (!hasOwn_(hv.have, key)) return { ok: false, error: 'opening_required', index: i, name: it.name };
+      var sys = hv.have[key].qty;
       // the screen shows what the app holds; a sale saved since then changes the difference
-      if (l.system != null && Math.abs(Number(l.system) - have[key]) > 0.0005) return { ok: false, error: 'count_changed', index: i, name: it.name };
-      var diff = Math.round((counted - have[key]) * 1000) / 1000;
-      out.push({ it: it, st: st, counted: counted, system: have[key], diff: diff });
+      if (l.system != null && Math.abs(Number(l.system) - sys) > 0.0005) return { ok: false, error: 'count_changed', index: i, name: it.name };
+      var diff = Math.round((counted - sys) * 1000) / 1000, cost = hv.have[key].cost;
+      out.push({ stockItemId: it.id, state: st || null, counted: counted, system: sys, diff: diff, unitCost: cost, value: cost == null ? null : Math.round(diff * cost * 100) / 100 });
     }
-    var countId = Utilities.getUuid(), written = [];
-    out.forEach(function (o) {
-      if (!o.diff) return;
-      var c = { stockItemId: o.it.id, state: o.st || null, kind: o.diff > 0 ? 'count_gain' : 'count_loss', qty: Math.abs(o.diff), newCylinders: false, note: String(req.note || '').slice(0, 300) };
-      written.push(writeRow(SHEETS.INV_MOVES, invMoveRow_(lf.loc.id, c, date, user, { countId: countId, counted: o.counted, systemQty: o.system })));
-    });
-    logAudit_('inventory_count', user.id, lf.loc.id + ' ' + date + ' ' + out.length + ' lines, ' + written.length + ' differences');
-    return { ok: true, countId: countId, lines: out.map(function (o) { return { stockItemId: o.it.id, state: o.st || null, counted: o.counted, system: o.system, diff: o.diff }; }), moves: written };
+    var at = new Date().toISOString(), mgr = countAreaManager_(lf.loc.id);
+    // the area step is passed only when there is nobody else to take it: the area manager counted, or the area has none
+    var skip = !mgr || mgr === user.id;
+    var row = { locationId: lf.loc.id, date: date, note: String(req.note || '').slice(0, 300), lines: out, status: skip ? 'pending_ops' : 'pending_area',
+      submittedBy: user.id, submittedAt: at, createdAt: at, history: [{ step: 'submitted', by: user.id, at: at }] };
+    if (skip) row.history.push({ step: 'area', skipped: true, at: at, reason: mgr ? 'counted_by_area_manager' : 'no_area_manager' });
+    row = writeRow(SHEETS.STOCK_COUNTS, row);
+    logAudit_('stock_count_submit', user.id, row.id + ' ' + lf.loc.id + ' ' + date + ' ' + out.length + ' lines');
+    return { ok: true, count: row, lines: out.map(countLineOut_), moves: [] };
   } finally { try { lock.releaseLock(); } catch (e) {} }
+}
+// the figures finance would post now: what the app holds today for the count's day
+function actionStockCountPreview_(req, user) {
+  var cnt = getById_(SHEETS.STOCK_COUNTS, req.id);
+  if (!cnt) return { ok: false, error: 'not_found' };
+  var scope = invReadBranches_(user);
+  if (scope === false || (scope && scope.indexOf(cnt.locationId) < 0)) return { ok: false, error: 'forbidden' };
+  var hv = countHave_(cnt.locationId, cnt.date, invStockCtx_());
+  if (!hv.ok) return hv;
+  return { ok: true, lines: (cnt.lines || []).map(function (l) {
+    var h = hv.have[l.stockItemId + '|' + (l.state || '')];
+    return { stockItemId: l.stockItemId, state: l.state || null, systemNow: h ? h.qty : null, diffNow: h ? Math.round((l.counted - h.qty) * 1000) / 1000 : null };
+  }) };
+}
+function actionStockCountDecide_(req, user) {
+  var decision = String(req.decision || ''), reason = String(req.reason || '').trim().slice(0, 500);
+  if (decision !== 'approve' && decision !== 'reject') return { ok: false, error: 'invalid_input' };
+  if (decision === 'reject' && !reason) return { ok: false, error: 'reason_required' };
+  var lock = scriptLock_(); lock.waitLock(30000);
+  try {
+    freshenExec_();
+    var cnt = getById_(SHEETS.STOCK_COUNTS, req.id), err = countStepError_(cnt, user);
+    if (err) return { ok: false, error: err };
+    var step = COUNT_STEPS_[cnt.status], at = new Date().toISOString(), hist = cnt.history = cnt.history || [];
+    if (decision === 'reject') {
+      cnt.status = 'rejected'; cnt.rejectedBy = user.id; cnt.rejectedAt = at; cnt.rejectReason = reason;
+      hist.push({ step: step, decision: 'rejected', by: user.id, at: at, reason: reason });
+      writeRow(SHEETS.STOCK_COUNTS, cnt);
+      logAudit_('stock_count_reject', user.id, cnt.id + ' ' + step + ': ' + reason);
+      return { ok: true, count: cnt };
+    }
+    if (step !== 'finance') {
+      cnt.status = step === 'area' ? 'pending_ops' : 'pending_finance';
+      hist.push({ step: step, decision: 'approved', by: user.id, at: at, note: reason || null });
+      writeRow(SHEETS.STOCK_COUNTS, cnt);
+      logAudit_('stock_count_approve', user.id, cnt.id + ' ' + step);
+      return { ok: true, count: cnt };
+    }
+    // finance posts: the counted figure is the truth; the difference is against what the app holds now
+    var sc = invStockCtx_(), hv = countHave_(cnt.locationId, cnt.date, sc);
+    if (!hv.ok) return hv;
+    var expect = req.expect && typeof req.expect === 'object' ? req.expect : null, written = [];
+    for (var i = 0; i < cnt.lines.length; i++) {
+      var l = cnt.lines[i], key = l.stockItemId + '|' + (l.state || ''), h = hv.have[key];
+      if (!h) return { ok: false, error: 'opening_required', index: i };
+      // what the person approving saw must still be what posts
+      if (expect && hasOwn_(expect, key) && Math.abs(Number(expect[key]) - h.qty) > 0.0005) return { ok: false, error: 'count_changed', index: i };
+      l.systemAtPost = h.qty; l.diffPosted = Math.round((l.counted - h.qty) * 1000) / 1000;
+    }
+    cnt.lines.forEach(function (l) {
+      if (!l.diffPosted) return;
+      var c = { stockItemId: l.stockItemId, state: l.state || null, kind: l.diffPosted > 0 ? 'count_gain' : 'count_loss', qty: Math.abs(l.diffPosted), newCylinders: false, note: cnt.note || '' };
+      var mv = writeRow(SHEETS.INV_MOVES, invMoveRow_(cnt.locationId, c, cnt.date, { id: cnt.submittedBy }, { countId: cnt.id, counted: l.counted, systemQty: l.systemAtPost, postedBy: user.id }));
+      l.moveId = mv.id; written.push(mv);
+    });
+    cnt.status = 'posted'; cnt.postedBy = user.id; cnt.postedAt = at;
+    hist.push({ step: 'finance', decision: 'posted', by: user.id, at: at, note: reason || null });
+    writeRow(SHEETS.STOCK_COUNTS, cnt);
+    logAudit_('inventory_count', user.id, cnt.locationId + ' ' + cnt.date + ' ' + cnt.lines.length + ' lines, ' + written.length + ' differences (' + cnt.id + ')');
+    return { ok: true, count: cnt, countId: cnt.id, moves: written, lines: cnt.lines.map(function (l) { return { stockItemId: l.stockItemId, state: l.state || null, counted: l.counted, system: l.systemAtPost, diff: l.diffPosted }; }) };
+  } finally { try { lock.releaseLock(); } catch (e) {} }
+}
+// the person who submitted it takes it back while nobody has approved it yet; admin always may
+function actionStockCountCancel_(req, user) {
+  var reason = String(req.reason || '').trim().slice(0, 500);
+  if (!reason) return { ok: false, error: 'reason_required' };
+  var lock = scriptLock_(); lock.waitLock(30000);
+  try {
+    freshenExec_();
+    var cnt = getById_(SHEETS.STOCK_COUNTS, req.id);
+    if (!cnt) return { ok: false, error: 'not_found' };
+    if (!hasOwn_(COUNT_STEPS_, cnt.status)) return { ok: false, error: 'count_not_pending' };
+    var acted = (cnt.history || []).some(function (x) { return x.decision === 'approved'; });
+    if (user.role !== 'admin' && (cnt.submittedBy !== user.id || acted)) return { ok: false, error: 'forbidden' };
+    var at = new Date().toISOString();
+    cnt.status = 'cancelled'; cnt.cancelledBy = user.id; cnt.cancelledAt = at; cnt.cancelReason = reason;
+    (cnt.history = cnt.history || []).push({ step: 'cancelled', by: user.id, at: at, reason: reason });
+    writeRow(SHEETS.STOCK_COUNTS, cnt);
+    logAudit_('stock_count_cancel', user.id, cnt.id + ': ' + reason);
+    return { ok: true, count: cnt };
+  } finally { try { lock.releaseLock(); } catch (e) {} }
+}
+// every count, with its lines and steps. Counts posted before approvals existed come from their moves.
+function actionListStockCounts_(req, user) {
+  var scope = invReadBranches_(user);
+  if (scope === false) return { ok: false, error: 'forbidden' };
+  var from = req.dateFrom ? String(req.dateFrom) : '', to = req.dateTo ? String(req.dateTo) : '', loc = req.locationId ? String(req.locationId) : '';
+  function keep(c) { return (!scope || scope.indexOf(c.locationId) >= 0) && (!loc || c.locationId === loc) && (!from || c.date >= from) && (!to || c.date <= to); }
+  var counts = readSheet(SHEETS.STOCK_COUNTS), known = Object.create(null), out = [];
+  counts.forEach(function (c) { known[c.id] = 1; if (keep(c)) out.push(c); });
+  var old = Object.create(null);
+  readSheet(SHEETS.INV_MOVES).forEach(function (m) {
+    if (!m.countId || known[m.countId]) return;
+    var c = old[m.countId] || (old[m.countId] = { id: m.countId, legacy: true, status: 'posted', locationId: m.locationId, date: m.date, submittedBy: m.enteredBy, submittedAt: m.createdAt, postedAt: m.createdAt, lines: [], note: m.note || '' });
+    var diff = (m.kind === 'count_gain' ? 1 : -1) * Number(m.qty || 0);
+    c.lines.push({ stockItemId: m.stockItemId || m.productId, state: m.state || null, counted: m.counted, system: m.systemQty, diff: diff, systemAtPost: m.systemQty, diffPosted: m.voided ? 0 : diff, cancelled: !!m.voided });
+  });
+  Object.keys(old).forEach(function (k) { if (keep(old[k])) out.push(old[k]); });
+  out.forEach(function (c) { c.canAct = hasOwn_(COUNT_STEPS_, c.status) && !countStepError_(c, user); c.canCancel = hasOwn_(COUNT_STEPS_, c.status) && (user.role === 'admin' || (c.submittedBy === user.id && !(c.history || []).some(function (x) { return x.decision === 'approved'; }))); });
+  out.sort(function (a, b) { return (hasOwn_(COUNT_STEPS_, b.status) ? 1 : 0) - (hasOwn_(COUNT_STEPS_, a.status) ? 1 : 0) || String(b.date).localeCompare(String(a.date)) || String(b.submittedAt || '').localeCompare(String(a.submittedAt || '')); });
+  return { ok: true, counts: out.slice(0, 1000), total: out.length };
 }
 
 // `extraEntries`: day rows not on file yet, counted in as if they were (the check
