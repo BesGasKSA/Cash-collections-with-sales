@@ -3773,6 +3773,14 @@
     .pl-dc-g i{font-style:normal;font-size:11px;color:var(--muted);}
   }
   .sc-foot{display:flex;gap:10px;justify-content:flex-end;}
+  /* a popup taller than the window scrolls inside, and its buttons stay in view (2026-11-04: a long stock
+     warning pushed Save and Back below a laptop screen, with no way to go on) */
+  .pa-card > .pa-top,.pa-card > .pa-foot{flex:none;}
+  .pa-card > .hp-body{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;}
+  .pa-top{position:relative;}
+  .pa-x{position:absolute;top:10px;inset-inline-end:10px;width:36px;height:36px;border:0;border-radius:50%;background:rgba(255,255,255,.16);color:inherit;font:inherit;font-size:22px;line-height:1;cursor:pointer;display:grid;place-items:center;}
+  .pa-x:hover{background:rgba(255,255,255,.28);}
+  .pa-x:focus-visible{outline:2px solid #fff;outline-offset:2px;}
   .sc-diff{background:color-mix(in srgb,#C27C1E 12%,#fff);}
   .sc-lines{margin-top:12px;max-height:40vh;overflow:auto;}
   /* the collector's home (2026-10-12): big figures, big buttons, one job per card */
@@ -9124,7 +9132,7 @@ function entryServerCheck_(rows, previewNet, go, stop){
     var b = res.breakdown || {}, net = Math.round(Number(b.netCashOwed || 0) * 100) / 100;
     var differs = previewNet != null && Math.abs(net - previewNet) > 0.009;
     var ov = el('<div class="pa-ov sc-ov" role="dialog" aria-modal="true" aria-labelledby="scTitle"><div class="pa-bg"></div><div class="pa-card">' +
-      '<div class="pa-top"><span class="pa-bell">'+icon_('check')+'</span><div><div class="pa-hi">'+esc(t('sc_hi'))+'</div><h2 id="scTitle">'+esc(t('sc_title'))+'</h2></div></div>' +
+      '<div class="pa-top"><span class="pa-bell">'+icon_('check')+'</span><div><div class="pa-hi">'+esc(t('sc_hi'))+'</div><h2 id="scTitle">'+esc(t('sc_title'))+'</h2></div><button type="button" class="pa-x" aria-label="'+esc(t('sc_back'))+'">×</button></div>' +
       '<div class="hp-body"><div class="hp-k">'+esc(t('entry_netOwed'))+'</div><div class="hp-big num">'+money(net)+'<small>'+esc(t('ui_sar'))+'</small></div>' +
         (differs ? '<div class="hp-row sc-diff"><span>'+esc(t('sc_diff').replace('{p}', money(previewNet)))+'</span></div>' : '') +
         nsWarnHtml_(res.stockShorts) +
@@ -9136,6 +9144,7 @@ function entryServerCheck_(rows, previewNet, go, stop){
     document.addEventListener('keydown', onKey);
     qs('.pa-bg', ov).addEventListener('click', function(){ close(); stop(null); });
     qs('.sc-back', ov).addEventListener('click', function(){ close(); stop(null); });
+    qs('.pa-x', ov).addEventListener('click', function(){ close(); stop(null); });
     qs('.sc-go', ov).addEventListener('click', function(){ close(); go(); });
     document.body.appendChild(ov);
     setTimeout(function(){ try { qs('.sc-go', ov).focus({ preventScroll: true }); } catch (e) {} }, 60);
