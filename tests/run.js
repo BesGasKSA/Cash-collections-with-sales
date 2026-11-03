@@ -7988,6 +7988,22 @@ console.log('--- physical counts: area manager, operations, finance; only financ
   check(c2.readSheet(S.STOCK_COUNTS)[0].txNo && /^CNT-/.test(c2.readSheet(S.STOCK_COUNTS)[0].txNo), 'each count has its CNT number');
   var pa = cl({ action: 'myPendingActions', token: am });
   check(pa.ok, 'the to-do list still answers');
+  // the posted count's movement is not undone by the branch or the area
+  var mvId = post.moves[0].id;
+  check(cl({ action: 'voidInventoryMove', token: bm, id: mvId, reason: 'x' }).error === 'forbidden' && cl({ action: 'voidInventoryMove', token: am, id: mvId, reason: 'x' }).error === 'forbidden', 'an approved count is not undone by the counter or the area manager');
+  // in date order: an earlier day is not posted after a later one of the same item
+  function through(cid, t1, t2) { cl({ action: 'stockCountDecide', token: t1, id: cid, decision: 'approve' }); return cl({ action: 'stockCountDecide', token: t2, id: cid, decision: 'approve' }); }
+  var e1 = cl({ action: 'stockCountSubmit', token: bm, locationId: 'ckLoc', date: '2026-10-10', lines: [{ stockItemId: it.id, counted: 44 }] });
+  var e2 = cl({ action: 'stockCountSubmit', token: bm, locationId: 'ckLoc', date: '2026-10-12', lines: [{ stockItemId: it.id, counted: 43 }] });
+  cl({ action: 'stockCountDecide', token: am, id: e1.count.id, decision: 'approve' }); cl({ action: 'stockCountDecide', token: am, id: e2.count.id, decision: 'approve' });
+  check(through(e2.count.id, ops, fin).ok, 'the later count posts');
+  var early = through(e1.count.id, dep, tk('ckFin2'));
+  check(early.error === 'count_later_posted', 'the earlier one cannot post after it (' + (early.error || 'ok') + ')');
+  // a disabled area manager does not hold a count
+  var amRow = c2.getById_(S.USERS, 'ckAm'); amRow.active = false; c2.writeRow(S.USERS, amRow);
+  if (c2.resetExecMemo_) c2.resetExecMemo_();
+  var off = cl({ action: 'stockCountSubmit', token: bm, locationId: 'ckLoc', date: '2026-10-14', lines: [{ stockItemId: it.id, counted: 43 }] });
+  check(off.ok && off.count.status === 'pending_ops', 'with the area manager disabled the count goes to operations');
 })();
 
 console.log('--- a branch sheet does not bring the day\'s purchases twice (2026-11-03) ---');

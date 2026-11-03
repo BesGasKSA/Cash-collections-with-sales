@@ -779,6 +779,8 @@ function actionVoidInventoryMove_(req, user) {
     var allowed = user.role === 'admin' || user.role === 'finance' ||
       (inScope && (m.enteredBy === user.id || user.role === 'cluster_manager'));
     if (!allowed) return { ok: false, error: 'forbidden' };
+    // an approved count is not undone by the people it was approved over (2026-11-04)
+    if (m.countId && user.role !== 'admin' && user.role !== 'finance') return { ok: false, error: 'forbidden' };
     // a dispatch whose cylinders already came back cannot be taken away from under them
     if (m.kind === 'refill_out') {
       var sc0 = invStockCtx_(), tg0 = sc0.moveTarget(m);
@@ -998,7 +1000,9 @@ var COUNT_STEPS_ = { pending_area: 'area', pending_ops: 'ops', pending_finance: 
 var COUNT_ROLES_ = { store_manager: 1, cluster_manager: 1, admin: 1, finance: 1 };
 function countAreaManager_(locId) {
   var l = getById_(SHEETS.LOCATIONS, locId), c = l && l.clusterId ? getById_(SHEETS.CLUSTERS, l.clusterId) : null;
-  return c && c.clusterManagerUserId ? c.clusterManagerUserId : null;
+  if (!c || !c.clusterManagerUserId) return null;
+  var m = getById_(SHEETS.USERS, c.clusterManagerUserId);
+  return m && m.active !== false ? m.id : null;
 }
 // why this person may not act on the count's current step, or null
 function countStepError_(cnt, user) {
@@ -1071,7 +1075,7 @@ function actionStockCountSubmit_(req, user) {
     if (skip) row.history.push({ step: 'area', skipped: true, at: at, reason: mgr ? 'counted_by_area_manager' : 'no_area_manager' });
     row = writeRow(SHEETS.STOCK_COUNTS, row);
     logAudit_('stock_count_submit', user.id, row.id + ' ' + lf.loc.id + ' ' + date + ' ' + out.length + ' lines');
-    return { ok: true, count: row, lines: out.map(countLineOut_), moves: [] };
+    return { ok: true, submitted: true, count: row, lines: out.map(countLineOut_), moves: [] };
   } finally { try { lock.releaseLock(); } catch (e) {} }
 }
 // the figures finance would post now: what the app holds today for the count's day
@@ -1111,6 +1115,11 @@ function actionStockCountDecide_(req, user) {
       logAudit_('stock_count_approve', user.id, cnt.id + ' ' + step);
       return { ok: true, count: cnt };
     }
+    // finance posts in date order: an earlier day posted after a later count of the same shelf would
+    // move that later count's figure away from what was counted
+    var keys = Object.create(null); (cnt.lines || []).forEach(function (l) { keys[l.stockItemId + '|' + (l.state || '')] = 1; });
+    var later = readSheet(SHEETS.STOCK_COUNTS).filter(function (c) { return c.id !== cnt.id && c.status === 'posted' && c.locationId === cnt.locationId && String(c.date) > String(cnt.date) && (c.lines || []).some(function (l) { return keys[l.stockItemId + '|' + (l.state || '')]; }); })[0];
+    if (later) return { ok: false, error: 'count_later_posted', txNo: later.txNo || '', date: later.date };
     // finance posts: the counted figure is the truth; the difference is against what the app holds now
     var sc = invStockCtx_(), hv = countHave_(cnt.locationId, cnt.date, sc);
     if (!hv.ok) return hv;
