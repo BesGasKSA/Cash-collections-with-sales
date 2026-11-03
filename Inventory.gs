@@ -1160,7 +1160,8 @@ function actionListStockCounts_(req, user) {
   var scope = invReadBranches_(user);
   if (scope === false) return { ok: false, error: 'forbidden' };
   var from = req.dateFrom ? String(req.dateFrom) : '', to = req.dateTo ? String(req.dateTo) : '', loc = req.locationId ? String(req.locationId) : '';
-  function keep(c) { return (!scope || scope.indexOf(c.locationId) >= 0) && (!loc || c.locationId === loc) && (!from || c.date >= from) && (!to || c.date <= to); }
+  // a count waiting for approval shows whatever the period: nobody's step is hidden by a date filter
+  function keep(c) { return (!scope || scope.indexOf(c.locationId) >= 0) && (!loc || c.locationId === loc) && (hasOwn_(COUNT_STEPS_, c.status) || ((!from || c.date >= from) && (!to || c.date <= to))); }
   var counts = readSheet(SHEETS.STOCK_COUNTS), known = Object.create(null), out = [];
   counts.forEach(function (c) { known[c.id] = 1; if (keep(c)) out.push(c); });
   var old = Object.create(null);

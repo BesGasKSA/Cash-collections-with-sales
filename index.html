@@ -24764,7 +24764,7 @@ function invCountCard_(res, editLocs, today, reload){
     var rowsH = sendL.map(function(l){ var d0 = Math.round((l.counted - l.system) * 1000) / 1000;
       return '<tr><td>'+esc(invRowName_(l.stockItemId, l.state || ''))+'</td><td class="n num">'+invFig_(l.system)+'</td><td class="n num"><b>'+invFig_(l.counted)+'</b></td><td class="n num ivc-d'+(d0 > 0 ? ' up' : d0 < 0 ? ' down' : '')+'">'+(d0 > 0 ? '+' : d0 < 0 ? '−' : '')+invFig_(Math.abs(d0))+'</td></tr>'; }).join('');
     var nOver = sendL.filter(function(l){ return l.counted > l.system + 0.0005; }).length, nShort = sendL.filter(function(l){ return l.counted < l.system - 0.0005; }).length;
-    var ov = el('<div class="pa-ov sc-ov" role="dialog" aria-modal="true" aria-labelledby="ivcT"><div class="pa-bg"></div><div class="pa-card">' +
+    var ov = el('<div class="pa-ov sc-ov" role="dialog" aria-modal="true" aria-labelledby="ivcT" data-noexport><div class="pa-bg"></div><div class="pa-card">' +
       '<div class="pa-top"><span class="pa-bell">'+icon_('inventory')+'</span><div><div class="pa-hi">'+esc(t('ivc_confirmHi'))+'</div><h2 id="ivcT">'+esc(t('ivc_confirmT'))+'</h2></div><button type="button" class="pa-x" aria-label="'+esc(t('cancel'))+'">×</button></div>' +
       '<div class="hp-body"><p class="muted" style="margin:0 0 10px;">'+esc(t('ivc_confirmLead').replace('{b}', locationName(locId)).replace('{d}', dt))+'</p>' +
         '<div class="hp-row"><span>'+esc(t('icr_lines'))+'</span><b class="num">'+sendL.length+'</b></div><div class="hp-row"><span>'+esc(t('icr_over'))+'</span><b class="num">'+nOver+'</b></div><div class="hp-row"><span>'+esc(t('icr_short'))+'</span><b class="num">'+nShort+'</b></div>' +
@@ -24797,7 +24797,7 @@ function cntStatusChip_(c){
 }
 function cntSums_(c){
   var o = { over: 0, short: 0, value: 0, hasValue: false, posted: c.status === 'posted' };
-  (c.lines || []).forEach(function(l){ var d0 = o.posted && l.diffPosted != null ? l.diffPosted : l.diff; if (d0 > 0.0005) o.over++; else if (d0 < -0.0005) o.short++; if (l.unitCost != null) { o.hasValue = true; o.value += (d0 || 0) * l.unitCost; } });
+  (c.lines || []).forEach(function(l){ var d0 = o.posted && l.diffPosted != null ? l.diffPosted : l.diff; if (d0 > 0.0005) o.over++; else if (d0 < -0.0005) o.short++; if (l.unitCost != null && l.unitCost > 0) { o.hasValue = true; o.value += (d0 || 0) * l.unitCost; } });
   o.value = Math.round(o.value * 100) / 100;
   return o;
 }
@@ -24827,7 +24827,7 @@ function cntDocView_(c, reload){
       (c.lines || []).map(function(l, i){ var d0 = posted && l.diffPosted != null ? l.diffPosted : l.diff;
         return '<tr data-k="'+esc(l.stockItemId + '|' + (l.state || ''))+'"><td>'+esc(invRowName_(l.stockItemId, l.state || ''))+(l.cancelled ? ' <span class="badge rejected">'+esc(t('cs_cancelled'))+'</span>' : '')+'</td><td class="n num">'+invFig_(l.system)+'</td><td class="n num"><b>'+invFig_(l.counted)+'</b></td><td class="n num ivc-d'+(l.diff > 0 ? ' up' : l.diff < 0 ? ' down' : '')+'">'+(l.diff > 0 ? '+' : l.diff < 0 ? '−' : '')+invFig_(Math.abs(l.diff || 0))+'</td>' +
           (posted ? '<td class="n num">'+(l.systemAtPost == null ? '' : invFig_(l.systemAtPost))+'</td><td class="n num"><b>'+(l.diffPosted == null ? '' : (l.diffPosted > 0 ? '+' : l.diffPosted < 0 ? '−' : '') + invFig_(Math.abs(l.diffPosted)))+'</b></td>' : '<td class="n num cnt-nowc" hidden></td>') +
-          (s0.hasValue ? '<td class="n">'+(l.unitCost == null ? '' : plAmt_(Math.round((d0 || 0) * l.unitCost * 100) / 100))+'</td>' : '') + '</tr>'; }).join('') + '</tbody></table></div>' +
+          (s0.hasValue ? '<td class="n">'+(!(l.unitCost > 0) ? '' : plAmt_(Math.round((d0 || 0) * l.unitCost * 100) / 100))+'</td>' : '') + '</tr>'; }).join('') + '</tbody></table></div>' +
       (s0.hasValue ? '<div class="hp-row"><span>'+esc(t('icr_value'))+'</span><b>'+plAmt_(s0.value)+'</b></div>' : '') + '</div>';
     body.appendChild(exButtons_(function(){ return cntSheets_([c]); }, function(){ return (c.txNo || t('icr_title')) + ' ' + locationName(c.locationId) + ' ' + c.date; }));
     var expect = null;
