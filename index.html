@@ -8337,7 +8337,7 @@ function gsGo_(r){
       var h = (DRILL.handoffs || []).filter(function(x){ return x.id === r.id; })[0];
       if (h) { drawerOpen_(handoffDocView_(h)); return; }
       // an area request followed on the Collections screen, not a handover of this person's
-      if (r.kind === 'cluster_to_collector') { goScreen_('collections'); return; }
+      if (r.kind === 'cluster_to_collector') { colState_().preset = 'all'; colSave_(); goScreen_('collections'); return; }
       toastRaw_(t('gs_notYours'), 'err');
     });
     return;
@@ -14310,7 +14310,7 @@ function dashFilterLine_(F){
   return when + ' · ' + where;
 }
 function dashFilterBar_(onChange){
-  var F = DASH_F_ || (DASH_F_ = { p: 'yesterday', from: localYesterday_(), to: localYesterday_(), city: '', clusterId: '', locationId: '' });
+  var F = dashF_();
   var meta = state.meta || {}, locs = meta.locations || [], cls = meta.clusters || [];
   var cities = []; locs.forEach(function(l){ if (l.city && cities.indexOf(l.city) < 0) cities.push(l.city); }); cities.sort();
   var bar = el('<div class="card df-bar no-collapse"><div class="col-chips">' + ['today', 'yesterday', 'week', 'month', 'lastMonth', 'all'].map(function(p){ return '<button type="button" class="col-chip'+(F.p === p ? ' on' : '')+'" data-p="'+p+'" aria-pressed="'+(F.p === p ? 'true' : 'false')+'">'+esc(t('rp_p_' + p))+'</button>'; }).join('') + '</div>' +
@@ -14334,8 +14334,15 @@ function dashFilterBar_(onChange){
   sel('.dfFrom', 'from'); sel('.dfTo', 'to'); sel('.dfCity', 'city', ['locationId']); sel('.dfArea', 'clusterId', ['locationId']); sel('.dfLoc', 'locationId');
   return bar;
 }
+// the dashboard's period, set before the first request; "today" and "yesterday" move with the clock
+function dashF_(){
+  var F = DASH_F_ || (DASH_F_ = { p: 'yesterday', from: '', to: '', city: '', clusterId: '', locationId: '' });
+  if (F.p === 'yesterday') F.from = F.to = localYesterday_();
+  else if (F.p === 'today') F.from = F.to = localToday_();
+  return F;
+}
 function dashPayload_(){
-  var F = DASH_F_ || {}, p = {};
+  var F = dashF_(), p = {};
   if (F.from) p.dateFrom = F.from; if (F.to) p.dateTo = F.to; if (F.city) p.city = F.city; if (F.clusterId) p.clusterId = F.clusterId; if (F.locationId) p.locationId = F.locationId;
   return p;
 }
@@ -14981,7 +14988,7 @@ function renderCollectorHome_(body){
     var more = el('<section class="ch-more'+rise()+'"><button type="button" class="ch-link ch-hand">'+icon_('handoffs')+'<span>'+esc(t('ch_handOther'))+'</span></button>' +
       '<button type="button" class="ch-link ch-all">'+icon_('report')+'<span>'+esc(t('ch_seeAll'))+'</span></button></section>');
     qs('.ch-hand', more).addEventListener('click', function(){ goScreen_('handoffs'); });
-    qs('.ch-all', more).addEventListener('click', function(){ goScreen_('collections'); });
+    qs('.ch-all', more).addEventListener('click', function(){ colState_().preset = 'all'; colSave_(); goScreen_('collections'); });
     w.appendChild(more);
 
     body.innerHTML = '';
@@ -16445,10 +16452,10 @@ function listFilters_(opts){
   return { node: node, match: match, values: values, active: activeCount, sort: sort, count: count, pairs: pairs, sortMode: function(){ return val('.lfSort') || 'new'; } };
 }
 
-// Today's date on this device, for the date pickers (the server checks the
-// real rule against Riyadh time).
 // every period screen opens on yesterday (the owner, 2026-11-03); a choice made in the tab is kept
 function localYesterday_(){ var x = localToday_().split('-').map(Number), d = new Date(Date.UTC(x[0], x[1] - 1, x[2] - 1)); return d.toISOString().slice(0, 10); }
+// Today's date on this device, for the date pickers (the server checks the
+// real rule against Riyadh time).
 function localToday_(){
   var d = new Date();
   return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
@@ -24311,7 +24318,10 @@ function renderReport(body){
   qs('#rCity').addEventListener('change', populateZoneFilter);
 
   qs('#rRun').addEventListener('click', runReport);
-  if (!qs('#rFrom').value && !qs('#rTo').value) { var ry = periodRange_('yesterday'); qs('#rFrom').value = ry[0]; qs('#rTo').value = ry[1]; qsa('.rp-periods button').forEach(function(x){ x.classList.toggle('on', x.dataset.p === 'yesterday'); }); }
+  var rpSaved = null; try { rpSaved = JSON.parse(sessionStorage.getItem('bgc_rp') || 'null'); } catch (e) {}
+  var rpP = rpSaved ? rpSaved.p : 'yesterday', rr = rpP && rpP !== '' ? periodRange_(rpP) : [rpSaved.from || '', rpSaved.to || ''];
+  qs('#rFrom').value = rr[0]; qs('#rTo').value = rr[1];
+  qsa('.rp-periods button').forEach(function(x){ x.classList.toggle('on', x.dataset.p === rpP); });
   runReport();
 
   // every filter in use, by the label on its field and the value as the picker shows it
@@ -24330,6 +24340,8 @@ function renderReport(body){
   }
 
   function runReport(){
+    var onB = qs('.rp-periods button.on');
+    try { sessionStorage.setItem('bgc_rp', JSON.stringify({ p: onB ? onB.dataset.p : '', from: qs('#rFrom').value, to: qs('#rTo').value })); } catch (e) {}
     var payload = {
       dateFrom: qs('#rFrom').value || undefined,
       dateTo: qs('#rTo').value || undefined,
@@ -25215,7 +25227,8 @@ function renderInventory(body){
   body.innerHTML = '';
   var meta = state.meta || {}, role = state.user.role;
   var today = localToday_();
-  if (!INV_.from) { INV_.from = INV_.to = localYesterday_(); INV_.p = 'yesterday'; }
+  if (!INV_.from) INV_.p = 'yesterday';
+  if (INV_.p === 'yesterday') INV_.from = INV_.to = localYesterday_();
   var canEdit = ['admin', 'finance', 'cluster_manager', 'store_manager'].indexOf(role) >= 0;
   var mine = invMyBranches_();
   var editLocs = (meta.locations || []).filter(function(l){ return !mine || mine.indexOf(l.id) >= 0; });
