@@ -2977,6 +2977,12 @@ check(cyImp.ok && cyImp.moves.length === 4, 'a day\'s quantities go in together 
 check(call(cyDay).error === 'already_imported', 'the same sheet day cannot go in twice');
 var cyDup = JSON.parse(JSON.stringify(cyDay)); cyDup.ref = 'again'; cyDup.moves = [{ productId: cyIron.id, state: 'full', kind: 'opening', qty: 1 }, { productId: cyReg.id, kind: 'purchase', qty: 3 }];
 check(call(cyDup).error === 'opening_exists', 'a second opening count is refused, and nothing of that day is written');
+var cyBuy2 = JSON.parse(JSON.stringify(cyDay)); cyBuy2.ref = 'again-buy'; cyBuy2.moves = [{ productId: cyIron.id, state: 'full', kind: 'purchase', qty: 1400 }];
+check(call(cyBuy2).error === 'purchase_exists', 'a second sheet of the same day cannot add its purchases again');
+cyBuy2.ref = 'again-buy-2'; cyBuy2.moves = [{ productId: cyReg.id, kind: 'transfer_in', qty: 2 }];
+var cyNoBuy = call(cyBuy2); check(cyNoBuy.ok || cyNoBuy.error !== 'purchase_exists', 'without its purchases the sheet goes in (' + (cyNoBuy.error || 'ok') + ')');
+cyBuy2.date = '2026-09-27'; cyBuy2.ref = 'other-day'; cyBuy2.moves = [{ productId: cyIron.id, state: 'full', kind: 'purchase', qty: 1 }];
+check(call(cyBuy2).error !== 'purchase_exists', 'another day is not stopped by this one');
 check(!ctx.readSheet(ctx.SHEETS.INV_MOVES).some(function (m) { return m.importRef === 'again'; }), 'all or nothing');
 check(call({ action: 'importInventoryDay', token: dpTok, locationId: dpLoc.id, date: '2026-09-28', ref: 'x', moves: [{ productId: cyReg.id, kind: 'purchase', qty: 1 }] }).error === 'forbidden', 'a driver cannot load stock');
 var cyStore = call({ action: 'listMeta', token: adminTok }).stores.filter(function (s) { return s.locationId === dpLoc.id; })[0].id;
@@ -7863,6 +7869,15 @@ console.log('--- several requests approved in one click (2026-10-31) ---');
   var mails = ctx._debug.mailLog.length; req('mvMail');
   call({ action: 'deputyValidateMany', token: dep, ids: ['mvMail'] });
   check(ctx._debug.mailLog.length === mails + 2, 'the collector and the area manager are told, after the lock (' + (ctx._debug.mailLog.length - mails) + ')');
+})();
+
+console.log('--- a branch sheet does not bring the day\'s purchases twice (2026-11-03) ---');
+(function () {
+  var src = fs0_('Inventory.gs');
+  check(/error: 'purchase_exists'/.test(src) && /m\.kind === 'purchase' \|\| m\.kind === 'refill_in'/.test(src), 'importInventoryDay refuses purchases when the day has some');
+  check(/String\(r\.date\) > todayRiyadh_\(\)\) return;/.test(src), 'a future day is not asked about purchases');
+  check(/brPurchPending/.test(clientHtml) && /purchMissingBox_\(qs\('#impMsg', importCard\)/.test(clientHtml), 'the area upload asks for its stock first, the entries file answers its days');
+  function fs0_(f) { return require('fs').readFileSync(require('path').join(__dirname, '..', f), 'utf8'); }
 })();
 
 console.log('--- a quick filter tapped again comes off, and All (2026-10-31) ---');

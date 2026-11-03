@@ -536,10 +536,16 @@ function actionImportInventoryDay_(req, user) {
   lock.waitLock(30000);
   try {
     freshenExec_();
-    if (readSheet(SHEETS.INV_MOVES).some(function (m) { return !m.voided && m.locationId === lf.loc.id && m.importRef === ref; })) return { ok: false, error: 'already_imported' };
+    var dayMoves = readSheet(SHEETS.INV_MOVES).filter(function (m) { return !m.voided && m.locationId === lf.loc.id; });
+    if (dayMoves.some(function (m) { return m.importRef === ref; })) return { ok: false, error: 'already_imported' };
     var open = invOpenings_();
     for (var j = 0; j < checked.length; j++) {
       if (checked[j].move.kind === 'opening' && open[invOpeningKey_(lf.loc.id, checked[j].itemId, checked[j].move.state)]) return { ok: false, error: 'opening_exists', index: j };
+    }
+    // the day's purchases already entered (the purchases step, the stock screen): the sheet's own
+    // would count them twice, so the screen offers to save the sheet without them (2026-11-03)
+    if (dayMoves.some(function (m) { return m.date === date && (m.kind === 'purchase' || m.kind === 'refill_in'); })) {
+      for (var pj = 0; pj < checked.length; pj++) if (checked[pj].move.kind === 'purchase') return { ok: false, error: 'purchase_exists', index: pj };
     }
     // the day's lines together: filled back with nothing at the plant or a return no customer holds
     // are refused; the day's own filled and empties are the panel's, with the file's own sales
@@ -592,6 +598,7 @@ function actionReplaceOpenings_(req, user) {
     var old = sc.moves.filter(function (m) { return !m.voided && m.kind === 'opening'; });
     // an opening counts from the start of its day, so that day's moves stay after it
     var after = sc.moves.filter(function (m) { return !m.voided && m.kind !== 'opening' && String(m.date) >= date; });
+    var before = sc.moves.filter(function (m) { return !m.voided && m.kind !== 'opening' && String(m.date) < date; }).length;
     // what loses its opening without a new one, and cylinders still at the plant, which stop a plain purchase
     var missing = Object.create(null), plant = Object.create(null);
     old.forEach(function (m) {
@@ -609,7 +616,7 @@ function actionReplaceOpenings_(req, user) {
       missingLines: Object.keys(missing).map(function (k) { return missing[k]; }),
       atPlant: Object.keys(plant).map(function (k) { return plant[k]; }),
       laterCounts: after.filter(function (m) { return hasOwn_(INV_COUNT_, m.kind); }).length,
-      laterPurchases: after.filter(function (m) { return m.kind === 'purchase' || m.kind === 'refill_in'; }).length };
+      laterPurchases: after.filter(function (m) { return m.kind === 'purchase' || m.kind === 'refill_in'; }).length, earlier: before };
     if (req.dryRun) return { ok: true, dryRun: true, preview: pv };
     var at = new Date().toISOString();
     // on record first: sending the same file again finishes a run cut short
@@ -661,7 +668,7 @@ function purchaseGateOn_(user, date) { return !!PURCHASE_GATE_ROLES_[user.role] 
 function purchaseGateRows_(user, rows) {
   var want = Object.create(null), list = [];
   rows.forEach(function (r) {
-    if (!r || !r.date || !r.sourceType || !r.sourceId || !purchaseGateOn_(user, r.date)) return;
+    if (!r || !r.date || !r.sourceType || !r.sourceId || !purchaseGateOn_(user, r.date) || String(r.date) > todayRiyadh_()) return;
     if (!entryHasSales_(r) && !(Array.isArray(r.creditItems) && r.creditItems.length)) return;
     var sc = checkEntryScope_(user, r.sourceType, r.sourceId);
     if (!sc.ok || !sc.locationId) return;
