@@ -1048,9 +1048,10 @@ function saveEntity_(req, user) {
     // One exception (the owner, 2026-11-04): a sales item that was never linked to stock, whose sales
     // should have moved it all along, is linked by an admin with a reason; its sales then count from
     // the opening on. An existing link is never changed this way.
-    var relink = kind === 'product' && !obj.stockItemId && !!merged.stockItemId && user.role === 'admin' && String(req.relinkReason || '').trim();
+    var relink = kind === 'product' && obj.type !== 'services' && !obj.stockItemId && !!merged.stockItemId && user.role === 'admin' && String(req.relinkReason || '').trim();
     if (kind === 'product' && stockItemsLive_() && ['stockItemId', 'stockEffect', 'returnItemId'].some(function (k) { return String(merged[k] || '') !== String(obj[k] || ''); }) && productHasStockHistory_(obj.id) && !relink) return { ok: false, error: 'stock_link_locked' };
-    if (relink && productHasStockHistory_(obj.id)) logAudit_('product_stock_relink', user.id, obj.id + ' -> ' + merged.stockItemId + ' ' + (merged.stockEffect || '') + ': ' + String(req.relinkReason).trim().slice(0, 300));
+    // written once the save is on file, below
+    var relinkNote = relink && productHasStockHistory_(obj.id) ? obj.id + ' -> ' + merged.stockItemId + ' ' + (merged.stockEffect || '') + ': ' + String(req.relinkReason).trim().slice(0, 300) : '';
     // an item with stock movements stays an inventory item, or its history would vanish
     if (kind === 'product' && merged.type === 'services' && obj.type !== 'services' && invHasMoves_(obj.id)) return { ok: false, error: 'has_stock' };
     // full and empty counts would lose their meaning
@@ -1080,6 +1081,7 @@ function saveEntity_(req, user) {
   if (rateBefore) rateChanges_(kind, rateBefore, saved, user.id, { via: req.importing ? 'import' : 'save' });
   if (colBefore && saved.collectorUserId && saved.collectorUserId !== colBefore) moveWaitingRequests_(saved.id, colBefore, saved.collectorUserId, user.id);
   logAudit_('admin_save_' + kind, user.id, saved.id);
+  if (typeof relinkNote !== 'undefined' && relinkNote) logAudit_('product_stock_relink', user.id, relinkNote);
   if (!req.noTranslate) fillTranslations_(translatableOf_(saved));
   return { ok: true, entity: saved };
 }
