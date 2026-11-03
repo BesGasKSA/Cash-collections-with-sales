@@ -390,10 +390,11 @@ function actionAddInventoryMove_(req, user) {
     if (c.move.kind === 'opening' && invOpenings_()[invOpeningKey_(lf.loc.id, c.itemId, c.move.state)]) return { ok: false, error: 'opening_exists' };
     if (hasOwn_(INV_COUNT_, c.move.kind)) return { ok: false, error: 'use_stock_count' };
     // the purchases step (it sends clientRef) after a branch sheet brought this item's purchases that day
-    if (cRef && c.move.kind === 'purchase') {
+    // (a plant receipt is the same full cylinders; brand-new cylinders bought on top are a real second purchase)
+    if (cRef && (c.move.kind === 'purchase' || c.move.kind === 'refill_in') && c.move.newCylinders !== true) {
       var scP = invStockCtx_(), fromSheet = scP.moves.filter(function (m) {
         if (m.voided || m.locationId !== lf.loc.id || m.date !== date || !m.importRef || m.kind !== 'purchase') return false;
-        var tg = scP.moveTarget(m); return !!tg && tg.item.id === c.itemId && (m.state || '') === (c.move.state || '');
+        var tg = scP.moveTarget(m); return !!tg && tg.item.id === c.itemId && (tg.state || '') === (c.move.state || (c.move.kind === 'refill_in' ? 'full' : ''));
       });
       if (fromSheet.length) return { ok: false, error: 'purchase_sheet', onFile: fromSheet.reduce(function (s, m) { return s + Number(m.qty || 0); }, 0) };
     }
@@ -557,19 +558,21 @@ function actionImportInventoryDay_(req, user) {
     // an item whose purchases that day are already on file (the purchases step, the stock screen):
     // the sheet's own would count them twice. Item by item, with both figures, so the screen can
     // save the difference or leave the item out; the other items are not held back (2026-11-03)
-    if (!req.acceptOnFile) {
-      var onFile = Object.create(null), hits = [];
-      dayMoves.forEach(function (m) {
-        if (m.date !== date || (m.kind !== 'purchase' && m.kind !== 'refill_in')) return;
-        var tg = sc.moveTarget(m); if (!tg) return;
-        var k = tg.item.id + '|' + (m.state || ''); onFile[k] = (onFile[k] || 0) + Number(m.qty || 0);
-      });
-      checked.forEach(function (x, i) {
-        var k = x.itemId + '|' + (x.move.state || '');
-        if (x.move.kind === 'purchase' && onFile[k] > 0.0005) hits.push({ index: i, onFile: Math.round(onFile[k] * 1000) / 1000, qty: x.move.qty });
-      });
-      if (hits.length) return { ok: false, error: 'purchase_exists', items: hits };
-    }
+    // seenOnFile {key: qty} is what the person saw when choosing: a figure that moved since is asked again
+    var seen = req.seenOnFile && typeof req.seenOnFile === 'object' ? req.seenOnFile : null;
+    var onFile = Object.create(null), hits = [];
+    dayMoves.forEach(function (m) {
+      if (m.date !== date || (m.kind !== 'purchase' && m.kind !== 'refill_in')) return;
+      var tg = sc.moveTarget(m); if (!tg) return;
+      var k = tg.item.id + '|' + (tg.state || ''); onFile[k] = (onFile[k] || 0) + Number(m.qty || 0);
+    });
+    checked.forEach(function (x, i) {
+      var k = x.itemId + '|' + (x.move.state || ''), now = Math.round((onFile[k] || 0) * 1000) / 1000;
+      if (x.move.kind !== 'purchase' || now <= 0.0005) return;
+      var saw = seen && hasOwn_(seen, k) ? Number(seen[k]) : null;
+      if (saw === null || Math.abs(saw - now) > 0.0005) hits.push({ index: i, key: k, onFile: now, qty: x.move.qty });
+    });
+    if (hits.length) return { ok: false, error: 'purchase_exists', items: hits };
     // the day's lines together: filled back with nothing at the plant or a return no customer holds
     // are refused; the day's own filled and empties are the panel's, with the file's own sales
     var iRows = checked.map(function (x) { return invMoveRow_(lf.loc.id, x.move, date, user, { importRef: ref }); });

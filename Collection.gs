@@ -2230,7 +2230,7 @@ function actionDeputyValidateMany_(req, user) {
   ids.forEach(function (id) {
     var h = byId[id] || null, err = deputyHandoffGuard_(h, user);
     // a reply that never arrived: this very part already approved it, and it is still approved
-    if (err === 'not_pending' && bref && h.deputyBulkRef === bref && h.status === 'pending' && h.deputyValidatedBy === user.id) { again.push(h); results.push({ id: id, ok: true, txNo: h.txNo || '', already: true }); return; }
+    if (err === 'not_pending' && bref && h.deputyBulkRef === bref && h.deputyValidatedBy === user.id && ['returned', 'rejected', 'voided'].indexOf(h.status) < 0) { again.push(h); results.push({ id: id, ok: true, txNo: h.txNo || '', already: true }); return; }
     if (err) { results.push({ id: id, ok: false, error: err, txNo: h ? h.txNo || '' : '' }); return; }
     h.status = 'pending'; h.deputyValidatedBy = user.id; h.deputyValidatedAt = at; h.deputyNote = ''; h.deputyBulk = true; h.deputyBulkRef = bref || null;
     rows.push(h); results.push({ id: id, ok: true, txNo: h.txNo || '' });

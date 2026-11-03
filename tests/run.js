@@ -2998,13 +2998,15 @@ check(cyN.opening === 1593, 'the next day opens with the day\'s ending (got ' + 
 check(call({ action: 'importInventoryDay', token: noorTok, locationId: dpLoc.id, date: '2026-09-29', ref: 'tr', moves: [{ productId: cyIron.id, state: 'full', kind: 'transfer_out', qty: 10 }, { productId: cyIron.id, state: 'empty', kind: 'transfer_in', qty: 2 }] }).ok, 'transfers out of and into the branch are movements too');
 check(call({ action: 'adminSaveEntity', token: adminTok, kind: 'product', id: cyIron.id, data: { cylinder: false } }).error === 'has_stock', 'a cylinder item with stock cannot stop being one');
 // a branch sheet's purchases go in once, item by item (2026-11-03)
-function cySheet(date, ref, moves, accept) { var p = { action: 'importInventoryDay', token: noorTok, locationId: dpLoc.id, date: date, ref: ref, moves: moves }; if (accept) p.acceptOnFile = true; return call(p); }
+function cySheet(date, ref, moves, seen) { var p = { action: 'importInventoryDay', token: noorTok, locationId: dpLoc.id, date: date, ref: ref, moves: moves }; if (seen) p.seenOnFile = seen; return call(p); }
 var cyP1 = cySheet('2026-09-30', 'brsheet|2026-09-30', [{ productId: cyReg.id, kind: 'purchase', qty: 3 }]);
 check(cyP1.ok, 'a sheet with the day\'s purchases goes in (' + (cyP1.error || 'ok') + ')');
 var cyP2 = cySheet('2026-09-30', 'another sheet', [{ productId: cyIron.id, state: 'full', kind: 'transfer_in', qty: 1 }, { productId: cyReg.id, kind: 'purchase', qty: 5 }]);
 check(cyP2.error === 'purchase_exists' && cyP2.items.length === 1 && cyP2.items[0].index === 1 && cyP2.items[0].onFile === 3 && cyP2.items[0].qty === 5, 'a second sheet names the item already bought that day, with both figures');
-var cyP3 = cySheet('2026-09-30', 'another sheet', [{ productId: cyIron.id, state: 'full', kind: 'transfer_in', qty: 1 }, { productId: cyReg.id, kind: 'purchase', qty: 2 }], true);
+check(cySheet('2026-09-30', 'another sheet', [{ productId: cyReg.id, kind: 'purchase', qty: 2 }], { 'x|': 3 }).error === 'purchase_exists', 'a figure the person did not see is asked again');
+var cyP3 = cySheet('2026-09-30', 'another sheet', [{ productId: cyIron.id, state: 'full', kind: 'transfer_in', qty: 1 }, { productId: cyReg.id, kind: 'purchase', qty: 2 }], (function () { var o = {}; o[cyP2.items[0].key] = 3; return o; })());
 check(cyP3.ok && cyP3.moves.length === 2, 'the difference goes in once the person has seen it (' + (cyP3.error || 'ok') + ')');
+check(cySheet('2026-09-30', 'a third sheet', [{ productId: cyReg.id, kind: 'purchase', qty: 1 }], (function () { var o = {}; o[cyP2.items[0].key] = 3; return o; })()).error === 'purchase_exists', 'and once more is on file than the person saw, it is asked again');
 check(cySheet('2026-09-30', 'Branch sheet 2026-09-30', [{ productId: cyIron.id, state: 'full', kind: 'transfer_in', qty: 1 }]).error === 'already_imported', 'the old language-bound reference of the same day counts as the same sheet');
 var cyPop = call({ action: 'addInventoryMove', token: noorTok, locationId: dpLoc.id, productId: cyReg.id, kind: 'purchase', qty: 3, date: '2026-09-30', supplier: 'Khazeen', clientRef: 'popup-1' });
 check(cyPop.error === 'purchase_sheet', 'the purchases step does not add what the sheet already brought (' + (cyPop.error || 'ok') + ')');
