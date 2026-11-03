@@ -923,7 +923,7 @@ function actionAdminSaveEntity_(req, user) {
   var lock = scriptLock_();
   lock.waitLock(30000);
   var res;
-  try { freshenExec_(); res = saveEntity_({ kind: req.kind, id: req.id, data: req.data, noTranslate: true }, user); } finally { try { lock.releaseLock(); } catch (e) {} }
+  try { freshenExec_(); res = saveEntity_({ kind: req.kind, id: req.id, data: req.data, noTranslate: true, relinkReason: req.relinkReason }, user); } finally { try { lock.releaseLock(); } catch (e) {} }
   // the translation call is slow; nothing else should wait on it
   if (res && res.ok) fillTranslations_(translatableOf_(res.entity));
   return res;
@@ -1045,7 +1045,12 @@ function saveEntity_(req, user) {
     // after the setup a sales item with sales or old counts keeps its stock link: changing it
     // would move every past figure. A wrong link is fixed with a new sales item (and this
     // one deactivated) or a dated count (fix round 1, 2026-10-05).
-    if (kind === 'product' && stockItemsLive_() && ['stockItemId', 'stockEffect', 'returnItemId'].some(function (k) { return String(merged[k] || '') !== String(obj[k] || ''); }) && productHasStockHistory_(obj.id)) return { ok: false, error: 'stock_link_locked' };
+    // One exception (the owner, 2026-11-04): a sales item that was never linked to stock, whose sales
+    // should have moved it all along, is linked by an admin with a reason; its sales then count from
+    // the opening on. An existing link is never changed this way.
+    var relink = kind === 'product' && !obj.stockItemId && !!merged.stockItemId && user.role === 'admin' && String(req.relinkReason || '').trim();
+    if (kind === 'product' && stockItemsLive_() && ['stockItemId', 'stockEffect', 'returnItemId'].some(function (k) { return String(merged[k] || '') !== String(obj[k] || ''); }) && productHasStockHistory_(obj.id) && !relink) return { ok: false, error: 'stock_link_locked' };
+    if (relink && productHasStockHistory_(obj.id)) logAudit_('product_stock_relink', user.id, obj.id + ' -> ' + merged.stockItemId + ' ' + (merged.stockEffect || '') + ': ' + String(req.relinkReason).trim().slice(0, 300));
     // an item with stock movements stays an inventory item, or its history would vanish
     if (kind === 'product' && merged.type === 'services' && obj.type !== 'services' && invHasMoves_(obj.id)) return { ok: false, error: 'has_stock' };
     // full and empty counts would lose their meaning
