@@ -3010,6 +3010,13 @@ check(cySheet('2026-09-30', 'a third sheet', [{ productId: cyReg.id, kind: 'purc
 check(cySheet('2026-09-30', 'Branch sheet 2026-09-30', [{ productId: cyIron.id, state: 'full', kind: 'transfer_in', qty: 1 }]).error === 'already_imported', 'the old language-bound reference of the same day counts as the same sheet');
 var cyPop = call({ action: 'addInventoryMove', token: noorTok, locationId: dpLoc.id, productId: cyReg.id, kind: 'purchase', qty: 3, date: '2026-09-30', supplier: 'Khazeen', clientRef: 'popup-1' });
 check(cyPop.error === 'purchase_sheet', 'the purchases step does not add what the sheet already brought (' + (cyPop.error || 'ok') + ')');
+check(cySheet('2026-09-30', 'a fourth sheet', [{ productId: cyReg.id, kind: 'purchase', qty: 1 }], (function () { var o = {}; o[cyP2.items[0].key] = 'abc'; return o; })()).error === 'purchase_exists', 'a figure that is not a number counts as not seen');
+var cyFullDay = cySheet('2026-10-01', 'brsheet|2026-10-01', [{ productId: cyIron.id, state: 'full', kind: 'purchase', qty: 1 }]);
+if (cyFullDay.ok) {
+  check(call({ action: 'addInventoryMove', token: noorTok, locationId: dpLoc.id, productId: cyIron.id, state: 'full', kind: 'refill_in', qty: 1, date: '2026-10-01', clientRef: 'popup-2' }).error === 'purchase_sheet', 'a plant receipt of the same cylinders after the sheet is refused too');
+  check(call({ action: 'addInventoryMove', token: noorTok, locationId: dpLoc.id, productId: cyIron.id, state: 'full', kind: 'purchase', qty: 1, newCylinders: true, date: '2026-10-01', supplier: 'Khazeen', clientRef: 'popup-3' }).error !== 'purchase_sheet', 'brand-new cylinders bought on top still go in');
+  check(call({ action: 'addInventoryMove', token: noorTok, locationId: dpLoc.id, productId: cyIron.id, state: 'empty', kind: 'purchase', qty: 1, date: '2026-10-01', supplier: 'Khazeen', clientRef: 'popup-4' }).error !== 'purchase_sheet', 'empties are another stock line');
+} else check(false, 'the full-cylinder sheet day for the guard tests goes in (' + cyFullDay.error + ')');
 
 console.log('--- every way a sale is entered reaches the stock, once (2026-10-05) ---');
 var scLoc = call({ action: 'adminSaveEntity', token: adminTok, kind: 'location', data: { city: 'Riyadh', name: 'Scenario Branch', clusterId: cluster.entity.id, collectorUserId: musa.id } }).entity;

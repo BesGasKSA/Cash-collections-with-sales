@@ -570,7 +570,7 @@ function actionImportInventoryDay_(req, user) {
       var k = x.itemId + '|' + (x.move.state || ''), now = Math.round((onFile[k] || 0) * 1000) / 1000;
       if (x.move.kind !== 'purchase' || now <= 0.0005) return;
       var saw = seen && hasOwn_(seen, k) ? Number(seen[k]) : null;
-      if (saw === null || Math.abs(saw - now) > 0.0005) hits.push({ index: i, key: k, onFile: now, qty: x.move.qty });
+      if (saw === null || !isFinite(saw) || Math.abs(saw - now) > 0.0005) hits.push({ index: i, key: k, onFile: now, qty: x.move.qty });
     });
     if (hits.length) return { ok: false, error: 'purchase_exists', items: hits };
     // the day's lines together: filled back with nothing at the plant or a return no customer holds

@@ -19543,7 +19543,8 @@ function renderAreaBulk(body){
           ['purchase', 'transfer_out', 'transfer_in'].forEach(function(kd){ if (l.x[kd]) { moves.push(mv({ state: l.st || null, kind: kd, qty: l.x[kd], note: l.x.header })); names.push(l.x.header + (l.st ? ' (' + t('inv_st_' + l.st) + ')' : '')); } });
         });
         // list[i] goes with names[i]; accept: what was on file when the person chose what to do with it
-        function send(list, nm, accept){
+        // og[i] is the sheet's own figure for list[i]; seen carries every figure already settled
+        function send(list, nm, og, accept){
           var mb = qs('.brStMsg', holder);
           if (!list.length) { mb.innerHTML = '<div class="msg ok">'+esc(t('br_stNothing'))+'</div>'; sb.textContent = t('br_stDone'); sb.disabled = true; brPurchPending = false; renderAreaBulkPreview(); return; }
           sb.disabled = true;
@@ -19551,22 +19552,26 @@ function renderAreaBulk(body){
           if (accept) q.seenOnFile = accept;
           api('importInventoryDay', q).then(function(res){
             if (!res.ok && res.error === 'purchase_exists' && Array.isArray(res.items)) {
-              var hit = {}, seen = {}; res.items.forEach(function(x){ hit[x.index] = x; seen[x.key] = x.onFile; });
-              mb.innerHTML = '<div class="msg warn">'+esc(errMsg_(res))+'<ul class="ar-out">' + res.items.map(function(x){ return '<li>'+esc(nm[x.index] || '')+': '+esc(t('br_stOnFile').replace('{f}', invQty_(x.onFile)).replace('{s}', invQty_(x.qty)))+'</li>'; }).join('') + '</ul></div>' +
+              var hit = {}, seen = Object.assign({}, accept || {}); res.items.forEach(function(x){ hit[x.index] = x; seen[x.key] = x.onFile; });
+              mb.innerHTML = '<div class="msg warn">'+esc(errMsg_(res))+'<ul class="ar-out">' + res.items.map(function(x){ return '<li>'+esc(nm[x.index] || '')+': '+esc(t('br_stOnFile').replace('{f}', invQty_(x.onFile)).replace('{s}', invQty_(og[x.index])))+'</li>'; }).join('') + '</ul></div>' +
                 '<button type="button" class="btn brStDiff">'+esc(t('br_stDiff'))+'</button> <button type="button" class="btn secondary brStSkip">'+esc(t('br_stSkip'))+'</button>';
               sb.disabled = false;
               qs('.brStDiff', mb).addEventListener('click', function(){
-                var l2 = [], n2 = [];
+                // what is on file comes off the sheet's own figure, once per item even when two lines name it
+                var l2 = [], n2 = [], o2 = [], left = {};
+                res.items.forEach(function(x){ left[x.key] = x.onFile; });
                 list.forEach(function(m, i){
-                  var x = hit[i], c = x ? Object.assign({}, m, { qty: Math.round((Number(m.qty) - x.onFile) * 1000) / 1000 }) : m;
-                  if (Number(c.qty) > 0.0005) { l2.push(c); n2.push(nm[i]); }
+                  var x = hit[i], c = m;
+                  if (x) { var take = Math.min(Number(og[i]), left[x.key]); left[x.key] -= take; c = Object.assign({}, m, { qty: Math.round((Number(og[i]) - take) * 1000) / 1000 }); }
+                  if (Number(c.qty) > 0.0005) { l2.push(c); n2.push(nm[i]); o2.push(og[i]); }
                 });
-                send(l2, n2, seen);
+                send(l2, n2, o2, seen);
               });
               qs('.brStSkip', mb).addEventListener('click', function(){
                 var l2 = [], n2 = [];
-                list.forEach(function(m, i){ if (!hit[i]) { l2.push(m); n2.push(nm[i]); } });
-                send(l2, n2, seen);
+                var o2 = [];
+                list.forEach(function(m, i){ if (!hit[i]) { l2.push(m); n2.push(nm[i]); o2.push(og[i]); } });
+                send(l2, n2, o2, seen);
               });
               return;
             }
@@ -19578,7 +19583,7 @@ function renderAreaBulk(body){
             renderAreaBulkPreview();
           });
         }
-        send(moves, names, false);
+        send(moves, names, moves.map(function(m){ return m.qty; }), false);
       });
       var fb = qs('.brStSetup', holder);
       if (fb) fb.addEventListener('click', function(){
