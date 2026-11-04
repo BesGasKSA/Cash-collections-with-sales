@@ -2843,7 +2843,7 @@ function actionDataHealthCheck_(req, user) {
   // missing (a purchase or refill not entered) or wrong
   try {
     if (stockItemsLive_()) {
-      var today = todayRiyadh_(), sr = actionInventoryReport_({ dateFrom: today, dateTo: today }, INV_SYSTEM_READER_);
+      var today = todayRiyadh_(), sr = actionInventoryReport_({ dateFrom: today, dateTo: today }, INV_SYSTEM_READER_, null, null, { entries: E });
       if (sr && sr.ok) {
         checked.stockLines = sr.rows.length;
         sr.rows.forEach(function (r) {
@@ -2851,7 +2851,7 @@ function actionDataHealthCheck_(req, user) {
           var l = getById_(SHEETS.LOCATIONS, r.locationId), it = getById_(SHEETS.STOCK_ITEMS, r.stockItemId);
           var kind = r.state === 'full' ? 'stock_full_below_zero' : r.state === 'empty' ? 'stock_empty_below_zero' : 'stock_unit_below_zero';
           issues.push({ kind: kind, id: r.locationId + '|' + r.stockItemId + '|' + (r.state || ''), txNo: '', hKind: '', status: '', locationId: r.locationId, at: today,
-            msg: (l ? l.name : r.locationId) + ': ' + (it ? it.name : r.stockItemId) + (r.state ? ' (' + r.state + ')' : '') + ' ' + r.ending, expected: 0, actual: r2(r.ending), gap: r2(r.ending) });
+            msg: (l ? l.name : r.locationId) + ': ' + (it ? it.name : r.stockItemId) + (r.state ? ' (' + r.state + ')' : '') + ', short by ' + (Math.round(Math.abs(Number(r.ending)) * 1000) / 1000), expected: null, actual: null, gap: null });
         });
       }
     }

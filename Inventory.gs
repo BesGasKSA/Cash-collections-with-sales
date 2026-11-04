@@ -390,7 +390,7 @@ function actionAddInventoryMove_(req, user) {
     if (c.move.kind === 'opening' && invOpenings_()[invOpeningKey_(lf.loc.id, c.itemId, c.move.state)]) return { ok: false, error: 'opening_exists' };
     if (hasOwn_(INV_COUNT_, c.move.kind)) return { ok: false, error: 'use_stock_count' };
     // the purchases step (it sends clientRef) after a branch sheet brought this item's purchases that day
-    // (a plant receipt is the same full cylinders; brand-new cylinders bought on top are a real second purchase)
+    // (a plant receipt is the same full cylinders; new cylinders are empties since 2026-11-04 and are checked too)
     if (cRef && (c.move.kind === 'purchase' || c.move.kind === 'refill_in') && c.move.newCylinders !== true) {
       var scP = invStockCtx_(), fromSheet = scP.moves.filter(function (m) {
         if (m.voided || m.locationId !== lf.loc.id || m.date !== date || !m.importRef || m.kind !== 'purchase') return false;
