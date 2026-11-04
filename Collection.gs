@@ -2838,6 +2838,24 @@ function actionDataHealthCheck_(req, user) {
   });
   // banked more than its requests say after a receipt was corrected: for Finance to look at
   H.forEach(function (h) { if (h.kind === 'deposit' && h.status !== 'voided' && Number(h.overBanked || 0) > 0.005) add('over_banked', h, 'deposit carries ' + h.overBanked + ' more than its requests', 0, Number(h.overBanked)); });
+  // stock as it stands today (the owner, 2026-11-04): full and empty never below zero, so full never
+  // above the cylinders a branch holds; a unit item never below zero. A break means a movement is
+  // missing (a purchase or refill not entered) or wrong
+  try {
+    if (stockItemsLive_()) {
+      var today = todayRiyadh_(), sr = actionInventoryReport_({ dateFrom: today, dateTo: today }, INV_SYSTEM_READER_);
+      if (sr && sr.ok) {
+        checked.stockLines = sr.rows.length;
+        sr.rows.forEach(function (r) {
+          if (r.noOpening || !(Number(r.ending) < -0.0005)) return;
+          var l = getById_(SHEETS.LOCATIONS, r.locationId), it = getById_(SHEETS.STOCK_ITEMS, r.stockItemId);
+          var kind = r.state === 'full' ? 'stock_full_below_zero' : r.state === 'empty' ? 'stock_empty_below_zero' : 'stock_unit_below_zero';
+          issues.push({ kind: kind, id: r.locationId + '|' + r.stockItemId + '|' + (r.state || ''), txNo: '', hKind: '', status: '', locationId: r.locationId, at: today,
+            msg: (l ? l.name : r.locationId) + ': ' + (it ? it.name : r.stockItemId) + (r.state ? ' (' + r.state + ')' : '') + ' ' + r.ending, expected: 0, actual: r2(r.ending), gap: r2(r.ending) });
+        });
+      }
+    }
+  } catch (eS) { console.error('stock health: ' + eS); }
   var byKind = {};
   issues.forEach(function (i) { byKind[i.kind] = (byKind[i.kind] || 0) + 1; });
   return { ok: true, at: new Date().toISOString(), checked: checked, issues: issues, byKind: byKind };
