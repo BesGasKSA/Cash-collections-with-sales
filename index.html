@@ -16603,7 +16603,8 @@ function purchPopup_(loc, date, st, done, cancel){
         // what the plant returned first: a gas purchase waits for it
         take(row, '.pgPlant', 'refill_in', 'full', false);
         take(row, '.pgRefill', 'purchase', 'full', false);
-        take(row, '.pgNew', 'purchase', 'full', true);
+        // a new cylinder arrives without gas: one more empty (the owner, 2026-11-04)
+        take(row, '.pgNew', 'purchase', 'empty', false);
       } else take(row, '.pgUnit', 'purchase', null, false);
     });
     if (bad) { say('err', t('pbuy_needLine')); return; }
@@ -25615,7 +25616,8 @@ function renderInventory(body){
         var p = byId(goods, qs('.ivaProd', f).value), cyl = !!(p && p.cylinder), buy = qs('.ivaKind', f).value === 'purchase';
         qs('.ivaStateF', f).hidden = !cyl;
         qs('.ivaBoxF', f).hidden = !(cyl && buy);
-        qs('.ivaNewF', f).hidden = !(cyl && buy && qs('.ivaState', f).value === 'full');
+        // new cylinders are bought as empties (the owner, 2026-11-04): no 'new' on a full purchase
+        qs('.ivaNewF', f).hidden = true;
         effect_();
         var kd = qs('.ivaKind', f).value;
         qs('.ivaCostF', f).hidden = !(live && (kd === 'purchase' || kd === 'opening'));
