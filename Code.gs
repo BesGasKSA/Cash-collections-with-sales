@@ -1037,6 +1037,7 @@ function route_(req) {
     purchaseDayStatus: function () { return actionPurchaseDayStatus_(req, user); },
     purchaseDayConfirm: function () { return actionPurchaseDayConfirm_(req, user); },
     replaceOpenings: function () { return actionReplaceOpenings_(req, user); },
+    adminImportPurchases: function () { return actionAdminImportPurchases_(req, user); },
     getInventoryReport: function () { return actionInventoryReport_(req, user); },
     firstDataDay: function () { return actionFirstDataDay_(); },
     getInventoryLive: function () { return actionInventoryLive_(req, user); },

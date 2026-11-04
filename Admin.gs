@@ -1691,6 +1691,11 @@ function runOneTimeMigrations_() {
   // the translations catch-up is not here: it runs from doGet only (translationsCatchUpStep_)
   // the app became Best Gas Collections; the sender name saved at setup still
   // said the old default (a name someone chose is kept)
+  // the day's purchases, mailed at 11 pm (2026-11-04)
+  runOnce_('PURCHASES_DIGEST_TRIGGER', function () {
+    var has = ScriptApp.getProjectTriggers().some(function (t) { return t.getHandlerFunction() === 'purchasesDigestDaily_'; });
+    if (!has) ScriptApp.newTrigger('purchasesDigestDaily_').timeBased().everyDays(1).atHour(23).create();
+  });
   runOnce_('SENDER_RENAMED', function () {
     var c = config_();
     if (!c.senderName || c.senderName === 'Best Gas Cash Collection') { c.senderName = 'Best Gas Collections'; writeRow(SHEETS.CONFIG, c); }

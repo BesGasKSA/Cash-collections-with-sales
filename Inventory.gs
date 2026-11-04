@@ -422,19 +422,22 @@ function actionAddInventoryMove_(req, user) {
       if (pl0.atPlant > INV_GUARD_ROUND_) return { ok: false, error: 'use_refill_in', atPlant: pl0.atPlant };
     }
     // gas bought fills empties the branch has; more than that are new cylinders
+    var isRefill = c.move.kind === 'purchase' && c.move.state === 'full' && c.move.newCylinders !== true, warn = null;
     var rfErr = invRefillError_(c, lf.loc.id, date, user);
-    if (rfErr) return rfErr;
+    if (rfErr) { if (REFILL_GUARD_BLOCKS_ || !isRefill) return rfErr; warn = rfErr; }
     var row = invMoveRow_(lf.loc.id, c.move, date, user);
     var gErr = invGuard_(lf.loc.id, user, [row]);
     if (gErr) {
       // a refill that later days cannot carry reads as the refill rule
-      if (gErr.state === 'empty' && c.move.kind === 'purchase' && c.move.state === 'full' && c.move.newCylinders !== true) { gErr.error = 'refill_over_empty_later'; gErr.date0 = date; }
-      return gErr;
+      if (gErr.state === 'empty' && isRefill) { gErr.error = 'refill_over_empty_later'; gErr.date0 = date; }
+      if (REFILL_GUARD_BLOCKS_ || !isRefill || gErr.state !== 'empty') return gErr;
+      warn = warn || gErr;
     }
     if (cRef) row.clientRef = cRef;
+    if (warn) row.emptyShortWarned = true;
     var move = writeRow(SHEETS.INV_MOVES, row);
-    logAudit_('inventory_' + c.move.kind, user.id, move.id);
-    return { ok: true, move: move };
+    logAudit_('inventory_' + c.move.kind, user.id, move.id + (warn ? ' (empties short: ' + warn.error + ')' : ''));
+    return warn ? { ok: true, move: move, warn: { error: warn.error, emptyOnHand: warn.emptyOnHand, qty: warn.qty, shortBy: warn.shortBy, date: warn.date } } : { ok: true, move: move };
   } finally { try { lock.releaseLock(); } catch (e) {} }
 }
 
@@ -675,6 +678,11 @@ function actionReplaceOpenings_(req, user) {
 // two days and stays on their list; after that sales stop until the day is answered. A day
 // with no sales is never blocked, a driver is never blocked, and days before the start stay as
 // they are. Every way of saving a day goes through purchaseGateRows_.
+// The owner, 2026-11-04: "I don't need to stop the user from recording the sales". The day's purchases are
+// still asked for (the popup, the to-do list) but a sale goes in without them; true restores the block.
+var PURCHASE_GATE_BLOCKS_ = false;
+// a gas purchase beyond the empties on hand is saved with a warning, not refused (the owner: "just warn him")
+var REFILL_GUARD_BLOCKS_ = false;
 var PURCHASE_GATE_FROM_ = '2026-11-01', PURCHASE_DEFER_DAYS_ = 2, PURCHASE_GATE_ROLES_ = { store_manager: 1, cluster_manager: 1, admin: 1 };
 function purchaseIndex_() {
   var moved = Object.create(null), recs = Object.create(null);
@@ -830,6 +838,95 @@ function actionFirstDataDay_() {
   readSheet(SHEETS.ENTRIES).forEach(see);
   readSheet(SHEETS.INV_MOVES).forEach(see);
   return { ok: true, day: first };
+}
+// Past purchases from a file (2026-11-04: October's Odoo receipts). Admin only, with a reason. Each line
+// carries its own key (receipt and line), so the same file sent again is skipped line by line. The receipts
+// happened: stock below zero is not refused here, the health check shows it. At most 400 lines a call.
+function actionAdminImportPurchases_(req, user) {
+  if (user.role !== 'admin') return { ok: false, error: 'forbidden' };
+  var reason = String(req.reason || '').trim().slice(0, 300);
+  if (!reason) return { ok: false, error: 'reason_required' };
+  var list = Array.isArray(req.rows) ? req.rows : [];
+  if (!list.length || list.length > 400) return { ok: false, error: 'invalid_input' };
+  var lock = scriptLock_(); lock.waitLock(30000);
+  try {
+    freshenExec_();
+    var sc = invStockCtx_();
+    if (!sc.live) return { ok: false, error: 'setup_required' };
+    var seen = Object.create(null), out = [], skipped = 0, today = todayRiyadh_(), ref = String(req.ref || '').slice(0, 120);
+    readSheet(SHEETS.INV_MOVES).forEach(function (m) { if (!m.voided && m.clientRef) seen[m.clientRef] = 1; });
+    for (var i = 0; i < list.length; i++) {
+      var r = list[i] || {}, loc = getById_(SHEETS.LOCATIONS, String(r.locationId || ''));
+      if (!loc) return { ok: false, error: 'branch_required', index: i };
+      var date = String(r.date || '');
+      if (!invDateOk_(date)) return { ok: false, error: 'invalid_date', index: i };
+      if (date > today) return { ok: false, error: 'future_date', index: i };
+      var key = String(r.lineKey || '').trim().slice(0, 120);
+      if (!key) return { ok: false, error: 'invalid_input', index: i };
+      var c = invCheckMove_({ stockItemId: r.stockItemId, state: r.state, kind: 'purchase', qty: r.qty, supplier: r.supplier || 'Odoo', invoiceNo: r.invoiceNo, note: r.note }, date, sc);
+      if (c.error) return { ok: false, error: c.error, index: i };
+      if (seen[key]) { skipped++; continue; }
+      seen[key] = 1;
+      out.push(invMoveRow_(loc.id, c.move, date, user, { clientRef: key, importRef: ref, historic: true }));
+    }
+    if (req.dryRun) return { ok: true, dryRun: true, toWrite: out.length, skipped: skipped };
+    var written = costAppendMany_(SHEETS.INV_MOVES, out);
+    logAudit_('inventory_purchase_import', user.id, written.length + ' lines, ' + skipped + ' already on file (' + ref + '): ' + reason);
+    return { ok: true, written: written.length, skipped: skipped };
+  } finally { try { lock.releaseLock(); } catch (e) {} }
+}
+// ---------- the day's purchases in one mail (the owner, 2026-11-04) ----------
+// At the end of the day: to the deputy and the operations managers, every branch; to each area manager, the
+// branches of the area. Per branch: purchases entered (what, by whom), answered "none", put off, or nothing.
+function purchasesDigestDaily_() { try { purchasesDigest_(todayRiyadh_()); } catch (e) { console.error('purchases digest: ' + e); } }
+function purchasesDigest_(date) {
+  date = String(date || todayRiyadh_());
+  if (!stockItemsLive_() || date < PURCHASE_GATE_FROM_) return { ok: true, skipped: true };
+  var ix = purchaseIndex_(), users = readSheet(SHEETS.USERS), uName = Object.create(null), items = Object.create(null), areas = Object.create(null);
+  users.forEach(function (u) { uName[u.id] = u.name || u.email || ''; });
+  readSheet(SHEETS.STOCK_ITEMS).forEach(function (s) { items[s.id] = s.name; });
+  readSheet(SHEETS.CLUSTERS).forEach(function (c) { areas[c.id] = c; });
+  var moves = readSheet(SHEETS.INV_MOVES).filter(function (m) { return !m.voided && m.date === date && (m.kind === 'purchase' || m.kind === 'refill_in'); });
+  var rows = readSheet(SHEETS.LOCATIONS).filter(function (l) { return l.active !== false; }).map(function (l) {
+    var mv = moves.filter(function (m) { return m.locationId === l.id; }), rec = ix.recs[l.id + '|' + date] || null, by = [];
+    mv.forEach(function (m) { var n = uName[m.enteredBy] || ''; if (n && by.indexOf(n) < 0) by.push(n); });
+    var status = mv.length ? 'entered' : rec && rec.status === 'none' ? 'none' : rec && rec.status === 'deferred' ? 'deferred' : 'missing';
+    if (!mv.length && rec && rec.by) by.push(uName[rec.by] || '');
+    var what = mv.map(function (m) { return (items[m.stockItemId] || '') + (m.state === 'full' ? ' (ممتلئ)' : m.state === 'empty' ? ' (فارغ)' : '') + ' ' + m.qty; }).join('، ');
+    return { name: l.name || '', city: l.city || '', area: l.clusterId || '', areaName: areas[l.clusterId] ? areas[l.clusterId].name : '', status: status, by: by.join('، '), what: what, reason: rec && rec.reason ? rec.reason : '' };
+  }).sort(function (a, b) { var o = { missing: 0, deferred: 1, none: 2, entered: 3 }; return o[a.status] - o[b.status] || a.name.localeCompare(b.name); });
+  var LBL = { entered: 'أُدخلت · Entered', none: 'لا مشتريات · None', deferred: 'مؤجلة · Put off', missing: 'لم تُسجّل · Not recorded' };
+  var COL = { entered: '#2f6b3a', none: '#55606a', deferred: '#a86b12', missing: '#b3261e' };
+  function mailFor(list, title) {
+    var n = { entered: 0, none: 0, deferred: 0, missing: 0 }; list.forEach(function (r) { n[r.status]++; });
+    var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+    var html = '<div dir="rtl" style="font-family:Tahoma,Arial,sans-serif;color:#1f2a22;max-width:760px">' +
+      '<h2 style="margin:0 0 6px;color:#3b5540">مشتريات اليوم ' + esc(date) + ' · Purchases of ' + esc(date) + '</h2>' +
+      '<p style="margin:0 0 12px;color:#55606a">' + esc(title) + '</p>' +
+      '<p style="margin:0 0 14px"><b style="color:' + COL.missing + '">' + n.missing + '</b> لم تُسجّل · not recorded &nbsp; <b style="color:' + COL.deferred + '">' + n.deferred + '</b> مؤجلة · put off &nbsp; <b>' + n.none + '</b> لا مشتريات · none &nbsp; <b style="color:' + COL.entered + '">' + n.entered + '</b> أُدخلت · entered</p>' +
+      '<table cellpadding="6" cellspacing="0" style="border-collapse:collapse;width:100%;font-size:13px">' +
+      '<tr style="background:#4D6D51;color:#fff"><th align="right">الفرع · Branch</th><th align="right">المنطقة · Area</th><th align="right">الحالة · Status</th><th align="right">من · By</th><th align="right">ما أُدخل · What</th></tr>' +
+      list.map(function (r, i) { return '<tr style="background:' + (i % 2 ? '#f6f4ee' : '#fff') + '"><td>' + esc(r.name) + '</td><td>' + esc(r.areaName) + '</td><td style="color:' + COL[r.status] + ';font-weight:700">' + LBL[r.status] + '</td><td>' + esc(r.by) + '</td><td>' + esc(r.what || r.reason) + '</td></tr>'; }).join('') +
+      '</table></div>';
+    var text = 'Purchases of ' + date + ' (' + title + ')\n' + list.map(function (r) { return r.name + ': ' + LBL[r.status] + (r.by ? ' - ' + r.by : '') + (r.what ? ' - ' + r.what : ''); }).join('\n');
+    return { subject: 'مشتريات اليوم ' + date + ' · Purchases ' + date + ' (' + n.missing + ' لم تُسجّل · not recorded)', text: text, html: html };
+  }
+  var sent = 0;
+  users.forEach(function (u) {
+    if (u.active === false || !u.email) return;
+    var list = null, title = '';
+    if (u.role === 'operations_manager' || u.role === 'deputy_operations_manager') { list = rows; title = 'كل الفروع · All branches'; }
+    else if (u.role === 'cluster_manager') {
+      var mine = Object.keys(areas).filter(function (k) { return areas[k].clusterManagerUserId === u.id; });
+      if (!mine.length) return;
+      list = rows.filter(function (r) { return mine.indexOf(r.area) >= 0; }); title = 'فروع منطقتك · Your branches';
+    }
+    if (!list || !list.length) return;
+    var m = mailFor(list, title);
+    sendMail_(u.email, m.subject, m.text, m.html); sent++;
+  });
+  logAudit_('purchases_digest', 'system', date + ': ' + sent + ' mails, ' + rows.filter(function (r) { return r.status === 'missing'; }).length + ' branches not recorded');
+  return { ok: true, sent: sent, rows: rows };
 }
 function actionInventoryLive_(req, user) {
   var today = todayRiyadh_();

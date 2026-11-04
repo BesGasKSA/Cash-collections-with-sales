@@ -17,6 +17,9 @@ function close(a, b, label) {
 }
 
 var ctx = harness.buildContext();
+// the stock guard's refusals are checked as they were; the owner's default (a refill beyond the empties is
+// saved with a warning, 2026-11-04) has its own section with a fresh context
+ctx.REFILL_GUARD_BLOCKS_ = true;
 // archiving is off in the live system (2026-10-29); the older sections still exercise its logic here
 ctx.ARCHIVE_OFF_ = false;
 var SHEETS = ctx.SHEETS;
@@ -8006,6 +8009,41 @@ console.log('--- physical counts: area manager, operations, finance; only financ
   check(off.ok && off.count.status === 'pending_ops', 'with the area manager disabled the count goes to operations');
 })();
 
+console.log('--- nothing stops a sale; the day\'s purchases in one mail (2026-11-04) ---');
+(function () {
+  var c3 = harness.buildContext(), S = c3.SHEETS, salt = c3.randomSalt_();
+  function cl(p) { try { return c3.route_(p); } catch (e) { return { ok: false, error: String(e && e.message || e) }; } }
+  function u(id, role) { c3.writeRow(S.USERS, { id: id, name: id, email: id + '@bestgas.sa', role: role, active: true, language: 'en', salt: salt, pass: c3.hashPw_('Bootstrap#1', salt), mustChangePw: false }); }
+  ['dgBm:store_manager', 'dgAm:cluster_manager', 'dgOps:operations_manager', 'dgDep:deputy_operations_manager', 'dgCol:collector', 'dgAdm:admin'].forEach(function (x) { var p = x.split(':'); u(p[0], p[1]); });
+  c3.writeRow(S.CLUSTERS, { id: 'dgA', name: 'Digest Area', clusterManagerUserId: 'dgAm' });
+  c3.writeRow(S.LOCATIONS, { id: 'dgL', name: 'Digest Branch', city: 'Riyadh', clusterId: 'dgA', collectorUserId: 'dgCol' });
+  c3.writeRow(S.LOCATIONS, { id: 'dgL2', name: 'Quiet Branch', city: 'Riyadh', clusterId: 'dgA', collectorUserId: 'dgCol' });
+  c3.writeRow(S.STORES, { id: 'dgS', name: 'S', locationId: 'dgL', storeManagerUserId: 'dgBm' });
+  c3.writeRow(S.STOCK_ITEMS, { id: 'dgU', name: 'Hose', kind: 'unit', unitCost: 5, active: true });
+  c3.setScriptProp_(c3.INV_SETUP_FLAG_, 'yes'); c3.resetExecMemo_();
+  c3.PURCHASE_GATE_FROM_ = '2020-01-01';
+  var today = new Date(Date.now() + 3 * 3600e3).toISOString().slice(0, 10);
+  var bm = cl({ action: 'login', email: 'dgBm@bestgas.sa', password: 'Bootstrap#1' }).token;
+  var sale = cl({ action: 'importDailyEntries', token: bm, rows: [{ date: today, sourceType: 'store', sourceId: 'dgS', cashSales: 50, submissionId: 'dg1' }] });
+  check(sale.ok, 'a sale goes in without the day\'s purchases (' + (sale.error || 'ok') + ')');
+  check(cl({ action: 'purchaseDayStatus', token: bm, locationId: 'dgL', date: today }).required === true, 'and the purchases are still asked for');
+  var mails = c3._debug.mailLog.length;
+  var dg = c3.purchasesDigest_(today);
+  var got = c3._debug.mailLog.slice(mails), to = got.map(function (m) { return m.to; });
+  check(dg.ok && to.indexOf('dgOps@bestgas.sa') >= 0 && to.indexOf('dgDep@bestgas.sa') >= 0 && to.indexOf('dgAm@bestgas.sa') >= 0, 'one mail each to the operations manager, the deputy and the area manager (' + to.join(',') + ')');
+  check(to.indexOf('dgBm@bestgas.sa') < 0 && to.indexOf('dgCol@bestgas.sa') < 0, 'and nobody else');
+  check(dg.rows.filter(function (r) { return r.name === 'Digest Branch'; })[0].status === 'missing' && /Not recorded/.test(got[0].body), 'a branch that recorded nothing is named');
+  // a refill beyond the empties: saved, with a warning
+  c3.writeRow(S.STOCK_ITEMS, { id: 'dgCy', name: 'Cyl', kind: 'cylinder', unitCost: 5, active: true });
+  c3.resetExecMemo_();
+  var adm = cl({ action: 'login', email: 'dgAdm@bestgas.sa', password: 'Bootstrap#1' }).token;
+  cl({ action: 'addInventoryMove', token: adm, locationId: 'dgL', stockItemId: 'dgCy', state: 'full', kind: 'opening', qty: 5, date: '2026-10-01' });
+  cl({ action: 'addInventoryMove', token: adm, locationId: 'dgL', stockItemId: 'dgCy', state: 'empty', kind: 'opening', qty: 2, date: '2026-10-01' });
+  var over = cl({ action: 'addInventoryMove', token: adm, locationId: 'dgL', stockItemId: 'dgCy', state: 'full', kind: 'purchase', qty: 10, date: '2026-10-02', supplier: 'Khazeen' });
+  check(over.ok && over.warn && /refill_over/.test(over.warn.error), 'gas bought for more empties than on hand is saved with a warning (' + JSON.stringify(over.warn || over.error) + ')');
+  check(c3.ScriptApp.getProjectTriggers().length >= 0, 'the trigger API answers');
+})();
+
 console.log('--- a branch sheet does not bring the day\'s purchases twice (2026-11-03) ---');
 (function () {
   var src = fs0_('Inventory.gs');
@@ -8044,6 +8082,8 @@ console.log('--- purchases come before sales (2026-10-31) ---');
   ctx.setScriptProp_(ctx.INV_SETUP_FLAG_, 'yes'); ctx.resetExecMemo_();
   var today = new Date(Date.now() + 3 * 3600e3).toISOString().slice(0, 10), bm = tok('pgBm'), dr = tok('pgDr'), adm = tok('pgAdm');
   ctx.PURCHASE_GATE_FROM_ = '2020-01-01';
+  // the block as it was, with its switch on; the owner's default (warn only) is checked after
+  ctx.PURCHASE_GATE_BLOCKS_ = true;
   function day(t, sub, type, src) { return call({ action: 'importDailyEntries', token: t, rows: [{ date: today, sourceType: type || 'store', sourceId: src || 'pgS', cashSales: 100, submissionId: sub }] }); }
   var st0 = call({ action: 'purchaseDayStatus', token: bm, locationId: 'pgL', date: today });
   check(st0.ok && st0.required && !st0.done && st0.canDefer, 'a new branch day asks for its purchases');
