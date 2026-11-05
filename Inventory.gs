@@ -1396,7 +1396,7 @@ function actionListStockCounts_(req, user) {
 // `pre`: {entries} already read by the caller (stockShortsFor_ asks for several days at once).
 function actionInventoryReport_(req, user, scOverride, extraEntries, pre) {
   var entriesOnFile = pre && pre.entries ? pre.entries : null;
-  function entriesRead() { if (!entriesOnFile) entriesOnFile = readSheet(SHEETS.ENTRIES); return entriesOnFile; }
+  function entriesRead() { if (!entriesOnFile) entriesOnFile = readSheetRO_(SHEETS.ENTRIES); return entriesOnFile; }
   var scope = invReadBranches_(user);
   if (scope === false) return { ok: false, error: 'forbidden' };
   var today = todayRiyadh_();
@@ -1824,7 +1824,7 @@ function actionStockLedger_(req, user, scOverride) {
     push({ date: m.date, at: m.createdAt || '', kind: m.kind, newCylinders: m.newCylinders === true, txNo: m.txNo || '', by: m.enteredBy, note: m.note || '', moveId: m.id, d: d, opening: m.kind === 'opening',
       customerId: m.customerId || null, carId: m.carId || null, toLocationId: m.toLocationId || null, fromLocationId: m.fromLocationId || null, qty: q });
   });
-  readSheet(SHEETS.ENTRIES).forEach(function (e) {
+  readSheetRO_(SHEETS.ENTRIES).forEach(function (e) {
     if (e.voided || !e.productId || e.locationId !== locId || !e.date || e.date > to) return;
     var link = sc.saleLink(e.productId); if (!link) return;
     var q = Number(e.qty || 0); if (!q) return;

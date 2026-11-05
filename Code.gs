@@ -291,6 +291,17 @@ function readSheet(name) {
   return rows;
 }
 
+// One parsed copy per request for code that only reads (2026-11-06, speed): readSheet hands every caller its
+// own fresh parse because many change what they read; the entries sheet is ~10 MB, and a single stock check
+// parsed it several times. A write to the sheet drops the copy (its memoized text changes).
+function readSheetRO_(name) {
+  var ex = exec_(); ex.ro = ex.ro || {};
+  var hit = ex.ro[name];
+  if (hit && ex.rows[name] !== undefined && ex.rows[name] === hit.src) return hit.rows;
+  var rows = readSheet(name);
+  ex.ro[name] = { src: ex.rows[name], rows: rows };
+  return rows;
+}
 function findRow_(sh, id) {
   var lastRow = sh.getLastRow();
   if (lastRow < 2) return -1;
