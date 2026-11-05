@@ -3825,7 +3825,9 @@
   .cnt2-opt span{padding:8px 14px;border-radius:999px;border:1px solid var(--border);cursor:pointer;font-size:13.5px;}
   .cnt2-opt input:checked+span{background:var(--green);border-color:var(--green);color:#fff;font-weight:700;}
   .cnt2-opt input:focus-visible+span{outline:2px solid var(--green);outline-offset:2px;}
-  .cnt2-blind{display:flex;gap:10px;align-items:flex-start;margin:12px 0;cursor:pointer;}
+  .cnt2-blind{display:flex !important;grid-template-columns:none !important;gap:10px;align-items:flex-start;justify-content:flex-start;margin:12px 0;cursor:pointer;text-align:start;}
+  .cnt2-blind input{flex:none;width:18px;height:18px;margin:2px 0 0 !important;}
+  .cnt2-blind > span{flex:1;min-width:0;}
   .cnt2-blind input{margin-top:3px;}
   .cnt2-blind small{display:block;color:var(--muted);font-size:12.5px;margin-top:2px;}
   .cnt2-blind,.cnt2-blind *,.cnt2-opt,.cnt2-opt *{text-transform:none !important;letter-spacing:normal !important;}
@@ -7120,7 +7122,7 @@ function clearScreenCache_(){
 }
 function stripToken_(res){
   var copy = {};
-  Object.keys(res).forEach(function(k){ if (k !== 'token') copy[k] = res[k]; });
+  Object.keys(res).forEach(function(k){ if (k !== 'token' && k !== '_ms') copy[k] = res[k]; });
   return copy;
 }
 // cb(res, fromCache). `body` is the screen container: if the user has left

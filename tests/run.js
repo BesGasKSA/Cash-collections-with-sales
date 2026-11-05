@@ -3199,7 +3199,7 @@ function mgFigures(legacyOf) {
 }
 function mgProfit() {
   return [['2026-08-01', '2026-08-31'], ['2026-09-01', '2026-09-30'], ['2026-09-14', '2026-09-14']].map(function (p) {
-    var r = call({ action: 'getProfitReport', token: adminTok, dateFrom: p[0], dateTo: p[1] }); delete r.token; return mgCanon(r);
+    var r = call({ action: 'getProfitReport', token: adminTok, dateFrom: p[0], dateTo: p[1] }); delete r.token; delete r._ms; return mgCanon(r);
   });
 }
 function mgSheets(c) { c = c || ctx; return [c.SHEETS.INV_MOVES, c.SHEETS.ENTRIES].map(function (s) { return mgCanon(c.readSheet(s)); }); }

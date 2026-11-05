@@ -969,8 +969,12 @@ function withMeta_(result, req, user) {
   return result;
 }
 
+// Where a request's time goes (2026-11-06, speed): the server's own milliseconds per stage ride back as _ms.
+var ROUTE_MS_ = null;
+function msMark_(k) { if (ROUTE_MS_) ROUTE_MS_[k] = Date.now() - ROUTE_MS_.t0; }
 function route_(req) {
   resetExecMemo_();
+  ROUTE_MS_ = { t0: Date.now() };
   var action = req.action;
   if (!action) throw new Error('missing_action');
 
@@ -983,7 +987,9 @@ function route_(req) {
   // every other action requires a session
   var session = requireAuth_(req);
   var user = session.user;
+  msMark_('auth');
   runOneTimeMigrations_();
+  msMark_('mig');
   // the area an area manager is working in, for this request only (area switching, 2026-10-06)
   setActiveArea_(user, req.activeAreaId);
   var newToken = renewToken_(user.id, session.hardExp, epochOf_(user));
@@ -1169,18 +1175,23 @@ function route_(req) {
     try {
       cache = CacheService.getScriptCache();
       respKey = responseCacheKey_(action, req, user);
+      msMark_('key');
       var hit = cacheGetBig_(cache, respKey);
       if (hit) {
         var cached = JSON.parse(hit);
         cached.token = newToken;   // the session token is never cached
+        msMark_('hit'); cached._ms = msOut_();
         return cached;
       }
+      msMark_('miss');
     } catch (e) { respKey = null; }
   }
 
   // push notifications the action asks for are gathered and sent once it has returned (Push.gs)
   exec_().pushBatch = [];
+  msMark_('pre');
   var result = handlers[action]();
+  msMark_('act');
   // an action that answered ok:false did not happen: nothing it queued goes out
   if (result && result.ok === false) exec_().pushBatch = null;
   else { try { pushFlush_(); } catch (e) { /* push is best-effort */ } }
@@ -1193,8 +1204,10 @@ function route_(req) {
   }
   // after the action: a changed sign-in raises the epoch, and this device keeps its session
   result.token = renewToken_(user.id, session.hardExp, epochOf_(user));
+  msMark_('done'); if (result && typeof result === 'object') result._ms = msOut_();
   return result;
 }
+function msOut_() { var o = {}; if (ROUTE_MS_) Object.keys(ROUTE_MS_).forEach(function (k) { if (k !== 't0') o[k] = ROUTE_MS_[k]; }); return o; }
 
 function actionLogin_(req) {
   var login = String(req.email || '').trim();
