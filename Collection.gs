@@ -677,6 +677,98 @@ function actionAdminVoidTransaction_(req, user) {
   return { ok: true, voided: rows.length, handoffsVoided: hList.length, depositsVoided: deposits.length };
 }
 
+// The owner (2026-11-05, DAY-2026-000267): "cancel all and remove it from the bank". An admin
+// cancels a day even after its cash was received and banked: the day, every handover that carried
+// only this day, and its part of the bank deposit (the deposit's amount, breakdown and areas are
+// worked out again from what is left, each change kept in `adjustments`). Refused when a handover
+// on the way also carries other cash (it cannot be split), when the deposit was matched with the
+// bank statement, when credit was invoiced, and without the word CANCEL. Nothing is deleted.
+function actionAdminCancelBanked_(req, user) {
+  if (user.role !== 'admin') return { ok: false, error: 'forbidden' };
+  var reason = String(req.reason || '').trim().slice(0, 1000);
+  if (!reason) return { ok: false, error: 'reason_required' };
+  if (String(req.confirm || '') !== 'CANCEL') return { ok: false, error: 'cancel_confirm_required' };
+  var all = readSheet(SHEETS.ENTRIES), pick = Object.create(null);
+  var e0 = all.filter(function (x) { return x.id === String(req.id || ''); })[0];
+  if (!e0) return { ok: false, error: 'not_found' };
+  all.forEach(function (x) { if (!x.voided && (x.id === e0.id || (e0.txNo && x.txNo === e0.txNo) || (e0.submissionId && x.submissionId === e0.submissionId))) pick[x.id] = x; });
+  var rows = Object.keys(pick).map(function (k) { return pick[k]; });
+  if (!rows.length) return { ok: false, error: 'not_found' };
+  var inv = invoicedEntries_(), directs = [];
+  for (var i = 0; i < rows.length; i++) {
+    if (rows[i].creditCustomerId && inv[rows[i].id]) return { ok: false, error: 'entry_invoiced' };
+    var dd = directDepositOf_(rows[i].id);
+    if (dd && (dd.reconciled || dd.wasReconciled)) return { ok: false, error: 'deposit_reconciled' };
+    if (dd) directs.push(dd);
+  }
+  // the way up: every handover must hold only this day (and the handovers below it on this way)
+  var hs = readSheet(SHEETS.HANDOFFS), hById = Object.create(null); hs.forEach(function (h) { hById[h.id] = h; });
+  var chain = [], cur = null, seen = Object.create(null);
+  var top = rows[0].consumedBy || null;
+  for (var j = 0; j < rows.length; j++) if ((rows[j].consumedBy || null) !== top) return { ok: false, error: 'handoff_shared' };
+  var deposit = null;
+  // inside an area batch (no handover row yet): that is the batch's to reject, not this
+  if (top && !hById[top]) return { ok: false, error: 'entry_handed_on' };
+  cur = top ? hById[top] : null;
+  while (cur && !seen[cur.id]) {
+    seen[cur.id] = 1;
+    if (cur.kind === 'deposit') { deposit = cur; break; }
+    if (['voided', 'returned', 'rejected'].indexOf(cur.status) >= 0) return { ok: false, error: 'not_found' };
+    var below = chain.length ? [chain[chain.length - 1].id] : [];
+    var srcE = (cur.sourceEntryIds || []).filter(function (id) { var e = all.filter(function (x) { return x.id === id; })[0]; return !(e && e.voided); });
+    var srcH = (cur.sourceHandoffIds || []).filter(function (id) { var h = hById[id]; return h && ['voided', 'returned', 'rejected'].indexOf(h.status) < 0; });
+    var onlyE = srcE.every(function (id) { return pick[id]; }), onlyH = srcH.every(function (id) { return below.indexOf(id) >= 0; });
+    if (!onlyE || !onlyH || (chain.length === 0 && srcH.length) || (chain.length && srcE.length)) return { ok: false, error: 'handoff_shared', existingTxNo: cur.txNo || '' };
+    chain.push(cur);
+    cur = cur.consumedBy ? hById[cur.consumedBy] : null;
+  }
+  if (deposit && (deposit.reconciled || deposit.wasReconciled)) return { ok: false, error: 'deposit_reconciled', existingTxNo: deposit.txNo || '' };
+  if (deposit && deposit.status !== 'completed') return { ok: false, error: 'not_found' };
+  // nobody cuts a chain their own cash went through (CLAUDE.md trap 3)
+  var parties = chain.concat(deposit ? [deposit] : []).concat(directs);
+  if (parties.some(function (h) { return [h.fromUserId, h.toUserId, h.createdBy, h.confirmedBy, h.disputedBy].indexOf(user.id) >= 0; })) return { ok: false, error: 'conflict_of_interest' };
+  var at = new Date().toISOString(), adj = null;
+  if (deposit) {
+    var last = chain[chain.length - 1];
+    var keep = (deposit.sourceHandoffIds || []).filter(function (id) { return id !== last.id; }).map(function (id) { return hById[id]; }).filter(Boolean);
+    // the deposit's own banked figure less exactly what this day's handover carried: money it holds
+    // beyond its requests (overBanked, a request corrected out) stays where it is
+    var before = Number(deposit.amount || 0), took = Math.round(Number(last.amount || 0) * 100) / 100, after = Math.round((before - took) * 100) / 100;
+    adj = { at: at, by: user.id, reason: reason, removedHandoffId: last.id, removedTxNo: last.txNo || '', removedAmount: took, amountBefore: before, amountAfter: after };
+    deposit.adjustments = (deposit.adjustments || []).concat([adj]);
+    deposit.sourceHandoffIds = keep.map(function (h) { return h.id; });
+    if (!(deposit.sourceHandoffIds || []).length && !(after > 0.004)) { deposit.status = 'voided'; deposit.voidedAt = at; deposit.voidedBy = user.id; deposit.voidReason = reason; }
+    else {
+      if (deposit.originalBankAmount == null) deposit.originalBankAmount = before;
+      deposit.amount = after;
+      deposit.breakdown = sumBreakdowns_(keep.map(function (h) { return h.breakdown; }));
+      deposit.perCluster = collectorPerCluster_(keep);
+      // the deposit's day follows what it still holds (unless it was set by hand)
+      if (!deposit.dateChanged) { var dc = hoDateCtx_(); dc.hById[last.id] = Object.assign({}, last, { status: 'voided' }); rows.forEach(function (e) { dc.eById[e.id] = Object.assign({}, e, { voided: true }); }); dc.memo = Object.create(null); hoStampDate_(dc, deposit, null, null, user); }
+    }
+    writeRow(SHEETS.HANDOFFS, deposit);
+    logAudit_('admin_deposit_reduced', user.id, deposit.id + ' ' + before + ' -> ' + after + ' (' + (last.txNo || last.id) + '): ' + reason);
+  }
+  chain.forEach(function (h) {
+    h.status = 'voided'; h.voidedAt = at; h.voidedBy = user.id; h.voidReason = reason; h.consumedBy = null; h.cancelledAfterBanking = !!deposit;
+    writeRow(SHEETS.HANDOFFS, h);
+    logAudit_('admin_void_handoff', user.id, h.id);
+  });
+  rows.forEach(function (e) {
+    var fresh = getById_(SHEETS.ENTRIES, e.id) || e;
+    fresh.voided = true; fresh.voidedAt = at; fresh.voidedBy = user.id; fresh.voidReason = reason; fresh.consumedBy = null;
+    writeRow(SHEETS.ENTRIES, fresh);
+    logAudit_('admin_void_entry', user.id, fresh.id);
+    if (fresh.directDepositPhotoId) { var ph = getById_(SHEETS.ENTRY_PHOTOS, fresh.directDepositPhotoId); if (ph && ph.usedBy === fresh.id) { ph.usedBy = null; writeRow(SHEETS.ENTRY_PHOTOS, ph); } }
+  });
+  directs.forEach(function (d) {
+    d.status = 'voided'; d.voidedAt = at; d.voidedBy = user.id; d.voidReason = reason;
+    writeRow(SHEETS.HANDOFFS, d);
+    logAudit_('void_direct_deposit', user.id, d.id);
+  });
+  return { ok: true, voided: rows.length, handoffsVoided: chain.length, deposit: deposit ? { id: deposit.id, txNo: deposit.txNo || '', status: deposit.status, amountBefore: adj.amountBefore, amountAfter: adj.amountAfter } : null };
+}
+
 // The bank deposit a day's الموازنة wrote, if it is still standing.
 function directDepositOf_(entryId) {
   return readSheet(SHEETS.HANDOFFS).filter(function (h) {

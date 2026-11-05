@@ -65,7 +65,8 @@ function autoMatchBankLines_(user) {
   var matched = 0, doneLines = [], doneDeposits = [];
   lines.forEach(function (line) {
     var candidates = deposits.filter(function (d) {
-      return Math.abs(Number(d.amount) - Number(line.amount)) < RECON_AMOUNT_TOLERANCE &&
+      // a deposit reduced after banking (adminCancelBanked) is still the figure the bank received
+      return Math.abs(Number(d.originalBankAmount != null ? d.originalBankAmount : d.amount) - Number(line.amount)) < RECON_AMOUNT_TOLERANCE &&
         daysBetween_(d.confirmedAt || d.createdAt, line.date) <= RECON_DATE_WINDOW_DAYS;
     });
     if (candidates.length === 1) {

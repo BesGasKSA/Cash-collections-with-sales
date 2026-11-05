@@ -7924,6 +7924,66 @@ console.log('--- several requests approved in one click (2026-10-31) ---');
   check(ctx._debug.mailLog.length === mails + 2, 'the collector and the area manager are told, after the lock (' + (ctx._debug.mailLog.length - mails) + ')');
 })();
 
+console.log('--- the owner cancels a banked day, the deposit included (2026-11-05) ---');
+(function () {
+  var c5 = harness.buildContext(), S = c5.SHEETS, salt = c5.randomSalt_();
+  function cl(p) { try { return c5.route_(p); } catch (e) { return { ok: false, error: String(e && e.message || e) }; } }
+  function u(id, role) { c5.writeRow(S.USERS, { id: id, name: id, email: id + '@bestgas.sa', role: role, active: true, language: 'en', salt: salt, pass: c5.hashPw_('Bootstrap#1', salt), mustChangePw: false }); }
+  ['cbAdm:admin', 'cbFin:finance', 'cbAm:cluster_manager', 'cbCol:collector'].forEach(function (x) { var p = x.split(':'); u(p[0], p[1]); });
+  var adm = cl({ action: 'login', email: 'cbAdm@bestgas.sa', password: 'Bootstrap#1' }).token, fin = cl({ action: 'login', email: 'cbFin@bestgas.sa', password: 'Bootstrap#1' }).token;
+  function bd(n) { return { storeCash: n, netCashOwed: n }; }
+  c5.writeRow(S.ENTRIES, { id: 'cbE1', submissionId: 'cbS1', date: '2026-10-11', locationId: 'L1', sourceType: 'store', sourceId: 's1', cashSales: 100, consumedBy: 'cbH1' });
+  c5.writeRow(S.ENTRIES, { id: 'cbE1b', submissionId: 'cbS1', date: '2026-10-11', locationId: 'L1', sourceType: 'store', sourceId: 's1', cashSales: 20, consumedBy: 'cbH1' });
+  c5.writeRow(S.ENTRIES, { id: 'cbE2', submissionId: 'cbS2', date: '2026-10-11', locationId: 'L2', sourceType: 'store', sourceId: 's2', cashSales: 300, consumedBy: 'cbH2' });
+  c5.writeRow(S.HANDOFFS, { id: 'cbH1', kind: 'cluster_to_collector', clusterId: 'A1', locationId: 'L1', fromUserId: 'cbAm', toUserId: 'cbCol', amount: 120, breakdown: bd(120), sourceEntryIds: ['cbE1', 'cbE1b'], sourceHandoffIds: [], status: 'confirmed', consumedBy: 'cbD' });
+  c5.writeRow(S.HANDOFFS, { id: 'cbH2', kind: 'cluster_to_collector', clusterId: 'A1', locationId: 'L2', fromUserId: 'cbAm', toUserId: 'cbCol', amount: 300, breakdown: bd(300), sourceEntryIds: ['cbE2'], sourceHandoffIds: [], status: 'confirmed', consumedBy: 'cbD' });
+  c5.writeRow(S.HANDOFFS, { id: 'cbD', kind: 'deposit', fromUserId: 'cbCol', amount: 420, breakdown: bd(420), perCluster: [], sourceEntryIds: [], sourceHandoffIds: ['cbH1', 'cbH2'], status: 'completed', bankReference: 'R1' });
+  check(cl({ action: 'adminVoidTransaction', token: adm, ids: ['cbE1'], reason: 'x' }).error === 'entry_handed_on', 'the ordinary cancel still stops at a banked day');
+  check(cl({ action: 'adminCancelBanked', token: fin, id: 'cbE1', reason: 'x', confirm: 'CANCEL' }).error === 'forbidden', 'only an admin cancels a banked day');
+  check(cl({ action: 'adminCancelBanked', token: adm, id: 'cbE1', reason: '', confirm: 'CANCEL' }).error === 'reason_required', 'with a reason');
+  check(cl({ action: 'adminCancelBanked', token: adm, id: 'cbE1', reason: 'x', confirm: 'yes' }).error === 'cancel_confirm_required', 'and the word CANCEL');
+  var r = cl({ action: 'adminCancelBanked', token: adm, id: 'cbE1', reason: 'owner: wrong day', confirm: 'CANCEL' });
+  var d = c5.getById_(S.HANDOFFS, 'cbD'), h1 = c5.getById_(S.HANDOFFS, 'cbH1');
+  check(r.ok && r.voided === 2 && r.handoffsVoided === 1, 'both lines of the day and its handover are cancelled (' + JSON.stringify(r) + ')');
+  check(d.status === 'completed' && d.amount === 300 && d.sourceHandoffIds.join() === 'cbH2' && d.breakdown.netCashOwed === 300 && d.originalBankAmount === 420, 'the deposit drops to 300 and keeps the other branch (' + d.amount + ')');
+  check(d.adjustments.length === 1 && d.adjustments[0].removedAmount === 120 && d.adjustments[0].reason === 'owner: wrong day', 'the change is kept on the deposit with its reason');
+  check(h1.status === 'voided' && h1.cancelledAfterBanking && c5.getById_(S.ENTRIES, 'cbE1').voided && c5.getById_(S.ENTRIES, 'cbE1b').voided, 'nothing is deleted: rows stay, cancelled');
+  check(!c5.getById_(S.ENTRIES, 'cbE2').voided && c5.getById_(S.HANDOFFS, 'cbH2').status === 'confirmed', 'the other branch is untouched');
+  check(c5.readSheet(S.AUDIT).some(function (a) { return a.action === 'admin_deposit_reduced'; }), 'the deposit change is on the audit trail');
+  // the last day in a deposit takes the deposit with it; a matched deposit, or a shared handover, refuses
+  var r2 = cl({ action: 'adminCancelBanked', token: adm, id: 'cbE2', reason: 'x', confirm: 'CANCEL' });
+  check(r2.ok && c5.getById_(S.HANDOFFS, 'cbD').status === 'voided', 'the last day out voids the deposit');
+  c5.writeRow(S.ENTRIES, { id: 'cbE3', date: '2026-10-12', locationId: 'L1', consumedBy: 'cbH3' });
+  c5.writeRow(S.ENTRIES, { id: 'cbE4', date: '2026-10-12', locationId: 'L1', consumedBy: 'cbH3' });
+  c5.writeRow(S.HANDOFFS, { id: 'cbH3', kind: 'cluster_to_collector', amount: 50, breakdown: bd(50), sourceEntryIds: ['cbE3', 'cbE4'], sourceHandoffIds: [], status: 'confirmed', consumedBy: 'cbD2' });
+  c5.writeRow(S.HANDOFFS, { id: 'cbD2', kind: 'deposit', amount: 50, breakdown: bd(50), sourceHandoffIds: ['cbH3'], status: 'completed', reconciled: true });
+  check(cl({ action: 'adminCancelBanked', token: adm, id: 'cbE3', reason: 'x', confirm: 'CANCEL' }).error === 'handoff_shared', 'a handover carrying other days is not split');
+  c5.writeRow(S.ENTRIES, { id: 'cbE6', date: '2026-10-12', locationId: 'L1', consumedBy: 'cbH4' });
+  c5.writeRow(S.HANDOFFS, { id: 'cbH4', kind: 'cluster_to_collector', amount: 50, breakdown: bd(50), sourceEntryIds: ['cbE6'], sourceHandoffIds: [], status: 'confirmed', consumedBy: 'cbD3' });
+  c5.writeRow(S.HANDOFFS, { id: 'cbD3', kind: 'deposit', amount: 50, breakdown: bd(50), sourceHandoffIds: ['cbH4'], status: 'completed', reconciled: true });
+  check(cl({ action: 'adminCancelBanked', token: adm, id: 'cbE6', reason: 'x', confirm: 'CANCEL' }).error === 'deposit_reconciled' && !c5.getById_(S.ENTRIES, 'cbE6').voided, 'a deposit matched with the bank statement is not changed');
+  c5.writeRow(S.ENTRIES, { id: 'cbE5', date: '2026-10-12', locationId: 'L1', consumedBy: 'batch-1' });
+  check(cl({ action: 'adminCancelBanked', token: adm, id: 'cbE5', reason: 'x', confirm: 'CANCEL' }).error === 'entry_handed_on', 'a day inside an area batch is the deputy\'s to reject');
+  // money banked beyond the requests stays; the deposit drops by exactly the day's handover
+  c5.writeRow(S.ENTRIES, { id: 'cbE7', date: '2026-10-13', locationId: 'L1', consumedBy: 'cbH7' });
+  c5.writeRow(S.ENTRIES, { id: 'cbE8', date: '2026-10-13', locationId: 'L2', consumedBy: 'cbH8' });
+  c5.writeRow(S.HANDOFFS, { id: 'cbH7', kind: 'cluster_to_collector', fromUserId: 'cbAm', toUserId: 'cbCol', amount: 70, breakdown: bd(70), sourceEntryIds: ['cbE7'], sourceHandoffIds: [], status: 'confirmed', consumedBy: 'cbD7' });
+  c5.writeRow(S.HANDOFFS, { id: 'cbH8', kind: 'cluster_to_collector', fromUserId: 'cbAm', toUserId: 'cbCol', amount: 30, breakdown: bd(30), sourceEntryIds: ['cbE8'], sourceHandoffIds: [], status: 'confirmed', consumedBy: 'cbD7' });
+  var now7 = new Date().toISOString();
+  c5.writeRow(S.HANDOFFS, { id: 'cbD7', kind: 'deposit', fromUserId: 'cbCol', amount: 150, overBanked: 50, breakdown: bd(100), sourceHandoffIds: ['cbH7', 'cbH8'], status: 'completed', createdAt: now7, confirmedAt: now7 });
+  var r7 = cl({ action: 'adminCancelBanked', token: adm, id: 'cbE7', reason: 'x', confirm: 'CANCEL' }), d7 = c5.getById_(S.HANDOFFS, 'cbD7');
+  check(r7.ok && d7.amount === 80 && d7.overBanked === 50 && d7.adjustments[0].removedAmount === 70 && d7.originalBankAmount === 150, 'the deposit drops by the day\'s 70 only; the 50 banked over stays (' + JSON.stringify(r7.error || d7.amount) + ')');
+  // the bank statement still matches the figure the bank received
+  c5.writeRow(S.BANK_LINES, { date: now7.slice(0, 10), amount: 150, reference: 'R7', status: 'unmatched' });
+  c5.autoMatchBankLines_({ id: 'cbFin' });
+  check(c5.getById_(S.HANDOFFS, 'cbD7').reconciled === true, 'a reduced deposit still matches the bank line of what was banked');
+  // nobody cuts a chain their own cash went through
+  c5.writeRow(S.ENTRIES, { id: 'cbE9', date: '2026-10-13', locationId: 'L1', consumedBy: 'cbH9' });
+  c5.writeRow(S.HANDOFFS, { id: 'cbH9', kind: 'cluster_to_collector', fromUserId: 'cbAm', toUserId: 'cbAdm', amount: 10, breakdown: bd(10), sourceEntryIds: ['cbE9'], sourceHandoffIds: [], status: 'confirmed', consumedBy: 'cbD9' });
+  c5.writeRow(S.HANDOFFS, { id: 'cbD9', kind: 'deposit', fromUserId: 'cbAdm', amount: 10, breakdown: bd(10), sourceHandoffIds: ['cbH9'], status: 'completed' });
+  check(cl({ action: 'adminCancelBanked', token: adm, id: 'cbE9', reason: 'x', confirm: 'CANCEL' }).error === 'conflict_of_interest', 'an admin does not cut a deposit they made');
+})();
+
 console.log('--- physical counts: area manager, operations, finance; only finance posts (2026-11-04) ---');
 (function () {
   var c2 = harness.buildContext(), S = c2.SHEETS, salt = c2.randomSalt_();

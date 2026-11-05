@@ -1005,6 +1005,7 @@ function route_(req) {
     // entries
     voidEntries: function () { return withCashLock_(function () { return actionVoidEntries_(req, user); }); },
     adminVoidTransaction: function () { return withCashLock_(function () { return actionAdminVoidTransaction_(req, user); }); },
+    adminCancelBanked: function () { return withCashLock_(function () { return actionAdminCancelBanked_(req, user); }); },
     deputyValidateHandoff: function () { var r = withCashLock_(function () { return actionDeputyValidateHandoff_(req, user); }); if (r && r.ok) r.wa = waNotifyCollector_(r.handoff); return r; },
     // several requests approved in one click (2026-10-31)
     deputyValidateMany: function () { var r = withCashLock_(function () { return actionDeputyValidateMany_(req, user); }); if (r && r.ok) { r.wa = (r.handoffs || []).map(waNotifyCollector_).filter(Boolean); delete r.handoffs; } return r; },
