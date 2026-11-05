@@ -1189,6 +1189,7 @@ function actionStockCountSave_(req, user) {
       if (!it) return { ok: false, error: 'invalid_stock_item', index: i };
       var st = it.kind === 'cylinder' ? String(l.state || '') : '';
       if (it.kind === 'cylinder' && INV_STATES_.indexOf(st) < 0) return { ok: false, error: 'invalid_state', index: i };
+      if ((cnt.scope === 'cylinders' && it.kind !== 'cylinder') || (cnt.scope === 'units' && it.kind === 'cylinder')) return { ok: false, error: 'count_scope', index: i, name: it.name };
       var key = it.id + '|' + st; if (seen[key]) continue; seen[key] = 1;
       var cv = l.counted, blank = cv === '' || cv == null, counted = blank ? null : ((typeof cv === 'number' && cv === 0) || cv === '0' ? 0 : invQty_(cv));
       if (!blank && counted == null) return { ok: false, error: 'invalid_qty', index: i };
@@ -1240,6 +1241,7 @@ function actionStockCountSubmit_(req, user) {
       if (!it) return { ok: false, error: 'invalid_stock_item', index: i };
       var st = it.kind === 'cylinder' ? String(l.state || '') : '';
       if (it.kind === 'cylinder' && INV_STATES_.indexOf(st) < 0) return { ok: false, error: 'invalid_state', index: i };
+      if (opened && ((opened.scope === 'cylinders' && it.kind !== 'cylinder') || (opened.scope === 'units' && it.kind === 'cylinder'))) return { ok: false, error: 'count_scope', index: i, name: it.name };
       var key = it.id + '|' + st; if (seen[key]) return { ok: false, error: 'invalid_input', index: i }; seen[key] = true;
       var cv = l.counted, counted = (typeof cv === 'number' && cv === 0) || cv === '0' ? 0 : invQty_(cv);
       if (counted == null) return { ok: false, error: 'invalid_qty', index: i };

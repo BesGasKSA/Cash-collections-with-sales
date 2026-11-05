@@ -8070,6 +8070,12 @@ console.log('--- a count is opened, recorded as it goes, then submitted (2026-11
   var rc = cl({ action: 'stockCountDecide', token: am, id: o5.count.id, decision: 'recount', reason: 'count the back yard again' });
   check(rc.ok && rc.count.status === 'open' && rc.count.recounts === 1 && rc.count.draftLines[0].counted === 95 && rc.count.draftLines[0].reason === 'sale_missing', 'it opens again with every line as typed (' + (rc.error || '') + ')');
   check(cl({ action: 'stockCountCancel', token: bm, id: o5.count.id, reason: 'x' }).error === 'forbidden', 'a count sent back is not cancelled by the counter');
+  var pa5 = cl({ action: 'myPendingActions', token: bm });
+  check(pa5.ok && (pa5.items || []).some(function (x) { return x.kind === 'count_recount' && x.refId === o5.count.id; }), 'the count sent back is on the counter\'s to-do list');
+  // the count's own scope holds on the server
+  var os = cl({ action: 'stockCountOpen', token: bm, locationId: 'coL', date: '2026-10-12', scope: 'units' });
+  check(cl({ action: 'stockCountSave', token: bm, id: os.count.id, lines: [{ stockItemId: cy.id, state: 'full', counted: 1 }] }).error === 'count_scope', 'a cylinder is not saved into an other-items count');
+  check(cl({ action: 'stockCountSubmit', token: bm, id: os.count.id, lines: [{ stockItemId: cy.id, state: 'full', counted: 1 }] }).error === 'count_scope', 'nor submitted');
   var r2 = cl({ action: 'stockCountSubmit', token: bm, id: o5.count.id, lines: [{ stockItemId: cy.id, state: 'full', counted: 96, system: 97, reason: 'count_error' }] });
   check(r2.ok && r2.count.status === 'pending_area', 'the recount is submitted again');
   check(cl({ action: 'stockCountDecide', token: am, id: o5.count.id, decision: 'approve' }).ok, 'the area manager who sent it back approves the new round');

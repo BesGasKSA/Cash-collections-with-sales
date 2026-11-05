@@ -2789,6 +2789,12 @@ function actionListHandoffs_(req, user) {
   rows.sort(function (a, b) { return new Date(b.createdAt) - new Date(a.createdAt); });
   var dctx = hoDateCtx_();
   rows.forEach(function (h) { hoDecorate_(dctx, h, h); });
+  // the screens read only the place and amount of each part; the parts' own breakdowns stay in the sheet
+  // (2026-11-06, speed: perCluster and perLocation were 1.3 MB of the 3.9 MB list on live)
+  rows.forEach(function (h) {
+    if (Array.isArray(h.perCluster)) h.perCluster = h.perCluster.map(function (p) { return { clusterId: p.clusterId, amount: p.amount }; });
+    if (Array.isArray(h.perLocation)) h.perLocation = h.perLocation.map(function (p) { return { locationId: p.locationId, amount: p.amount }; });
+  });
   return { ok: true, handoffs: leanRows_(rows) };
 }
 
@@ -3295,7 +3301,7 @@ function actionDashboard_(req, user) {
 // a person is told only about what they may act on. Nothing is written.
 // kind order below is the order the client lists them in.
 var PENDING_KINDS_ = ['confirm_receipt', 'deputy_validate', 'deputy_batch', 'returned_fix', 'batch_rejected',
-  'send_ready', 'car_handover', 'dispute_open', 'second_approval', 'deposit_due', 'purchases_due', 'count_approve', 'stock_short', 'risk_high'];
+  'send_ready', 'car_handover', 'dispute_open', 'second_approval', 'deposit_due', 'purchases_due', 'count_approve', 'count_recount', 'stock_short', 'risk_high'];
 function actionMyPendingActions_(req, user) {
   var items = [];
   function add(kind, o) { o.kind = kind; items.push(o); }
@@ -3351,6 +3357,11 @@ function actionMyPendingActions_(req, user) {
   if (['admin', 'finance', 'cluster_manager', 'operations_manager', 'deputy_operations_manager'].indexOf(user.role) >= 0) {
     var cw = readSheet(SHEETS.STOCK_COUNTS).filter(function (c) { return hasOwn_(COUNT_STEPS_, c.status) && !countStepError_(c, user); });
     if (cw.length) add('count_approve', { count: cw.length, amount: 0, refId: cw[0].id, since: cw[0].submittedAt });
+  }
+  // a count an approver sent back to be counted again waits on the one who counted it (2026-11-06)
+  if (COUNT_ROLES_[user.role]) {
+    var rb = readSheet(SHEETS.STOCK_COUNTS).filter(function (c) { return c.status === 'open' && c.recounts && c.openedBy === user.id; });
+    if (rb.length) add('count_recount', { count: rb.length, amount: 0, refId: rb[0].id, since: rb[0].recountAt || rb[0].openedAt });
   }
   // cash ready to pass up: confirmed handovers held, and the person's own open entries
   var entries = null;
