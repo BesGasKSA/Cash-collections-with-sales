@@ -1081,6 +1081,18 @@ function actionListEntries_(req, user) {
       : null;
     e.canVoid = e.lockState === 'open' && !e.voidBlock;
   });
+  // recent history plus everything not yet approved (2026-11-06, speed): `since` keeps a day from that date on;
+  // an open or submitted entry is kept whatever its date, so the work queue stays whole
+  var since = req.since && /^\d{4}-\d{2}-\d{2}$/.test(String(req.since)) ? String(req.since) : '', older = 0;
+  if (since) {
+    // an older entry stays while its cash is anywhere short of the bank: approved at the first hop is not banked
+    var walk = entryCohort_(rows.filter(function (e) { return String(e.date || '') < since && e.lockState === 'approved'; })).byEntry || {};
+    rows = rows.filter(function (e) {
+      var w = walk[e.id], banked = w && (w.s === 'deposited' || w.s === 'settled');
+      var keep = String(e.date || '') >= since || e.lockState === 'open' || e.lockState === 'submitted' || (e.lockState === 'approved' && !banked);
+      if (!keep) older++; return keep;
+    });
+  }
   // where each one stands now, from the same walk the journey uses, so the list
   // and the timeline cannot disagree (never lets a bad row break the list)
   try {
@@ -1089,7 +1101,7 @@ function actionListEntries_(req, user) {
   } catch (x) { /* the list still stands */ }
   // each entry's place in the chain and its share, for the Entries screen's key figures (2026-10-15)
   var coh = entryCohort_(rows).byEntry;
-  return { ok: true, entries: leanRows_(rows), cohort: coh };
+  return { ok: true, entries: leanRows_(rows), cohort: coh, since: since || null, olderHidden: older };
 }
 
 // Cash or approvals still in motion around a person: entries they wrote

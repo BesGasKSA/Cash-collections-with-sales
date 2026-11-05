@@ -7984,6 +7984,26 @@ console.log('--- the owner cancels a banked day, the deposit included (2026-11-0
   check(cl({ action: 'adminCancelBanked', token: adm, id: 'cbE9', reason: 'x', confirm: 'CANCEL' }).error === 'conflict_of_interest', 'an admin does not cut a deposit they made');
 })();
 
+console.log('--- the Entries list reads recent history plus everything not yet banked (2026-11-06) ---');
+(function () {
+  var c7 = harness.buildContext(), S = c7.SHEETS, salt = c7.randomSalt_();
+  function cl(p) { try { return c7.route_(p); } catch (e) { return { ok: false, error: String(e && e.message || e) }; } }
+  c7.writeRow(S.USERS, { id: 'seAdm', name: 'a', email: 'seAdm@bestgas.sa', role: 'admin', active: true, language: 'en', salt: salt, pass: c7.hashPw_('Bootstrap#1', salt), mustChangePw: false });
+  var tk = cl({ action: 'login', email: 'seAdm@bestgas.sa', password: 'Bootstrap#1' }).token;
+  function bd(n) { return { storeCash: n, netCashOwed: n }; }
+  c7.writeRow(S.ENTRIES, { id: 'seOpen', date: '2026-08-01', locationId: 'L', sourceType: 'store', sourceId: 's', cashSales: 10 });
+  c7.writeRow(S.ENTRIES, { id: 'seHeld', date: '2026-08-02', locationId: 'L', sourceType: 'store', sourceId: 's', cashSales: 20, consumedBy: 'seH1' });
+  c7.writeRow(S.ENTRIES, { id: 'seBank', date: '2026-08-03', locationId: 'L', sourceType: 'store', sourceId: 's', cashSales: 30, consumedBy: 'seH2' });
+  c7.writeRow(S.ENTRIES, { id: 'seNew', date: '2026-10-20', locationId: 'L', sourceType: 'store', sourceId: 's', cashSales: 40, consumedBy: 'seH2' });
+  c7.writeRow(S.HANDOFFS, { id: 'seH1', kind: 'cluster_to_collector', amount: 20, breakdown: bd(20), sourceEntryIds: ['seHeld'], sourceHandoffIds: [], status: 'confirmed', locationId: 'L' });
+  c7.writeRow(S.HANDOFFS, { id: 'seH2', kind: 'cluster_to_collector', amount: 70, breakdown: bd(70), sourceEntryIds: ['seBank', 'seNew'], sourceHandoffIds: [], status: 'confirmed', consumedBy: 'seD', locationId: 'L' });
+  c7.writeRow(S.HANDOFFS, { id: 'seD', kind: 'deposit', amount: 70, breakdown: bd(70), sourceHandoffIds: ['seH2'], status: 'completed' });
+  var r = cl({ action: 'listEntries', token: tk, since: '2026-10-01' });
+  var ids = (r.entries || []).map(function (e) { return e.id; }).sort().join(',');
+  check(r.ok && ids === 'seHeld,seNew,seOpen' && r.olderHidden === 1, 'old open and old not-yet-banked entries stay; an old banked one is left out and counted (' + ids + ', ' + r.olderHidden + ')');
+  check(cl({ action: 'listEntries', token: tk }).entries.length === 4, 'without `since` everything comes back');
+})();
+
 console.log('--- a count is opened, recorded as it goes, then submitted (2026-11-05) ---');
 (function () {
   var c6 = harness.buildContext(), S = c6.SHEETS, salt = c6.randomSalt_();
