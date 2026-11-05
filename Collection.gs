@@ -1042,6 +1042,13 @@ function handoffsScope_(user) {
   return function (h) { return ((h.fromUserId === user.id || h.toUserId === user.id) && inActiveArea_(user, h)) || !!(kinds[h.kind] && h.locationId && locs[h.locationId] && h.status !== 'voided'); };
 }
 
+// The two biggest lists go out without their empty fields (2026-11-06, speed): a blank or null field reads the
+// same on the client when it is missing (every check there is a truthiness or == null test), and the entries
+// list was 10.8 MB on live. Only top-level fields of rows already read for this answer are touched.
+function leanRows_(rows) {
+  rows.forEach(function (r) { Object.keys(r).forEach(function (k) { var v = r[k]; if (v === null || v === undefined || v === '') delete r[k]; }); });
+  return rows;
+}
 function actionListEntries_(req, user) {
   var rows = readSheet(SHEETS.ENTRIES).filter(entriesScope_(user));
 
@@ -1081,7 +1088,8 @@ function actionListEntries_(req, user) {
     rows.forEach(function (e) { try { var sg = jrStage_(jc, e); if (sg) e.stage = sg; } catch (x) { /* the list still stands */ } });
   } catch (x) { /* the list still stands */ }
   // each entry's place in the chain and its share, for the Entries screen's key figures (2026-10-15)
-  return { ok: true, entries: rows, cohort: entryCohort_(rows).byEntry };
+  var coh = entryCohort_(rows).byEntry;
+  return { ok: true, entries: leanRows_(rows), cohort: coh };
 }
 
 // Cash or approvals still in motion around a person: entries they wrote
@@ -2769,7 +2777,7 @@ function actionListHandoffs_(req, user) {
   rows.sort(function (a, b) { return new Date(b.createdAt) - new Date(a.createdAt); });
   var dctx = hoDateCtx_();
   rows.forEach(function (h) { hoDecorate_(dctx, h, h); });
-  return { ok: true, handoffs: rows };
+  return { ok: true, handoffs: leanRows_(rows) };
 }
 
 // ---------- The Collections screen: every area request followed to the bank (2026-10-11) ----------

@@ -6980,6 +6980,11 @@ var READ_ACTIONS = { listStockCounts:1, stockCountPreview:1, getStockLedger:1, g
   getReconciliation:1, listRiskItems:1, listAreaBulkBatches:1, areaBulkBatchDetail:1, traceNumber:1, login:1, forgotPassword:1, setLanguage:1,
   listCosts:1, getCostReport:1, getProfitReport:1, getInventoryLive:1, getInventoryReport:1, areaBatchRows:1, myPendingActions:1, getJourney:1, globalSearch:1 };
 
+// The heavy lists (2026-11-06, the owner asked for speed): several screens and drawers asked for the same
+// whole list seconds apart, each a full download (entries 10.8 MB, handovers 4 MB on live). The same request
+// within 45 s now shares one download; one already on its way is joined. Any save empties it at once.
+var SHARED_READS_ = { listEntries: 1, listHandoffs: 1, getSalesReport: 1, collectionsData: 1 }, SHARED_TTL_ = 45000, SHARED_ = {};
+function sharedClear_(){ SHARED_ = {}; }
 function api(action, payload, opts){
   payload = payload || {};
   opts = opts || {};
@@ -6987,6 +6992,28 @@ function api(action, payload, opts){
   payload.token = state.token;
   // the area an area manager is working in rides on every request (area switching)
   var workArea = activeArea_(); if (workArea && payload.activeAreaId === undefined) payload.activeAreaId = workArea;
+  if (SHARED_READS_[action] && !opts.fresh && state.user) {
+    var sk = action + '|' + state.user.id + '|' + JSON.stringify(payload, function(k, v){ return k === 'token' ? undefined : v; });
+    var hit = SHARED_[sk], now = Date.now(), staleAt = 0;
+    try { staleAt = screenCacheStaleAt_(); } catch (e) {}
+    // a copy is used while young, and only if no save (in this tab or another) came after it
+    if (hit && hit.str && now - hit.at < SHARED_TTL_ && !(staleAt > hit.at)) return Promise.resolve(JSON.parse(hit.str));
+    // join a request on its way, unless it has hung
+    if (hit && hit.p && now - hit.t0 < SHARED_TTL_) return hit.p.then(function(){ return hit.str ? JSON.parse(hit.str) : apiNet_(action, payload, opts); });
+    // old copies go: each heavy list holds megabytes
+    Object.keys(SHARED_).forEach(function(k){ var x = SHARED_[k]; if (x && !x.p && (!x.at || now - x.at >= SHARED_TTL_)) delete SHARED_[k]; });
+    var slot = SHARED_[sk] = { p: null, t0: now };
+    slot.p = apiNet_(action, payload, opts).then(function(r){
+      slot.p = null;
+      if (r && r.ok && SHARED_[sk] === slot) { slot.str = JSON.stringify(r); slot.at = Date.now(); } else if (SHARED_[sk] === slot) delete SHARED_[sk];
+      return r;
+    });
+    // the first caller keeps the answer itself; the others read their own copy of the stored text
+    return slot.p;
+  }
+  return apiNet_(action, payload, opts);
+}
+function apiNet_(action, payload, opts){
   // a phone reads behind skeletons and a thin top bar, never the blocking veil (2026-10-18);
   // a save still takes the veil, so a second tap cannot send it twice
   var quiet = !!opts.silent || !!(state.user && READ_ACTIONS[action] && action !== 'login' && typeof msPhone_ === 'function' && msPhone_());
@@ -7006,11 +7033,12 @@ function api(action, payload, opts){
     body: JSON.stringify(payload)
   }).then(function(r){ return r.json(); }).then(function(res){
     release();
+    if (!READ_ACTIONS[action] && !payload.dryRun) sharedClear_();
     if (res.token) { state.token = res.token; localStorage.setItem('bgc_token', res.token); }
     // a save no longer wipes the screens' last copies (2026-10-08: every screen after a save
     // then waited the whole round trip behind the loading circle); they are marked stale,
     // still drawn at once but dimmed under an "updating" bar until the fresh copy lands
-    if (res.ok && !READ_ACTIONS[action] && !payload.dryRun) { try { GS_.cache = {}; } catch (e) {} markScreenCacheStale_(); state.pendDirty = true; DRILL.entries = null; DRILL.handoffs = null; DRILL.eById = null; DRILL.hById = null; }
+    if (res.ok && !READ_ACTIONS[action] && !payload.dryRun) { sharedClear_(); try { GS_.cache = {}; } catch (e) {} markScreenCacheStale_(); state.pendDirty = true; DRILL.entries = null; DRILL.handoffs = null; DRILL.eById = null; DRILL.hById = null; }
     // a session ended elsewhere (a changed sign-in, a reset): sign out cleanly;
     // a temporary sign-in: its page, before anything else (2026-10-04)
     if (res && res.error === 'auth_required' && state.user && action !== 'login') setTimeout(function(){ logout(); }, 0);
@@ -7018,6 +7046,7 @@ function api(action, payload, opts){
     return res;
   }).catch(function(err){
     release();
+    if (!READ_ACTIONS[action] && !payload.dryRun) sharedClear_();
     return { ok:false, error:'network' };
   });
 }
@@ -7797,6 +7826,7 @@ function heroWisdom_(box){
 }
 
 function logout(){
+  sharedClear_();
   FIRST_DAY_ = '';
   try { MS_HIST_INIT_ = false; MS_SUB_ = null; adminProfile = null; } catch (e) {}
   // this device stops receiving the person's notifications (while the session can still say so)
@@ -9172,7 +9202,7 @@ function pendRow_(it, compact){
 
 // Go: open the screen, with the row or panel the item is about already open.
 function pendGo_(it){
-  pendClose_();
+  pendClose_(); sharedClear_();
   var scr = PEND_SCREEN_[it.kind] || 'handoffs';
   if (!navItemsForRole_().some(function(n){ return n[0] === scr; })) scr = 'handoffs';
   var scroll = null;
@@ -10251,7 +10281,7 @@ function msPtr_(){
     if (d > 70) {
       ind.classList.add('spin'); ind.setAttribute('aria-label', t('msr_loading')); msBuzz_(10);
       state.pendDirty = true;
-      setTimeout(function(){ render(); refreshPending_({ force: true }); }, 350);
+      setTimeout(function(){ sharedClear_(); render(); refreshPending_({ force: true }); }, 350);
     } else { ind.style.transform = ''; ind.style.opacity = ''; }
   }, { passive: true });
 }
@@ -30894,11 +30924,12 @@ function pnListen_(m){
   m.onMessage(function(payload){
     var n = (payload && payload.notification) || {}, d = (payload && payload.data) || {};
     pnToast_(n.title || d.title || t('pn_title'), n.body || d.body || '', d.open || '');
-    state.pendDirty = true;
+    state.pendDirty = true; sharedClear_();
     try { refreshPending_({ force: true }); } catch (e) {}
   });
 }
 function pnOpenLink_(link){
+  sharedClear_();
   var m = /[?&]open=([^&#]+)/.exec(String(link || ''));
   if (!m) return;
   try { sessionStorage.setItem('bgc_open', decodeURIComponent(m[1])); } catch (e) {}

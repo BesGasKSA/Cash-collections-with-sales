@@ -1079,7 +1079,7 @@ function route_(req) {
     getProfitReport: function () { return actionProfitReport_(req, user); },
 
     // reporting
-    getSalesReport: function () { return actionSalesReport_(req, user); },
+    getSalesReport: function () { var sr = actionSalesReport_(req, user); if (sr && sr.ok && Array.isArray(sr.entries)) leanRows_(sr.entries); return sr; },
     getShortfallByEntrant: function () { return actionShortfallByEntrant_(req, user); },
     getDashboardComparison: function () { return actionDashboardComparison_(req, user); },
     getHeldCashTrend: function () { return actionHeldCashTrend_(req, user); },

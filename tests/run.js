@@ -6996,7 +6996,7 @@ console.log('--- global search ---');
   var lo = clientFn_('logout'), gr = clientFn_('gsReset_');
   check(/gsReset_\(\)/.test(lo), 'client: logout closes and resets the search palette');
   check(/GS_\.cache = \{\}/.test(gr) && /GS_\.q = ''/.test(gr) && /GS_\.res = null/.test(gr) && /GS_\.seq\+\+/.test(gr) && /\.remove\(\)/.test(gr), 'client: gsReset_ drops the cache, query and answers and removes the overlay');
-  check(/GS_\.cache = \{\}/.test(clientFn_('api')), 'client: a successful write empties the search cache');
+  check(/GS_\.cache = \{\}/.test(clientFn_('apiNet_')) && /sharedClear_\(\)/.test(clientFn_('apiNet_')), 'client: a successful write empties the search cache and the shared reads');
   check(/activeArea_\(\)/.test(clientFn_('gsKeyOf_')) && /state\.user/.test(clientFn_('gsKeyOf_')), 'client: a cached answer is keyed by person and area');
   // short and empty queries
   check(S(adm, '').results.length === 0 && S(adm, ' ').ok, 'an empty query returns nothing, without error');
