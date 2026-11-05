@@ -357,7 +357,7 @@ function sendInvitation_(u, token, inviter, appUrl) {
     c.other
   ].join('\n');
   try {
-    sendMail_(u.email, c.subject, text, inviteEmailHtml_(u, link, c, vars, appUrl));
+    sendMail_(u.email, c.subject, text, inviteEmailHtml_(u, link, c, vars, appUrl), { always: true });
     return true;
   } catch (e) {
     logAudit_('invite_email_failed', u.id, String(e));
@@ -466,6 +466,7 @@ function actionAdminUpdateUser_(req, user) {
   }
   if (d.language != null) { target.language = d.language; target.languageChosen = true; }
   if (d.active != null) target.active = !!d.active;
+  if (d.noEmail != null) { if (target.noEmail !== (d.noEmail === true)) logAudit_('user_emails_' + (d.noEmail === true ? 'stopped' : 'restarted'), user.id, target.id); target.noEmail = d.noEmail === true; }
   if (d.locationId !== undefined) target.locationId = d.locationId;
   if (d.clusterId !== undefined) target.clusterId = d.clusterId;
   if (phoneError_(d)) return { ok: false, error: 'invalid_phone' };
@@ -573,7 +574,7 @@ function sendInvite_(u, tempPassword) {
   var html = null;
   try { html = signInEmailHtml_(u, tempPassword); } catch (eH) { html = null; }
   try {
-    sendMail_(u.email, subject, body, html);
+    sendMail_(u.email, subject, body, html, { always: true });
   } catch (e) {
     // email quota/misconfiguration must not block account creation
     logAudit_('invite_email_failed', u.id, String(e));
@@ -1693,8 +1694,10 @@ function runOneTimeMigrations_() {
   // said the old default (a name someone chose is kept)
   // the day's purchases, mailed at 11 pm (2026-11-04)
   runOnce_('PURCHASES_DIGEST_TRIGGER', function () {
-    var has = ScriptApp.getProjectTriggers().some(function (t) { return t.getHandlerFunction() === 'purchasesDigestDaily_'; });
-    if (!has) ScriptApp.newTrigger('purchasesDigestDaily_').timeBased().everyDays(1).atHour(23).create();
+    try {
+      var has = ScriptApp.getProjectTriggers().some(function (t) { return t.getHandlerFunction() === 'purchasesDigestDaily_'; });
+      if (!has) ScriptApp.newTrigger('purchasesDigestDaily_').timeBased().everyDays(1).atHour(23).create();
+    } catch (eT) { try { logAudit_('purchases_digest_trigger_failed', 'system', String(eT).slice(0, 300)); } catch (eA) {} }
   });
   runOnce_('SENDER_RENAMED', function () {
     var c = config_();

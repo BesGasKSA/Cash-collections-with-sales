@@ -869,7 +869,24 @@ function actionAdminImportPurchases_(req, user) {
       seen[key] = 1;
       out.push(invMoveRow_(loc.id, c.move, date, user, { clientRef: key, importRef: ref, historic: true }));
     }
-    if (req.dryRun) return { ok: true, dryRun: true, toWrite: out.length, skipped: skipped };
+    if (req.dryRun) {
+      // what the person should see before writing: the same branch, item and day already bought, and lines before the opening
+      var onFile = Object.create(null), openDay = Object.create(null);
+      sc.moves.forEach(function (m) {
+        if (m.voided) return; var tg = sc.moveTarget(m); if (!tg) return;
+        var k = m.locationId + '|' + tg.item.id + '|' + (tg.state || '');
+        if ((m.kind === 'purchase' || m.kind === 'refill_in') && !m.historic) onFile[k + '|' + m.date] = (onFile[k + '|' + m.date] || 0) + Number(m.qty || 0);
+        if (m.kind === 'opening' && (!openDay[k] || String(m.date) < openDay[k])) openDay[k] = String(m.date);
+      });
+      var overlap = [], early = 0;
+      out.forEach(function (row) {
+        var tg = sc.moveTarget(row); if (!tg) return;
+        var k = row.locationId + '|' + tg.item.id + '|' + (tg.state || '');
+        if (onFile[k + '|' + row.date]) overlap.push({ locationId: row.locationId, stockItemId: tg.item.id, state: tg.state || null, date: row.date, onFile: onFile[k + '|' + row.date], qty: row.qty });
+        if (openDay[k] && String(row.date) < openDay[k]) early++;
+      });
+      return { ok: true, dryRun: true, toWrite: out.length, skipped: skipped, overlap: overlap.slice(0, 200), overlapCount: overlap.length, beforeOpening: early };
+    }
     var written = costAppendMany_(SHEETS.INV_MOVES, out);
     logAudit_('inventory_purchase_import', user.id, written.length + ' lines, ' + skipped + ' already on file (' + ref + '): ' + reason);
     return { ok: true, written: written.length, skipped: skipped };
@@ -911,7 +928,7 @@ function purchasesDigest_(date) {
     var text = 'Purchases of ' + date + ' (' + title + ')\n' + list.map(function (r) { return r.name + ': ' + LBL[r.status] + (r.by ? ' - ' + r.by : '') + (r.what ? ' - ' + r.what : ''); }).join('\n');
     return { subject: 'مشتريات اليوم ' + date + ' · Purchases ' + date + ' (' + n.missing + ' لم تُسجّل · not recorded)', text: text, html: html };
   }
-  var sent = 0;
+  var sent = 0, failed = 0;
   users.forEach(function (u) {
     if (u.active === false || !u.email) return;
     var list = null, title = '';
@@ -923,9 +940,9 @@ function purchasesDigest_(date) {
     }
     if (!list || !list.length) return;
     var m = mailFor(list, title);
-    sendMail_(u.email, m.subject, m.text, m.html); sent++;
+    try { if (sendMail_(u.email, m.subject, m.text, m.html) !== 'none') sent++; } catch (eM) { failed++; console.error('digest mail: ' + eM); }
   });
-  logAudit_('purchases_digest', 'system', date + ': ' + sent + ' mails, ' + rows.filter(function (r) { return r.status === 'missing'; }).length + ' branches not recorded');
+  logAudit_('purchases_digest', 'system', date + ': ' + sent + ' mails, ' + (failed ? failed + ' failed, ' : '') + rows.filter(function (r) { return r.status === 'missing'; }).length + ' branches not recorded');
   return { ok: true, sent: sent, rows: rows };
 }
 function actionInventoryLive_(req, user) {

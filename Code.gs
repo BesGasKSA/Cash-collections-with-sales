@@ -561,12 +561,16 @@ function entryVatRate_(e, hist) { return typeof e.vatRate === 'number' && isFini
 // send) it falls back to MailApp, so an alert is never lost.
 // `html` is optional; when given, clients that render HTML show it and the
 // plain `body` is the fallback.
-function sendMail_(to, subject, body, html) {
+function sendMail_(to, subject, body, html, opts) {
   // accounts without email (drivers who sign in by iqama) simply get nothing
-  to = String(to || '').split(',').map(function (x) { return x.trim(); }).filter(function (x) { return x.indexOf('@') > 0; }).join(',');
+  to = String(to || '').split(',').map(function (x) { return x.trim(); }).filter(function (x) { return x.indexOf('@') > 0; });
+  // a person whose emails an admin stopped gets none (the owner, 2026-11-05); their own invitation and
+  // password mails still go (opts.always), or they could never get into their account
+  if (!(opts && opts.always)) to = to.filter(function (x) { var u = userByEmail_(x); return !(u && u.noEmail === true); });
+  to = to.join(',');
   if (!to) return 'none';
   // nobody waits for the lock while a message goes out
-  if (exec_().inCashLock) { afterCashLock_(function () { sendMail_(to, subject, body, html); }); return 'queued'; }
+  if (exec_().inCashLock) { afterCashLock_(function () { sendMail_(to, subject, body, html, opts); }); return 'queued'; }
   if (typeof sendViaGraph_ === 'function') {
     var cfg = graphMailConfig_();
     if (cfg) {
@@ -816,7 +820,7 @@ function publicUser_(u) {
     id: u.id, code: u.code || null, name: u.name, email: u.email, role: u.role,
     active: u.active !== false, language: userLang_(u),
     locationId: u.locationId || null, clusterId: u.clusterId || null,
-    mustChangePw: !!u.mustChangePw, iqamaId: u.iqamaId || null, phone: u.phone || null,
+    mustChangePw: !!u.mustChangePw, iqamaId: u.iqamaId || null, phone: u.phone || null, noEmail: u.noEmail === true,
     status: userStatus_(u), lastLoginAt: u.lastLoginAt || null, pushOn: u.pushOn !== false,
     invitedAt: u.invitedAt || null, acceptedAt: u.acceptedAt || null,
     activatedAt: u.activatedAt || null, inviteExpiresAt: u.inviteExpiresAt || null

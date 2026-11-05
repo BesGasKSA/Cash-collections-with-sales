@@ -8042,6 +8042,16 @@ console.log('--- nothing stops a sale; the day\'s purchases in one mail (2026-11
   var over = cl({ action: 'addInventoryMove', token: adm, locationId: 'dgL', stockItemId: 'dgCy', state: 'full', kind: 'purchase', qty: 10, date: '2026-10-02', supplier: 'Khazeen' });
   check(over.ok && over.warn && /refill_over/.test(over.warn.error), 'gas bought for more empties than on hand is saved with a warning (' + JSON.stringify(over.warn || over.error) + ')');
   check(c3.ScriptApp.getProjectTriggers().length >= 0, 'the trigger API answers');
+  // an admin stops one person's emails; their invitation and password mails still go
+  var admT = cl({ action: 'login', email: 'dgAdm@bestgas.sa', password: 'Bootstrap#1' }).token;
+  check(cl({ action: 'adminUpdateUser', token: admT, id: 'dgOps', data: { noEmail: true } }).ok, 'an admin stops the operations manager\'s emails');
+  var m0 = c3._debug.mailLog.length; c3.resetExecMemo_();
+  c3.purchasesDigest_(today);
+  var to2 = c3._debug.mailLog.slice(m0).map(function (m) { return m.to; });
+  check(to2.indexOf('dgOps@bestgas.sa') < 0 && to2.indexOf('dgDep@bestgas.sa') >= 0, 'the stopped person gets no digest, the others still do (' + to2.join(',') + ')');
+  check(c3.sendMail_('dgOps@bestgas.sa', 'reset', 'x', null, { always: true }) !== 'none', 'a password mail still reaches them');
+  check(c3.readSheet(S.AUDIT).some(function (a) { return a.action === 'user_emails_stopped'; }), 'stopping is on the audit trail');
+  check(cl({ action: 'adminUpdateUser', token: admT, id: 'dgOps', data: { noEmail: false } }).ok && c3.sendMail_('dgOps@bestgas.sa', 's', 'x') !== 'none', 'and turned back on, mails flow again');
 })();
 
 console.log('--- a branch sheet does not bring the day\'s purchases twice (2026-11-03) ---');

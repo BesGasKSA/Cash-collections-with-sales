@@ -737,8 +737,8 @@ function actionCreateEntry_(req, user) {
   // every screen sends a form number; a bare API call (the test harness) keeps the old behaviour
   var dup = req.submissionId && entryHasSales_(req) ? openDayEntry_(req.sourceType, req.sourceId, req.date, req.submissionId, req) : null;
   if (dup) return { ok: false, error: 'day_already_entered', existingTxNo: dup.txNo || '', existingId: dup.id, enteredBy: dup.enteredBy };
-  var purchErr = purchaseGateRows_(user, [req]);
-  if (purchErr && PURCHASE_GATE_BLOCKS_) return purchErr;
+  var purchErr = PURCHASE_GATE_BLOCKS_ ? purchaseGateRows_(user, [req]) : null;
+  if (purchErr) return purchErr;
 
   var entry = {
     id: Utilities.getUuid(),
@@ -798,8 +798,8 @@ function actionImportEntries_(req, user) {
   if (!rows.length) return { ok: false, error: 'invalid_input' };
   if (rows.length > 500) return { ok: false, error: 'too_many_rows' };
   if (creditOverLines_(rows)) return { ok: false, error: 'credit_over_lines' };
-  var purchErr = purchaseGateRows_(user, rows);
-  if (purchErr && PURCHASE_GATE_BLOCKS_) return purchErr;
+  var purchErr = PURCHASE_GATE_BLOCKS_ ? purchaseGateRows_(user, rows) : null;
+  if (purchErr) return purchErr;
   // the same form sent twice is saved once
   var sids = {}; rows.forEach(function (r) { if (r && r.submissionId) sids[String(r.submissionId).slice(0, 64)] = 1; });
   var sidList = Object.keys(sids);
@@ -1592,8 +1592,8 @@ function actionBulkSubmitAreaBatch_(req, user) {
     return { ok: false, error: 'forbidden' };
   }
 
-  var bulkPurch = purchaseGateRows_(user, Array.isArray(req.rows) ? req.rows : []);
-  if (bulkPurch && PURCHASE_GATE_BLOCKS_) return bulkPurch;
+  var bulkPurch = PURCHASE_GATE_BLOCKS_ ? purchaseGateRows_(user, Array.isArray(req.rows) ? req.rows : []) : null;
+  if (bulkPurch) return bulkPurch;
 
   // A batch the deputy rejected is corrected and sent again as itself
   // (2026-10-05): same id, its next version, the rejected version kept on it.
