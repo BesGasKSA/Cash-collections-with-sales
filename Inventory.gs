@@ -1122,8 +1122,10 @@ function countAreaManager_(locId) {
 function countStepError_(cnt, user) {
   if (!cnt) return 'not_found';
   if (!hasOwn_(COUNT_STEPS_, cnt.status)) return 'count_not_pending';
-  if (cnt.submittedBy === user.id) return 'conflict_of_interest';
-  if ((cnt.history || []).some(function (x) { return x.by === user.id && x.step !== 'submitted'; })) return 'already_acted';
+  if (cnt.submittedBy === user.id || (cnt.openedBy && cnt.openedBy === user.id)) return 'conflict_of_interest';
+  // two steps of one round are never one person's; a count sent back for recount starts a new round
+  var hist0 = cnt.history || [], from0 = 0; hist0.forEach(function (x, i) { if (x.step === 'submitted') from0 = i; });
+  if (hist0.slice(from0).some(function (x) { return x.by === user.id && x.step !== 'submitted'; })) return 'already_acted';
   if (user.role === 'admin') return null;
   if (cnt.status === 'pending_area') return user.id === countAreaManager_(cnt.locationId) ? null : 'forbidden';
   if (cnt.status === 'pending_ops') return user.role === 'operations_manager' || user.role === 'deputy_operations_manager' ? null : 'forbidden';
@@ -1141,15 +1143,81 @@ function countLineOut_(l) {
   return { stockItemId: l.stockItemId, state: l.state || null, counted: l.counted, system: l.system, diff: l.diff, unitCost: l.unitCost, value: l.value,
     systemAtPost: l.systemAtPost, diffPosted: l.diffPosted };
 }
-function actionStockCountSubmit_(req, user) {
+// A count is opened first (2026-11-05, the owner: "request open by the branch manager or area manager, choose
+// the source, then a fully detailed screen to record, then the approval cycle"; SAP's physical inventory document,
+// Odoo's inventory adjustment). It holds what was counted so far (draftLines, saved as the counter goes) until it is
+// submitted; nothing moves the stock before finance posts it.
+var COUNT_SCOPES_ = { all: 1, cylinders: 1, units: 1 };
+// why a counted line differs (D365's counting reason codes, SAP's reason for movement); 'other' needs a note
+var COUNT_REASONS_ = { sale_missing: 1, purchase_missing: 1, damaged: 1, transfer_missing: 1, count_error: 1, other: 1 };
+function countReason_(v) { v = String(v || ''); return hasOwn_(COUNT_REASONS_, v) ? v : ''; }
+function actionStockCountOpen_(req, user) {
   if (!COUNT_ROLES_[user.role]) return { ok: false, error: 'forbidden' };
   var lf = invLocFor_(user, req.locationId);
   if (lf.error) return { ok: false, error: lf.error };
   var date = String(req.date || '');
   if (!invDateOk_(date)) return { ok: false, error: 'invalid_date' };
   if (date > todayRiyadh_()) return { ok: false, error: 'future_date' };
-  var lines = Array.isArray(req.lines) ? req.lines : [];
-  if (!lines.length || lines.length > 100) return { ok: false, error: 'invalid_input' };
+  var scope = hasOwn_(COUNT_SCOPES_, String(req.scope || 'all')) ? String(req.scope || 'all') : 'all';
+  var lock = scriptLock_(); lock.waitLock(30000);
+  try {
+    freshenExec_();
+    if (!invStockCtx_().live) return { ok: false, error: 'setup_required' };
+    var same = readSheet(SHEETS.STOCK_COUNTS).filter(function (c) { return c.locationId === lf.loc.id && c.date === date && (c.status === 'open' || hasOwn_(COUNT_STEPS_, c.status)); })[0];
+    if (same) return { ok: false, error: same.status === 'open' ? 'count_open' : 'count_pending', id: same.id, txNo: same.txNo || '' };
+    var at = new Date().toISOString();
+    var row = writeRow(SHEETS.STOCK_COUNTS, { locationId: lf.loc.id, date: date, scope: scope, blind: req.blind === true, status: 'open', note: String(req.note || '').slice(0, 300),
+      draftLines: [], lines: [], openedBy: user.id, openedAt: at, createdAt: at, history: [{ step: 'opened', by: user.id, at: at }] });
+    logAudit_('stock_count_open', user.id, row.id + ' ' + lf.loc.id + ' ' + date + ' ' + scope);
+    return { ok: true, count: row };
+  } finally { try { lock.releaseLock(); } catch (e) {} }
+}
+// what was counted so far; a blank figure is a line not counted yet
+function actionStockCountSave_(req, user) {
+  var lock = scriptLock_(); lock.waitLock(30000);
+  try {
+    freshenExec_();
+    var cnt = getById_(SHEETS.STOCK_COUNTS, String(req.id || ''));
+    if (!cnt) return { ok: false, error: 'not_found' };
+    if (cnt.status !== 'open') return { ok: false, error: 'count_not_open' };
+    if (cnt.openedBy !== user.id && user.role !== 'admin') return { ok: false, error: 'forbidden' };
+    var list = Array.isArray(req.lines) ? req.lines : [];
+    if (list.length > 200) return { ok: false, error: 'count_too_many' };
+    var sc = invStockCtx_(), out = [], seen = Object.create(null);
+    for (var i = 0; i < list.length; i++) {
+      var l = list[i] || {}, it = hasOwn_(sc.items, String(l.stockItemId)) ? sc.items[l.stockItemId] : null;
+      if (!it) return { ok: false, error: 'invalid_stock_item', index: i };
+      var st = it.kind === 'cylinder' ? String(l.state || '') : '';
+      if (it.kind === 'cylinder' && INV_STATES_.indexOf(st) < 0) return { ok: false, error: 'invalid_state', index: i };
+      var key = it.id + '|' + st; if (seen[key]) continue; seen[key] = 1;
+      var cv = l.counted, blank = cv === '' || cv == null, counted = blank ? null : ((typeof cv === 'number' && cv === 0) || cv === '0' ? 0 : invQty_(cv));
+      if (!blank && counted == null) return { ok: false, error: 'invalid_qty', index: i };
+      out.push({ stockItemId: it.id, state: st || null, counted: counted, note: String(l.note || '').slice(0, 200), reason: countReason_(l.reason) });
+    }
+    // a line the screen did not send (an item it does not draw now) keeps what was saved for it
+    (cnt.draftLines || []).forEach(function (l) { var k0 = l.stockItemId + '|' + (l.state || ''); if (!seen[k0]) out.push(l); });
+    cnt.draftLines = out; cnt.savedAt = new Date().toISOString();
+    if (req.note != null) cnt.note = String(req.note).slice(0, 300);
+    writeRow(SHEETS.STOCK_COUNTS, cnt);
+    return { ok: true, savedAt: cnt.savedAt, lines: out.length };
+  } finally { try { lock.releaseLock(); } catch (e) {} }
+}
+function actionStockCountSubmit_(req, user) {
+  if (!COUNT_ROLES_[user.role]) return { ok: false, error: 'forbidden' };
+  // an opened count is submitted as itself: its branch and day, its saved lines unless new ones come
+  var opened = req.id ? getById_(SHEETS.STOCK_COUNTS, String(req.id)) : null;
+  if (req.id && !opened) return { ok: false, error: 'not_found' };
+  if (opened && opened.status !== 'open') return { ok: false, error: 'count_not_open' };
+  if (opened && opened.openedBy !== user.id && user.role !== 'admin') return { ok: false, error: 'forbidden' };
+  if (opened) { req.locationId = opened.locationId; req.date = opened.date; }
+  var lf = invLocFor_(user, req.locationId);
+  if (lf.error) return { ok: false, error: lf.error };
+  var date = String(req.date || '');
+  if (!invDateOk_(date)) return { ok: false, error: 'invalid_date' };
+  if (date > todayRiyadh_()) return { ok: false, error: 'future_date' };
+  var lines = Array.isArray(req.lines) ? req.lines : (opened ? (opened.draftLines || []).filter(function (l) { return l.counted != null; }) : []);
+  if (!lines.length) return { ok: false, error: 'invalid_input' };
+  if (lines.length > 200) return { ok: false, error: 'count_too_many' };
   var lock = scriptLock_(); lock.waitLock(30000);
   try {
     freshenExec_();
@@ -1160,7 +1228,8 @@ function actionStockCountSubmit_(req, user) {
       var miss = { locationId: lf.loc.id, date: date, name: lf.loc.name || '' };
       return { ok: false, error: 'purchases_first', locationId: miss.locationId, date: date, name: miss.name, missing: [miss], count: 1 };
     }
-    if (readSheet(SHEETS.STOCK_COUNTS).some(function (c) { return c.locationId === lf.loc.id && c.date === date && hasOwn_(COUNT_STEPS_, c.status); })) return { ok: false, error: 'count_pending' };
+    if (opened) { opened = getById_(SHEETS.STOCK_COUNTS, opened.id); if (!opened || opened.status !== 'open') return { ok: false, error: 'count_not_open' }; if (!Array.isArray(req.lines)) lines = (opened.draftLines || []).filter(function (l) { return l.counted != null; }); }
+    if (readSheet(SHEETS.STOCK_COUNTS).some(function (c) { return c.locationId === lf.loc.id && c.date === date && (hasOwn_(COUNT_STEPS_, c.status) || (c.status === 'open' && (!opened || c.id !== opened.id))); })) return { ok: false, error: 'count_pending' };
     // what the app holds for that day with everything saved so far: its purchases, sales and any
     // earlier count (2026-10-30: the closing of the day before counted a day's moves again)
     var hv = countHave_(lf.loc.id, date, sc);
@@ -1179,13 +1248,19 @@ function actionStockCountSubmit_(req, user) {
       // the screen shows what the app holds; a sale saved since then changes the difference
       if (l.system != null && Math.abs(Number(l.system) - sys) > 0.0005) return { ok: false, error: 'count_changed', index: i, name: it.name };
       var diff = Math.round((counted - sys) * 1000) / 1000, cost = hv.have[key].cost;
-      out.push({ stockItemId: it.id, state: st || null, counted: counted, system: sys, diff: diff, unitCost: cost, value: cost == null ? null : Math.round(diff * cost * 100) / 100 });
+      var ln = { stockItemId: it.id, state: st || null, counted: counted, system: sys, diff: diff, unitCost: cost, value: cost == null ? null : Math.round(diff * cost * 100) / 100 };
+      if (l.note) ln.note = String(l.note).slice(0, 200);
+      var rsn = countReason_(l.reason); if (rsn) ln.reason = rsn;
+      // an opened, open-eyed count says why a line differs (a blind counter cannot see it; the approvers can send it back)
+      if (opened && !opened.blind && Math.abs(diff) > 0.0005 && (!rsn || (rsn === 'other' && !ln.note))) return { ok: false, error: rsn ? 'reason_note_required' : 'count_reason_required', index: i, name: it.name, state: st || null };
+      out.push(ln);
     }
     var at = new Date().toISOString(), mgr = countAreaManager_(lf.loc.id);
     // the area step is passed only when there is nobody else to take it: the area manager counted, or the area has none
-    var skip = !mgr || mgr === user.id;
-    var row = { locationId: lf.loc.id, date: date, note: String(req.note || '').slice(0, 300), lines: out, status: skip ? 'pending_ops' : 'pending_area',
-      submittedBy: user.id, submittedAt: at, createdAt: at, history: [{ step: 'submitted', by: user.id, at: at }] };
+    var skip = !mgr || mgr === user.id || (opened && mgr === opened.openedBy);
+    var row = opened || { locationId: lf.loc.id, date: date, createdAt: at, history: [] };
+    row.note = String(req.note != null ? req.note : (row.note || '')).slice(0, 300); row.lines = out; row.status = skip ? 'pending_ops' : 'pending_area';
+    row.submittedBy = user.id; row.submittedAt = at; row.history = (row.history || []).concat([{ step: 'submitted', by: user.id, at: at }]);
     if (skip) row.history.push({ step: 'area', skipped: true, at: at, reason: mgr ? 'counted_by_area_manager' : 'no_area_manager' });
     row = writeRow(SHEETS.STOCK_COUNTS, row);
     logAudit_('stock_count_submit', user.id, row.id + ' ' + lf.loc.id + ' ' + date + ' ' + out.length + ' lines');
@@ -1207,14 +1282,26 @@ function actionStockCountPreview_(req, user) {
 }
 function actionStockCountDecide_(req, user) {
   var decision = String(req.decision || ''), reason = String(req.reason || '').trim().slice(0, 500);
-  if (decision !== 'approve' && decision !== 'reject') return { ok: false, error: 'invalid_input' };
-  if (decision === 'reject' && !reason) return { ok: false, error: 'reason_required' };
+  if (decision !== 'approve' && decision !== 'reject' && decision !== 'recount') return { ok: false, error: 'invalid_input' };
+  if ((decision === 'reject' || decision === 'recount') && !reason) return { ok: false, error: 'reason_required' };
   var lock = scriptLock_(); lock.waitLock(30000);
   try {
     freshenExec_();
     var cnt = getById_(SHEETS.STOCK_COUNTS, req.id), err = countStepError_(cnt, user);
     if (err) return { ok: false, error: err };
     var step = COUNT_STEPS_[cnt.status], at = new Date().toISOString(), hist = cnt.history = cnt.history || [];
+    if (decision === 'recount') {
+      // back to the one who counted, with every line as it was typed; the approvals start again
+      cnt.status = 'open'; cnt.openedBy = cnt.openedBy || cnt.submittedBy; cnt.recounts = (cnt.recounts || 0) + 1;
+      cnt.draftLines = (cnt.lines || []).map(function (l) { return { stockItemId: l.stockItemId, state: l.state || null, counted: l.counted, note: l.note || '', reason: l.reason || '' }; });
+      cnt.recountReason = reason; cnt.recountBy = user.id; cnt.recountAt = at;
+      (cnt.rounds = cnt.rounds || []).push({ lines: cnt.lines || [], submittedBy: cnt.submittedBy, submittedAt: cnt.submittedAt });
+      cnt.lines = [];
+      hist.push({ step: step, decision: 'recount', by: user.id, at: at, reason: reason });
+      writeRow(SHEETS.STOCK_COUNTS, cnt);
+      logAudit_('stock_count_recount', user.id, cnt.id + ' ' + step + ': ' + reason);
+      return { ok: true, count: cnt };
+    }
     if (decision === 'reject') {
       cnt.status = 'rejected'; cnt.rejectedBy = user.id; cnt.rejectedAt = at; cnt.rejectReason = reason;
       hist.push({ step: step, decision: 'rejected', by: user.id, at: at, reason: reason });
@@ -1267,9 +1354,11 @@ function actionStockCountCancel_(req, user) {
     freshenExec_();
     var cnt = getById_(SHEETS.STOCK_COUNTS, req.id);
     if (!cnt) return { ok: false, error: 'not_found' };
-    if (!hasOwn_(COUNT_STEPS_, cnt.status)) return { ok: false, error: 'count_not_pending' };
+    if (!hasOwn_(COUNT_STEPS_, cnt.status) && cnt.status !== 'open') return { ok: false, error: 'count_not_pending' };
     var acted = (cnt.history || []).some(function (x) { return x.decision === 'approved'; });
-    if (user.role !== 'admin' && (cnt.submittedBy !== user.id || acted)) return { ok: false, error: 'forbidden' };
+    var owner = cnt.status === 'open' ? cnt.openedBy : cnt.submittedBy;
+    // a count an approver sent back to be counted again is counted again, not dropped by its counter
+    if (user.role !== 'admin' && (owner !== user.id || acted || cnt.recounts)) return { ok: false, error: 'forbidden' };
     var at = new Date().toISOString();
     cnt.status = 'cancelled'; cnt.cancelledBy = user.id; cnt.cancelledAt = at; cnt.cancelReason = reason;
     (cnt.history = cnt.history || []).push({ step: 'cancelled', by: user.id, at: at, reason: reason });
@@ -1284,7 +1373,7 @@ function actionListStockCounts_(req, user) {
   if (scope === false) return { ok: false, error: 'forbidden' };
   var from = req.dateFrom ? String(req.dateFrom) : '', to = req.dateTo ? String(req.dateTo) : '', loc = req.locationId ? String(req.locationId) : '';
   // a count waiting for approval shows whatever the period: nobody's step is hidden by a date filter
-  function keep(c) { return (!scope || scope.indexOf(c.locationId) >= 0) && (!loc || c.locationId === loc) && (hasOwn_(COUNT_STEPS_, c.status) || ((!from || c.date >= from) && (!to || c.date <= to))); }
+  function keep(c) { return (!scope || scope.indexOf(c.locationId) >= 0) && (!loc || c.locationId === loc) && (hasOwn_(COUNT_STEPS_, c.status) || c.status === 'open' || ((!from || c.date >= from) && (!to || c.date <= to))); }
   var counts = readSheet(SHEETS.STOCK_COUNTS), known = Object.create(null), out = [];
   counts.forEach(function (c) { known[c.id] = 1; if (keep(c)) out.push(c); });
   var old = Object.create(null);
@@ -1295,8 +1384,10 @@ function actionListStockCounts_(req, user) {
     c.lines.push({ stockItemId: m.stockItemId || m.productId, state: m.state || null, counted: m.counted, system: m.systemQty, diff: diff, systemAtPost: m.systemQty, diffPosted: m.voided ? 0 : diff, cancelled: !!m.voided });
   });
   Object.keys(old).forEach(function (k) { if (keep(old[k])) out.push(old[k]); });
-  out.forEach(function (c) { c.canAct = hasOwn_(COUNT_STEPS_, c.status) && !countStepError_(c, user); c.canCancel = hasOwn_(COUNT_STEPS_, c.status) && (user.role === 'admin' || (c.submittedBy === user.id && !(c.history || []).some(function (x) { return x.decision === 'approved'; }))); });
-  out.sort(function (a, b) { return (hasOwn_(COUNT_STEPS_, b.status) ? 1 : 0) - (hasOwn_(COUNT_STEPS_, a.status) ? 1 : 0) || String(b.date).localeCompare(String(a.date)) || String(b.submittedAt || '').localeCompare(String(a.submittedAt || '')); });
+  out.forEach(function (c) { c.canAct = hasOwn_(COUNT_STEPS_, c.status) && !countStepError_(c, user); c.canCancel = (hasOwn_(COUNT_STEPS_, c.status) && (user.role === 'admin' || (c.submittedBy === user.id && !(c.history || []).some(function (x) { return x.decision === 'approved'; })))) || (c.status === 'open' && (user.role === 'admin' || (c.openedBy === user.id && !c.recounts)));
+    c.canContinue = c.status === 'open' && (user.role === 'admin' || c.openedBy === user.id); });
+  function live(c) { return hasOwn_(COUNT_STEPS_, c.status) || c.status === 'open' ? 1 : 0; }
+  out.sort(function (a, b) { return live(b) - live(a) || String(b.date).localeCompare(String(a.date)) || String(b.submittedAt || '').localeCompare(String(a.submittedAt || '')); });
   return { ok: true, counts: out.slice(0, 1000), total: out.length };
 }
 

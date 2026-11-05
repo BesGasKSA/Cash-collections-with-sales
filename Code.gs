@@ -1034,6 +1034,8 @@ function route_(req) {
     // a count is submitted and posts only once approved (2026-11-04); the old name submits too
     recordStockCount: function () { return actionStockCountSubmit_(req, user); },
     stockCountSubmit: function () { return actionStockCountSubmit_(req, user); },
+    stockCountOpen: function () { return actionStockCountOpen_(req, user); },
+    stockCountSave: function () { return actionStockCountSave_(req, user); },
     stockCountDecide: function () { return actionStockCountDecide_(req, user); },
     stockCountCancel: function () { return actionStockCountCancel_(req, user); },
     stockCountPreview: function () { return actionStockCountPreview_(req, user); },

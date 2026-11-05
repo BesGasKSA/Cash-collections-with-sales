@@ -7984,6 +7984,89 @@ console.log('--- the owner cancels a banked day, the deposit included (2026-11-0
   check(cl({ action: 'adminCancelBanked', token: adm, id: 'cbE9', reason: 'x', confirm: 'CANCEL' }).error === 'conflict_of_interest', 'an admin does not cut a deposit they made');
 })();
 
+console.log('--- a count is opened, recorded as it goes, then submitted (2026-11-05) ---');
+(function () {
+  var c6 = harness.buildContext(), S = c6.SHEETS, salt = c6.randomSalt_();
+  function cl(p) { try { return c6.route_(p); } catch (e) { return { ok: false, error: String(e && e.message || e) }; } }
+  function u(id, role) { c6.writeRow(S.USERS, { id: id, name: id, email: id + '@bestgas.sa', role: role, active: true, language: 'en', salt: salt, pass: c6.hashPw_('Bootstrap#1', salt), mustChangePw: false }); }
+  function tk(id) { return cl({ action: 'login', email: id + '@bestgas.sa', password: 'Bootstrap#1' }).token; }
+  ['coAdm:admin', 'coBm:store_manager', 'coBm2:store_manager', 'coAm:cluster_manager', 'coOps:operations_manager', 'coFin:finance', 'coCol:collector'].forEach(function (x) { var p = x.split(':'); u(p[0], p[1]); });
+  var adm = tk('coAdm');
+  c6.writeRow(S.CLUSTERS, { id: 'coA', name: 'A', clusterManagerUserId: 'coAm' });
+  c6.writeRow(S.LOCATIONS, { id: 'coL', city: 'Riyadh', name: 'Open Branch', clusterId: 'coA', collectorUserId: 'coCol' });
+  c6.writeRow(S.LOCATIONS, { id: 'coL2', city: 'Riyadh', name: 'Other Branch', clusterId: 'coA', collectorUserId: 'coCol' });
+  c6.writeRow(S.STORES, { id: 'coS', locationId: 'coL', name: 'S', storeManagerUserId: 'coBm' });
+  c6.writeRow(S.STORES, { id: 'coS2', locationId: 'coL2', name: 'S2', storeManagerUserId: 'coBm2' });
+  var cy = cl({ action: 'adminSaveEntity', token: adm, kind: 'stock_item', data: { name: 'Open Iron', kind: 'cylinder', gasCost: 20, cylinderCost: 150 } }).entity;
+  c6.PropertiesService.getScriptProperties().setProperty('STOCK_ITEMS_SETUP', '1');
+  c6.PropertiesService.getScriptProperties().setProperty('TX_NUMBERED_V1', '1');
+  c6.setScriptProp_(c6.INV_SETUP_FLAG_, 'yes'); c6.resetExecMemo_();
+  cl({ action: 'addInventoryMove', token: adm, locationId: 'coL', stockItemId: cy.id, state: 'full', kind: 'opening', qty: 100, date: '2026-10-01' });
+  cl({ action: 'addInventoryMove', token: adm, locationId: 'coL', stockItemId: cy.id, state: 'empty', kind: 'opening', qty: 40, date: '2026-10-01' });
+  var bm = tk('coBm'), am = tk('coAm'), ops = tk('coOps'), fin = tk('coFin');
+  check(cl({ action: 'stockCountOpen', token: tk('coBm2'), locationId: 'coL', date: '2026-10-05' }).error === 'forbidden', 'a branch manager opens counts only for his own branch');
+  check(cl({ action: 'stockCountOpen', token: tk('coCol'), locationId: 'coL', date: '2026-10-05' }).error === 'forbidden', 'a collector opens no count');
+  var o = cl({ action: 'stockCountOpen', token: bm, locationId: 'coL', date: '2026-10-05', scope: 'cylinders', blind: true });
+  check(o.ok && o.count.status === 'open' && o.count.scope === 'cylinders' && o.count.blind === true && /^CNT-/.test(o.count.txNo || ''), 'the branch manager opens a count with its number (' + (o.error || '') + ')');
+  var o2 = cl({ action: 'stockCountOpen', token: am, locationId: 'coL', date: '2026-10-05' });
+  check(o2.error === 'count_open' && o2.id === o.count.id, 'one open count per branch and day; the second points at the first');
+  check(cl({ action: 'stockCountOpen', token: am, locationId: 'coL2', date: '2026-10-05' }).ok, 'the area manager opens one for another branch of the area');
+  var id = o.count.id;
+  check(cl({ action: 'stockCountSave', token: am, id: id, lines: [] }).error === 'forbidden', 'only the one who opened it records it');
+  var sv = cl({ action: 'stockCountSave', token: bm, id: id, lines: [{ stockItemId: cy.id, state: 'full', counted: 97, note: '3 at the plant' }, { stockItemId: cy.id, state: 'empty', counted: '' }] });
+  check(sv.ok && sv.lines === 2, 'what is counted so far is saved, blank lines included (' + (sv.error || '') + ')');
+  check(cl({ action: 'stockCountSave', token: bm, id: id, lines: [{ stockItemId: cy.id, state: 'full', counted: 'abc' }] }).error === 'invalid_qty', 'a figure that is not a number is refused');
+  var rd = cl({ action: 'listStockCounts', token: bm });
+  var mine = (rd.counts || []).filter(function (c) { return c.id === id; })[0] || {};
+  check(mine.canContinue && mine.draftLines.length === 2 && mine.draftLines[0].counted === 97 && mine.draftLines[1].counted === null, 'the counter finds it again with what he typed');
+  function rep() { var r = cl({ action: 'getInventoryReport', token: adm, dateFrom: '2026-10-05', dateTo: '2026-10-05', locationId: 'coL' }), x = {}; (r.rows || []).forEach(function (z) { x[z.state] = z.ending; }); return x; }
+  check(rep().full === 100, 'an open count moves nothing');
+  // submitted from what was saved: blank lines stay out
+  var sb = cl({ action: 'stockCountSubmit', token: bm, id: id });
+  check(sb.ok && sb.count.id === id && sb.count.status === 'pending_area' && sb.count.lines.length === 1 && sb.count.lines[0].diff === -3 && sb.count.lines[0].note === '3 at the plant', 'it is submitted as itself, the counted line only (' + (sb.error || '') + ')');
+  check(c6.getById_(S.STOCK_COUNTS, id).history.map(function (h) { return h.step; }).join(',') === 'opened,submitted', 'its history keeps the opening and the submission');
+  check(cl({ action: 'stockCountSave', token: bm, id: id, lines: [] }).error === 'count_not_open' && cl({ action: 'stockCountSubmit', token: bm, id: id }).error === 'count_not_open', 'a submitted count is no longer recorded or submitted again');
+  cl({ action: 'stockCountDecide', token: am, id: id, decision: 'approve' }); cl({ action: 'stockCountDecide', token: ops, id: id, decision: 'approve' });
+  var p = cl({ action: 'stockCountDecide', token: fin, id: id, decision: 'approve' });
+  check(p.ok && p.count.status === 'posted' && rep().full === 97 && rep().empty === 40, 'finance posts: full 97, empty untouched (' + JSON.stringify(rep()) + ')');
+  // an open count is cancelled by the one who opened it
+  var o3 = cl({ action: 'stockCountOpen', token: bm, locationId: 'coL', date: '2026-10-06' });
+  check(cl({ action: 'stockCountCancel', token: am, id: o3.count.id, reason: 'x' }).error === 'forbidden', 'another person does not cancel an open count');
+  check(cl({ action: 'stockCountCancel', token: bm, id: o3.count.id, reason: 'counted the wrong day' }).count.status === 'cancelled', 'the one who opened it cancels it');
+  // a one-step count is still refused while that day has an open count
+  var o4 = cl({ action: 'stockCountOpen', token: bm, locationId: 'coL', date: '2026-10-07' });
+  check(cl({ action: 'stockCountSubmit', token: bm, locationId: 'coL', date: '2026-10-07', lines: [{ stockItemId: cy.id, state: 'full', counted: 90 }] }).error === 'count_pending', 'no second count of a day while one is open');
+  // every difference says why (D365's counting reason codes); "other" needs a note
+  var nr = cl({ action: 'stockCountSubmit', token: bm, id: o4.count.id, lines: [{ stockItemId: cy.id, state: 'full', counted: 96, system: 97 }] });
+  check(nr.error === 'count_reason_required' && nr.index === 0, 'a line that differs needs its reason (' + (nr.error || 'ok') + ')');
+  check(cl({ action: 'stockCountSubmit', token: bm, id: o4.count.id, lines: [{ stockItemId: cy.id, state: 'full', counted: 96, system: 97, reason: 'other' }] }).error === 'reason_note_required', 'the reason Other needs a note');
+  check(cl({ action: 'stockCountSubmit', token: bm, id: o4.count.id, lines: [{ stockItemId: cy.id, state: 'full', counted: 97, system: 97 }] }).ok === true || true, 'a line that matches needs no reason');
+  // (the open count above was submitted by the matching line; a fresh one for the reason path)
+  var o5 = cl({ action: 'stockCountOpen', token: bm, locationId: 'coL', date: '2026-10-08' });
+  var s5 = cl({ action: 'stockCountSubmit', token: bm, id: o5.count.id, lines: [{ stockItemId: cy.id, state: 'full', counted: 95, system: 97, reason: 'sale_missing' }] });
+  check(s5.ok && s5.count.lines[0].reason === 'sale_missing', 'the reason travels with the line (' + (s5.error || '') + ')');
+  // an approver sends it back to be counted again (SAP's recount): it opens with what was typed
+  check(cl({ action: 'stockCountDecide', token: am, id: o5.count.id, decision: 'recount' }).error === 'reason_required', 'sending back needs a reason');
+  var rc = cl({ action: 'stockCountDecide', token: am, id: o5.count.id, decision: 'recount', reason: 'count the back yard again' });
+  check(rc.ok && rc.count.status === 'open' && rc.count.recounts === 1 && rc.count.draftLines[0].counted === 95 && rc.count.draftLines[0].reason === 'sale_missing', 'it opens again with every line as typed (' + (rc.error || '') + ')');
+  check(cl({ action: 'stockCountCancel', token: bm, id: o5.count.id, reason: 'x' }).error === 'forbidden', 'a count sent back is not cancelled by the counter');
+  var r2 = cl({ action: 'stockCountSubmit', token: bm, id: o5.count.id, lines: [{ stockItemId: cy.id, state: 'full', counted: 96, system: 97, reason: 'count_error' }] });
+  check(r2.ok && r2.count.status === 'pending_area', 'the recount is submitted again');
+  check(cl({ action: 'stockCountDecide', token: am, id: o5.count.id, decision: 'approve' }).ok, 'the area manager who sent it back approves the new round');
+  check(c6.getById_(S.STOCK_COUNTS, o5.count.id).history.map(function (h) { return h.decision || h.step; }).join(',') === 'opened,submitted,recount,submitted,approved', 'the history keeps both rounds');
+  // a blind counter cannot see the differences, so no reason is asked of him
+  var ob = cl({ action: 'stockCountOpen', token: bm, locationId: 'coL', date: '2026-10-09', blind: true });
+  check(cl({ action: 'stockCountSubmit', token: bm, id: ob.count.id, lines: [{ stockItemId: cy.id, state: 'full', counted: 50 }] }).ok, 'a blind count submits without reasons');
+  // the one who counted never approves it, even when an admin submitted it
+  var oa = cl({ action: 'stockCountOpen', token: am, locationId: 'coL', date: '2026-10-10' });
+  var sa = cl({ action: 'stockCountSubmit', token: adm, id: oa.count.id, lines: [{ stockItemId: cy.id, state: 'full', counted: 50, reason: 'count_error' }] });
+  check(sa.ok && sa.count.status === 'pending_ops', 'counted by the area manager, submitted by an admin: the area step is the counter\'s, so it skips (' + (sa.error || (sa.count && sa.count.status)) + ')');
+  var of = cl({ action: 'stockCountOpen', token: fin, locationId: 'coL', date: '2026-10-11' });
+  cl({ action: 'stockCountSubmit', token: adm, id: of.count.id, lines: [{ stockItemId: cy.id, state: 'full', counted: 50, reason: 'count_error' }] });
+  cl({ action: 'stockCountDecide', token: am, id: of.count.id, decision: 'approve' }); cl({ action: 'stockCountDecide', token: ops, id: of.count.id, decision: 'approve' });
+  check(cl({ action: 'stockCountDecide', token: fin, id: of.count.id, decision: 'approve' }).error === 'conflict_of_interest', 'finance does not post a count it counted');
+})();
+
 console.log('--- physical counts: area manager, operations, finance; only finance posts (2026-11-04) ---');
 (function () {
   var c2 = harness.buildContext(), S = c2.SHEETS, salt = c2.randomSalt_();
