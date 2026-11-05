@@ -124,7 +124,11 @@
   .notif-bell{position:relative;padding:8px !important;display:flex;align-items:center;justify-content:center;line-height:1;}
   .notif-bell svg{width:19px;height:19px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block;}
   #loadOverlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(32,36,31,.22);z-index:9999;opacity:0;pointer-events:none;transition:opacity .2s ease;}
-  #loadOverlay.active{opacity:1;}
+  #loadOverlay.active{opacity:1;pointer-events:auto;cursor:progress;}
+  /* 2026-11-05, the owner: nothing behind a loading screen takes a click */
+  #clickShield{position:fixed;inset:0;z-index:9998;display:none;cursor:progress;background:transparent;}
+  #clickShield.active{display:block;animation:shieldTint .2s ease 1s forwards;}
+  @keyframes shieldTint{to{background:rgba(244,243,238,.35);}}
   #loadOverlay .ring{width:68px;height:68px;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow-lg);}
   #loadOverlay .ring-inner{width:52px;height:52px;border-radius:50%;background:var(--card);display:flex;align-items:center;justify-content:center;}
   #loadOverlay .pct{font-size:13.5px;font-weight:800;color:var(--green-dark);}
@@ -6811,6 +6815,21 @@ function setLoadProgress(p){
   els.ring.style.background = 'conic-gradient(var(--green) ' + deg + 'deg, var(--border-soft) 0deg)';
   els.pct.textContent = Math.round(p) + '%';
 }
+// While anything the person asked for is loading, nothing behind it takes a click or a key (2026-11-05)
+var SHIELD_N_ = 0;
+function clickShield_(d){
+  SHIELD_N_ = Math.max(0, SHIELD_N_ + d);
+  var sh = document.getElementById('clickShield');
+  if (!sh) { sh = document.createElement('div'); sh.id = 'clickShield'; sh.setAttribute('aria-hidden', 'true'); document.body.appendChild(sh); }
+  sh.classList.toggle('active', SHIELD_N_ > 0);
+}
+function uiBusy_(){ return loadingCount > 0 || SHIELD_N_ > 0; }
+document.addEventListener('keydown', function(ev){
+  if (!uiBusy_()) return;
+  if (ev.key === 'Escape') { ev.preventDefault(); ev.stopPropagation(); return; }
+  var tg = ev.target; if (tg && (tg.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(tg.tagName || ''))) return;
+  if (ev.key === 'Enter' || ev.key === ' ' || ev.key === 'Spacebar') { ev.preventDefault(); ev.stopPropagation(); }
+}, true);
 function startLoading(){
   loadingCount++;
   if (loadingCount !== 1) return;
@@ -6854,14 +6873,20 @@ function api(action, payload, opts){
   var quiet = !!opts.silent || !!(state.user && READ_ACTIONS[action] && action !== 'login' && typeof msPhone_ === 'function' && msPhone_());
   var isWrite = !READ_ACTIONS[action];
   if (isWrite) MS_WRITES_++;
+  // a read the person asked for on a phone: no veil, but nothing behind takes a click until it lands
+  var shield = quiet && !opts.silent;
   if (!quiet) startLoading(); else silentProgress_(1);
+  if (shield) clickShield_(1);
+  var released = false;
+  function release(){ if (released) return; released = true; clearTimeout(guardT); if (isWrite) MS_WRITES_ = Math.max(0, MS_WRITES_ - 1); if (!quiet) stopLoading(); else silentProgress_(-1); if (shield) clickShield_(-1); }
+  // a read lets go after 45 s; a save holds the screen up to Apps Script's own 6-minute limit, so it is never sent twice
+  var guardT = setTimeout(release, isWrite ? 370000 : 45000);
   return fetch(state.apiUrl, {
     method:'POST',
     headers:{'Content-Type':'text/plain;charset=utf-8'},
     body: JSON.stringify(payload)
   }).then(function(r){ return r.json(); }).then(function(res){
-    if (isWrite) MS_WRITES_ = Math.max(0, MS_WRITES_ - 1);
-    if (!quiet) stopLoading(); else silentProgress_(-1);
+    release();
     if (res.token) { state.token = res.token; localStorage.setItem('bgc_token', res.token); }
     // a save no longer wipes the screens' last copies (2026-10-08: every screen after a save
     // then waited the whole round trip behind the loading circle); they are marked stale,
@@ -6873,8 +6898,7 @@ function api(action, payload, opts){
     if (res && res.error === 'first_login_change' && state.user && !state.user.mustChangePw) { state.user.mustChangePw = true; setTimeout(function(){ render(); }, 0); }
     return res;
   }).catch(function(err){
-    if (isWrite) MS_WRITES_ = Math.max(0, MS_WRITES_ - 1);
-    if (!quiet) stopLoading(); else silentProgress_(-1);
+    release();
     return { ok:false, error:'network' };
   });
 }
