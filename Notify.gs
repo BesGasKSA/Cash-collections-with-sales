@@ -566,7 +566,7 @@ function actionAdminSendTestMail_(req, user) {
     var r = { name: u.name || '', role: u.role, email: u.email || '', sent: false, pushed: false, error: '' };
     var o = { subject: T.s, tone: 'good', head: T.h, lead: T.l, name: firstName_(u.name), button: T.b, link: DEFAULT_APP_URL, facts: [], notes: [] };
     if (u.email) {
-      try { var via = sendMail_(u.email, o.subject, nmText_(c, o), nmHtml_(c, lang, o)); r.sent = via !== 'none'; }
+      try { var via = sendMail_(u.email, o.subject, nmText_(c, o), nmHtml_(c, lang, o)); r.sent = via !== 'none'; if (!r.sent && u.noEmail === true) r.error = 'emails_stopped'; }
       catch (e) { r.error = String(e && e.message || e).slice(0, 160); }
     } else r.error = 'no_email';
     try { if (pushHasDevice_(u.id)) { pushTo_(u.id, { title: o.subject, body: o.head, open: DEFAULT_APP_URL, lang: lang, dir: c.dir }); r.pushed = true; } } catch (eP) {}

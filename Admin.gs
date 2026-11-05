@@ -466,7 +466,7 @@ function actionAdminUpdateUser_(req, user) {
   }
   if (d.language != null) { target.language = d.language; target.languageChosen = true; }
   if (d.active != null) target.active = !!d.active;
-  if (d.noEmail != null) { if (target.noEmail !== (d.noEmail === true)) logAudit_('user_emails_' + (d.noEmail === true ? 'stopped' : 'restarted'), user.id, target.id); target.noEmail = d.noEmail === true; }
+  if (d.noEmail != null) { if ((target.noEmail === true) !== (d.noEmail === true)) logAudit_('user_emails_' + (d.noEmail === true ? 'stopped' : 'restarted'), user.id, target.id); target.noEmail = d.noEmail === true; }
   if (d.locationId !== undefined) target.locationId = d.locationId;
   if (d.clusterId !== undefined) target.clusterId = d.clusterId;
   if (phoneError_(d)) return { ok: false, error: 'invalid_phone' };
