@@ -7984,6 +7984,22 @@ console.log('--- the owner cancels a banked day, the deposit included (2026-11-0
   check(cl({ action: 'adminCancelBanked', token: adm, id: 'cbE9', reason: 'x', confirm: 'CANCEL' }).error === 'conflict_of_interest', 'an admin does not cut a deposit they made');
 })();
 
+console.log('--- a collector receives a branch\'s requests in one go (2026-11-07) ---');
+(function () {
+  var c8 = harness.buildContext(), S = c8.SHEETS, salt = c8.randomSalt_();
+  function cl(p) { try { return c8.route_(p); } catch (e) { return { ok: false, error: String(e && e.message || e) }; } }
+  ['rmCol:collector', 'rmCol2:collector', 'rmAm:cluster_manager'].forEach(function (x) { var p = x.split(':'); c8.writeRow(S.USERS, { id: p[0], name: p[0], email: p[0] + '@bestgas.sa', role: p[1], active: true, language: 'en', salt: salt, pass: c8.hashPw_('Bootstrap#1', salt), mustChangePw: false }); });
+  var col = cl({ action: 'login', email: 'rmCol@bestgas.sa', password: 'Bootstrap#1' }).token;
+  function bd(n) { return { storeCash: n, netCashOwed: n }; }
+  [['rmH1', 100, 'rmCol', 'pending'], ['rmH2', 250, 'rmCol', 'pending'], ['rmH3', 40, 'rmCol2', 'pending'], ['rmH4', 60, 'rmCol', 'confirmed']].forEach(function (x) {
+    c8.writeRow(S.HANDOFFS, { id: x[0], kind: 'cluster_to_collector', fromUserId: 'rmAm', toUserId: x[2], amount: x[1], breakdown: bd(x[1]), sourceEntryIds: [], sourceHandoffIds: [], status: x[3], locationId: 'L1' });
+  });
+  check(cl({ action: 'confirmHandoffMany', token: col, ids: ['rmH1', 'rmH3'] }).error === 'receiver_only' && c8.getById_(S.HANDOFFS, 'rmH1').status === 'pending', 'one request not his stops the lot, nothing received');
+  check(cl({ action: 'confirmHandoffMany', token: col, ids: ['rmH1', 'rmH4'] }).error === 'not_pending' && c8.getById_(S.HANDOFFS, 'rmH1').status === 'pending', 'one already received stops the lot');
+  var r = cl({ action: 'confirmHandoffMany', token: col, ids: ['rmH1', 'rmH2'] });
+  check(r.ok && r.confirmed === 2 && r.total === 350 && c8.getById_(S.HANDOFFS, 'rmH1').status === 'confirmed' && c8.getById_(S.HANDOFFS, 'rmH2').receivedAmount === 250 && c8.getById_(S.HANDOFFS, 'rmH2').confirmedBy === 'rmCol', 'both received in full in one go (' + JSON.stringify(r.error || r.total) + ')');
+})();
+
 console.log('--- the Entries list reads recent history plus everything not yet banked (2026-11-06) ---');
 (function () {
   var c7 = harness.buildContext(), S = c7.SHEETS, salt = c7.randomSalt_();

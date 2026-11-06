@@ -1034,6 +1034,7 @@ function route_(req) {
     // handoffs
     createHandoff: function () { return withCashLock_(function () { healLinks_(); return actionCreateHandoff_(req, user); }); },
     confirmHandoff: function () { return withCashLock_(function () { return actionConfirmHandoff_(req, user); }); },
+    confirmHandoffMany: function () { return withCashLock_(function () { return actionConfirmHandoffMany_(req, user); }); },
     disputeHandoff: function () { return withCashLock_(function () { return actionDisputeHandoff_(req, user); }); },
     resolveDispute: function () { return withCashLock_(function () { return actionResolveDispute_(req, user); }); },
     recordDeposit: function () { return withCashLock_(function () { healLinks_(); return actionRecordDeposit_(req, user); }); },

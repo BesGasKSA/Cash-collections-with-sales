@@ -2135,6 +2135,31 @@ function notifyAreaBatchRejected_(batch) {
 // (originalAmount/shortfall) for audit. The separate "dispute" action still
 // exists for a receiver who wants to flag something (e.g. suspected fraud,
 // refuses to accept it at all) rather than simply accept a shortfall.
+// A collector receives several requests at once (2026-11-07, the owner: "receive all amounts one time when the money
+// relates to many requests; aggregate by the branch"). Every request is checked first, then each is confirmed as
+// received in full, the same as one by one; one that cannot be received stops the whole lot and nothing is written.
+// A different amount is still received request by request.
+function actionConfirmHandoffMany_(req, user) {
+  var ids = Array.isArray(req.ids) ? req.ids.map(String) : [];
+  if (!ids.length || ids.length > 50) return { ok: false, error: 'invalid_input' };
+  var seen = Object.create(null);
+  for (var i = 0; i < ids.length; i++) {
+    if (seen[ids[i]]) return { ok: false, error: 'invalid_input' }; seen[ids[i]] = 1;
+    var h = getById_(SHEETS.HANDOFFS, ids[i]);
+    var err = !h ? 'not_found' : h.status !== 'pending' ? 'not_pending' : (h.fromUserId === user.id || h.createdBy === user.id) ? 'conflict_of_interest'
+      : h.toUserId !== user.id ? 'receiver_only' : !inActiveArea_(user, h) ? 'other_area'
+      : !(isFinite(Number(h.amount)) && Number(h.amount) >= 0) ? 'invalid_amount'
+      : (req.amounts && req.amounts[ids[i]] != null && Math.abs(Number(req.amounts[ids[i]]) - Number(h.amount)) > 0.005) ? 'amount_changed' : null;
+    if (err) return { ok: false, error: err, id: ids[i], existingTxNo: h ? (h.txNo || '') : '' };
+  }
+  var done = [], total = 0;
+  for (var j = 0; j < ids.length; j++) {
+    var r = actionConfirmHandoff_({ id: ids[j] }, user);
+    if (!r.ok) return { ok: false, error: r.error, id: ids[j], confirmed: done.length, handoffs: done };
+    done.push(r.handoff); total += Number(r.handoff.amount || 0);
+  }
+  return { ok: true, confirmed: done.length, total: Math.round(total * 100) / 100, handoffs: done };
+}
 function actionConfirmHandoff_(req, user) {
   var h = getById_(SHEETS.HANDOFFS, req.id);
   if (!h) return { ok: false, error: 'not_found' };
