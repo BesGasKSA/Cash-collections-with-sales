@@ -1219,12 +1219,13 @@
   #loadOverlay .lc-bt{font:800 12.5px/1 Inter,'IBM Plex Sans Arabic',system-ui,sans-serif;fill:#3b5540;letter-spacing:.02em;}
   #loadOverlay .lc-bt2{fill:#fbfaf6;}
   #loadOverlay .lc-brand{transition:opacity .3s ease;}
+  #loadOverlay #loadLvl{transition:transform .35s cubic-bezier(.3,.7,.3,1);}
   #loadOverlay .lc-pct{font-size:15px;font-weight:800;color:#3b5540;font-variant-numeric:tabular-nums;letter-spacing:.01em;background:rgba(255,255,255,.85);border-radius:999px;padding:3px 12px;box-shadow:0 2px 8px rgba(59,85,64,.14);min-width:56px;text-align:center;}
   #loadOverlay.full .lc-cyl{animation:lcFull .38s ease-out;}
   @keyframes lcWave{to{transform:translateX(60px);}}
   @keyframes lcBub{0%{transform:translateY(70px);opacity:0;}20%{opacity:.9;}100%{transform:translateY(-6px);opacity:0;}}
   @keyframes lcFull{50%{transform:scale(1.06);}}
-  @media (prefers-reduced-motion: reduce){ #loadOverlay .lc-wave,#loadOverlay .lc-bub,#loadOverlay.full .lc-cyl{animation:none !important;} #loadOverlay .lc-bub{display:none;} #loadOverlay .lc,#loadOverlay .lc-liq{transition:none;} }
+  @media (prefers-reduced-motion: reduce){ #loadOverlay .lc-wave,#loadOverlay .lc-bub,#loadOverlay.full .lc-cyl{animation:none !important;} #loadOverlay .lc-bub{display:none;} #loadOverlay .lc,#loadOverlay .lc-liq,#loadOverlay #loadLvl{transition:none;} }
   /* ---------- stale screen copy, headline icons (2026-10-08) ---------- */
   .scr-stale .card, .scr-stale .tile, .scr-stale .panel{transition:opacity .2s ease;opacity:.62;}
   .tb-title h1{display:flex;align-items:center;gap:10px;}
@@ -6904,7 +6905,7 @@ function loadOverlayEls(){
     var wave = 'M-120 0'; for (var w = 0; w < 6; w++) wave += ' q15 -5 30 0 t30 0';
     var body = 'M30 64 Q30 46 50 44 L70 44 Q90 46 90 64 L90 138 Q90 150 78 150 L42 150 Q30 150 30 138 Z';
     overlay.innerHTML = '<div class="lc"><svg class="lc-cyl" viewBox="0 0 120 172" aria-hidden="true">' +
-      '<defs><clipPath id="lcBody"><path d="'+body+'"/></clipPath><clipPath id="lcLvl"><rect id="loadLvl" x="0" y="152.5" width="120" height="172"/></clipPath>' +
+      '<defs><clipPath id="lcBody"><path d="'+body+'"/></clipPath><clipPath id="lcLvl"><rect id="loadLvl" x="0" y="0" width="120" height="172" style="transform:translateY(154.5px)"/></clipPath>' +
       '<linearGradient id="lcGas" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6f9474"/><stop offset="1" stop-color="#3b5540"/></linearGradient></defs>' +
       '<ellipse class="lc-shadow" cx="60" cy="164" rx="34" ry="4"/>' +
       '<path class="lc-glass" d="'+body+'"/>' +
@@ -6945,7 +6946,7 @@ function setLoadProgress(p){
   if (els.liq) els.liq.style.transform = 'translateY(' + lvlY + 'px)';
   // the brand fades in with the percentage (fully there by 60%); the gas surface sits a little below the wave's crest
   if (els.brand) els.brand.style.opacity = String(Math.min(1, Math.max(0, p) / 60).toFixed(2));
-  if (els.lvl) els.lvl.setAttribute('y', String(+lvlY + 2));
+  if (els.lvl) els.lvl.style.transform = 'translateY(' + (+lvlY + 2) + 'px)';
   els.overlay.setAttribute('aria-valuenow', String(Math.round(p)));
   els.overlay.setAttribute('aria-hidden', els.overlay.classList.contains('active') ? 'false' : 'true');
   els.overlay.classList.toggle('full', p >= 100);
