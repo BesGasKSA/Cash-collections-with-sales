@@ -1210,7 +1210,24 @@ function route_(req) {
 }
 function msOut_() { var o = {}; if (ROUTE_MS_) Object.keys(ROUTE_MS_).forEach(function (k) { if (k !== 't0') o[k] = ROUTE_MS_[k]; }); return o; }
 
+// The reference data for a sign-in: the saved copy of listMeta for this person when nothing changed since (2026-11-11,
+// speed), else worked out and saved the same way a listMeta answer is. A sign-in has no active area, as listMeta without one.
+function loginMeta_(req, user, lms) {
+  var cache = null, key = null;
+  try {
+    cache = CacheService.getScriptCache(); key = responseCacheKey_('listMeta', {}, user);
+    var hit = cacheGetBig_(cache, key);
+    if (hit) { lms.metaCache = 'hit'; return JSON.parse(hit); }
+  } catch (e) { key = null; }
+  var meta = actionMeta_(req, user);
+  lms.metaCache = 'miss';
+  if (key && meta && meta.ok) {
+    try { var tc = {}; safeOwnKeys_(meta).forEach(function (k) { if (k !== 'token') tc[k] = meta[k]; }); cachePutBig_(cache, key, JSON.stringify(tc), RESP_CACHE_TTL_SEC); } catch (e) { /* the cache is a convenience */ }
+  }
+  return meta;
+}
 function actionLogin_(req) {
+  var lt0 = Date.now(), lms = {};
   var login = String(req.email || '').trim();
   if (!login) throw new Error('missing_email');
   var lockKey = loginKey_(login);
@@ -1233,6 +1250,7 @@ function actionLogin_(req) {
     noteFail_(lockKey);
     return { ok: false, error: 'invalid_credentials' };
   }
+  lms.verify = Date.now() - lt0;
   clearFail_(lockKey);
   if (viaReset) {
     user.salt = user.resetSalt;
@@ -1255,11 +1273,16 @@ function actionLogin_(req) {
     user.lastLoginAt = new Date().toISOString();
     writeRow(SHEETS.USERS, user);
   }
+  lms.write = Date.now() - lt0;
   var token = issueToken_(user.id, epochOf_(user));
-  logAudit_('login', user.id, null);
   // Reference data rides along with the login reply, so the client can
   // render straight away instead of making a second round trip for listMeta.
-  return { ok: true, token: token, user: publicUser_(user), previousLoginAt: previousLoginAt, meta: actionMeta_(req, user) };
+  var meta = loginMeta_(req, user, lms);
+  lms.meta = Date.now() - lt0;
+  // the sign-in's own timings stay on the audit trail, so a slow one can be read afterwards
+  logAudit_('login', user.id, 'ms verify ' + lms.verify + ', write ' + lms.write + ', data ' + lms.meta + ' (' + lms.metaCache + ')');
+  lms.total = Date.now() - lt0;
+  return { ok: true, token: token, user: publicUser_(user), previousLoginAt: previousLoginAt, meta: meta, _ms: lms };
 }
 
 // Self-service password reset — no session required, since a locked-out user
