@@ -5513,6 +5513,333 @@
   .gs-ov.gs-phone .gs-chip{padding:7px 12px;font-size:13.5px;}
   @media (prefers-reduced-motion: reduce){ .gs-ov,.gs-box{transition:none;} .gs-spin,.gs-skel i{animation:none;} }
 .tn-row{display:flex;gap:8px;align-items:stretch}.tn-row input{flex:1;min-width:0}.tnOut{margin-top:10px}.tnOut .msg{margin:8px 0}
+  /* =====================================================================
+     One story from the door to Home (2026-11-11, the owner): the sign-in page,
+     the loading scene, the welcome, the Home greeting. One cylinder runs through
+     it: it fills as the person types, fills for real while the server answers,
+     lights when they are in. New motion here is transform and opacity only; every
+     entrance is a from-keyframe, so nothing stays hidden under reduced motion.
+     ===================================================================== */
+  /* ---------- 1. sign-in ---------- */
+  .brand-page.si{--pine:#14241a;--pine2:#1f3326;--paper:#FBFAF6;--gold:#E0B54A;--ink:#1c2a20;--lv:.12;
+    display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start;gap:0;padding:0;min-height:100vh;min-height:100dvh;
+    background:radial-gradient(90% 46% at 50% 12%,#3a5b42 0%,rgba(58,91,66,0) 72%),linear-gradient(180deg,#1f3326 0%,#14241a 100%);overflow:hidden;overflow:clip;isolation:isolate;}
+  .brand-page.si::before,.brand-page.si::after{content:none;}
+  .brand-page.si > :not(.si-sheet){animation:none;}
+  .si-stage{position:relative;z-index:0;flex:none;display:flex;flex-direction:column;align-items:center;text-align:center;color:#F2EEE4;
+    padding:calc(14px + env(safe-area-inset-top)) max(20px,env(safe-area-inset-right)) 18px max(20px,env(safe-area-inset-left));}
+  .si-stage .lg3d-word{--w:156px;flex:none;}
+  .si-hero{position:relative;flex:none;width:min(42vw,19vh,172px);margin:2px 0 4px;animation:siHeroIn .9s cubic-bezier(.2,.9,.25,1) both;}
+  .si-par{transform:translate3d(calc(var(--px,0) * 10px),calc(var(--py,0) * 8px),0);transition:transform .5s cubic-bezier(.2,.8,.2,1);}
+  .si-hero svg{display:block;width:100%;height:auto;overflow:visible;direction:ltr;}
+  .si-glow{opacity:calc(.25 + var(--lv) * .75);transition:opacity .7s ease;}
+  .si-ticks{fill:none;stroke:#F2EEE4;stroke-width:5;stroke-dasharray:1 11.6;opacity:.34;transform-box:fill-box;transform-origin:center;animation:siSpin 140s linear infinite;}
+  .si-ticks.t2{stroke-width:1;stroke-dasharray:none;opacity:.14;animation:none;}
+  .si-cyl .lc-glass{fill:rgba(242,238,228,.07);}
+  .si-cyl .lc-line{fill:none;stroke:#F2EEE4;stroke-width:2.6;stroke-linejoin:round;stroke-linecap:round;}
+  .si-cyl .lc-weld{fill:none;stroke:#F2EEE4;stroke-width:1.1;opacity:.4;}
+  .si-cyl .lc-hole{fill:#1f3326;stroke:#F2EEE4;stroke-width:1.7;}
+  .si-cyl .lc-valve{fill:#F2EEE4;}
+  .si-cyl .lc-shine{fill:#fff;opacity:.16;}
+  .si-cyl .lc-shadow{fill:rgba(0,0,0,.35);}
+  .si-cyl .lc-liq{transition:transform .8s cubic-bezier(.3,.7,.3,1);}
+  .si-cyl .lc-wave{animation:lcWave 2.4s linear infinite;}
+  .si-cyl .lc-bub{fill:rgba(255,255,255,.6);opacity:0;animation:lcBub 2.6s ease-in infinite;}
+  .si-cyl .lc-bub.b2{animation-delay:.9s;animation-duration:2.1s;} .si-cyl .lc-bub.b3{animation-delay:1.6s;animation-duration:3s;}
+  /* the regulator's dial: the needle follows the level */
+  .lc-dial{fill:#F2EEE4;stroke:#3b5540;stroke-width:2;}
+  .lc-tk{fill:none;stroke:#3b5540;stroke-width:1.2;stroke-linecap:round;opacity:.7;}
+  .lc-tk.hot{stroke:#c0392b;opacity:1;}
+  .lc-ndl{fill:none;stroke:#b3261e;stroke-width:1.8;stroke-linecap:round;transform-box:fill-box;transform-origin:50% 100%;transition:transform .7s cubic-bezier(.3,1.3,.5,1);}
+  .lc-hub{fill:#23372a;}
+  .lc-pipe{fill:none;stroke-width:3;stroke-linecap:round;}
+  .si-cyl .lc-dial{stroke:#F2EEE4;} .si-cyl .lc-pipe{stroke:#F2EEE4;}
+  /* the pilot flame: blue with a gold heart, taller as the level rises */
+  .lc-fl{transform-box:fill-box;transform-origin:50% 100%;transition:transform .7s cubic-bezier(.3,1.3,.5,1),opacity .4s ease;}
+  .lc-fl-in{transform-box:fill-box;transform-origin:50% 100%;animation:lcFlick 1.7s ease-in-out infinite;}
+  .lc-fl-core{transform-box:fill-box;transform-origin:50% 100%;animation:lcFlick 1.1s ease-in-out -.4s infinite;}
+  @keyframes lcFlick{0%,100%{transform:scale(1,1) rotate(0deg);}22%{transform:scale(.94,1.07) rotate(-2deg);}47%{transform:scale(1.05,.95) rotate(1.5deg);}71%{transform:scale(.97,1.05) rotate(2deg);}}
+  @keyframes siSpin{to{transform:rotate(360deg);}}
+  @keyframes siHeroIn{from{opacity:0;transform:translateY(18px) scale(.92);}}
+  @keyframes siUp{from{opacity:0;transform:translateY(14px);}}
+  @keyframes siSheetIn{from{opacity:0;transform:translateY(46px);}}
+  @keyframes siSheetSide{from{opacity:0;transform:translateX(calc(var(--fx) * 46px));}}
+  @keyframes siShake{0%,100%{transform:none;}18%{transform:translateX(-9px);}36%{transform:translateX(8px);}54%{transform:translateX(-6px);}72%{transform:translateX(4px);}88%{transform:translateX(-2px);}}
+  .si-name{margin:2px 0 0;font-size:23px;line-height:1.25;font-weight:800;letter-spacing:-.02em;color:#F2EEE4;text-wrap:balance;animation:siUp .7s cubic-bezier(.2,.8,.2,1) .15s both;}
+  html[dir="rtl"] .si-name{font-family:'Cairo','IBM Plex Sans Arabic',sans-serif;letter-spacing:0;line-height:1.45;}
+  .si-tag{margin:2px 0 0;font-size:14px;line-height:1.6;color:#d5dccf;animation:siUp .7s cubic-bezier(.2,.8,.2,1) .22s both;}
+  .si-tag:lang(en){font-family:Georgia,'Times New Roman',serif;font-style:italic;font-size:15px;}
+  /* the chain the money follows: a real sequence, so it is drawn as one */
+  .si-chain{display:none;list-style:none;margin:0;padding:0;align-items:center;gap:0;font-size:14px;font-weight:700;color:#F2EEE4;}
+  .si-chain li{display:flex;align-items:center;gap:8px;}
+  .si-chain li + li::before{content:'';width:44px;height:2px;margin-inline:12px;background:linear-gradient(90deg,rgba(242,238,228,.2),rgba(224,181,74,.9),rgba(242,238,228,.2));border-radius:2px;}
+  .si-chain .ic2{width:18px;height:18px;stroke:#E0B54A;}
+  .si-sheet{position:relative;z-index:1;flex:1 1 auto;display:flex;flex-direction:column;align-items:center;background:var(--paper);color:var(--ink);
+    border-radius:28px 28px 0 0;padding:16px max(20px,env(safe-area-inset-right)) calc(14px + env(safe-area-inset-bottom)) max(20px,env(safe-area-inset-left));
+    box-shadow:0 -22px 48px rgba(0,0,0,.34);animation:siSheetIn .75s cubic-bezier(.16,1,.3,1) .1s both;}
+  .si.si-still .si-sheet,.si.si-still .si-hero,.si.si-still .si-name,.si.si-still .si-tag,.si.si-still .login-card > *{animation:none !important;}
+  .si .login-card{width:100%;max-width:400px;margin:0;padding:0;background:none;border:0 !important;border-radius:0;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none;overflow:visible;animation:none;display:flex;flex-direction:column;}
+  .si.shake .login-card{animation:siShake .46s cubic-bezier(.36,.07,.19,.97) both;}
+  .si .login-lang{align-self:center;display:inline-flex;gap:2px;margin:0 0 12px;padding:4px;border-radius:999px;background:#ebe6d8;}
+  .si .login-lang button{min-height:44px;min-width:78px;padding:0 14px;border:0;border-radius:999px;background:transparent;color:#3f4b41;font-size:14.5px;font-weight:700;transition:background-color .2s ease,color .2s ease;}
+  .si .login-lang button:hover{color:#1c2a20;background:rgba(255,255,255,.55);}
+  .si .login-lang button.active{background:#fff;color:#1c2a20;box-shadow:0 1px 3px rgba(28,42,32,.18);}
+  .si .login-lang button:focus-visible,.si .login-forgot:focus-visible,.si .pw-eye:focus-visible{outline:3px solid #3b5540;outline-offset:2px;}
+  .si-h{margin:0;font-size:24px;line-height:1.3;font-weight:800;letter-spacing:-.02em;color:var(--ink);}
+  html[dir="rtl"] .si-h{font-family:'Cairo','IBM Plex Sans Arabic',sans-serif;letter-spacing:0;line-height:1.5;}
+  .si-sub{margin:2px 0 12px;font-size:14.5px;line-height:1.65;color:#4b574d;max-width:38ch;}
+  .si #loginMsg .msg{margin:0 0 14px;border-radius:14px;font-size:14px;line-height:1.6;padding:12px 14px;}
+  .si #loginMsg .msg.err{background:#fbe7e1;color:#8f2f1b;border:1px solid #efc3b6;display:flex;gap:10px;align-items:flex-start;}
+  .si #loginMsg .msg.err::before{content:'';flex:none;width:8px;height:8px;margin-top:8px;border-radius:50%;background:#c14a30;}
+  .si .login-card .field{margin:0 0 12px;animation-name:siUp;}
+  .si .login-card .field label{display:block;margin:0 0 6px;font-size:14px;font-weight:600;color:#3f4b41;text-transform:none;letter-spacing:0;}
+  .si .login-card .field input{width:100%;height:54px;padding:0 16px;border:1.5px solid #cfc9b8;border-radius:14px;background:#fff;color:var(--ink);font-size:16px;transition:border-color .15s ease,background-color .15s ease;}
+  .si .login-card .field input:hover{border-color:#9aa596;}
+  .si .login-card .field input:focus{transform:none;box-shadow:none;border-color:#3b5540;outline:3px solid rgba(59,85,64,.38);outline-offset:1px;background:#fff;}
+  .si .pw-wrap input{padding-inline-end:56px;}
+  .si .pw-eye{width:44px;height:44px;margin-top:-22px;inset-inline-end:5px;color:#4b574d;}
+  .si .login-card button.btn{position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;gap:10px;width:100%;height:56px;margin:4px 0 0;padding:0 18px;border-radius:16px;
+    background:#3b5540;color:#fff;font-size:17px;font-weight:800;letter-spacing:0;box-shadow:0 16px 28px -16px rgba(20,36,26,.9);transition:background-color .2s ease,transform .12s ease;}
+  .si .login-card button.btn:hover{background:#2f4634;transform:translateY(-1px);}
+  .si .login-card button.btn:active{transform:scale(.985);}
+  .si .login-card button.btn:focus-visible{outline:3px solid #E0B54A;outline-offset:3px;}
+  .si .login-card button.btn[disabled]{opacity:.75;cursor:progress;}
+  .si .login-card button.btn .si-bf{width:18px;height:22px;flex:none;}
+  .si .login-forgot{min-height:44px;margin-top:6px;padding:0 12px;font-size:14.5px;color:#2f4634;border-radius:12px;}
+  .si .login-footer{margin:auto 0 0;padding-top:8px;color:#566055;font-size:12px;animation:none;}
+  .si .login-card .login-lang{animation-delay:.3s;} .si .login-card .si-h{animation:siUp .55s cubic-bezier(.2,.8,.2,1) .36s both;} .si .login-card .si-sub{animation:siUp .55s cubic-bezier(.2,.8,.2,1) .42s both;}
+  .si .login-card .field:nth-of-type(1){animation-delay:.48s;} .si .login-card .field:nth-of-type(2){animation-delay:.54s;}
+  .si .login-card button.btn{animation-delay:.62s;} .si .login-card .login-forgot{animation-delay:.7s;}
+  @media (max-width:899px){ .si .login-card:has(#loginMsg .msg) .si-sub{display:none;} .si .login-card:has(#loginMsg .msg) .si-h{margin-bottom:10px;} }
+  @media (max-height:700px) and (max-width:899px){ .si-hero{width:min(34vw,120px);} .si-stage .lg3d-word{display:none;} }
+  @media (min-width:900px){
+    .brand-page.si{flex-direction:row;background:radial-gradient(60% 60% at 42% 46%,#3a5b42 0%,rgba(58,91,66,0) 70%),linear-gradient(160deg,#22382a 0%,#14241a 100%);}
+    .si-stage{flex:1.2 1 0;min-width:0;min-height:100vh;align-items:flex-start;justify-content:space-between;text-align:start;padding:44px clamp(36px,5vw,72px) 40px;}
+    .si-stage .lg3d-word{--w:190px;}
+    .si-hero{align-self:center;width:min(31vw,50vh,400px);margin:0;}
+    .si-copy{display:flex;flex-direction:column;gap:6px;}
+    .si-name{font-size:clamp(34px,3.5vw,54px);line-height:1.1;margin:0;text-align:start;}
+    .si-tag{text-align:start;}
+    html[dir="rtl"] .si-name{line-height:1.4;}
+    .si-tag{font-size:17px;margin:0 0 18px;} .si-tag:lang(en){font-size:19px;}
+    .si-chain{display:flex;}
+    .si-sheet{flex:1 1 0;max-width:580px;min-height:100vh;justify-content:center;padding:40px clamp(32px,4vw,64px);border-radius:0;border-start-start-radius:40px;border-end-start-radius:40px;
+      box-shadow:calc(var(--fx) * -30px) 0 70px rgba(0,0,0,.32);animation-name:siSheetSide;}
+    .si .login-card{max-width:400px;flex:none;}
+    .si .login-lang{align-self:flex-start;margin-bottom:28px;}
+    .si-h{font-size:32px;} .si-sub{margin-bottom:24px;font-size:15.5px;}
+    .si .login-footer{position:absolute;inset-inline:0;bottom:22px;text-align:center;margin:0;}
+  }
+  @media (prefers-color-scheme:dark){
+    .brand-page.si{--paper:#101b14;--ink:#F2EEE4;}
+    .si-sheet{box-shadow:0 -22px 48px rgba(0,0,0,.5),inset 0 1px 0 rgba(242,238,228,.1);}
+    .si-sub,.si .login-card .field label{color:#c5cec1;}
+    .si .login-lang{background:#1c2c21;} .si .login-lang button{color:#c5cec1;} .si .login-lang button:hover{color:#fff;background:rgba(255,255,255,.08);}
+    .si .login-lang button.active{background:#F2EEE4;color:#14241a;}
+    .si .login-card .field input{background:#182a1e;border-color:#3f5645;color:#F2EEE4;} .si .login-card .field input:hover{border-color:#6f8a75;}
+    .si .login-card .field input:focus{background:#182a1e;border-color:#E0B54A;outline-color:rgba(224,181,74,.45);}
+    .si .pw-eye{color:#c5cec1;} .si .pw-eye:hover{background:rgba(255,255,255,.1);color:#fff;}
+    .si .login-card button.btn{background:#F2EEE4;color:#14241a;} .si .login-card button.btn:hover{background:#fff;}
+    .si .login-forgot{color:#E9C877;} .si .login-footer{color:#a9b4a5;}
+    .si .login-lang button:focus-visible,.si .login-forgot:focus-visible,.si .pw-eye:focus-visible{outline-color:#E0B54A;}
+    .si #loginMsg .msg.err{background:#3a1b14;color:#ffd2c6;border-color:#6b2f22;}
+  }
+  /* ---------- 2. the loading scene ----------
+     The same cylinder, now with the regulator dial and a pilot flame. Over a page that has no
+     app shell yet (opening the app, signing in) the veil is the pine stage itself, so the
+     sign-in page turns into the loader instead of being covered by a pale sheet. */
+  #loadOverlay .lc-cyl{width:102px;}
+  #loadOverlay .lc-pipe{stroke:#3b5540;}
+  #loadOverlay .lc-fl{opacity:.92;}
+  #loadOverlay .lc-won{display:none;}
+  #loadOverlay .lc-halo{opacity:0;transform-box:fill-box;transform-origin:center;}
+  #loadOverlay.scene{background:radial-gradient(70% 50% at 50% 42%,#3a5b42 0%,rgba(58,91,66,0) 72%),linear-gradient(180deg,#1f3326 0%,#14241a 100%);-webkit-backdrop-filter:none;backdrop-filter:none;}
+  #loadOverlay.scene .lc{gap:16px;}
+  #loadOverlay.scene .lc-cyl{width:min(62vw,38vh,250px);filter:none;}
+  #loadOverlay.scene .lc-glass{fill:rgba(242,238,228,.07);}
+  #loadOverlay.scene .lc-line{stroke:#F2EEE4;stroke-width:2.6;}
+  #loadOverlay.scene .lc-weld{stroke:#F2EEE4;}
+  #loadOverlay.scene .lc-hole{fill:#1f3326;stroke:#F2EEE4;}
+  #loadOverlay.scene .lc-valve{fill:#F2EEE4;}
+  #loadOverlay.scene .lc-shadow{fill:rgba(0,0,0,.35);}
+  #loadOverlay.scene .lc-dial{stroke:#F2EEE4;} #loadOverlay.scene .lc-pipe{stroke:#F2EEE4;}
+  #loadOverlay.scene #lcGas stop:first-child{stop-color:#c3dcbd;} #loadOverlay.scene #lcGas stop:last-child{stop-color:#6f9474;}
+  #loadOverlay.scene .lc-bt{fill:#F2EEE4;} #loadOverlay.scene .lc-bt2{fill:#14241a;}
+  #loadOverlay.scene .lc-pct{background:none;box-shadow:none;color:#F2EEE4;font-size:30px;letter-spacing:-.01em;padding:0;}
+  #loadOverlay.scene .lc-note{background:rgba(242,238,228,.12);color:#F2EEE4;box-shadow:none;font-size:14px;}
+  #loadOverlay.scene .lc-won{color:#F2EEE4;font-size:22px;font-weight:800;line-height:1.4;text-align:center;}
+  html[dir="rtl"] #loadOverlay.scene .lc-won{font-family:'Cairo','IBM Plex Sans Arabic',sans-serif;}
+  /* in: the scene holds for a moment, the cylinder full, the flame lit, a ring of light going out from it */
+  html.si-won #loadOverlay{opacity:1;}
+  html.si-won:not(.si-out) #loadOverlay{pointer-events:auto;}
+  html.si-won #loadOverlay .lc{opacity:1;transform:none;}
+  html.si-won #loadOverlay #loadLiq{transform:translateY(41px) !important;}
+  html.si-won #loadOverlay #loadLvl{transform:translateY(43px) !important;}
+  html.si-won #loadOverlay #loadBrand{opacity:1 !important;}
+  html.si-won #loadOverlay .lc-fl{transform:scale(1.5) !important;opacity:1;}
+  html.si-won #loadOverlay #loadNeedle{transform:rotate(104deg) !important;}
+  html.si-won #loadOverlay .lc-halo{animation:lcHalo .9s cubic-bezier(.2,.7,.2,1) both;}
+  html.si-won #loadOverlay .lc-cyl{animation:lcFull .5s ease-out;}
+  html.si-won #loadOverlay .lc-pct,html.si-won #loadOverlay .lc-note{display:none;}
+  html.si-won #loadOverlay .lc-won{display:block;animation:siUp .5s cubic-bezier(.2,.8,.2,1) .12s both;}
+  html.si-won.si-out #loadOverlay:not(.active){opacity:0;transition:opacity .3s ease;}
+  html.si-won .wl-ov *,html.si-won .hero.splash,html.si-won .hero.splash *{animation-play-state:paused !important;}
+  @keyframes lcHalo{from{opacity:.75;transform:scale(.5);}to{opacity:0;transform:scale(2.4);}}
+  /* ---------- 3. the welcome ----------
+     The scene lifts and the welcome is already there: the same pine stage, the day drawn as a dial with the
+     light where the hour is, the greeting, then the name on its own line. The paper half follows, one piece
+     at a time. On a wide screen the stage and the paper stand side by side, like the sign-in page. */
+  .wl-card.wl2{width:min(470px,100%);border-radius:28px;background:#FBFAF6;box-shadow:0 40px 90px rgba(10,20,13,.5);animation:wlRise2 .8s cubic-bezier(.16,1,.3,1) both;}
+  .pa-ov.wl-ov .pa-bg{background:rgba(14,24,17,.62);}
+  .wl2 .wl-stage{gap:6px;padding:20px 24px 24px;background:radial-gradient(90% 70% at 50% 100%,rgba(224,181,74,.16) 0%,rgba(224,181,74,0) 70%),linear-gradient(180deg,#22382a 0%,#16271c 100%);}
+  .wl2[data-tod="morning"] .wl-stage{background:radial-gradient(100% 80% at 22% 100%,rgba(233,200,119,.34) 0%,rgba(233,200,119,0) 68%),linear-gradient(180deg,#3d5d44 0%,#27402f 100%);}
+  .wl2[data-tod="afternoon"] .wl-stage{background:radial-gradient(90% 70% at 50% 0%,rgba(242,238,228,.1) 0%,rgba(242,238,228,0) 70%),linear-gradient(180deg,#40604a 0%,#2a4532 100%);}
+  .wl2[data-tod="evening"] .wl-stage{background:radial-gradient(100% 80% at 80% 100%,rgba(224,150,74,.3) 0%,rgba(224,150,74,0) 68%),linear-gradient(180deg,#27402f 0%,#16271c 100%);}
+  .wl2[data-tod="night"] .wl-stage{background:radial-gradient(90% 70% at 50% 0%,rgba(127,183,230,.16) 0%,rgba(127,183,230,0) 70%),linear-gradient(180deg,#18291f 0%,#0f1c14 100%);}
+  .wl2 .wl-bloom{display:none;}
+  .wl2 .wl-mark{position:relative;z-index:1;display:block;width:min(230px,70%);height:auto;opacity:1;transform:none;animation:wlMarkIn .9s cubic-bezier(.16,1,.3,1) .15s both;}
+  .wl2 .wl-mark svg{display:block;width:100%;height:auto;overflow:visible;direction:ltr;}
+  .wl2 .wl-arc{fill:none;stroke:rgba(242,238,228,.34);stroke-width:1.4;stroke-linecap:round;}
+  .wl2 .wl-tk path{fill:none;stroke:rgba(242,238,228,.5);stroke-width:1.3;stroke-linecap:round;}
+  .wl2 .wl-sun{transform:rotate(var(--a));animation:wlSun 1.6s cubic-bezier(.3,.8,.2,1) .35s both;}
+  .wl2 .wl-sun-d{fill:#F4C95D;} .wl2 .wl-sun-g{fill:rgba(244,201,93,.26);} .wl2 .wl-moon{fill:#F2EEE4;}
+  .wl2[data-tod="night"] .wl-sun-g{fill:rgba(191,225,251,.2);}
+  .wl2 .wl-cyl .c-line{fill:none;stroke:#F2EEE4;stroke-width:3.4;stroke-linejoin:round;stroke-linecap:round;}
+  .wl2 .wl-cyl .c-gas{fill:rgba(195,220,189,.3);}
+  .wl2 .wl-cyl .lc-fl{transform:scale(1) !important;}
+  .wl2 .wl-stage .wl-hi{display:flex;flex-direction:column;align-items:center;gap:0;margin-top:8px;}
+  .wl2 .wl-gr{font-size:15.5px;font-weight:600;line-height:1.5;color:#dfe6d9;letter-spacing:0;}
+  .wl2 .wl-nm{font-size:38px;line-height:1.15;font-weight:800;letter-spacing:-.025em;color:#F2EEE4;overflow-wrap:anywhere;}
+  .wl2:lang(ar) .wl-nm,.wl2:lang(ur) .wl-nm{font-family:'Cairo','IBM Plex Sans Arabic',sans-serif;letter-spacing:0;line-height:1.45;}
+  .wl2 .wl-tag{margin-top:8px;font-size:15.5px;line-height:1.7;color:#e6ecdf;}
+  .wl2 .wl-tag:lang(en){font-size:16px;line-height:1.5;}
+  .wl2 .wl-body{padding:20px 22px 6px;gap:14px;}
+  .wl2 .wl-team{padding:2px 0 2px;padding-inline-start:16px;border:0;border-radius:0;background:none;border-inline-start:3px solid #E0B54A;}
+  .wl2 .wl-team::before{content:none;}
+  .wl2 .wl-team-h{font-size:13px;font-weight:700;color:#4b6a50;margin:0 0 2px;}
+  .wl2 .wl-team .wl-line{font-size:18px;line-height:1.6;font-weight:700;color:#1c2a20;text-wrap:pretty;}
+  .wl2 .wl-team .wl-line:lang(en){font-family:Georgia,'Times New Roman',serif;font-weight:400;font-size:19.5px;line-height:1.45;}
+  .wl2 .wl-src{font-size:13px;color:#566055;}
+  .wl2 .wl-date{gap:0;border-radius:14px;background:#f1ede1;font-size:13.5px;font-weight:700;color:#2f3d32;overflow:hidden;}
+  .wl2 .wl-date span{flex:1 1 auto;padding:10px 14px;font-variant-numeric:tabular-nums;}
+  .wl2 .wl-date span + span{border-inline-start:1px solid #dcd6c4;}
+  .wl2 .wl-date span + span::before{content:none;}
+  .wl2 .wl-today{border-radius:18px;padding:14px 16px;border-color:#e3decf;}
+  .wl2 .wl-th{font-size:14.5px;margin-bottom:6px;}
+  .wl2 .wl-th b{background:#b3261e;min-width:28px;height:28px;}
+  .wl2 .wl-row{padding:10px 0;} .wl2 .wl-row .pa-s{font-size:14.5px;} .wl2 .wl-row button.pa-go{min-height:44px;padding:0 16px;font-size:13.5px;}
+  .wl2 .wl-clear{font-size:15px;color:#27603a;}
+  .wl2 .wl-foot{padding:14px 22px calc(20px + env(safe-area-inset-bottom));}
+  .wl2 .wl-go{min-height:56px;border-radius:16px;background:#3b5540;font-size:17px;box-shadow:0 16px 28px -16px rgba(20,36,26,.9);}
+  .wl2 .wl-go:hover{background:#2f4634;}
+  .pa-ov.wl-ov.out .wl-card.wl2{animation:paSink .2s ease both;}
+  @keyframes wlRise2{from{opacity:0;transform:translateY(26px) scale(.975);}}
+  @keyframes wlMarkIn{from{opacity:0;transform:translateY(10px) scale(.94);}}
+  @keyframes wlSun{from{transform:rotate(-90deg);}}
+  @keyframes wlUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:none;}}
+  @media (max-width:430px){ .wl2 .wl-stage{padding:14px 16px 18px;} .wl2 .wl-mark{width:min(190px,62%);} .wl2 .wl-nm{font-size:32px;} .wl2 .wl-body{padding:16px 16px 4px;gap:12px;} .wl2 .wl-foot{padding:12px 16px calc(16px + env(safe-area-inset-bottom));} .wl2 .wl-team .wl-line{font-size:16.5px;} .wl2 .wl-team .wl-line:lang(en){font-size:18px;}
+    .wl2 .wl-date{flex-direction:column;} .wl2 .wl-date span{padding:8px 14px;} .wl2 .wl-date span + span{border-inline-start:0;border-top:1px solid #dcd6c4;} }
+  @media (min-width:900px){
+    .wl-card.wl2{width:min(900px,100%);display:grid;grid-template-columns:minmax(0,43fr) minmax(0,57fr);grid-template-rows:minmax(0,1fr) auto;}
+    .wl2 .wl-stage{grid-row:1 / 3;padding:36px 34px;gap:10px;}
+    .wl2 .wl-mark{width:min(270px,86%);}
+    .wl2 .wl-nm{font-size:46px;}
+    .wl2 .wl-tag{font-size:17px;} .wl2 .wl-tag:lang(en){font-size:18px;}
+    .wl2 .wl-body{padding:34px 34px 8px;gap:18px;}
+    .wl2 .wl-team .wl-line{font-size:21px;} .wl2 .wl-team .wl-line:lang(en){font-size:24px;}
+    .wl2 .wl-foot{padding:16px 34px 30px;}
+  }
+  @media (prefers-reduced-motion:reduce){ .wl2 .wl-mark,.wl2 .wl-sun{animation:none !important;} .wl2 .wl-sun{transform:rotate(var(--a)) !important;} }
+  /* ---------- 4. Home: the greeting block ----------
+     The same pine and the same dial ticks; the name is the headline. Right after signing in the lines arrive
+     one after another (from-keyframes, so a later redraw simply shows them). */
+  .hero{background:radial-gradient(70% 120% at 100% 0%,#44654a 0%,rgba(68,101,74,0) 62%),linear-gradient(160deg,#27402f 0%,#16271c 100%);}
+  html[dir="rtl"] .hero{background:radial-gradient(70% 120% at 0% 0%,#44654a 0%,rgba(68,101,74,0) 62%),linear-gradient(200deg,#27402f 0%,#16271c 100%);}
+  .hero::before{width:300px;height:300px;inset-inline-end:-70px;bottom:-150px;border:0;border-radius:50%;background:repeating-conic-gradient(rgba(242,238,228,.3) 0 .7deg,rgba(242,238,228,0) .7deg 6deg);
+    -webkit-mask:radial-gradient(closest-side,transparent 91%,#000 92%);mask:radial-gradient(closest-side,transparent 91%,#000 92%);}
+  .hero::after{width:236px;height:236px;inset-inline-end:-38px;top:auto;bottom:-118px;background:none;border:1px solid rgba(242,238,228,.14);border-radius:50%;}
+  @media (max-width:700px){ .hero::before,.hero::after{display:none;} }
+  .hero .hi{font-size:15px;font-weight:600;opacity:1;color:#dfe6d9;}
+  .hero .nm{font-size:clamp(28px,3vw,38px);line-height:1.2;letter-spacing:-.025em;color:#F2EEE4;}
+  html[dir="rtl"] .hero .nm{font-family:'Cairo','IBM Plex Sans Arabic',sans-serif;letter-spacing:0;line-height:1.45;}
+  .hero .rl{font-size:14px;opacity:1;color:#F2D896;font-weight:700;}
+  .hero .meta span{font-size:12.5px;background:rgba(242,238,228,.1);border-color:rgba(242,238,228,.18);color:#eef1e9;}
+  .hero.splash{animation:none;}
+  .hero.splash .hi{animation:siUp .6s cubic-bezier(.2,.8,.2,1) .05s both;}
+  .hero.splash .nm{animation:siUp .7s cubic-bezier(.2,.8,.2,1) .16s both;}
+  .hero.splash .rl{animation:siUp .6s cubic-bezier(.2,.8,.2,1) .28s both;}
+  .hero.splash .meta{animation:siUp .6s cubic-bezier(.2,.8,.2,1) .4s both;}
+  .hero.splash .hero-wis,.hero.splash .hero-span,.hero.splash .cta{animation:siUp .6s cubic-bezier(.2,.8,.2,1) .52s both;}
+  /* ---------- 5. type that fits the screen ----------
+     One fluid scale in rem with clamp(): it grows with the viewport between a phone and a wide desktop and
+     follows the person's own browser text size. Used by the sign-in page, the loading scene, the welcome,
+     the Home greeting and the sidebar. Form fields never go under 1rem (a phone zooms in on smaller ones). */
+  :root{--fz-xs:clamp(.75rem,.72rem + .14vw,.8125rem);--fz-sm:clamp(.875rem,.84rem + .16vw,.9375rem);--fz-md:clamp(.9375rem,.9rem + .22vw,1.0625rem);
+    --fz-lg:clamp(1.125rem,1.03rem + .45vw,1.375rem);--fz-xl:clamp(1.4rem,1.15rem + 1.1vw,2rem);--fz-2xl:clamp(1.6rem,1.05rem + 2.5vw,3.375rem);}
+  html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
+  .si-name{font-size:clamp(1.3rem,1.05rem + 1.2vw,1.6rem);overflow-wrap:anywhere;} .si-tag{font-size:var(--fz-sm);} .si-tag:lang(en){font-size:var(--fz-md);}
+  .si-h{font-size:var(--fz-xl);overflow-wrap:anywhere;} .si-sub{font-size:var(--fz-sm);}
+  .si .login-card .field label,.si .login-lang button,.si .login-forgot,.si #loginMsg .msg{font-size:var(--fz-sm);}
+  .si .login-card .field input{font-size:max(1rem,var(--fz-md));} .si .login-card button.btn{font-size:var(--fz-md);} .si .login-footer{font-size:var(--fz-xs);}
+  .si-chain{font-size:var(--fz-sm);}
+  @media (min-width:900px){ .si-name{font-size:var(--fz-2xl);} .si-tag{font-size:var(--fz-md);} .si-tag:lang(en){font-size:var(--fz-lg);} }
+  #loadOverlay.scene .lc-pct{font-size:var(--fz-xl);} #loadOverlay.scene .lc-won{font-size:var(--fz-lg);} #loadOverlay .lc-note{font-size:var(--fz-sm);}
+  .wl2 .wl-gr{font-size:var(--fz-md);} .wl2 .wl-nm{font-size:clamp(1.8rem,1.3rem + 2vw,2.875rem);} .wl2 .wl-tag,.wl2 .wl-tag:lang(en){font-size:var(--fz-md);}
+  .wl2 .wl-team-h,.wl2 .wl-src{font-size:var(--fz-xs);} .wl2 .wl-team .wl-line,.wl2 .wl-team .wl-line:lang(en){font-size:var(--fz-lg);overflow-wrap:anywhere;}
+  .wl2 .wl-date,.wl2 .wl-th,.wl2 .wl-row .pa-s,.wl2 .wl-clear{font-size:var(--fz-sm);} .wl2 .wl-row .pa-s{overflow-wrap:anywhere;} .wl2 .wl-go{font-size:var(--fz-md);}
+  .hero .hi{font-size:var(--fz-md);} .hero .nm{font-size:var(--fz-xl);overflow-wrap:anywhere;} .hero .rl{font-size:var(--fz-sm);} .hero .meta span{font-size:var(--fz-xs);}
+  /* ---------- 6. the sidebar ----------
+     The same pine as the door. The brand on top, the menu in named groups scrolling on its own between
+     the brand and the account card, so the card (who is signed in, sign out, language, build) is never
+     pushed off or squeezed. The open screen is a cream plate with a gold edge. 701-1100px: a 78px rail
+     of icons, the group names become thin rules. Phone: the same groups in the menu sheet. */
+  .sb{background:linear-gradient(180deg,#24392b 0%,#182a1e 52%,#101c14 100%);}
+  .sb-in{padding:16px 12px 12px;gap:10px;overflow:hidden;}
+  .sb-brand{flex:none;gap:12px;padding:4px 6px 14px;border-bottom:1px solid rgba(242,238,228,.16);border-image:none;}
+  .sb-brand .txt{min-width:0;} .sb-brand .t1{font-size:var(--fz-md);line-height:1.35;overflow-wrap:anywhere;} .sb-brand .t2{font-size:var(--fz-xs);opacity:1;color:#d5dccf;}
+  .sb-nav{flex:1 1 auto;min-height:0;overflow-x:hidden;overflow-y:auto;scrollbar-width:none;gap:2px;padding:2px 2px 18px;
+    -webkit-mask-image:linear-gradient(180deg,#000 calc(100% - 20px),transparent);mask-image:linear-gradient(180deg,#000 calc(100% - 20px),transparent);}
+  .sb-nav::-webkit-scrollbar{width:0;}
+  .sb-sec{flex:none;display:flex;align-items:center;gap:10px;padding:14px 12px 5px;font-size:var(--fz-xs);font-weight:700;letter-spacing:0;text-transform:none;opacity:1;color:#E9C877;}
+  .sb-sec:first-of-type{padding-top:6px;}
+  .sb-sec::after{content:'';flex:1;height:1px;background:rgba(242,238,228,.16);}
+  .sb-item{flex:none;min-height:44px;padding:8px 12px;gap:12px;border-radius:12px;font-size:var(--fz-sm);font-weight:600;line-height:1.4;color:#e9eee4;text-shadow:none;}
+  .sb-item .lbl{flex:1;min-width:0;overflow-wrap:anywhere;}
+  .sb-item:hover{background:rgba(242,238,228,.09);}
+  .sb-item.active{color:#14241a;font-weight:800;}
+  .sb-item:focus-visible{outline:3px solid #E0B54A;outline-offset:-2px;}
+  .sb-ind{background:#F2EEE4;box-shadow:0 8px 18px -8px rgba(0,0,0,.55);}
+  .sb-ind::before{content:'';position:absolute;inset-block:10px;inset-inline-start:5px;width:4px;border-radius:4px;background:#C8962A;}
+  .sb-nav.has-ind .sb-item.active{padding-inline-start:18px;}
+  .sb-item .pill{font-size:.6875rem;min-width:22px;height:22px;}
+  .sb-user.sbu2{flex:none;margin-top:0;gap:10px;padding:12px;border-radius:18px;background:rgba(242,238,228,.07);border:1px solid rgba(242,238,228,.18);box-shadow:none;}
+  .sbu2 .avatar{width:42px;height:42px;border-radius:14px;font-size:var(--fz-md);}
+  .sbu2 .nm{font-size:var(--fz-sm);} .sbu2 .rl{font-size:var(--fz-xs);color:#E9C877;}
+  .sbu2 .sbu-out{width:44px;height:44px;border-radius:14px;}
+  .sbu2 .lsw-btn{min-height:48px;border-radius:14px;} .sbu2 .lsw-t small{font-size:.6875rem;opacity:1;color:#d5dccf;} .sbu2 .lsw-t b{font-size:var(--fz-sm);}
+  .sbu2 .build{font-size:.6875rem;color:#b9c4b4;overflow-wrap:anywhere;line-height:1.4;}
+  @media (max-width:1100px) and (min-width:701px){
+    .sb-in{padding:14px 8px 10px;align-items:stretch;gap:8px;}
+    .sb-brand{justify-content:center;padding:2px 0 12px;border-bottom:1px solid rgba(242,238,228,.16);}
+    .sb-nav{align-items:center;padding:2px 0 16px;}
+    .sb-sec{display:flex;align-self:stretch;padding:9px 16px 7px;font-size:0;gap:0;} .sb-sec span{display:none;} .sb-sec:first-of-type{display:none;}
+    .sb-item{width:54px;min-height:48px;height:48px;padding:0;justify-content:center;}
+    .sb-nav.has-ind .sb-item.active{padding-inline-start:0;}
+    .sb-ind::before{inset-block:auto;inset-inline:16px;bottom:5px;top:auto;width:auto;height:3px;}
+    .sb-user.sbu2{padding:6px 0 2px;align-items:center;background:transparent;border:0;gap:8px;}
+    .sbu2 .who2{flex-direction:column;gap:8px;} .sbu2 .avatar{width:44px;height:44px;}
+    .sbu2 .lsw-btn{width:44px;min-height:44px;}
+  }
+  @media (max-height:520px) and (min-width:701px){ .sb-in{overflow-y:auto;} .sb-nav{flex:none;overflow:visible;-webkit-mask-image:none;mask-image:none;} .sbu2 .build{display:none;} }
+  @media (max-height:640px) and (min-width:1101px){ .sbu2 .build{display:none;} .sb-user.sbu2{padding:10px;gap:8px;} }
+  /* the phone's menu sheet: the same groups */
+  .mm-sec{padding:12px 10px 4px;font-size:var(--fz-xs);font-weight:700;color:#4b6a50;display:flex;align-items:center;gap:10px;}
+  .mm-sec:first-child{padding-top:4px;}
+  .mm-sec::after{content:'';flex:1;height:1px;background:#e3decf;}
+  .mm-it{min-height:52px;font-size:var(--fz-md);border-radius:12px;} .mm-l{overflow-wrap:anywhere;text-align:start;}
+  .mm-it.on{background:#1f3326;color:#F2EEE4;} .mm-it.on .mm-ic{background:#E0B54A;color:#14241a;} .mm-it.on .mm-ch{opacity:.7;}
+  .mm-it:focus-visible{outline:3px solid #3b5540;outline-offset:1px;}
+  .mm-build{text-align:center;font-size:.6875rem;color:#566055;padding:2px 0 4px;}
 </style>
 </head>
 <body>
@@ -5585,14 +5912,17 @@ function lg3dWords_(){
       pending = null;
       var t = document.querySelector('.lg3d-tilt');
       if (t) { t.style.setProperty('--ry', (x * 22).toFixed(2) + 'deg'); t.style.setProperty('--rx', (-y * 16).toFixed(2) + 'deg'); }
+      // the sign-in page's cylinder drifts a little the same way
+      var sp = document.querySelector('.si-par');
+      if (sp) { sp.style.setProperty('--px', x.toFixed(3)); sp.style.setProperty('--py', y.toFixed(3)); }
     });
   }
   document.addEventListener('pointermove', function(e){
-    if (!document.querySelector('.lg3d')) return;
+    if (!document.querySelector('.lg3d') && !document.querySelector('.si-par')) return;
     set(e.clientX / window.innerWidth * 2 - 1, e.clientY / window.innerHeight * 2 - 1);
   }, { passive: true });
   window.addEventListener('deviceorientation', function(e){
-    if (!document.querySelector('.lg3d') || e.gamma == null) return;
+    if ((!document.querySelector('.lg3d') && !document.querySelector('.si-par')) || e.gamma == null) return;
     set(Math.max(-1, Math.min(1, e.gamma / 30)), Math.max(-1, Math.min(1, (e.beta - 45) / 30)));
   }, { passive: true });
 })();
@@ -6903,9 +7233,10 @@ function loadOverlayEls(){
     // The company's own product (2026-11-05, the owner asked for a loading screen worth looking at):
     // a gas cylinder that fills with gas as the page loads, the surface moving, a few bubbles rising.
     overlay.setAttribute('role', 'progressbar'); overlay.setAttribute('aria-label', 'Loading'); overlay.setAttribute('aria-hidden', 'true'); overlay.setAttribute('aria-valuemin', '0'); overlay.setAttribute('aria-valuemax', '100');
-    var wave = 'M-120 0'; for (var w = 0; w < 6; w++) wave += ' q15 -5 30 0 t30 0';
-    var body = 'M30 64 Q30 46 50 44 L70 44 Q90 46 90 64 L90 138 Q90 150 78 150 L42 150 Q30 150 30 138 Z';
-    overlay.innerHTML = '<div class="lc"><svg class="lc-cyl" viewBox="0 0 120 172" aria-hidden="true">' +
+    var wave = LC_WAVE_, body = LC_BODY_;
+    // 2026-11-11: the regulator dial (its needle follows the percentage), a pilot flame in the cylinder's
+    // window, and a ring of light for the moment the person is in (see siWon_)
+    overlay.innerHTML = '<div class="lc"><svg class="lc-cyl" viewBox="-8 0 136 172" aria-hidden="true">' +
       '<defs><clipPath id="lcBody"><path d="'+body+'"/></clipPath><clipPath id="lcLvl"><rect id="loadLvl" x="0" y="0" width="120" height="172" style="transform:translateY(154.5px)"/></clipPath>' +
       '<linearGradient id="lcGas" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6f9474"/><stop offset="1" stop-color="#3b5540"/></linearGradient></defs>' +
       '<ellipse class="lc-shadow" cx="60" cy="164" rx="34" ry="4"/>' +
@@ -6922,10 +7253,37 @@ function loadOverlayEls(){
       '<rect class="lc-hole" x="49" y="20" width="8" height="9" rx="3"/><rect class="lc-hole" x="63" y="20" width="8" height="9" rx="3"/>' +
       '<rect class="lc-valve" x="55" y="32" width="10" height="12" rx="2"/>' +
       '<path class="lc-line" d="M38 150 V158 H82 V150"/>' +
-      '</svg><span class="lc-pct" id="loadPct">0%</span><span class="lc-note" id="loadNote" role="status" hidden></span></div>';
+      '<circle class="lc-halo" cx="60" cy="98" r="52" fill="none" stroke="#E0B54A" stroke-width="2.5"/>' +
+      lcFlame_('loadFlame', 'translate(60 90) scale(.56) translate(-60 -120)') + lcGauge_('loadNeedle') +
+      '</svg><span class="lc-pct" id="loadPct">0%</span><span class="lc-won" id="loadWon"></span><span class="lc-note" id="loadNote" role="status" hidden></span></div>';
     document.body.appendChild(overlay);
   }
-  return { overlay: overlay, liq: qs('#loadLiq', overlay), pct: qs('#loadPct', overlay), brand: qs('#loadBrand', overlay), lvl: qs('#loadLvl', overlay) };
+  return { overlay: overlay, liq: qs('#loadLiq', overlay), pct: qs('#loadPct', overlay), brand: qs('#loadBrand', overlay), lvl: qs('#loadLvl', overlay), needle: qs('#loadNeedle', overlay), flame: qs('#loadFlame', overlay) };
+}
+// The cylinder's drawing, shared by the loader and the sign-in page's large one (2026-11-11).
+var LC_BODY_ = 'M30 64 Q30 46 50 44 L70 44 Q90 46 90 64 L90 138 Q90 150 78 150 L42 150 Q30 150 30 138 Z';
+var LC_WAVE_ = (function(){ var w = 'M-120 0'; for (var i = 0; i < 6; i++) w += ' q15 -5 30 0 t30 0'; return w; })();
+// the regulator's dial beside the valve: seven marks over 240 degrees, the last two red
+function lcGauge_(needleId){
+  var tk = '';
+  for (var i = 0; i < 7; i++) {
+    var a = (-120 + i * 40 - 90) * Math.PI / 180, x1 = 108 + Math.cos(a) * 9.5, y1 = 36 + Math.sin(a) * 9.5, x2 = 108 + Math.cos(a) * 12.5, y2 = 36 + Math.sin(a) * 12.5;
+    tk += '<path class="lc-tk' + (i > 4 ? ' hot' : '') + '" d="M' + x1.toFixed(1) + ' ' + y1.toFixed(1) + ' L' + x2.toFixed(1) + ' ' + y2.toFixed(1) + '"/>';
+  }
+  return '<g class="lc-gauge"><path class="lc-pipe" d="M66 37 H93"/><circle class="lc-dial" cx="108" cy="36" r="15"/>' + tk +
+    '<path class="lc-ndl" id="' + needleId + '" d="M108 36 V26" style="transform:rotate(-120deg)"/><circle class="lc-hub" cx="108" cy="36" r="2.3"/></g>';
+}
+// the flame: blue outside, gold at the heart; `place` puts its foot (60,120) where the drawing wants it
+function lcFlame_(id, place){
+  return '<g transform="' + place + '"><g class="lc-fl" id="' + id + '" style="transform:scale(.7)"><g class="lc-fl-in">' +
+    '<path fill="#5fa8e6" d="M60 74 C67 84 75 92 75 104 C75 113 68 120 60 120 C52 120 45 113 45 104 C45 97 49 92 52 87 C53 92 55 95 58 95 C56 88 57 80 60 74 Z"/>' +
+    '<path fill="#bfe1fb" opacity=".85" d="M60 88 C65 95 70 100 70 107 C70 114 66 119 60 119 C54 119 50 114 50 107 C50 103 52 100 55 97 C56 100 57 101 59 101 C58 96 59 92 60 88 Z"/>' +
+    '<path class="lc-fl-core" fill="#F4C95D" d="M60 101 C63 105 65 108 65 112 C65 116 63 119 60 119 C57 119 55 116 55 112 C55 109 57 105 60 101 Z"/></g></g></g>';
+}
+// which veil: the pine scene while there is no app shell behind it (opening, signing in), the pale one inside the app
+function loadScene_(){
+  if (document.documentElement.classList.contains('si-won')) return;
+  var ov = document.getElementById('loadOverlay'); if (ov) ov.classList.toggle('scene', !document.querySelector('#app.shell'));
 }
 // Thin animated bar across the top while background refreshes run, so a
 // silent update is visible without blocking the screen.
@@ -6948,6 +7306,10 @@ function setLoadProgress(p){
   // the brand fades in with the percentage (fully there by 60%); the gas surface sits a little below the wave's crest
   if (els.brand) els.brand.style.opacity = String(Math.min(1, Math.max(0, p) / 60).toFixed(2));
   if (els.lvl) els.lvl.style.transform = 'translateY(' + (+lvlY + 2) + 'px)';
+  var p01 = Math.max(0, Math.min(100, p)) / 100;
+  if (els.needle) els.needle.style.transform = 'rotate(' + (-120 + 240 * p01).toFixed(1) + 'deg)';
+  if (els.flame) els.flame.style.transform = 'scale(' + (0.7 + 0.3 * p01).toFixed(2) + ')';
+  if (p === 0) loadScene_();
   els.overlay.setAttribute('aria-valuenow', String(Math.round(p)));
   els.overlay.setAttribute('aria-hidden', els.overlay.classList.contains('active') ? 'false' : 'true');
   els.overlay.classList.toggle('full', p >= 100);
@@ -7383,42 +7745,118 @@ function wireLangPills(onPicked){
   });
 }
 
-function renderLogin(){
+// The sign-in page (2026-11-11, the owner asked for one worth looking at): the brand side carries a large
+// cylinder that fills as the person types (the dial's needle and the pilot flame follow it); the form sits in
+// a sheet on a phone and in its own half on a wide screen. Every id doLogin uses is unchanged.
+var SI_TEXT_ = {
+  ar: { si_title:'أهلاً بعودتك', si_hint:'ادخل ببريدك أو رقم إقامتك لتكمل تحصيل اليوم.' },
+  en: { si_title:'Welcome back', si_hint:'Use your email or iqama number to pick up today\u2019s collection.' },
+  ur: { si_title:'خوش آمدید', si_hint:'آج کی وصولی جاری رکھنے کے لیے اپنی ای میل یا اقامہ نمبر سے داخل ہوں۔' }
+};
+function siT_(k){ return (SI_TEXT_[state.lang] || SI_TEXT_.ar)[k]; }
+function siHero_(){
+  return '<div class="si-hero" aria-hidden="true"><div class="si-par"><svg class="si-cyl" viewBox="0 0 280 330">' +
+    '<defs><clipPath id="siBody"><path d="' + LC_BODY_ + '"/></clipPath>' +
+    '<linearGradient id="siGas" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c3dcbd"/><stop offset="1" stop-color="#5f8463"/></linearGradient>' +
+    '<radialGradient id="siGlowG"><stop offset="0" stop-color="#E0B54A" stop-opacity=".42"/><stop offset=".45" stop-color="#7fb7e6" stop-opacity=".14"/><stop offset="1" stop-color="#7fb7e6" stop-opacity="0"/></radialGradient></defs>' +
+    '<circle class="si-glow" cx="140" cy="176" r="150" fill="url(#siGlowG)"/>' +
+    '<circle class="si-ticks t2" cx="140" cy="176" r="139"/><circle class="si-ticks" cx="140" cy="176" r="148"/>' +
+    '<g transform="translate(38 22) scale(1.7)">' +
+      '<ellipse class="lc-shadow" cx="60" cy="164" rx="34" ry="4"/><path class="lc-glass" d="' + LC_BODY_ + '"/>' +
+      '<g clip-path="url(#siBody)"><g class="lc-liq" id="siLiq" style="transform:translateY(139px)">' +
+        '<g class="lc-wave"><path d="' + LC_WAVE_ + ' L240 0 L240 140 L-120 140 Z" fill="url(#siGas)"/></g>' +
+        '<circle class="lc-bub b1" cx="46" cy="40" r="2.2"/><circle class="lc-bub b2" cx="63" cy="60" r="1.6"/><circle class="lc-bub b3" cx="75" cy="30" r="2"/>' +
+      '</g><rect class="lc-shine" x="38" y="50" width="7" height="92" rx="3.5"/></g>' +
+      lcFlame_('siFlame', 'translate(0 8)') +
+      '<path class="lc-line" d="' + LC_BODY_ + '"/><path class="lc-weld" d="M30 80 H90 M30 124 H90"/>' +
+      '<path class="lc-line" d="M44 44 V22 Q44 15 51 15 H69 Q76 15 76 22 V44"/>' +
+      '<rect class="lc-hole" x="49" y="20" width="8" height="9" rx="3"/><rect class="lc-hole" x="63" y="20" width="8" height="9" rx="3"/>' +
+      '<rect class="lc-valve" x="55" y="32" width="10" height="12" rx="2"/><path class="lc-line" d="M38 150 V158 H82 V150"/>' +
+      lcGauge_('siNeedle') +
+    '</g></svg></div></div>';
+}
+// how full the large cylinder stands: a pilot level when empty, more with the sign-in name, more with each
+// of the first eight characters of the password, and never full until the server says yes
+function siLevel_(){
+  var page = qs('.brand-page.si'); if (!page) return;
+  var em = qs('#loginEmail'), pw = qs('#loginPw');
+  var lv = 0.12 + (em && em.value.trim() ? 0.3 : 0) + Math.min(8, pw ? pw.value.length : 0) * 0.05;
+  page.style.setProperty('--lv', lv.toFixed(2));
+  var liq = qs('#siLiq', page), nd = qs('#siNeedle', page), fl = qs('#siFlame', page);
+  if (liq) liq.style.transform = 'translateY(' + (152.5 - 111.5 * lv).toFixed(1) + 'px)';
+  if (nd) nd.style.transform = 'rotate(' + (-120 + 240 * lv).toFixed(1) + 'deg)';
+  if (fl) fl.style.transform = 'scale(' + (0.55 + 0.55 * lv).toFixed(2) + ')';
+}
+function renderLogin(still){
+  var keepId = '', keepPw = ''; try { var old = qs('#loginEmail'), oldPw = qs('#loginPw'); if (still === true && old) { keepId = old.value; if (oldPw) keepPw = oldPw.value; } } catch (e) {}
   var root = qs('#app'); root.innerHTML='';
-  var box = el('<div class="brand-page">' +
-    brandMark_() +
-    '<div class="brand-title">'+esc(t('appName'))+'</div>' +
-    '<div class="brand-tagline">'+esc(t('appTagline'))+'</div>' +
+  var steps = [['cash', 'in_s1'], ['handoffs', 'in_s2'], ['bank', 'in_s3']];
+  var box = el('<div class="brand-page si' + (still === true ? ' si-still' : '') + '" lang="' + esc(state.lang) + '">' +
+    '<div class="si-stage">' +
+      lg3dWords_() + siHero_() +
+      '<div class="si-copy"><h1 class="si-name brand-title">'+esc(t('appName'))+'</h1>' +
+      '<p class="si-tag brand-tagline" lang="' + esc(state.lang) + '">'+esc(t('appTagline'))+'</p>' +
+      '<ol class="si-chain">' + steps.map(function(st){ return '<li>' + icon_(st[0]) + '<span>' + esc(t(st[1])) + '</span></li>'; }).join('') + '</ol></div>' +
+    '</div>' +
+    '<div class="si-sheet">' +
     '<div class="card login-card">' +
       langPills() +
-    '<div id="loginMsg">'+(state.idleOut ? '<div class="msg ok idle-msg">'+icon_('clock')+'<span>'+esc(t(state.idleOut === 'draft' ? 'idle_outDraft' : 'idle_out'))+'</span></div>' : '')+'</div>' +
-    '<div class="field"><label>'+esc(t('login_id'))+'</label><input id="loginEmail" type="text" dir="ltr" autocapitalize="off" autocorrect="off" spellcheck="false" autocomplete="username"></div>' +
-    '<div class="field"><label>'+esc(t('password'))+'</label><input id="loginPw" type="password" autocomplete="current-password"></div>' +
-    '<button class="btn" id="loginBtn">'+esc(t('signIn'))+'</button>' +
+    '<p class="si-h" role="heading" aria-level="2">'+esc(siT_('si_title'))+'</p><p class="si-sub">'+esc(siT_('si_hint'))+'</p>' +
+    '<div id="loginMsg" role="alert">'+(state.idleOut ? '<div class="msg ok idle-msg">'+icon_('clock')+'<span>'+esc(t(state.idleOut === 'draft' ? 'idle_outDraft' : 'idle_out'))+'</span></div>' : '')+'</div>' +
+    '<div class="field"><label for="loginEmail">'+esc(t('login_id'))+'</label><input id="loginEmail" type="text" dir="ltr" autocapitalize="off" autocorrect="off" spellcheck="false" autocomplete="username"></div>' +
+    '<div class="field"><label for="loginPw">'+esc(t('password'))+'</label><input id="loginPw" type="password" autocomplete="current-password"></div>' +
+    '<button class="btn" id="loginBtn"><svg class="si-bf" viewBox="44 72 32 50" aria-hidden="true"><path fill="currentColor" d="M60 74 C67 84 75 92 75 104 C75 113 68 120 60 120 C52 120 45 113 45 104 C45 97 49 92 52 87 C53 92 55 95 58 95 C56 88 57 80 60 74 Z"/></svg><span>'+esc(t('signIn'))+'</span></button>' +
     '<button type="button" class="login-forgot" id="forgotBtn">'+esc(t('forgotPassword'))+'</button>' +
     '</div>' +
     '<div class="login-footer">Best Gas Carrier Co. · <bdi dir="ltr">'+esc(BUILD_ID)+'</bdi></div>' +
+    '</div>' +
     '</div>');
   root.appendChild(box);
+  if (keepId) qs('#loginEmail').value = keepId;
+  if (keepPw) { var kp = qs('#loginPw'); if (kp) kp.value = keepPw; }
   wirePasswordEye_(box);
-  wireLangPills(renderLogin);
+  wireLangPills(function(){ renderLogin(true); });
   qs('#loginBtn').addEventListener('click', doLogin);
   qs('#loginPw').addEventListener('keydown', function(e){ if(e.key==='Enter') doLogin(); });
   qs('#forgotBtn').addEventListener('click', renderForgotPassword);
+  qs('#loginEmail').addEventListener('input', siLevel_);
+  qs('#loginPw').addEventListener('input', siLevel_);
+  siLevel_();
+  // a browser that fills the saved sign-in does it a moment after the page is drawn
+  setTimeout(siLevel_, 600);
+}
+// The moment the server says yes: the loading scene stays for a breath with the cylinder full and the
+// flame lit, then lifts off the app that is already drawn under it. It takes no click and delays nothing:
+// the veil stops catching the pointer as soon as the request ends.
+function siWon_(user){
+  try {
+    var root = document.documentElement, ov = loadOverlayEls().overlay, won = qs('#loadWon', ov);
+    var still = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (won) won.textContent = t('wl_aria');
+    ov.classList.add('scene'); root.classList.add('si-won');
+    setTimeout(function(){
+      root.classList.add('si-out');
+      setTimeout(function(){ root.classList.remove('si-won', 'si-out'); loadScene_(); }, 320);
+    }, still ? 300 : 950);
+  } catch (e) {}
 }
 
 function doLogin(){
   var email = qs('#loginEmail').value.trim();
   var pw = qs('#loginPw').value.trim();
   var btn = qs('#loginBtn'); btn.disabled = true;
+  var siPage = qs('.brand-page.si'); if (siPage) siPage.classList.remove('shake');
   api('login', { email: email, password: pw }, { timeoutMs: 70000 }).then(function(res){
     btn.disabled = false;
     if (!res.ok) {
       var box = qs('#loginMsg');
       var txt = res.error === 'invite_pending' || res.error === 'network' || res.error === 'timeout' || res.error === 'server_error' ? errMsg_(res) : t(res.error==='locked'?'locked':'invalidCredentials');
       box.innerHTML = '<div class="msg err">'+esc(txt)+'</div>';
+      // the refusal is felt as well as read: the form shakes once, and the field to retype takes the focus
+      if (siPage && siPage.parentNode) { void siPage.offsetWidth; siPage.classList.add('shake', 'si-still'); try { qs('#loginPw').focus({ preventScroll: true }); qs('#loginPw').select(); } catch (e) {} }
       return;
     }
+    siWon_(res.user);
     state.user = res.user;
     if (res.previousLoginAt) localStorage.setItem('bgc_lastLogin', res.previousLoginAt);
     else localStorage.removeItem('bgc_lastLogin');
@@ -7859,6 +8297,7 @@ function heroWisdom_(box){
 }
 
 function logout(){
+  SB_SCROLL_ = 0;
   sharedClear_(); ENT_SINCE_ = null;
   FIRST_DAY_ = '';
   try { MS_HIST_INIT_ = false; MS_SUB_ = null; adminProfile = null; } catch (e) {}
@@ -8034,6 +8473,14 @@ ICONS.colReports = ICONS.trend;
 ICONS.comparison = ICONS.dashboard;
 function icon_(name){ return '<svg class="ic2" viewBox="0 0 24 24" aria-hidden="true">'+(ICONS[name]||'')+'</svg>'; }
 
+// The menu in groups (2026-11-11, the owner asked for a grouped sidebar): the day's work, the reports,
+// the business behind it, the system. Shown once a role has more than seven screens; a short menu stays plain.
+var SB_SCROLL_ = 0;
+var NAV_GROUPS_ = { home:'day', dashboard:'day', entries:'day', areaBulk:'day', deputyReview:'day', handoffs:'day', collections:'day',
+  colReports:'rep', report:'rep', comparison:'rep', reconciliation:'rep', inventory:'ops', profit:'ops', customers:'ops', risk:'ops', admin:'sys', users:'sys' };
+var NAV_GROUP_T_ = { ar: { day:'عمل اليوم', rep:'التقارير', ops:'الأعمال', sys:'النظام' }, en: { day:'Daily work', rep:'Reports', ops:'Business', sys:'System' }, ur: { day:'روزانہ کام', rep:'رپورٹس', ops:'کاروبار', sys:'نظام' } };
+function navGroupOf_(k){ return NAV_GROUPS_[k] || 'day'; }
+function navGroupLabel_(g){ return (NAV_GROUP_T_[state.lang] || NAV_GROUP_T_.ar)[g] || ''; }
 function navItemsForRole_(){
   var role = state.user.role;
   var items = [['home','nav_home']];
@@ -8657,7 +9104,9 @@ function renderShell(){
   sbSpot_(sb);
   var sbNav = qs('.sb-nav', sb);
   sbNav.appendChild(el('<span class="sb-ind" aria-hidden="true"></span>'));
+  var sbGroup = '', sbGrouped = navItems.length > 7;
   navItems.forEach(function(it){
+    if (sbGrouped && navGroupOf_(it[0]) !== sbGroup) { sbGroup = navGroupOf_(it[0]); sbNav.appendChild(el('<div class="sb-sec" role="presentation"><span>' + esc(navGroupLabel_(sbGroup)) + '</span></div>')); }
     var b = el('<button type="button" class="sb-item'+(state.screen===it[0]?' active':'')+(sbInd_ && sbInd_.key===it[0] && state.screen!==it[0]?' was':'')+'" data-k="'+esc(it[0])+'" title="'+esc(t(it[1]))+'"'+(state.screen===it[0]?' aria-current="page"':'')+'>' +
       icon_(it[0]) + '<span class="lbl">'+esc(t(it[1]))+'</span>' + (it[0]==='handoffs' ? badge : '') +
     '</button>');
@@ -8665,6 +9114,14 @@ function renderShell(){
     sbNav.appendChild(b);
   });
   root.appendChild(sb);
+  // the menu scrolls on its own now (the account card stays in view): a redraw keeps its place, and the open screen stays visible
+  try {
+    sbNav.scrollTop = SB_SCROLL_;
+    var sbAct = qs('.sb-item.active', sbNav);
+    if (sbAct && sbNav.clientHeight) { if (sbAct.offsetTop < sbNav.scrollTop + 8) sbNav.scrollTop = Math.max(0, sbAct.offsetTop - 40); else if (sbAct.offsetTop + sbAct.offsetHeight > sbNav.scrollTop + sbNav.clientHeight - 28) sbNav.scrollTop = sbAct.offsetTop + sbAct.offsetHeight - sbNav.clientHeight + 40; }
+    SB_SCROLL_ = sbNav.scrollTop;
+    sbNav.addEventListener('scroll', function(){ SB_SCROLL_ = sbNav.scrollTop; }, { passive: true });
+  } catch (eSb) {}
   sbIndPlace_(sbNav, true);
   if (window.ResizeObserver) {
     if (sbRO_) sbRO_.disconnect();
@@ -9066,7 +9523,9 @@ function openMobileMenu_(){
     render: function(b){
       var wrap = el('<div class="stack"></div>');
       var nav = el('<div class="mm-nav" role="navigation" aria-label="'+esc(t('mm_screens'))+'"></div>');
-      navItemsForRole_().forEach(function(it, i){
+      var mmAll = navItemsForRole_(), mmGroup = '';
+      mmAll.forEach(function(it, i){
+        if (mmAll.length > 7 && navGroupOf_(it[0]) !== mmGroup) { mmGroup = navGroupOf_(it[0]); nav.appendChild(el('<div class="mm-sec" role="presentation">' + esc(navGroupLabel_(mmGroup)) + '</div>')); }
         var b = el('<button type="button" class="mm-it'+(state.screen === it[0] ? ' on' : '')+'" style="--i:'+Math.min(i, 8)+'"'+(state.screen === it[0] ? ' aria-current="page"' : '')+'><span class="mm-ic">'+icon_(it[0])+'</span><span class="mm-l">'+esc(t(it[1]))+'</span><span class="mm-ch">'+icon_('chevron')+'</span></button>');
         b.addEventListener('click', function(){ drawerClose_(); goScreen_(it[0]); });
         nav.appendChild(b);
@@ -9089,6 +9548,7 @@ function openMobileMenu_(){
       var out = el('<button type="button" class="btn danger" style="width:100%;">'+esc(t('logout'))+'</button>');
       out.addEventListener('click', function(){ drawerClose_(); logout(); });
       wrap.appendChild(out);
+      wrap.appendChild(el('<div class="mm-build"><bdi dir="ltr">' + esc(BUILD_ID) + '</bdi></div>'));
       b.appendChild(wrap);
     }
   });
@@ -9539,30 +9999,50 @@ function wlDates_(){
   } catch (e) {}
   return o;
 }
+// The welcome's mark (2026-11-11): the day as a dial. The arc runs from dawn to nightfall and the light on it
+// stands where the hour in Riyadh is (a moon after dark); under it the cylinder from the loading scene, full,
+// its flame lit. Pure: wlTod_ names the part of the day, wlSunAt_ the place on the arc (0 dawn .. 1 nightfall).
+function wlTod_(h){ return h < 5 ? 'night' : h < 12 ? 'morning' : h < 18 ? 'afternoon' : h < 21 ? 'evening' : 'night'; }
+function wlSunAt_(h){ return h >= 5 && h < 19 ? (h - 5) / 14 : ((h + 24 - 19) % 24) / 10; }
+function wlMark_(h){
+  var dark = h < 5 || h >= 19, ang = (-90 + 180 * Math.max(0, Math.min(1, wlSunAt_(h)))).toFixed(1), tk = '';
+  for (var i = 0; i <= 12; i++) { var a = Math.PI * (1 - i / 12), big = i % 3 === 0;
+    tk += '<path d="M' + (120 + Math.cos(a) * 96).toFixed(1) + ' ' + (104 - Math.sin(a) * 96).toFixed(1) + ' L' + (120 + Math.cos(a) * (big ? 104 : 101)).toFixed(1) + ' ' + (104 - Math.sin(a) * (big ? 104 : 101)).toFixed(1) + '"/>'; }
+  return '<span class="wl-logo wl-mark" aria-hidden="true"><svg viewBox="0 0 240 112">' +
+    '<path class="wl-arc" d="M30 104 A90 90 0 0 1 210 104"/><g class="wl-tk">' + tk + '</g>' +
+    '<g transform="translate(120 104)"><g class="wl-sun" style="--a:' + ang + 'deg">' +
+      '<circle class="wl-sun-g" cx="0" cy="-90" r="15"/>' +
+      (dark ? '<path class="wl-moon" d="M3 -98 A8 8 0 1 0 8 -84 A6.5 6.5 0 1 1 3 -98 Z"/>' : '<circle class="wl-sun-d" cx="0" cy="-90" r="6.5"/>') +
+    '</g></g>' +
+    '<g class="wl-cyl" transform="translate(87 22) scale(.55)">' +
+      '<path class="c-gas" d="' + LC_BODY_ + '"/>' + lcFlame_('wlFlame', 'translate(0 6)') +
+      '<path class="c-line" d="' + LC_BODY_ + '"/><path class="c-line" d="M44 44 V22 Q44 15 51 15 H69 Q76 15 76 22 V44"/><path class="c-line" d="M38 150 V158 H82 V150"/>' +
+    '</g><path class="wl-arc" d="M14 104 H226"/></svg></span>';
+}
 function wlOpen_(){
   if (!state.user || qs('.pa-ov')) return;
   var items = (state.pend && state.pend.items) || [], n = items.length;
   var signIns = 0; try { signIns = Number(localStorage.getItem('bgc_loginN_' + state.user.id) || 0); } catch (e) {}
   var name = firstName_(state.user.name), D = wlDates_();
-  var greet = t(wlGreetKey_(riyadhHour_())) + (name ? (state.lang === 'en' ? ', ' : '، ') + name : '');
+  var hourNow = riyadhHour_(), greet = t(wlGreetKey_(hourNow)) + (name ? (state.lang === 'en' ? ', ' : '، ') : '');
   // embers: fixed positions, so the stage reads the same on every sign-in
   var EMB = [[8, 3, 7.5, 0, 14], [17, 2, 9, 1.6, -10], [26, 4, 8, .7, 18], [35, 2, 10, 2.4, -6], [44, 3, 7, 1.1, 10], [52, 2, 9.5, 3, -14],
     [61, 3, 8.5, .4, 12], [70, 2, 10, 2, -8], [78, 4, 7.8, 1.4, 16], [86, 2, 9, 2.8, -12], [93, 3, 8.2, .9, 8], [12, 2, 11, 3.6, 6]];
   var emb = EMB.map(function(e){ return '<i style="--x:' + e[0] + '%;--s:' + e[1] + 'px;--d:' + e[2] + 's;--w:' + e[3] + 's;--dx:' + e[4] + 'px"></i>'; }).join('');
   var ov = el('<div class="pa-ov wl-ov" role="dialog" aria-modal="true" aria-labelledby="wlTitle" aria-describedby="wlLine">' +
     '<div class="pa-bg"></div>' +
-    '<div class="wl-card" lang="' + esc(state.lang) + '">' +
-      '<div class="wl-stage"><span class="wl-bloom" aria-hidden="true"></span><span class="wl-emb" aria-hidden="true">' + emb + '</span><img class="wl-logo" src="' + LOGO_SRC + '" alt="">' +
-        '<h2 class="wl-hi wl-in" id="wlTitle" style="--t:.5s">' + esc(greet) + '</h2>' +
+    '<div class="wl-card wl2" data-tod="' + wlTod_(hourNow) + '" lang="' + esc(state.lang) + '">' +
+      '<div class="wl-stage"><span class="wl-bloom" aria-hidden="true"></span><span class="wl-emb" aria-hidden="true">' + emb + '</span>' + wlMark_(hourNow) +
+        '<h2 class="wl-hi wl-in" id="wlTitle" style="--t:.45s"><span class="wl-gr">' + esc(greet) + '</span>' + (name ? '<b class="wl-nm">' + esc(name) + '</b>' : '') + '</h2>' +
         // the company's brand line, fixed, in the language the person signed in with (2026-10-26)
-        '<p class="wl-tag wl-in wl-shine" style="--t:.9s"><span class="wl-q" aria-hidden="true">' + (state.lang === 'en' ? '“' : '«') + '</span>' + esc(t('wl_tagline')) + '<span class="wl-q" aria-hidden="true">' + (state.lang === 'en' ? '”' : '»') + '</span></p></div>' +
+        '<p class="wl-tag wl-in wl-shine" style="--t:.8s"><span class="wl-q" aria-hidden="true">' + (state.lang === 'en' ? '“' : '«') + '</span>' + esc(t('wl_tagline')) + '<span class="wl-q" aria-hidden="true">' + (state.lang === 'en' ? '”' : '»') + '</span></p></div>' +
       '<div class="wl-body">' +
-        (function(){ var lk = wlLineKey_(signIns), src = t(lk.replace('wl_l', 'wl_a')); return '<figure class="wl-team wl-in" style="--t:1.3s"><figcaption class="wl-team-h">' + esc(t('wl_team')) + '</figcaption>' +
+        (function(){ var lk = wlLineKey_(signIns), src = t(lk.replace('wl_l', 'wl_a')); return '<figure class="wl-team wl-in" style="--t:1.05s"><figcaption class="wl-team-h">' + esc(t('wl_team')) + '</figcaption>' +
           '<blockquote class="wl-line" id="wlLine">' + esc(t(lk)) + '</blockquote>' + (src && src !== lk.replace('wl_l', 'wl_a') ? '<cite class="wl-src">' + esc(src) + '</cite>' : '') + '</figure>'; })() +
-        '<div class="wl-date wl-in" style="--t:1.6s"><span>' + esc(D.gregorian) + '</span>' + (D.hijri ? '<span>' + esc(D.hijri) + '</span>' : '') + '</div>' +
-        '<section class="wl-today wl-in" style="--t:1.9s" aria-labelledby="wlToday"></section>' +
+        '<div class="wl-date wl-in" style="--t:1.25s"><span>' + esc(D.gregorian) + '</span>' + (D.hijri ? '<span>' + esc(D.hijri) + '</span>' : '') + '</div>' +
+        '<section class="wl-today wl-in" style="--t:1.45s" aria-labelledby="wlToday"></section>' +
       '</div>' +
-      '<div class="wl-foot wl-in" style="--t:2.2s"><button type="button" class="wl-go">' + esc(t('wl_start')) + '</button></div>' +
+      '<div class="wl-foot wl-in" style="--t:1.65s"><button type="button" class="wl-go">' + esc(t('wl_start')) + '</button></div>' +
     '</div></div>');
   var box = qs('.wl-today', ov);
   if (n) {
