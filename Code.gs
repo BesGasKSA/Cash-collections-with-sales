@@ -340,6 +340,12 @@ function writeRow(name, obj) {
         json = JSON.stringify(toStore);
       } catch (e) {}
     }
+    if (rowIndex > 0 && name === SHEETS.USERS) {
+      try {
+        var prevU = JSON.parse(sh.getRange(rowIndex, 2, 1, 1).getValues()[0][0] || '{}');
+        if (Number(prevU.tokenEpoch || 0) > Number(toStore.tokenEpoch || 0)) { toStore.tokenEpoch = prevU.tokenEpoch; obj.tokenEpoch = prevU.tokenEpoch; json = JSON.stringify(toStore); }
+      } catch (e) {}
+    }
     if (rowIndex > 0) {
       sh.getRange(rowIndex, 1, 1, 3).setValues([[obj.id, json, now]]);
     } else {
@@ -995,11 +1001,12 @@ function route_(req) {
   setActiveArea_(user, req.activeAreaId);
   var newToken = renewToken_(user.id, session.hardExp, epochOf_(user));
   // a temporary sign-in is changed before anything else (security review 2026-10-04)
-  if (user.mustChangePw && ['whoami', 'bootstrap', 'changePassword', 'setLanguage'].indexOf(action) < 0) return { ok: false, error: 'first_login_change', token: newToken };
+  if (user.mustChangePw && ['whoami', 'bootstrap', 'changePassword', 'setLanguage', 'logout'].indexOf(action) < 0) return { ok: false, error: 'first_login_change', token: newToken };
 
   var handlers = {
     // self-service
     whoami: function () { return { user: publicUser_(user) }; },
+    logout: function () { return actionLogout_(req, user); },
     // Reopening the app used to be whoami then listMeta: two round trips
     // before anything could render. One call returns both.
     bootstrap: function () { var meta = actionMeta_(req, user); return { ok: true, user: publicUser_(user), meta: meta }; },
@@ -1204,8 +1211,10 @@ function route_(req) {
       cachePutBig_(cache, respKey, JSON.stringify(toCache), RESP_CACHE_TTL_SEC);
     } catch (e) { /* oversized or unavailable cache must never fail a request */ }
   }
-  // after the action: a changed sign-in raises the epoch, and this device keeps its session
-  result.token = renewToken_(user.id, session.hardExp, epochOf_(user));
+  // after the action: a changed sign-in raises the epoch, and this device keeps its session;
+  // signing out hands back no session at all
+  if (action === 'logout') delete result.token;
+  else result.token = renewToken_(user.id, session.hardExp, epochOf_(user));
   msMark_('done'); if (result && typeof result === 'object') result._ms = msOut_();
   return result;
 }
@@ -1339,6 +1348,28 @@ function actionForgotPassword_(req) {
   return { ok: true };
 }
 
+// Sign out everywhere (owner's choice, 2026-11-12): the account's epoch rises, so every token
+// it ever issued (this device, a phone, a copied one) stops working at once. The row is read
+// fresh under the lock so an admin's change a moment earlier is never written back over.
+function actionLogout_(req, user) {
+  var lock = scriptLock_();
+  lock.waitLock(30000);
+  try {
+    freshenExec_();
+    var u = getById_(SHEETS.USERS, user.id);
+    if (!u) return { ok: true };
+    bumpEpoch_(u);
+    writeRow(SHEETS.USERS, u);
+    // every device of the person stops getting notifications (a lost phone's lock screen included);
+    // a device signing in again registers its key afresh
+    var nowIso = new Date().toISOString();
+    readSheet(SHEETS.PUSH_TOKENS).forEach(function (p) {
+      if (p.userId === user.id && p.active === true) { p.active = false; p.deactivatedAt = nowIso; p.deactivatedReason = 'logout_all'; writeRow(SHEETS.PUSH_TOKENS, p); }
+    });
+    logAudit_('logout_all', user.id, null);
+  } finally { lock.releaseLock(); }
+  return { ok: true };
+}
 function actionSetLanguage_(req, user) {
   user.language = req.language === 'ar' || req.language === 'ur' ? req.language : 'en';
   user.languageChosen = true;

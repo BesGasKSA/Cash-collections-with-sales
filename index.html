@@ -8363,13 +8363,27 @@ function heroWisdom_(box){
   });
 }
 
-function logout(){
+// all = the person pressed Sign out: every device's session ends on the server (owner, 2026-11-12).
+// A plain fetch, not api(), for the same reason as pnUnregisterRaw_: api() would write a token back.
+function srvLogoutAll_(){
+  try {
+    if (!state.token || !state.apiUrl || !state.user) return;
+    var uid = state.user.id, pt = ''; try { pt = localStorage.getItem('bgc_pushTok_' + uid) || ''; } catch (e) {}
+    fetch(state.apiUrl, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, keepalive: true,
+      body: JSON.stringify({ action: 'logout', token: state.token, pushToken: pt }) })
+      .then(function(r){ return r.json(); })
+      .then(function(res){ if (res && res.ok && pt) { try { localStorage.removeItem('bgc_pushTok_' + uid); } catch (e) {} } })
+      .catch(function(){});
+  } catch (e) {}
+}
+function logout(all){
+  if (all === true) srvLogoutAll_();
   SB_SCROLL_ = 0;
   sharedClear_(); ENT_SINCE_ = null;
   FIRST_DAY_ = '';
   try { MS_HIST_INIT_ = false; MS_SUB_ = null; adminProfile = null; } catch (e) {}
   // this device stops receiving the person's notifications (while the session can still say so)
-  try { pnOnLogout_(); } catch (e) {}
+  try { pnOnLogout_(all === true); } catch (e) {}
   try { HF_STATE_ = {}; DP_STATE_ = {}; AU_STATE_ = {}; } catch (e) {}
   try { SD_PREV_ = {}; SD_SEQ_ = {}; } catch (e) {}
   // an open document or drill-down lives outside #app: it goes too
@@ -9248,7 +9262,7 @@ function renderShell(){
   col.appendChild(main);
   root.appendChild(col);
 
-  qs('#logoutBtn', sb).addEventListener('click', logout);
+  qs('#logoutBtn', sb).addEventListener('click', function(){ logout(true); });
   qs('#langBtn', sb).addEventListener('click', function(e){ openLangPicker_(e.currentTarget); });
 
   // ---- phone bottom switcher: every screen for this role ----
@@ -9613,7 +9627,7 @@ function openMobileMenu_(){
       });
       wrap.appendChild(langCard);
       var out = el('<button type="button" class="btn danger" style="width:100%;">'+esc(t('logout'))+'</button>');
-      out.addEventListener('click', function(){ drawerClose_(); logout(); });
+      out.addEventListener('click', function(){ drawerClose_(); logout(true); });
       wrap.appendChild(out);
       wrap.appendChild(el('<div class="mm-build"><bdi dir="ltr">' + esc(BUILD_ID) + '</bdi></div>'));
       b.appendChild(wrap);
@@ -10908,7 +10922,7 @@ function msProfileOpen_(){
     var foot = el('<footer class="msp-foot"></footer>');
     foot.appendChild(lang);
     var out = el('<button type="button" class="msp-out">'+icon_('logout')+'<span>'+esc(t('logout'))+'</span></button>');
-    out.addEventListener('click', function(){ close(true); logout(); });
+    out.addEventListener('click', function(){ close(true); logout(true); });
     foot.appendChild(out);
     foot.appendChild(el('<p class="msp-build"><bdi dir="ltr">'+esc(BUILD_ID)+'</bdi></p>'));
     b.appendChild(foot);
@@ -31660,9 +31674,9 @@ function pnUnregisterRaw_(sessionToken, uid){
       .catch(function(){});
   } catch (e) {}
 }
-function pnOnLogout_(){
+function pnOnLogout_(viaServer){
   // the server call captures the session and the device key now, before logout() clears them
-  if (state.user) pnUnregisterRaw_(state.token, state.user.id);
+  if (state.user && !viaServer) pnUnregisterRaw_(state.token, state.user.id);
   // and Firebase deletes the token itself, so nothing reaches this browser even if the server missed it
   var m = PN_.messaging;
   if (m) { PN_.messaging = null; try { Promise.resolve(m.deleteToken()).catch(function(){}); } catch (e) {} }

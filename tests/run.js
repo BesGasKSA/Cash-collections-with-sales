@@ -4323,6 +4323,23 @@ check(call({ action: 'whoami', token: seCh.token }).error === 'auth_required', '
 var seOld = (function () { var p = admin.id + '|' + (Date.now() + 3600000) + '|' + (Date.now() + 86400000); return ctx.Utilities.base64EncodeWebSafe(p) + '.' + ctx.sign_(p); })();
 check(!!call({ action: 'whoami', token: seOld }).user, 'a sign-in made before this update keeps working');
 
+console.log('--- security: signing out ends the sessions on every device (2026-11-12) ---');
+var loA = login('sess.fx@bestgas.sa', 'NewPass#123');
+var loTokA = loA.token || '';
+if (!loTokA) { var loTmp = ctx.readSheet(SHEETS.USERS).filter(function (u) { return u.email === 'sess.fx@bestgas.sa'; })[0]; loTokA = ctx.issueToken_(loTmp.id, ctx.epochOf_(loTmp)); }
+var loUser = ctx.readSheet(SHEETS.USERS).filter(function (u) { return u.email === 'sess.fx@bestgas.sa'; })[0];
+var loTokB = ctx.issueToken_(loUser.id, ctx.epochOf_(loUser));
+check(!!call({ action: 'whoami', token: loTokA }).user && !!call({ action: 'whoami', token: loTokB }).user, 'two devices are signed in');
+ctx.writeRow(SHEETS.PUSH_TOKENS, { userId: loUser.id, token: 'phone-key-1', active: true });
+ctx.writeRow(SHEETS.PUSH_TOKENS, { userId: loUser.id, token: 'laptop-key-2', active: true });
+var loRes = call({ action: 'logout', token: loTokA });
+check(ctx.readSheet(SHEETS.PUSH_TOKENS).filter(function (p) { return p.userId === loUser.id && p.active === true; }).length === 0, 'no device of the person keeps getting notifications');
+var loStale = JSON.parse(JSON.stringify(loUser)); loStale.language = 'ur'; ctx.writeRow(SHEETS.USERS, loStale);
+check(call({ action: 'whoami', token: loTokB }).error === 'auth_required', 'a copy read before the sign-out does not bring its sessions back');
+check(loRes.ok === true && !loRes.token, 'signing out answers ok and hands back no session');
+check(call({ action: 'whoami', token: loTokA }).error === 'auth_required', 'the device that signed out is out');
+check(call({ action: 'whoami', token: loTokB }).error === 'auth_required', 'and so is every other device');
+
 console.log('--- security: a temporary password is changed before anything else ---');
 var tpNew = call({ action: 'adminCreateUser', token: adminTok, data: { name: 'Temp Driver', iqamaId: '2111222333', role: 'driver' } });
 check(tpNew.ok && !!tpNew.tempPassword, 'an iqama account starts with a temporary password');
