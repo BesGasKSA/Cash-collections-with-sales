@@ -318,6 +318,14 @@ function creditOverLines_(rows) {
 var DISCOUNT_REASONS_ = ['loyal_customer', 'promotion', 'damaged_cylinder', 'price_match', 'manager_approved', 'other'];
 function discountLimit_() { var v = Number(config_().discountLimit || 0); return isFinite(v) && v > 0 ? v : 0; }
 function checkNonSalesFields_(r, siblingCash) {
+  var MONEY_KEYS_ = ['cashSales', 'posSales', 'creditSales', 'deliveryFeeBankAmount', 'otherCash', 'expenseAmount',
+    'directDepositAmount', 'discountAmount', 'bankTransferAmount', 'qty', 'unitPrice', 'cylindersOut', 'cylindersIn'];
+  for (var mk = 0; mk < MONEY_KEYS_.length; mk++) {
+    var mv = r[MONEY_KEYS_[mk]];
+    if (mv == null || mv === '') continue;
+    var mn = Number(mv);
+    if (!isFinite(mn) || mn < 0 || mn > 1e8) return 'invalid_amount';
+  }
   // the item the line sold, when it names one: a real, active product (security
   // review 2026-10-04: "__proto__" as an item broke the stock report for good)
   if (r.productId != null && r.productId !== '') {
@@ -378,7 +386,7 @@ function checkNonSalesFields_(r, siblingCash) {
   for (var ni = 0; ni < nums.length; ni++) {
     if (nums[ni] == null || nums[ni] === '') continue;
     var nv = Number(nums[ni]);
-    if (!isFinite(nv) || nv < 0) return 'invalid_amount';
+    if (!isFinite(nv) || nv < 0 || nv > 1e8) return 'invalid_amount';
   }
   var dep = Number(r.directDepositAmount || 0);
   if (dep > 0) {

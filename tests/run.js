@@ -5118,6 +5118,22 @@ var dsOver = call({ action: 'importDailyEntries', token: jrBm.tok, rows: [
 check(!dsOver.ok || (dsOver.results || []).some(function (r) { return r.error === 'discount_over_sale'; }), 'a discount line is never more than the day\'s cash');
 check(call({ action: 'createDailyEntry', token: jrBm.tok, date: jrToday, sourceType: 'store', sourceId: dsLoc, cashSales: 100, bankTransferAmount: 100, discountAmount: 10, discountReason: 'promotion', submissionId: 'ds-9' }).error === 'discount_over_sale',
   'a discount cannot take off cash the row\'s own deductions already took (all 100 came by transfer)');
+// audit 2026-11-12: otherCash "1e999" is Infinity, so the cash in hand was infinite and a 5000
+// discount on 100 of cash was accepted, netting the day to -4900
+var infBefore = ctx.readSheet(ctx.SHEETS.ENTRIES).length;
+check(call({ action: 'createDailyEntry', token: jrBm.tok, date: jrToday, sourceType: 'store', sourceId: dsLoc, cashSales: 100, otherCash: '1e999', otherCashItemId: incomeId, otherCashReason: 'x', submissionId: 'inf-1' }).error === 'invalid_amount', 'an infinite other collection is refused');
+check(call({ action: 'createDailyEntry', token: jrBm.tok, date: jrToday, sourceType: 'store', sourceId: dsLoc, cashSales: 100, otherCash: '1e999', otherCashItemId: incomeId, otherCashReason: 'x', discountAmount: 5000, discountReason: 'promotion', submissionId: 'inf-2' }).error === 'invalid_amount', 'and cannot carry a discount above the sale (100 cash, 5000 off)');
+var infImp = call({ action: 'importDailyEntries', token: jrBm.tok, dryRun: true, rows: [
+  { date: jrToday, sourceType: 'store', sourceId: dsLoc, cashSales: 100, otherCash: '1e999', otherCashItemId: incomeId, otherCashReason: 'x', discountAmount: 5000, discountReason: 'promotion', submissionId: 'inf-3' }] });
+check(!infImp.ok || (infImp.results || []).some(function (r) { return r.error === 'invalid_amount'; }), 'the file import\'s dry run refuses it too (' + JSON.stringify(infImp.results || infImp.error) + ')');
+check(['NaN', 'Infinity', '-1e999', '1e9'].every(function (v) { return call({ action: 'createDailyEntry', token: jrBm.tok, date: jrToday, sourceType: 'store', sourceId: dsLoc, cashSales: v, submissionId: 'inf-v' + v }).error === 'invalid_amount'; }), 'a sale that is not a number, infinite or above 100,000,000 is refused');
+check(ctx.readSheet(ctx.SHEETS.ENTRIES).length === infBefore, 'none of them wrote a row');
+var infOk = call({ action: 'createDailyEntry', token: jrBm.tok, date: dsDay(11), sourceType: 'store', sourceId: dsLoc, cashSales: 100, otherCash: 20, otherCashItemId: incomeId, otherCashReason: 'scrap', discountAmount: 10, discountReason: 'promotion', submissionId: 'inf-ok' });
+check(infOk.ok && infOk.entry.otherCash === 20 && infOk.entry.discountAmount === 10, 'an ordinary day with a collection and a discount still saves (' + (infOk.error || 'ok') + ')');
+// a body that is not a JSON object, and a token that is not a string, are bad requests, not server errors
+var dpOut = function (body) { return JSON.parse(ctx.doPost({ postData: { contents: body } })._text); };
+check(['null', '[]', '5', '"x"'].every(function (b) { return dpOut(b).error === 'bad_request'; }), 'doPost refuses a body that is not an object');
+check(dpOut(JSON.stringify({ action: 'listMeta', token: { a: 1 } })).error === 'auth_required', 'a token that is not a string is simply not signed in');
 
 console.log('--- one area manager runs four areas ---');
 var fourMgr = jrMake('cluster_manager', 'Four Area Manager', 'four.fx@bestgas.sa');

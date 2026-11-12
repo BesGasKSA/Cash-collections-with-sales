@@ -730,7 +730,7 @@ function issueToken_(uid, epoch) {
 }
 
 function authToken_(token) {
-  if (!token) return null;
+  if (!token || typeof token !== 'string') return null;
   var parts = token.split('.');
   if (parts.length !== 2) return null;
   var payload;
@@ -875,6 +875,7 @@ function doPost(e) {
   } catch (err) {
     return json_({ ok: false, error: 'bad_request' });
   }
+  if (!req || typeof req !== 'object' || Array.isArray(req)) return json_({ ok: false, error: 'bad_request' });
   try {
     return json_(route_(req));
   } catch (err) {
@@ -1346,6 +1347,8 @@ function actionSetLanguage_(req, user) {
 }
 
 function actionChangePassword_(req, user) {
+  if (req.newPassword != null) req.newPassword = String(req.newPassword).trim();
+  if (req.currentPassword != null) req.currentPassword = String(req.currentPassword).trim();
   if (!req.newPassword || String(req.newPassword).length < 8) {
     return { ok: false, error: 'weak_password' };
   }
