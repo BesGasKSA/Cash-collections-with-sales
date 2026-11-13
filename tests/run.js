@@ -3583,6 +3583,9 @@ console.log('--- costing: cost types are master data, seeded once ---');
 var pfMeta = call({ action: 'listMeta', token: adminTok });
 check(pfMeta.ok && Array.isArray(pfMeta.costTypes) && pfMeta.costTypes.length >= 30, 'the cost types are seeded (got ' + (pfMeta.costTypes || []).length + ')');
 check((pfMeta.costTypes || []).every(function (c) { return /^CST-\d{4}$/.test(c.code || '') && c.name && c.group; }), 'each with its number, name and group');
+check(['فوائد التمويل', 'الزكاة', 'مخصصات', 'إيجار معدات', 'مياه وكهرباء'].every(function (n) { return (pfMeta.costTypes || []).some(function (c) { return c.name === n; }); }), 'the cost items Odoo needs (finance costs, zakat, provisions, equipment rent, utilities) are there');
+var pfNames = (pfMeta.costTypes || []).map(function (c) { return c.name; });
+check(pfNames.length === new Set(pfNames).size && new Set((pfMeta.costTypes || []).map(function (c) { return c.code; })).size === pfNames.length, 'no cost item or number twice');
 check(!call({ action: 'listMeta', token: saraTok }).costTypes, 'an area manager is not sent the cost types');
 function pfType(group, word) { return pfMeta.costTypes.filter(function (c) { return c.group === group && c.name.indexOf(word) >= 0; })[0]; }
 var pfDep = pfMeta.costTypes.filter(function (c) { return c.depreciation; })[0];

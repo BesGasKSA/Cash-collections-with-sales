@@ -144,7 +144,21 @@ var COST_TYPE_SEED_ = [
 ];
 // The starting catalogue, written once. A name already there is left alone,
 // and the English and Urdu come with it so nothing waits on a translation.
-function seedCostTypes_() {
+// Cost items the Odoo chart of accounts has and the first catalogue did not (owner, 2026-11-13:
+// "if needed add some expenses GL to the system"), so every GL that moves net profit has a home.
+// Written once like the first set; a name already there is left alone.
+var COST_TYPE_SEED_V2_ = [
+  ['فوائد التمويل', 'admin', 'fixed', 'Finance costs (loan interest)', 'قرض پر سود'],
+  ['الزكاة', 'admin', 'fixed', 'Zakat', 'زکوٰۃ'],
+  ['استهلاك وإطفاء الإدارة', 'admin', 'fixed', 'Head office depreciation and amortisation', 'ہیڈ آفس کی فرسودگی اور اطفاء', true],
+  ['مخصصات', 'admin', 'variable', 'Provisions', 'پروویژنز'],
+  ['سفر عمل وضيافة', 'admin', 'variable', 'Business travel and hospitality', 'کاروباری سفر اور مہمان نوازی'],
+  ['إيجار معدات', 'operations', 'fixed', 'Equipment rent', 'آلات کا کرایہ'],
+  ['مصاريف الشحن والنقل', 'operations', 'variable', 'Shipping and freight', 'شپنگ اور مال برداری'],
+  ['مياه وكهرباء', 'premises', 'variable', 'Water and electricity', 'پانی اور بجلی']
+];
+function seedCostTypes_(list) {
+  list = list || COST_TYPE_SEED_;
   var n = 0;
   var lock = scriptLock_();
   lock.waitLock(30000);
@@ -157,7 +171,7 @@ function seedCostTypes_() {
       if (m && Number(m[1]) > seq) seq = Number(m[1]);
     });
     var idx = translationIndex_(), types = [], words = [];
-    COST_TYPE_SEED_.forEach(function (s) {
+    list.forEach(function (s) {
       if (have[normalizeName_(s[0])]) return;
       seq++;
       var code = String(seq); while (code.length < 4) code = '0' + code;
@@ -172,7 +186,7 @@ function seedCostTypes_() {
   } finally { try { lock.releaseLock(); } catch (e) {} }
   return n;
 }
-function seedCostTypesOnce_() { runOnce_('SEEDED_COST_TYPES', seedCostTypes_); }
+function seedCostTypesOnce_() { runOnce_('SEEDED_COST_TYPES', function () { return seedCostTypes_(COST_TYPE_SEED_); }); runOnce_('SEEDED_COST_TYPES_V2', function () { return seedCostTypes_(COST_TYPE_SEED_V2_); }); }
 
 // ---------- a product's unit cost over time ----------
 // saveEntity_ calls this when a product's unit cost changes: the sales made
