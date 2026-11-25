@@ -1950,6 +1950,27 @@ Deputy screen filtered by `createdAt`. Live: of 216 lines of 13 Oct, 190 were ha
   `runMissingEntriesCheck {date}` (admin/finance) sends a day again. Audit
   `missing_entries_digest`. Tests: `node tests/branch-status.js`.
 
+## Ledger actuals and the estimated daily net profit (2026-11-25, the owner)
+
+- **A month from the ledger.** `importCostLines {month, oneOff:true, actual:true, rows}` writes
+  one-month lines marked `actual` (the Odoo month, e.g. `profitability-import/odoo-costs-2026-10.xlsx`,
+  sheets per branch and head office, already mapped to cost items). `actual` without `oneOff`
+  is `invalid_input`. Audit `cost_lines_import` says "(ledger actuals)".
+- **What `profitCompute_` does with it.** In a ledger month, an actual line for a place and
+  cost item replaces any running line of the same place and item that month (a lease line and
+  the ledger rent would otherwise both count). A later month with no ledger yet is estimated:
+  every actual line of the last ledger month before it adds its daily average (amount / days of
+  its own month) on each day, and the running lines it replaced stay out. Lines with no ledger
+  counterpart run as before; a month before the first ledger month is unchanged. Sales and cost
+  of goods are always actual. Spans now carry days (`s.days`, `s.dim`, cols `[idx, days]`).
+- **Output.** `T.estimated` (in `COST_SUM_FIELDS_`), unit `series.est`, `res.estimate`
+  `{month: basis month}`, `res.actualMonths`. Client: `plIsEst_`/`plEstNote_`; the Daily tab marks
+  each estimated day with ≈ (table and phone cards) and every tab but Cost profiles shows the note.
+- **Trap fixed at the same time:** `renderProfit` had a local `plChips_()` (the quick-period
+  buttons) shadowing the shared `plChips_(items, current, onPick)`, so the overview threw at its
+  day-by-day chart and drew nothing below the tiles. The local one is `plQuickSync_` now.
+- Tests: `node tests/profit-estimate.js`.
+
 ## Traps
 
 ### 1. A bare `<tr>` built through `el()` silently loses its content

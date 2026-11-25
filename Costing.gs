@@ -567,6 +567,10 @@ function actionVoidCostLine_(req, user) {
 function actionImportCostLines_(req, user) {
   requireManager_(user);
   var month = String(req.month == null ? '' : req.month), oneOff = req.oneOff === true;
+  // a month's figures from the ledger (2026-11-25): one-month lines marked actual, which replace
+  // running lines of the same item that month and are the basis of the next months' estimate
+  var actual = req.actual === true;
+  if (actual && !oneOff) return { ok: false, error: 'invalid_input' };
   if (!costMonthOk_(month)) return { ok: false, error: 'invalid_month' };
   var rows = Array.isArray(req.rows) ? req.rows : null;
   if (!rows || !rows.length || rows.length > 500) return { ok: false, error: 'invalid_input' };
@@ -631,13 +635,13 @@ function actionImportCostLines_(req, user) {
       if (p.replace) {
         p.replace.voided = true; p.replace.voidReason = 'replaced'; p.replace.voidedBy = user.id; p.replace.voidedAt = now;
         writeRow(SHEETS.COST_LINES, p.replace);
-        batch.push(costRow_(p.add, user, { imported: true, replaces: p.replace.id })); changed++; return;
+        batch.push(costRow_(p.add, user, actual ? { imported: true, actual: true, replaces: p.replace.id } : { imported: true, replaces: p.replace.id })); changed++; return;
       }
-      if (p.add) { batch.push(costRow_(p.add, user, { imported: true })); created++; return; }
+      if (p.add) { batch.push(costRow_(p.add, user, actual ? { imported: true, actual: true } : { imported: true })); created++; return; }
       costChange_(p.change, month, p.amount, user, batch); changed++;
     });
     var written = costAppendMany_(SHEETS.COST_LINES, batch);
-    logAudit_('cost_lines_import', user.id, month + ' +' + created + ' ~' + changed + ' =' + skipped);
+    logAudit_('cost_lines_import', user.id, month + (actual ? ' (ledger actuals)' : '') + ' +' + created + ' ~' + changed + ' =' + skipped);
     return { ok: true, created: created, changed: changed, skipped: skipped, lines: written };
   });
 }
@@ -724,10 +728,10 @@ function actionCostReport_(req, user) {
 function costZeroT_() {
   return { gross: 0, vat: 0, net: 0, deliveryIncome: 0, cogs: 0, gm: 0, commission: 0, expenses: 0,
     fixed: 0, fixedVehicle: 0, fixedStaff: 0, fixedPremises: 0, fixedOperations: 0, fixedAdmin: 0, cm: 0,
-    ovhLocation: 0, ovhCluster: 0, ovhCity: 0, ovhCompany: 0, ovh: 0, profit: 0, qty: 0, uncostedSales: 0 };
+    ovhLocation: 0, ovhCluster: 0, ovhCity: 0, ovhCompany: 0, ovh: 0, profit: 0, qty: 0, uncostedSales: 0, estimated: 0 };
 }
 var COST_SUM_FIELDS_ = ['gross', 'vat', 'net', 'deliveryIncome', 'cogs', 'commission', 'expenses', 'fixed', 'fixedVehicle', 'fixedStaff', 'fixedPremises',
-  'fixedOperations', 'fixedAdmin', 'ovhLocation', 'ovhCluster', 'ovhCity', 'ovhCompany', 'qty', 'uncostedSales'];
+  'fixedOperations', 'fixedAdmin', 'ovhLocation', 'ovhCluster', 'ovhCity', 'ovhCompany', 'qty', 'uncostedSales', 'estimated'];
 function costFinishT_(T) {
   T.gm = T.net + T.deliveryIncome - T.cogs;
   T.cm = T.gm - T.commission - T.expenses - T.fixed;
@@ -760,10 +764,11 @@ function profitCompute_(from, to, basis, vatIncl) {
   for (var si = costMonthIndex_(from.slice(0, 7)); si <= costMonthIndex_(to.slice(0, 7)); si++) {
     var m = costMonthOf_(si), dim = costDaysIn_(m);
     var first = m + '-01' < from ? from : m + '-01', last = m + '-' + (dim < 10 ? '0' : '') + dim > to ? to : m + '-' + (dim < 10 ? '0' : '') + dim;
+    // cols carry days, not shares: a line divides by its own month's length, an estimate by its basis month's
     var n = costDaysBetween_(first, last), cols = [];
-    if (byMonth) cols.push([bIdx[m], n / dim]);
-    else for (var dj = 0; dj < n; dj++) cols.push([bIdx[costDateAdd_(first, dj)], 1 / dim]);
-    spans.push({ month: m, share: n / dim, cols: cols });
+    if (byMonth) cols.push([bIdx[m], n]);
+    else for (var dj = 0; dj < n; dj++) cols.push([bIdx[costDateAdd_(first, dj)], 1]);
+    spans.push({ month: m, dim: dim, days: n, cols: cols });
   }
   function zeros() { return buckets.map(function () { return 0; }); }
 
@@ -773,7 +778,7 @@ function profitCompute_(from, to, basis, vatIncl) {
       var sep = key.indexOf(':'), type = key.slice(0, sep), rest = key.slice(sep + 1);
       var row = maps.unitRow[key] || null;
       units[key] = { key: key, type: type, id: rest, row: row, locationId: type === 'none' ? rest : type === 'ovh' ? null : maps.unitLoc[key] || null,
-        T: costZeroT_(), touched: false, series: { gross: zeros(), net: zeros(), other: zeros(), cogs: zeros(), variable: zeros(), fixed: zeros(), ovh: zeros() } };
+        T: costZeroT_(), touched: false, series: { gross: zeros(), net: zeros(), other: zeros(), cogs: zeros(), variable: zeros(), fixed: zeros(), ovh: zeros(), est: zeros() } };
       order.push(key);
     }
     return units[key];
@@ -812,24 +817,53 @@ function profitCompute_(from, to, basis, vatIncl) {
     u.series.gross[b] += gross; u.series.net[b] += net; u.series.other[b] += deliv; u.series.cogs[b] += cogs; u.series.variable[b] += com + exp;
   });
 
-  // the cost lines: a car's or store's own, and the pools above them
+  // the cost lines: a car's or store's own, and the pools above them.
+  // Ledger actuals and the daily estimate (2026-11-25, the owner): a month loaded from
+  // the ledger (one-month lines marked `actual`) is that month's real cost, and its
+  // figure for a place and cost item replaces any running line of the same item there
+  // that month (a lease line would otherwise count twice). A later month with no
+  // ledger yet is estimated: each actual line's daily average (its amount / the days
+  // of its month) on every day, and the running lines it replaces stay out too.
+  var costLines = readSheet(SHEETS.COST_LINES).filter(function (l) { return !l.voided; });
+  var actualMonth = Object.create(null), actualAt = Object.create(null);
+  function itemKey(l) { return l.centreType + '|' + l.centreId + '|' + l.typeId; }
+  costLines.forEach(function (l) { if (l.actual && l.oneOff) { actualMonth[l.fromMonth] = true; actualAt[l.fromMonth + '|' + itemKey(l)] = true; } });
+  var actualMonths = Object.keys(actualMonth).sort(), estBasis = Object.create(null);
+  spans.forEach(function (s) {
+    if (actualMonth[s.month]) return;
+    var b = null; actualMonths.forEach(function (a) { if (a < s.month) b = a; });
+    if (b) estBasis[s.month] = b;
+  });
   var pools = [];
-  readSheet(SHEETS.COST_LINES).forEach(function (l) {
-    if (l.voided) return;
-    var ser = null, total = 0;
-    spans.forEach(function (s) {
-      if (!costActiveIn_(l, s.month)) return;
-      if (!ser) ser = zeros();
-      s.cols.forEach(function (c2) { ser[c2[0]] += Number(l.amount) * c2[1]; });
-      total += Number(l.amount) * s.share;
-    });
-    if (!ser) return;
+  function placeCost(l, ser, total, est) {
     if (l.centreType === 'car' || l.centreType === 'store') {
       var u = unit(l.centreType + ':' + l.centreId), g = COST_GROUP_FIELD_[(typeById[l.typeId] || {}).group] || 'fixedOperations';
       u.touched = true; u.T.fixed += total; u.T[g] += total; costAddType_(u, g, l.typeId, total);
+      if (est) u.T.estimated += total;
       if (l.asset || (typeById[l.typeId] || {}).depreciation) costAddType_(u, 'dep', l.typeId, total);
-      ser.forEach(function (v, i) { u.series.fixed[i] += v; });
-    } else pools.push({ level: l.centreType, id: l.centreId, series: ser, total: total, typeId: l.typeId, dep: !!(l.asset || (typeById[l.typeId] || {}).depreciation) });
+      ser.forEach(function (v, i) { u.series.fixed[i] += v; if (est) u.series.est[i] += v; });
+    } else pools.push({ level: l.centreType, id: l.centreId, series: ser, total: total, typeId: l.typeId, est: est, dep: !!(l.asset || (typeById[l.typeId] || {}).depreciation) });
+  }
+  costLines.forEach(function (l) {
+    var ser = null, total = 0, eser = null, etotal = 0, k = itemKey(l);
+    spans.forEach(function (s) {
+      if (costActiveIn_(l, s.month)) {
+        var replaced = !l.oneOff && (actualAt[s.month + '|' + k] || (estBasis[s.month] && actualAt[estBasis[s.month] + '|' + k]));
+        if (!replaced) {
+          if (!ser) ser = zeros();
+          s.cols.forEach(function (c2) { ser[c2[0]] += Number(l.amount) * c2[1] / s.dim; });
+          total += Number(l.amount) * s.days / s.dim;
+        }
+      }
+      if (l.actual && l.oneOff && estBasis[s.month] === l.fromMonth) {
+        var bd = costDaysIn_(l.fromMonth);
+        if (!eser) eser = zeros();
+        s.cols.forEach(function (c2) { eser[c2[0]] += Number(l.amount) * c2[1] / bd; });
+        etotal += Number(l.amount) * s.days / bd;
+      }
+    });
+    if (ser) placeCost(l, ser, total, false);
+    if (eser) placeCost(l, eser, etotal, true);
   });
 
   // each pool is shared among the stores and cars under it
@@ -861,9 +895,10 @@ function profitCompute_(from, to, basis, vatIncl) {
       if (!w[i]) return;
       var share = w[i] / sum;
       u.T[field] += pool.total * share;
+      if (pool.est) u.T.estimated += pool.total * share;
       costAddType_(u, field, pool.typeId, pool.total * share);
       if (pool.dep) costAddType_(u, 'dep', pool.typeId, pool.total * share);
-      pool.series.forEach(function (v, k) { u.series.ovh[k] += v * share; });
+      pool.series.forEach(function (v, k) { u.series.ovh[k] += v * share; if (pool.est) u.series.est[k] += v * share; });
     });
   });
 
@@ -900,7 +935,7 @@ function profitCompute_(from, to, basis, vatIncl) {
       if (u.types) Object.keys(u.types).forEach(function (tk) { costAddType_(nodes[nk], tk.slice(0, tk.indexOf('|')), tk.slice(tk.indexOf('|') + 1), u.types[tk]); });
     });
     var s = u.series, any = false, ser = {};
-    ['gross', 'net', 'other', 'cogs', 'variable', 'fixed', 'ovh'].forEach(function (f) { ser[f] = s[f].map(function (v) { if (v) any = true; return costR4_(v); }); });
+    ['gross', 'net', 'other', 'cogs', 'variable', 'fixed', 'ovh', 'est'].forEach(function (f) { ser[f] = s[f].map(function (v) { if (v) any = true; return costR4_(v); }); });
     if (any) outUnits.push({ key: k, series: ser });
   });
   var list = nodeOrder.map(function (k) {
@@ -912,6 +947,8 @@ function profitCompute_(from, to, basis, vatIncl) {
   var company = nodes.company.T;
   return {
     bucket: byMonth ? 'month' : 'day', buckets: buckets, nodes: list, units: outUnits,
+    // months estimated from an earlier month's ledger: { '2026-11': '2026-10' }; actualMonths: months loaded from the ledger
+    estimate: estBasis, actualMonths: actualMonths,
     coverage: { sales: company.net, uncostedSales: company.uncostedSales, productsWithoutCost: Object.keys(noCost),
       unitsWithoutCosts: order.filter(function (k) { var u = units[k]; return (u.type === 'store' || u.type === 'car') && u.row && u.row.active !== false && !u.T.fixed; }) }
   };

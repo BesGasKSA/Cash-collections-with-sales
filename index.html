@@ -3329,6 +3329,8 @@
   #eDraft svg{width:16px;height:16px;}
   #eDraftNote{font-size:.75rem;color:var(--muted);font-weight:600;}
   #eDraftNote:empty{display:none;}
+  .pl-estnote{margin:6px 0 0;padding:6px 10px;border-radius:8px;background:var(--amber-pale,#fff4dc);color:var(--amber-dark,#7a5200);font-size:.8125rem}
+  .pl-est{color:var(--amber-dark,#7a5200);font-weight:700}
   .card.mxb-card{background:var(--danger-bg) !important;border:1px solid var(--danger) !important;color:var(--danger)}
   .mxb-card h3{margin:0 0 2px;font-size:.9375rem;font-weight:700}
   .mxb-card .mxb-sub{margin:0 0 8px;font-size:.8125rem;opacity:.85}
@@ -6608,7 +6610,7 @@ var L = {
       sc_hi:'Before saving', sc_title:'The system will record this day as', sc_diff:'The screen showed {p}. This is the exact figure that will be saved.', sc_back:'Back to the form', sc_save:'Save the day',
       av_hint:'Admin: cancel this whole transaction, every line, whoever entered it. If it is in a handover nobody has received yet, that handover is cancelled too and its other days go back to be sent again. Nothing is deleted: it stays in the audit trail.', av_btn:'Cancel the whole transaction', av_confirm:'Cancel every line of this transaction, with its bank deposit and any handover not yet received?', av_done:'Cancelled: {n} lines, {h} handovers', err_entryHandedOn:'This day is in a handover already received or passed on ({no}). Settle it through that handover instead.',
       hp_title:'Here is what you hold now', hp_held:'Cash with you now', hp_heldN:'from {n} received handovers not yet passed on', hp_nothing:'Nothing left with you. All handed on.', hp_coming:'Still on its way to you ({n})', hp_received:'Received {amount} SAR', hp_banked:'Deposited {amount} SAR',
-      err_dupMovesCash:'This transaction carries cash that was already handed on, so cancelling it would change amounts that were received. It cannot be cancelled as a duplicate.', err_notDuplicate:'No other transaction holds this source and day, so this one is not a duplicate.', loc_active:'Branch active (takes transactions)', err_branchInactive:'This branch is inactive, so no transactions can be entered for it.', mxb_title:'Branches with no transactions yesterday', mxb_sub:'Active branches with nothing entered on {date}', mxb_more:'and {n} more', err_dayAlreadyEntered:'This day is already entered for this source ({no}, by {who}). Only {who} or the admin can cancel it; then the day can be entered again.', dep_amount:'Amount you are depositing', dep_amountHint:'Count the cash and type the total. It must match the cash you hold.', err_depAmountRequired:'Type the amount you are depositing', err_depAmountMismatch:'The amount does not match the cash you hold. Count again before depositing.',
+      err_dupMovesCash:'This transaction carries cash that was already handed on, so cancelling it would change amounts that were received. It cannot be cancelled as a duplicate.', err_notDuplicate:'No other transaction holds this source and day, so this one is not a duplicate.', loc_active:'Branch active (takes transactions)', pl_estTag:'Costs estimated', pl_estNote:'Costs for {months} are estimated: the daily average of each cost item from {basis}, per branch and head office, until that month is loaded. Sales and cost of goods are actual.', err_branchInactive:'This branch is inactive, so no transactions can be entered for it.', mxb_title:'Branches with no transactions yesterday', mxb_sub:'Active branches with nothing entered on {date}', mxb_more:'and {n} more', err_dayAlreadyEntered:'This day is already entered for this source ({no}, by {who}). Only {who} or the admin can cancel it; then the day can be entered again.', dep_amount:'Amount you are depositing', dep_amountHint:'Count the cash and type the total. It must match the cash you hold.', err_depAmountRequired:'Type the amount you are depositing', err_depAmountMismatch:'The amount does not match the cash you hold. Count again before depositing.',
       mm_screens:'Screens', navs_deputyReview:'Approvals', navs_users:'Users', navs_areaBulk:'Area upload', navs_reconciliation:'Bank', navs_customers:'Customers', navs_comparison:'Compare', navs_profit:'Profit',
       en_line0:'Every riyal you hand over on time keeps Best Gas strong. Thank you for today.', en_line1:'A clear day starts with one small step. You have got this.',
       en_line2:'Your care with the numbers is what customers never see, and always feel.', en_line3:'Good work is quiet. Today it adds up to something big.',
@@ -6637,7 +6639,7 @@ var L = {
       sc_hi:'قبل الحفظ', sc_title:'سيُسجّل النظام هذا اليوم هكذا', sc_diff:'الشاشة عرضت {p}. هذا هو الرقم الدقيق الذي سيُحفظ.', sc_back:'العودة إلى النموذج', sc_save:'حفظ اليوم',
       av_hint:'للمسؤول: إلغاء هذه المعاملة كاملة بكل أسطرها أيًّا كان مُدخِلها. إن كانت في تسليم لم يُستلم بعد، يُلغى التسليم أيضًا وتعود أيامه الأخرى لتُرسل من جديد. لا يُحذف شيء: يبقى في سجل التدقيق.', av_btn:'إلغاء المعاملة كاملة', av_confirm:'إلغاء كل أسطر هذه المعاملة مع إيداعها البنكي وأي تسليم لم يُستلم بعد؟', av_done:'أُلغي: {n} سطر، {h} تسليم', err_entryHandedOn:'هذا اليوم في تسليم تم استلامه أو تمريره ({no}). عالجه من خلال ذلك التسليم.',
       hp_title:'هذا ما لديك الآن', hp_held:'النقدية التي معك الآن', hp_heldN:'من {n} تسليمات استلمتها ولم تُسلَّم بعد', hp_nothing:'لا يوجد لديك شيء. سُلّم كل شيء.', hp_coming:'ما زال في الطريق إليك ({n})', hp_received:'استلمت {amount} ر.س', hp_banked:'أودعت {amount} ر.س',
-      err_dupMovesCash:'هذه المعاملة تحمل نقدية سُلّمت للمرحلة التالية، وإلغاؤها يغيّر مبالغ تم استلامها، فلا يمكن إلغاؤها كمكررة.', err_notDuplicate:'لا توجد معاملة أخرى لهذا المصدر وهذا اليوم، فهذه المعاملة ليست مكررة.', loc_active:'الفرع نشط (يقبل المعاملات)', err_branchInactive:'هذا الفرع غير نشط، فلا يمكن إدخال معاملات له.', mxb_title:'فروع بلا معاملات أمس', mxb_sub:'فروع نشطة لم يُسجَّل لها أي إدخال يوم {date}', mxb_more:'و{n} غيرها', err_dayAlreadyEntered:'هذا اليوم مُدخل مسبقًا لهذا المصدر ({no}، أدخله {who}). لا يلغيه إلا {who} أو مسؤول النظام، ثم يمكن إدخال اليوم من جديد.', dep_amount:'المبلغ الذي تودعه', dep_amountHint:'عُدّ النقدية واكتب الإجمالي. يجب أن يطابق النقدية التي لديك.', err_depAmountRequired:'اكتب المبلغ الذي تودعه', err_depAmountMismatch:'المبلغ لا يطابق النقدية التي لديك. أعد العدّ قبل الإيداع.',
+      err_dupMovesCash:'هذه المعاملة تحمل نقدية سُلّمت للمرحلة التالية، وإلغاؤها يغيّر مبالغ تم استلامها، فلا يمكن إلغاؤها كمكررة.', err_notDuplicate:'لا توجد معاملة أخرى لهذا المصدر وهذا اليوم، فهذه المعاملة ليست مكررة.', loc_active:'الفرع نشط (يقبل المعاملات)', pl_estTag:'تكاليف تقديرية', pl_estNote:'تكاليف {months} تقديرية: متوسط يومي لكل بند تكلفة من {basis}، لكل فرع وللمكتب الرئيسي، إلى أن تُحمَّل تكاليف ذلك الشهر. المبيعات وتكلفة البضاعة فعلية.', err_branchInactive:'هذا الفرع غير نشط، فلا يمكن إدخال معاملات له.', mxb_title:'فروع بلا معاملات أمس', mxb_sub:'فروع نشطة لم يُسجَّل لها أي إدخال يوم {date}', mxb_more:'و{n} غيرها', err_dayAlreadyEntered:'هذا اليوم مُدخل مسبقًا لهذا المصدر ({no}، أدخله {who}). لا يلغيه إلا {who} أو مسؤول النظام، ثم يمكن إدخال اليوم من جديد.', dep_amount:'المبلغ الذي تودعه', dep_amountHint:'عُدّ النقدية واكتب الإجمالي. يجب أن يطابق النقدية التي لديك.', err_depAmountRequired:'اكتب المبلغ الذي تودعه', err_depAmountMismatch:'المبلغ لا يطابق النقدية التي لديك. أعد العدّ قبل الإيداع.',
       mm_screens:'الشاشات', navs_deputyReview:'الاعتمادات', navs_users:'المستخدمون', navs_areaBulk:'رفع المنطقة', navs_reconciliation:'البنك', navs_comparison:'المقارنة', navs_profit:'الأرباح', navs_customers:'العملاء',
       en_line0:'كل ريال تسلّمه في وقته يقوّي شركتنا. شكرًا لك على اليوم.', en_line1:'اليوم الواضح يبدأ بخطوة صغيرة. أنت قدّها.',
       en_line2:'دقتك في الأرقام لا يراها العميل، لكنه يشعر بها دائمًا.', en_line3:'العمل الجيد هادئ، واليوم يصنع فرقًا كبيرًا.',
@@ -6667,7 +6669,7 @@ var L = {
       sc_hi:'محفوظ کرنے سے پہلے', sc_title:'سسٹم یہ دن اس طرح درج کرے گا', sc_diff:'اسکرین نے {p} دکھایا۔ یہی درست رقم محفوظ ہو گی۔', sc_back:'فارم پر واپس', sc_save:'دن محفوظ کریں',
       av_hint:'ایڈمن: یہ پورا لین دین منسوخ کریں، ہر سطر، جس نے بھی درج کیا ہو۔ اگر یہ کسی ایسی ترسیل میں ہے جو ابھی وصول نہیں ہوئی تو وہ ترسیل بھی منسوخ ہو گی اور اس کے دوسرے دن دوبارہ بھیجنے کے لیے واپس جائیں گے۔ کچھ حذف نہیں ہوتا: یہ آڈٹ ریکارڈ میں رہتا ہے۔', av_btn:'پورا لین دین منسوخ کریں', av_confirm:'اس لین دین کی ہر سطر، اس کی بینک جمع اور ابھی وصول نہ ہونے والی ترسیل منسوخ کریں؟', av_done:'منسوخ: {n} سطریں، {h} ترسیل', err_entryHandedOn:'یہ دن ایسی ترسیل میں ہے جو وصول یا آگے جا چکی ({no})۔ اسے اسی ترسیل کے ذریعے نمٹائیں۔',
       hp_title:'اب آپ کے پاس یہ ہے', hp_held:'ابھی آپ کے پاس نقدی', hp_heldN:'{n} وصول شدہ ترسیل سے، جو ابھی آگے نہیں گئیں', hp_nothing:'آپ کے پاس کچھ باقی نہیں۔ سب آگے دے دیا گیا۔', hp_coming:'ابھی آپ کی طرف راستے میں ({n})', hp_received:'{amount} ریال وصول ہوئے', hp_banked:'{amount} ریال جمع ہوئے',
-      err_dupMovesCash:'اس لین دین میں وہ نقدی شامل ہے جو آگے حوالے ہو چکی ہے، اسے منسوخ کرنے سے وصول شدہ رقمیں بدل جائیں گی، اس لیے اسے دہرا سمجھ کر منسوخ نہیں کیا جا سکتا۔', err_notDuplicate:'اس ذریعے اور دن کا کوئی اور لین دین نہیں، اس لیے یہ دہرا نہیں ہے۔', loc_active:'برانچ فعال (لین دین قبول کرتی ہے)', err_branchInactive:'یہ برانچ غیر فعال ہے، اس لیے اس کے لیے کوئی لین دین درج نہیں ہو سکتا۔', mxb_title:'کل بغیر لین دین کی برانچیں', mxb_sub:'فعال برانچیں جن کے لیے {date} کو کچھ درج نہیں ہوا', mxb_more:'اور {n} مزید', err_dayAlreadyEntered:'یہ دن اس ذریعے کے لیے پہلے سے درج ہے ({no}، {who} نے درج کیا)۔ صرف {who} یا ایڈمن اسے منسوخ کر سکتے ہیں، پھر دن دوبارہ درج ہو سکتا ہے۔', dep_amount:'جمع کی جانے والی رقم', dep_amountHint:'نقدی گنیں اور کل رقم لکھیں۔ یہ آپ کے پاس موجود نقدی کے برابر ہونی چاہیے۔', err_depAmountRequired:'جمع کی جانے والی رقم لکھیں', err_depAmountMismatch:'رقم آپ کے پاس موجود نقدی سے مطابقت نہیں رکھتی۔ جمع کرنے سے پہلے دوبارہ گنیں۔',
+      err_dupMovesCash:'اس لین دین میں وہ نقدی شامل ہے جو آگے حوالے ہو چکی ہے، اسے منسوخ کرنے سے وصول شدہ رقمیں بدل جائیں گی، اس لیے اسے دہرا سمجھ کر منسوخ نہیں کیا جا سکتا۔', err_notDuplicate:'اس ذریعے اور دن کا کوئی اور لین دین نہیں، اس لیے یہ دہرا نہیں ہے۔', loc_active:'برانچ فعال (لین دین قبول کرتی ہے)', pl_estTag:'تخمینی اخراجات', pl_estNote:'{months} کے اخراجات تخمینی ہیں: {basis} سے ہر لاگت مد کا یومیہ اوسط، ہر برانچ اور ہیڈ آفس کے لیے، جب تک اس مہینے کے اخراجات درج نہ ہوں۔ فروخت اور مال کی لاگت اصل ہیں۔', err_branchInactive:'یہ برانچ غیر فعال ہے، اس لیے اس کے لیے کوئی لین دین درج نہیں ہو سکتا۔', mxb_title:'کل بغیر لین دین کی برانچیں', mxb_sub:'فعال برانچیں جن کے لیے {date} کو کچھ درج نہیں ہوا', mxb_more:'اور {n} مزید', err_dayAlreadyEntered:'یہ دن اس ذریعے کے لیے پہلے سے درج ہے ({no}، {who} نے درج کیا)۔ صرف {who} یا ایڈمن اسے منسوخ کر سکتے ہیں، پھر دن دوبارہ درج ہو سکتا ہے۔', dep_amount:'جمع کی جانے والی رقم', dep_amountHint:'نقدی گنیں اور کل رقم لکھیں۔ یہ آپ کے پاس موجود نقدی کے برابر ہونی چاہیے۔', err_depAmountRequired:'جمع کی جانے والی رقم لکھیں', err_depAmountMismatch:'رقم آپ کے پاس موجود نقدی سے مطابقت نہیں رکھتی۔ جمع کرنے سے پہلے دوبارہ گنیں۔',
       mm_screens:'اسکرینیں', navs_deputyReview:'منظوریاں', navs_users:'صارفین', navs_areaBulk:'ایریا اپ لوڈ', navs_reconciliation:'بینک', navs_comparison:'موازنہ', navs_profit:'منافع', navs_customers:'گاہک',
       en_line0:'وقت پر دیا گیا ہر ریال کمپنی کو مضبوط رکھتا ہے۔ آج کے لیے شکریہ۔', en_line1:'اچھا دن ایک چھوٹے قدم سے شروع ہوتا ہے۔ آپ کر سکتے ہیں۔',
       en_line2:'اعداد میں آپ کی احتیاط گاہک نہیں دیکھتا، مگر ہمیشہ محسوس کرتا ہے۔', en_line3:'اچھا کام خاموش ہوتا ہے، آج یہ بڑا فرق بنائے گا۔',
@@ -26880,6 +26882,15 @@ function plPath_(res, key){
   return out;
 }
 // the day-by-day figures of a place: its stores and cars added up
+// Costs of a month with no ledger yet are estimated from the last ledger month's daily average
+// (2026-11-25, Costing.gs profitCompute_): res.estimate { month: basis month }.
+function plIsEst_(res, b){ var e = res && res.estimate; return !!(e && b && e[String(b).slice(0, 7)]); }
+function plEstNote_(res){
+  var e = (res && res.estimate) || {}, ms = Object.keys(e).sort();
+  if (!ms.length) return null;
+  var basis = []; ms.forEach(function(m){ if (basis.indexOf(e[m]) < 0) basis.push(e[m]); });
+  return el('<p class="pl-estnote" role="note"><span aria-hidden="true">≈</span> '+esc(t('pl_estNote').replace('{months}', ms.map(plMonthName_).join('، ')).replace('{basis}', basis.map(plMonthName_).join('، ')))+'</p>');
+}
 function plSeries_(res, key){
   var ix = plIndex_(res), under = {}, n = res.buckets.length;
   (function walk(k){ var nd = ix.by[k]; if (!nd) return; if (nd.level === 'unit') under[k] = true; (ix.kids[k] || []).forEach(function(c){ walk(c.key); }); })(key);
@@ -27810,6 +27821,7 @@ function renderProfit(body){
     var days = Math.round((new Date(res.dateTo + 'T00:00:00Z') - new Date(res.dateFrom + 'T00:00:00Z')) / 86400000) + 1;
     var revenue = T.net + T.deliveryIncome, direct = T.commission + T.expenses + T.fixed;
     out.innerHTML = '';
+    var estN0 = plEstNote_(res); if (estN0) { var estC0 = el('<div class="card no-collapse"></div>'); estC0.appendChild(estN0); out.appendChild(estC0); }
     // the smart dashboard (2026-10-26): the focused place against the report's own previous period
     try { sdMount_(body, sdPlModel_(res, F, prev, ix.kids[F.key] || [], function(k){ focusOn(k.key); }), out); } catch (e) { try { console.warn('smart dashboard', e); } catch (e2) {} }
     // the staircase: four figures, and what comes off between them
@@ -28027,14 +28039,15 @@ function renderProfit(body){
       '<div class="tbl-scroll rp-scroll"><table class="rp-table pl-table" data-nosort><thead><tr><th>'+esc(rows[0][0])+'</th>'+ORDER.map(function(i){ return '<th class="n'+(KINDS[i] === 'less' ? ' pl-less-c' : '')+'">'+(KINDS[i] === 'less' ? '<small>'+esc(t('is_less'))+'</small> ' : '')+esc(rows[0][i])+'</th>'; }).join('')+'<th class="n">'+esc(t('pl_npPct'))+'</th></tr></thead><tbody>' +
       body2.map(function(r){
         var quiet = [1, 2, 4, 6].every(function(i){ return Math.abs(r[i]) < 0.005; });
-        return '<tr class="'+(r[7] < -0.004 ? 'pl-lossrow' : '')+(quiet ? ' pl-quiet' : '')+'"><td class="pl-day"><b>'+esc(res.bucket === 'day' ? plDayName_(r[0]) : plMonthName_(r[0]))+'</b></td>'+ORDER.map(function(i){ return td(r[i], KINDS[i]); }).join('')+td(pctOf(r), 'pct')+'</tr>';
+        return '<tr class="'+(r[7] < -0.004 ? 'pl-lossrow' : '')+(quiet ? ' pl-quiet' : '')+'"><td class="pl-day"><b>'+esc(res.bucket === 'day' ? plDayName_(r[0]) : plMonthName_(r[0]))+'</b>'+(plIsEst_(res, r[0]) ? ' <span class="pl-est" title="'+esc(t('pl_estTag'))+'">≈</span>' : '')+'</td>'+ORDER.map(function(i){ return td(r[i], KINDS[i]); }).join('')+td(pctOf(r), 'pct')+'</tr>';
       }).join('') + '</tbody><tfoot><tr><td>'+esc(t('rp_total'))+'</td>'+ORDER.map(function(i){ return td(tot[i], KINDS[i]); }).join('')+td(pctOf(tot), 'pct')+'</tr></tfoot></table></div>' +
       // phone (2026-10-12): one card per day, net profit first, the rest two across, nothing to scroll sideways
       '<div class="pl-dcards">' + body2.concat([tot]).map(function(r, k){
         var isTot = k === body2.length;
-        return '<div class="pl-dc'+(isTot ? ' tot' : '')+(r[7] < -0.004 ? ' loss' : '')+'"><div class="pl-dc-h"><b>'+esc(isTot ? t('rp_total') : res.bucket === 'day' ? plDayName_(r[0]) : plMonthName_(r[0]))+'</b><span class="pl-dc-n"><small>'+esc(rows[0][7])+'</small>'+plAmt_(r[7])+'</span></div>' +
+        return '<div class="pl-dc'+(isTot ? ' tot' : '')+(r[7] < -0.004 ? ' loss' : '')+'"><div class="pl-dc-h"><b>'+esc(isTot ? t('rp_total') : res.bucket === 'day' ? plDayName_(r[0]) : plMonthName_(r[0]))+'</b>'+(!isTot && plIsEst_(res, r[0]) ? ' <span class="pl-est" title="'+esc(t('pl_estTag'))+'">≈</span>' : '')+'<span class="pl-dc-n"><small>'+esc(rows[0][7])+'</small>'+plAmt_(r[7])+'</span></div>' +
           '<div class="pl-dc-g">'+[1, 2, 3, 4, 5, 6].map(function(i){ return '<span><i>'+(KINDS[i] === 'less' ? esc(t('is_less')) + ' ' : '')+esc(rows[0][i])+'</i>'+cell(r[i], KINDS[i])+'</span>'; }).join('')+'</div></div>';
       }).join('') + '</div></div>');
+    var estN = plEstNote_(res); if (estN) qs('.rp-head > div', card).appendChild(estN);
     var note = { note: plNodeName_(F) + ' · ' + periodText(res) };
     qs('.rp-head', card).appendChild(plExBar_(
       function(){ exportXlsx_(t('pl_dayByDay') + ' ' + plNodeName_(F) + ' ' + res.dateFrom + ' ' + res.dateTo, [{ name: t('pl_dayByDay'), rows: rows, note: note.note }], note); },
@@ -28174,28 +28187,30 @@ function renderProfit(body){
       if (!plIndex_(res).by[PL_.focus]) PL_.focus = 'company';
       crumbs(res);
       ({ overview: overview, levels: levels, daily: daily, costs: costs })[PL_.tab](res);
+      // levels says when the costs are partly estimated (the overview draws its own note; the daily tab marks each day)
+      if (PL_.tab === 'levels') { var estN = plEstNote_(res); if (estN) { var estC = el('<div class="card no-collapse"></div>'); estC.appendChild(estN); out.insertBefore(estC, out.firstChild); } }
     });
   }
   // the quick periods, one tap each (the owner, 2026-10-31); the picker keeps the rest
   qs('.pl-bar-row', bar).insertAdjacentHTML('afterend', '<div class="rp-periods pl-quick" role="group" aria-label="'+esc(t('pp_quick'))+'">' +
     ['today', 'yesterday', 'thisWeek', 'lastWeek', 'thisMonth', 'lastMonth', 'thisYear', 'lastYear', 'all'].map(function(p){ return '<button type="button" data-p="'+p+'">'+esc(t('pp_' + p))+'</button>'; }).join('') + '</div>');
-  function plChips_(){ qsa('.pl-quick button', bar).forEach(function(b){ var on = !!PL_.custom && PL_.preset === b.getAttribute('data-p'); b.classList.toggle('on', on); b.setAttribute('aria-pressed', on ? 'true' : 'false'); }); }
+  function plQuickSync_(){ qsa('.pl-quick button', bar).forEach(function(b){ var on = !!PL_.custom && PL_.preset === b.getAttribute('data-p'); b.classList.toggle('on', on); b.setAttribute('aria-pressed', on ? 'true' : 'false'); }); }
   qsa('.pl-quick button', bar).forEach(function(b){ b.addEventListener('click', function(){
     var sel = qs('#plMonth', bar); sel.value = 'p:' + quickToggle_(PL_.custom ? PL_.preset : '', b.getAttribute('data-p'));
     sel.dispatchEvent(new Event('change', { bubbles: true }));
   }); });
-  plChips_();
+  plQuickSync_();
   qs('#plMonth', bar).addEventListener('change', function(){
     var v = this.value;
     setTimeout(plChips_, 0);
     if (v === 'p:all') {
       firstDay_().then(function(day){
         if (qs('#plMonth', bar).value !== 'p:all') return;
-        if (!day) { qs('#plMonth', bar).value = PL_.custom ? (PL_.preset ? 'p:' + PL_.preset : 'custom') : (PL_.month || ''); plChips_(); return; }
+        if (!day) { qs('#plMonth', bar).value = PL_.custom ? (PL_.preset ? 'p:' + PL_.preset : 'custom') : (PL_.month || ''); plQuickSync_(); return; }
         PL_.preset = 'all'; PL_.custom = true; PL_.from = day; PL_.to = localToday_();
         qs('#plFrom', bar).value = PL_.from; qs('#plTo', bar).value = PL_.to;
         qsa('.pl-cust', bar).forEach(function(f){ f.hidden = false; });
-        plChips_(); show();
+        plQuickSync_(); show();
       });
       return;
     }
@@ -28205,7 +28220,7 @@ function renderProfit(body){
     if (PL_.custom) { PL_.from = qs('#plFrom', bar).value; PL_.to = qs('#plTo', bar).value; }
     show();
   });
-  ['#plFrom', '#plTo'].forEach(function(s){ qs(s, bar).addEventListener('change', function(){ PL_.preset = ''; qs('#plMonth', bar).value = 'custom'; plChips_(); PL_.from = qs('#plFrom', bar).value; PL_.to = qs('#plTo', bar).value; if (PL_.from && PL_.to && PL_.from <= PL_.to) show(); }); });
+  ['#plFrom', '#plTo'].forEach(function(s){ qs(s, bar).addEventListener('change', function(){ PL_.preset = ''; qs('#plMonth', bar).value = 'custom'; plQuickSync_(); PL_.from = qs('#plFrom', bar).value; PL_.to = qs('#plTo', bar).value; if (PL_.from && PL_.to && PL_.from <= PL_.to) show(); }); });
   qs('#plBasis', bar).addEventListener('change', function(){ PL_.basis = this.value; show(); });
   qsa('.pl-tabs button', bar).forEach(function(b){ b.addEventListener('click', function(){
     PL_.tab = b.dataset.tab;
