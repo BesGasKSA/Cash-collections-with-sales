@@ -71,5 +71,22 @@ var sep = company(rep('2026-09-01', '2026-09-30'));
 near(sep.ovh, 5000, 'September keeps the lease as before');
 near(sep.estimated, 0, 'and no estimate');
 
+console.log('--- Souq Gas is its own line, and its sales leave the branch that recorded them ---');
+c.writeRow(S.CHANNELS, { id: 'peCh', name: 'Souq Gas', active: true });
+c.writeRow(S.ENTRIES, { id: 'peCE', date: '2026-09-10', sourceType: 'store', sourceId: 'peS', locationId: 'peL', cashSales: 1150, qty: 10, channelQtys: { peCh: 4 }, channelCommission: 20, channelDeliveryFee: 46, creditCommission: 5, expenseAmount: 7, enteredBy: 'peBm' });
+check(call({ action: 'importCostLines', token: tok, month: '2026-09', oneOff: true, rows: [{ centreType: 'channel', centreId: 'peCh', typeId: T3, amount: 300 }] }).ok, 'a cost line on the channel');
+c.resetExecMemo_();
+var sp = rep('2026-09-10', '2026-09-10'), byKey = {}; sp.nodes.forEach(function (n) { byKey[n.key] = n.T; });
+var ch = byKey['channel:peCh'], st = byKey['store:peS'];
+check(!!ch, 'Souq Gas has its own line');
+near(ch.gross, 460, 'four of ten units go to Souq Gas');
+near(st.gross, 690, 'six stay at the branch: nothing counted twice');
+near(byKey.company.gross, 1150, 'the company total is unchanged');
+near(ch.commission, 20, 'the channel commission goes with it');
+near(st.commission, 5, 'the credit commission stays at the branch');
+near(st.expenses, 7, 'and so do expenses');
+near(ch.deliveryIncome, 46 / 1.15, 'the channel delivery fee goes to Souq Gas');
+near(ch.fixed, 300 / 30, 'its own cost sits on it');
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);

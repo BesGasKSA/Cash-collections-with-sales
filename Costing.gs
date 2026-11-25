@@ -26,7 +26,7 @@
 // and starts a new one, and a wrong line is voided with a reason. A day
 // carries a month's cost divided by the days of that month.
 var COST_GROUPS_ = ['vehicle', 'staff', 'premises', 'operations', 'admin'];
-var COST_CENTRES_ = ['car', 'store', 'location', 'cluster', 'city', 'company'];
+var COST_CENTRES_ = ['car', 'store', 'location', 'cluster', 'city', 'company', 'channel'];
 var COST_BASES_ = ['sales', 'qty', 'equal'];
 var COST_ROLES_ = ['admin', 'finance', 'accountant'];
 var COST_MAX_AMOUNT_ = 100000000;
@@ -390,7 +390,7 @@ function costCentre_(type, id) {
     var city = readSheet(SHEETS.CITIES).filter(function (c) { return c.name && normalizeName_(c.name) === key; })[0];
     return city ? { type: 'city', id: city.name } : null;
   }
-  var sheet = { car: SHEETS.CARS, store: SHEETS.STORES, location: SHEETS.LOCATIONS, cluster: SHEETS.CLUSTERS }[type];
+  var sheet = { car: SHEETS.CARS, store: SHEETS.STORES, location: SHEETS.LOCATIONS, cluster: SHEETS.CLUSTERS, channel: SHEETS.CHANNELS }[type];
   var row = getById_(sheet, id);
   return row ? { type: type, id: row.id } : null;
 }
@@ -789,32 +789,46 @@ function profitCompute_(from, to, basis, vatIncl) {
   var noCost = Object.create(null);
   readSheet(SHEETS.ENTRIES).forEach(function (e) {
     if (e.voided || !e.date || e.date < from || e.date > to) return;
-    var u = unit(costUnitOf_(e, maps.posById, maps.unitRow)), T = u.T, b = bIdx[byMonth ? e.date.slice(0, 7) : e.date];
+    var homeKey = costUnitOf_(e, maps.posById, maps.unitRow), b = bIdx[byMonth ? e.date.slice(0, 7) : e.date];
     // VAT inside the prices at the rate the day was saved with
     var div = vatIncl ? 1 + entryVatRate_(e, vatHist) : 1;
     // a discount (2026-10-07) is revenue not earned: sales are recorded at full price, the discount comes off
     var gross = Number(e.cashSales || 0) + Number(e.posSales || 0) - Number(e.discountAmount || 0), net = gross / div;
-    var deliv = (Number(e.channelDeliveryFee || 0) + Number(e.creditDeliveryFee || 0)) / div;
-    var com = Number(e.channelCommission || 0) + Number(e.creditCommission || 0), exp = Number(e.expenseAmount || 0);
-    var qty = Number(e.qty || 0), p = e.productId ? productsById[e.productId] : null, cogs = 0;
+    var chDeliv = Number(e.channelDeliveryFee || 0) / div, crDeliv = Number(e.creditDeliveryFee || 0) / div;
+    var chCom = Number(e.channelCommission || 0), crCom = Number(e.creditCommission || 0), exp = Number(e.expenseAmount || 0);
+    var qty = Number(e.qty || 0), p = e.productId ? productsById[e.productId] : null, cogs = 0, uncosted = 0;
     if (p && p.type === 'services') { /* a service has no cost of goods */ }
     else if (p && qty > 0) {
       var c = costOfProduct_(p, e.date, hist, productsById, stkItems);
       var avgC = String(e.date) >= AVG_COGS_FROM_ && invAverage_() && stockItemsLive_() ? invAvgCostEx_(p, e.date, hist, stkItems) : null;
       if (avgC != null) cogs = qty * avgC;
       else if (c > 0) cogs = qty * costExVat_(c, e.date, vatHist);
-      else if (net > 0) { T.uncostedSales += net; noCost[p.id] = true; }
-    } else if (net > 0) T.uncostedSales += net;   // a sale typed as an amount only cannot be costed
-    if (gross || deliv || com || exp || qty) u.touched = true;
-    T.gross += gross; T.net += net; T.vat += gross - net; T.deliveryIncome += deliv; T.cogs += cogs; T.commission += com; T.expenses += exp;
-    // what each line is made of, for the statement's drill-down (2026-10-30)
+      else if (net > 0) { uncosted = net; noCost[p.id] = true; }
+    } else if (net > 0) uncosted = net;   // a sale typed as an amount only cannot be costed
+    // Sales channels are their own line (2026-11-25, the owner): the part of a line sold through a
+    // channel (channelQtys, or a whole line with channelId) leaves the branch with its share of the
+    // sales and cost of goods, and takes the channel's delivery fee and commission; credit fees and
+    // expenses stay at the branch. A line split by quantity splits its amounts in the same proportion.
+    var parts = [], chQ = 0, chMap = e.channelQtys && typeof e.channelQtys === 'object' ? e.channelQtys : null;
+    if (chMap) safeOwnKeys_(chMap).forEach(function (cid) { var q = Number(chMap[cid] || 0); if (q > 0) { parts.push({ key: 'channel:' + cid, q: q }); chQ += q; } });
+    else if (e.channelId) { parts.push({ key: 'channel:' + e.channelId, q: qty > 0 ? qty : 1 }); chQ = qty > 0 ? qty : 1; }
+    var chFrac = !parts.length ? 0 : qty > 0 ? Math.min(1, chQ / qty) : 1;
+    parts.forEach(function (pt) { pt.f = chFrac * pt.q / chQ; pt.ch = pt.q / chQ; });
+    parts.unshift({ key: homeKey, f: 1 - chFrac, ch: 0, home: true });
     var lineKey = e.productId || '';
-    costAddType_(u, 'net', lineKey, net); costAddType_(u, 'cogs', lineKey, cogs);
-    costAddType_(u, 'deliveryIncome', 'channel', Number(e.channelDeliveryFee || 0) / div); costAddType_(u, 'deliveryIncome', 'credit', Number(e.creditDeliveryFee || 0) / div);
-    costAddType_(u, 'commission', 'channel', Number(e.channelCommission || 0)); costAddType_(u, 'commission', 'credit', Number(e.creditCommission || 0));
-    costAddType_(u, 'expenses', e.expenseItemId || '', exp);
-    if (p && p.type !== 'services') T.qty += qty;
-    u.series.gross[b] += gross; u.series.net[b] += net; u.series.other[b] += deliv; u.series.cogs[b] += cogs; u.series.variable[b] += com + exp;
+    parts.forEach(function (pt) {
+      var u = unit(pt.key), T = u.T, f = pt.f, h = !!pt.home;
+      var dl = chDeliv * pt.ch + (h ? crDeliv : 0), cm = chCom * pt.ch + (h ? crCom : 0), ex = h ? exp : 0;
+      if (gross * f || dl || cm || ex || qty * f) u.touched = true;
+      T.gross += gross * f; T.net += net * f; T.vat += (gross - net) * f; T.deliveryIncome += dl; T.cogs += cogs * f; T.commission += cm; T.expenses += ex; T.uncostedSales += uncosted * f;
+      // what each line is made of, for the statement's drill-down (2026-10-30)
+      costAddType_(u, 'net', lineKey, net * f); costAddType_(u, 'cogs', lineKey, cogs * f);
+      costAddType_(u, 'deliveryIncome', 'channel', chDeliv * pt.ch); if (h) costAddType_(u, 'deliveryIncome', 'credit', crDeliv);
+      costAddType_(u, 'commission', 'channel', chCom * pt.ch); if (h) costAddType_(u, 'commission', 'credit', crCom);
+      if (h) costAddType_(u, 'expenses', e.expenseItemId || '', ex);
+      if (p && p.type !== 'services') T.qty += qty * f;
+      u.series.gross[b] += gross * f; u.series.net[b] += net * f; u.series.other[b] += dl; u.series.cogs[b] += cogs * f; u.series.variable[b] += cm + ex;
+    });
   });
 
   // the cost lines: a car's or store's own, and the pools above them.
@@ -836,7 +850,7 @@ function profitCompute_(from, to, basis, vatIncl) {
   });
   var pools = [];
   function placeCost(l, ser, total, est) {
-    if (l.centreType === 'car' || l.centreType === 'store') {
+    if (l.centreType === 'car' || l.centreType === 'store' || l.centreType === 'channel') {
       var u = unit(l.centreType + ':' + l.centreId), g = COST_GROUP_FIELD_[(typeById[l.typeId] || {}).group] || 'fixedOperations';
       u.touched = true; u.T.fixed += total; u.T[g] += total; costAddType_(u, g, l.typeId, total);
       if (est) u.T.estimated += total;
