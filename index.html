@@ -5399,7 +5399,8 @@
     /* the sweep found 30 kinds of tap target under 44px (chips 33, toggles 28, sort arrows 20,
        row buttons 29, a details link 16): every button on a phone screen is 44px tall now */
     :root body .ms-on #screenBody button,:root body .ms-on #screenBody [role="button"],:root body .ms-on .dr button{min-height:44px;}
-    :root body .ms-on #screenBody button:not(.btn):not(.tile):not(:is(td, th) button){min-width:44px;}
+    /* a chart's columns share the chart's width: a 44px floor pushed 25 days out of the card (2026-11-25) */
+    :root body .ms-on #screenBody button:not(.btn):not(.tile):not(.sd-col):not(:is(td, th) button){min-width:44px;}
     :root body .ms-on #screenBody .col-chip,:root body .ms-on #screenBody .details-toggle,:root body .ms-on #screenBody .eqx-allTog{display:inline-flex;align-items:center;justify-content:center;}
     :root body .ms-on #screenBody .adm-tabs{margin-inline:0;}
     :root body .ms-on #screenBody th[role="button"]{min-width:44px;}
