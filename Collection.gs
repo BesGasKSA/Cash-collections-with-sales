@@ -84,9 +84,19 @@ function resolveSourceLocation_(sourceType, sourceId) {
   return null;
 }
 
+// A branch is active unless it is set inactive: rows saved before the status
+// existed have no `active` and count as active (2026-11-25). An inactive branch
+// takes no new transactions; cash already on its way up the chain still moves.
+function branchInactive_(locationId) {
+  var loc = locationId ? getById_(SHEETS.LOCATIONS, locationId) : null;
+  return !!(loc && loc.active === false);
+}
+
 function checkEntryScope_(user, sourceType, sourceId) {
   var locationId = resolveSourceLocation_(sourceType, sourceId);
   if (!locationId) return { ok: false, error: 'not_found' };
+  // an inactive branch takes no transactions, from anyone (2026-11-25)
+  if (branchInactive_(locationId)) return { ok: false, error: 'branch_inactive' };
 
   if (user.role === 'admin') return { ok: true, locationId: locationId };
 
@@ -1688,6 +1698,7 @@ function checkClusterBulkEntryScope_(user, clusterId, sourceType, sourceId) {
   if (!locationId) return { ok: false, error: 'not_found' };
   var loc = getById_(SHEETS.LOCATIONS, locationId);
   if (!loc || loc.clusterId !== clusterId) return { ok: false, error: 'forbidden' };
+  if (loc.active === false) return { ok: false, error: 'branch_inactive' };
   return { ok: true, locationId: locationId };
 }
 
@@ -3271,6 +3282,96 @@ function checkStaleHandoffs_() {
     escalated += checkHeldTooLong_();
   } finally { pushBatchEnd_(pushOpened); }
   return escalated;
+}
+
+// ---------- Active branches with no transactions on a day (2026-11-25) ----------
+// The owner's rule: a branch is active by default; an active branch that posts
+// nothing on a day is shown in red, and at 07:00 Riyadh the next morning its
+// branch manager, its area manager and head office are mailed. "Posted" means
+// any entry of that day at the branch that is not cancelled (a sale, a payment,
+// an expense, a line in an area batch still with the deputy). An inactive branch
+// is never named, nor a branch added after the day.
+var MISSING_MAIL_FLAG_ = 'MISSING_ENTRIES_MAILED';
+var MISSING_HQ_ROLES_ = ['admin', 'finance', 'operations_manager', 'deputy_operations_manager'];
+function riyadhDayOf_(d) { return Utilities.formatDate(d, 'Asia/Riyadh', 'yyyy-MM-dd'); }
+function yesterdayRiyadh_() { return riyadhDayOf_(new Date(Date.now() - 864e5)); }
+function missingEntryRows_(date) {
+  var has = Object.create(null), areas = Object.create(null), mgr = Object.create(null);
+  readSheet(SHEETS.ENTRIES).forEach(function (e) { if (!e.voided && String(e.date) === date && e.locationId) has[e.locationId] = true; });
+  readSheet(SHEETS.CLUSTERS).forEach(function (c) { areas[c.id] = c; });
+  readSheet(SHEETS.STORES).forEach(function (s) { if (s.locationId && s.storeManagerUserId && !mgr[s.locationId]) mgr[s.locationId] = s.storeManagerUserId; });
+  return readSheet(SHEETS.LOCATIONS).filter(function (l) {
+    if (l.active === false || has[l.id]) return false;
+    if (l.createdAt) { var made = new Date(l.createdAt); if (!isNaN(made.getTime()) && riyadhDayOf_(made) > date) return false; }
+    return true;
+  }).map(function (l) {
+    var a = areas[l.clusterId] || null;
+    return { locationId: l.id, code: l.code || '', name: l.name || '', city: l.city || '', clusterId: l.clusterId || '', areaName: a ? a.name || '' : '',
+      areaManagerUserId: a ? a.clusterManagerUserId || '' : '', branchManagerUserId: mgr[l.id] || '' };
+  }).sort(function (x, y) { return (x.city + x.areaName + x.name).localeCompare(y.city + y.areaName + y.name); });
+}
+// the rows one person may see: head office all, an area manager his areas, a branch manager his branch
+function missingRowsFor_(user, rows) {
+  if (isCompanyWide_(user.role)) return rows;
+  if (user.role === 'cluster_manager') return rows.filter(function (r) { return r.areaManagerUserId === user.id || clusterManagerOwnsCluster_(user.id, r.clusterId); });
+  if (user.role === 'store_manager') return rows.filter(function (r) { return r.branchManagerUserId === user.id; });
+  return [];
+}
+// read-only: the active branches with nothing posted on a day (default yesterday)
+function actionMissingEntryBranches_(req, user) {
+  var date = String(req.date || yesterdayRiyadh_());
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return { ok: false, error: 'invalid_date' };
+  if (date > todayRiyadh_()) return { ok: false, error: 'future_date' };
+  return { ok: true, date: date, branches: missingRowsFor_(user, missingEntryRows_(date)).map(function (r) {
+    return { locationId: r.locationId, code: r.code, name: r.name, city: r.city, clusterId: r.clusterId, areaName: r.areaName };
+  }) };
+}
+function missingEntriesMail_(date, list, title) {
+  var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+  var html = '<div dir="rtl" style="font-family:Tahoma,Arial,sans-serif;color:#1f2a22;max-width:760px">' +
+    '<h2 style="margin:0 0 6px;color:#b3261e">فروع بلا معاملات يوم ' + esc(date) + ' · Branches with no transactions on ' + esc(date) + '</h2>' +
+    '<p style="margin:0 0 12px;color:#55606a">' + esc(title) + '</p>' +
+    '<p style="margin:0 0 14px">لم يُسجَّل أي إدخال في هذه الفروع النشطة لذلك اليوم. · Nothing was entered for these active branches that day.</p>' +
+    '<table cellpadding="6" cellspacing="0" style="border-collapse:collapse;width:100%;font-size:13px">' +
+    '<tr style="background:#4D6D51;color:#fff"><th align="right">الفرع · Branch</th><th align="right">المنطقة · Area</th><th align="right">المدينة · City</th></tr>' +
+    list.map(function (r, i) { return '<tr style="background:' + (i % 2 ? '#f6f4ee' : '#fff') + '"><td style="color:#b3261e;font-weight:700">' + esc(r.name) + (r.code ? ' <span style="color:#55606a;font-weight:400">' + esc(r.code) + '</span>' : '') + '</td><td>' + esc(r.areaName) + '</td><td>' + esc(r.city) + '</td></tr>'; }).join('') +
+    '</table></div>';
+  var text = 'Branches with no transactions on ' + date + ' (' + title + ')\n' + list.map(function (r) { return r.name + (r.areaName ? ' - ' + r.areaName : ''); }).join('\n');
+  return { subject: 'فروع بلا معاملات ' + date + ' · No transactions ' + date + ' (' + list.length + ')', text: text, html: html };
+}
+// date: the day checked. force: send again even if that day was already mailed (admin's "send now").
+function missingEntriesDigest_(date, force) {
+  date = String(date || yesterdayRiyadh_());
+  var props = PropertiesService.getScriptProperties();
+  if (!force && props.getProperty(MISSING_MAIL_FLAG_) === date) return { ok: true, skipped: 'already_sent', date: date };
+  var rows = missingEntryRows_(date);
+  // claimed before sending: a second run (a retried trigger) must not mail twice
+  props.setProperty(MISSING_MAIL_FLAG_, date);
+  if (!rows.length) { logAudit_('missing_entries_digest', 'system', date + ': every active branch posted'); return { ok: true, date: date, sent: 0, rows: rows }; }
+  var sent = 0, failed = 0;
+  readSheet(SHEETS.USERS).forEach(function (u) {
+    if (u.active === false || !u.email) return;
+    var list, title;
+    if (MISSING_HQ_ROLES_.indexOf(u.role) >= 0) { list = rows; title = 'كل الفروع · All branches'; }
+    else if (u.role === 'cluster_manager') { list = missingRowsFor_(u, rows); title = 'فروع منطقتك · Your branches'; }
+    else if (u.role === 'store_manager') { list = missingRowsFor_(u, rows); title = 'فرعك · Your branch'; }
+    if (!list || !list.length) return;
+    var m = missingEntriesMail_(date, list, title);
+    try { if (sendMail_(u.email, m.subject, m.text, m.html) !== 'none') sent++; } catch (eM) { failed++; console.error('missing entries mail: ' + eM); }
+  });
+  logAudit_('missing_entries_digest', 'system', date + ': ' + rows.length + ' branches, ' + sent + ' mails' + (failed ? ', ' + failed + ' failed' : ''));
+  return { ok: true, date: date, sent: sent, failed: failed, rows: rows };
+}
+// the daily trigger, 07:00 Riyadh: yesterday's branches
+function missingEntriesDaily_() { try { missingEntriesDigest_(yesterdayRiyadh_(), false); } catch (e) { console.error('missing entries digest: ' + e); } }
+// Admin → Settings: run it now for a day (sent again even if that day was mailed)
+function actionRunMissingEntriesCheck_(req, user) {
+  requireManager_(user);
+  var date = String(req.date || yesterdayRiyadh_());
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || date > todayRiyadh_()) return { ok: false, error: 'invalid_date' };
+  var res = missingEntriesDigest_(date, true);
+  logAudit_('run_missing_entries_check', user.id, date);
+  return { ok: true, date: date, branches: res.rows.length, sent: res.sent || 0 };
 }
 
 function actionRunStaleCheck_(req, user) {

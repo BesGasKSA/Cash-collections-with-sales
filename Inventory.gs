@@ -378,6 +378,7 @@ function invGuard_(locId, user, all, opts) {
 function actionAddInventoryMove_(req, user) {
   var lf = invLocFor_(user, req.locationId);
   if (lf.error) return { ok: false, error: lf.error };
+  if (lf.loc.active === false) return { ok: false, error: 'branch_inactive' };
   var date = String(req.date || '');
   var c = invCheckMove_(req, date, invStockCtx_());
   if (c.error) return { ok: false, error: c.error };
@@ -450,6 +451,8 @@ function actionTransferInventory_(req, user) {
   var to = getById_(SHEETS.LOCATIONS, req.toLocationId);
   if (!to) return { ok: false, error: 'branch_required' };
   if (to.id === lf.loc.id) return { ok: false, error: 'same_branch' };
+  // stock may leave an inactive branch (to clear it), never arrive at one (2026-11-25)
+  if (to.active === false) return { ok: false, error: 'branch_inactive' };
   var date = String(req.date || ''), list = Array.isArray(req.lines) ? req.lines : [];
   if (!list.length || list.length > 50) return { ok: false, error: 'invalid_input' };
   var sc = invStockCtx_(), checked = [];
@@ -497,6 +500,7 @@ function actionTransferInventory_(req, user) {
 function actionCarStockMove_(req, user) {
   var lf = invLocFor_(user, req.locationId);
   if (lf.error) return { ok: false, error: lf.error };
+  if (lf.loc.active === false) return { ok: false, error: 'branch_inactive' };
   var car = getById_(SHEETS.CARS, req.carId);
   if (!car || car.locationId !== lf.loc.id) return { ok: false, error: 'invalid_car' };
   var kind = String(req.kind || '');
@@ -526,6 +530,7 @@ function actionCarStockMove_(req, user) {
 function actionImportInventoryDay_(req, user) {
   var lf = invLocFor_(user, req.locationId);
   if (lf.error) return { ok: false, error: lf.error };
+  if (lf.loc.active === false) return { ok: false, error: 'branch_inactive' };
   var date = String(req.date || ''), ref = String(req.ref || '').trim().slice(0, 120);
   var list = Array.isArray(req.moves) ? req.moves : null;
   var checkOnly = !!list && !list.length && !!req.seenOnFile;

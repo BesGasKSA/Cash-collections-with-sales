@@ -1924,6 +1924,32 @@ Deputy screen filtered by `createdAt`. Live: of 216 lines of 13 Oct, 190 were ha
 - **Speed:** `getById_` indexes per request; the audit sheet no longer clears cached reports; a repeat sign-in within the hour writes nothing; `getInventoryLive` is cached by the stock's versions; Home entries drop empty fields; the opening runs two seconds.
 - **The statement's lines open as a pivot** (`placeKids` in `plIfrsModel_`): collapsed, city, area when a city has several, branch, store or car, written to the page when first opened (`m.rowHtml`). Its Excel and PDF keep the statement's own lines.
 
+## Branch status, and active branches with no transactions (2026-11-25, the owner)
+
+- **Status.** `location.active`: active by default; a row saved before the status has no
+  field and counts as active (`branchInactive_` server, `branchInactiveId_` client, both
+  `active === false`). The branch form has the switch (`loc_active`), the list an `active`
+  column. `entityForm_` shows a missing `active` as ticked, or saving any other field of an
+  old record would switch it off. New records now carry `createdAt` (`saveEntity_`).
+- **Inactive = no transactions.** `branch_inactive` from `checkEntryScope_` (form, file
+  import; above the admin early return, so admins too), `checkClusterBulkEntryScope_` (area
+  batch), `addInventoryMove`, `importInventoryDay`, car stock moves and a transfer *to* it.
+  A transfer *from* it, stock counts, handovers, deposits and cancellations still work, so
+  cash already entered finishes the chain (the owner chose this). The entry form's source
+  picker drops its stores, cars and POS; report filters keep it (its history stays visible).
+- **No transactions on a day.** A branch "posted" if any non-voided entry of that date has
+  its `locationId` (a sale, payment, expense, a line in a batch still with the deputy).
+  `missingEntryRows_(date)`: active branches without one, leaving out branches created after
+  the day. `missingEntryBranches {date?}` (read-only, default yesterday): company-wide all,
+  area manager his areas, branch manager his branch; Home shows it as a red card
+  (`.mxb-card`, admin/finance tap a branch to open it).
+- **The 07:00 mail.** `missingEntriesDaily_` runs at 07:00 Asia/Riyadh (trigger set once,
+  `MISSING_ENTRIES_TRIGGER`, `.inTimezone('Asia/Riyadh')`) for yesterday: admin, finance,
+  operations and deputy get every branch; an area manager his; a branch manager his own.
+  `MISSING_ENTRIES_MAILED` holds the last day mailed, so a re-run sends nothing;
+  `runMissingEntriesCheck {date}` (admin/finance) sends a day again. Audit
+  `missing_entries_digest`. Tests: `node tests/branch-status.js`.
+
 ## Traps
 
 ### 1. A bare `<tr>` built through `el()` silently loses its content

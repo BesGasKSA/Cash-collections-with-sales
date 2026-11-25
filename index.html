@@ -3329,6 +3329,13 @@
   #eDraft svg{width:16px;height:16px;}
   #eDraftNote{font-size:.75rem;color:var(--muted);font-weight:600;}
   #eDraftNote:empty{display:none;}
+  .card.mxb-card{background:var(--danger-bg) !important;border:1px solid var(--danger) !important;color:var(--danger)}
+  .mxb-card h3{margin:0 0 2px;font-size:.9375rem;font-weight:700}
+  .mxb-card .mxb-sub{margin:0 0 8px;font-size:.8125rem;opacity:.85}
+  .mxb-card ul{margin:0;padding:0;list-style:none;display:flex;flex-wrap:wrap;gap:6px}
+  .mxb-card li{padding:4px 10px;border-radius:999px;background:var(--surface,#fff);border:1px solid var(--danger);font-size:.8125rem;font-weight:600}
+  .mxb-card li.mxb-go{cursor:pointer}
+  .mxb-card li small{font-weight:400;opacity:.8}
   .draft-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 12px;padding:10px 12px;border-radius:12px;background:var(--green-pale);color:var(--green-dark);font-size:.8125rem;font-weight:600;}
   .draft-bar > svg{width:18px;height:18px;flex:none;}
   .draft-bar > span{flex:1;min-width:160px;}
@@ -6601,7 +6608,7 @@ var L = {
       sc_hi:'Before saving', sc_title:'The system will record this day as', sc_diff:'The screen showed {p}. This is the exact figure that will be saved.', sc_back:'Back to the form', sc_save:'Save the day',
       av_hint:'Admin: cancel this whole transaction, every line, whoever entered it. If it is in a handover nobody has received yet, that handover is cancelled too and its other days go back to be sent again. Nothing is deleted: it stays in the audit trail.', av_btn:'Cancel the whole transaction', av_confirm:'Cancel every line of this transaction, with its bank deposit and any handover not yet received?', av_done:'Cancelled: {n} lines, {h} handovers', err_entryHandedOn:'This day is in a handover already received or passed on ({no}). Settle it through that handover instead.',
       hp_title:'Here is what you hold now', hp_held:'Cash with you now', hp_heldN:'from {n} received handovers not yet passed on', hp_nothing:'Nothing left with you. All handed on.', hp_coming:'Still on its way to you ({n})', hp_received:'Received {amount} SAR', hp_banked:'Deposited {amount} SAR',
-      err_dupMovesCash:'This transaction carries cash that was already handed on, so cancelling it would change amounts that were received. It cannot be cancelled as a duplicate.', err_notDuplicate:'No other transaction holds this source and day, so this one is not a duplicate.', err_dayAlreadyEntered:'This day is already entered for this source ({no}, by {who}). Only {who} or the admin can cancel it; then the day can be entered again.', dep_amount:'Amount you are depositing', dep_amountHint:'Count the cash and type the total. It must match the cash you hold.', err_depAmountRequired:'Type the amount you are depositing', err_depAmountMismatch:'The amount does not match the cash you hold. Count again before depositing.',
+      err_dupMovesCash:'This transaction carries cash that was already handed on, so cancelling it would change amounts that were received. It cannot be cancelled as a duplicate.', err_notDuplicate:'No other transaction holds this source and day, so this one is not a duplicate.', loc_active:'Branch active (takes transactions)', err_branchInactive:'This branch is inactive, so no transactions can be entered for it.', mxb_title:'Branches with no transactions yesterday', mxb_sub:'Active branches with nothing entered on {date}', mxb_more:'and {n} more', err_dayAlreadyEntered:'This day is already entered for this source ({no}, by {who}). Only {who} or the admin can cancel it; then the day can be entered again.', dep_amount:'Amount you are depositing', dep_amountHint:'Count the cash and type the total. It must match the cash you hold.', err_depAmountRequired:'Type the amount you are depositing', err_depAmountMismatch:'The amount does not match the cash you hold. Count again before depositing.',
       mm_screens:'Screens', navs_deputyReview:'Approvals', navs_users:'Users', navs_areaBulk:'Area upload', navs_reconciliation:'Bank', navs_customers:'Customers', navs_comparison:'Compare', navs_profit:'Profit',
       en_line0:'Every riyal you hand over on time keeps Best Gas strong. Thank you for today.', en_line1:'A clear day starts with one small step. You have got this.',
       en_line2:'Your care with the numbers is what customers never see, and always feel.', en_line3:'Good work is quiet. Today it adds up to something big.',
@@ -6630,7 +6637,7 @@ var L = {
       sc_hi:'قبل الحفظ', sc_title:'سيُسجّل النظام هذا اليوم هكذا', sc_diff:'الشاشة عرضت {p}. هذا هو الرقم الدقيق الذي سيُحفظ.', sc_back:'العودة إلى النموذج', sc_save:'حفظ اليوم',
       av_hint:'للمسؤول: إلغاء هذه المعاملة كاملة بكل أسطرها أيًّا كان مُدخِلها. إن كانت في تسليم لم يُستلم بعد، يُلغى التسليم أيضًا وتعود أيامه الأخرى لتُرسل من جديد. لا يُحذف شيء: يبقى في سجل التدقيق.', av_btn:'إلغاء المعاملة كاملة', av_confirm:'إلغاء كل أسطر هذه المعاملة مع إيداعها البنكي وأي تسليم لم يُستلم بعد؟', av_done:'أُلغي: {n} سطر، {h} تسليم', err_entryHandedOn:'هذا اليوم في تسليم تم استلامه أو تمريره ({no}). عالجه من خلال ذلك التسليم.',
       hp_title:'هذا ما لديك الآن', hp_held:'النقدية التي معك الآن', hp_heldN:'من {n} تسليمات استلمتها ولم تُسلَّم بعد', hp_nothing:'لا يوجد لديك شيء. سُلّم كل شيء.', hp_coming:'ما زال في الطريق إليك ({n})', hp_received:'استلمت {amount} ر.س', hp_banked:'أودعت {amount} ر.س',
-      err_dupMovesCash:'هذه المعاملة تحمل نقدية سُلّمت للمرحلة التالية، وإلغاؤها يغيّر مبالغ تم استلامها، فلا يمكن إلغاؤها كمكررة.', err_notDuplicate:'لا توجد معاملة أخرى لهذا المصدر وهذا اليوم، فهذه المعاملة ليست مكررة.', err_dayAlreadyEntered:'هذا اليوم مُدخل مسبقًا لهذا المصدر ({no}، أدخله {who}). لا يلغيه إلا {who} أو مسؤول النظام، ثم يمكن إدخال اليوم من جديد.', dep_amount:'المبلغ الذي تودعه', dep_amountHint:'عُدّ النقدية واكتب الإجمالي. يجب أن يطابق النقدية التي لديك.', err_depAmountRequired:'اكتب المبلغ الذي تودعه', err_depAmountMismatch:'المبلغ لا يطابق النقدية التي لديك. أعد العدّ قبل الإيداع.',
+      err_dupMovesCash:'هذه المعاملة تحمل نقدية سُلّمت للمرحلة التالية، وإلغاؤها يغيّر مبالغ تم استلامها، فلا يمكن إلغاؤها كمكررة.', err_notDuplicate:'لا توجد معاملة أخرى لهذا المصدر وهذا اليوم، فهذه المعاملة ليست مكررة.', loc_active:'الفرع نشط (يقبل المعاملات)', err_branchInactive:'هذا الفرع غير نشط، فلا يمكن إدخال معاملات له.', mxb_title:'فروع بلا معاملات أمس', mxb_sub:'فروع نشطة لم يُسجَّل لها أي إدخال يوم {date}', mxb_more:'و{n} غيرها', err_dayAlreadyEntered:'هذا اليوم مُدخل مسبقًا لهذا المصدر ({no}، أدخله {who}). لا يلغيه إلا {who} أو مسؤول النظام، ثم يمكن إدخال اليوم من جديد.', dep_amount:'المبلغ الذي تودعه', dep_amountHint:'عُدّ النقدية واكتب الإجمالي. يجب أن يطابق النقدية التي لديك.', err_depAmountRequired:'اكتب المبلغ الذي تودعه', err_depAmountMismatch:'المبلغ لا يطابق النقدية التي لديك. أعد العدّ قبل الإيداع.',
       mm_screens:'الشاشات', navs_deputyReview:'الاعتمادات', navs_users:'المستخدمون', navs_areaBulk:'رفع المنطقة', navs_reconciliation:'البنك', navs_comparison:'المقارنة', navs_profit:'الأرباح', navs_customers:'العملاء',
       en_line0:'كل ريال تسلّمه في وقته يقوّي شركتنا. شكرًا لك على اليوم.', en_line1:'اليوم الواضح يبدأ بخطوة صغيرة. أنت قدّها.',
       en_line2:'دقتك في الأرقام لا يراها العميل، لكنه يشعر بها دائمًا.', en_line3:'العمل الجيد هادئ، واليوم يصنع فرقًا كبيرًا.',
@@ -6660,7 +6667,7 @@ var L = {
       sc_hi:'محفوظ کرنے سے پہلے', sc_title:'سسٹم یہ دن اس طرح درج کرے گا', sc_diff:'اسکرین نے {p} دکھایا۔ یہی درست رقم محفوظ ہو گی۔', sc_back:'فارم پر واپس', sc_save:'دن محفوظ کریں',
       av_hint:'ایڈمن: یہ پورا لین دین منسوخ کریں، ہر سطر، جس نے بھی درج کیا ہو۔ اگر یہ کسی ایسی ترسیل میں ہے جو ابھی وصول نہیں ہوئی تو وہ ترسیل بھی منسوخ ہو گی اور اس کے دوسرے دن دوبارہ بھیجنے کے لیے واپس جائیں گے۔ کچھ حذف نہیں ہوتا: یہ آڈٹ ریکارڈ میں رہتا ہے۔', av_btn:'پورا لین دین منسوخ کریں', av_confirm:'اس لین دین کی ہر سطر، اس کی بینک جمع اور ابھی وصول نہ ہونے والی ترسیل منسوخ کریں؟', av_done:'منسوخ: {n} سطریں، {h} ترسیل', err_entryHandedOn:'یہ دن ایسی ترسیل میں ہے جو وصول یا آگے جا چکی ({no})۔ اسے اسی ترسیل کے ذریعے نمٹائیں۔',
       hp_title:'اب آپ کے پاس یہ ہے', hp_held:'ابھی آپ کے پاس نقدی', hp_heldN:'{n} وصول شدہ ترسیل سے، جو ابھی آگے نہیں گئیں', hp_nothing:'آپ کے پاس کچھ باقی نہیں۔ سب آگے دے دیا گیا۔', hp_coming:'ابھی آپ کی طرف راستے میں ({n})', hp_received:'{amount} ریال وصول ہوئے', hp_banked:'{amount} ریال جمع ہوئے',
-      err_dupMovesCash:'اس لین دین میں وہ نقدی شامل ہے جو آگے حوالے ہو چکی ہے، اسے منسوخ کرنے سے وصول شدہ رقمیں بدل جائیں گی، اس لیے اسے دہرا سمجھ کر منسوخ نہیں کیا جا سکتا۔', err_notDuplicate:'اس ذریعے اور دن کا کوئی اور لین دین نہیں، اس لیے یہ دہرا نہیں ہے۔', err_dayAlreadyEntered:'یہ دن اس ذریعے کے لیے پہلے سے درج ہے ({no}، {who} نے درج کیا)۔ صرف {who} یا ایڈمن اسے منسوخ کر سکتے ہیں، پھر دن دوبارہ درج ہو سکتا ہے۔', dep_amount:'جمع کی جانے والی رقم', dep_amountHint:'نقدی گنیں اور کل رقم لکھیں۔ یہ آپ کے پاس موجود نقدی کے برابر ہونی چاہیے۔', err_depAmountRequired:'جمع کی جانے والی رقم لکھیں', err_depAmountMismatch:'رقم آپ کے پاس موجود نقدی سے مطابقت نہیں رکھتی۔ جمع کرنے سے پہلے دوبارہ گنیں۔',
+      err_dupMovesCash:'اس لین دین میں وہ نقدی شامل ہے جو آگے حوالے ہو چکی ہے، اسے منسوخ کرنے سے وصول شدہ رقمیں بدل جائیں گی، اس لیے اسے دہرا سمجھ کر منسوخ نہیں کیا جا سکتا۔', err_notDuplicate:'اس ذریعے اور دن کا کوئی اور لین دین نہیں، اس لیے یہ دہرا نہیں ہے۔', loc_active:'برانچ فعال (لین دین قبول کرتی ہے)', err_branchInactive:'یہ برانچ غیر فعال ہے، اس لیے اس کے لیے کوئی لین دین درج نہیں ہو سکتا۔', mxb_title:'کل بغیر لین دین کی برانچیں', mxb_sub:'فعال برانچیں جن کے لیے {date} کو کچھ درج نہیں ہوا', mxb_more:'اور {n} مزید', err_dayAlreadyEntered:'یہ دن اس ذریعے کے لیے پہلے سے درج ہے ({no}، {who} نے درج کیا)۔ صرف {who} یا ایڈمن اسے منسوخ کر سکتے ہیں، پھر دن دوبارہ درج ہو سکتا ہے۔', dep_amount:'جمع کی جانے والی رقم', dep_amountHint:'نقدی گنیں اور کل رقم لکھیں۔ یہ آپ کے پاس موجود نقدی کے برابر ہونی چاہیے۔', err_depAmountRequired:'جمع کی جانے والی رقم لکھیں', err_depAmountMismatch:'رقم آپ کے پاس موجود نقدی سے مطابقت نہیں رکھتی۔ جمع کرنے سے پہلے دوبارہ گنیں۔',
       mm_screens:'اسکرینیں', navs_deputyReview:'منظوریاں', navs_users:'صارفین', navs_areaBulk:'ایریا اپ لوڈ', navs_reconciliation:'بینک', navs_comparison:'موازنہ', navs_profit:'منافع', navs_customers:'گاہک',
       en_line0:'وقت پر دیا گیا ہر ریال کمپنی کو مضبوط رکھتا ہے۔ آج کے لیے شکریہ۔', en_line1:'اچھا دن ایک چھوٹے قدم سے شروع ہوتا ہے۔ آپ کر سکتے ہیں۔',
       en_line2:'اعداد میں آپ کی احتیاط گاہک نہیں دیکھتا، مگر ہمیشہ محسوس کرتا ہے۔', en_line3:'اچھا کام خاموش ہوتا ہے، آج یہ بڑا فرق بنائے گا۔',
@@ -7430,7 +7437,7 @@ function stopLoading(){
 // Read-only actions. Anything NOT listed here changes data, so a successful
 // call to it wipes the screen cache below -- otherwise a screen re-rendered
 // right after "confirm" could briefly show the pre-confirm copy.
-var READ_ACTIONS = { listStockCounts:1, stockCountPreview:1, getStockLedger:1, getCustomerStatement:1, listCustomerPayments:1, getCustomerBalances:1, getInvoiceCandidates:1, listInvoices:1, listArchiveRuns:1, firstDataDay:1, purchaseDayStatus:1, collectionsData:1, collectionReports:1, getRateHistory:1, whoami:1, bootstrap:1, listMeta:1, listDashboard:1, getDashboardAll:1, listEntries:1, listHandoffs:1,
+var READ_ACTIONS = { missingEntryBranches:1, listStockCounts:1, stockCountPreview:1, getStockLedger:1, getCustomerStatement:1, listCustomerPayments:1, getCustomerBalances:1, getInvoiceCandidates:1, listInvoices:1, listArchiveRuns:1, firstDataDay:1, purchaseDayStatus:1, collectionsData:1, collectionReports:1, getRateHistory:1, whoami:1, bootstrap:1, listMeta:1, listDashboard:1, getDashboardAll:1, listEntries:1, listHandoffs:1,
   getSalesReport:1, getShortfallByEntrant:1, getDashboardComparison:1, getHeldCashTrend:1, listAudit:1, getFile:1,
   getReconciliation:1, listRiskItems:1, listAreaBulkBatches:1, areaBulkBatchDetail:1, traceNumber:1, login:1, forgotPassword:1, setLanguage:1,
   listCosts:1, getCostReport:1, getProfitReport:1, getInventoryLive:1, getInventoryReport:1, areaBatchRows:1, myPendingActions:1, getJourney:1, globalSearch:1 };
@@ -7702,7 +7709,7 @@ var ERROR_KEYS_ = { amount_changed:'err_amountChanged', count_scope:'err_countSc
   invalid_centre:'err_invalidCentre', invalid_month:'err_invalidMonth', duplicate_line:'err_duplicateLine', overlap_line:'err_overlapLine',
   invalid_income_item:'err_invalidIncomeItem', invalid_expense_item:'err_invalidExpenseItem', reason_required:'err_reasonRequired',
   customer_required:'err_customerRequired', user_in_other_area:'err_userInOtherArea',
-  future_date:'err_futureDate', day_closed:'err_dayClosed', day_already_entered:'err_dayAlreadyEntered', duplicate_moves_cash:'err_dupMovesCash', not_a_duplicate:'err_notDuplicate', close_confirm_required:'err_confirmRequiredClose', invalid_phone:'err_invalidPhone', phone_required:'err_phoneRequired', entry_handed_on:'err_entryHandedOn', deposit_amount_mismatch:'err_depAmountMismatch', deposit_amount_required:'err_depAmountRequired', invalid_date:'err_invalidDate', not_your_entry:'err_notYourEntry', invalid_range:'err_invalidRange', handoff_date_future:'err_handoffDateFuture', handoff_date_before_entries:'err_handoffDateBefore', date_reason_required:'err_dateReasonRequired', invalid_handoff_date:'err_handoffDateInvalid',
+  future_date:'err_futureDate', day_closed:'err_dayClosed', branch_inactive:'err_branchInactive', day_already_entered:'err_dayAlreadyEntered', duplicate_moves_cash:'err_dupMovesCash', not_a_duplicate:'err_notDuplicate', close_confirm_required:'err_confirmRequiredClose', invalid_phone:'err_invalidPhone', phone_required:'err_phoneRequired', entry_handed_on:'err_entryHandedOn', deposit_amount_mismatch:'err_depAmountMismatch', deposit_amount_required:'err_depAmountRequired', invalid_date:'err_invalidDate', not_your_entry:'err_notYourEntry', invalid_range:'err_invalidRange', handoff_date_future:'err_handoffDateFuture', handoff_date_before_entries:'err_handoffDateBefore', date_reason_required:'err_dateReasonRequired', invalid_handoff_date:'err_handoffDateInvalid',
   entry_locked:'err_entryLocked', deposit_reconciled:'err_depositReconciled', has_direct_deposit:'err_hasDirectDeposit', already_voided:'err_alreadyVoided', receiver_only:'err_receiverOnly',
   person_holds_cash:'err_personHoldsCash', cash_in_flight:'err_cashInFlight', user_has_assignments:'err_userHasAssignments',
   cannot_change_self:'err_cannotChangeSelf', last_admin:'err_lastAdmin', live_locked:'err_liveLocked',
@@ -15998,6 +16005,30 @@ function renderHome(body){
       body.appendChild(dCard);
     }
 
+    // ---- active branches with nothing entered yesterday, in red (2026-11-25) ----
+    if (['admin','finance','accountant','operations_manager','deputy_operations_manager','cluster_manager','store_manager'].indexOf(state.user.role) >= 0) {
+      var mxHost = el('<div></div>');
+      body.appendChild(mxHost);
+      api('missingEntryBranches', {}, { silent: true }).then(function(mr){
+        if (!mr || !mr.ok || !mr.branches || !mr.branches.length || !mxHost.isConnected) return;
+        var canOpen = state.user.role === 'admin' || state.user.role === 'finance', MAX = 24, list = mr.branches;
+        var card = el('<section class="card mxb-card no-collapse" role="alert"><h3>'+esc(t('mxb_title'))+' ('+list.length+')</h3>' +
+          '<p class="mxb-sub">'+esc(t('mxb_sub').replace('{date}', mr.date))+'</p><ul></ul></section>');
+        var ul = qs('ul', card);
+        list.slice(0, MAX).forEach(function(b){
+          var li = el('<li'+(canOpen ? ' class="mxb-go" tabindex="0"' : '')+'>'+esc(b.name)+(b.areaName ? ' <small>· '+esc(b.areaName)+'</small>' : '')+'</li>');
+          if (canOpen) {
+            var go = function(){ openProfile_('location', b.locationId); };
+            li.addEventListener('click', go);
+            li.addEventListener('keydown', function(ev){ if (ev.key === 'Enter') go(); });
+          }
+          ul.appendChild(li);
+        });
+        if (list.length > MAX) ul.appendChild(el('<li>'+esc(t('mxb_more').replace('{n}', list.length - MAX))+'</li>'));
+        mxHost.appendChild(card);
+      });
+    }
+
     // ---- the stock on hand, always in view (2026-10-05) ----
     if (invCanRead_() && navItemsForRole_().some(function(it){ return it[0] === 'inventory'; })) {
       body.appendChild(invLiveCard_({ onOpen: function(){ goScreen_('inventory'); } }));
@@ -16244,6 +16275,12 @@ function downloadAreaBulkCsvTemplate_(clusterId){
 // The branches this person may enter data for: null means "no limit"
 // (admin), otherwise a list of branch ids. An area manager gets every branch
 // in the areas they manage; a branch manager gets their own branch.
+// A branch is active unless set inactive (rows saved before the status have no `active`).
+// Mirrors the server's branchInactive_ (Collection.gs).
+function branchInactiveId_(locationId){
+  var l = locationId ? byId((state.meta || {}).locations, locationId) : null;
+  return !!(l && l.active === false);
+}
 function branchIdsForEntry_(){
   var meta = state.meta || {};
   var role = state.user.role;
@@ -18310,6 +18347,8 @@ function renderEntries(body){
     } else if (type==='pos'){
       list = (meta.pos||[]).filter(function(x){ return (role==='driver' || role==='branch_worker') ? x.assignedUserId===state.user.id : inMyBranch_(posOwnerLocationId_(x)); });
     }
+    // an inactive branch takes no transactions (2026-11-25): its sources are not offered
+    list = list.filter(function(x){ return !branchInactiveId_(type === 'pos' ? posOwnerLocationId_(x) : x.locationId); });
     // no level yet: nothing to choose; a level: its sources under an empty first choice
     srcSel.innerHTML = !type ? '<option value="">'+esc(t('src_pickFirst'))+'</option>'
       : list.length ? '<option value="" selected>— '+esc(t('entry_source_' + type))+' —</option>' + sourceOptionsGrouped_(type, list)
@@ -29176,8 +29215,10 @@ var ENTITY_FIELDS = {
     {k:'clusterId', l:'admin_cluster', pick:'clusters', pickLabel:function(x){return x.name;}},
     // the collector this branch's cash goes to (collectors belong to branches)
     {k:'collectorUserId', l:'admin_collector', pick:'users', pickLabel:function(x){return x.name;}, pickFilter:function(x){return x.role==='collector';}},
-    {k:'zoneId', l:'admin_zone', pick:'zones', pickLabel:function(x){return x.city+' — '+x.name;}}
-  ], cols:['name','city','clusterId','areaManager','collectorUserId','zoneId'] },
+    {k:'zoneId', l:'admin_zone', pick:'zones', pickLabel:function(x){return x.city+' — '+x.name;}},
+    // the branch status (2026-11-25): active by default; an inactive branch takes no transactions
+    {k:'active', l:'loc_active', type:'check'}
+  ], cols:['name','city','clusterId','areaManager','collectorUserId','zoneId','active'] },
   store: { addKey:'admin_addStore', fields:[
     {k:'locationId', l:'admin_location', pick:'locations', pickLabel:function(x){return x.city+' — '+x.name;}},
     {k:'name', l:'admin_storeName'},
@@ -29733,6 +29774,8 @@ function entityForm_(kind, item){
   spec.fields.forEach(function(f){
     var wrap = el('<div class="field'+(f.type==='check'?' field-check':'')+'"><label>'+esc(t(f.l))+(isRequiredField_(kind, f.k) ? '<span class="req">*</span>' : '')+'</label></div>');
     var v = item ? item[f.k] : (f.k === 'active' ? true : '');
+    // a record saved before it had a status is active: never show it unticked, or the next save would switch it off
+    if (f.k === 'active' && item && (v == null || v === '')) v = true;
     wrap.appendChild(entityFieldInput_(f, v, meta, kind));
     grid.appendChild(wrap);
   });

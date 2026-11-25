@@ -997,7 +997,8 @@ function saveEntity_(req, user) {
 
   var obj = req.id ? getById_(sheetName, req.id) : null;
   if (req.id && !obj) return { ok: false, error: 'not_found' };
-  if (!obj) obj = { id: Utilities.getUuid(), active: true };
+  // createdAt (2026-11-25): a branch added today is not named for having no entries yesterday
+  if (!obj) obj = { id: Utilities.getUuid(), active: true, createdAt: new Date().toISOString() };
 
   // Validate the merged result, not the raw patch — a partial update (e.g.
   // just toggling `active`) must not fail validation for omitting fields
@@ -1698,6 +1699,13 @@ function runOneTimeMigrations_() {
       var has = ScriptApp.getProjectTriggers().some(function (t) { return t.getHandlerFunction() === 'purchasesDigestDaily_'; });
       if (!has) ScriptApp.newTrigger('purchasesDigestDaily_').timeBased().everyDays(1).atHour(23).create();
     } catch (eT) { try { logAudit_('purchases_digest_trigger_failed', 'system', String(eT).slice(0, 300)); } catch (eA) {} }
+  });
+  // active branches with nothing posted yesterday, mailed at 07:00 Riyadh (2026-11-25)
+  runOnce_('MISSING_ENTRIES_TRIGGER', function () {
+    try {
+      var has = ScriptApp.getProjectTriggers().some(function (t) { return t.getHandlerFunction() === 'missingEntriesDaily_'; });
+      if (!has) ScriptApp.newTrigger('missingEntriesDaily_').timeBased().atHour(7).everyDays(1).inTimezone('Asia/Riyadh').create();
+    } catch (eT) { try { logAudit_('missing_entries_trigger_failed', 'system', String(eT).slice(0, 300)); } catch (eA) {} }
   });
   runOnce_('SENDER_RENAMED', function () {
     var c = config_();

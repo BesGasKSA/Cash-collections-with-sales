@@ -272,8 +272,9 @@ function buildContext() {
         timeBased: function () { built.timeBased = true; return builder; },
         everyDays: function (n) { built.everyDays = n; return builder; },
         atHour: function (h) { built.atHour = h; return builder; },
+        inTimezone: function (tz) { built.timezone = tz; return builder; },
         create: function () {
-          var trigger = { getHandlerFunction: function () { return handlerFn; } };
+          var trigger = { getHandlerFunction: function () { return handlerFn; }, built: built };
           triggers.push(trigger);
           return trigger;
         }

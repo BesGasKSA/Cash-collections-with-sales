@@ -1122,6 +1122,8 @@ function route_(req) {
     // SLA escalation on stale (long-pending) handoffs, and a second
     // sign-off flag on large confirmed amounts (see Collection.gs)
     runStaleCheck: function () { return actionRunStaleCheck_(req, user); },
+    missingEntryBranches: function () { return actionMissingEntryBranches_(req, user); },
+    runMissingEntriesCheck: function () { return actionRunMissingEntriesCheck_(req, user); },
     adminInstallStaleTrigger: function () { return actionAdminInstallStaleTrigger_(req, user); },
     acknowledgeSecondApproval: function () { return withCashLock_(function () { return actionAcknowledgeSecondApproval_(req, user); }); },
     adminCorrectReceipt: function () { return withCashLock_(function () { return actionAdminCorrectReceipt_(req, user); }); },
