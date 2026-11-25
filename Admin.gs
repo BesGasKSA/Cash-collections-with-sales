@@ -1681,6 +1681,28 @@ function runOnce_(flag, fn) {
   return true;
 }
 
+// Run once by the script owner from the Apps Script editor (Run ▸ installDailyTriggers).
+// A web request cannot create triggers: the owner must grant the "manage triggers"
+// permission, and the editor asks for it on this run (found 2026-11-25: both the
+// purchases digest and the missing-entries mail had logged *_trigger_failed).
+// Safe to run again: a trigger already there is left as it is.
+function installDailyTriggers() {
+  var want = [
+    { fn: 'purchasesDigestDaily_', hour: 23 },
+    { fn: 'missingEntriesDaily_', hour: 7 }
+  ];
+  var have = ScriptApp.getProjectTriggers().map(function (t) { return t.getHandlerFunction(); });
+  var made = [];
+  want.forEach(function (w) {
+    if (have.indexOf(w.fn) >= 0) return;
+    ScriptApp.newTrigger(w.fn).timeBased().atHour(w.hour).everyDays(1).inTimezone('Asia/Riyadh').create();
+    made.push(w.fn + ' ' + w.hour + ':00');
+  });
+  logAudit_('daily_triggers_installed', 'system', made.length ? made.join(', ') : 'already there');
+  console.log(made.length ? 'Created: ' + made.join(', ') : 'Both triggers were already there.');
+  return made;
+}
+
 // The data jobs that run once after an update. Each keeps its own flag, so
 // calling this on every request costs one read of the script properties.
 function runOneTimeMigrations_() {
