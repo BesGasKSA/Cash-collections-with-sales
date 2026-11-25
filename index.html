@@ -4164,9 +4164,16 @@
   @media (min-width:900px){ .sd-charts{grid-template-columns:1fr 1fr;} }
   .sd-chart{margin:0;padding:10px 12px;border:1px solid #E9E5DA;border-radius:14px;background:#fff;min-width:0;}
   .sd-chart figcaption{font-size:.7813rem;font-weight:800;color:#23372A;margin-bottom:8px;}
-  .sd-day .sd-plot{display:flex;align-items:flex-end;gap:2px;height:118px;position:relative;padding-bottom:18px;border-bottom:1px solid #E4DED0;}
-  .sd-col{flex:1 1 0;min-width:0;height:100%;display:flex;align-items:flex-end;border:0;padding:0;background:none;cursor:pointer;position:relative;}
-  .sd-col i{display:block;width:100%;height:calc(var(--h) * 100%);min-height:1px;border-radius:3px 3px 0 0;background:#4D6D51;transform-origin:bottom;}
+  .sd-day .sd-plot{display:flex;align-items:flex-end;gap:3px;height:190px;position:relative;padding-bottom:20px;margin-bottom:4px;background:linear-gradient(#EFEBE1,#EFEBE1) 0 calc(100% - 20px)/100% 1px no-repeat,repeating-linear-gradient(to top,transparent 0 41px,rgba(77,109,81,.07) 41px 42px) 0 0/100% calc(100% - 20px) no-repeat;}
+  .sd-col{flex:1 1 0;min-width:0;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;border:0;padding:0;background:none;cursor:pointer;position:relative;}
+.sd-col .sd-v{flex:none;font-style:normal;font-size:.625rem;font-weight:700;line-height:1;color:#3B5540;writing-mode:vertical-rl;transform:rotate(180deg);white-space:nowrap;margin-bottom:4px;letter-spacing:.02em;opacity:.85;}
+.sd-col.hi .sd-v{color:#1F6B3A;opacity:1;font-size:.6875rem;}
+.sd-col.lo .sd-v{color:#B3261E;opacity:1;}
+.sd-col .sd-d{position:absolute;bottom:-18px;left:50%;transform:translateX(-50%);font-size:.625rem;font-weight:600;color:#7A8277;line-height:1;}
+.sd-col.hi .sd-d,.sd-col.lo .sd-d{color:#23372A;font-weight:800;}
+  .sd-col i{display:block;flex:none;width:100%;height:calc(var(--h) * (100% - 44px));min-height:2px;border-radius:4px 4px 1px 1px;background:linear-gradient(180deg,#6A8F6E 0%,#4D6D51 70%,#3F5B43 100%);box-shadow:inset 0 1px 0 rgba(255,255,255,.18);transform-origin:bottom;}
+.sd-col.hi i{background:linear-gradient(180deg,#D9A93F 0%,#C98A1B 100%);}
+.sd-col.lo i{background:linear-gradient(180deg,#9DB59F 0%,#7E9A81 100%);}
   .sd-col.neg i{background:#B3261E;} .sd-col:hover i{background:#3B5540;} .sd-col:disabled{cursor:default;} .sd-col:disabled i{opacity:.35;}
   .sd-col:hover::after,.sd-col:focus-visible::after{content:attr(data-tip);position:absolute;bottom:calc(100% + 4px);left:50%;transform:translateX(-50%);white-space:nowrap;background:#23372A;color:#fff;font-size:.75rem;font-weight:700;padding:3px 7px;border-radius:6px;z-index:2;pointer-events:none;}
   .sd-axis{position:absolute;left:0;right:0;bottom:-2px;display:flex;justify-content:space-between;font-size:.75rem;color:#7A8277;font-weight:600;pointer-events:none;}
@@ -14300,6 +14307,13 @@ function sdChg_(k){
   var good = (p > 0) !== !!k.down;
   return '<span class="sd-ch ' + (good ? 'good' : 'bad') + '" title="' + esc(sdFill_(t('sd_prevWas'), { v: sdFmt_(k.prev, k.kind) })) + '"><b aria-hidden="true">' + (p > 0 ? '▲' : '▼') + '</b><bdi dir="ltr">' + Math.abs(sdRound_(p, 1)).toFixed(1) + '%</bdi></span>';
 }
+// an amount in a few characters for a chart label: 505K, 1.2M (2026-11-25)
+function sdShortNum_(v){
+  var a = Math.abs(v), sg = v < 0 ? '-' : '';
+  if (a >= 1e6) return sg + (Math.round(a / 1e5) / 10).toLocaleString('en-US') + 'M';
+  if (a >= 1e3) return sg + Math.round(a / 1e3).toLocaleString('en-US') + 'K';
+  return sg + Math.round(a).toLocaleString('en-US');
+}
 function sdChart_(ch, i){
   var rows = (ch.rows || []).filter(function(r){ return r && isFinite(r.v); });
   if (!rows.length || !rows.some(function(r){ return Math.abs(r.v) > 0.004; })) return null;
@@ -14309,12 +14323,18 @@ function sdChart_(ch, i){
   var plot = qs('.sd-plot', box);
   if (ch.kind === 'day') {
     var mx = Math.max.apply(null, rows.map(function(r){ return Math.abs(r.v); })) || 1;
+    // every day carries its own labels (the owner, 2026-11-25): its amount, short and turned upright
+    // above the column, and its day of the month under it; the highest and lowest day stand out
+    var hiV = -Infinity, loV = Infinity;
+    rows.forEach(function(r){ if (r.v > hiV) hiV = r.v; if (Math.abs(r.v) > 0.004 && r.v < loV) loV = r.v; });
     rows.forEach(function(r, j){
-      var b = el('<button type="button" class="sd-col' + (r.v < 0 ? ' neg' : '') + '" style="--h:' + (Math.abs(r.v) / mx).toFixed(4) + ';--j:' + j + '" aria-label="' + esc(r.label + ': ' + sdFmt_(r.v, ch.unit || 'money')) + '" data-tip="' + esc(r.label + ' · ' + sdFmt_(r.v, ch.unit || 'money')) + '"><i></i></button>');
+      var dayNo = (String(r.label).match(/\d+/) || [r.label])[0];
+      var mark = r.v === hiV ? ' hi' : r.v === loV && rows.length > 2 ? ' lo' : '';
+      var b = el('<button type="button" class="sd-col' + (r.v < 0 ? ' neg' : '') + mark + '" style="--h:' + (Math.abs(r.v) / mx).toFixed(4) + ';--j:' + j + '" aria-label="' + esc(r.label + ': ' + sdFmt_(r.v, ch.unit || 'money')) + '" data-tip="' + esc(r.label + ' · ' + sdFmt_(r.v, ch.unit || 'money')) + '">' +
+        '<em class="sd-v" aria-hidden="true"><bdi dir="ltr">' + esc(Math.abs(r.v) > 0.004 ? sdShortNum_(r.v) : '') + '</bdi></em><i></i><span class="sd-d" aria-hidden="true">' + esc(dayNo) + '</span></button>');
       if (r.open) b.addEventListener('click', r.open); else b.disabled = true;
       plot.appendChild(b);
     });
-    plot.appendChild(el('<div class="sd-axis"><span>' + esc(rows[0].label) + '</span><span>' + esc(rows[rows.length - 1].label) + '</span></div>'));
   } else {
     var top = rows.slice().sort(function(a, b){ return b.v - a.v; }), shown = top.slice(0, 6), mx2 = Math.max.apply(null, shown.map(function(r){ return Math.abs(r.v); })) || 1;
     shown.forEach(function(r, j){
